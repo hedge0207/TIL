@@ -1,0 +1,201 @@
+# git push
+
+0. git 시작하기
+
+```bash
+$ git init
+```
+
+- 이제부터 해당 디렉토리를 git으로 관리하겠다.
+
+- git init은 상위 폴더에서 수행했으면 하위 폴더에서는 하지 않아도 된다.
+
+- 성공하면 뒤에 (master)가 뜬다. 이미 (master)가 붙어있다면  git init을 입력하지 않아도 된다.
+
+- 이미 한 허브에 올린 후 다른 허브에 올릴 때도 하지 않아도 된다.
+
+
+
+1. 상태 확인하기
+
+```bash
+$ git status
+```
+
+- 관리하고 있지 않은 파일(git hub에 올리지 않은 파일)은 빨간색으로 뜬다.
+
+
+
+2. 스테이지에 올리기(완료 후 git status 실행하여 초록색으로 뜨는지 확인)
+
+```bash
+$ git add ㅏ파일명ㅓ
+```
+
+
+
+3. 커밋하기(사진찍기)
+
+```bash
+$ git commit -m '메세지'
+# -m과 같이 -뒤에 오는 것은  short name 옵션이고 --global같이 --뒤에 오는 것은 long name옵션이다.
+```
+
+
+
+4. 기록(log) 확인하기
+
+```bash
+$ git log
+```
+
+
+
+5. 리모트(원격 저장소) 등록하기
+
+```bash
+$ git remote add 식별자 ㅏ원격저장소 주소ㅓ
+```
+
+- origin은 식별자로, 아무 이름으로해도 상관없다. 또한 각기 다른 곳에 올리더라도(ex. lab과 git hub) 식별자를 다르게 할 필요는 없다.
+
+- 주소는 프로젝트(lab의 경우 프로젝트 내의 clone클릭 후 http 복사), 혹은 repository에 들어가면 볼 수 있다.
+
+
+
+6. 파일 푸쉬(업로드)하기
+
+```bash
+$ git push 식별자 master
+```
+
+- 로그인창에 git hub아이디와 비밀번호 입력
+
+- 식별자는 remote add에 쓴 것과 동일해야 한다.
+
+- add, commit, push가 한 세트
+
+
+
+---
+
+
+
+
+
+
+
+# git pull
+
+
+
+1. 파일 다운 받기
+
+```bash
+$ git clone ㅏ다운받고자 하는 주소ㅓ(프로젝트 내에  clone or download에 있다)
+```
+
+
+
+2. 원래 있던 폴더(다운 받은 파일을 업로드한 폴더)에서 다운 받은 폴더에서 업로드한 파일을 받기
+
+```bash
+$ git pull 식별자 master
+```
+
+
+
+
+
+---
+
+
+
+
+
+
+
+# git branch
+
+1. 브랜치 생성
+
+   ```bash
+   (master) $ git branch ㅏ브랜치명ㅓ
+   ```
+
+2. 브랜치 이동
+
+   ```bash
+   (master) $ git checkout ㅏ브랜치명ㅓ
+   ```
+
+3. 브랜치 생성 및 이동
+
+   ```bash
+   (master) $ git checkout -b ㅏ브랜치명ㅓ
+   ```
+
+4. 브랜치 삭제
+
+   ```bash
+   (master) $ git branch -d ㅏ브랜치명ㅓ
+   ```
+
+5. 브랜치 목록
+
+   ```bash
+   (master) $ git branch
+   ```
+
+6. 브랜치 병합
+
+   ```bash
+   (master) $ git merge ㅏ브랜치명ㅓ
+   ```
+
+   * master 브랜치에서 ㅏ브랜치명ㅓ을 병합
+
+7. 브랜치 상황 그래프로 확인하기
+
+   ```bash
+   $ git log --oneline --graph
+   ```
+
+8. branch 삭제
+
+   ```bash
+   $ git branch -d feature/signup
+   ```
+
+
+
+
+
+---
+
+
+
+
+
+# 기타
+
+1. 식별자 지우기
+
+```bash
+$ git remote rm 식별자
+```
+
+- 해당 식별자로 올라간 폴더도 함께 삭제된다.
+
+
+
+
+
+---
+
+
+
+
+
+
+
