@@ -724,34 +724,29 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
       </form>
       
       ```
-    
-  
-  <!--xxx를 입력받았다고 가정-->
-      ```
-  
+      
       ```html
+      <!--xxx를 입력받았다고 가정-->
       <!--complete.html-->
       {{ qwe }}
-  
-
-<!--페이지에 xxx가 출력된다.-->
+      <!--페이지에 xxx가 출력된다.-->
       ```
-
-      - 정리
-    
-        ⓐnew/경로로 접근한다.
-    
-        ⓑurls.py는 접근을 감지하고 views의 new함수를 실행시킨다.
-    
-        ⓒnew 함수가 실행되면  new.html이 렌더링 해 화면에 출력한다.
-    
-        ⓓ값을 입력받는다.
-    
-        ⓔ입력 값은 complete/경로로 넘겨진다.
-      
-        ⓕurls.py는 접근을 감지하고 views의  complete함수를 실행시킨다.
-    
-        ⓖcomplete함수 complete.html이 렌더링 해 화면에 출력한다.
+  
+  - 정리
+  
+    ⓐnew/경로로 접근한다.
+  
+    ⓑurls.py는 접근을 감지하고 views의 new함수를 실행시킨다.
+  
+    ⓒnew 함수가 실행되면  new.html이 렌더링 해 화면에 출력한다.
+  
+    ⓓ값을 입력받는다.
+  
+    ⓔ입력 값은 complete/경로로 넘겨진다.
+  
+    ⓕurls.py는 접근을 감지하고 views의  complete함수를 실행시킨다.
+  
+    ⓖcomplete함수 complete.html이 렌더링 해 화면에 출력한다.
 
 
 
@@ -778,7 +773,7 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
 
 - 데이터
   - 데이터를 엑셀 파일에 비유했을 때 하나의 테이블은 하나의 sheet가 된다.
-  - 열(column)은 속성을 담고 있다. 속성 혹은 레코드라고도 부른다. 스키마가 틀을 만드는 것이 바로 열이다
+  - 열(column)은 속성을 담고 있다. 속성 혹은 레코드라고도 부른다. 스키마가 틀을 만드는 것이 바로 열이다. 필드(field)는 데이터베이스의 테이블에서 열(column)을 의미한다.
   - 행(row)는 각 속성의 구체적인 정보를 담고 있다. 레코드라고도 부른다.
   - PK(Primary Key): 주민등록번호, 군번, 학번과 같이 식별을 위해 지정된 고유한 값 , PK값의 column의 이름을 id라 부른다.
   - 장고에서는 객체를 저장할 때 마다 PK값을 하나씩 증가시키면서  PK값을 부여한다.
@@ -1135,63 +1130,87 @@ admin.site.register(Article)
 
 # 정적 파일 관리
 
-- static: 정적 파일 관리, CSS,JS,image파일을 일반적으로 static파일이라 부른다.
+- static: 정적 파일, CSS,JS,image파일을 일반적으로 static파일이라 부른다.
+- html파일이 위치한 templates폴더에서 관리하지 않고 아래와 같은 방법으로 관리, 사용한다.
 
-  - 앱 하부폴더로 static폴더를 생성 후 static폴더 하부에 앱 이름과 동일한 폴더를 생성(templates폴더와 가은 이유로 폴더 내부에 앱 이름과 같은 이름의 폴더를 생성해준다)후 그 폴더에 필요한 파일을 작성, 만일 특정 앱이 아닌 프로젝트 전체에서 쓰고싶다면 프로젝트에 폴더를 생성하면 된다.
+- 정적 파일 관리 방법
 
-  - bootstrap-download-Compiled CSS ans JS 다운로드 후 위에서 생성한 폴더에 업로드
+  - static 폴더를 생성하고 그 하위 폴더로 app이름과 동일한 폴더를 생성한 뒤 그 안에 css,js파일을 넣는다. 일반적으로 css파일과 js파일을 각기 폴더를 만들어서 관리한다. 굳이 하위폴더를 만드는 이유는 templates 폴더 아래에 앱 이름과 같은 폴더를 하나 만들고 그 안에 html파일들을 관리하는 것과 같은 이유다.
 
-  - `settings.py`에 아래의 코드 추가
+    - static폴더는 templates폴더와 같이 이름을 변경해선 안된다.
+    - 주의할 점은 만일 static폴더를 만들기 전에 서버를 켜놨다면 static폴더를 만들고 적용 한 후에 서버를 껐다 켜야 static폴더를 불러와 적용이 된다.
+
+  - static 파일을 적용할 html 파일에 DTL(장고 템플릿 랭귀지)로 아래와 같이 작성
+
+    ```html
+    <!--아래와 같이 static파일을 불러온다는 것을 알려주고-->
+    {% load static%}
+    
+    <!--static폴더의 하위 폴더부터 static파일까지의 경로를 적으면 된다-->
+    <link rel="stylesheet" href="{% static 'static파일이 있는 위치/static파일' %}">
+    
+    <!--accounts/static/accounts/css 폴더 형식이 이와 같고 파일 명이 index.css면-->
+    <link rel="stylesheet" href="{% static 'accounts/css/index.css' %}">
+    
+    <!--주의할 점은 템플릿 확장을 할 경우 {% load static%}은 항상 extends보다 아래에 있어야 한다는 점이다-->
+    ```
+
+  - `base.html`에 사용하고 싶을 경우 프로젝트 폴더 하부 폴더로 static 폴더를 생성하고 그 하부 폴더로 적당한 이름의 폴더를 생성한 후 그 안에 static파일을 넣으면 되며, 이 경우 base.html 작성이 담긴 templates 폴더를 사용하는 것과 마찬가지로 `settings.py`에서 아래 코드를 추가해야 한다.
 
     ```python
+    #settings.py
+    
     # serving 되는 URL 앞에 붙음.
     STATIC_URL = '/static/'
-    # app 디렉토리가 아닌 static 폴더 지정
+    # app 디렉토리가 아닌 static 폴더 지정시 아래 코드를 추가
     STATICFILES_DIRS = [
         os.path.join(BASE_DIR, 'static')
     ]
     ```
 
-  - 적용하고자 하는 html파일(전부 다 적용할 것이라면 base.html파일)에 아래의 코드를 추가, 그대로 쓰는 것이 아닌 적용하고자 하는 파일을 적으면 된다.
+  - base.html에서 사용할 때도 ` settings.py`를 수정하는 것만 제외하면 위와 동일하게 사용하면 되며, 만일 base.html에 적용한 static파일을 다른 html파일에서도 쓰고 싶다면 아래와 같이 쓰면 된다.
 
     ```html
+    <!--base.html-->
+    {% load static %}
+    <!DOCTYPE html>
+    <html lang="ko">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta http-equiv="X-UA-Compatible" content="ie=edge">
         <title>Document</title>
-        
-        <!--추가한 코드-->
+        <link rel="stylesheet" href="{% static 'articles/stylesheets/style.css' %}">
         <link rel="stylesheet" href="{% static 'bootstrap/bootstrap.min.css' %}">
-        
-        {% block css %}
+        {% block css %}<!--이처럼 block css를 쓴 후-->
         {% endblock %}
     </head>
-    
     <body>
-        
-        <!--추가한 코드-->
+        <div class="container">
+            {% block body %}
+            {% endblock %}
+        <a href="{% url 'articles:index' %}">게시글 목록 보기</a>
+        </div>
         <script src="{% static 'bootstrap/bootstrap.min.js' %}"></script>
-    
     </body>
     </html>
     ```
 
-  - 적용 받는 HTML파일에 아래의 코드를 추가
-
-    ```python
-    {% extends 'base.html' %}  <!--extends는 항상 최상위에 와야 한다.-->
+    ```html
+    <!--other.html-->
     {% load static %}
+    
     {% block css %}
-    <link rel="stylesheet" href="{% static 'stylesheets/form.css' %}">
     {% endblock %}
+    
+    
+    <!--위 처럼 쓰면 되는데 만일 other.html 파일에 base에 적용되지 않은 static파일을 쓰고 싶다면 아래와 같이 block사이에 작성하면 된다.-->
+    {% load static %}
+    	<link rel="stylesheet" href="{% static 경로/파일' %}">
+    {% block css %}
     ```
 
-
-
-
-
-
+    
 
 
 
@@ -1230,7 +1249,7 @@ admin.site.register(Article)
       
       
       
-  #혹은 아래와 같이 설정도 가능하다. 이 경우에도 Meta를 함께 넘겨줘야 한다.
+  #만일 클래스를 지정하고 싶다면 아래와 같이 하면 된다.
   from django import forms
   from .models import Review
   
@@ -1478,30 +1497,53 @@ admin.site.register(Article)
   
   <form action="" method="POST">
           {% csrf_token %}
-          {% bootstrap_form form %}
-          <!-- input type:submit -->
+          {% form %}
           <button class="btn btn-primary">제출</button>
       </form>
   <!--아니면 그냥 위 처럼 입력하고 해당 정보가 표시되는 창에서 디버깅창(F12)에 보면 각 정보별 태그가 나와있는데, 그 태그를 보고 적용해도 된다.-->
   
+  
+  {% load bootstrap4 %}
   <form action="" method="POST">
   	{% csrf_token %}
   	{% bootstrap_form form %}
   	<button class="btn btn-primary">제출</button>
   </form>
-  <!--아니면 그냥 위 처럼 bootstrap적용도 가능하다. 단, bootstrap을 활용하려면 settings.py도 바꿔야 하고 load도 해줘야 하기에 과정이 복잡하다.-->
-  django-bootstrap4에 가면 관련 정보가 있다.
-  <!--
+  <!--아니면 그냥 위 처럼 bootstrap적용도 가능하다. 단, bootstrap을 활용하려면 settings.py도 바꿔야 하고 load도 해줘야 하기에 과정이 복잡하다.
+  https://django-bootstrap4.readthedocs.io/en/latest/index.html에 가면 관련 정보가 있다.
+  
+  적용 방법
+  0.$ pip install django-bootstrap4를 입력해 설치
   1.settings.py에서 installed_app에 bootstrap4를 추가
   2.쓰려는 html파일 상단에 {% load bootstrap4 %}를 입력
-  3.base.html 상단에도 {% load bootstrap4 %}를 입력하고 {% bootstrap_css %}와 {% bootstrap_javascript jquery='full' %}를 각기 css,js관련 정보를 입력하던 곳에 입력
+  3.base.html 상단에도 {% load bootstrap4 %}를 입력하고 {% bootstrap_css %}와 {% bootstrap_javascript jquery='full' %}를 각기 css,js관련 정보를 입력하던 곳에 입력-->
   ```
 
   
 
-- message(추가 필요)
+- message
   
-  - message를 별 다른 선언 없이 사용 가능한 이유는 settings에 선언이 되어 있기 때문이다.
+  - message를 별 다른 선언 없이 사용 가능한 이유는 이미 django내부의 `settings`에 선언이 되어 있기 때문이다(`MIDDLEWARE`, `TEMPLATES` 부분에 있다, request도 역시 마찬가지 이유로 선언 없이 사용 가능).
+  
+  - 상세한 내용은 django 공식문서에서 찾아볼 수 있다.
+  
+    > https://docs.djangoproject.com/en/3.0/ref/contrib/messages/
+  
+  - 상기한 문서에 있는 코드들 중 하나를 선택해 `views.py`의 상단에 `message`를 import 한 후 원하는 곳에 입력하면 된다.
+  
+    ```python
+    from django.contrib import messages
+    
+    messages.debug(request, '%s SQL statements were executed.' % count)
+    messages.info(request, 'Three credits remain in your account.')
+    messages.success(request, 'Profile details updated.')
+    messages.warning(request, 'Your account expires in three days.')
+    messages.error(request, 'Document deleted.')
+    
+    #messages.error(request, 'Document deleted.')를 예로 들면 error는 메세지의 색을, 'Document deleted.'는 띄울 문구를 뜻하며 자유롭게 수정이 가능하다. 단, 아래에서 살펴볼 사용자 관리에서 사용자 관리 관련 form들을 불러와 사용한 경우에는 messages.error(request, '')와 같이 비워둬도 form에 미리 저장되어 있는 메세지가 출력되며, 문자열 안에 내용을 입력해도 미리 저장되어 있는 메세지가 출력된다.
+    ```
+  
+    
 
 
 
@@ -1519,12 +1561,16 @@ admin.site.register(Article)
 
 - form과 model을 이미 장고에서 정의해 놓았기에 import해서 쓰기만 하면 된다.
 
+  - 그러나 migrate는 해야 한다. 
+  - 새로 정의한 모델이 없기에 migrations는 할 필요 없다.
+  
+- 사용자 계정 관리(회원가입)
+
   ```python
   #views.py
   from django.shortcuts import render, redirect, get_object_or_404
-  from django.contrib.auth import get_user_model  #모델을 불러오고
   from django.contrib.auth.forms import UserCreationForm  #form을 불러온다. 
-  # from django.contrib.auth.models import User
+  #UserCreationForm은 공식 문서를 보면 3개를 넘긴다(password1,password2,username)
   
   # Create your views here.
   def signup(request):
@@ -1539,33 +1585,292 @@ admin.site.register(Article)
           'form': form
       }
       return render(request, 'accounts/signup.html', context)
+  ```
   
-  def detail(request, pk):
-      User = get_user_model()
-      user = get_object_or_404(User, pk=pk)
+
+
+
+- User는 AbstractUser를 상속받고, AbstractUser는 AbstractBaseUser를 상속 받으며, AbstractBaseUser는 models.Model을 상속받는다.
+
+  - 단계마다 담겨있는 속성들이 다르다, 따라서 만일 User를 불러 오는 것이 아니라 custom해서 만들고 싶다면 필요에 따라 무엇을 상속받게 하여 만들지 결정하면 된다.
+
+    - AbstractUser: first_name, last_name,email, 기타
+    - AbstractBaseUser: password, last_login, is_active
+
+    ```python
+    #예를 들어 만일 first_name, last_name,email은 필요가 없고 last_login을 담고 싶다면 아래와 같이 last_login속성을 지는 AbstractBaseUser 클래스를 상속 받으면 된다.
+    class MyUser(AbstractBaseUser):
+    	pass
+    ```
+
+    
+
+- 로그인을 구현 할 때에는 사용자가 로그인한 상태라는 것을 알게 해줘야 한다.
+
+  - 예를 들어 네이버에 로그인 하면 어떤 네이버 블로그를 가던, 카페를 가던 로그인 상태가 유지가 된다.
+
+  - 웹의 기본 규약인 HTTP의 특징 
+
+    - 요청과 응답(POST,GET등을 통한). 
+    - stateless, connectless: 상태와 연결상황을 알지 못한다. email을 보내는 것과 전화를 하는 것의 차이와 유사하다.  전화는 통화중에는 실시간으로 계속 요청과 응답이 가능하지만 email은 요청을 보내고 답이 오면 연결이 끊어지게 된다. 또한 특정한 요청이 들어왔을 때 요청을 한 사람이 이전에 어떤 요청을 한 사람인지 알 수 없다. 따라서 연결이 끊어짐에도 로그인 상태가 유지되도록 해야 한다. 이를 가능하게 하는 것이 쿠키다.
+
+  - 쿠키
+
+    - 웹 사이트에서 어떤 행동을 할 때마다 웹은 사용자에게 쿠키를 제공(쿠키는 브라우저에 저장)하게 되고 이후부터는 사용자가 가진 쿠키를 웹에서 읽어서 그 상태를 기억하게 된다.
+    - 만일 사용자가 쿠키를 임의로 조작하는 경우(예를 들어 일반 회원에서 admin으로 인식되도록 쿠키를 조작하는 경우) 문제가 생길 수 있다. 따라서 django에는 이를 막는 방법이 존재한다.
+  - 세션
+    - 사용자에게 제공한 쿠키에 대한 정보를 세션(DB/메모리)에 저장하고 사용자가 제출한 쿠키와 세션에 저장된 쿠키가 일치하지 않으면 요청이 들어와도 응답을 하지 않게 된다.
+    - 세션에는 쿠키 만료 시간 등이 담겨 있다.
+    - 그러나 세션은 서버 리소스를 사용하기 모든 사항에 대해서 쓰지 않고 일반적으로 변경되면 안되거나 중요한 사항에만 사용한다.
+    - 로그인, 로그 아웃은 이 세션에 create과 delete를 하는 과정이다.
+
+
+
+- 캐시는 특정 사이트에 대한 정보를 브라우저에 저장함으로써 다음에 해당 사이트에 접속했을 때 사이트가 더 빨리 로드되게 해준다.
+
+
+
+- 로그인, 로그아웃
+
+  - UserCreationForm과  AuthenticationForm
+    -  회원가입에 쓰이는 UserCreationForm은 User모델을 create생성하는 Form이다(이전에 했던 ArticleForm도 Article을 create하는 Form이었다). 즉, 모델을 기반으로 만든 form이다.
+    -  로그인에  쓰이는 Authentication은 ModelForm이 아닌 그냥 form이다. 즉, 특정한 모델을 기반으로 만든 form이 아니다. 
+    - 로그인은 쿠키, 세션과 관련된 것인데 쿠키는 사용자의 요청에 담겨서 온다. 따라서 로그인 코드에서는 request를 함께 넘겨준다.
+
+  ```python
+  from django.shortcuts import render, redirect
+  from django.contrib.auth import get_user_model
+  #from django.contrib.auth.models import User 이와 같이 import해도 되지만 get_user_model을 import해서 쓰는 것이 더 낫다.
+  from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+  from django.contrib.auth import login as auth_login
+  from django.contrib.auth import logout as auth_logout
+  #as auth_login, as auth_logout으로 이름을 바꿔서 import하는 이유는 아래에 login, logout이라는 함수를 정의했기에 중복을 피하기 위함이다. 만일 아래 함수를 login, logout이 아닌 signin, signout으로 했다면 그냥 import하면 된다.
+  
+  
+  # Create your views here.
+  def index(request):
+      return render(request,'accounts/index.html')
+  
+  def login(request):
+      if request.method=="POST":
+          form = AuthenticationForm(request, request.POST)
+          if form.is_valid():
+              auth_login(request,form.get_user())
+              #form.get_user()는 아이디, 비번 체크해서 일치하는 유저를 불러온다.
+              #AuthenticationForm에 정의된 메소드다.
+              return redirect('accounts:index')
+      else:
+          form=AuthenticationForm()
       context = {
-          'user': user
+          'form':form
       }
-      return render(request, 'accounts/detail.html', context)
+      return render(request,'accounts/login.html',context)
+  
+  def logout(request):
+      auth_logout(request)
+      return redirect('accounts:index')
   ```
 
   
 
+- 로그인 상태일 때 특정 페이지로 들어가지 못하게 하는 방법
 
+  ```python
+  #로그인 된 상태에서는 로그인 페이지나 회원가입 페이지로 갈 필요가 없기에 아래와 같이 조건문을 사용하여 들어가지 않게 해준다.
+  def signup(request):
+      if request.user.is_authenticated:  #만일 로그인 상태면
+          return redirect('accounts:index') #redirect
+      if request.method=="POST":
+          form=UserCreationForm(request.POST)
+          if form.is_valid():
+              form.save()
+              return redirect('accounts:index')
+      else:
+          form = UserCreationForm()
+      context = {
+          'form':form,
+      }
+      return render(request,'accounts/signup.html', context)
+  
+  def login(request):
+      if request.user.is_authenticated:    #만일 로그인 상태면
+          return redirect('accounts:index') #redirect
+      if request.method=="POST":
+          form = AuthenticationForm(request, request.POST)
+          if form.is_valid():
+              auth_login(request,form.get_user())
+              #form.get_user()는 아이디, 비번 체크해서 일치하는 유저를 불러온다.
+              #AuthenticationForm에 정의된 메소드다.
+              return redirect('accounts:index')
+      else:
+          form=AuthenticationForm()
+      context = {
+          'form':form
+      }
+      return render(request,'accounts/login.html',context)
+  ```
 
+  
 
+- @login_required
 
+  > 로그인이 필요한 페이지에 로그인을 하지 않고 접근했을 경우의 처리
 
+  - @login_required와 단순히 조건문으로 이러한 처리를 할 때의 차이는 @login_required는 url에 next를 포함시킨다는 것이다.
 
+  ```python
+  #만일 로그인 하지 않은 상태에서 로그아웃을 시도할 경우
+  #위에서 import했던 것들은 다시 import하지 않았음
+  from django.contrib.auth.decorators import login_required #import하고
+  
+  def login(request):
+      if request.user.is_authenticated:
+          return redirect('articles:index')
+      if request.method == 'POST':
+          form = AuthenticationForm(request, request.POST)
+          if form.is_valid():
+              auth_login(request, form.get_user())
+              '''
+              @login_required만 붙인다고 끝이 아니라 login 함수에 아래 코드를 써야 한다.
+              
+              만일 @login_required가 작성되지 않았거나 작성되었더라도 로그인한 상태로 해당 경로로 
+              들어갔다면 next자체가 선언되지 않을 것이고 None이 되어 False가 되고	
+              'accounts:index'로 redirect된다.
+              
+              그러나 만일 @login_required가 작성되었고 로그인하지 않은 상태로 해당 경로로 들어갔다면 
+              next가 원래 접근하려 했던 경로에 대한 정보가 담긴채로 선언되고 해당 경로를 redirect하
+              게 된다. 또한 단축평가에 따라 앞의 문장이 참이므로 뒤의 'accounts:index'는 실행되지 X
+              '''
+              return redirect(request.GET.get('next') or 'accounts:index')
+      else:
+          form = AuthenticationForm()
+      context = {
+          'form':form,
+      }
+      return render(request, 'accounts/login.html', context)
+  
+  
+  @login_required
+  def logout(request):
+      auth_logout(request)
+      return redirect('accounts:index')
+  
+  
+  #로그인 하지 않은 상태에서 로그아웃으로 접근 후 url창을 확인하면 아래와 같은 url을 확인할 수 있다.
+  #/accounts/login/?next=/accounts/logout/
+  
+  #next에 /accounts/logout/가 담기게 된다.
+  
+  #만일 로그인 처리가 된다면 ?next=이후에 나오는 경로로 이동하겠다는 의미이다.
+  
+  #따라서 위 코드에 따르면 로그인 하지 않은 상태에서 로그아웃을 한다면 우선 로그인 창이 출력되고 로그인이 완료되면 바로 로그아웃이 될 것이다.
+  
+  #예를 들어 만일 로그인이 필요한 기능은 새 글 쓰기에 로그인 하지 않고 접근하려 할 경우 만일 이러한 처리를 단순히 if문으로 한다면 기존 페이제로 rediect하거나 로그인을 바란다는 페이지를 render하거나 아니면 복잡한 코드를 짜서 로그인 후 원래 접근하려던 새 글 쓰기 페이지에 접근하도록 해야 할 것이다. 그러나 만일 @login_required를 쓴다면 다른 조건문 없이도 로그인 후 바로 원래 접근하려던 페이지를 띄워준다.
+  ```
 
+  
 
+- 회원탈퇴, 회원 정보 수정
 
+  - 회원 탈퇴와 회원 정보 수정은 이전에 했던 게시글 수정, 삭제와 같이 pk를 url로 넘겨받아서 이루어지지 않는다. 만일 위와 같은 방식으로 수정, 탈퇴를 한다면 누군가 악의적으로 이를 이용할 수 있기 때문이다.
 
+  - 따라서 로그인 상태에서 로그인한 유저의 정보를 받아서 수정, 삭제하는 방법을 사용한다.
 
+  - 회원 탈퇴
 
+    ```python
+    #views.py
+    #위에서 import했던 것들은 다시 import하지 않았음
+    from django.views.decorators.http import require_POST
+    
+    @require_POST  #GET으로 접근해서 삭제할 수 없도록 require_POST를 써준다.
+    @login_required  #로그인 해야만 삭제할 수 있도록 한다.
+    def delete(request):
+        request.user.delete() #요청을 보낸 유저의 정보를 삭제
+        return redirect('articles:index')
+    ```
 
+    ```html
+    <!--detail.html(회원 프로필을 보여주는 페이지)-->
+    {% block body %}
+    <h1>{{ user.pk }} : {{ user.username }}</h1>
+    {% if request.user == user %} <!--만일 요청을 보낸 유저와 유저가 동일하면-->
+    	<!--아래의 회원탈퇴 form을 띄운다.-->
+        <form action="{% url 'accounts:delete' %}" method="POST">
+            {% csrf_token %}
+            <button class="btn btn-secondary">회원 탈퇴</button>
+        </form>
+    {% endif %}
+    <hr>
+    {% endblock %}
+    ```
 
+  - 회원 정보 수정
 
+    - `UserChangeForm`이 존재하여 `views.py`에서 아래와 같이 import해서 쓸 수도 있다.
 
+    ```python
+    from django.contrib.auth.forms import UserChangeForm
+    ```
 
+    - 그러나 직접 만들어서 쓸 수도 있다.
+
+    ```python
+    #forms.py
+    from django.contrib.auth import get_user_model
+    from django.contrib.auth.forms import UserChangeForm
+    
+    # UserChangeForm를 그대로 사용하지 않고 상속받아서 custom한다.
+    class CustomUserChangeForm(UserChangeForm): #UserChangeForm상속
+        class Meta:
+            model = get_user_model()
+            fields = ['username', 'first_name', 'last_name', 'email']
+    ```
+
+    ```python
+    #views.py
+    from .forms import CustomUserChangeForm #직접 만든 Form을 불러오고
+    
+    # Create your views here.
+    
+    def update(request):
+        if request.method == 'POST':
+            #글을 수정 할 때와 같이 instance=request.user를 통해 확인을 해주고
+            form = CustomUserChangeForm(request.POST, instance=request.user)
+            if form.is_valid():
+                form.save()
+                return redirect('articles:index')
+        else:
+            form = CustomUserChangeForm(instance=request.user)
+        context = {
+            'form': form
+        }
+        return render(request, 'accounts/update.html', context)
+    ```
+
+    ```html
+    <!--update.html-->
+    {% extends 'base.html' %}
+    
+    {% load bootstrap4 %}
+    {% block body %}
+        <form action="" method="POST">
+            {% csrf_token %}
+            {% bootstrap_form form %}
+            <button class="btn btn-primary">수정</button>
+        </form>
+    {% endblock %}
+    
+    
+    
+    <!--detail.html(회원 프로필을 보여주는 페이지)-->
+    {% block body %}
+    <h1>{{ user.pk }} : {{ user.username }}</h1>
+    {% if request.user == user %} <!--만일 요청을 보낸 유저와 유저가 동일하면-->
+    	<!--아래의 회원탈퇴 링크를 띄운다.-->
+        <a href="{% url 'accounts:update' %}">회원 수정</a>
+    {% endblock %}
+    ```
+
+    
 
