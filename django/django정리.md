@@ -1198,18 +1198,21 @@ admin.site.register(Article)
 
     ```html
     <!--other.html-->
+    <!--확인 결과 아래 3줄을 쓰지 않아도 다른 html파일에서 base.html파일에 적용된 스태틱 파일을 사용 가능한 것으로 확인되었다. 따라서 아래 세 줄은 base.html에 적용된 static파일 이외에 해당 파일에만 적용되길 원하는 static파일이 있을 시(아래의 경우)에만 적으면 된다.-->
     {% load static %}
     
     {% block css %}
     {% endblock %}
     
     
-    <!--위 처럼 쓰면 되는데 만일 other.html 파일에 base에 적용되지 않은 static파일을 쓰고 싶다면 아래와 같이 block사이에 작성하면 된다.-->
+    <!--other.html 파일에 base에 적용되지 않은 static파일을 쓰고 싶다면 아래와 같이 block사이에 작성하면 된다.-->
     {% load static %}
-    	<link rel="stylesheet" href="{% static 경로/파일' %}">
+    
+    {% load static %}
+	<link rel="stylesheet" href="{% static 경로/파일' %}">
     {% block css %}
     ```
-
+    
     
 
 
@@ -1249,7 +1252,7 @@ admin.site.register(Article)
       
       
       
-  #만일 클래스를 지정하고 싶다면 아래와 같이 하면 된다.
+  #만일 클래스를 지정하고 싶다면 아래와 같이 하면 된다. 또한 아래와 같이 별도로 클래스를 지정해준 것들은 fileds에 넣지 않아도 넘어 간다.
   from django import forms
   from .models import Review
   
@@ -1465,6 +1468,7 @@ admin.site.register(Article)
 
   ```html
   <!--
+  한 html파일을 2개의 경로가 사용할 경우 아래와 같이 입력하면 어떤 url로 들어왔을 때 어떤 것을 보여줄지 정할 수 있다.
   분기의 기준은 url_name이다.
   path로 하면, url이 바뀔 때마다 바꿔줘야한다.
   -->
@@ -1511,6 +1515,9 @@ admin.site.register(Article)
   </form>
   <!--아니면 그냥 위 처럼 bootstrap적용도 가능하다. 단, bootstrap을 활용하려면 settings.py도 바꿔야 하고 load도 해줘야 하기에 과정이 복잡하다.
   https://django-bootstrap4.readthedocs.io/en/latest/index.html에 가면 관련 정보가 있다.
+  
+  <!--주의! {% bootstrap_form form %}은 반드시 form태그 안에 써야 한다. 밖에 쓸 경우 form양식에 맞게 제출 해도 실제 form태그 내에서는 입력된 것이 없기에 빈 것이 제출되었다고 인식한다.-->
+  
   
   적용 방법
   0.$ pip install django-bootstrap4를 입력해 설치
@@ -1723,6 +1730,7 @@ admin.site.register(Article)
   #위에서 import했던 것들은 다시 import하지 않았음
   from django.contrib.auth.decorators import login_required #import하고
   
+  
   def login(request):
       if request.user.is_authenticated:
           return redirect('articles:index')
@@ -1737,9 +1745,9 @@ admin.site.register(Article)
               들어갔다면 next자체가 선언되지 않을 것이고 None이 되어 False가 되고	
               'accounts:index'로 redirect된다.
               
-              그러나 만일 @login_required가 작성되었고 로그인하지 않은 상태로 해당 경로로 들어갔다면 
-              next가 원래 접근하려 했던 경로에 대한 정보가 담긴채로 선언되고 해당 경로를 redirect하
-              게 된다. 또한 단축평가에 따라 앞의 문장이 참이므로 뒤의 'accounts:index'는 실행되지 X
+            그러나 만일 @login_required가 작성되었고 로그인하지 않은 상태로 해당 경로로 들어갔다면 
+            next가 원래 접근하려 했던 경로에 대한 정보가 담긴채로 선언되고 해당 경로를 redirect하
+            게 된다. 또한 단축평가에 따라 앞의 문장이 참이므로 뒤의 'accounts:index'는 실행되지 X
               '''
               return redirect(request.GET.get('next') or 'accounts:index')
       else:
@@ -1766,6 +1774,50 @@ admin.site.register(Article)
   #따라서 위 코드에 따르면 로그인 하지 않은 상태에서 로그아웃을 한다면 우선 로그인 창이 출력되고 로그인이 완료되면 바로 로그아웃이 될 것이다.
   
   #예를 들어 만일 로그인이 필요한 기능은 새 글 쓰기에 로그인 하지 않고 접근하려 할 경우 만일 이러한 처리를 단순히 if문으로 한다면 기존 페이제로 rediect하거나 로그인을 바란다는 페이지를 render하거나 아니면 복잡한 코드를 짜서 로그인 후 원래 접근하려던 새 글 쓰기 페이지에 접근하도록 해야 할 것이다. 그러나 만일 @login_required를 쓴다면 다른 조건문 없이도 로그인 후 바로 원래 접근하려던 페이지를 띄워준다.
+  
+  #login_required를 작성한 함수가 아닌 login을 하는 함수에 return redirect(request.GET.get('next') or 'accounts:index')를 적어야 한다는 것을 기억해야 한다.
+  ```
+
+  - 경로(/accounts/login/?next=/accounts/logout/)에서 next 앞 부분(/accounts/login/)은 로그인 되어 있지 않을 때 login경로로 이동하겠다는 것이다.
+
+    - 만일 urls.py에 로그인 함수를 실행시키는 경로를 login이 아닌 다른 것으로 설정해 놓았다면 제대로 작동하지 않는다.
+
+    - 따라서 이럴 때에는 경로 명을 수정해 주거나 settings.py에서 해당 경로를 변경해 줘야 한다.
+
+      ```python
+      #urls.py 
+      from django.urls import path
+      from . import views
+      
+      app_name = "accounts"
+      
+      urlpatterns = [
+          path('signin/',views.signin, name="signin"),
+          path('logout/',views.logout, name="logout"),
+      ]
+      #만일 이처럼 url 경로가 설정되어 있다면  
+      #/accounts/login/?next=/accounts/logout/가 아닌
+      #/accounts/signin/?next=/accounts/logout/이 되게 하거나
+      
+      #path('signin/',views.signin, name="signin"),가 아닌
+      #path('login/',views.signin, name="signin"),이 되게 해야 한다.
+      
+      #후자는 단순히 이름만 바꿔주면 되지만 전자는 settings.py에 코드를 추가해 줘야 한다.
+      
+      #settings.py
+      #본래 아래의 코드는 settings.py에 존재하지 않지만 'accounts:login'이 기본값으로 설정되어 있다. 따라서 아래 코드를 추가해 줘야 한다. 만일 앱 이름이 accounts가 아니라면 이 역시 accounts가 아닌 다른 것으로 수정해 줘야 한다.
+      LOGIN_URL = 'accounts:signin'
+      ```
+
+- html 파일에서 로그인 했을 때와 하지 않았을 때 각기 다른 내용을 보여주는 방법
+
+  ```html
+  {% if user.is_authenticated %}  <!--만일 로그인 했다면-->
+    <p>{{ user.username }}, 님 환영합니다.</p>   <!--이걸 보여주고-->
+  {% else %}					 <!--안했다면-->
+    <a href="{% url 'accounts:login' %}">로그인</a>   <!--이걸 보여준다.-->
+    <a href="{% url 'accounts:signup' %}">회원가입</a>
+  {% endif %}
   ```
 
   
@@ -1874,3 +1926,31 @@ admin.site.register(Article)
 
     
 
+- 일반적으로 urls.py에 경로 설정을 하면 처음 서버를 실행시키고 창을 열었을 때 `Page not found (404)`태창 뜨고 뒤에 추가적인 url을 입력해야 해당 페이지가 출력된다. 만일 이게 귀찮다면 다음과 같이 하면 된다.
+
+  ```python
+  #urls.py(프로젝트)
+  from django.contrib import admin
+  from django.urls import path, include
+  
+  urlpatterns = [
+      path('admin/', admin.site.urls),
+      path('', include('reviews.urls')),
+      ]
+  from django.urls import path
+  from . import views
+  
+  app_name = 'reviews'
+  
+  
+  #urls.py(앱)
+  urlpatterns = [
+      path('',views.index, name="index" ),
+  ]
+  #위와 같이 프로젝트 urls.py에서 include할 때 빈 경로로 설정하면 서버를 실행 시키고 창을 띄우자 마자
+  #index함수가 실행되어 해당 함수가 렌더링하는 창이 뜨게 된다. 
+  #즉 본래 https://3fdd8495a9bc4dd093821052501b61d9.vfs.cloud9.us-west-2.amazonaws.com/
+  #위와 같은 url의 뒤에 app이름과 app내부의 urls.py에서 정의한 경로를 추가하여 그 페이지로 이동하는 방식이었는데 프로젝트 url과 앱 url을 둘 다 비워두면 위의 url이 곧 path('',views.index, name="index" )를 가리키게 되어 index함수가 실행된다.
+  ```
+
+  
