@@ -1,12 +1,81 @@
+# Django
+
+- HTML, CSS, JS 만으로는 Static web(미리 저장된 html,css,js 등의 정적 파일을 제공) 밖에 만들 수 없다.
+- 장고는 web framework다.
+  - web framework는 웹 페이지 개발 과정의 어려움을 줄이는 것이 주 목적이다.
+  - 표준 구조를 구현하는 클래스와 라이브러리의 모임이다.
+- 장고는 파이썬 기반으로 만들어졌다.
+
+- 서버와 클라이언트
+  - 서버와 클라이언트는 요청과 응답을 통해 상호작용이 이루어진다.
+  - 클라이언트의 요청에 따라 서버는 응답(주로 HTML파일)을 보내게 된다.
+
+- 기본적인 명령어
+
+  - 터미널 지우기
+
+    ```bash
+    ctrl+1
+    ```
+
+  - 기본 파이썬 실행
+
+    ```bash
+    $ python ㅏ파일명.pyㅓ
+    ```
+
+  - django 설치
+
+    ```bash
+    $ pip install django==ㅏ버전ㅓ
+    ```
+
+  - 프로젝트 시작
+
+    ```bash
+    $ django-admin startproject ㅏ프로젝트명ㅓ
+    ```
+
+  - 앱 생성
+
+    ```bash
+    $ python manage.py startapp ㅏ앱이름ㅓ
+    ```
+
+  - 서버 실행
+
+    - 뒤의 8080은 포트 번호로, 로컬에선 쓰지 않아도 된다.
+
+    ```bash
+    $ python manage. py runserver 8080
+    ```
+
+  - 마이그레이션
+
+    ```bash
+    $ python manage. py makemigrations
+    ```
+
+  - 마이그레이트
+
+    ```bash
+    $ python manage. py migrate
+    ```
+
+    
+
 
 
 # MTV기초
 
+- 소프트웨어 디자인 패턴
+  - 소프트웨어를 어떻게 설계할지 디자인
+  - MVC, MTV는 모두 소프트웨어 디자인 패턴이다.
 - MTV: Model, Template, View로 장고의 기본 흐름이다. 다른 곳에서는 보통 MVC를 쓴다.
-  - Model: 데이터 관리
-  - Template: 인터페이스(화면)
+  - Model: 데이터 관리, 데이터베이스 조작
+  - Template: 인터페이스(화면), 단순히 html파일을 의미하는 것이 아니라 html파일을 만드는 것을 의미
   - View: 중간 관리(상호 동작)
-- MVC: Modle,View,Controller 순서대로 MTV와 하나씩 대응
+- MVC: Model, View, Controller 순서대로 MTV와 하나씩 대응
 
 
 
@@ -21,19 +90,33 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     - \_\_init.py\_\_, settings.py, urls.py, wsgi.py등이 있다.
     - wsgi는 web server gateway interface이다.
 
+  - settings.py에서 아래와 같은 코드를 입력한다.
+
+    ```python
+  ALLOWED_HOST = ['*']
+    # 운용 서버에서 사용할 Host이름을 등록해 주는 것으로 IP주소와 도메인 모두 사용할 수 있다.
+  # 등록되지 않은 호스트 명으로 요청이 들어올 경우 400 Bad Request Error를 반환
+    # *는 모든 요청을 수락한다는 것이다.
+  
+    # 특정하고 싶다면 아래와 같이 특정 도메인이나 ip주소를 입력하면 된다.
+    ALLOWED_HOST = ['fathomless-scrubland-30645.herokuapp.com','127.0.0.1']
+    ```
+  
+    
+  
   - 앱 생성
-
+  
     - 앱 이름은 복수로 지정하는 것이 관례다. 
-
+  
   - 장고에게 앱이 생성되었다는 것을 알리기
-
+  
     - 즉, 등록을 해야하는데 이는 `settings.py`에서 한다.
-
+  
     - `INSTALLED_APPS`에 추가해줘야 한다.
   
-      ```python
+    ```python
       # $manage.py startapp pages를 통해 pages라는 app을 만들었을 경우 아래와 같이 추가해야 한다.
-      
+    #INSTALLED_APPS는 아래에서 확인 할 수 있듯이 리스트이다.
       
       INSTALLED_APPS = [
           'django.contrib.admin',
@@ -45,9 +128,9 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
           'pages',  #앱 이름 등록
     ]
       ```
-
+  
   - url 연결하기
-
+  
     - 다음으로 `urls.py`에서 어떤 url로 들어갔을 때 무엇을 처리할지를 설정해줘야 한다.
   
       ```python
@@ -57,9 +140,9 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
       #기본 구조
       #from app이름 import 함수정의된 파일 이름
       
-      urlpatterns = [
+    urlpatterns = [
           path('admin/', admin.site.urls),
-          path('index/', views.index),
+        path('index/', views.index),
           # index라는 url로 들어가면 views의 index라는 함수를 처리를 하겠다.
           #기본 구조
          	#path('url/', 함수가 정의된 파일 이름.함수 이름)
@@ -71,17 +154,21 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
           path('bboong/', views.index),
     ]
       ```
-
+  
   - 함수 정의하기
-
+  
     - 위에서 어떤 url에서 어떤 함수가 처리될지 정의했으니 이제 처리될 함수를 정의해야 한다.
   
       ```python
       #위에서 views의 index라는 함수를 처리할 것이라고 했으므로 views.py에서 해당 함수를 정의해야 한다.
-      from django.shortcuts import render
+    from django.shortcuts import render
+      
+    
       
       #해당 함수를 실행시키는 url에 접속해야 실행되기에 request라는 이름을 붙인다.
+      
       #request가 아닌 다른 것을 넣어도 동작은 하지만 그렇게 하지 않는다.
+      
       def index(request): #항상 첫번째 인자로 request를 정의한다.
       	return render(request,'index.html') #항상 render()를 리턴한다.
       #render는 html이 응답할 수 있게 만드는 작업을 한다. import를 해줘야 사용 가능하다.
@@ -91,14 +178,18 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
       
       def index(request): #항상 첫번째 인자로 request를 정의한다.
           return render(request,'qwert.html')
+      
+      #단 꼭 request로 적는 것은 아니며 아무거나 적어도 된다. 그러나, 이렇게 쓰지 않는다.
+      def index(re):
+          return render(re,'qwert.html')
       ```
-
+  
     - redirect
-
+  
       ```python
     #특정 html파일을 렌더링 하는 것이 아니라 처리가 모두 끝난 후 특정 url로 넘어가고자 할 때에는 redirect를 쓰면 된다. 물론 임폴트를 해야 한다.
       from django.shortcuts import render,redirect  #import 해주고
-    
+  
       def index(request):
           return redirect('가고자 하는 url')
       
@@ -140,7 +231,10 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
   - HTML파일에 넘겨줄 변수가 있는 경우
 
     - 항상 딕셔너리로 넘겨준다.
-
+- 일반적으로 html파일에 넘겨줄 내용들을 context라는 딕셔너리에 담아서 넘기며 꼭 리스트만 넘길 수 있는 것은 아니고 문자열, 빈 리스트도 넘길 수 있다.
+    - 꼭 변수명이 context일 필요는 없지만 일반적으로 context를 사용한다.
+    - 또한 꼭 context에 담지 않고 딕셔너리를 바로 넘길 수 도 있지만 그렇게 하지 않는다.
+    
     ```python
     from django.shortcuts import render
     
@@ -151,6 +245,15 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
             'pick':pick
         }
     	return render(request,'lotto.html',context)
+    
+    
+    #아래와 같이 쓰지 않는다.
+    from django.shortcuts import render
+    
+    def index(request):
+        import random
+        pick = random.sample(range(1,46),6)
+    	return render(request,'lotto.html',{'pick':pick})
     ```
 
 
@@ -229,11 +332,20 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
 - DTL(Django Template Language): 장고의 화면을 작성하기 위한 언어, 렌더링을 위한 언어
 
   
+  - jinja 역시 템플릿 언어 중 하나이다.
+  
   - 기본 출력
   
     ```html
-    {{}}
+    {{ }}
     ```
+  
+  - 주석: DTL의 내용을 html주석(<!---->)으로 처리하면 오류가 발생한다. 따라서 DTL 주석은 반드시 아래와 같이 해줘야 한다.
+  
+    ```html
+    {# #}
+    ```
+  
   
   - 반복문, 조건문 등의 문법
   
@@ -327,17 +439,33 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
   
 - 기타
   
+    
+    - 일반적으로 DTL에서 `|`는 필터(filter)를 나타낸다.
+      
     - `|length`: 앞에 온 문자열 혹은 리스트의 길이를 출력
     
       ```html
       <!--예를 들어 content에 "안녕"을 넘겼다고 가정하면-->
       <p>{{content|length}}</p>
-    
+      
       out
-    2
+      2
       ```
-
-
+    
+    - `|truncatechars:양의 정수`: 앞의 내용을 양의 정수까지만 출력하고 나머지는 말줄임표로 처리
+    
+      ```html
+      <!--content에 Life is short, you need python이 담겨 있다면-->
+      
+      {{ contemt|truncatechars:10 }}
+      
+      out
+      Life i ...
+      
+      <!--공백 역시 하나의 문자로 취급되며 마지막에 오는 ...도 개수에 포함된다.-->
+      ```
+    
+      
 
 
 
@@ -353,7 +481,7 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
   
   
   TEMPLATES = [
-      {    #DjangoTemplates(DTL)라는 엔진을 쓰고 있다는 의미
+      {    #DjangoTemplates(DTL)라는 엔진을 쓰고 있다는 의미, jinja2 등으로 변경 가능
           'BACKEND': 'django.template.backends.django.DjangoTemplates',
           'DIRS': [],
           #'APP_DIRS'가 True면 Installed_APPS에 등록된 앱들의 템플릿 폴더를 관리하겠다는 의미
@@ -621,6 +749,8 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
               'BACKEND': 'django.template.backends.django.DjangoTemplates',
               #본래 비어 있던 아래 []사이에 다음과 같이 입력해준다.
               #BASE_DIR은 manage.py가 존재하는 프로젝트 최상위 폴더를 의미하는데 (BASE_DIR, 		 '프로젝트명','templates')는 최상위 폴더부터 temlpates폴더까지의 경로를 ,로 구분		해서 입력한 것이다.
+              #app내에 있는 폴더가 아닌, 추가적으로 templates로 활용하고 싶은 경로를 입력한다.
+              #아래와 같은 설정은 settings.py내에 DATABASES에서도 찾을 수 있다.
               'DIRS': [os.path.join(BASE_DIR, '상위폴더','templates')],
               'APP_DIRS': True,  
               'OPTIONS': {
@@ -662,7 +792,8 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
   
   ```python
   #views.py파일
-  #위에서 받아온 입력값은 request에 담기게 된다.
+  #위에서 받아온 입력값은 request에 담기게 된다. 즉 request는 요청받은 내용과 관련된 정보들이 담긴 객체이다.
+  
   def complete(request):
      	print(request.GET) #어떤 정보가 담겨있는지
       print(request.path) #어떤 경로로 요청이 들어왔는지
@@ -673,7 +804,7 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
   /pages/complete/
   
   
-  #위에서 본것과 같이 request.GET은 딕셔너리이다. 이 딕셔너리로 넘어온 정보를 활용하는 방법은 키를 입력하면 값을 돌려주는 .get()함수를 사용하는 것이다.
+  #위에서 본것과 같이 request.GET은 QueryDict라는 이름의 딕셔너리이다. 이 딕셔너리로 넘어온 정보를 활용하는 방법은 키를 입력하면 값을 돌려주는 .get()함수를 사용하는 것이다.
   def complete(request):
   	title = request.GET.get('title')    #'title'의 value인 5678이 title에 담기고
       content=request.GET.get('content')  #'content'의 value인 1234가 content에 담긴다.
@@ -683,15 +814,15 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
       }
     return render(request, 'complete.html',context)
   ```
-  
 
+  
   - 위와 같은 처리를 위해서는 url은 2개를 만들어야 한다.
   
     - form과 input을 입력하기 위한 url
     - 입력받은 정보를 처리하기 위한 url
   - 하나의 url에 위의 두 기능을 하는 함수를 작성하여 사용하는 경우가 있는데 이는 좋지 않은 방법이다.
-    - 따라서 반드시 2개의 url을 작성해야 한다.
-
+  - 따라서 반드시 2개의 url을 작성해야 한다.
+  
     - 예시
   
       ```python
@@ -783,7 +914,8 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
 - 데이터 베이스를 조작하는 언어
   - SQL(Structured Query Language)
   - ORM(Object Relational mapper)
-    - object와 database를 맵핑 시킨 것. 객체로 관계(DB)를 조작한다고 보면 된다.
+    - object와 database를 맵핑 시킨 것. 파이썬의 객체로 관계(DB)를 조작한다고 보면 된다.
+    - DB에 저장된 값을 객체로 넘겨준다. 예를 들어 Article이라는 모델을 정의 했을 때 모델 내부에 title, content 가 정의되어 있다고 할 때, Article의 각 객체에 title,contet라는 데이터 베이스에 저장된 값을 담아서 넘겨준다.
     - 객체 조작은 메서드를 호출함으로써 가능하다.
 
 
@@ -1039,14 +1171,37 @@ admin.site.register(Article)
 
 
 
-- POST와 GET의 차이
+- POST와 GET
 
-  - GET은 주소창에 정보를 입력하여 받아오는 것이고 POST는 주소창에 입력하지 않고 받아오는 것이다. 
+  - 공통점
 
-  - 둘 다 정보를 받아오는 것이라는 공통점이 있지만 post는 받아온 내용을 서버에도 제출하여 서버에서 관리하고,  get은 딕셔너리에 담아 관리한다는 차이가 있다. 또한 GET은 받아온 정보가 url로 넘어가지만(따라서 크기 제한 및 보안 이슈가 있다) POST는 그렇지 않다. 일반적으로 GET은  정보를 받아서 읽는 용도로 사용하고 POST는 받아서 추가적인 처리를 더 해줄때 사용한다. GET은 a태그와 form태그 둘 다 사용가능하지만 POST는 form태그만 사용 가능하다. 요청을 보냈을 때 GET은 데이터 베이스가 변화하지 않지만 POST는 데이터 베이스가 변화한다.
+    - 요청 메세지이다.
+    - HTML/CSS에서는 GET과 POST 요청밖에 보내지 못한다.
 
-  - method로 POST를 쓸 경우 보내는 곳에 아래의 코드를 추가해야 한다.  보안상의 이유로 붙이는 것이다.
-  
+  - GET
+
+    - 정보를 가져오는 것(일반적으로 정보를 받아서 읽는 용도로 사용)
+    - 특정 리소스의 표시
+    - 받아온 정보가 url(쿼리 스트링)로 넘어감(따라서 크기 제한 및 보안 이슈가 있다)
+    - GET은 a태그와 form태그 둘 다 사용 가능, 브라우저에서 주소창을 보내는 요청
+    - 데이터 베이스가 변화하지 않음
+
+  - POST
+
+    - DB에 어떤 값을 저장하는 것(받아서 추가적인 처리를 더 해줄때 사용)
+    - 특정 리소스에 제출(서버의 상태 변화)
+    -  form태그만 사용 가능하다. 
+    - 데이터 베이스가 변화
+
+  - method로 POST를 쓸 경우 보내는 곳에 아래의 코드를 추가해야 한다.  보안상의 이유(사이트간 요청 변조 방지)로 붙이는 것이다.
+
+    - 특정 url에 사용자가 의도하지 않은 작동이 일어나도록 설정하여 사용자가 해당 url을 클릭 했을 때 해당 작동이 일어나게 되는 것이 사이트간 요청 변조로, 이를 막아주는 것이 csrftoken이다.
+    - 붙이지 않을 경우 403  forbidden 페이지가 뜬다.
+    - csrftoken 값은 새로고침 할 때마다(요청을 보낼 때 마다) 바뀌며, 이 값을 검증하여 변조된 요청인지 아닌지를 판단하는 방법으로 방어가 가능하다.
+    - 쿠키에도 저장되고 이를 통해서도 방어가 가능하다. 
+    - 검사를 통해 보면 csrftoken의 타입은 hidden이다.
+    - settings.pt의 `MIDDLEWARE`에 csrf관련 처리가 되어 있다. 만일 해당 코드를 주석처리 한다면 오류는 발생하지 않지만 보안이 무너지게 되므로 절대 해서는 안된다.
+
     ```html
     {% csrf_token %}
     ```
