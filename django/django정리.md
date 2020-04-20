@@ -1,9 +1,16 @@
-# Django
+Django
+
+- Static web page와 Dynamic web page
+
+  - static web page: 미리 만들어둔 문서(HTML, CSS, JS 등)를 항상 똑같이 제공하는 서비스
+  - dynamic web page: 사용자의 요청에 맞게 그때그때 문서를 만들어서 전달하는 서비스
 
 - HTML, CSS, JS 만으로는 Static web(미리 저장된 html,css,js 등의 정적 파일을 제공) 밖에 만들 수 없다.
+
 - 장고는 web framework다.
   - web framework는 웹 페이지 개발 과정의 어려움을 줄이는 것이 주 목적이다.
   - 표준 구조를 구현하는 클래스와 라이브러리의 모임이다.
+  
 - 장고는 파이썬 기반으로 만들어졌다.
 
 - 서버와 클라이언트
@@ -15,7 +22,7 @@
   - 터미널 지우기
 
     ```bash
-    ctrl+1
+    ctrl+l
     ```
 
   - 기본 파이썬 실행
@@ -47,19 +54,19 @@
     - 뒤의 8080은 포트 번호로, 로컬에선 쓰지 않아도 된다.
 
     ```bash
-    $ python manage. py runserver 8080
+    $ python manage.py runserver 8080
     ```
 
   - 마이그레이션
 
     ```bash
-    $ python manage. py makemigrations
+    $ python manage.py makemigrations
     ```
 
   - 마이그레이트
 
     ```bash
-    $ python manage. py migrate
+    $ python manage.py migrate
     ```
 
     
@@ -126,9 +133,56 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
           'pages',  #앱 이름 등록
     ]
     ```
+  
+  - settings.py에 있는 각종 옵션들
+  
+    ```python
+    DEBUG = True  #True로 되어 있으면 개발 모드다. 배포시에는 반드시 False로 바꿔야 한다.
+    
+    ALLOWED_HOSTS = [] #프로젝트에서 생성한 사이트(경로)로 들어올 권한을 정하는 것이다.
+    #'*'를 대괄호 사이에 넣으면 누구나 입장 가능한 상태가 된다.
+    #프로그래밍에서 *는 일반적으로 "모두"를 뜻한다.
+    
+    
+    TEMPLATES = [
+        {    #DjangoTemplates(DTL)라는 엔진을 쓰고 있다는 의미, jinja2 등으로 변경 가능
+            'BACKEND': 'django.template.backends.django.DjangoTemplates',
+            'DIRS': [],
+            #'APP_DIRS'가 True면 Installed_APPS에 등록된 앱들의 템플릿 폴더를 관리하겠다는 의미
+            'APP_DIRS': True,  
+            'OPTIONS': {
+                'context_processors': [
+                    'django.template.context_processors.debug',
+                    'django.template.context_processors.request',
+                    'django.contrib.auth.context_processors.auth',
+                    'django.contrib.messages.context_processors.messages',
+                ],
+            },
+        },
+    ]
+    
+    
+    #디버그
+    DEBURG = True
+    # True로 놓으면 오류 페이지가 상세하게 떠서 어떤 오류가 발생했고 어떤 코드에서 발생했는지 알 수 있다.
+    #False로 해놓으면 오류 메세지만 출력된다. 따라서 만일 True로 해놓은 상태에서 오류가 발생하게 되면 다른 사람들이 내가 짠 코드를 전부 볼 수 있게 되므로 보안상의 심각한 문제가 생길 수 있다. 따라서 다른 사람들이 사용하게 할 때에는 반드시 False로 바꿔야 한다.
     
     
     
+    # Internationalization관련 설정들
+    LANGUAGE_CODE = 'en-us'  #언어를 설정하는 것으로 "ko-kr"로 바꾸면 한국어가 된다.
+    
+    TIME_ZONE="UTC"  #시간 설정으로 'Asia/Seoul'로 바꾸면 한국 시간이 된다.
+    
+    USE_I18N = True #Internationalization의 약자로 I와 N사이에 18자가 위치해 이렇게 명명
+    
+    USE_L10N = True #Localization의 약자로 L과 N사이에 10자가 위치해 이렇게 명명
+    
+    USE_TZ = True
+    ```
+  
+    
+  
   - url 연결하기
   
     - 다음으로 `urls.py`에서 어떤 url로 들어갔을 때 무엇을 처리할지를 설정해줘야 한다.
@@ -233,32 +287,10 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
   - HTML파일에 넘겨줄 변수가 있는 경우
 
     - 항상 딕셔너리로 넘겨준다.
+  
 - 일반적으로 html파일에 넘겨줄 내용들을 context라는 딕셔너리에 담아서 넘기며 꼭 리스트만 넘길 수 있는 것은 아니고 문자열, 빈 리스트도 넘길 수 있다.
-    - 꼭 변수명이 context일 필요는 없지만 일반적으로 context를 사용한다.
-    - 또한 꼭 context에 담지 않고 딕셔너리를 바로 넘길 수 도 있지만 그렇게 하지 않는다.
-    
-    ```python
-    from django.shortcuts import render
-    
-    def index(request):
-        import random
-        pick = random.sample(range(1,46),6)
-        context={
-            'pick':pick
-        }
-    	return render(request,'lotto.html',context)
-    
-    
-    #아래와 같이 쓰지 않는다.
-    from django.shortcuts import render
-    
-    def index(request):
-        import random
-        pick = random.sample(range(1,46),6)
-    	return render(request,'lotto.html',{'pick':pick})
-    ```
 
-
+    
 
 - HTML문서 정리
 
@@ -329,6 +361,10 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
 
 
 
+
+# DTL
+
+
 - DTL(Django Template Language): 장고의 화면을 작성하기 위한 언어, 렌더링을 위한 언어
 
   
@@ -390,20 +426,20 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
   
   - `forloop.counter`: 반복 횟수를 출력, 당연히 for문 안에만 쓸 수 있다.
   
-    - `forloop.counter숫자`:입력한 숫자부터 시작한다.
+    - `forloop.counter숫자`:입력한 숫자부터 시작한다(지정하지 않으면 1부터 시작).  숫자와 counter 사이에 띄어쓰기 안한다.
   
     ```html
     <!--index.html-->
     <ul>
       {% for m in menu %}   <!--for문과-->
-      <li>{{forloop.counter}} : {{m}}</li>
+      <li>{{forloop2.counter}} : {{m}}</li>
       {% endfor %}          <!--endfor문 사이의 내용을 len(menu)번 반복-->
     </ul>
         
     out
-    1 : 치킨
-    2 : 피자
-    3 : 햄버거
+    2 : 치킨
+    3 : 피자
+    4 : 햄버거
     ```
   
     
@@ -457,7 +493,7 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
       ```html
       <!--content에 Life is short, you need python이 담겨 있다면-->
       
-      {{ contemt|truncatechars:10 }}
+      {{ content|truncatechars:10 }}
       
       out
       Life i ...
@@ -465,58 +501,31 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
       <!--공백 역시 하나의 문자로 취급되며 마지막에 오는 ...도 개수에 포함된다.-->
       ```
     
+    - `|title`:  첫 글자를 대문자로 출력
+    
+      ```html
+      {{ 'my name is smith'|title }}
       
-
-
-
-
-- settings.py에 있는 각종 옵션들
-
-  ``` python
-  DEBUG = True  #True로 되어 있으면 개발 모드다. 배포시에는 반드시 False로 바꿔야 한다.
-  
-  ALLOWED_HOSTS = [] #프로젝트에서 생성한 사이트(경로)로 들어올 권한을 정하는 것이다.
-  #'*'를 대괄호 사이에 넣으면 누구나 입장 가능한 상태가 된다.
-  #프로그래밍에서 *는 일반적으로 "모두"를 뜻한다.
-  
-  
-  TEMPLATES = [
-      {    #DjangoTemplates(DTL)라는 엔진을 쓰고 있다는 의미, jinja2 등으로 변경 가능
-          'BACKEND': 'django.template.backends.django.DjangoTemplates',
-          'DIRS': [],
-          #'APP_DIRS'가 True면 Installed_APPS에 등록된 앱들의 템플릿 폴더를 관리하겠다는 의미
-          'APP_DIRS': True,  
-          'OPTIONS': {
-              'context_processors': [
-                  'django.template.context_processors.debug',
-                  'django.template.context_processors.request',
-                  'django.contrib.auth.context_processors.auth',
-                  'django.contrib.messages.context_processors.messages',
-              ],
-          },
-      },
-  ]
-  
-  
-  #디버그
-  DEBURG = True
-  # True로 놓으면 오류 페이지가 상세하게 떠서 어떤 오류가 발생했고 어떤 코드에서 발생했는지 알 수 있다.
-  #False로 해놓으면 오류 메세지만 출력된다. 따라서 만일 True로 해놓은 상태에서 오류가 발생하게 되면 다른 사람들이 내가 짠 코드를 전부 볼 수 있게 되므로 보안상의 심각한 문제가 생길 수 있다. 따라서 다른 사람들이 사용하게 할 때에는 반드시 False로 바꿔야 한다.
-  
-  
-  
-  # Internationalization관련 설정들
-  LANGUAGE_CODE = 'en-us'  #언어를 설정하는 것으로 "ko-kr"로 바꾸면 한국어가 된다.
-  
-  TIME_ZONE="UTC"  #시간 설정으로 'Asia/Seoul'로 바꾸면 한국 시간이 된다.
-  
-  USE_I18N = True #Internationalization의 약자로 I와 N사이에 18자가 위치해 이렇게 명명
-  
-  USE_L10N = True #Localization의 약자로 L과 N사이에 10자가 위치해 이렇게 명명
-  
-  USE_TZ = True
-  
-  ```
+      out
+      My Name Is Smith
+      ```
+    
+    - `|date`: 표현식에 따라 출력
+    
+      - 자세한 표현식은 https://docs.djangoproject.com/en/dev/ref/templates/builtins/?from=olddocs의 date참고
+    
+      ```html
+      <!--{ date자료형|date:"표현식" } 형태-->
+      today에 datetime객체가 들어있다고 가정
+      {today|date:Y년 m월 d일 (D) A h:i}
+      
+      out
+      2020년 03월 06일 (Sun) PM 04:01
+      
+      <!--Y는 4자리로 표기한 년도, m은 숫자만 표기된 월, d는 숫자만 표기된 일, D는 요일, A는 오전, 오후, h는 시간, i는 분-->
+      ```
+    
+      
 
 
 
@@ -529,6 +538,9 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
 
 
 - variable routing: url을 변수화 해서 변수로 사용하는 것
+
+
+  - 아래에서 name뒤에 숫자를 붙였는데 숫자가 같은 것 끼리는 변수명이 동일해야 한다.
 
   ```python
   #예시1
@@ -555,8 +567,6 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
   out
   안녕, John
   ```
-
-  - 위에서 name뒤에 숫자를 붙였는데 숫자가 같은 것 끼리는 변수명이 동일해야 한다.
 
   ```python
   #예시2
@@ -597,7 +607,7 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
   - HTML작성시에도 마찬가지로 여러 HTML문서에 공통으로 들어가는 사항을 매번 입력하지 않고 한번의 작성만으로 끝낼 수 있는 방법이 존재한다.
 
     ```html
-    <!--기본-->
+    <!--base-->
     <!--이름에 넣고 싶은 것을 입력하고-->
     {% block 이름 %}
     {% endblock %}
@@ -605,7 +615,7 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     
     <!--적용-->
     <!--위에서 입력한 이름과 위 html파일의 파일명을 일치시키면 된다.-->
-    {% extends base가되는 html파일명 %} <!--어떤 파일을 기준으로 확장할지 적어준다.-->
+    {% extends 'base가되는 html파일명' %} <!--어떤 파일을 기준으로 확장할지 적어준다.-->
     
     {% block 이름 %}
     {% endblock %} 
@@ -768,59 +778,69 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
 
 
 
-- form태그와 input태그
 
-  - 각 태그의 특징
 
-  ```html
-  <!--form과 input태그에서 가장 중요한 것은 각기 action과 name이다. action은 input에서 입력 받은 내용을 어디로 보낼지에 관한 것이고 name은 입력 받은 내용을 어떤 변수에 담아서 보낼지에 관한 것이다. 아래의 경우 입력받은 내용을 content와 title에 담아 content와 title을 /pages/complete/라는 경로에 보내겠다는 의미다. -->
+
+
+# form태그와 input태그
+
+- 각 태그의 특징
+
+```html
+<!--form과 input태그에서 가장 중요한 것은 각기 action과 name이다. action은 input에서 입력 받은 내용을 어디로 보낼지에 관한 것이고 name은 입력 받은 내용을 어떤 변수에 담아서 보낼지에 관한 것이다. 아래의 경우 입력받은 내용을 content와 title에 담아 content와 title을 /pages/complete/라는 경로에 보내겠다는 의미다. -->
+
+
+<!--name을 지정하지 않으면 url에 표시되지 않는다.-->
+
+<!--action태그를 비워 두면 해당 html파일을 호출한 함수로 데이터가 전달된다.-->
+<!--또한 아래 action에서 주소를 쓸 때 반드시 /를 붙여 줘야 한다. GET으로 보낼 때는 상관 없지만 POST일 경우 오류가 발생한다. 즉 "/pages/complete"와 같이 쓰면 안된다.-->
+<form action="/pages/complete/">
+	<input type="text" name="content">
+    <input type="text" name="title">
+</form>
+<!--content와 title은 경로상에서 ?뒤에 표시되며 이를 쿼리문이라 한다.-->
+<!--만일 content에 1234를, title에 5678을 입력한 경우-->
+<!--~/pages/complete/?content=1234&title=5678-->
+```
+
+- 장고에서의 활용
+
+```python
+#views.py파일
+#위에서 받아온 입력값은 request에 담기게 된다. 즉 request는 요청받은 내용과 관련된 정보들이 담긴 객체이다.
+  
+def complete(request):
+    print(request.GET) #어떤 정보가 담겨있는지
+    print(request.path) #어떤 경로로 요청이 들어왔는지
+    return render(request, 'complete.html')
+  
+out
+QueryDict{'content':1234,'title':5678}
+/pages/complete/
   
   
-  <!--action태그를 비워 두면 해당 html파일을 호출한 함수로 데이터가 전달된다.-->
-  <!--또한 아래 action에서 주소를 쓸 때 반드시 /를 붙여 줘야 한다. GET으로 보낼 때는 상관 없지만 POST일 경우 오류가 발생한다. 즉 "/pages/complete"와 같이 쓰면 안된다.-->
-  <form action="/pages/complete/">
-  	<input type="text" name="content">
-      <input type="text" name="title">
-  </form>
-  <!--content와 title는 경로상에서 ?뒤에 표시되며 이를 쿼리문이라 한다.-->
-<!--만일 content에 1234를, titl에 5678을 입력한 경우-->
-  <!--~/pages/complete/?content=1234&title=5678-->
-  ```
-  
-  - 장고에서의 활용
-  
-  ```python
-  #views.py파일
-  #위에서 받아온 입력값은 request에 담기게 된다. 즉 request는 요청받은 내용과 관련된 정보들이 담긴 객체이다.
-    
+#위에서 본것과 같이 request.GET은 QueryDict라는 이름의 딕셔너리이다. 이 딕셔너리로 넘어온 정보를 활용하는 방법은 키를 입력하면 값을 돌려주는 .get()함수를 사용하는 것이다.
   def complete(request):
-      print(request.GET) #어떤 정보가 담겨있는지
-      print(request.path) #어떤 경로로 요청이 들어왔는지
-      return render(request, 'complete.html')
-    
-  out
-  QueryDict{'content':1234,'title':5678}
-  /pages/complete/
-    
-    
-  #위에서 본것과 같이 request.GET은 QueryDict라는 이름의 딕셔너리이다. 이 딕셔너리로 넘어온 정보를 활용하는 방법은 키를 입력하면 값을 돌려주는 .get()함수를 사용하는 것이다.
-    def complete(request):
-    	title = request.GET.get('title')    #'title'의 value인 5678이 title에 담기고
-      content=request.GET.get('content')  #'content'의 value인 1234가 content에 담긴다.
-      context = {
-          'title':title,
-          'content':content
-      }
-      return render(request, 'complete.html',context)
-  ```
-  
-  
+  	title = request.GET.get('title')    #'title'의 value인 5678이 title에 담기고
+    content=request.GET.get('content')  #'content'의 value인 1234가 content에 담긴다.
+    context = {
+        'title':title,
+        'content':content
+    }
+    return render(request, 'complete.html',context)
+```
+
+
 
 
   - 위와 같은 처리를 위해서는 url은 2개를 만들어야 한다.
   
     - form과 input을 입력하기 위한 url
     - 입력받은 정보를 처리하기 위한 url
+
+
+
+
 - 하나의 url에 위의 두 기능을 하는 함수를 작성하여 사용하는 경우가 있는데 이는 좋지 않은 방법이다.
     - 따라서 반드시 2개의 url을 작성해야 한다.
     
@@ -854,7 +874,6 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
       <form action="/어플명/complete/">
       	<input type="text" name="abc">
       </form>
-      
       ```
       
       ```html
@@ -863,24 +882,35 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
       {{ qwe }}
       <!--페이지에 xxx가 출력된다.-->
       ```
+      
+    - 정리
     
-  - 정리
+    
+  ⓐnew/경로로 접근한다.
   
-    ⓐnew/경로로 접근한다.
+  ⓑurls.py는 접근을 감지하고 views의 new함수를 실행시킨다.
   
-    ⓑurls.py는 접근을 감지하고 views의 new함수를 실행시킨다.
+  ⓒnew 함수가 실행되면  new.html을 렌더링 해 화면에 출력한다.
   
-    ⓒnew 함수가 실행되면  new.html이 렌더링 해 화면에 출력한다.
+  ⓓ값을 입력받는다.
   
-    ⓓ값을 입력받는다.
+  ⓔ입력 값은 complete/경로로 넘겨진다.
   
-    ⓔ입력 값은 complete/경로로 넘겨진다.
+  ⓕurls.py는 접근을 감지하고 views의  complete함수를 실행시킨다.
   
-    ⓕurls.py는 접근을 감지하고 views의  complete함수를 실행시킨다.
+  ⓖcomplete함수 complete.html을 렌더링 해 화면에 출력한다.
   
-    ⓖcomplete함수 complete.html이 렌더링 해 화면에 출력한다.
+- 수정을 하고자 할 때 form태그와 input 태그
 
+    ```html
+    <form action="수정하는 함수를 실행시키는 경로">
+    	<input type="text" name="abc" value={{article.title}}>
+    </form>
+    
+    <!--위와 같이 value에 받아온 정보를 DTL로 입력하면 입력창에 article.title이 담기게 된다.-->
+    ```
 
+    
 
 
 
@@ -888,7 +918,7 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
 
 # Model
 
-- Model은 데이터를 관리하는 작업을 한다(데이터 베이스를 모델링). 
+- Model은 데이터를 관리하는 작업을 한다(데이터 베이스를 모델링).
 
 
 
@@ -899,15 +929,15 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
 
 - 스키마란
   - 다양한 사람이 작성할 수 있는 데이터 베이스의 특성상 동일한 정보도 다르게 작성할 수 있다. 따라서 동일한 정보는 동일하게 저장하도록 틀을 만들어 놓아야 하는데 이를 스키마라 부른다.
-  - 예를 들어 나이를 입력하라고 했을 때 동일한 20살의 나이를 누군가는 20, 누군가는 20살, 누군가는 스무살로 각기 다르게 입력할 수 있다. 따라서 IntField라는 스키마(틀)을 줘서 이에 맞게 입력하도록 하는 것
+  - 예를 들어 나이를 입력하라고 했을 때 동일한 20살의 나이를 누군가는 20, 누군가는 20살, 누군가는 스무살로 각기 다르게 입력할 수 있다. 따라서 IntField라는 스키마(틀)을 줘서 이에 맞게 입력하도록 한다.
 
 
 
 - 데이터
   - 데이터를 엑셀 파일에 비유했을 때 하나의 테이블은 하나의 sheet가 된다.
-  - 열(column)은 속성을 담고 있다. 속성 혹은 레코드라고도 부른다. 스키마가 틀을 만드는 것이 바로 열이다. 필드(field)는 데이터베이스의 테이블에서 열(column)을 의미한다.
-  - 행(row)는 각 속성의 구체적인 정보를 담고 있다. 레코드라고도 부른다.
-  - PK(Primary Key): 주민등록번호, 군번, 학번과 같이 식별을 위해 지정된 고유한 값 , PK값의 column의 이름을 id라 부른다.
+  - 열(column)은 속성을 담고 있다. 속성 혹은 레코드라고도 부른다. 스키마가 만든 틀이 바로 열이다. 필드(field)는 데이터베이스의 테이블에서 열(column)을 의미한다.
+  - 행(row)은 각 속성의 구체적인 정보를 담고 있다. 레코드라고도 부른다.
+  - PK(Primary Key): 주민등록번호, 군번, 학번과 같이 식별을 위해 지정된 고유한 값 , id값의 column의 이름을 pk라 부른다.
   - 장고에서는 객체를 저장할 때 마다 PK값을 하나씩 증가시키면서  PK값을 부여한다.
 
 
@@ -916,7 +946,7 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
   - SQL(Structured Query Language)
   - ORM(Object Relational mapper)
     - object와 database를 맵핑 시킨 것. 파이썬의 객체로 관계(DB)를 조작한다고 보면 된다.
-    - DB에 저장된 값을 객체로 넘겨준다. 예를 들어 Article이라는 모델을 정의 했을 때 모델 내부에 title, content 가 정의되어 있다고 할 때, Article의 각 객체에 title,contet라는 데이터 베이스에 저장된 값을 담아서 넘겨준다.
+    - DB에 저장된 값을 객체로 넘겨준다. 예를 들어 Article이라는 모델을 정의 하고, 모델 내부에 title, content 가 정의되어 있다고 할 때, Article의 각 객체에 title,contet라는 데이터 베이스에 저장된 값을 담아서 넘겨준다.
     - 객체 조작은 메서드를 호출함으로써 가능하다.
 
 
@@ -966,14 +996,14 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     article.title = '제목'    #article 객체의 title을 '제목'으로,
     article.content = '내용'  #article 객체의 content을 '내용'으로 설정한다.
     article.save()           #반드시 세이브를 해줘야 한다.
-                             #models.DateTimeField(auto_now_add=True) 속성의 경우에는 위의 							과정을 거치지 않아도 자동으로 생성되므로 바로 쓰면 된다.
+                             #models.DateTimeField(auto_now_add=True) 속성의 						   			  경우에는 위의 과정을 거치지 않아도 자동으로 생성되므로 바							      로 쓰면 된다.
     
     #방법2
     article = Article(title='제목', content='내용')
     article.save()
     
     #방법3
-    article = Article.objects.create(title='제목',content='내용')
+    Article.objects.create(title='제목',content='내용')
     ```
   
   
@@ -986,23 +1016,28 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     Article.objects.all()
     >> <QuerySet [<Article: Article object (1)>]>
     
+    #아래의 코드는 지금까지 생성된 Article의 모든 객체를 QuerySet 형태로 article에 담는 것이다.
+    article=Article.object.all()
+  
     #Article.objects.order_by('-id').all()와 같이 쓰면 역순으로 조회한다.
     ```
-  
-    - 단일 데이터 조회(고유한 값인 id를 통해 가능)
+    
+  - 단일 데이터 조회(고유한 값인 id를 통해 가능)
     
     ```python
-  #방법1
+    #방법1
     Article.objects.get(id=1)
     
     #방법2
     Article.objects.all()[0]  #[]안에 음수는 올 수 없다.
     
     #방법3
-    Article.objects.all().first()
+  Article.objects.all().first()  #첫번째 데이터 조회
     <Article: Article object (1)>
+        
+    Article.objects.all().last()   #마지막 데이터 조회
     ```
-  
+    
   - 수정- ex. 게시글 수정
   
     ```python
@@ -1018,10 +1053,6 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
       a1.delete()
       >> (1, {'articles.Article': 1})
       ```
-
-
-
-
 
 
 
@@ -1290,7 +1321,7 @@ admin.site.register(Article)
 
 # 정적 파일 관리
 
-- static: 정적 파일, CSS,JS,image파일을 일반적으로 static파일이라 부른다.
+- static: 정적 파일, CSS, JS, image 등의 파일을을 static파일이라 부른다.
 - html파일이 위치한 templates폴더에서 관리하지 않고 아래와 같은 방법으로 관리, 사용한다.
 
 - 정적 파일 관리 방법
@@ -1368,13 +1399,15 @@ admin.site.register(Article)
     
     <!--other.html 파일에 base에 적용되지 않은 static파일을 쓰고 싶다면 아래와 같이 block사이에 작성하면 된다.-->
     {% load static %}
-    
-	{% load static %}
     <link rel="stylesheet" href="{% static 경로/파일' %}">
-    {% block css %}
+	  {% block css %}
     ```
-    
-    
+
+
+
+
+
+
 
 
 
@@ -1727,6 +1760,8 @@ admin.site.register(Article)
 
 
 
+
+
 # 사용자 인증 관리
 
 - django에서 사용자 정보는 다른 정보와는 다르게 특별한 처리를 해줘야 한다.
@@ -1893,7 +1928,34 @@ admin.site.register(Article)
 
   
 
-- 로그인 상태일 때 특정 페이지로 들어가지 못하게 하는 방법
+- `is_authenticated`
+
+  - 로그인 상태인지 확인하는 속성
+  - `User`가 상속받는 `AbstractBaseUser`에 정의되어 있다.
+  - `is_authenticated`를 별 다른 import 없이 사용하고, html파일에서도 사용할 수 있는 이유는 `settings.py`에 정의되어 있기 때문이다.
+
+  ```python
+  TEMPLATES = [
+      {    #DjangoTemplates(DTL)라는 엔진을 쓰고 있다는 의미, jinja2 등으로 변경 가능
+          'BACKEND': 'django.template.backends.django.DjangoTemplates',
+          'DIRS': [],
+          #'APP_DIRS'가 True면 Installed_APPS에 등록된 앱들의 템플릿 폴더를 관리하겠다는 의미
+          'APP_DIRS': True,  
+          'OPTIONS': {
+              'context_processors': [  #context를 처리할 때 아래의 것들을 사용할 수 있도록
+                  'django.template.context_processors.debug',
+                  'django.template.context_processors.request',
+                  'django.contrib.auth.context_processors.auth', #정의되어 있다.
+                  'django.contrib.messages.context_processors.messages',
+              ],
+          },
+      },
+  ]
+  ```
+
+  
+
+  - request, messages를 별 다른 import 없이 사용할 수 있는 이유도 이 때문이다.
 
   ```python
   #로그인 된 상태에서는 로그인 페이지나 회원가입 페이지로 갈 필요가 없기에 아래와 같이 조건문을 사용하여 들어가지 않게 해준다.
@@ -1928,14 +1990,14 @@ admin.site.register(Article)
       }
       return render(request,'accounts/login.html',context)
   ```
-  
 
   
+
 - @login_required
 
   > 로그인이 필요한 페이지에 로그인을 하지 않고 접근했을 경우의 처리
 
-  - @login_required를 쓰지 않고 `is_authenticated` 조건문으로 해도 된다.
+  - @login_required를 쓰지 않고 `is_authenticated`를 활용한 조건문으로 처리해도 된다.
 
   - @login_required와 단순히 조건문으로 이러한 처리를 할 때의 차이는 @login_required는 로그인 경로로 이동하게 해 주고 url에 next를 포함시킨다는 것이다.
 
@@ -1959,7 +2021,7 @@ admin.site.register(Article)
               코드의 경우 로그인 처리를 하는 함수가 login함수이므로 여기다 적는 것이다.
               
               만일 @login_required가 작성되지 않았거나 작성되었더라도 로그인한 상태로 해당 경로로 
-              들어갔다면 next자체가 선언되지 않을 것이고 None이 되어 False가 되고	
+              들어갔다면 next자체가 선언되지 않을 것이고 None이 되어 False가 되고,	
               'accounts:index'로 redirect된다.
               
             그러나 만일 @login_required가 작성되었고 로그인하지 않은 상태로 해당 경로로 들어갔다면 
@@ -2035,30 +2097,6 @@ admin.site.register(Article)
     <a href="{% url 'accounts:login' %}">로그인</a>   <!--이걸 보여준다.-->
     <a href="{% url 'accounts:signup' %}">회원가입</a>
   {% endif %}
-  ```
-
-- is_authenticated
-
-  - is_authenticated를 별 다른 import 없이 사용하고, html파일에서도 사용할 수 있는 이유는 `settings.py`에 정의되어 있기 때문이다.
-  - request, messages를 별 다른 import 없이 사용할 수 있는 이유도 이 때문이다.
-
-  ```python
-  TEMPLATES = [
-      {    #DjangoTemplates(DTL)라는 엔진을 쓰고 있다는 의미, jinja2 등으로 변경 가능
-          'BACKEND': 'django.template.backends.django.DjangoTemplates',
-          'DIRS': [],
-          #'APP_DIRS'가 True면 Installed_APPS에 등록된 앱들의 템플릿 폴더를 관리하겠다는 의미
-          'APP_DIRS': True,  
-          'OPTIONS': {
-              'context_processors': [  #context를 처리할 때 아래의 것들을 사용할 수 있도록
-                  'django.template.context_processors.debug',
-                  'django.template.context_processors.request',
-                  'django.contrib.auth.context_processors.auth', #정의되어 있다.
-                  'django.contrib.messages.context_processors.messages',
-              ],
-          },
-      },
-  ]
   ```
 
   
@@ -2169,11 +2207,11 @@ admin.site.register(Article)
     {% endblock %}
     
     
-    
     <!--detail.html(회원 프로필을 보여주는 페이지)-->
     {% block body %}
     <h1>{{ user.pk }} : {{ user.username }}</h1>
-    {% if request.user == user %} <!--만일 요청을 보낸 유저와 유저가 동일하면-->
+    <!--만일 요청을 보낸 유저와 context에 담겨 넘어온 유저가 동일하면-->
+    {% if request.user == user %} 
     	<!--아래의 회원탈퇴 링크를 띄운다.-->
         <a href="{% url 'accounts:update' %}">회원 수정</a>
     {% endblock %}
@@ -2211,6 +2249,305 @@ admin.site.register(Article)
 
 
 
-# 에러
 
-- OOPS는 서버 실행 자체가 안되는 에러다.
+# import 암기
+
+```python
+#urls.py
+from django.contrib import admin
+from django.urls import path, include
+
+#views.py
+from django.shortcuts import render,redirect, get_object_or_404
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import UserCreationForm,AuthenticationForm,UserChangeForm
+from django.contrib.auth import login as auth_login
+from django.contrib.auth import logout as auth_logout
+```
+
+
+
+
+
+
+
+# 데이터 베이스
+
+- 데이터 베이스: 여러 사람이 공유하여 사용할 목적으로 체계화해 통합, 관리하는 데이터의 집합
+- DBMS: 데이터베이스(DataBase)를 관리(Manage)하는 시스템(System)
+
+  - RDBMS: 관계형 모델을 기반으로 하는 데이터베이스 관리 시스템
+    - Oracle, MySQL, SQLite 등이 있으나 수업땐는 SQLite를 사용
+- 관계형 데이터 베이스
+  - 관계를 열과 행으로 이루어진 테이블 집합으로 구성(e.g.엑셀)
+  - 각 열에 특정 종류의 데이터를 기록
+  - 테이블의 행은 각 객체/엔터티와 관련된 값의 모음
+
+
+
+- 기본 용어
+
+  - 스키마: 데이터 베이스에서 자료의 구조(e.g. datatype)와 제약조건(e.g.비워 둬도 되는지)에 관한 전반적 명세
+  - 테이블: 열과 행의 모델을 사용해 조직된 데이터 요소들의 집합
+    - column(열): 속성, 각 열에는 고유한 데이터 형식이 있다.
+    - row(행): 데이터가 저장되는 곳 
+    - PK: 각 행의 고유값으로 저장된 레코드를 고유하게 식별할 수 있는 값
+
+
+
+- SQL(Structured Query Language) 기본
+
+  - Query란 DB에 보내는 요청이라고 할 수 있다.
+  - 지금까지는 ORM을 통해서 DB에 접근했었다. 
+
+    - 파이썬 클래스를 통해서 DB에 접근
+    - 파이썬 코드를 SQL로 변경해서 실행하는 방식
+    - ORM을 통해 SQL보다 편리하게 데이터베이스를 다룰 수 있었다.
+    - 그럼에도 SQL을 배워야 하는 이유는 결국 ORM은 남이 짜놓은 코드이기에 한계가 있다.
+
+  - 데이터 베이스 관리를 위한 언어, RDBMS의 데이터를 관리하기 위해 사용하는 프로그래밍 언어
+
+  - 종류
+
+    - DDL(데이터 정의 언어):데이터 정의(create,drop 등)
+    - DML(데이터 조작 언어): 데이터 저장, 수정, 삭제(CRUD 관련)
+    - DCL(데이터 제어 언어): 데이터베이스 사용자의 권한 등 제어
+
+  - SQL에서의 Datetype
+
+    - INTEGER, TEXT, REAL(실수), NUMERIC(boolean), BLOB
+
+
+  - 실행
+
+    ```bash
+    $ sqlite3 db.sqlite3
+    
+    #종료는 ctrl+d
+    ```
+
+  - sqlite에서만 사용 가능한 명령어
+
+    ```sql
+    --내가 생성한 table들 보기
+    .tables
+    --내가 생성한 테이블의 스키마 보기
+    .schema 테이블명
+    ```
+
+    
+
+  - 테이블 생성
+
+    ```sql
+    CREATE TABLE 테이블명 (
+      컬럼명 datetype [constraints]
+    )
+    
+    --이미 동일한 테이블이 있으면 생성하지 안음
+    CREATE TABLE IF NOT EXISTS '테이블명' (
+      컬럼명 datetype [constraints]
+    )
+    
+    
+    --예시
+    sqlite>CREATE TABLE classmates(
+        id는 숫자 타입이며, primary키 역할을 하고, 자동으로 1씩 증가한다.
+        id INTEGER PPIMARY KEY AUTOINCREMENT, 
+        name TEXT NOT NULL,  NOT NULL은 비워 둘 수 없다는 의미이다.
+        age INTEGER,
+        address TEXT
+    )
+    ```
+
+  - 테이블 이름 변경
+
+    ```sql
+    ALTER TABLE 테이블명 RENAME TO 새 테이블명;
+    ```
+
+  - 테이블 삭제
+
+    ```sql
+    DROP TABLE table;
+    ```
+
+  - 테이블에 데이터 추가(C)
+
+    ```sql
+    INSERT INTO 테이블명 (column) VALUES (value);
+    ex. INSERT INTO 테이블명 (name,age) VALUES ('홍길동',23);
+    
+    --모든 column에 데이터를 넣을 때는 column을 입력할 필요가 없다. 순서대로 입력만 해주면 된다.
+    ex. INSERT INTO 테이블명 VALUES ('홍길동',23, '대전');
+    ```
+
+  - 다른 곳에 작성한 sql파일을 불러와 추가하는 방법 
+
+    - db파일과 동일한 위치에 csv파일을 만든다.
+
+    ```
+    #date.csv
+    
+    #아이디는 이미 저장된 것과 겹치면 안된다.
+    id,flight_num,departure,waypoint,arrival,price #헤더, 굳이 안 써도 된다.
+    4,RT9122,Madrid,Beijing,Incheon,200   #공백을 넣으면 안된다. 공백을 넣으면 공백도 포함됨 
+    5,XZ0352,LA,Moscow,Incheon,800 
+    6,SQ0972,London,Beijing,Sydney,500
+    ```
+
+    - 터미널 창에 아래의 명령어 입력
+
+    ```sql
+    sqlite> .mode csv
+    sqlite> .headers on  --헤더가 있다는 것을 알려주고, 없으면 안 써도 된다.
+    sqlite> .separator "," --""안에 csv파일 내의 자료들이 무엇으로 구분되어 있는지 적으면 된다.
+    sqlite> .import data.csv flights
+    ```
+
+    
+
+  - 테이블의 데이터 삭제(D)
+
+    ```sql
+    DELETE FROM 테이블명 WHERE 조건;
+    ```
+
+  - 수정(U)
+
+    ```sql
+    UPDATE 테이블명 SET column=value WHERE 조건;
+    
+    --여러 개를 수정하고자 하면 콤마로 구분하여 연속해서 입력
+    UPDATE 테이블명 SET column1=value1, column2=value2 WHERE 조건;
+    ```
+
+    
+
+  - 레코드 조회(R)
+
+    - select문: 데이터를 읽어올 수 있으며 특정 테이블을 반환한다.
+
+    ```sql
+    SELECT column FROM 테이블명;   column칸에 *을 입력하면 모든 column을 조회
+    ```
+
+    - distinct: 중복 없이 가져오기
+
+    ```sql
+    SELECT DISTINCT column FROM 테이블명;
+    ```
+
+  - 표현식
+
+    - count: 특정 테이블에 특정 레코드의 개수
+
+    ```sql
+    SELECT COUNT(column) FROM 테이블명;
+    ```
+
+    - avg: 특정 테이블에 특정 레코드의 평균
+
+    ```sql
+    SELECT AVG(column) FROM 테이블명;
+    ```
+
+    - sum: 특정 테이블에 특정 레코드의 합
+
+    ```sql
+    SELECT SUM(column) FROM 테이블명;
+    ```
+
+    - MIN: 특정 테이블에 특정 레코드의 최소값
+
+    ```sql
+    SELECT MIN(column) FROM 테이블명;
+    ```
+
+    - MAX: 특정 테이블에 특정 레코드의 최대값
+
+    ```sql
+    SELECT MAX(column) FROM 테이블명;
+    ```
+
+    
+
+  - where: 조건문을 활용
+
+    - 기본형
+
+    ```sql
+    SELECT column FROM 테이블명 WHERE 조건;
+    
+    --아래와 같이 and나 or을 사용할 수도 있다.
+    SELECT column FROM 테이블명 WHERE 조건1 and/or 조건2;
+    ```
+
+    - like 활용: 특정 패턴을 보여준다.
+
+    ```sql
+    SELECT column FROM 테이블명 WHERE cloumn LIKE '패턴';
+    
+    --e.g.like 활용
+    sqlited>SELECT * FROM classmates WHERE phone LIKE '010-%'
+    ```
+
+    - like에서 사용되는 키워드(와일드카드)
+
+    | %:문자열이 있을 수도 있다.    | 2%      | %앞의 문자(이 경우 2)로 시작하는 값           |
+    | ----------------------------- | ------- | --------------------------------------------- |
+    |                               | %2      | %뒤의 문자로(이 경우2)로 끝나는 값            |
+    |                               | %2%     | %사이의 문자(이 경우2)가 들어가는 값          |
+    | _:반드시 한 개의 문자가 있다. | _2%     | 아무 값이나 들어가고 두번째가 2로 시작하는 값 |
+    |                               | 1___    | 1로 시작하고 4자리인 값                       |
+    |                               | 2\_%\_% | 2로 시작하고 적어도 3자리인 값                |
+
+  - order_by: 특정 column을 기준으로 정렬
+
+    ```sql
+    SELECT column FROM 테이블명 ORDER BY column1, column2 ASC/DESC;
+    
+    --ASC: 오름차순(기본값)
+    --DESC: 내림차순
+    ```
+
+
+
+- orm과 sql
+
+  - orm에서는 model을 정의하고 migrate를 해줘야 했다.
+
+  - sql에서는 그 대신 테이블을 생성한다.
+  - orm은 쿼리셋 형태로, sql은 테이블 형태로 데이터를 저장
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
