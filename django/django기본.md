@@ -1,4 +1,4 @@
-Django
+# Django
 
 - Static web page와 Dynamic web page
 
@@ -984,12 +984,16 @@ QueryDict{'content':1234,'title':5678}
 
         ```bash
         $ python manage.py shell_plus
+        
+    
+        #아래와 같이 입력하면 sql 형식으로도 보여준다.
+      $ python manage.py shell_plus --print-sql
         ```
-
+    
       - 쉘 종료 명령어는 `ctrl+d` 이다.
-
+  
   - 생성 - ex. 게시글 작성
-
+  
     ```python
     #방법1
     article = Article()      #Article()이라는 클래스로 article이라는 객체를 만들고
@@ -2097,6 +2101,14 @@ admin.site.register(Article)
     <a href="{% url 'accounts:login' %}">로그인</a>   <!--이걸 보여준다.-->
     <a href="{% url 'accounts:signup' %}">회원가입</a>
   {% endif %}
+  
+  <!--
+  user와 username의 차이
+  {{ user }}와 {{user.username}}은 같은 것을 출력하는데 둘의 차이는
+  user는 User클래스의 인스턴스, username은 문자열이라는 것이다. 
+  즉, 둘의 출력은 같으나 타입은 완전히 다르다.
+  같은 것이 출력되는 이유는 user를 출력했을 때 username이 출력되도록 코드가 짜여져 있기 때문이다.
+  -->
   ```
 
   
@@ -2267,287 +2279,5 @@ from django.contrib.auth.forms import UserCreationForm,AuthenticationForm,UserCh
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
 ```
-
-
-
-
-
-
-
-# 데이터 베이스
-
-- 데이터 베이스: 여러 사람이 공유하여 사용할 목적으로 체계화해 통합, 관리하는 데이터의 집합
-- DBMS: 데이터베이스(DataBase)를 관리(Manage)하는 시스템(System)
-
-  - RDBMS: 관계형 모델을 기반으로 하는 데이터베이스 관리 시스템
-    - Oracle, MySQL, SQLite 등이 있으나 수업땐는 SQLite를 사용
-- 관계형 데이터 베이스
-  - 관계를 열과 행으로 이루어진 테이블 집합으로 구성(e.g.엑셀)
-  - 각 열에 특정 종류의 데이터를 기록
-  - 테이블의 행은 각 객체/엔터티와 관련된 값의 모음
-
-
-
-- 기본 용어
-
-  - 스키마: 데이터 베이스에서 자료의 구조(e.g. datatype)와 제약조건(e.g.비워 둬도 되는지)에 관한 전반적 명세
-  - 테이블: 열과 행의 모델을 사용해 조직된 데이터 요소들의 집합
-    - column(열): 속성, 각 열에는 고유한 데이터 형식이 있다.
-    - row(행): 데이터가 저장되는 곳 
-    - PK: 각 행의 고유값으로 저장된 레코드를 고유하게 식별할 수 있는 값
-
-
-
-- SQL(Structured Query Language) 기본
-
-  - Query란 DB에 보내는 요청이라고 할 수 있다.
-  - 지금까지는 ORM을 통해서 DB에 접근했었다. 
-
-    - 파이썬 클래스를 통해서 DB에 접근
-    - 파이썬 코드를 SQL로 변경해서 실행하는 방식
-    - ORM을 통해 SQL보다 편리하게 데이터베이스를 다룰 수 있었다.
-    - 그럼에도 SQL을 배워야 하는 이유는 결국 ORM은 남이 짜놓은 코드이기에 한계가 있다.
-
-  - 데이터 베이스 관리를 위한 언어, RDBMS의 데이터를 관리하기 위해 사용하는 프로그래밍 언어
-
-  - 종류
-
-    - DDL(데이터 정의 언어):데이터 정의(create,drop 등)
-    - DML(데이터 조작 언어): 데이터 저장, 수정, 삭제(CRUD 관련)
-    - DCL(데이터 제어 언어): 데이터베이스 사용자의 권한 등 제어
-
-  - SQL에서의 Datetype
-
-    - INTEGER, TEXT, REAL(실수), NUMERIC(boolean), BLOB
-
-
-  - 실행
-
-    ```bash
-    $ sqlite3 db.sqlite3
-    
-    #종료는 ctrl+d
-    ```
-
-  - sqlite에서만 사용 가능한 명령어
-
-    ```sql
-    --내가 생성한 table들 보기
-    .tables
-    --내가 생성한 테이블의 스키마 보기
-    .schema 테이블명
-    ```
-
-    
-
-  - 테이블 생성
-
-    ```sql
-    CREATE TABLE 테이블명 (
-      컬럼명 datetype [constraints]
-    )
-    
-    --이미 동일한 테이블이 있으면 생성하지 안음
-    CREATE TABLE IF NOT EXISTS '테이블명' (
-      컬럼명 datetype [constraints]
-    )
-    
-    
-    --예시
-    sqlite>CREATE TABLE classmates(
-        id는 숫자 타입이며, primary키 역할을 하고, 자동으로 1씩 증가한다.
-        id INTEGER PPIMARY KEY AUTOINCREMENT, 
-        name TEXT NOT NULL,  NOT NULL은 비워 둘 수 없다는 의미이다.
-        age INTEGER,
-        address TEXT
-    )
-    ```
-
-  - 테이블 이름 변경
-
-    ```sql
-    ALTER TABLE 테이블명 RENAME TO 새 테이블명;
-    ```
-
-  - 테이블 삭제
-
-    ```sql
-    DROP TABLE table;
-    ```
-
-  - 테이블에 데이터 추가(C)
-
-    ```sql
-    INSERT INTO 테이블명 (column) VALUES (value);
-    ex. INSERT INTO 테이블명 (name,age) VALUES ('홍길동',23);
-    
-    --모든 column에 데이터를 넣을 때는 column을 입력할 필요가 없다. 순서대로 입력만 해주면 된다.
-    ex. INSERT INTO 테이블명 VALUES ('홍길동',23, '대전');
-    ```
-
-  - 다른 곳에 작성한 sql파일을 불러와 추가하는 방법 
-
-    - db파일과 동일한 위치에 csv파일을 만든다.
-
-    ```
-    #date.csv
-    
-    #아이디는 이미 저장된 것과 겹치면 안된다.
-    id,flight_num,departure,waypoint,arrival,price #헤더, 굳이 안 써도 된다.
-    4,RT9122,Madrid,Beijing,Incheon,200   #공백을 넣으면 안된다. 공백을 넣으면 공백도 포함됨 
-    5,XZ0352,LA,Moscow,Incheon,800 
-    6,SQ0972,London,Beijing,Sydney,500
-    ```
-
-    - 터미널 창에 아래의 명령어 입력
-
-    ```sql
-    sqlite> .mode csv
-    sqlite> .headers on  --헤더가 있다는 것을 알려주고, 없으면 안 써도 된다.
-    sqlite> .separator "," --""안에 csv파일 내의 자료들이 무엇으로 구분되어 있는지 적으면 된다.
-    sqlite> .import data.csv flights
-    ```
-
-    
-
-  - 테이블의 데이터 삭제(D)
-
-    ```sql
-    DELETE FROM 테이블명 WHERE 조건;
-    ```
-
-  - 수정(U)
-
-    ```sql
-    UPDATE 테이블명 SET column=value WHERE 조건;
-    
-    --여러 개를 수정하고자 하면 콤마로 구분하여 연속해서 입력
-    UPDATE 테이블명 SET column1=value1, column2=value2 WHERE 조건;
-    ```
-
-    
-
-  - 레코드 조회(R)
-
-    - select문: 데이터를 읽어올 수 있으며 특정 테이블을 반환한다.
-
-    ```sql
-    SELECT column FROM 테이블명;   column칸에 *을 입력하면 모든 column을 조회
-    ```
-
-    - distinct: 중복 없이 가져오기
-
-    ```sql
-    SELECT DISTINCT column FROM 테이블명;
-    ```
-
-  - 표현식
-
-    - count: 특정 테이블에 특정 레코드의 개수
-
-    ```sql
-    SELECT COUNT(column) FROM 테이블명;
-    ```
-
-    - avg: 특정 테이블에 특정 레코드의 평균
-
-    ```sql
-    SELECT AVG(column) FROM 테이블명;
-    ```
-
-    - sum: 특정 테이블에 특정 레코드의 합
-
-    ```sql
-    SELECT SUM(column) FROM 테이블명;
-    ```
-
-    - MIN: 특정 테이블에 특정 레코드의 최소값
-
-    ```sql
-    SELECT MIN(column) FROM 테이블명;
-    ```
-
-    - MAX: 특정 테이블에 특정 레코드의 최대값
-
-    ```sql
-    SELECT MAX(column) FROM 테이블명;
-    ```
-
-    
-
-  - where: 조건문을 활용
-
-    - 기본형
-
-    ```sql
-    SELECT column FROM 테이블명 WHERE 조건;
-    
-    --아래와 같이 and나 or을 사용할 수도 있다.
-    SELECT column FROM 테이블명 WHERE 조건1 and/or 조건2;
-    ```
-
-    - like 활용: 특정 패턴을 보여준다.
-
-    ```sql
-    SELECT column FROM 테이블명 WHERE cloumn LIKE '패턴';
-    
-    --e.g.like 활용
-    sqlited>SELECT * FROM classmates WHERE phone LIKE '010-%'
-    ```
-
-    - like에서 사용되는 키워드(와일드카드)
-
-    | %:문자열이 있을 수도 있다.    | 2%      | %앞의 문자(이 경우 2)로 시작하는 값           |
-    | ----------------------------- | ------- | --------------------------------------------- |
-    |                               | %2      | %뒤의 문자로(이 경우2)로 끝나는 값            |
-    |                               | %2%     | %사이의 문자(이 경우2)가 들어가는 값          |
-    | _:반드시 한 개의 문자가 있다. | _2%     | 아무 값이나 들어가고 두번째가 2로 시작하는 값 |
-    |                               | 1___    | 1로 시작하고 4자리인 값                       |
-    |                               | 2\_%\_% | 2로 시작하고 적어도 3자리인 값                |
-
-  - order_by: 특정 column을 기준으로 정렬
-
-    ```sql
-    SELECT column FROM 테이블명 ORDER BY column1, column2 ASC/DESC;
-    
-    --ASC: 오름차순(기본값)
-    --DESC: 내림차순
-    ```
-
-
-
-- orm과 sql
-
-  - orm에서는 model을 정의하고 migrate를 해줘야 했다.
-
-  - sql에서는 그 대신 테이블을 생성한다.
-  - orm은 쿼리셋 형태로, sql은 테이블 형태로 데이터를 저장
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
