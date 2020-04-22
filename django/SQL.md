@@ -731,7 +731,21 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
       return redirect('post:detail', post.pk)
   
   
-  #댓글을 표시하는 detail페이지(게시글과 공유한다)
+  #댓글을 표시하는 detail페이지(게시글과 공유한다)-잘못된 방법
+  def detail(request, article_pk):
+      post = get_object_or_404(Post, pk=post_pk)
+      comments = Comment.objects.all()
+      #기존에 하던 것 처럼 위와 같이 넘기면 어떤 게시글을 보던지 같은 댓글이 보이게 된다. 따라서 각 게	 시글에 작성된 댓글만을 넘겨야 하는데 이 방법으로는 그렇게 할 수 없다.
+      comment_form=CommentForm()
+      context = {
+          'post': post,
+          'comment_form':comment_form,
+          'comments':comments,
+      }
+      return render(request, 'post/detail.html', context)
+  
+  
+  #댓글을 표시하는 detail페이지(게시글과 공유한다)-옳은 방법
   def detail(request, article_pk):
       post = get_object_or_404(Post, pk=post_pk)
       comments = post.comment_set.all()  #post에 작성된 comment를 모두 comments에 할당
@@ -762,6 +776,20 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
   {% load bootstrap4 %}
   <h3>댓글</h3>
       {% for comment in post.comment_set.all %}
+          <li>{{ comment.user.username }} : {{ comment.content }}</li>
+      {% endfor %}
+      <hr>
+      <form action="{% url 'articles:comments_create' article.pk %}" method="POST">
+          {% csrf_token %}
+          {% bootstrap_form form %}
+          <button class="btn btn-primary">작성</button>
+      </form>
+  
+  <!--또는 detail함수에서 comments = post.comment_set까지만 넘겨받아 아래와 같이 쓸 수도 있다.-->
+  
+  {% load bootstrap4 %}
+  <h3>댓글</h3>
+      {% for comment in comments.all %}
           <li>{{ comment.user.username }} : {{ comment.content }}</li>
       {% endfor %}
       <hr>
