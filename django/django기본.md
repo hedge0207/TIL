@@ -1775,6 +1775,7 @@ admin.site.register(Article)
     - 단방향이기에 1234라는 비밀번호를 gweggewg8754egwdg24ggwe라는 다이제스트(암호)로 변환은 할 수 있어도 암호를 다시 1234로 변환할 수는 없다. 
   - 또한 같은 비밀번호라도 다른 암호로 변환하는데 이를 솔팅이라 하고 그 값을 솔트라 한다. 솔트 값을 암호 중간중간에 넣어 암호를 더 복잡하게 만든다.
   - 반복은 혹시라도 brute force로 암호 해독을 시도하는 경우에 대비해서 최대한 반복 횟수를 늘림으로써 해독을 어렵게 하기 위함이다.
+  
 - 따라서 django에서 정의한 form이 아닌 직접 작정한 form으로 회원가입을 할 경우 위의 비밀번호 암호화 작업을 추가적으로 해주지 않으면 비밀번호가 그대로 저장되게 된다,
   
 - form과 model을 이미 장고에서 정의해 놓았기에 import해서 쓰기만 하면 된다.
@@ -1807,9 +1808,32 @@ admin.site.register(Article)
       return render(request, 'accounts/signup.html', context)
   ```
   
-
-
-
+  ```python
+  #settings.py
+  #비밀번호 유효성을 검사하는 부분
+  
+  # Password validation
+  # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators
+  
+  AUTH_PASSWORD_VALIDATORS = [
+      {
+          'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+      },
+      {
+          'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+      },
+      {
+          'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+      },
+      {
+          'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+      },
+  ]
+  
+  ```
+  
+  
+  
 - User는 AbstractUser를 상속받고, AbstractUser는 AbstractBaseUser를 상속 받으며, AbstractBaseUser는 models.Model을 상속받는다.
 
   - 단계마다 담겨있는 속성들이 다르다, 따라서 만일 User를 불러 오는 것이 아니라 custom해서 만들고 싶다면 필요에 따라 무엇을 상속받게 하여 만들지 결정하면 된다.
@@ -1855,7 +1879,7 @@ admin.site.register(Article)
       
     
   - 캐시는 특정 사이트에 대한 정보를 브라우저에 저장함으로써 다음에 해당 사이트에 접속했을 때 사이트가 더 빨리 로드되게 해준다. 즉 요청을 보냈을 때  매번 모든 정보를 받아오는 것이 아니라 요청한 정보에 대해서만 정보를 받아온다.
-  
+
   - 캐시와 쿠키에 대한 정보는 웹브라우저의 개발자도구에서 application 탭에서 볼 수 있다.
 
 
@@ -1886,7 +1910,7 @@ admin.site.register(Article)
       if request.method=="POST":
           #AuthenticationForm은 ModelForm이 아니기에 인자의 구성도 다르다. 
           #로그인은 쿠키, 세션에 관한 정보를 조작하는 것인데 쿠키에 대한 정보는 요청(request)에 담겨 
-          #있다. 따라서 아래와 같이 request를 넘겨줘야 한다.
+          #있다. 따라서 아래와 같이 (로그인 정보를 담고 있는)request를 넘겨줘야 한다.
           form = AuthenticationForm(request, request.POST)
           if form.is_valid():
               #로그인 할 때 데이터베이스에 세션에 대한 정보를 저장하고 이를 쿠키에 담아서 사용자에게

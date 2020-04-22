@@ -553,26 +553,28 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
 
   - 데이터와 데이터의 관계에서 한 쪽의 PK값은 다른 데이터로 넘어가면 FK값이 된다.
 
+  - 일반적으로 N의 위치에 있는 데이터가 FK값을 가진다.
+
   - 유저 정보를 관리하는 db테이블에 각 유저가 작성한 글을 저장하는 것 보다는 게시글 정보를 관리하는 db테이블에 유저 정보를 저장하는 것이 더 낫다.
 
   - 만일 유저 정보를 관리하는 db테이블에서 각 유저가 글을 작성할 때마다 그 글에 대한 정보를 db테이블에 장한다면 유저 정보를 관리하는 테이블은 무한히 늘어나야 할 것이다.
-
+  
     | user |          |                 |                 |                 |      | article |          |
     | ---- | -------- | --------------- | --------------- | --------------- | ---- | ------- | -------- |
     | id   | nickname | create_article1 | create_article2 | create_article3 | ...  | title   | content  |
-    | 1    | name1    | title1,content1 | article         | ...             |      | title1  | content1 |
+  | 1    | name1    | title1,content1 | article         | ...             |      | title1  | content1 |
     | 2    | name2    | title2,content2 | article1        | ...             |      | title2  | content2 |
 
   - 반면에 게시글 정보를 관리하는 db테이블에 유저 정보를 저장한다면 게시글 마다 유저 정보만 추가시켜주면 된다. 
-
+  
     | user |          |      | article |          |             |
     | ---- | -------- | ---- | ------- | -------- | ----------- |
     | id   | nickname |      | title   | content  | user_id(FK) |
-    | 1    | name1    |      | title1  | content1 | 1           |
+  | 1    | name1    |      | title1  | content1 | 1           |
     | 2    | name2    |      | title2  | content2 | 2           |
 
   - 유저의 PK값을 게시글 db에 저장한다. 그리고 원래 db가 아닌 다른 db에서 사용되는 pk값을 fk값이라고 부른다(유저db의 pk값을 게시글db에서 쓴다면 같은 값을 유저 db에서는 pk로, 게시글 db에서는 fk로 부른다).
-
+  
   - 이 경우 한 명의 유저는 여러 개의 게시글을 작성할 수 있으므로 유저와 게시글 사이에 1:N의 관계가 성립한다고 볼 수 있다.
 
 
@@ -585,7 +587,7 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
       username = models.CharField(max_length=5)
   
   # POST 모델을 생성
-  class POST(models.Model):
+  class Post(models.Model):
       title = models.CharField(max_length=10)
       content = models.TextField()
       creater = models.ForeignKey(Creater, on_delete=models.CASCADE)
@@ -615,7 +617,7 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
   
   
   #post(N)를 생성한다.
-  post1 = POST()
+  post1 = Post()
   post1.title = '제목1'
   post1.content = '내용1'
   # creater는 creater 오브젝트를 저장
@@ -624,7 +626,7 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
   # a1.reporter_id = 1 
   post1.save()
   
-  post2 = POST.objects.create(title='제목2', content='내용2', creater=creater1)
+  post2 = Post.objects.create(title='제목2', content='내용2', creater=creater1)
   
   
   #1(파이리):N(posts)관계 활용
@@ -632,7 +634,7 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
   #`creater`의 경우 `post_set` 으로 N개(QuerySet)를 가져올 수 있다.
   
   #글의 작성자
-  post1 = Article.objects.get(pk=2)
+  post1 = Post.objects.get(pk=2)
   post1.reporter
   
   # 2. 글의 작성자의 username
@@ -644,7 +646,9 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
   
   # 4. 작성자(1)의 글
   creater1 = Creater.objects.get(pk=1)
-  creater1.post_set.all()
+  creater1.post_set.all()  
+  #전부 가져오는 것이 아닌 특정 조건을 충족하는 것들을 가져오고 싶다면
+  creater1.post_set.filter()  
   ```
 
   
@@ -710,6 +714,7 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
   
   
   #유저 정보를 넘길 때의 구조
+  #아래에는 comments_create를 예로 들었지만 실제로 유저 정보를 저장해야 하는 모든 것들(게시글 작성, 게시글 수정)에도 해줘야 한다. 단, 게시글 수정의 경우 작성자가 아닌 사람이 게시글을 수정하는 경우는 없을 것이므로 하지 않아도 큰 문제는 없지만 만에 하나 오류가 발생할 수 있으므로 해준다.
   @require_POST
   @login_required
   def comments_create(request,post_pk):
@@ -724,9 +729,79 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
           #굳이 comment.post_id=post.pk라고 적지 않아도 알아서 id값이 넘어가게 된다.
           comment.save()
       return redirect('post:detail', post.pk)
+  
+  
+  #댓글을 표시하는 detail페이지(게시글과 공유한다)
+  def detail(request, article_pk):
+      post = get_object_or_404(Post, pk=post_pk)
+      comments = post.comment_set.all()  #post에 작성된 comment를 모두 comments에 할당
+      # 아래와 같이 쓰는 것과 같다.
+      # comments=Comments.objects.filter(article_id=article.id)
+      comment_form=CommentForm() #댓글 입력 창은 게시글 내에 있어야 하므로 입력from도 넘긴다.
+      context = {
+          'post': post,
+          'comment_form':comment_form,
+          'comments':comments,
+      }
+      return render(request, 'post/detail.html', context)
+  
+  #혹은 위와 같이 comments = post.comment_set.all()로 넘기는 것이 아니라 post만 넘기고 html에서 따로 처리를 해주는 방법도 있다.
+  def detail(request, article_pk):
+      post = get_object_or_404(Post, pk=post_pk)
+      comment_form=CommentForm()
+      context = {
+          'post': post,
+          'comment_form':comment_form,
+      }
+      return render(request, 'post/detail.html', context)
+  #위와 같이 post를 넘긴 후
   ```
-
-
+  
+  ```html
+  <!--아래와 같이 post.comment_set.all으로 처리하면 된다.-->
+  {% load bootstrap4 %}
+  <h3>댓글</h3>
+      {% for comment in post.comment_set.all %}
+          <li>{{ comment.user.username }} : {{ comment.content }}</li>
+      {% endfor %}
+      <hr>
+      <form action="{% url 'articles:comments_create' article.pk %}" method="POST">
+          {% csrf_token %}
+          {% bootstrap_form form %}
+          <button class="btn btn-primary">작성</button>
+      </form>
+  ```
+  
+  ```html
+  <!--로그인 한 사용자와 글 작성자가 같은 사용자일 경우에만 특정 내용을 띄우는 방법-->
+  <!--아무나 게시글을 삭제하게 해선 안되므로 아래와 같이 게시글의 유저와 요청을 보낸 유저가 같을 때에만 게시글 삭제 창을 띄우게 할 수 있다.-->
+  
+  {% if article.user == request.user  %}
+      <form action="{% url 'articles:delete' article.pk %}" method="POST">
+          {% csrf_token %}
+          <button class="btn btn-primary">삭제</button>
+      </form>
+  {% endif %}
+  <!--==을 쓸 때는 반드시 좌우 한 칸씩을 띄워야 하며 띄우지 않을 경우 오류가 발생한다. 또한 == 대신 is를 사용 가능하다-->
+  ```
+  
+  ```python
+  #아래와 같이 함수 내에서 request.user, 즉 로그인한 유저의 정보를 사용하고자 한다면 @login_required를 붙여주는 것이 좋다. 로그인하지 않았을 경우 request.user에는 Anonymous 유저가 들어가게 되는데 자칫하면 에러가 발생할 수 있다. 
+  
+  @login_required
+  def delete(request):
+      request.user.delete()
+      return redirect('articles:index')
+  ```
+  
+  
+  
+- ERD: 데이터베이스 모델링에서 활용되는 다이어그램(추가 필요)
+  - 카디널리티: 데이터 사이의 논리적 관계
+    - 1:1 관계(직선)
+    - 1:N 관계(까마귀 발이  있는 쪽이 N)
+  - 데이터베이스 관계선택사항/옵셔널리티
+    - 게시글 입장에서 댓글은 필수가 아니나, 댓글 입장에서는 게시글이 필수다.
 
 
 
