@@ -1393,6 +1393,8 @@ admin.site.register(Article)
 
     ```html
     <!--other.html-->
+    
+    <!--아래 내용 재확인 필요-->
     <!--확인 결과 아래 3줄을 쓰지 않아도 다른 html파일에서 base.html파일에 적용된 스태틱 파일을 사용 가능한 것으로 확인되었다. 따라서 아래 세 줄은 base.html에 적용된 static파일 이외에 해당 파일에만 적용되길 원하는 static파일이 있을 시(아래의 경우)에만 적으면 된다.-->
     <!--{% load static %}은 base.html에 이미 있더라도 반드시 해줘야 한다.-->
     {% load static %}
@@ -1402,9 +1404,9 @@ admin.site.register(Article)
     
     
     <!--other.html 파일에 base에 적용되지 않은 static파일을 쓰고 싶다면 아래와 같이 block사이에 작성하면 된다.-->
-    {% load static %}
+	  {% load static %}
     <link rel="stylesheet" href="{% static 경로/파일' %}">
-	  {% block css %}
+    {% block css %}
     ```
 
 
@@ -2119,7 +2121,7 @@ admin.site.register(Article)
 - html 파일에서 로그인 했을 때와 하지 않았을 때 각기 다른 내용을 보여주는 방법
 
   ```html
-  {% if user.is_authenticated %}  <!--만일 로그인 했다면-->
+  {% if request.user.is_authenticated %}  <!--만일 로그인 했다면-->
     <p>{{ user.username }}, 님 환영합니다.</p>   <!--이걸 보여주고-->
   {% else %}					 <!--안했다면-->
     <a href="{% url 'accounts:login' %}">로그인</a>   <!--이걸 보여준다.-->
