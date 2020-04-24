@@ -1103,8 +1103,8 @@ admin.site.register(Article)
        #넣고 싶은 데이터들을 입력
    	list_display=('title','content','created_at','updated_at')
        #이 외에도 list_display_link, list_display_filter등도 있다.
-       #list_display=['title'] 은 title에 링크를 설정해준다.
-       #list_filter=['title']은 title에 필터를 적용해준다.
+       #list_display_link=['title'] 은 title에 링크를 설정해준다.
+       #list_display_filter=['title']은 title에 필터를 적용해준다.
    
    admin.site.register(Article, ArticleAdmin)
    ```
