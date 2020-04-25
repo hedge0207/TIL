@@ -1338,7 +1338,7 @@ admin.site.register(Article)
   - static 파일을 적용할 html 파일에 DTL(장고 템플릿 랭귀지)로 아래와 같이 작성
 
     ```html
-    <!--아래와 같이 static파일을 불러온다는 것을 알려주고-->
+    <!--아래와 같이 static파일을 불러온다는 것을 알려준다. 이 코드를 써야 아래의 href안에 들어가는 내용, "{% static 'static파일이 있는 위치/static파일' %}"을 쓸 수 있다.-->
     {% load static%}
     
     <!--static폴더의 하위 폴더부터 static파일까지의 경로를 적으면 된다-->
@@ -1377,7 +1377,8 @@ admin.site.register(Article)
         <title>Document</title>
         <link rel="stylesheet" href="{% static 'articles/stylesheets/style.css' %}">
         <link rel="stylesheet" href="{% static 'bootstrap/bootstrap.min.css' %}">
-        {% block css %}<!--이처럼 block css를 쓴 후-->
+        <!--이처럼 block css를 쓴 후, 만일 다른 html파일에만 적용하고 싶은 css, js 파일이 없다면 		쓰지 않아도 된다.-->
+        {% block css %}
         {% endblock %}
     </head>
     <body>
@@ -1389,24 +1390,19 @@ admin.site.register(Article)
         <script src="{% static 'bootstrap/bootstrap.min.js' %}"></script>
     </body>
     </html>
-    ```
-
+```
+    
     ```html
     <!--other.html-->
     
-    <!--아래 내용 재확인 필요-->
-    <!--확인 결과 아래 3줄을 쓰지 않아도 다른 html파일에서 base.html파일에 적용된 스태틱 파일을 사용 가능한 것으로 확인되었다. 따라서 아래 세 줄은 base.html에 적용된 static파일 이외에 해당 파일에만 적용되길 원하는 static파일이 있을 시(아래의 경우)에만 적으면 된다.-->
-    <!--{% load static %}은 base.html에 이미 있더라도 반드시 해줘야 한다.-->
-    {% load static %}
+    <!--base.html에 적용한 css파일은 {% extends base.html %} 만으로도 적용 된다. 즉, 굳이 {% load static %}, {% block css %}, {% endblock %}을 쓸 필요가 없다.-->
+    
+    <!--그러나 other.html 파일에 base.html에 적용되지 않은 static파일을 쓰고 싶다면 아래와 같이 block사이에 작성하면 된다.-->
+    {% load static %}<!--href="{% static 경로/파일' %}"을 쓰기 위해 static을 불러 오고-->
     
     {% block css %}
-    {% endblock %}
-    
-    
-    <!--other.html 파일에 base에 적용되지 않은 static파일을 쓰고 싶다면 아래와 같이 block사이에 작성하면 된다.-->
-	  {% load static %}
     <link rel="stylesheet" href="{% static 경로/파일' %}">
-    {% block css %}
+    {% endblock %}
     ```
 
 
