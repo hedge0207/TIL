@@ -1749,20 +1749,168 @@ admin.site.register(Article)
   
     ```python
     from django.contrib import messages
+    #아래와 같이 직접 지정해서 쓸 수도 있고
+    messages.add_message(request, messages.INFO, 'Hello world.')
     
+    #아래와 같이 django에서 지정한 shortcut을 사용할 수도 있다. 
     messages.debug(request, '%s SQL statements were executed.' % count)
     messages.info(request, 'Three credits remain in your account.')
     messages.success(request, 'Profile details updated.')
     messages.warning(request, 'Your account expires in three days.')
     messages.error(request, 'Document deleted.')
+  
+    #e.g.
+    @login_required
+    def update(request, pk):
+        # 수정시에는 해당 article 인스턴스를 넘겨줘야한다!
+        article = get_object_or_404(Article, pk=pk)
+        if request.user == article.user:
+            pass
+        else:
+            messages.warning(request, '본인 글만 수정 가능합니다.')
+            return redirect('articles:index')
     
-    #messages.error(request, 'Document deleted.')를 예로 들면 error는 메세지의 색을, 'Document deleted.'는 띄울 문구를 뜻하며 자유롭게 수정이 가능하다. 단, 아래에서 살펴볼 사용자 관리에서 사용자 관리 관련 form들을 불러와 사용한 경우에는 messages.error(request, '')와 같이 비워둬도 form에 미리 저장되어 있는 메세지가 출력되며, 문자열 안에 내용을 입력해도 미리 저장되어 있는 메세지가 출력된다.
+    #messages.error(request, 'Document deleted.')를 예로 들면 error는 메세지의 색을, 'Document deleted.'는 띄울 문구를 뜻하며 자유롭게 수정이 가능하다. 단, 뒤에서 살펴볼 사용자 관리에서 사용자 관리 관련 form들을 불러와 사용한 경우에는 messages.error(request, '')와 같이 비워둬도 form에 미리 저장되어 있는 메세지가 출력되며, 문자열 안에 내용을 입력해도 미리 저장되어 있는 메세지가 출력된다.
+    ```
+  
+  - html 파일에 띄우려면 아래와 같이 입력하면 된다.
+  
+    - 주로 base.html파일에 작성하게 되는데 그 이유는 메세지가 어디서 사용될지 모르기에 base.html에 작성하여 어떤 html파일에서도 뜨게 하기 위함이다.
+  
+    ```html
+    <!--아래와 같이 해도 bootstrap처럼 색이 뜨지는 않는다.-->
+    {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}
+      <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
+          {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}Important: {% endif %}
+          {{ message }}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    
+    
+    <!--bootstrap으로 스타일링 하는 방법-->
+    <!DOCTYPE html>
+    {% load bootstrap4 %} <!--bootstrap불러 오고-->
+    <html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>Practice</title>
+        {% bootstrap_css %}
+    </head>
+    <body>
+    {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}    <!--아래의 tags부분을 쪼개면 된다.-->
+      <li{% if message.tags %} class="alert alert-{{ message.tags }}"{% endif %}>
+          {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}Important: {% endif %}
+          {{ message }}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    </body>
+    </html>
+    
+    <!--위와 같이 하면 메세지가 list(li)태그에 들어 있어 .도 함께 출력이 되는데, 보기 싫다면 div태그로 바꿔주면 된다.-->
     ```
   
     
 
+- HTTP 상태 코드 출력하기
 
+  >https://docs.djangoproject.com/en/3.0/ref/request-response/#httpresponse-subclasses
 
+  - 위 링크에 정의된 다양한 클래스중 하나를 import해서 사용한다.
 
+  ```python
+  #원하는 것을 import하고
+  from django.http import HttpResponseForbidden
+  
+  #render, redirect 대신 아래와 같이 쓴다.
+  return HttpResponseForbidden()
+  
+  #e.g.
+  @login_required
+  def update(request, pk):
+      # 수정시에는 해당 article 인스턴스를 넘겨줘야한다!
+      article = get_object_or_404(Article, pk=pk)
+      if request.user == article.user:
+          pass
+      else:
+          return HttpResponseForbidden()
+  ```
+
+  - 좀 더 범용성 있는 사용을 위해서는 아래와 같이 쓸 수도 있다.
+
+  ```python
+  #HttpResponse를 import하고
+  from django.http import HttpResponse
+  
+  @login_required
+  def update(request, pk):
+      # 수정시에는 해당 article 인스턴스를 넘겨줘야한다!
+      article = get_object_or_404(Article, pk=pk)
+      if request.user == article.user:
+          pass
+      else:
+  		return HttpResponse(status=401) #status 코드를 직접 지정 가능
+  ```
+
+  
+
+- `include` 
+
+  - html파일이 지나치게 길어질 경우 html파일을 분할해서 작성하는 것이 가능하다.
+  - `{% include '파일명' %}`
+  - extends와의 차이는 extends는 각각의 블록에 넣는 것이고, include는 코드를 불러오는 것이다.
+
+  ```html
+  <!--base.html파일에 navbar를 만들고 싶은데 코드가 너무 길어질 것 같으면 아래와 같이 {% include '_nav.html' %}를 써서 navbar를 작성한 파일을 불러온다.-->
+  <!DOCTYPE html>
+  <html lang="ko">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta http-equiv="X-UA-Compatible" content="ie=edge">
+      <title>Django Live Session</title>
+      {% bootstrap_css %}
+  </head>
+  <body>
+      {% include '_nav.html' %}
+      {% block body %}
+      {% endblock %}
+  </body>
+  </html>
+  ```
+
+  ```html
+  <!--_nav.html-->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" href="/articles/">HOME</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ml-auto">
+          <li class="nav-item">
+              <a class="nav-link" href="{% url 'accounts:logout' %}">로그아웃</a>
+          </li>
+          <li class="nav-item">
+              <a class="nav-link" href="{% url 'accounts:login' %}">로그인</a>
+          </li>
+          <li class="nav-item">
+              <a class="nav-link" href="{% url 'accounts:signup' %}">회원가입</a>
+          </li>
+      </ul>
+    </div>
+  </nav>
+  ```
+
+  
 
 

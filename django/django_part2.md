@@ -350,20 +350,25 @@
       LOGIN_URL = '/accounts/signin/'
       ```
 
-  - login_required의 next 요청은 GET으로 밖에 가지 않는다(request.GET.get('next')). 따라서 require_POST와 함께 쓸 경우 오류가 발생할 수 있으므로 @require_POST를 쓸 경우 login_required는 함수 내부에 조건문으로 구현해야 한다.
+  - login_required의 next 요청은 GET으로 밖에 가지 않는다(request.GET.get('next')). 따라서 require_POST와 함께 쓸 경우 오류가 발생할 수 있으므로 둘 중 하나는 함수 내부에 조건문으로 구현해야 한다.
 
     ```python
+    #@require_POST를 조건문으로 처리
     @login_required
+    #@require_POST
     def detail(request, article_pk):
         if request.method=="POST": #만일 POST로 요청이 들어왔다면 아래 과정을 처리하고 return
             article = get_object_or_404(Article,pk=article_pk)
         	article.delete()
         return redirect('articles:index')
     
-    #아니라면 그냥 return
     ```
 
+  #아니라면 그냥 return
+    ```
     
+    
+    ```
 
 - html 파일에서 로그인 했을 때와 하지 않았을 때 각기 다른 내용을 보여주는 방법
 
@@ -1345,6 +1350,8 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
   <!--로그인 한 사용자와 글 작성자가 같은 사용자일 경우에만 특정 내용을 띄우는 방법-->
   <!--아무나 게시글을 삭제하게 해선 안되므로 아래와 같이 게시글의 유저와 요청을 보낸 유저가 같을 때에만 게시글 삭제 창을 띄우게 할 수 있다.-->
   
+  <!--request.user에서 request는 생략 가능-->
+  
   {% if article.user == request.user  %}
       <form action="{% url 'articles:delete' article.pk %}" method="POST">
           {% csrf_token %}
@@ -1374,7 +1381,92 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
 
 
 
+- 1:N 관계 보충
 
+  ```python
+  #models.py
+  class User(models.Model):
+      username = models.CharField(max_length=10)
+      
+  class Post(models.Model):
+      title = models.CharField(max_length=100)
+      content = models.TextField()
+      user = models.ForeignKey(User, on_delete=models.CASCADE)
+  
+  class Comment(models.Model):
+      content = models.TextField()
+      article = models.ForeignKey(Post, on_delete=models.CASCADE)
+      user = models.ForeignKey(User, on_delete=models.CASCADE)
+  ```
+
+  ```python
+  from onetomany.models import User, Article, Comment
+  
+  # objects
+  u1 = User.objects.create(username='파이리')
+  u2 = User.objects.create(username='꼬북이')
+  
+  p1 = Post.objects.create(title='글1', user=u1)
+  p2 = Post.objects.create(title='글2', user=u2)
+  p3 = Post.objects.create(title='글3', user=u2)
+  p4 = Post.objects.create(title='글4', user=u2)
+  
+  c1 = Comment.objects.create(content='글1댓1', post=p1, user=u2)
+  c2 = Comment.objects.create(content='글1댓2', post=p1, user=u2)
+  c3 = Comment.objects.create(content='글2댓1', post=p2, user=u1)
+  c4 = Comment.objects.create(content='글4댓1', post=p4, user=u1)
+  c5 = Comment.objects.create(content='글3댓1', post=p3, user=u2)
+  c6 = Comment.objects.create(content='글3댓2', post=p3, user=u1)
+  ```
+
+  - 1번 유저가 작성한 글들
+
+  ```python
+  u1.article_set.all()
+  ```
+
+  - 2번 유저가 작성한 댓글의 내용을 모두 출력
+
+  ```python
+  for comment in u2.comment_set.all():
+      print(comment.content)
+  ```
+
+  - 3번 글의 작성된 댓글의 내용을 모두 출력
+
+  ```python
+  for comment in p3.comment_set.all():
+      print(comment.content)
+  ```
+
+  ```html
+  {% for comment in article.comment_set.all %}
+     {{ comment.content }}
+  {% endfor %}
+  ```
+
+  - title이 글1인 게시글들
+
+  ```python
+  Post.objects.filter(title='글1')
+  ```
+
+  - 글이라는 단어가 들어간 게시글들
+
+  ```python
+  Post.objects.filter(title__contains='글')
+  ```
+
+  - 댓글들(N) 중에 제목이 글1인 게시글(1)에 작성된 댓글
+    - 1:N 관계에서 1의 열에 따라서,  필터링하는 방법
+
+  ```python
+  Comment.objects.filter(article__title='글1')
+  ```
+
+  
+
+  
 
 
 
@@ -1396,7 +1488,7 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
 
   ```python
   class Mymodel(models.Model):
-      image = models.ImageField
+      image = models.ImageField()
   ```
 
   
@@ -1499,15 +1591,18 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
     - urls.py
 
     ```python
+    # 아래 2개를 import 하고
+    from django.conf import settings
+    from django.conf.urls.static import static
+    
     urlpatterns = [
         path('admin/', admin.site.urls),
         path('articles/', include('articles.urls')),
-        path('accounts/', include('accounts.urls')),
     ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    
+
     #+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)는 url이 넘어가서 html파일을 실행시킬 때 media파일도 함께 보내서(서빙) 실행시킨다는 것을 알려주는 것이다.
     ```
-
+    
     
 
 - `media`폴더는 최초로 미디어 파일을 등록하면 자동으로 생성된다.
@@ -1518,7 +1613,7 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
 
 - 이미지 조작
 
-  - 섬네일에 맞게 이미지를 자르는 등의 조작이 포함된다.
+  - 이미지 파일의 크기를 조작할 수 있다.
   - 이미지를 업로드할 때 pillow를 install 해서 사용했으나 조작 할 때는 아래와 같이 추가적인 install이 필요
 
   ```bash
@@ -1527,7 +1622,105 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
 
   
 
-   
+  - models.py
+
+  ```python
+  from imagekit.models import ImageSpecField, ProcessedImageField
+  from imagekit.processors import ResizeToFill, ResizeToFit, Thumbnail
+  #ResizeToFill은 지정한 사이즈대로 정확하게 자른다(사진 일부가 잘릴 수도 있다).
+  #ResizeToFit은 너비(가로)와 높이(세로) 중 더 긴 곳을 설정값으로 맞추고 더 짧은 쪽은 비율에 맞춘다. 따라서 이미지가 잘릴 일이 없다.
+  #Thumbnail은 ResizeToFill과 유사하지만 더 깔끔해 보이게 자른다.
+  
+  
+  class Article(models.Model):
+      image = models.ImageField()
+      #ImageField와는 달리 ImageSpecField는 DB에 저장되는 것이 아니다. 따라서 migrate를 할 필요가 	없다. 다만 해당 모델의 멤버 변수로써 사용이 가능하다. 단, ImageField에서 받아온 사진을 조작하는 	것이므로 ImageField를 써줘야 한다.
+      #ImageSpecField는 원본은 그대로 두고 잘라서 활용만한다.
+      image_thumbnail = ImageSpecField(source='image',
+                            processors=[Thumbnail(300, 300)],
+                            format='JPEG',
+                            options={'quality': 60})
+      #source는 어떤 이미지를 자를 지를 정하는 것
+      #processors는 어떤 방식으로 자를 지를 정하는 것 
+      #format은 어떤 형식으로 반환할지를 정하는 것
+      #options은 몇 %의 퀄리티로 표현 할지 정하는 것
+      # ProcessedImageField는 원본 자체를 잘라서 저장한다.
+      image = ProcessedImageField(
+                            processors=[ResizeToFill(100, 50)],
+                            format='JPEG',
+                            options={'quality': 60})
+  ```
+
+  
+
+  - html
+
+  ```html
+  <img src="{{ article.image_thumbnail.url }}">
+  ```
+
+  
+
+ 
+
+
+
+
+
+# M:N
+
+- 만일 게시글에 좋아요를 표시한다고 가정한다면 2개의 테이블이 필요하다. 좋아요를 누른 유저에 대한 정보를 저장할 User, 게시글에 대한 정보를 저장할 Article.
+
+  - 특정 유저가 특정 게시글에 좋아요를 눌렀다는 정보를 어느 테이블에 저장해야 할 지가 문제가 될 수 있다.
+
+  - aritcle테이블에 저장할 경우
+
+    - 1번 방법
+
+    | id   | title | content | user_id(fk) | 좋아요 누른 유저 |
+    | ---- | ----- | ------- | ----------- | ---------------- |
+    | 1    | 제목1 | 내용1   | 1           | 2,3              |
+    | 2    | 제목2 | 내용2   | 2           | 1                |
+    | 3    | 제목3 | 내용3   | 1           | 2,3              |
+    | 4    | 제목4 | 내용4   | 3           | 2                |
+
+    - 2번 방법
+
+    | id   | title | content | user_id(fk) | 좋아요 누른 유저1 | 좋아요 누른 유저2 |
+    | ---- | ----- | ------- | ----------- | ----------------- | ----------------- |
+    | 1    | 제목1 | 내용1   | 1           | 2                 | 3                 |
+    | 2    | 제목2 | 내용2   | 2           | 1                 |                   |
+    | 3    | 제목3 | 내용3   | 1           | 2                 | 3                 |
+    | 4    | 제목4 | 내용4   | 3           | 2                 |                   |
+
+    - 1번 방법은 한 셀에 두 개 이상의 데이터가 들어갔으므로 불가능하고, 2번 방법은 다른 유저가 좋아요를 누를때 마다 열을 늘려야 하므로 비효율 적이다. 2번글은 좋아요를 누른 사람이 1명 뿐임에도 `좋아요 누른 유저2`라는 열까지 저장해야 한다.
+
+  - user테이블에 저장할 경우
+
+    - 역시 위와 마찬가지 이유로 불가능하다.
+
+  - 따라서 좋아요에 대한 정보를 저장할 제3의 테이블을 생성해서 저장한다.
+
+    - User와 제3의 테이블의 관계도 1:N이고 Article과 제3의 테이블의 관계도 1:N이다.
+    - Article의 pk값과 User의 pk값을 가져온다.
+    - 위에서 aritcle테이블에 저장 했던 좋아요 정보를 제 3의 테이블에 옮기면 다음과 같다.
+
+    | id   | article_id(FK) | user_id(FK) |
+    | ---- | -------------- | ----------- |
+    | 1    | 1              | 2           |
+    | 2    | 1              | 3           |
+    | 3    | 2              | 1           |
+    | 4    | 3              | 2           |
+    | 5    | 3              | 3           |
+    | 6    | 4              | 2           |
+
+    
+
+
+
+
+
+
 
 
 
