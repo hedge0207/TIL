@@ -1,4 +1,4 @@
-# 사용자 인증 관리
+사용자 인증 관리
 
 - django에서 사용자 정보는 다른 정보와는 다르게 특별한 처리를 해줘야 한다.
 
@@ -873,10 +873,34 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
 
       -ex. 특정 게시글로 연결해 줄 경우 하나의 게시글 번호를 요청한 것이 아니면 모두 에러를 띄운다.
 
+      -오브젝트를 바로 반환
+
+      ```python
+  Article.objects.get(title="제목1")
+      
+      out
+      <Article:Article object (4)>
+      ```
+    
+      
+    
     - filter: 쿼리셋(비어 있더라도)을 반환
-
+    
+      ```python
+    Article.objects.filter(title="제목1")
+      
+      out
+      <QuerySet [<Article:Article object (4)>]>
+      
+      #get과 달리 object를 바로 반환하지 않으므로 object를 반환하기 위해서는 뒤에 인덱스를 붙여야 한다.
+      Article.objects.filter(title="제목1")[0]
+      #이렇게 하면 해당하는 오브젝트 중 첫 번째 오브젝트를 반환한다.
+      ```
+      
+      
+      
       -ex.검색을 할 때에는 그에 해당하는 모든 게시글을 보여주고, 검색 결과가 없어도(비어도) 보여준다.
-
+      
       - and: 메서드 체이닝, 인자로 넘겨주는 방식
       - or : Q로 묶어서 처리한다.
       - 대소관계
@@ -1192,9 +1216,15 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
   
   # 4. 작성자(1)의 글
   creater1 = Creater.objects.get(pk=1)
-  creater1.post_set.all()  
+  creater1.post_set.all()
   #전부 가져오는 것이 아닌 특정 조건을 충족하는 것들을 가져오고 싶다면
-  creater1.post_set.filter()  
+  creater1.post_set.filter() 
+  
+  #creater1.post_set.all()은 아래의 코드와 동일하다.
+  #Post.objects.filter(creater=creater1)
+  
+  #creater1.post_set.all()와 Post.objects.filter(creater=creater1)의 기능은 동일하지만 느낌은 다를 수 있다.
+  #creater1.post_set.all()가 보다 creater1이 작성한 포스트를 모두 가져온다는 느낌을 강하게 주며 활용에 있어서도 더 편하다.
   ```
 
   
@@ -1716,19 +1746,306 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
 
     
 
+- django에서의 활용
 
+  - 모델 생성
 
+  ```python
+  class Doctor(models.Model):
+      name = models.CharField(max_length=10)
+  
+  class Patient(models.Model):
+      name = models.CharField(max_length=10)
+  
+  #제 3의 모델
+  class Reservation(models.Model):
+      doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE)
+      patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
+  ```
 
+  ```python
+  #환자, 의사 생성
+  d1 = Doctor.objects.create(name='dr.파이리')
+  d2 = Doctor.objects.create(name='dr.꼬부기')
+  
+  p1 = Patient.objects.create(name='철수')
+  p2 = Patient.objects.create(name='영희')
+  
+  #예약 생성
+  Reservation.objects.create(doctor=d1, patient=p1)
+  Reservation.objects.create(doctor=d1, patient=p2)
+  Reservation.objects.create(doctor=d2, patient=p1)
+  #위는 d1,p1 등의 객체를 넘기는 방법이고 아래와 같이 id값을 넘기는 방법도 있다.
+  Reservation.objects.create(doctor_id=1, patient_id=1)
+  Reservation.objects.create(docto_id=1, patient_id=2)
+  Reservation.objects.create(doctor_id=2, patient_id=1)
+  #또는 혼용도 가능
+  Reservation.objects.create(doctor_id=2, patient=p1)
+  
+  #ref. 1:N 관계에서도 위와 같이 생성이 가능하다.
+  #객체를 넘기는 방법
+  Artice.objects.create(article.user = reques.user)
+  #id값을 넘기는 방법
+  Artice.objects.create(article.user_id = 1)
+  ```
 
+  - 의사1의 예약 목록
 
+  ```python
+  d1.reservation_set.all()
+  ```
 
+  - 환자1의 예약 목록
 
+  ```python
+  p1.reservation_set.all()
+  ```
 
+  - 1번 의사의 환자 출력
 
+  ```python
+  for reservation in d1.reservation_set.all():
+      print(reservation.patient.name)
+  ```
 
+  
 
+- 중개모델
 
+  - `ManyToMany`필드를 사용, `through`옵션을 통해 중개 모델을 선언
+  - `ManyToMany`필드를 추가할 경우 추가적인 migrate를 할 필요가 없다. `ManyToMany`필드는 DB에 영향을 주지 않기 때문이다.
+  - `ManyToMany`필드두 모델 중 아무 쪽에나 설정하면 된다. 
 
+  ```python
+  class Doctor(models.Model):
+      name = models.CharField(max_length=10)
+  
+  class Patient(models.Model):
+      name = models.CharField(max_length=10)
+      # M:N 필드, Reservation을 통해 Doctor에 접근한다는 의미
+      doctors = models.ManyToManyField(Doctor, 
+                                      through='Reservation')
+  
+  class Reservation(models.Model):
+      doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE)
+      patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
+  ```
+
+  - 의사, 환자 오브젝트 가져오기
+
+  ```python
+  p1 = Patient.objects.get(pk=1)
+  d1 = Doctor.objects.get(pk=1)
+  ```
+
+  - 1번 환자의 의사 목록
+
+  ```python
+  #`ManyToManyField` 가 정의된 `Patient` 는 Doctor를 직접 참조
+  p1.doctors.all()
+  ```
+
+  - 1번 의사의 환자 목록
+
+  ```python
+  #`Doctor` 는 직접 참조가 아니라 `Patient` 모델의 역참조.
+  d1.patient_set.all()    
+  ```
+
+  
+
+- `related_name` : 역참조
+
+  - 역참조의 기본값은: `유저명_set`이다. 즉, 지금까지 `_set`을 활용할 때마다 역참조를 하고 있었던 것
+  - `related_name`은 다른 방법으로 역참조를 할 수 있게 해준다.
+
+  ```python
+  class Doctor(models.Model):
+      name = models.TextField()
+  
+  class Patient(models.Model):
+      name = models.TextField()
+      #related_name옵션을 통해 역참조를 설정, 참조, 역참조는 모두 복수형으로 설정한다.
+      #related_name은 필수 값은 아니지만, 꼭 필요한 상황이 존재.
+      doctors = models.ManyToManyField(Doctor, 
+                          through='Reservation',
+                          related_name='patients')
+  
+  class Reservation(models.Model):
+      doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE)
+      patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
+  ```
+
+  - 1번 의사의 환자 목록
+
+  ```python
+  #related_name을 설정하기 전에는 위에서 본 것과 같이 d1.patient_set.all()로 가져와야 했으나 related_name을 설정했기에 아래와 같이 참조가 가능해졌다.
+  
+  d1.patients.all()    
+  ```
+
+  
+
+  - 역참조가 반드시 필요한 상황
+
+  ```python
+  class Article(models.Model):
+      title = models.CharField(max_length=100)
+      content = models.TextField()
+      user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                               on_delete=models.CASCADE)
+      users = models.ManyToManyField(settings.AUTH_USER_MODEL)
+      
+  
+  # user, users는 모두 settings.AUTH_USER_MODEL라는 모델과 관계가 설정되어 있다.
+  # 위 코드에 따르면 article을 기준으로 봤을 때
+  # article.user에서의 user는 작성자를,
+  # article.users의 users는 좋아요 누른 사람을 뜻한다.
+  # 그런데 user(AUTH_USER_MODEL의 오브젝트)를 기준으로 보면
+  # user.article_set을 하면 user가 작성한 글인지, 좋아요를 누른 글인지 구분이 되지 않는다.
+  # 따라서 migrate를 할 경우 에러가 발생하게 된다. 따라서 아래와 같이 역참조를 설정해야 한다.
+  
+  class Article(models.Model):
+      title = models.CharField(max_length=100)
+      content = models.TextField()
+      user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                               on_delete=models.CASCADE)
+      like_users = models.ManyToManyField(settings.AUTH_USER_MODEL,
+                              related_name='like_articles')
+  ```
+
+  
+
+- 실제 중개 모델을 만들지 않고 중개모델을 사용
+
+  - 위에서는 `Reservation`이라는 실제 중개 테이블을 만들어 이를 활용했으나 실제 중개 테이블을 만들지 않고도 중개 모델 활용이 가능하다.
+
+  - `ManyToManyField`를 설정하고 DB파일을 보면 중개 테이블이 생성된 것을 확인할 수 있다.
+
+    - 중개 테이블 이름은 `앱명_모델명_``ManyToManyField를 설정한 필드명`이다. 
+
+  - models.py
+
+    ```python
+    class Doctor(models.Model):
+        name = models.TextField()
+    
+    class Patient(models.Model):
+        name = models.TextField()
+        doctors = models.ManyToManyField(Doctor,   #through='Reservation'삭제
+                            related_name='patients')
+        
+    #Reservation 삭제
+    ```
+
+    
+
+  - 기존 방식
+
+    ```python
+    # 예약 생성
+    #d1,p1은 위에서 정의했다고 가정
+    Reservation.objects.create(doctor=d1, patient=p1)
+    ```
+
+  - 새로운 방식
+
+    ```python
+    # 예약 생성
+    #d1,p1은 위에서 정의했다고 가정
+    d1.patients.add(p1) #add를 통해 추가를 하면
+    
+    d1.patients.all()  #의사와
+    <QuerySet [<Patient:Patient object (1)>]>
+    p1.doctors.all()   #환자 모두에 추가가 된다.
+    <QuerySet [<Doctor:Doctor object (1)>]>
+    
+    
+    #예약 삭제
+    d1.patients.remove(p1) #remove를 통해 삭제를 하면
+    
+    d1.patients.all()  #의사와
+    <QuerySet []>
+    p1.doctors.all()   #환자 모두에서 삭제가 된다.
+    <QuerySet []>
+    ```
+
+  
+
+  - 단, 중개 모델을 꼭 만들어야 하는 경우가 존재한다.
+
+    - 두 모델 모두에 정의되지 않은, 정의할 수 없는 필드가 필요할 경우
+
+    ```python
+    #예를 들어, 예약 날짜가 필요할 경우 예약 날짜는 Doctor,Patient 중 어느 쪽에 정의하기가 어렵다. 
+    class Doctor(models.Model):
+        name = models.TextField()
+    
+    class Patient(models.Model):
+        name = models.TextField()
+        doctors = models.ManyToManyField(Doctor, 
+                            through='Reservation',
+                            related_name='patients')
+    
+    #따라서 Reservation이라는 중개모델을 만들어 여기에 설정한다.
+    class Reservation(models.Model):
+        doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE)
+        patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
+       	date = models.DateTimeField()
+    ```
+
+    
+
+- 좋아요 기능 구현하기
+
+  ```python
+  #models.py
+  class Article(models.Model):
+      title = models.CharField(max_length=100)
+      content = models.TextField()
+      user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                               on_delete=models.CASCADE)
+      like_users = models.ManyToManyField(settings.AUTH_USER_MODEL,
+                              related_name='like_articles')
+  ```
+
+  ```python
+  #urls.py
+  app_name = 'articles'
+  
+  urlpatterns = [
+      path('<int:pk>/like/', views.like, name='like'),
+  ]
+  ```
+
+  ```python
+  #views.py
+  def like(request, pk):
+      article = get_object_or_404(Article, pk=pk)
+      # 좋아요를 누른적이 있다면, 즉 DB에 저장되어 있으면
+      # if request.user in article.like_users.all():
+      # 위 처럼 써도 되지만, 아래처럼 쓸 수도 있다.
+      # .exists()는 True, False값을 반환한다.
+      if article.like_users.filter(id=request.user.pk).exists():
+          # 좋아요 취소
+          article.like_users.remove(request.user)
+      else:
+          # 좋아요
+          article.like_users.add(request.user)
+      return redirect('articles:detail', article.pk)
+  ```
+
+  ```html
+  <!--user가 article에 좋아요를 표시한 users 중에 있으면-->
+  {% if request.user in article_like_users %}
+  <a href="{% url 'articles:like' article.pk %}">좋아요 취소</a>
+  {% else %}
+  <a href="{% url 'articles:like' article.pk %}">좋아요</a>
+  {% endif %}
+  <p>{{ article_like_users|length }}명이 좋아합니다.</p>
+  ```
+
+  
 
 
 

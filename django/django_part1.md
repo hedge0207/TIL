@@ -540,7 +540,8 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
 - variable routing: url을 변수화 해서 변수로 사용하는 것
 
 
-  - 아래에서 name뒤에 숫자를 붙였는데 숫자가 같은 것 끼리는 변수명이 동일해야 한다.
+  - variable routing에서 str이 기본값이라 문자열을 쓸 경우 str을 적지 않아도 된다.
+    - 아래에서 name뒤에 숫자를 붙였는데 숫자가 같은 것 끼리는 변수명이 동일해야 한다.
 
   ```python
   #예시1
@@ -595,7 +596,28 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
   13
   ```
 
+  - 주의사항
 
+    - variable routing으로 str값을 설정할 경우 주의해야 한다.
+    - url 경로는 기본적으로 문자열(str)이고, url 경로를  `urlpatterns`에 정의된 순서대로 탐색해 나간다. variable routing으로 str값을 `urlpatterns` 맨 앞에 설정할 경우 모든 url 경로가 그쪽으로만 빠질 수 있다.
+
+    ```python
+    #맨 첫 줄에 variable routing으로 '<str:username>/'이라는 경로가 설정되어 있으므로, url경로로 login이 들어왔을 때, 문자열인 'login'은 views.login이 아닌 views.profile을 실행시키게 된다. 이는 `logout`도 마찬가지로, 이를 해결하기 위해서는 path('<str:username>/',views.profile,name="profile"),을 맨 마지막 줄에 적거나,
+    urlpatterns = [
+        path('<str:username>/',views.profile,name="profile"),
+        path('login/', views.login, name='login'),
+        path('logout/', views.logout, name='logout'),
+    ]
+    
+    #아래와 같이 보다 구체적으로 url을 설정해 줘야 한다.
+    urlpatterns = [
+        path('profile/<username>/',views.profile,name="profile"),
+        path('login/', views.login, name='login'),
+        path('logout/', views.logout, name='logout'), 
+    ]
+    ```
+
+    
 
 
 
