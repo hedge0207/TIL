@@ -1,4 +1,4 @@
-사용자 인증 관리
+# 사용자 인증 관리
 
 - django에서 사용자 정보는 다른 정보와는 다르게 특별한 처리를 해줘야 한다.
 
@@ -360,15 +360,11 @@
         if request.method=="POST": #만일 POST로 요청이 들어왔다면 아래 과정을 처리하고 return
             article = get_object_or_404(Article,pk=article_pk)
         	article.delete()
+        #아니라면 그냥 return
         return redirect('articles:index')
-    
-    ```
-
-  #아니라면 그냥 return
     ```
     
     
-    ```
 
 - html 파일에서 로그인 했을 때와 하지 않았을 때 각기 다른 내용을 보여주는 방법
 
@@ -538,7 +534,97 @@
 
 
 
+- User 모델의 custom
 
+  - django에서는 프로젝트를 시작 할 때 User를 커스텀해서 사용할 것을 강하게 권장한다. 만일 이후에 커스텀 해서 사용할 일이 생겨 뒤늦게 커스텀할 경우 과정이 복잡해지기 때문이다.
+  - User 모델을 custom 할 경우 User를 상속받아서 정의하는 것이 아니라 User가 상속받는 AbstractUser를 상속 받아서 사용한다.
+
+  ```python
+  from django.db import models
+  from django.contrib.auth.models import AbstractUser
+  
+  #꼭 모델명을 User로 할 필요는 없다.
+  class User(AbstractUser):
+      pass
+  ```
+
+  - 위와 같이 작성한 후 migrate를 하면 에러가 발생한다.
+    - 만일 위와 같이 작성하여 migrate를 한다면 테이블명이 `앱이름_user`로 생성이 될 것이다.
+    - 테이블에는 이미 장고가 정의한 auth_user라는 테이블이 존재한다.
+    - 따라서 기존이 정의된 auth_user는 사용할 수 없게 된다.
+
+  - 이를 해결하기 위해 `settings.py`에 아래의 코드를 추가해야 한다. 추가하면 migrate가 가능해진다.
+
+  ```python
+  #이제 기본 유저 모델로 `앱이름.User`를 사용하겠다는 의미
+  AUTH_USER_MODEL = '앱이름.User'
+  
+  #디폴트값은
+  AUTH_USER_MODEL = 'auth.User'
+  ```
+
+  - 유저를 정의해서 사용할 경우 추가, 수정해야 하는 것들
+
+    - User 모델의 경우 admin에 별다른 설정 없이 사용 가능했지만 이제 User를 직접 정의했으므로 admin에도 아래의 코드를 추가해야 한다.
+
+    ```python
+    #accounts/admin.py
+    
+    from django.contrib import admin
+    from .models import User  #직접 정의한 User 모델을 가져오고
+    # Register your models here.
+    
+    #등록한다.
+    admin.site.register(User)
+    ```
+
+    - 사용자 관리 관련 form들
+
+    ```python
+    #공식문서
+    class UserCreationForm(forms.ModelForm):
+        #...중략...
+        class Meta:
+            model = User  #UserCreationForm은 django에서 직접 정의한 User를 상속받아 만든 
+            #..후략..		 form이다. 따라서 UserCreationForm도 재정의 해야 한다. 								  UserChangeForm도 마찬가지 이유로 재정의가 필요하다.
+            
+    
+            
+    #재정의
+    #accounts/models.py        
+    from django.contrib.auth import get_user_model
+    from django.contrib.auth.forms import UserCreationForm
+    
+    class CustomUserCreationForm(UserCreationForm):
+        class Meta:
+            model = get_user_model()
+            fields = ['username', 'email']
+            
+            
+    #단, AuthenticationForm은 모델폼이 아니라 그냥 폼이기에 수정 없이 사용 가능하다.
+    ```
+
+    - get_user_model을 사용하지 않았을 경우 import, model명을 바꿔줘야 한다.
+
+    ```python
+    from django.contrib.auth.models import User
+    from django.contrib.auth import get_user_model
+    
+    #아래와 같이 하지 않고
+    User = get_user_model()
+    user = get_object_or_404(User,pk=pk)
+    
+    #아래와 같이 했을 경우
+    user = get_object_or_404(User,pk=pk)
+    
+    
+    #아래와 같이 수정해야 한다.
+    from .models import MyUser #import를 수정
+    
+    user = get_object_or_404(MyUser,pk=pk)
+    ```
+
+  
 
 
 
@@ -1548,7 +1634,7 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
 
     ```python
     class Mymodel(models.Model):
-        image = models.ImageField(black=True)
+        image = models.ImageField(blank=True)
     ```
 
     
@@ -1647,7 +1733,7 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
   - 이미지를 업로드할 때 pillow를 install 해서 사용했으나 조작 할 때는 아래와 같이 추가적인 install이 필요
 
   ```bash
-  $ pip install pilkit djnago-imagekity
+  $ pip install pilkit djnago-imagekit
   ```
 
   
@@ -1664,7 +1750,7 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
   
   class Article(models.Model):
       image = models.ImageField()
-      #ImageField와는 달리 ImageSpecField는 DB에 저장되는 것이 아니다. 따라서 migrate를 할 필요가 	없다. 다만 해당 모델의 멤버 변수로써 사용이 가능하다. 단, ImageField에서 받아온 사진을 조작하는 	것이므로 ImageField를 써줘야 한다.
+      #ImageField와는 달리 ImageSpecField는 DB에 저장되는 것이 아니다. 따라서 migrate를 할 필요      가없다. 다만 해당 모델의 멤버 변수로써 사용이 가능하다. 단, ImageField에서 받아온 사진을 조      작하는 것이므로 ImageField를 써줘야 한다.
       #ImageSpecField는 원본은 그대로 두고 잘라서 활용만한다.
       image_thumbnail = ImageSpecField(source='image',
                             processors=[Thumbnail(300, 300)],
@@ -1674,20 +1760,23 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
       #processors는 어떤 방식으로 자를 지를 정하는 것 
       #format은 어떤 형식으로 반환할지를 정하는 것
       #options은 몇 %의 퀄리티로 표현 할지 정하는 것
+      
+      
       # ProcessedImageField는 원본 자체를 잘라서 저장한다.
+      # ImageSpecField와 달리 migrate를 해야 한다.
       image = ProcessedImageField(
                             processors=[ResizeToFill(100, 50)],
-                            format='JPEG',
+                          format='JPEG',
                             options={'quality': 60})
   ```
-
   
-
   - html
-
+  
   ```html
   <img src="{{ article.image_thumbnail.url }}">
   ```
+  
+  
 
   
 
@@ -1856,8 +1945,12 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
 
 - `related_name` : 역참조
 
-  - 역참조의 기본값은: `유저명_set`이다. 즉, 지금까지 `_set`을 활용할 때마다 역참조를 하고 있었던 것
-  - `related_name`은 다른 방법으로 역참조를 할 수 있게 해준다.
+  - 역참조 컨벤션
+    - 1:N의 역참조는 `단수형모델_set`.
+    - M:N의 역참조는 `복수형 모델`을 사용한다.
+  - 역참조의 기본값은: `모델명_set`이다. 즉, 지금까지 `_set`을 활용할 때마다 역참조를 하고 있었던 것
+    - `related_name`은 다른 방법으로 역참조를 할 수 있게 해준다.
+    - `related_name`은 복수형으로 쓴다(naming convention)
 
   ```python
   class Doctor(models.Model):
@@ -1889,6 +1982,11 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
   - 역참조가 반드시 필요한 상황
 
   ```python
+  #settings.AUTH_USER_MODEL은 settings.py에 정의된 유저 모델을 참조한다.
+  #그냥 User를 import 해서 써도 되지만, 만일 나중에 커스텀 유저를 만들어서 쓸 경우 User를 모두 커스텀 유저로 바꿔줘야 하는 불편함이 있다. 따라서 .AUTH_USER_MODEL을 쓴다.
+  from django.conf import settings
+  
+  
   class Article(models.Model):
       title = models.CharField(max_length=100)
       content = models.TextField()
@@ -1897,7 +1995,7 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
       users = models.ManyToManyField(settings.AUTH_USER_MODEL)
       
   
-  # user, users는 모두 settings.AUTH_USER_MODEL라는 모델과 관계가 설정되어 있다.
+  # user, users는 모두 settings.AUTH_USER_MODEL이라는 모델과 관계가 설정되어 있다.
   # 위 코드에 따르면 article을 기준으로 봤을 때
   # article.user에서의 user는 작성자를,
   # article.users의 users는 좋아요 누른 사람을 뜻한다.
@@ -2046,6 +2144,147 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
   ```
 
   
+
+- 좋아요 한 글을 모아서 보는 방법
+
+  ```html
+  <h3>좋아요한 글 목록</h3>
+  {% for article in user.like_articles.all %}
+      <a href="{% url 'articles:detail' article.pk %}">
+          <p>{{ article.title }}</p>
+      </a>
+  {% endfor %}
+  
+  <!--만일 작성한 글을 보여주는 코드를 작성하고자 한다면 구조는 위와 같다.-->
+  <h3>작성한 글 목록</h3>
+  <!--단, 유저와 게시글의 관계는 1:N 관계이므로 user.article_set.all로 불러온다.-->
+  {% for article in user.article_set.all %} 
+      <a href="{% url 'articles:detail' article.pk %}">
+          <p>{{ article.title }}</p>
+      </a>
+  {% endfor %}
+  ```
+
+  
+
+- count와 len의 차이
+
+  - django 공식 문서에서도 len()을 쓰는 것 보다 count()를 쓰는 것을 권장한다.
+
+  ```python
+  article.like_users.count()
+  # 위 코드를 쿼리문으로 옮기면 다음과 같다.
+  select count(*) from 쿼리셋의 개수를 센 결과값을 가져온다.
+  
+  
+  len(article.like_users.all())
+  # 위 코드를 쿼리문으로 옮기면 다음과 같다.
+  select * from로 쿼리 셋을 결과값으로 가져온 뒤 그 길이를 센다.
+  
+  #즉, len은 일단 모든 오브젝트를 결과값으로 가져 온 뒤 그 길이를 쟤는 것이고 count는 모든 오브젝트를 가져오지 않고 미리 개수를 센 뒤 그 결과값을 가져오는 것이다. 따라서 count가 len에 비해 효율적이다.
+  #단, 쿼리 셋을 불러올 필요가 없을 경우에는 len을 쓰는 것이 낫다.
+  
+  #추가로
+  article.like_users.count()와
+  article.like_users.all.count()는 같다.
+  ```
+
+
+
+- with
+
+  ```html
+  <!--article.like_users.all를 article_like_users라는 변수에 할당하고 with 블록 안에서 사용 가능하다. 즉 article.like_users.all가 쓰일 때 마다 전체 오브젝트가 호출이 되는데 with를 사용하면 캐시를 사용하는 것 같이 오브젝트를 변수에 저장하여 사용함으로써 매번 오브젝트가 호출되지 않아도 된다.-->
+  {% with article_like_users=article.like_users.all %}
+     {% if request.user in article_like_users %}
+     <a href="{% url 'articles:like' article.pk %}">
+        <i class="fas fa-heart fa-lg animated delay-1s" style="color: red;"></i>
+     </a>
+     {% else %}
+     <a href="{% url 'articles:like' article.pk %}">
+         <i class="far fa-heart fa-lg animated infinite bounce delay-1s" 						style="color: gray;"></i>
+     </a>
+     {% endif %}
+  	<!--이런 with의 특성으로 인해 with를 쓸 경우 count보다 length를 쓰는 것이 더 효과적이다.-->
+     <p>{{ article_like_users|length }}명이 좋아합니다.</p>
+  {% endwith %}
+  ```
+
+  
+
+- 팔로우 기능 구현하기
+
+  - follower 필드를 만들어야 하므로 User 모델을 커스텀해서 사용해야 한다.
+  - accounts/models.py
+
+  ```python
+  from django.db import models
+  from django.conf import settings
+  from django.contrib.auth.models import AbstractUser
+  
+  class User(AbstractUser):
+      followers = models.ManyToManyField(
+              settings.AUTH_USER_MODEL,
+              related_name='followings'
+          )
+  ```
+
+  - accounts/urls.py
+
+  ```python
+  from django.urls import path
+  from . import views
+  
+  app_name = 'accounts'
+  urlpatterns = [
+      path('<int:pk>/follow/', views.follow, name='follow'),
+  ]
+  ```
+
+  - views.py
+
+  ```python
+  def follow(request, pk):
+      User = get_user_model()
+      # 아래의 user는 팔로우 당하는 사람, 팔로우를 요청한 사람은 request.user
+      user = get_object_or_404(User, pk=pk)
+      if user != request.user:
+          # 팔로우가 되어 있다면,
+          if user.followers.filter(pk=request.user.pk).exists():
+              # 삭제
+              user.followers.remove(request.user)
+          else:
+              # 추가
+              user.followers.add(request.user)
+      return redirect('accounts:detail', user.pk)
+  ```
+
+  - detail.html(유저 프로필)
+
+  ```python
+  {% with user_followers=user.followers.all %}
+      {% if request.user == user %}
+          <a href="{% url 'accounts:update' %}">회원 수정</a>
+          <form action="{% url 'accounts:delete' %}" method="POST">
+              {% csrf_token %}
+              <button class="btn btn-secondary">회원 탈퇴</button>
+          </form>
+      {% else %}
+          <hr>
+              {% if request.user in user_followers %}
+                  <a href="{% url 'accounts:follow' user.pk %}">팔로우 취소</a>
+              {% else %}
+                  <a href="{% url 'accounts:follow' user.pk %}">팔로우</a>
+              {% endif %}
+      {% endif %}
+      <p> {{ user_followers|length }}명이 팔로우</p>
+      <p> {{ user.followings.count }}명을 팔로우</p>
+  {% endwith %}
+  ```
+
+
+
+- 위 처럼 동일한 Model(위의 경우 User모델)간에 M:N 관계를 설정할 경우 테이블에는 `from_소문자 모델명_id`, `to_소문자 모델명_id`로 필드명이 설정된다.
 
 
 

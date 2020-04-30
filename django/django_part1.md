@@ -1413,20 +1413,21 @@ admin.site.register(Article)
     </body>
     </html>
     ```
-```
     
     ```html
     <!--other.html-->
-    
+        
     <!--base.html에 적용한 css파일은 {% extends base.html %} 만으로도 적용 된다. 즉, 굳이 {% load static %}, {% block css %}, {% endblock %}을 쓸 필요가 없다.-->
-    
+        
     <!--그러나 other.html 파일에 base.html에 적용되지 않은 static파일을 쓰고 싶다면 아래와 같이 block사이에 작성하면 된다.-->
     {% load static %}<!--href="{% static 경로/파일' %}"을 쓰기 위해 static을 불러 오고-->
-    
+        
     {% block css %}
     <link rel="stylesheet" href="{% static 경로/파일' %}">
     {% endblock %}
-```
+    ```
+    
+    
 
 
 
