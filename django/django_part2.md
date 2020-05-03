@@ -757,26 +757,27 @@
   -- 완료 후 반드시 ;를 입력해야 한다.
 
   
---혹은 sql파일에 작성하고 이를 불러오고 싶으면 아래와 같이 하면 된다.
+  
+  --혹은 sql파일에 작성하고 이를 불러오고 싶으면 아래와 같이 하면 된다.
   --classmate.sql 파일
   CREATE TABLE 'classmates'(
       'id' INTEGER PRIMARY KEY AUTOINCREMENT,
-    'name' TEXT NOT NULL,
+      'name' TEXT NOT NULL,
       'age' INTEGER,
-    'address' TEXT
+      'address' TEXT
   );
-  
+    
   --sql 입력창에 아래와 같이 입력
   sqlite>.read classmate.sql
   ```
   
-    - 테이블 이름 변경
+  - 테이블 이름 변경
   
   ```sql
   ALTER TABLE 테이블명 RENAME TO 새 테이블명;
   ```
   
-    - 테이블 삭제
+  - 테이블 삭제
   
   ```sql
   DROP TABLE 테이블명;
@@ -958,7 +959,16 @@
 
 # ORM
 
-ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 생성된다.
+ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 생성된다. 따라서 sql로 데이터를 조작하고자 할 때는  아래와 같이 접근해야 한다.
+
+```sql
+select * from 앱이름_모델명(소문자)
+
+--e.g.
+select * from people_people
+```
+
+
 
 - orm과 sql
   - orm에서는 model을 정의하고 migrate를 해줘야 했다.
@@ -972,25 +982,35 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
 
   - 조회
 
-    - get: 오직 하나의 쿼리 결과만을 반환, 하나가 아니면 모두 에러
+    - get: 오직 하나의 쿼리 결과만을 반환, 하나가 아니면 모두 에러(즉, 2개 이상이거나 0개이면 에러)
 
       -ex. 특정 게시글로 연결해 줄 경우 하나의 게시글 번호를 요청한 것이 아니면 모두 에러를 띄운다.
 
       -오브젝트를 바로 반환
 
       ```python
-  Article.objects.get(title="제목1")
+      Article.objects.get(title="제목1")
       
       out
       <Article:Article object (4)>
-      ```
-    
+          
+      User.objects.get(last_name='최')
+      # MultipleObjectsReturned: get() returned more than one User -- it returned 3!
+      #1개 이상의 User(3개)를 리턴하여 에러가 발생 
       
-    
-    - filter: 쿼리셋(비어 있더라도)을 반환
-    
+      User.objects.get(id=1000)
+      # DoesNotExist: User matching query does not exist.
+      # 리턴할 것이 없어 애러
+      ```
+
+      
+
+    - filter: 쿼리셋(비어 있더라도)을 반환(.values도 QuerySet을 반환한다.)
+
+      ex.검색을 할 때에는 그에 해당하는 모든 게시글을 보여주고, 검색 결과가 없어도(비어도) 보여준다.
+
       ```python
-    Article.objects.filter(title="제목1")
+      Article.objects.filter(title="제목1")
       
       out
       <QuerySet [<Article:Article object (4)>]>
@@ -998,221 +1018,302 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
       #get과 달리 object를 바로 반환하지 않으므로 object를 반환하기 위해서는 뒤에 인덱스를 붙여야 한다.
       Article.objects.filter(title="제목1")[0]
       #이렇게 하면 해당하는 오브젝트 중 첫 번째 오브젝트를 반환한다.
+      
+      #e.g.
+      type(People.objects.filter(age=47).values('first_name')) django.db.models.query.QuerySet #QuerySet을 반환
+      
+      type(People.objects.filter(age=47).values('first_name')[0])                     dict #dict타입을 반환
       ```
+
       
-      
-      
-      ex.검색을 할 때에는 그에 해당하는 모든 게시글을 보여주고, 검색 결과가 없어도(비어도) 보여준다.
-      
-      - and: 메서드 체이닝, 인자로 넘겨주는 방식
-      - or : Q로 묶어서 처리한다.
-      - 대소관계
-      - 패턴
+
+- Django shell: python interactive interpreter를 django 프로젝트에 맞게 쓸 수 있는 기능
+  - 이를 사용하기 위해서는 추가적인 패키지 설치가 필요
+
+  ```bash
+  $ pip install django-extensions ipython
+  ```
+
+  - `django-extensions` 는 django 개발에 있어서 유용한 기능들을 기본적으로 제공한다.
+
+  - `ipython` 은 인터렉티브 쉘을 조금 더 편하게 활용하기 위해서 설치.
+
+  - 설치 후 `settings.py` 에 다음의 내용을 추가한다. (콤마 유의)
+
+    ```python
+    # django_crud/settings.py
+    INSTALLED_APPS = [
+        ...
+        'django_extensions',
+        'articles',
+    ]
+    ```
+
+  - 그리고 이제부터는 아래의 명령어를 사용한다.
+
+    ```bash
+    $ python manage.py shell_plus
+    
+    
+    #아래와 같이 입력하면 sql 형식으로도 보여준다.
+    $ python manage.py shell_plus --print-sql
+    ```
+
+  - 쉘 종료 명령어는 `ctrl+d` 이다.
+
+  - 쉘 창에서 아래와 같은 명령어를 입력하면 SQL command로 어떻게 표현되는지 보여준다.
+
+    ```python
+    print(쿼리셋.query)
+    #쿼리셋일 경우에만 가능하다.
+    
+    #e.g.
+    people=People.objects.all()
+    type(users)
+    django.db.models.query.QuerySet  #결과가 queryset이므로
+    
+    print(people.query)  #사용 가능
+    
+    SELECT "people_people"."id", "people_people"."first_name", "people_people"."last_name", "people_people"."age", "people_people"."country", "people_people"."phone", "people_people"."balance" FROM "people_people"
+    ```
+
+    
 
 
 
 - ORM 문법
 
+  - `sqlmigrate` 
+    - migration을 위한 SQL statements를 보여준다. 어떤 기능을 실행하는 명령어는 아니고, 내가 django에서 class를 통해 생성하거나 변경한 table이 SQL command로 어떻게 표현되는지 보여주는 기능
+
+  ```bash
+  $ python manage.py sqlmigrate 앱이름 migrations파일 번호
+  
+  #e.g.
+  $ python manage.py sqlmigrate people 0001
+  ```
+
   - 테이블 생성: sql의 테이블 생성에 대응하는 orm의 테이블 생성은 model을 정의하고 migrate하는 것
 
-  - 모든 레코드 조회(R)
+  ```python
+  #models.py
+  class People(models.Model):
+      first_name = models.CharField(max_length=10)
+      last_name = models.CharField(max_length=10)
+      age = models.IntegerField()
+      country = models.CharField(max_length=10)
+      phone = models.CharField(max_length=15)
+      balance = models.IntegerField()
+  ```
 
-    > sql의 `select * from`
-
-    ```shell
-    모델명.objects.all()
-    ```
-
-    
-
-  - 특정 레코드 조회(R)
-
-    > sql의 `WHERE`
-
-    ```shell
-    User.objects.get(id=100)  #get은 오직 하나의 쿼리 결과만을 반환
-    ```
-
-    
-
-  - 레코드 생성(C) - 기존의 C방식과 동일하게 하면 된다.
-
-    > sql의 `INSERT INTO`
-
-    ```shell
-    #이 외의 2가지 방법을 사용해도 만들 수 있다(ref. CRUD 파트).
-    모델명.objects.create(column=value)
-    ```
-
-    
-
-  - 레코드 수정(U) 
-
-    > sql의 `SET`
-
-    ```python
-    모델명오브젝트=.objects.get(조건)
-    오브젝트.column = 수정할 내용
-    오브젝트.save()
-    
-    #e.g.
-    user = User.objects.get(id=100)
-    user.last_name = '성'
-    user.save()
-    ```
-
-    
-
-  - 레코드 삭제(D)
-
-    > sql의 `DELETE`
-
-    ```
-    모델명.objects.get(조건).delete()
-    ```
-
-    
-
-  - 조건에 따른 쿼리문
-
-    - 개수 세기
-
-      >sql의 `COUNT`
-
-    ```python
-    모델명.objects.count()
-    
-    #e.g.
-    User.objects.count()
-    ```
-
-    - 조건에 따른 값
-
-      > sql의 `WHERE`
-
-    ```python
-    모델명.objects.filter(조건).values(가져올 값)
-    
-    #e.g.
-    User.objects.filter(age=30).values('first_name')
-    
-    
-    #조건이 2개 이상일 경우
-    
-    #조건이 AND일 경우
-    #방법1
-    모델명.objects.filter(조건1, 조건2).values(가져올 값)
-    User.objects.filter(age=30, last_name='김').count()
-    
-    #방법2
-    모델명.objects.filter(조건1).filter(조건2).values(가져올 값)
-    User.objects.filter(age=30).filter(last_name='김').count()
-    
-    #방법2와 같이 filter에 다시 filter를 쓰는 것이 가능한 이유
-    #filter의 결과도 queryset이기에 다시 filter 적용이 가능하다(기린의 번식의 결과 기린이 나오고 그 기린이 자라서 다시 번식이 가능한 것과 비슷하다).
-    
-    
-    #조건이 OR일 경우
-    from django.db.models import Q  #Q를 import해야 한다.
-    #Q로 묶고 |로 구분한다.
-    모델명.objects.filter(Q(조건1)|Q(조건2))
-    
-    #e.g.
-    User.objects.filter(Q(balance__gte=2000)|Q(age__lte=40)).count()
-    ```
+  ```bash
+  $ python manage.py makemigrations
+  $ python manage.py migrate
+  ```
 
   
 
-  - lookup
+- 모든 레코드 조회(R)
 
-    ```python
-    모델명.objects.filter(column__lookup)
-    ```
+  > sql의 `select * from`
 
-    - 대소관계
+  ```shell
+  모델명.objects.all()
+  ```
 
-    ```python
-    '''
-    __gte:>=
-    __gt:>
-    __lte:<=
-    __lt:<
-    '''
-    
-    #e.g.
-    User.objects.filter(age__gte=30)
-    ```
+  
 
-    - 문자열 포함 관련
+- 특정 레코드 조회(R)
 
-    ```python
-    #i라는 prefix는 case-insensitive(대소문자 구분X)의 의미를 지닌다.
-    """
-    iexact: 정확하게 일치하는가
-    contains, icontains: 특정 문자열을 포함하는가
-    startswith, istartswith: 특정 문자열로 시작하는가
-    endswith, iendswith: 특정 문자열로 끝나는가
-    """
-    
-    #e.g.
-    User.objects.filter(phone__startswith='02-') #02로 시작하는 데이터를 조회
-    ```
+  > sql의 `WHERE`
 
-    
+  ```shell
+  모델명.objects.get(id=100)  #get은 오직 하나의 쿼리 결과만을 반환
+  ```
 
-  - 기타
+  
 
-    - 정렬
+- 레코드 생성(C) - 기존의 C방식과 동일하게 하면 된다.
 
-    ```python
-    #내림차순
-    모델명.objects.order_by('-column')
-    
-    #오름차순
-    모델명.objects.order_by('column')
-    
-    #제한을 둘 경우(sql의 LIMIT)
-    모델명.objects.order_by('column')[:숫자]
-    
-    #임의의 순서를 찾을 경우(sql의 OFFSET)
-    모델명.objects.order_by('column')[숫자] #0부터 시작
-    ```
+  > sql의 `INSERT INTO`
 
-    - 중복 없이 조회하고자 할 경우
+  ```shell
+  #이 외의 2가지 방법을 사용해도 만들 수 있다(ref. CRUD 파트).
+  모델명.objects.create(column=value)
+  ```
 
-    ```python
-    #distinct()사용
-    #e.g.
-    #phone이 ‘011’로 시작하는 사람들의 나이를 중복 없이 조회
-    User.objects.filter(phone__startswith='011').values('age').distinct()
-    ```
+  
 
-    
+- 레코드 수정(U) 
 
-  - 표현식
+  > sql의 `SET`
 
-    - 표현식 사용을 위해서는 `aggregate`를 알아야 한다.
+  ```python
+  오브젝트=모델명.objects.get(조건)
+  오브젝트.column = 수정할 내용
+  오브젝트.save()
+  
+  #e.g.
+  user = User.objects.get(id=100)
+  user.last_name = '성'
+  user.save()
+  ```
 
-    ```python
-    from django.db.models import Sum,Avg,Max,Min
-    
-    모델명.objects.aggregate(표현식)
-    
-    #e.g.
-    User.objects.aggregate(Avg('age'))
-    ```
+  
 
-    
+- 레코드 삭제(D)
 
-  - group by
+  > sql의 `DELETE`
 
-    - annotate는 개별 item에 추가 필드를 구성한다.
+  ```
+  모델명.objects.get(조건).delete()
+  ```
 
-    ```python
-    모델명.objects.values('column').annotate(표시할 내용)
-    ```
+  
 
-    
+- 조건에 따른 쿼리문
+
+  - 개수 세기
+
+    >sql의 `COUNT`
+
+  ```python
+  모델명.objects.count()  #.all은 들어가지 않아도 된다(들어가도 된다).
+  
+  #e.g.
+  User.objects.count()
+  ```
+
+  - 조건에 따른 값
+
+    > sql의 `WHERE`
+
+  ```python
+  모델명.objects.filter(조건).values(가져올 값)
+  
+  #e.g.
+  User.objects.filter(age=30).values('first_name')
+  
+  
+  #조건이 2개 이상일 경우
+  
+  #조건이 AND일 경우
+  #방법1. 
+  모델명.objects.filter(조건1, 조건2).values(가져올 값)
+  #e.g.
+  User.objects.filter(age=30, last_name='김').count()
+  
+  #방법2.메서드 체이닝
+  모델명.objects.filter(조건1).filter(조건2).values(가져올 값)
+  #e.g.
+  User.objects.filter(age=30).filter(last_name='김').count()
+  
+  #방법2와 같이 filter에 다시 filter를 쓰는 것이 가능한 이유
+  #filter는 queryset에 사용할 수 있다.
+  #filter의 결과도 queryset이기에 다시 filter 적용이 가능하다(기린의 번식의 결과 기린이 나오고 그 기린이 자라서 다시 번식이 가능한 것과 비슷하다).
+  
+  
+  #조건이 OR일 경우
+  from django.db.models import Q  #Q를 import해야 한다.
+  #Q로 묶고 |로 구분한다.
+  모델명.objects.filter(Q(조건1)|Q(조건2))
+  
+  #e.g.
+  User.objects.filter(Q(balance__gte=2000)|Q(age__lte=40)).count()
+  ```
+
+
+
+- lookup
+
+  ```python
+  모델명.objects.filter(column__lookup)
+  ```
+
+  - 대소관계
+
+  ```python
+  '''
+  __gte:>=
+  __gt:>
+  __lte:<=
+  __lt:<
+  '''
+  
+  #e.g.
+  User.objects.filter(age__gte=30)
+  ```
+
+  - 문자열 포함 관련
+
+  ```python
+  """
+  i라는 prefix는 case-insensitive(대소문자 구분X)의 의미를 지닌다.
+  iexact: 정확하게 일치하는가
+  contains, icontains: 특정 문자열을 포함하는가
+  startswith, istartswith: 특정 문자열로 시작하는가
+  endswith, iendswith: 특정 문자열로 끝나는가
+  """
+  
+  #e.g.
+  User.objects.filter(phone__startswith='02-') #02로 시작하는 데이터를 조회
+  ```
+
+  
+
+- 기타
+
+  - 정렬
+
+  ```python
+  #내림차순
+  모델명.objects.order_by('-column')
+  
+  #오름차순
+  모델명.objects.order_by('column')
+  
+  #제한을 둘 경우(sql의 LIMIT)
+  모델명.objects.order_by('column')[:숫자]
+  
+  #임의의 순서를 찾을 경우(sql의 OFFSET)
+  모델명.objects.order_by('column')[숫자] #0부터 시작
+  ```
+
+  - 중복 없이 조회하고자 할 경우
+
+  ```python
+  #distinct()사용
+  #e.g.
+  #phone이 ‘011’로 시작하는 사람들의 나이를 중복 없이 조회
+  User.objects.filter(phone__startswith='011').values('age').distinct()
+  ```
+
+  
+
+- 표현식
+
+  - 표현식 사용을 위해서는 `aggregate`를 알아야 한다.
+
+  ```python
+  from django.db.models import Sum,Avg,Max,Min
+  
+  모델명.objects.aggregate(표현식('column'))
+  
+  #e.g.
+  User.objects.aggregate(Avg('age'))
+  ```
+
+  
+
+- group by
+
+  - annotate는 개별 item에 추가 필드를 구성한다.
+
+  ```python
+  모델명.objects.values('column').annotate(표시할 내용)
+  ```
+
+  
 
 
 
@@ -2315,6 +2416,155 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
 
 
 - 위 처럼 동일한 Model(위의 경우 User모델)간에 M:N 관계를 설정할 경우 테이블에는 `from_소문자 모델명_id`, `to_소문자 모델명_id`로 필드명이 설정된다.
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 기타
+
+## 투표 구현 방법
+
+- models.py
+
+```python
+class Poll(models.Model):
+    title = models.CharField(max_length=100)
+    red = models.CharField(max_length=100)
+    blue = models.CharField(max_length=100)
+# red와 blue라는 2개의 선택지가 될 charfield를 넘겨주고
+
+class Comment(models.Model):
+    text = models.CharField(max_length=100)
+    poll = models.ForeignKey(Poll,on_delete=models.CASCADE)
+    pick = models.BooleanField()
+```
+
+- forms.py
+
+```python
+from django import forms
+from .models import Poll, Comment
+
+class PollForm(forms.ModelForm):
+    class Meta:
+        model=Poll
+        fields="__all__"
+
+class CommentForm(forms.ModelForm):
+    CHOICES = (        
+        (False,'Blue'),
+        (True,'Red'),
+    )
+    pick = forms.ChoiceField(choices=CHOICES)
+	#choicefield를 설정
+    class Meta:
+        model=Comment
+        fields=['text','pick']
+```
+
+- views.py
+
+```python
+#create 페이지와 index 페이지는 생략
+def detail(request,pk):
+    poll = Poll.objects.get(pk=pk)
+    comments = poll.comment_set.all()
+    comment_form = CommentForm()
+    cnt=comments.count()
+    if cnt:  #if 로 분기를 한 이유는 cnt가 0일 경우 0으로 나눠 zero divide에러가 발생하기 때문
+        blue=comments.filter(pick=False).count()  #blue의 개수와
+        red=cnt-blue    #red의 개수
+        rred=100-int(blue/cnt*100)  #red의 비율과
+        rblue=100-rred  #blue의 비율을 모두 넘겨준다.
+    else:
+        rred=0
+        rblue=0
+    context = {
+        'poll':poll,
+        'comments':comments,
+        'comment_form':comment_form,
+        'rred':rred,
+        'rblue':rblue,
+        'blue':blue,
+        'red':red,
+    }
+    return render(request,"detail.html",context)
+
+def comment_create(request,poll_pk):
+    comment_form = CommentForm(request.POST)
+    poll = Poll.objects.get(pk=poll_pk)
+    if comment_form.is_valid():
+        comment=comment_form.save(commit=False)
+        comment.poll=poll
+        comment.save()
+    return redirect("poll:detail", poll_pk)
+```
+
+- detail.html
+
+```html
+<!DOCTYPE html>
+{% load bootstrap4 %}
+<!--bootstrap에서 progress-bar를 가져와 progress-bar로 표시해준다.-->
+<html lang="kr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <title>Document</title>
+</head>
+<body>
+    <h1>{{poll.title}}</h1>
+    <p>{{poll.red}} VS {{poll.blue}}</p>
+    <a href="{% url 'poll:index' %}">뒤로가기</a>
+    <div class="progress">
+      <div class="progress-bar progress-bar-striped" role="progressbar" style="width: {{rblue}}%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"><div>{{poll.blue}}{{rblue}}%({{blue}}명)</div></div>
+      <div class="progress-bar progress-bar-striped bg-danger" role="progressbar" style="width: {{rred}}%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"><div>{{poll.red}}{{rred}}%({{red}}명)</div></div>
+    </div>
+    <h3>댓글</h3>
+    <form action="{% url 'poll:comment_create' poll.pk %}" method=POST>
+        {% csrf_token %}
+        {% bootstrap_form comment_form %}
+        <button>댓글쓰기</button>
+    </form>
+
+    {% for comment in comments %}
+        <p>{{comment.text}}</p>
+        <p>{{comment.pick}}</p>
+        <hr>
+    {% endfor %}
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+</body>
+</html>
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

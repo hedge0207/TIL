@@ -979,43 +979,8 @@ QueryDict{'content':1234,'title':5678}
 
     - 게시판의 글을 생각해보면 보다 쉽게 이해할 수 있다.
 
-  - Django shell: python interactive interpreter를 django 프로젝트에 맞게 쓸 수 있는 기능
-
-    - 이를 사용하기 위해서는 추가적인 패키지 설치가 필요
-
-      ```bash
-      $ pip install django-extensions ipython
-      ```
-
-      - `django-extensions` 는 django 개발에 있어서 유용한 기능들을 기본적으로 제공한다.
-
-      - `ipython` 은 인터렉티브 쉘을 조금 더 편하게 활용하기 위해서 설치.
-
-      - 설치 후 `settings.py` 에 다음의 내용을 추가한다. (콤마 유의)
-
-        ```python
-        # django_crud/settings.py
-        INSTALLED_APPS = [
-            ...
-            'django_extensions',
-            'articles',
-        ]
-        ```
-
-      - 그리고 이제부터는 아래의 명령어를 사용한다.
-
-        ```bash
-        $ python manage.py shell_plus
-        
-    
-        #아래와 같이 입력하면 sql 형식으로도 보여준다.
-      $ python manage.py shell_plus --print-sql
-        ```
-    
-      - 쉘 종료 명령어는 `ctrl+d` 이다.
-  
   - 생성 - ex. 게시글 작성
-  
+
     ```python
     #방법1
     article = Article()      #Article()이라는 클래스로 article이라는 객체를 만들고
@@ -1031,9 +996,9 @@ QueryDict{'content':1234,'title':5678}
     #방법3
     Article.objects.create(title='제목',content='내용')
     ```
+
   
-  
-  
+
   - 조회- ex. 게시글 읽기
     
     - 전체 데이터 조회
@@ -1044,7 +1009,7 @@ QueryDict{'content':1234,'title':5678}
     
     #아래의 코드는 지금까지 생성된 Article의 모든 객체를 QuerySet 형태로 article에 담는 것이다.
     article=Article.object.all()
-  
+
     #Article.objects.order_by('-id').all()와 같이 쓰면 역순으로 조회한다.
     ```
     
@@ -1065,15 +1030,15 @@ QueryDict{'content':1234,'title':5678}
     ```
     
   - 수정- ex. 게시글 수정
-  
+
     ```python
     a1 = Article.objects.get(id=1)  #수정할 대상을 정하고
         a1.title = '제목 수정'       #수정후
         a1.save()                  #저장
     ```
-  
+
   - 삭제- ex. 게시글 삭제
-  
+
       ```python
       a1 = Article.objects.get(id=1)
       a1.delete()
