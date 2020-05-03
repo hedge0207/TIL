@@ -517,7 +517,7 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
       ```html
       <!--{ date자료형|date:"표현식" } 형태-->
       today에 datetime객체가 들어있다고 가정
-      {today|date:Y년 m월 d일 (D) A h:i}
+      {{today|date:'Y년 m월 d일 (D) A h:i'}}
       
       out
       2020년 03월 06일 (Sun) PM 04:01

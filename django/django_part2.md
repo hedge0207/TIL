@@ -110,10 +110,12 @@
 
     - django에서는 db.sqlite3 내부의 django_session에서 세션을 관리한다.
 
+    - 사용자가 로그인 할 경우 django_session 테이블에 기록된다.
+
       
 
   - 캐시는 특정 사이트에 대한 정보를 브라우저에 저장함으로써 다음에 해당 사이트에 접속했을 때 사이트가 더 빨리 로드되게 해준다. 즉 요청을 보냈을 때  매번 모든 정보를 받아오는 것이 아니라 요청한 정보에 대해서만 정보를 받아온다.
-
+  
   - 캐시와 쿠키에 대한 정보는 웹브라우저의 개발자도구에서 application 탭에서 볼 수 있다.
 
 
@@ -643,7 +645,7 @@
   - 테이블의 행은 각 객체/엔터티와 관련된 값의 모음
 - RDBMS와 NOSQL
   - RDBMS: RDBMS: 관계형 데이터 베이스, 데이터를 테이블 기반으로 처리한다. 스키마에 따라 데이터를 저장하여야 하기 때문에 명확한 데이터 구조를 보장하며 각 데이터에 맞게 테이블을 나누어 데이터 중복을 피해 데이터 공간을 절약 할 수 있다는 장점이 존재한다.
-  - NOSQL: RDBMS와는 달리 데이터 간의 관계를 정의하지 않는다. 스키마가 존재하지 않는다. 따라서 자유롭게 데이터를 추가가 가능하다는 장점이 존재한다.
+  - NOSQL: RDBMS와는 달리 데이터 간의 관계를 정의하지 않는다. 스키마가 존재하지 않는다. 따라서 자유롭게 데이터 추가가 가능하다는 장점이 존재한다.
 
 
 
@@ -677,7 +679,7 @@
 
 - 데이터 무결성: 데이터의 정확성과 일관성을 유지하는 것
   - 개체 무결성(Entitiy Integrity): 모든 테이블이  고유한 기본키(PK)를 가져야 하며, 빈 값은 허용되지 않음
-  - 참조 무결성(Referntial Integrity): 모든 외래키 값은 참조 릴레이션의 기본키거나 NULL
+  - 참조 무결성(Referntial Integrity): 모든 외래키 값은 참조 관계의 기본키거나 NULL
   - 도메인 무결성(Domain Integrity): 정의된 도메인에서 모든 열(속성)이 선언되도록 규정
 
 
@@ -746,24 +748,38 @@
   
   --예시
   sqlite>CREATE TABLE classmates(
-      id는 숫자 타입이며, primary키 역할을 하고, 자동으로 1씩 증가한다.
+      --id는 숫자 타입이며, primary키 역할을 하고, 자동으로 1씩 증가한다.
       id INTEGER PPIMARY KEY AUTOINCREMENT, 
-      name TEXT NOT NULL,  NOT NULL은 비워 둘 수 없다는 의미이다.
+      name TEXT NOT NULL,  --NOT NULL은 비워 둘 수 없다는 의미이다.
       age INTEGER,
       address TEXT
-  )
+  );
+  -- 완료 후 반드시 ;를 입력해야 한다.
+
+  
+--혹은 sql파일에 작성하고 이를 불러오고 싶으면 아래와 같이 하면 된다.
+  --classmate.sql 파일
+  CREATE TABLE 'classmates'(
+      'id' INTEGER PRIMARY KEY AUTOINCREMENT,
+    'name' TEXT NOT NULL,
+      'age' INTEGER,
+    'address' TEXT
+  );
+  
+  --sql 입력창에 아래와 같이 입력
+  sqlite>.read classmate.sql
   ```
-
+  
     - 테이블 이름 변경
-
+  
   ```sql
   ALTER TABLE 테이블명 RENAME TO 새 테이블명;
   ```
-
+  
     - 테이블 삭제
-
+  
   ```sql
-  DROP TABLE table;
+  DROP TABLE 테이블명;
   ```
 
 
@@ -822,7 +838,7 @@
 
     ```sql
     --select문: 데이터를 읽어올 수 있으며 특정 테이블을 반환한다.
-    SELECT column FROM 테이블명;   column칸에 *을 입력하면 모든 column을 조회
+    SELECT column FROM 테이블명;   --column칸에 *을 입력하면 모든 column을 조회
     
     --distinct: 중복 없이 가져오기
     SELECT DISTINCT column FROM 테이블명;
@@ -876,7 +892,7 @@
     SELECT column FROM 테이블명 WHERE 조건1 and/or 조건2;
     ```
 
-    - like 활용: 특정 패턴을 보여준다.
+    - like 활용: 특정 패턴을 보여준다(부정은 not을 사용).
 
     ```sql
     SELECT column FROM 테이블명 WHERE cloumn LIKE '패턴';
@@ -886,7 +902,8 @@
     ```
 
     - like에서 사용되는 키워드(와일드카드)
-
+  - 따옴표로 묶어줘야 한다(e.g. '2\_%\_%').
+    
     | %:문자열이 있을 수도 있다.    | 2%      | %앞의 문자(이 경우 2)로 시작하는 값           |
     | ----------------------------- | ------- | --------------------------------------------- |
     |                               | %2      | %뒤의 문자로(이 경우2)로 끝나는 값            |
@@ -921,7 +938,7 @@
 - offset: 특정 테이블에서 원하는 개수만큼 가져오기2
 
   ```sql
-  --숫자2에서 1을 뺀 숫자에서부터(cf.인덱스) 숫자1만큼 가져온다.
+  --숫자2에서 1을 더한 숫자에서부터(cf.인덱스) 숫자1만큼 가져온다.
   SELECT column FROM 테이블명 LIMIT 숫자1 offset 숫자2;
   ```
 
@@ -985,7 +1002,7 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
       
       
       
-      -ex.검색을 할 때에는 그에 해당하는 모든 게시글을 보여주고, 검색 결과가 없어도(비어도) 보여준다.
+      ex.검색을 할 때에는 그에 해당하는 모든 게시글을 보여주고, 검색 결과가 없어도(비어도) 보여준다.
       
       - and: 메서드 체이닝, 인자로 넘겨주는 방식
       - or : Q로 묶어서 처리한다.
@@ -1235,6 +1252,10 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
 
 
 
+- 만일 1:N 관계를 가지는 두 모델을 설정할 때, N에 해당하는 모델을 설정하는 과정에서 1에 해당하는 모델에 관한 정보(id나 객체)를 포함하지 않으면 `IntergrityError`가 발생한다.
+
+
+
 - django에서의 활용
 
   ```python
@@ -1252,7 +1273,7 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
       #여기서 creater가 아닌 creater_id로 하는 것이 맞다고 생각할 수 있지만 필드가 ForeignKey 라면	   creater로 넘겨도 djnago에서 내부적인 처리를 통해 creater_id로 넘어가게 된다.
   ```
 
-  - on_delete는 Django에서 모델을 구현할 때 데이터베이스 상에서 참조무결성을 유지하기 위해서 ForeignKeyField가 바라보는 값이 삭제될 때 해당 요소를 처리하는 방법을 지정하는 것이다.
+  - on_delete는 Django에서 모델을 구현할 때 데이터베이스 상에서 참조무결성을 유지하기 위해서 ForeignKeyField가 바라보는 값이 삭제될 때 해당 요소를 처리하는 방법을 지정하는 것이다. 필수값이다.
     - CASCADE : ForeignKeyField를 포함하는 모델 인스턴스(row)도 같이 삭제한다.
     - PROTECT : 해당 요소가 같이 삭제되지 않도록 ProtectedError를 발생시킨다.    
     - SET_NULL : ForeignKeyField 값을 NULL로 바꾼다. null=True일 때만 사용할 수 있다.
@@ -1488,12 +1509,19 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
   
   
   
-- ERD: 데이터베이스 모델링에서 활용되는 다이어그램(추가 필요)
-  - 카디널리티: 데이터 사이의 논리적 관계
-    - 1:1 관계(직선)
-    - 1:N 관계(까마귀 발이  있는 쪽이 N)
+- ERD: 데이터베이스 모델링에서 활용되는 다이어그램
+  - 데이터 베이스 관계 차수(카디널리티): 데이터 사이의 논리적 관계
+    - 1:1 관계(수직선): 주민등록 번호와 사람
+    - 1:N 관계(까마귀 발이  있는 쪽이 N): 게시글(1)과 댓글(N), 댓글쪽에 까마귀발이 존재
   - 데이터베이스 관계선택사항/옵셔널리티
-    - 게시글 입장에서 댓글은 필수가 아니나, 댓글 입장에서는 게시글이 필수다.
+    
+    - 관계를 선언하는 과정에서 필수(Mandatory)적인지, 선택(optional)적인지 표현
+      - 모든 사람은 주민등록 번호를 가지고 주민등록번호가 없는 사람은 없으므로 각각 필수적
+      - 게시글 입장에서 댓글은 필수가 아니나, 댓글 입장에서는 게시글이 필수다.
+    
+    - 필수적이면 수직선으로 표현, 선택적이면 O로 표현 선택적인 쪽에 O를 붙인다.
+    
+  - 만일 수직선이 2개면 그 데이터는 1:N 혹은 1:1의 관계에서 1이면서 필수적인 데이터라고 할 수 있다.
 
 
 
@@ -2135,12 +2163,14 @@ ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 �
 
   ```html
   <!--user가 article에 좋아요를 표시한 users 중에 있으면-->
-  {% if request.user in article_like_users %}
+  {% if request.user in article.like_users.all %}
   <a href="{% url 'articles:like' article.pk %}">좋아요 취소</a>
   {% else %}
   <a href="{% url 'articles:like' article.pk %}">좋아요</a>
   {% endif %}
-  <p>{{ article_like_users|length }}명이 좋아합니다.</p>
+  <p>{{ article.like_users.all|length }}명이 좋아합니다.</p>
+  <!--혹은 아래와 같이 쓸 수도 있다.-->
+  <p>{{ article.like_users.count }}명이 좋아합니다.</p>
   ```
 
   
