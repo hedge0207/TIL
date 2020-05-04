@@ -80,7 +80,7 @@
   - MVC, MTV는 모두 소프트웨어 디자인 패턴이다.
 - MTV: Model, Template, View로 장고의 기본 흐름이다. 다른 곳에서는 보통 MVC를 쓴다.
   - Model: 데이터 관리, 데이터베이스 조작
-  - Template: 인터페이스(화면), 단순히 html파일을 의미하는 것이 아니라 html파일을 만드는 것을 의미
+  - Template: 사용자와 웹 브라우저사이의 인터페이스(화면) 구성, 단순히 html파일을 의미하는 것이 아니라 html파일을 만드는 것을 의미
   - View: 중간 관리(상호 동작)
 - MVC: Model, View, Controller 순서대로 MTV와 하나씩 대응
 

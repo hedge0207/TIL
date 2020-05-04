@@ -1,4 +1,4 @@
-# 사용자 인증 관리
+
 
 - django에서 사용자 정보는 다른 정보와는 다르게 특별한 처리를 해줘야 한다.
 
@@ -712,6 +712,10 @@
 
 
 
+- SQLite에서 .tables, .headers on과 같은 dot( . )로 시작하는 명령어는 SQL문이 아니다. SQL문이 아닌, SQLite에서만 사용 가능한 명령어다.
+
+
+
 - 테이블 생성, 삭제
 
   - 실행
@@ -1083,6 +1087,13 @@ select * from people_people
 
 - ORM 문법
 
+  - `showmigrations`
+  - 마이그레이션 DB 반영 여부 확인
+
+  ```bash
+  $python manage.py showmigrations
+  ```
+
   - `sqlmigrate` 
     - migration을 위한 SQL statements를 보여준다. 어떤 기능을 실행하는 명령어는 아니고, 내가 django에서 class를 통해 생성하거나 변경한 table이 SQL command로 어떻게 표현되는지 보여주는 기능
 
@@ -1347,7 +1358,7 @@ select * from people_people
   | 1    | name1    |      | title1  | content1 | 1           |
     | 2    | name2    |      | title2  | content2 | 2           |
 
-  - 유저의 PK값을 게시글 db에 저장한다. 그리고 원래 db가 아닌 다른 db에서 사용되는 pk값을 fk값이라고 부른다(유저db의 pk값을 게시글db에서 쓴다면 같은 값을 유저 db에서는 pk로, 게시글 db에서는 fk로 부른다).
+  - 유저의 PK값을 게시글 테이블에 저장한다. 그리고 원래 테이블이 아닌 다른 테이블에서 사용되는 pk값을 fk값이라고 부른다(유저테이블의 pk값을 게시글 테이블에서 쓴다면 같은 값을 유저 테이블에서는 pk로, 게시글 테이블에서는 fk로 부른다).
   
   - 이 경우 한 명의 유저는 여러 개의 게시글을 작성할 수 있으므로 유저와 게시글 사이에 1:N의 관계가 성립한다고 볼 수 있다.
 
@@ -1369,8 +1380,8 @@ select * from people_people
       title = models.CharField(max_length=10)
       content = models.TextField()
       creater = models.ForeignKey(Creater, on_delete=models.CASCADE)
-      #ForeignKey는 첫 인자로 참고할 모델(Creater)을 넘긴다.
-      #두 번째 인자로 on_delete를 넘긴다.
+      #ForeignKey는 첫 인자로 참고할 모델(Creater)을 설정한다.
+      #두 번째 인자로 on_delete를 설정한다(필수값).
       #여기서 creater가 아닌 creater_id로 하는 것이 맞다고 생각할 수 있지만 필드가 ForeignKey 라면	   creater로 넘겨도 djnago에서 내부적인 처리를 통해 creater_id로 넘어가게 된다.
   ```
 
@@ -1409,7 +1420,7 @@ select * from people_people
   
   #1(파이리):N(posts)관계 활용
   #`post` 의 경우 `creater`로 1에 해당하는 오브젝트를 가져올 수 있다.
-  #`creater`의 경우 `post_set` 으로 N개(QuerySet)를 가져올 수 있다.
+  #`creater`의 경우 `post_set` 으로 N개(QuerySet)를 가져올 수 있다(역참조).
   
   #글의 작성자
   post1 = Post.objects.get(pk=2)
@@ -1827,14 +1838,16 @@ select * from people_people
     - settings.py
 
     ```python
-    #media 폴더 부터 BASE_DIR까지의 경로를 입력
+    #미디어 파일을 저장하기 위한 루트 경로, media 폴더 부터 BASE_DIR까지의 경로를 입력
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
     
+    #저장된 미디어 파일에 접근하기 위한 경로
     MEDIA_URL = '/media/'
     ```
-
-    - urls.py
-
+  ```
+    
+  - urls.py
+    
     ```python
     # 아래 2개를 import 하고
     from django.conf import settings
@@ -1843,11 +1856,11 @@ select * from people_people
     urlpatterns = [
         path('admin/', admin.site.urls),
         path('articles/', include('articles.urls')),
-    ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-    #+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)는 url이 넘어가서 html파일을 실행시킬 때 media파일도 함께 보내서(서빙) 실행시킨다는 것을 알려주는 것이다.
-    ```
+  ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     
+    #+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)는 url이 넘어가서 html파일을 실행시킬 때 media파일도 함께 보내서(서빙) 실행시킨다는 것을 알려주는 것이다.
+  ```
+
     
 
 - `media`폴더는 최초로 미디어 파일을 등록하면 자동으로 생성된다.
@@ -2421,6 +2434,18 @@ select * from people_people
 
 
 
+# QuerySet Evaluation
+
+- 쿼리셋은 lazy하다.
+  - 실제 실행되기 전까지는 작동하지 않는다.
+- 실제 실행되는 경우들
+  - 반복,step이 있는 경우의 슬라이싱(ex.[3:8]이 아닌 [3:8:2]같은 경우), print(repr), len, bool
+- 한 번 실행되면 메모리에 저장되어 매번 다시 불러오는 것이 아니라 캐시처럼 활용된다.
+
+
+
+
+
 
 
 
@@ -2555,6 +2580,160 @@ def comment_create(request,poll_pk):
 
 
 
+
+## Gravartar
+
+> https://ko.gravatar.com/
+
+- 프로필 사진 같이 사진을 넣을 수 있다.
+
+- Gravatar 'API'는 인증이 필요하지 않으며, HTTP GET 요청 하나로 모든 것을 처리할 수 있다.
+
+- 해시 생성
+
+  - 이메일 주소의 공백을 제거
+
+  ```python
+  #아래와 같이 email을 선언할 때 문자열에 공백이 있어선 안된다.
+  email = ' email@email.com '
+  
+  #strip() 함수를 사용하여 공백을 제거
+  email.strip()
+  ```
+
+  - 대문자를 소문자로 변환
+
+  ```python
+  #아래와 같이 email을 선언할 때 문자열에 대문자가 있어선 안된다.
+  email = 'Email@emAil.com'
+  
+  #lower()함수를 사용하여 모두 소문자로 변환
+  email.lower()
+  ```
+
+  - 혹은 둘을 동시에 실행
+
+  ```python
+  email = ' Email@emAil.com '
+  
+  #strip() 함수를 사용하여 공백을 제거한 후 lower()함수를 사용하여 모두 소문자로 변환
+  email.strip().lower()
+  ```
+
+  - md5 해시 알고리즘을 통해 그 해시값을 받아온다(굳이 공백을 제거하고 대문자를 소문자로 변환 한 이유가 이것이다. 공백이 하나라도 들어가거나 대문자가 하나라도 생기면 해시값이 완전히 바뀐다).
+
+  ```python
+  import hashlib
+  
+  email = ' email@email.com '
+  email.strip().lower()
+  
+  hashlib.md5(email.encode('utf-8')).hexdigest()
+  #위 코드의 결과로 해시값이 출력된다.
+  ```
+
+- 해시 등록(잘못된 방법)
+
+  - Gravartar에 접속해서 My Gravatars-View rating으로 해시를 생성하고 그 주소를 아래와 같이 html파일에 붙여넣을 경우 어떤 계정으로 접속해도 동일한 이미지가 뜨게 된다.
+
+    ```html
+    <img src='https://s.gravatar.com/avatar/a22607938d8b959b522e30b5ae09d169?s=80'>
+    ```
+
+  - 따라서 아래와 같이 유저별로 다른 사진이 뜨도록 views.py에서 해시값을 넘겨줘야 한다.
+
+  ```python
+  #views.py
+  import hashlib
+  
+  def index(request):
+      articles = Article.objects.all()
+      email_hash = hashlib.md5(request.user.email.encode('utf-				       	   8').strip().lower()).hexdigest()
+      context = {
+          'articles':articles,
+          'email_hash':email_hash,
+      }
+  ```
+
+  ```html
+  <img src='https://s.gravatar.com/avatar/{{ email_hash }}?s=80'>
+  <!--`s=`은 사이즈를 나타낸다.-->
+  ```
+  - 위와 같이 해시를 등록한다 하더라도 views.py에서 해시를 정의해준 페이지 이외의 페이지로 가면 넘겨준 페이지가 아닌 디폴트 페이지를 출력하게 된다.
+  - 결론적으로 위와 같은 방법을 사용하지 않는다.
+
+- 해시 등록(옳은 방법)
+
+  - `templatetags`라는 폴더를 앱 내부에 생성
+  - `templatetags`폴더 내부에 `__init__.py`파일과 `gravatar.py`라는 파일을 생성 
+  -  `gravatar.py`에 아래와 같은 코드 작성
+    - 이 방법은 template에서만 활용하고자 할 때 사용한다.
+
+  ```python
+  from django import template
+  from django.template.defaultfilters import stringfilter
+  
+  register = template.Library()
+  
+  @register.filter
+  @stringfilter
+  def profile_url(email):  #profile_url은 그냥 함수명이므로 원하는 대로 정의하면 된다.
+      #방법1.
+      return email.hashlib.md5(request.user.email.encode('utf-				       	   8').strip().lower()).hexdigest()
+  
+  	#방법2. 아래와 같이 f-string 활용
+  	return f"https://s.gravatar.com/avatar/{hashlib.md5(email.encode('utf-8').strip().lower()).hexdigest()}?s=80"
+  ```
+
+  - html파일에 적용
+
+  ```html
+  {% load gravatar %}
+  <!--방법1을 사용한 경우-->
+  <img src='https://s.gravatar.com/avatar/{{ request.user.email|profie_url }}?s=80'>
+  
+  <!--방법2를 사용한 경우(f-string 활용한 경우)-->
+  <img src="{{ request.user.email|profile_url }}">
+  ```
+
+  - 이제 다른 페이지에서도 계속 같은 이미지가 뜨게 된다.
+  - 혹은  `gravatar.py`에 작성하지 않고 아래와 같이 `models.py`의 model에서 `property`로 설정할 수 도 있다. `property`는 데이터베이스에 저장하고자 하는 속성 값이 아닌 추가적인 속성값을 저장한다.
+    - 이와 같은 방법은 ,view와 template에서 모두 활용하고자 할때 사용한다. 
+
+  ```python
+  import hashlib
+  from django.db import models
+  from django.conf import settings
+  from django.contrib.auth.models import AbstractUser
+  
+  # Create your models here.
+  class User(AbstractUser):
+      followers = models.ManyToManyField(
+              settings.AUTH_USER_MODEL,
+              related_name='followings'
+          )
+  
+      @property #모델 클래스 내부에 property 선언
+      def gravatar_url(self):
+          return f"https://s.gravatar.com/avatar/{hashlib.md5(self.email.encode('utf-8').strip().lower()).hexdigest()}?s=80"  #f-string활용
+  ```
+
+  - html
+
+  ```html
+  {% load gravatar %}
+  <img src='{{request.user.gravatar_url}}'>
+  ```
+
+- 디폴트 이미지 지정 방법
+
+  ```html
+  {% load gravatar %}
+  <img src='https://s.gravatar.com/avatar/{{ request.user.email|profie_url }}?s=80&d=data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/'>
+  <!--'d='뒤에 오는 이미지가 디폴트 값이 된다.-->
+  ```
+
+  
 
 
 
