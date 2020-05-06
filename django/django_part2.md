@@ -1,5 +1,3 @@
-
-
 - django에서 사용자 정보는 다른 정보와는 다르게 특별한 처리를 해줘야 한다.
 
 - django는 사용자 정보중 비빌번호를 저장 할 때 해시함수(input 값을 문자열로 바꿔주는 것)를 통해 암호화 해서 저장한다.
@@ -2434,17 +2432,298 @@ select * from people_people
 
 
 
-# QuerySet Evaluation
+# Query 최적화
+
+> https://docs.djangoproject.com/en/3.0/topics/db/optimization/ 참고
 
 - 쿼리셋은 lazy하다.
+  
   - 실제 실행되기 전까지는 작동하지 않는다.
-- 실제 실행되는 경우들
-  - 반복,step이 있는 경우의 슬라이싱(ex.[3:8]이 아닌 [3:8:2]같은 경우), print(repr), len, bool
-- 한 번 실행되면 메모리에 저장되어 매번 다시 불러오는 것이 아니라 캐시처럼 활용된다.
+  
+  ```python
+  # 아래 보면 q라는 쿼리셋을 만든 것 처럼 보이지만 실제 print되기 전까지 쿼리셋은 생성되지 않는다. 즉 sql문이 실제 실행되지 않는다.
+  >>> q = Entry.objects.filter(headline__startswith="What")
+  >>> q = q.filter(pub_date__lte=datetime.date.today())
+  >>> q = q.exclude(body_text__icontains="food")
+  
+  # cf.이는 다르게 표현하면 아래와 같다(체이닝)
+  q=Entry.objects.filter(headline__startswith="What").filter(pub_date__lte=datetime.date.today()).exclude(body_text__icontains="food")
+  
+  >>> print(q)  #이 때에야 쿼리셋이 생성된다(sql문이 실행된다.).
+  ```
+  
+- sql문이 실제 실행되는 경우들
+  
+  - 반복
+  - step이 있는 경우의 슬라이싱(ex.[3:8]이 아닌 [3:8:2]같은 경우)
+  - print(repr)
+  - len
+  - boolean 연산을 할 때
+  
+- sql문은 한 번 실행되면, 그 이후부터는 동일한 쿼리셋을 매번 다시 불러오는 것이 아니라, 쿼리셋을 메모리에 저장하여 캐시처럼 활용한다(ref. {% with%}).
 
 
 
+- 예시 데이터
 
+    ```python
+    # 테스트를 위한 fake data를 담은 파일
+    import random
+    from faker import Faker
+    fake = Faker()
+
+    for i in range(5):    #user는 5명
+    User.objects.create_user(
+    fake.user_name(),
+    fake.email(),
+    '1q2w3e4r!'
+    )
+
+    for i in range(1, 11):  #게시글 10개
+    Article.objects.create(
+    title=f'테스트 {i}글',
+    content=fake.text(),
+    user_id=random.choice(range(1, 6))
+    )
+
+    for j in range(1, 11):   #댓글은 게시글 1개당 10개(총 100개)
+    Comment.objects.create(
+    content=fake.sentence(),
+    article_id=i,
+    user_id=random.choice(range(1, 6))
+    )
+    ```
+
+
+
+- 각종 최적화
+
+   - views파일
+
+     ```python
+     #기존 함수
+     def index(request):
+         articles = Article.objects.order_by('-pk')
+         context = {
+             'articles': articles
+         }
+         return render(request, 'articles/index.html', context)
+     
+     
+     #변경 함수
+     #Count와 Prefetch를 import
+     from django.db.models import Count, Prefetch
+     
+     def index(request):
+         articles = Article.objects.order_by('-pk')
+         
+         
+         # 1) 댓글 수
+         # articles = Article.objects.annotate(comment_set_count=Count('comment')).order_by('-pk')
+         
+         '''
+         annotate를 활용,
+         위의 comment_set_count는 변수명이다. 아무렇게나 붙여도 된다.
+         '''
+         
+         
+         # 2) 게시글 작성자 이름 출력
+         # articles = Article.objects.select_related('user').order_by('-pk')
+         
+         '''
+         1(user):N(article)의 관계를 가지고 있는데 N입장에서 1에 대한 데이터를 같이 가지고 올 때 	select_related를 활용
+         
+         select_related는
+         1:1, 1:N 관계에서 참조관계(N이 1을 찾을 때)일 때 사용, SQL JOIN을 통해 데이터를 가져온다.
+         '''
+         
+         
+         # 3) 댓글 목록
+         # articles = Article.objects.prefetch_related('comment_set').order_by('-pk')
+         
+         '''
+         1(article):N(comment)의 관계를 가지고 있는데 1입장에서 N에 대한 데이터를 가지고 올 때 	prefetch_related를 활용
+        
+         prefetch_related는
+         M:N, 1:N관계에서 역참조관계(1이 N을 찾을 때)일 때 사용,  python을 통한 Join으로 데이터를 	  가져온다.
+         '''
+         
+         
+         # 4) 댓글 목록과 댓글 작성자 동시 출력
+         articles = Article.objects.prefetch_related(
+             	Prefetch(
+             	    'comment_set',
+         		    queryset=Comment.objects.select_related('user')
+     		    )
+         	).order_by('-pk')
+         context = {
+             'articles': articles
+         }
+         return render(request, 'articles/index.html', context)
+     ```
+
+  - html파일
+
+    ```html
+    <!--index.html-->
+    
+    <!--1)댓글 수 출력-->
+    <!--기존함수 활용한 기존 html파일-->
+    {% extends 'base.html' %}
+    {% block body %}
+        <h2 class="text-center">게시판 목록</h2>
+        <a href="{% url 'articles:create' %}"><button class="btn btn-primary my-2">글 쓰기</button></a>
+        {% for article in articles %}
+            <h5>{{ article.title }}</h5>
+            <p>{{ article.content }}</p>
+    		<p>댓글 수 : {{ article.comment_set.count }}</p>
+        {% endfor %}
+    {% endblock %}
+    <!--위 페이지를 출력하기 위해서 쿼리가 11번 발생하게 된다. 모든 게시글(Article 전체)을 불러오면서 1번 발생하게 되고 댓글 수를 count 하기 위한 쿼리들이 게시글 당 1번씩 생성되어 10번이 생성된다. 결국 총 11번의 쿼리가 생성된다.-->
+    
+    <!--N+1문제: 위와 같은 경우에 쿼리셋은 N+1번 생성되게 된다. 만일 게시글의 수(N)이 100이었다면 101번 쿼리셋이 생성되었을 것이다.-->
+    
+    
+    
+    <!--views.py에서 1)방식으로 게시글을 넘긴 후 변경한 html파일-->
+    {% extends 'base.html' %}
+    {% block body %}
+        <h2 class="text-center">게시판 목록</h2>
+        <a href="{% url 'articles:create' %}"><button class="btn btn-primary my-2">글 쓰기</button></a>
+        {% for article in articles %}
+            <h5>{{ article.title }}</h5>
+            <p>{{ article.content }}</p>
+            <p>댓글 수 : {{ article.comment_set_count }}</p>    
+    		<!--views.py에서 넘어온 comment_set_count를 입력-->
+        {% endfor %}
+    {% endblock %}
+    <!--Article 모델에 댓글의 개수라는 하나의 칼럼을 더 추가해 애초에 articles를 넘겨줄 때 댓글의 개수도 함께 가지고 와 모든 게시글을 불러오기 위한 1번의 쿼리 생성만 이루어진다.-->
+    
+    
+    <!--2)게시글 작성자 이름 출력-->
+    <!--함수를 2)로 변경한 후, html파일에선 추가적으로 수정할 것이 없다.-->
+    {% extends 'base.html' %}
+    {% block body %}
+        <h2 class="text-center">게시판 목록</h2>
+        <a href="{% url 'articles:create' %}"><button class="btn btn-primary my-2">글 쓰기</button></a>
+        {% for article in articles %}
+            <h5>{{ article.title }}</h5>
+            <p>{{ article.content }}</p>
+    		<h3>{{ article.user.username }}</h3> <!--작성자 출력-->
+        {% endfor %}
+    {% endblock %}
+    <!--위 페이지를 출력하기 위해 쿼리는 11번 발생한다. 모든 게시글(Article 전체)을 불러오면서 1번 발생하게 되고, article 마다 하나씩 가지고 있는 user 정보를 출력하기 위해 게시글 당 1번씩 쿼리를 생성하여 총 11번 쿼리를 생성하게 된다.-->
+    <!--views.py를 2)와 같이 수정하면 생성 횟수가 1번으로 줄어든다. 이는 JOIN을 활용했기 때문으로 JOIN은 두 개의 테이블을 합쳐서 하나의 테이블처럼 가지고 온다.-->
+    
+    
+    <!--3)게시글별 댓글을 모두 출력-->
+    <!--함수를 3)으로 변경한 후, html파일에선 추가적으로 수정할 것이 없다.-->
+    {% extends 'base.html' %}
+    {% block body %}
+        <h2 class="text-center">게시판 목록</h2>
+        <a href="{% url 'articles:create' %}"><button class="btn btn-primary my-2">글 쓰기</button></a>
+        {% for article in articles %}
+            <h5>{{ article.title }}</h5>
+            <p>{{ article.content }}</p>
+            {% for comment in article.comment_set.all %}
+                <p>{{ comment.content }}</p>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    <!--마찬가지 이유(전체 게시글을 불러오면서 1번, 10개의 댓글 불러오면서 10번)로 11번의 쿼리셋이 생성된다.-->
+    <!--3)과 같이 수정 후에는 쿼리셋 생성이 2번으로 감소한다.-->
+    
+    
+    
+    <!--4) 댓글 목록과 댓글 작성자 동시 출력-->
+    <!--함수를 4)로 변경한 후, html파일에선 추가적으로 수정할 것이 없다.-->
+    {% extends 'base.html' %}
+    {% block body %}
+        <h2 class="text-center">게시판 목록</h2>
+        <a href="{% url 'articles:create' %}"><button class="btn btn-primary my-2">글 쓰기</button></a>
+        {% for article in articles %}
+            <h5>{{ article.title }}</h5>
+            <p>{{ article.content }}</p>
+            {% for comment in article.comment_set.all %}
+            	<p>{{ comment.user.username }} : {{ comment.content }}</p>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    <!--이 경우 쿼리는 총 111번 발생한다. 모든 게시글을 불러오면서 1번, 각 게시글의 댓글을 불러오면서 10번, 댓글 마다 작성한 유저가 존재하므로 이들을 불러오는 데 또 10번이 생성되어 1+10+10*10으로 111번 발생한다.-->
+    <!--개선 후에는 2개의 쿼리만 발생-->
+    ```
+
+    
+
+- SQL JOIN 부가 설명
+
+    - JOIN: 두 개의 테이블을 합쳐서 하나의 테이블로 가져온다.
+    - 테이블, 데이터 생성
+
+    ```sql
+    -- 테이블 생성
+    CREATE TABLE user(
+    	id INTEGER PRIMARY KEY AUTOINCREMENT,
+    	username TEXT
+    );
+    
+    CREATE TABLE article(
+    	id INTEGER PRIMARY KEY AUTOINCREMENT,
+    	title TEXT,
+        user_id integer NOT NULL REFERENCES user (id) DEFERRABLE INITIALLY DEFERRED
+    );
+    
+    CREATE TABLE comment(
+    	id INTEGER PRIMARY KEY AUTOINCREMENT,
+    	content TEXT,
+    	article_id integer NOT NULL REFERENCES article (id) DEFERRABLE INITIALLY DEFERRED
+    );
+    
+    -- 데이터 생성
+    INSERT INTO user (username) VALUES ('글쓴사람');
+    INSERT INTO user (username) VALUES ('글안쓴사람');
+    
+    
+    INSERT INTO article (title, user_id) VALUES ('1글무플', 1);
+    INSERT INTO article (title, user_id) VALUES ('2글', 1);
+    
+    INSERT INTO comment (content, article_id) VALUES ('2글1댓', 2);
+    INSERT INTO comment (content, article_id) VALUES ('2글2댓', 2);
+    COMMIT;
+    ```
+
+    - LEFT OUTER JOIN(게시글 + 댓글)
+
+    ```sql
+    --artcle에 댓글 내용을 같이 가지고 오겠다
+    SELECT * from article LEFT OUTER JOIN comment ON article.id=comment.article_id
+    
+    
+    --위 명령어의 결과 테이블은 아래와 같다.
+    id | title | user_id | id | content | article_id
+    1  | 1글무플|    1    |    |          |
+    2  | 2글   |    1    |  1  |  2글1댓  |  2
+    3  | 2글   |    1    |  2  |  2글2댓  |  2
+    --id | title | user_id |까지는 article의 테이블, id | content | article_id는 comment의 테이블로 두 테이블이 합쳐져 위와 같이 표시되게 된다.
+    ```
+
+    - INNER JOIN(게시글 + 사용자)
+
+    ```sql
+    SELECT * FROM article INNER JOIN user ON article.user_id = user.id;
+    
+    id |  title  | user_id | id | username
+     1 | 1글무플  |    1    |  1  | 글쓴사람
+     2 |   2글   |    1    |  1  | 글쓴사람
+    ```
+
+    
+
+- 요약
+  - 특정 모델과 관계를 갖는 추가적인 쿼리들(Comment,User)을 묶어서 가져오는 3가지 방법
+    - anotate: 단순 계산 결과를 필드에 추가
+    - select_related: 1:1 또는 N이 1을 찾을 때 사용
+    - prefetch_related: M:N 또는 1이 N을 찾을 때
 
 
 
