@@ -2731,6 +2731,274 @@ select * from people_people
 
 
 
+# REST API
+
+- REST(Representational State Transfer):url 형식
+  - http verb(method)에는 GET,POST,PUT/PATCH,DELETE가 있다. 
+  - http verb+복수형 명사(혹은 복수형 명사+pk)로 구성되면 RESTful하다고 할 수 있다.
+
+
+
+- API(Application Programming Interface):개발자용 접점, 일반 사용자를 위한 것이 아닌 개발자를 위한 것 
+  - 프로그램 사이의 데이터 교환을 위한 접점을 뜻한다.
+  - 결국 데이터 교환은 개발자의 요청에 의해 이루어지므로 개발자용 접점이라고 할 수 있다. 
+
+
+
+- JSON(JavaScript Obeject Notation):자바스크립트 객체식 표기법, 저마다 제각각인 데이터 표기법을 표준화
+
+  - chrome 확장프로그램 중 JSON 데이터의 가시성을 개선시켜주는` JSON Viewer`가 있다.
+  - 예를 들어 청첩장을 만들기 위해 데이터를 받는다고 할 경우 사람마다 표기법이 제각각일 수 있다.
+
+  ```python
+  #1
+  누가:영희가
+  누구와:철수와
+  언제:2020.05.15
+  어디서: A호텔 예식장
+      
+  #2
+  누가 => 영희가
+  누구와 => 철수와
+  언제 => 2020.05.15
+  어디서 => A호텔 예식장
+  
+  #즉 동일한 키와 밸류를 연결하는 방식이 다 제각각이다.
+  ```
+
+  - html을 쓰지 못하는 이유: html은 태그가 정해져 있다.
+
+  ```html
+  <h1>청첩장</h1>
+  
+  <h2>영희</h2>
+  <h2>철수</h2>
+  <h2>2020.05.12</h2>
+  <h2>A호텔 예식장</h2>
+  
+  <!--위 처럼 HTML은 태그가 정해져 있어 key를 표기할 수 없다.-->
+  ```
+
+  - 이러한 단점을 보완하기 위해서 JSON 이전에 XML(eXtended Markup Language)이 활용되었다.
+    - XML은 태그에 제약이 없다.
+
+  ```xml
+  <제목>청첩장</제목>
+  
+  <누가>영희</누가>
+  <누구와>철수</누구와>
+  <언제>2020.05.12</언제>
+  <어디서>A호텔 예식장</어디서>
+  ```
+
+  - JSON은 XML 보다 짧은 길이로 데이터를 받아올 수 있어 더 많이 사용되기 시작
+    - 닫는 태그도 없을 뿐더러 XML은 HTML처럼 문서의 구조를 잡아줘야 해서 길이가 길어진다.
+    - 데이터가 많아질 수록 길이 차이가 커진다.
+    - 또한 빈번하게 데이터가 교환되는 웹의 특성상 약간의 길이 차이도 큰 차이를 불러올 수 있다.
+
+  ```python
+  {
+      "제목":"청첩장",
+      "누가":"영희가",
+      "누구와":"철수와",
+      "언제":"2020.05.12",
+      "어디서":"A호텔 예식장"
+  }
+  #JSON은 반드시 쌍따옴표를 써야 한다. 위 처럼 중괄호에 담아도 되고, 대괄호에 담아도 된다.
+  ```
+
+
+
+- 기존에는 사용자에게 요청을 받은 django가 MTV를 거쳐 사용자에게 HTML파일로 데이터를 제공했다면, 지금부터는 사용자는 Vue js에게 요청을 보내고 Vue js는 django에 사용자에게 받은 요청을 보낸다. django에서는 MV만 거치고 T는 거치지 않은 상태로 Vue js에게 JSON 형태의 데이터를 넘기게 되고 Vue js는 JSON 형태의 데이터를 사용자에게 HTML파일로 제공한다.
+  - 기존: 사용자 -> django(MTV), django(MTV)->사용자
+  - api: 사용자 -> Vue js -> django(MV),  django(MV) -> Vue js(T) -> 사용자
+
+- Django에서의 활용
+
+    ```python
+    from django.views.decorators.http import require_GET
+    from djnago.http.response import JsonResponse  #import하고
+    
+
+    #기존에 templates 파일을 통해 데이터를 보여주던 방식
+    def article_list_html(request):
+        articles = Article.objects.all()
+    context = { 
+            'articles': articles,
+        }
+        return render(request, 'board/article_list.html', context)
+    
+    
+    # JSON 데이터를 넘기는 방식
+    # 방법1:직관적인 코드
+    @require_GET  #읽기만 하는 것이므로 적어주는 것이 안전하다.
+def article_list_json_1(request):
+        articles = Article.objects.all()
+        #articles에는 쿼리셋이 들어가게 된다. 쿼리셋은 리스트(대괄호)도, 딕셔너리(중괄호)도 아니기에 바		로 JSON으로 넘길 수 없다.
+
+        data = []  #따라서 리스트(대괄호)에 담아줘야 한다.
+        for article in articles:
+            data.append({
+                'artcle_id':article.id,
+                'title':article.title,
+                'content':article.content
+            })
+            #위 과정을 거치면 리스트안에 articles 수 만큼의 딕셔너리가 담기게 된다.
+        return JsonResponse(data,safe=False)
+    	#templates 파일 사용하지 않으므로 JsonResponse를 사용하여 JSON으로 데이터를 보낸다.
+        #safe=False는 data가 딕셔너리가 아닐 때 써줘야 하는 것이다. 위에서 data는 list이기 때		문이 써준 것이다. 그러나 대부분의 브라우저에서 safe=False를 쓰지 않아도 되도록 지원을 하기 때문		에 크게 신경쓸 부분은 아니지만 적지 않으면 django에서 에러를 출력하기에 써줘야 한다.
+    
+    #위 코드는 직관적이지만 필드가 많아질 경우 입력할 내용이 많아져 위와 같이 쓰지는 않는다.
+    
+    
+    
+    # 방법2:더 간단한 방법
+    #django core serializer
+    from djnago.http.response import HttpResponse
+    
+    @require_GET #CRUD중 GET과 과 관련있으므로 require_GET을 쓴다. 안 써도 되지만 쓰면 보다 엄밀한 코드가 된다.
+    def article_list_json_2(request):
+        from django.core import serializers
+        articles = Article.objects.all()
+    	
+        data = serializers.serialize('json',articles)
+        #aricles라는 데이터를 json으로 바꾸겠다는 의미, 이 과정을 거치면 data에는 JSON 데이터가 문자열		에 담기게 된다.
+    
+        return HttpResponse(data, content_type='application/json')
+                                  #str이지만 json이라고 알려주는 것
+    
+    #위와 같이 하면 모두 string에 담겨 넘어가게 된다. JsonResponse는 dict나 list를 받는 것이지 str을 받는 것이 아니다. 따라서 JsonResponse가 아닌 HttpResponse를 쓴다.
+    
+    #보다 간략해지긴 했지만 보낼 필드를 직접 설정할 수 없다는 단점이 있다. 1번 방법의 경우 보낼 것만 선택해서 dict안에 담아주면 됐으나 2번 방법은 무조건 필드를 전부 보내야 한다.
+    ```
+
+
+
+- `serializer`: 직렬화, 데이터를 보내기 편하게 한 줄로 묶는 작업
+
+  - 위 두 방법을 보완한 더 나은 방법
+  - `djangorestframework`설치(줄여서 `drf`라고 부른다)
+
+  ```bash
+  #설치가 필요
+  $ pip install djangorestframework
+  ```
+
+  - `INSTALLED_APPS`에 추가
+
+  ```python
+  #settings.py
+  
+  INSTALLED_APPS = [
+      'rest_framework'
+  ]
+  ```
+
+  - `serializers.py`생성
+    - form과 구성이 유사
+
+  ```python
+  from rest_framework import serializers
+  from .models import Article
+  
+  """
+  forms.py 였다면
+  
+  from django import forms
+  
+  class ArticleForm(forms.Form):
+      class Meta:
+          model = Article
+          fields = '__all__'
+  """
+  
+  class ArticleSerializer(serializers.ModelSerializer):
+      class Meta:
+          model = Article
+          fields = '__all__'
+  ```
+
+  - `views.py`에서 활용
+
+  ```python
+  #views.py
+  
+  from rest_framework.response import Response
+  from rest_framework.decorators import api_view
+  #api_view가 화면으로 보이게 해준다.
+  
+  # rest framework
+  @api_view(['GET']) #쓰는게 좋은 것이 아니라 써야만 한다. 쓰지 않으면 에러 발생
+  def article_list_json_3(request):
+      articles = Article.objects.all()
+      serializer = ArticleSerializer(articles, many=True)
+      #many=True를 해주는 이유는 Article의 객체 하나가 아니라 모든 Article객체가 담긴 쿼리셋을 넘기	는 것이기 때문이다. 즉 복수의 객체를 넘길 때는 many=True를 써줘야 한다.
+  
+      # rest_framework 의 serializer 를 리턴하려면, rest_framework.response.Reponse를 써야 		한다.
+      return Response(serializer.data)
+  ```
+
+
+
+- 1:N 관계일 때 `Serializer` 정의
+
+  - `models.py`
+
+  ```python
+  class Artist(models.Model):
+      name = models.CharField(max_length=100)
+  
+  class Music(models.Model):
+      title = models.CharField(max_length=100)
+      artist = models.ForeignKey(Artist,on_delete=models.CASCADE)
+  ```
+
+  - `serializers.py`
+
+  ```python
+  #전체 조회
+  class ArtistSerializer(serializers.ModelSerializer):
+      class Meta:
+          model = Artist
+          fields = ['id','name']
+  
+  #상세 조회
+  class ArtistDetailSerializer(serializers.ModelSerializer):
+  	#역참조
+  	#한 가수에게 여러 곡이 등록될 수 있으므로 many=True를 쓴다.
+      music_set = MusicSerializer(many=True)
+      #혹시 다른 이름으로 하고 싶다면 아래와 같이 쓰면 된다.
+      # songs =  MusicSerializer(source='music_set',many=True)
+      #만일 models에 related_name을 설정했다면 source 뒤에는 설정한 related_name을 적으면 된다.
+      
+      music_count = serializers.IntegerField(source='music_set.count')
+  
+      class Meta:
+          model = Artist
+          fields= ['id','name','music_set','music_count']
+          
+          
+  #상속을 받아서 쓰고 싶을 경우
+  class ArtistDetailSerializer(ArtistSerializer):
+      
+      music_set = MusicSerializer(many=True)
+      music_count = serializers.IntegerField(source='music_set.count')
+      
+      class Meta(ArtistSerializer.Meta): #ArtistSerializer의 Meta 클래스를 상속
+          fields = ArtistSerializer.Meta.fields+['music_set','music_count']
+          #model은 쓰지 않아도 되고 fileds는 상속 받은 fields에 새로 추가한 fields를 추가해서 넘기		   면 된다.
+  ```
+
+  
+
+
+
+
+
+
+
+
+
 
 
 # 기타
@@ -3016,7 +3284,71 @@ def comment_create(request,poll_pk):
 
 
 
+## faker
 
+- `faker`설치
+
+```bash
+$ pip install faker
+```
+
+- `settings.py` 의 `INSTALLED_APPS`에 아래 코드를 추가
+
+```python
+'djnago_extensions'
+```
+
+- 이제 terminal 창에서 아래와 같이 사용이 가능하다.
+
+```bash
+#아래에서 예시로 든 .text(), .name()외에도 다양한 옵션이 있다.
+>>>from faker import Faker
+>>>f=Faker()
+>>>f.text()
+'Social common~~아무말~~'
+>>>f.name()
+'아무 이름'
+
+#만일 Article에 새로운 데이터를 추가하고 싶다면 아래와 같이 입력해야 한다.
+>>>Article.objects.create(title=f.text(), content=f.text(), ...)
+#만일 100개의 fake데이터를 만들고 싶다면 100번 입력해야 한다.
+
+#그러나 이를 더 쉽게 하는 방법이 있다.
+```
+
+- `models.py`
+
+```python
+from django.db import models
+from faker import Faker  #import
+
+f = Faker()  #Faker를 변수에 할당
+
+
+class Article(models.Model):
+    title = models.CharField(max_length=100)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # n개의 더미 데이터를 만드는 클레스 메소드
+    # cls는 클레스 메소드를 정의한 클래스가 들어가게 된다.
+    @classmethod
+    def dummy(cls,n): 
+        for _ in range(n):
+            cls.objects.create(
+                title=f.name(),
+                content=f.text()
+            )
+```
+
+- 터미널 창에 다음과 같이 입력
+
+```bash
+>>> Article.dummy(10)
+
+#10개의 더미 데이터가 생성된다.
+```
 
 
 

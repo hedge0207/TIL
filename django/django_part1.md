@@ -79,8 +79,8 @@
   - 소프트웨어를 어떻게 설계할지 디자인
   - MVC, MTV는 모두 소프트웨어 디자인 패턴이다.
 - MTV: Model, Template, View로 장고의 기본 흐름이다. 다른 곳에서는 보통 MVC를 쓴다.
-  - Model: 데이터 관리, 데이터베이스 조작
-  - Template: 사용자와 웹 브라우저사이의 인터페이스(화면) 구성, 단순히 html파일을 의미하는 것이 아니라 html파일을 만드는 것을 의미
+  - Model: 데이터 관리, 데이터베이스 조작, 데이터 구조화(어떻게 데이터를 넣을 것인가)
+  - Template: 사용자와 웹 브라우저사이의 인터페이스(화면) 구성, 단순히 html파일을 의미하는 것이 아니라 html파일을 만드는 것을 의미, 데이터를 표시하는 곳
   - View: 중간 관리(상호 동작)
 - MVC: Model, View, Controller 순서대로 MTV와 하나씩 대응
 
@@ -1244,12 +1244,12 @@ admin.site.register(Article)
     - 301 Moved Permanently
     - 302 Found
   - 400대는 클라이언트 이슈
-    - 400 Bad Request
+    - 400 Bad Request(잘못된 문법으로 인하여 서버가 요청을 이해할 수 없음)
     - 401 Unauthorized(로그인이 필요함에도 로그인 하지 않은 경우)
-    - 403 forbidden(권한이 없는 경우, {csrf_token}을 안써도 이 이슈가 발생)
-    - 404 Not Foubd(해당 URL이 없는 경우)
+    - 403 forbidden(권한이 없는 경우, {csrf_token}을 안써도 이 이슈가 발생), 클라이언트는 콘텐츠에 접근할 권리를 가지고 있지 않음
+    - 404 Not Foubd(해당 URL이 없는 경우): 요청받은 리소스를 찾을 수 없습
     - 405 Method Not Allowed(GET으로 처리하는데 POST로 보낸 경우)
-  - 500 Internal Server Error: 서버 오류
+  - 500 Internal Server Error: 서버 오류, 서버가 처리 방법을 모르는 상황과 마주침
 
 
 
@@ -1423,12 +1423,17 @@ admin.site.register(Article)
   
   #클래스명은 아무거나 해도 무관하지만 관례상 앱이름Form으로 한다.
   class ArticleForm(forms.ModelForm):  #상속을 받고
-      class Meta:  #어떤 모델에서 어떤 datafield를 가져 올지를 정의하는 부분
-      #M은 반드시 대문자로 쓸 것, 메타데이터를 가져오는 클래스이다. 메타데이터는 데이터에 대한 데이터로
-      #사진을 찍을 때 사진이라는 데이터에는 찍은 날짜, 장소 등도 저장되는데 이 날짜, 장소등이 메타데이터	  할 수 있다. class도 마찬가지로 class라는 데이터의 메타데이터를 (아래의 경우 title, content	  등)가져오는 것이다.
+      class Meta:  
+      #어떤 모델에서 어떤 datafield를 가져 올지를 정의하는 부분
+      
+      #M은 반드시 대문자로 쓸 것, 메타데이터를 가져오는 클래스이다. 메타데이터는 	데이터에 대한 데이터로
+      
+      #사진을 찍을 때 사진이라는 데이터에는 찍은 날짜, 장소 등도 저장되는데 이 		날짜, 장소등이 메타데이터 할 수 있다. class도 마찬가지로 class라는 데이	   터의 메타데이터를(아래의 경우 title, content 등)가져오는 것이다.
+      
+     #fields에 자료를 넣을 때 반드시 리스트에 넣어야 하는 것은 아니며 튜플에 넣	 는 것도 가능하다.
       	model = Article
           fields = '__all__'
-          #fields = ['title','content','created_at','updated_at'] 과 동일
+          #fields = ['title','content','created_at','updated_at'] 과 			동일
           #'__all__'을 쓰고 특정한 것을 제외하고 싶다면 
           #exclude = ['title']과 같이 쓰면 된다.
           
@@ -1446,8 +1451,7 @@ admin.site.register(Article)
       content = forms.CharField()
       
       
-      
-  #만일 클래스를 지정하고 싶다면 아래와 같이 하면 된다. 또한 아래와 같이 별도로 클래스를 지정해준 것들은 fileds에 넣지 않아도 넘어 간다.
+  #만일 클래스를 지정하고 싶다면 아래와 같이 하면 된다. 또한 아래와 같이 별도로 클래스를 지정해준 것들은 fileds에 넣을 수 없다. 왜냐하면 fileds에는 기본적으로 model에 지정한 model에 있는 필드들만 넣을 수 있기 때문이다.
   from django import forms
   from .models import Review
   
