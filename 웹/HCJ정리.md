@@ -1939,29 +1939,24 @@ cf. caniuse: 각종 기능을 어떤 웹 브라우저에서 사용 가능한지 
   
         ```javascript
       var x = 5, result;
-        
-        ```
-  
-      // 선대입 후증가 (Postfix increment operator)
+        // 선대입 후증가 (Postfix increment operator)
         result = x++;
-      console.log(result, x); // 5 6
-  
-      // 선증가 후대입 (Prefix increment operator)
+    console.log(result, x); // 5 6
+        
+        // 선증가 후대입 (Prefix increment operator)
         result = ++x;
-      console.log(result, x); // 7 7
-  
-      // 선대입 후감소 (Postfix decrement operator)
+    console.log(result, x); // 7 7
+        
+        // 선대입 후감소 (Postfix decrement operator)
         result = x--;
-      console.log(result, x); // 7 6
-  
-      // 선감소 후대입 (Prefix decrement operator)
+    console.log(result, x); // 7 6
+        
+        // 선감소 후대입 (Prefix decrement operator)
         result = --x;
-      console.log(result, x); // 5 5
+    console.log(result, x); // 5 5 
         ```
-        
-        
-        ```
-  
+      
+    
   - 2항 연산자: 피 연산자가 2개인 연산자, +, - * , / , =등
   
   - 3항 연산자:피 연산자가 3개인 연산자. 3항 연산자는 조건부 연산자 단 하나만 존재한다.
@@ -1992,36 +1987,26 @@ cf. caniuse: 각종 기능을 어떤 웹 브라우저에서 사용 가능한지 
   
       ```javascript
       456-123=333
-        "456"-123=333
+      "456"-123=333
       "a"-123=NaN
-        
-      ```
-  
       123*456=56088
       123*"456"=56088
-      123*"a"=NaN
-  
+  123*"a"=NaN
       ```
       
-      ```
-  
     - 나눗셈 연산자
   
       -피 연산자 모두가 정수라 할지라도 결과는 실수가 나올 수 있음(자바스크립트는 정수 타입이 별도로 존재하지 않음). 
-  
+    
       -숫자형 문자열을 숫자로 자동 변환하여 연산
   
-      -0으로 나누면 에러가 발생한다.
+      -0으로 나누면 NaN을 반환
   
     - 나머지 연산
   
       -나머지를 결과값으로 취함
   
       -그 외에는 나눗셈과 같다.
-      
-      ```
-      
-      ```
   
   - 비교연산자
   
