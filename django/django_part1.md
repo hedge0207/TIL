@@ -1527,6 +1527,39 @@ admin.site.register(Article)
   <!--{{ form }}외에도 {{ form.as_p }}, {{ form.as_table }} 등으로 쓸 수 있는데 각기 <p>태그에 넣어서 표현하겠다, <table>태그에 넣어서 표현하겠다는 뜻이 된다.-->
   ```
 
+- 상속을 활용한 form정의
+
+  ```python
+  #models.py
+  class Article(models.Model):
+      title = models.CharField(max_length=20)
+      content = models.TextField()
+      
+  
+  #forms.py
+  from django import forms
+  from .models import Article, Comment
+  
+  class ArticleForm(forms.ModelForm):
+      class Meta:
+          model = Article
+          fields = ['title','content']
+  
+  class ArticleSpecialForm(ArticleForm):  #위에서 정의한 ArticleForm을 상속받아서
+      book = forms.CharField(max_length=20)
+  
+      class Meta(ArticleForm.Meta): #ArticleForm의 Meta데이터도 상속받고
+          fields = ArticleForm.Meta.fields+['book']
+          #ArticleForm.Meta.fields는 ArticleForm 안의 Meta 안의 fields라는 뜻이다. 위 코드에서		  는 ['title','content']가 담겨있게 된다.
+          #exclude를 설정했을 경우 ArticleForm.Meta.exclude에는 exclude에 담은 리스트가 담겨있		  게 된다.
+          #추가 할 필드를 list에 넣어서 +연산으로 추가해준다.
+    
+  #주의점
+  #만일 추가할 필드가 모델에 정의되어 있지 않다면 form으로 해당 정보를 입력받더라도 데이터 테이블에는 해당 정보를 저장할 수 없다. 예를 들어 위의 경우 Article모델에는 book이라는 필드가 존재하지 않으므로 데이터 테이블에는 book이라는 필드가 저장될 공간이 없다. 따라서 form에 따라 book을 입력하더라도 저장되지 않는다.
+  
+  #만일 상속 할 Form에서 fields를 리스트가 아닌 '__all__'로 했다면 위와 같이 넘길 수 없다(문자열과 리스트는 +연산이 불가능하다). 사실 넘길 필요가 없다. 이미 필드를 전부 넘겼는데 추가적으로 넘길 필드가 없기 때문이다.
+  ```
+
   
 
 - `require_POST`

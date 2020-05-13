@@ -1,3 +1,5 @@
+# 사용자 인증 관리
+
 - django에서 사용자 정보는 다른 정보와는 다르게 특별한 처리를 해줘야 한다.
 
 - django는 사용자 정보중 비빌번호를 저장 할 때 해시함수(input 값을 문자열로 바꿔주는 것)를 통해 암호화 해서 저장한다.
@@ -817,28 +819,30 @@
     sqlite> .mode csv
     sqlite> .headers on  --헤더가 있다는 것을 알려주고, 없으면 안 써도 된다.
     sqlite> .separator "," --""안에 csv파일 내의 자료들이 무엇으로 구분되어 있는지 적으면 된다.
-    sqlite> .import data.csv flights
+    sqlite> .import data.csv 테이블명
+    
+--만일 위 테이블명을 적는 자리에 존재하지 않는 테이블을 적으면 테이블이 새로 생성된다. 그러나 모든 데이터 타입이 TEXT로 설정되고, 값이 제대로 들어가지 않는다.
     ```
 
     
 
       - 테이블의 데이터 삭제(D)
-
+    
     ```sql
-    DELETE FROM 테이블명 WHERE 조건;
+DELETE FROM 테이블명 WHERE 조건;
     ```
 
       - 수정(U)
-
+    
     ```sql
     UPDATE 테이블명 SET column=value WHERE 조건;
     
     --여러 개를 수정하고자 하면 콤마로 구분하여 연속해서 입력
-    UPDATE 테이블명 SET column1=value1, column2=value2 WHERE 조건;
+UPDATE 테이블명 SET column1=value1, column2=value2 WHERE 조건;
     ```
 
       - 레코드 조회(R)
-
+    
     ```sql
     --select문: 데이터를 읽어올 수 있으며 특정 테이블을 반환한다.
     SELECT column FROM 테이블명;   --column칸에 *을 입력하면 모든 column을 조회
@@ -1420,6 +1424,7 @@ select * from people_people
   #`post` 의 경우 `creater`로 1에 해당하는 오브젝트를 가져올 수 있다.
   #`creater`의 경우 `post_set` 으로 N개(QuerySet)를 가져올 수 있다(역참조).
   
+  
   #글의 작성자
   post1 = Post.objects.get(pk=2)
   post1.reporter
@@ -1862,6 +1867,7 @@ select * from people_people
     
 
 - `media`폴더는 최초로 미디어 파일을 등록하면 자동으로 생성된다.
+  
   - 성공적으로 등록될 경우 루트에 미디어 파일이 자동으로 저장된다.
   - 등록될 당시에는 파일 명이 같아도 이미 루트에 동명의 파일이 있는 경우 나중에 등록된 파일의 이름을 바꿔서 저장하기에 이름이 겹칠 일은 없다.
 
@@ -2088,6 +2094,7 @@ select * from people_people
   - 역참조 컨벤션
     - 1:N의 역참조는 `단수형모델_set`.
     - M:N의 역참조는 `복수형 모델`을 사용한다.
+    - 1:N에서도 M:N에서와 같이 `related_name`을 활용하여 역참조가 가능하지만 컨벤션에 어긋나므로 그렇게 하지 않는다.
   - 역참조의 기본값은: `모델명_set`이다. 즉, 지금까지 `_set`을 활용할 때마다 역참조를 하고 있었던 것
     - `related_name`은 다른 방법으로 역참조를 할 수 있게 해준다.
     - `related_name`은 복수형으로 쓴다(naming convention)
@@ -2958,6 +2965,9 @@ def article_list_json_1(request):
   - `serializers.py`
 
   ```python
+  from rest_framework import serializers
+  from .models import Artist,Music,Comment
+  
   #전체 조회
   class ArtistSerializer(serializers.ModelSerializer):
       class Meta:
@@ -2987,10 +2997,10 @@ def article_list_json_1(request):
       music_count = serializers.IntegerField(source='music_set.count')
       
       class Meta(ArtistSerializer.Meta): #ArtistSerializer의 Meta 클래스를 상속
-          fields = ArtistSerializer.Meta.fields+['music_set','music_count']
+        fields = ArtistSerializer.Meta.fields+['music_set','music_count']
           #model은 쓰지 않아도 되고 fileds는 상속 받은 fields에 새로 추가한 fields를 추가해서 넘기		   면 된다.
   ```
-
+  
   
 
 
