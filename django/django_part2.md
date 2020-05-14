@@ -806,7 +806,7 @@
         - 터미널 창에 아래의 명령어 입력
 
     ```
-    #date.csv
+    #파일명.csv(일반적으로 data.csv로 한다.)
     
     #아이디는 이미 저장된 것과 겹치면 안된다.
     id,flight_num,departure,waypoint,arrival,price #헤더, 굳이 안 써도 된다.
@@ -819,29 +819,26 @@
     sqlite> .mode csv
     sqlite> .headers on  --헤더가 있다는 것을 알려주고, 없으면 안 써도 된다.
     sqlite> .separator "," --""안에 csv파일 내의 자료들이 무엇으로 구분되어 있는지 적으면 된다.
-    sqlite> .import data.csv 테이블명
-    
---만일 위 테이블명을 적는 자리에 존재하지 않는 테이블을 적으면 테이블이 새로 생성된다. 그러나 모든 데이터 타입이 TEXT로 설정되고, 값이 제대로 들어가지 않는다.
+    sqlite> .import 파일명.csv 테이블명
+    --만일 위 테이블명을 적는 자리에 존재하지 않는 테이블을 적으면 테이블이 새로 생성된다. 그러나 모든 데이터 타입이 TEXT로 설정되고, 값이 제대로 들어가지 않는다.
     ```
-
     
-
-      - 테이블의 데이터 삭제(D)
+    - 테이블의 데이터 삭제(D)
     
     ```sql
-DELETE FROM 테이블명 WHERE 조건;
+    DELETE FROM 테이블명 WHERE 조건;
     ```
-
-      - 수정(U)
+    
+    - 수정(U)
     
     ```sql
     UPDATE 테이블명 SET column=value WHERE 조건;
     
     --여러 개를 수정하고자 하면 콤마로 구분하여 연속해서 입력
-UPDATE 테이블명 SET column1=value1, column2=value2 WHERE 조건;
+    UPDATE 테이블명 SET column1=value1, column2=value2 WHERE 조건;
     ```
-
-      - 레코드 조회(R)
+    
+    - 레코드 조회(R)
     
     ```sql
     --select문: 데이터를 읽어올 수 있으며 특정 테이블을 반환한다.
@@ -850,8 +847,8 @@ UPDATE 테이블명 SET column1=value1, column2=value2 WHERE 조건;
     --distinct: 중복 없이 가져오기
     SELECT DISTINCT column FROM 테이블명;
     ```
-
-
+    
+    
 
 
   - 표현식
