@@ -431,9 +431,9 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     ```html
     <!--index.html-->
     <ul>
-      {% for m in menu %}   <!--for문과-->
-      <li>{{forloop2.counter}} : {{m}}</li>
-      {% endfor %}          <!--endfor문 사이의 내용을 len(menu)번 반복-->
+      {% for m in menu %}
+      <li>{{forloop.counter2}} : {{m}}</li>
+      {% endfor %}
     </ul>
         
     out
@@ -815,7 +815,7 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
 <!--name을 지정하지 않으면 url에 표시되지 않는다.-->
 
 <!--action태그를 비워 두면 해당 html파일을 호출한 함수로 데이터가 전달된다.-->
-<!--또한 아래 action에서 주소를 쓸 때 반드시 /를 붙여 줘야 한다. GET으로 보낼 때는 상관 없지만 POST일 경우 오류가 발생한다. 즉 "/pages/complete"와 같이 쓰면 안된다.-->
+<!--또한 action에 주소를 쓸 때 반드시 /를 붙여 줘야 한다. GET으로 보낼 때는 상관 없지만 POST일 경우 오류가 발생한다. 즉 "/pages/complete"와 같이 쓰면 안된다.-->
 <form action="/pages/complete/">
 	<input type="text" name="content">
     <input type="text" name="title">

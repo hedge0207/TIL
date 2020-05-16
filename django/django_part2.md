@@ -655,7 +655,7 @@
   - 테이블: 열과 행의 모델을 사용해 조직된 데이터 요소들의 집합
     - column(열): 속성, 각 열에는 고유한 데이터 형식이 있다. 고유한 데이터 형식이 지정되는 열
     - row(행, 레코드): 단일 구조 데이터 항목을 가리키는 행, 데이터가 저장되는 곳 
-    - PK: 각 행의 고유값으로, 저장된 레코드를 고유하게 식별할 수 있는 값
+  - PK: 각 행의 고유값으로, 저장된 레코드를 고유하게 식별할 수 있는 값
 
 
 
@@ -690,6 +690,7 @@
 
 # SQL(Structured Query Language) 기본
 
+- RDBMS를 조작하기 위해 사용한다.
 - Query란 DB에 보내는 요청이라고 할 수 있다.
 - 지금까지는 ORM을 통해서 DB에 접근했었다. 
 
@@ -697,15 +698,12 @@
   - 파이썬 코드를 SQL로 변경해서 실행하는 방식
   - ORM을 통해 SQL보다 편리하게 데이터베이스를 다룰 수 있었다.
   - 그럼에도 SQL을 배워야 하는 이유는 결국 ORM은 남이 짜놓은 코드이기에 한계가 있다.
-
 - 데이터 베이스 관리를 위한 언어, RDBMS의 데이터를 관리하기 위해 사용하는 프로그래밍 언어
-
 - 종류
 
   - DDL(데이터 정의 언어):데이터 정의(create,drop 등)
   - DML(데이터 조작 언어): 데이터 저장, 수정, 삭제(CRUD 관련)
   - DCL(데이터 제어 언어): 데이터베이스 사용자의 권한 등 제어
-
 - SQL에서의 Datetype
 
   - INTEGER, TEXT, REAL(실수), NUMERIC(boolean), BLOB
@@ -962,7 +960,7 @@
 
 # ORM
 
-ref. migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 생성된다. 따라서 sql로 데이터를 조작하고자 할 때는  아래와 같이 접근해야 한다.
+- migrate 할 경우 테이블명은 `앱이름_모델명(소문자)`으로 생성된다. 따라서 sql로 데이터를 조작하고자 할 때는  아래와 같이 접근해야 한다.
 
 ```sql
 select * from 앱이름_모델명(소문자)
@@ -1086,8 +1084,12 @@ select * from people_people
 
 - ORM 문법
 
+  - `makemigrations`
+  - 마이그레이션 생성
+  - `migrate`
+    - 마이그레이션 파일의 내용을 DB에 최종 반영
   - `showmigrations`
-  - 마이그레이션 DB 반영 여부 확인
+    - 마이그레이션 DB 반영 여부 확인
 
   ```bash
   $python manage.py showmigrations
@@ -1335,12 +1337,14 @@ select * from people_people
 
 - FK(Foreign Key, 외래키)
 
+  - 부모 테이블의 데이터를 참조하기 위한 키
+
   - 데이터와 데이터의 관계에서 한 쪽의 PK값은 다른 데이터로 넘어가면 FK값이 된다.
 
   - 일반적으로 N의 위치에 있는 데이터가 FK값을 가진다.
 
   - 유저 정보를 관리하는 db테이블에 각 유저가 작성한 글을 저장하는 것 보다는 게시글 정보를 관리하는 db테이블에 유저 정보를 저장하는 것이 더 낫다.
-
+  
   - 만일 유저 정보를 관리하는 db테이블에서 각 유저가 글을 작성할 때마다 그 글에 대한 정보를 db테이블에 장한다면 유저 정보를 관리하는 테이블은 무한히 늘어나야 할 것이다.
   
     | user |          |                 |                 |                 |      | article |          |
@@ -1348,7 +1352,7 @@ select * from people_people
     | id   | nickname | create_article1 | create_article2 | create_article3 | ...  | title   | content  |
   | 1    | name1    | title1,content1 | article         | ...             |      | title1  | content1 |
     | 2    | name2    | title2,content2 | article1        | ...             |      | title2  | content2 |
-
+  
   - 반면에 게시글 정보를 관리하는 db테이블에 유저 정보를 저장한다면 게시글 마다 유저 정보만 추가시켜주면 된다. 
   
     | user |          |      | article |          |             |
@@ -1356,7 +1360,7 @@ select * from people_people
     | id   | nickname |      | title   | content  | user_id(FK) |
   | 1    | name1    |      | title1  | content1 | 1           |
     | 2    | name2    |      | title2  | content2 | 2           |
-
+  
   - 유저의 PK값을 게시글 테이블에 저장한다. 그리고 원래 테이블이 아닌 다른 테이블에서 사용되는 pk값을 fk값이라고 부른다(유저테이블의 pk값을 게시글 테이블에서 쓴다면 같은 값을 유저 테이블에서는 pk로, 게시글 테이블에서는 fk로 부른다).
   
   - 이 경우 한 명의 유저는 여러 개의 게시글을 작성할 수 있으므로 유저와 게시글 사이에 1:N의 관계가 성립한다고 볼 수 있다.
@@ -2095,6 +2099,10 @@ select * from people_people
   - 역참조의 기본값은: `모델명_set`이다. 즉, 지금까지 `_set`을 활용할 때마다 역참조를 하고 있었던 것
     - `related_name`은 다른 방법으로 역참조를 할 수 있게 해준다.
     - `related_name`은 복수형으로 쓴다(naming convention)
+  - ManyToManyField를 설정하고 migration을 하면 `앱이름_소문자 모델이름_모델에 정의된 ManyToManyField이름`으로 테이블이 생성된다. 
+    - 예를 들어 아래 앱 이름이` reservations`라고 하면
+    - `reservations_patient_doctors`라는 테이블이 생성된다.
+    - 해당 테이블의 필드는 `patient_id`, `doctor_id` 2개가 생성된다.
 
   ```python
   class Doctor(models.Model):
@@ -2322,7 +2330,6 @@ select * from people_people
   # 위 코드를 쿼리문으로 옮기면 다음과 같다.
   select count(*) from 쿼리셋의 개수를 센 결과값을 가져온다.
   
-  
   len(article.like_users.all())
   # 위 코드를 쿼리문으로 옮기면 다음과 같다.
   select * from로 쿼리 셋을 결과값으로 가져온 뒤 그 길이를 센다.
@@ -2363,29 +2370,32 @@ select * from people_people
   - follower 필드를 만들어야 하므로 User 모델을 커스텀해서 사용해야 한다.
   - accounts/models.py
 
-  ```python
-  from django.db import models
-  from django.conf import settings
-  from django.contrib.auth.models import AbstractUser
-  
-  class User(AbstractUser):
-      followers = models.ManyToManyField(
-              settings.AUTH_USER_MODEL,
-              related_name='followings'
-          )
-  ```
+```python
+from django.db import models
+from django.conf import settings
+from django.contrib.auth.models import AbstractUser
 
-  - accounts/urls.py
+class User(AbstractUser):
+    followers = models.ManyToManyField(
+            settings.AUTH_USER_MODEL,
+            related_name='followings'
+        )
+#위 처럼 동일한 Model(위의 경우 User모델)간에 M:N 관계를 설정할 경우 테이블에는 `from_소문자 모델명_id`, `to_소문자 모델명_id`로 필드명이 설정된다.
 
-  ```python
-  from django.urls import path
-  from . import views
+#테이블명은 앱이름_user_follwers가 된다.
+```
+
+- accounts/urls.py 
+
+```python
+from django.urls import path
+from . import views
   
-  app_name = 'accounts'
-  urlpatterns = [
-      path('<int:pk>/follow/', views.follow, name='follow'),
-  ]
-  ```
+app_name = 'accounts'
+urlpatterns = [
+    path('<int:pk>/follow/', views.follow, name='follow'),
+]
+```
 
   - views.py
 
@@ -2400,9 +2410,9 @@ select * from people_people
               # 삭제
               user.followers.remove(request.user)
           else:
-              # 추가
+            # 추가
               user.followers.add(request.user)
-      return redirect('accounts:detail', user.pk)
+    return redirect('accounts:detail', user.pk)
   ```
 
   - detail.html(유저 프로필)
@@ -2429,8 +2439,6 @@ select * from people_people
   ```
 
 
-
-- 위 처럼 동일한 Model(위의 경우 User모델)간에 M:N 관계를 설정할 경우 테이블에는 `from_소문자 모델명_id`, `to_소문자 모델명_id`로 필드명이 설정된다.
 
 
 
