@@ -1237,22 +1237,6 @@ admin.site.register(Article)
 
 
 
-
-- HTTP 상태 코드
-  - 200 OK: 성공
-  - 300대는 redirect
-    - 301 Moved Permanently
-    - 302 Found
-  - 400대는 클라이언트 이슈
-    - 400 Bad Request(잘못된 문법으로 인하여 서버가 요청을 이해할 수 없음)
-    - 401 Unauthorized(로그인이 필요함에도 로그인 하지 않은 경우)
-    - 403 forbidden(권한이 없는 경우, {csrf_token}을 안써도 이 이슈가 발생), 클라이언트는 콘텐츠에 접근할 권리를 가지고 있지 않음
-    - 404 Not Foubd(해당 URL이 없는 경우): 요청받은 리소스를 찾을 수 없습
-    - 405 Method Not Allowed(GET으로 처리하는데 POST로 보낸 경우)
-  - 500 Internal Server Error: 서버 오류, 서버가 처리 방법을 모르는 상황과 마주침
-
-
-
 - url에 이름을 지정하는 방법
 
   ```python
@@ -1307,6 +1291,106 @@ admin.site.register(Article)
 
 
 
+
+# HTTP
+
+- HTTP
+  - HTML 문서와 같은 리소스들을 가져올 수 있도록 해주는 프로토콜
+  - HTTP는 웹에서 이루어지는 모든 데이터 교환의 기초이며, 클라이언트-서버 프로토콜이기도 하다.
+  -  클라이언트-서버 프로토콜이란 (보통 웹브라우저인) 수신자 측에 의해 요청이 초기화되는 프로토콜을 의미
+  - 보통 브라우저인 클라이언트에 의해 전송되는 메시지를 요청(requests)이라고 부르며, 그에 대해 서버에서 응답으로 전송되는 메시지를 응답(responses)이라고 부른다.
+
+
+
+- HTTP 메시지
+  - 요청 메세지의 구성
+    - method: 클라이언트가 수행하고자 하는 동작을 정의한 `GET`,`POST`같은 동사나 `OPTIONS`나 `HEAD`와 같은 명사
+    - path: 가져오려는 리소스의 경로를 뜻하며 프로토콜(http:// 등), 도메인(naver.com 등), 또는 TCP 포트인 요소들을 제거한 리소스의 URL(django에서 앞 부분 다 빼고 urls.py에 작성하는 부분)
+    - HTTP 프로토콜의 버전
+    - 서버에 대한 추가 정보를 전달하는 선택적 헤더들
+  - 응답 메세지의 구성
+    - HTTP 프로토콜의 버전
+    - 요청 성공 여부와 그 이유를 나타내는 상태코드(아래 HTTP 상태 코드 참조)
+    - 상태 코드의 짧은 설명을 나타내는 상태 메시지.
+    - 요청 헤더와 비슷한 헤더들
+    - 선택 사항으로, 가져온 리소스가 포함되는 본문.
+
+
+
+- HTTP메서드
+
+  - 클라이언트가 수행하고자 하는 동작을 정의한 GET, POST 같은 동사나 OPTIONS, HEAD와 같은 명사
+
+  - 종류
+    - GET: 특정 리소스의 표시를 요청합니다. `GET`을 사용하는 요청은 오직 데이터를 받기만 한다. 요청받은 URI의 정보를 검색하여 응답
+    - HEAD:  `GET` 메서드의 요청과 동일한 응답을 요구하지만, 응답 본문을 포함하지 않는다. GET방식과 동일하지만, 응답에 BODY가 없고 응답코드와 HEAD만 응답
+    - POST: 특정 리소스에 엔티티를 제출할 때 쓰입니다. 이는 종종 서버의 상태의 변화나 부작용을 일으킨다. 요청된 자원을 생성(CREATE)
+    - PUT: 요청된 자원을 수정(UPDATE)
+    - PATCH: 리소스의 부분만을 수정하는 데 쓰인다.  PUT의 경우 자원 전체를 갱신하는 의미지만, PATCH는 해당자원의 일부를 교체하는 의미
+    - DELETE: 특정 리소스를 삭제, 요청된 자원을 삭제
+    - OPTIONS: 목적 리소스의 통신을 설정, 웹서버에서 지원되는 메소드의 종류를 확인
+    - GET, POST, PUT, DELETE 정도가 자주 쓰인다.
+
+
+
+- url
+
+  - 도메인: path가 시작되기 전까지
+
+    ```
+    www.example.com
+    ```
+
+  - port(:뒤에 표시)
+
+    - HTTP는 80, HTTPS는 443의 값을 가지며 일반적으로는 생략한다. 만일 특정한 포트를 임의로 설정하고 싶다고 한다면 쓸 수 있다.
+
+    ```
+    www.example.com:4040
+    
+    4040은 포트번호다.
+    ```
+
+  - path(/뒤에 표시)
+
+    ```
+    www.example.com/articles/create/
+    
+    실습하면서 일반적으로 사용하는 /뒤에 오는 것들
+    ```
+
+  - parameter(?뒤에 표시)
+
+    ```
+    www.example.com/detail?name1=abc&name2=cba
+    
+    ?name1=abc&name2=cba부분이 parameter로 키=값의 형태를 가지며, 여러개를 동시에 쓸 때에는 &로구분한다.
+    ```
+
+  - anchor(#뒤에 표시)
+
+    ```
+    www.example.com/detail#content3
+    
+    #content3부분이 anchor로 한 문서 내부에서 이동할 때 사용한다.
+    detail페이지의 content3으로 이동한다는 뜻이다.
+    ```
+
+
+
+
+- HTTP 상태 코드
+  - 200 OK: 성공
+  - 300대는 redirect
+    - 301 Moved Permanently
+    - 302 Found
+  - 400대는 클라이언트 이슈
+    - 400 Bad Request(잘못된 문법으로 인하여 서버가 요청을 이해할 수 없음)
+    - 401 Unauthorized(로그인이 필요함에도 로그인 하지 않은 경우)
+    - 403 forbidden(권한이 없는 경우, {csrf_token}을 안써도 이 이슈가 발생), 클라이언트는 콘텐츠에 접근할 권리를 가지고 있지 않음
+    - 404 Not Foubd(해당 URL이 없는 경우): 요청받은 리소스를 찾을 수 없습
+    - 405 Method Not Allowed(GET으로 처리하는데 POST로 보낸 경우)
+  - 500 Internal Server Error: 서버 오류, 서버가 처리 방법을 모르는 상황과 마주침
 
 
 
@@ -1574,61 +1658,6 @@ admin.site.register(Article)
 
 
 - form태그 내부의 botton태그는 input태그의 submit과 동일한 역할을 수행한다. 
-
-
-
-- url
-
-  - 도메인: path가 시작되기 전까지
-
-    ```
-    www.example.com
-    ```
-
-  - port(:뒤에 표시)
-
-    - HTTP는 80, HTTPS는 443의 값을 가지며 일반적으로는 생략한다. 만일 특정한 포트를 임의로 설정하고 싶다고 한다면 쓸 수 있다.
-
-    ```
-    www.example.com:4040
-    
-    4040은 포트번호다.
-    ```
-
-  - path(/뒤에 표시)
-
-    ```
-    www.example.com/articles/create/
-    
-    실습하면서 일반적으로 사용하는 /뒤에 오는 것들
-    ```
-
-  - parameter(?뒤에 표시)
-
-    ```
-    www.example.com/detail?name1=abc&name2=cba
-    
-    ?name1=abc&name2=cba부분이 parameter로 키=값의 형태를 가지며, 여러개를 동시에 쓸 때에는 &로구분한다.
-    ```
-
-  - anchor(#뒤에 표시)
-
-    ```
-    www.example.com/detail#content3
-    
-    #content3부분이 anchor로 한 문서 내부에서 이동할 때 사용한다.
-    detail페이지의 content3으로 이동한다는 뜻이다.
-    ```
-
-    
-
-- HTTP메서드
-
-  > 클라이언트가 수행하고자 하는 동작을 정의한 GET, POST 같은 동사나 OPTIONS, HEAD와 같은 명사
-  >
-  > GET, POST, PUT, DELETE,  HEAD, OPTIONS등이 있으나 GET, POST, PUT, DELETE 정도가 자주 쓰인다.
-
-
 
 
 
