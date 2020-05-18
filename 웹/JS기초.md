@@ -6,6 +6,7 @@
   - 국제적인 표준으로 만들기 위해 유럽 컴퓨터 제조 협회(ECMA)에서 승인을 받으려 함
     - Java를 만든 회사인 Sun micorsystems에서 이름을 문제삼음
     - 결국 ECMA Ver.1이라 이름 붙임(줄여서 ES1)
+  - JavaScript는 ECMAScript 표준(ECMA-262)을 바탕으로 구현된 언어
 
 
 
@@ -114,6 +115,7 @@
 
 
 - 브라우저의 구성 요소
+
   - BOM(Browser Object Model): window, 브라우저 창 자체
 
   - DOM(Document Object Model): 브라우저 창에 표시되는 document, BOM의 하위요소
@@ -148,13 +150,14 @@
 
 
 - 기본 명령어는 아래와 같다.
+
   - 윈도우가 최상단에 위치하고 그 아래 document가 존재하며 그 아래 함수가 존재하는 형태
   - 모든 명령어는 window를 써야 하므로 생략해도 동작한다. 
-  
+
   ```javascript
   window.document.함수
   ```
-  
+
   
 
 - 스타일 가이드
@@ -165,6 +168,8 @@
   - Naming Convention은 lowerCamelCase(첫 글자는 소문자, 이후 단어 시작마다 대문자)
 
 
+
+cf. 자바스크립트는 웹에서 사용하는 언어이므로 vscode에서 작상할 경우 vscode저장-웹 페이지 새로고침을 해야 작성 결과를 볼 수 있다. 그러나 vscode에서 Live Server를 설치하면 VScode에서 저장만 하면 자동으로 새로고침이 된다. vscode의 코드 창에서 우클릭 후 Open With Live Server를 클릭하면 된다.
 
 
 
@@ -288,61 +293,64 @@
   - 원시타입과 객체 타입
 
     - 원시타입(primitive)
-  
+
       -변경 불가능한 값(imuutable)
-  
+
       -불린, 숫자, null undefined, 문자열, symbol이 해당
-  
+
     - 객체타입(object)
-  
+
       -원시타입을 제외한 모든 데이터
 
       -객체란 키와 값으로 구성된 속성(property)의 집합이며, 프로퍼티 값이 함수일 경우 구분을 위해 메소드라고 부른다.
-  
+
       -일반객체, function,array,data,RegExp
-  
+
+
+
 - 기본 데이터 타입
-  
+
   cf. 리터럴(literal): 그 자신으로 해석되어야 하는 값
-  
+
     ```javascript
-    a = 28//라고 하면 a라는 변수에 28이라는 정수형 리터럴을 할당해준 것이다. 
+  a = 28//라고 하면 a라는 변수에 28이라는 정수형 리터럴을 할당해준 것이다. 
     ```
-  
+
   - Number
-  
+
     - 정수와 실수 구분 하지 않음, 더 정확히는 정수 타입이 별도로 존재하지 않음.
     - 단 정수 리터럴과 실수 리터럴 표현 시 범위가 다르다(단, 크게 문제가 되지는 않는다)
     - 양수, 음수, 소수, e지수 표기(과학적 표기법), Infinity, -Infinity, NaN, 상수 전부 가능
-    -  NaN: 숫자가 아님을 표시하는 것으로 자신을 포함한 어떤 것과도 같지 않다.따라서 어떤 변수가 NaN인지는 `if (a==NaN)`으로 확인할 수 없고 `isNaN(a)`함수를 사용해야 한다. 반변에 undefined과 null는 동등연산자로 비교시 같다고 나온다. NaN은 자신과 일치하지 않는 유일한 값이다.
+    - NaN: 숫자가 아님을 표시하는 것으로 자신을 포함한 어떤 것과도 같지 않다.따라서 어떤 변수가 NaN인지는 `if (a==NaN)`으로 확인할 수 없고 `isNaN(a)`함수를 사용해야 한다. 반변에 undefined과 null는 동등연산자로 비교시 같다고 나온다. NaN은 자신과 일치하지 않는 유일한 값이다.
     - 상수란 미리 정해져 있는 숫자로 원주율이나 중력가속도 등이 이에 속한다.
-  
+
     - JavaScript에서 상수를 사용할 때는 대소문자 구분이 완벽해야 한다.
 
     - 파이썬과 달리 0으로 나눌 경우 에러를 발생시키는 것이 아니라 Infinity를 반환
+
   - NaN(Nano Number): 컴퓨터로 표기할 수  없는 수(e.g. 0/0)를 의미
+
     - -2\*\*53부터 2\*\*53까지의 수를 가진다. 
-  
+
     ```javascript
     var x = 1  //var는 요즘은 쓰지 않지만 명시적 표기를 위해 적는다.
     ```
-  ```
-  
-  ```
-  
-- String: 큰 따옴표, 작은 따옴표로 생성
-  
+
+    
+
+  - String: 큰 따옴표, 작은 따옴표로 생성
+
     - JavaScript에는 char 데이터 타입이 없음
-  - 문자열 리터럴은 따옴표로 둘러싸인 문자 집합이다.
+    - 문자열 리터럴은 따옴표로 둘러싸인 문자 집합이다.
     - 이스케이프 시퀀스는 파이썬과 마찬가지로 \키를 쓴다.
-  
+
     ```javascript
     var x = '문자열1'
     var y = "문자열2"
     ```
-  
+
     - Template Literal
-  
+
     ```javascript
     //줄 바꿈: 따옴표가 아닌 ``를 사용
     const x = `자바스크
@@ -357,23 +365,23 @@
     const message1 = 'hi'
     const message2 = `I said, ${message1}``
     ```
-  
+
   - Boolean: 소문자 true,false(파이썬과 달리 소문자로 적는다)
-  
+
     - 문자와 숫자 변환이 자동으로 이루어진다.
-  
+
     ```javascript
     var x = true
     var y = false
     ```
-  
+
   - Empty Value: null, undefined
-  
+
     - null: 어떠한 데이터 타입도 가지고 있지 않음, 변수에 아무 값이 담겨있지 않음, 의도적으로 변수에 값이 없다는 것을 명시하기 위해 사용
     - undefine: 정의되어 있지 않음, 값이 할당된 적 없는 변수, 생성되지 않는 객체에 접근할 때 나옴, 선언 이후 값을 할당하지 않으면 undefine이 디폴트 값으로 할당됨. 즉 null은 의도적으로 변수에 값을 지정하지 않겠다고 표시한 것이라면 undefine은 변수에 값을 아직, 혹은 실수로 할당하지 않은 것이다.
     - empty value를 둘이나 설정한 것은 JS 개발자들의 실수다.
     - 둘의 타입은 다르다. 이 역시 JS 개발자들의 실수다
-  
+
     ```javascript
     var empty1 = null
     var empty2 = undefined
@@ -449,9 +457,9 @@
     - 피 연산자 중 하나라도 문자열이면 피연산자가 연결된 문자열이 나온다.
 
       ```javascript
-    1+1=2
-    1+"a"="1a"
-    1+"1"="11"
+      1+1=2
+      1+"a"="1a"
+      1+"1"="11"
       ```
 
   - 뺄셈과 곱셈 연산자
@@ -661,14 +669,14 @@
     2
     3
     ```
-    
+
     - for
-    
+
     ```javascript
     /*
     for문 구조
     for(카운트 변수 초기화;제어 조건;카운트 변수 증가){
-  실행코드;
+    실행코드;
     }
     카운트 변수 초기화: 변수 선언과 함께 꼭 키워드 var붙임
     제어 조건: 카운트 변수에 대한 조건
@@ -685,9 +693,9 @@
     1
     2
     ```
-    
+
     - for of
-    
+
     ```javascript
     const arr = ['a','b','c']
     for (const n of arr){
@@ -699,8 +707,9 @@
     b
     c
     ```
+
     - for in
-    
+
     ```javascript
     const fruits = {
         'apple':2,
@@ -727,9 +736,9 @@
     tomato 10
     watermelon 2
     ```
-    
+
     - continue
-    
+
     ```javascript
     for (let i=0;i<4;i++){
         if (i===3) continue
@@ -744,86 +753,156 @@
 
 ​    
 
-- 함수
+# 함수
 
-  - Javascript의 객체는 1급 객체다.
-    - 변수에 저장할 수 있다.
-    - 함수의 리턴값이 될 수 있다.
-    - 함수의 인자가 될 수 있다.
+- Javascript의 객체는 1급 객체다.
+  - 변수에 저장할 수 있다.
+  - 함수의 리턴값이 될 수 있다.
+  - 함수의 인자가 될 수 있다.
 
-  ```javascript
-  // 함수의 선언식
-  // 인자 없이
-  function f(){
-      return 10
-  }
-  console.log(f())
-  
-  out
-  10
-  
-  //인자가 있을 때
-  function f(a){
-      return 10+a
-  }
-  console.log(f(3))
-  
-  out
-  13
-  
-  //디폴트값 설정
-  function f(a=3){
-      return 10+a
-  }
-  console.log(f())
-  
-  out
-  13
-  
-  
-  
-  //함수의 표현식
-  //익명함수(파이썬의 lamda와 유사), 주로 한 번 쓰고 쓰지 않을 함수를 지정할때 사용
-  const bar = function(a,b){ //함수의 이름이 존재X
-      return a+b
-  }
-  console.log(bar(10,20))  //변수로 함수를 실행시킨다.
-  
-  out
-  30
-  
-  
-  //함수명을 지정
-  const bar = function bar(a,b){  
-      //꼭 함수명을 변수명과 동일하게 할 필요는 없으나 일반적으로 동일하게 한다		
-      return a+b
-  }
-  console.log(bar(10,20))
-  
-  out
-  30
-  
-  
-  //화살표 함수
-  //화살표 함수는 함수의 선언식 & 표현식과 문법적으로 차이가 있고, 내부 동작도 다르다
-  const ssum = (a,b) => {
-      return a+b
-  }
-  console.log(ssum(10,20))
-  
-  out
-  30
-  
-  //매개변수가 1개일 경우 괄호를 안쓰는 것도 가능하다.
-  const pprint = a => {
-      return a
-  }
-  
-  // 중괄호 안에 들어가는 내용이 한 줄이면 중괄호 없이 가능하다
-  const pprint = a => {
-      return a
-  }
-  ```
+```javascript
+// 함수의 선언식
+// 인자 없이
+function f(){
+    return 10
+}
+console.log(f())
+
+out
+10
+
+//인자가 있을 때
+function f(a){
+    return 10+a
+}
+console.log(f(3))
+
+out
+13
+
+//디폴트값 설정
+function f(a=3){
+    return 10+a
+}
+console.log(f())
+
+out
+13
+
+
+
+//함수의 표현식
+//익명함수(파이썬의 lamda와 유사), 주로 한 번 쓰고 쓰지 않을 함수를 지정할때 사용
+const bar = function(a,b){ //함수의 이름이 존재X
+    return a+b
+}
+console.log(bar(10,20))  //변수로 함수를 실행시킨다.
+
+out
+30
+
+
+//함수명을 지정
+const bar = function bar(a,b){  
+    //꼭 함수명을 변수명과 동일하게 할 필요는 없으나 일반적으로 동일하게 한다		
+    return a+b
+}
+console.log(bar(10,20))
+
+out
+30
+
+
+//화살표 함수
+//화살표 함수는 함수의 선언식 & 표현식과 문법적으로 차이가 있고, 내부 동작도 다르다
+const ssum = (a,b) => {
+    return a+b
+}
+console.log(ssum(10,20))
+
+out
+30
+
+//매개변수가 1개일 경우 괄호를 안쓰는 것도 가능하다(그러나 괄호를 쓰는 것이 권장된다).
+const pprint = a => {
+    return a
+}
+
+// 중괄호 안에 들어가는 내용이 한 줄이면 중괄호 없이 가능하다
+const pprint = a => {
+    return a
+}
+
+
+// 함수의 인자의 개수가 부족하거나 넘치거나 없어도 에러가 발생하지 않는다.
+function wrong(a,b){
+    console.log(a,b)
+}
+
+wrong()
+wrong(1)
+wrong(1,2,3)
+
+out
+undefined undefined  //입력을 안하면 에러가 아닌 undefined를 출력
+1 undefined //모자라면 받은 것만 출력
+1 2         //넘치면 필요한 만큼만 받는다.
+
+
+
+
+// rest parameter라는 python의 *args와 유사한 기능이 존재
+// *의 역할을 ...이 한다.
+function restOperator1(...numbers){
+    console.log(numbers)
+}
+
+restOperator1(1,2,3,4,5)
+
+out
+[1,2,3,4,5]
+
+function restOperator2(a,b,...numbers){
+    console.log(a,b,numbers)
+}
+
+restOperator2(1,2,3,4,5)
+
+out
+1 2 [3,4,5]
+
+
+
+//spead operator
+function spreadOperator(a,b,c){
+    console.log(a,b,c)
+}
+
+let numbers = [1,2,3]
+
+spreadOperator(numbers[0],numbers[1],numbers[2])
+spreadOperator(...numbers) //spreadOperator 위와 정확히 동이란 코드이다.
+//귀찮게 인덱스로 접근해서 넣어주지 않아도 ...을 쓰면 알아서 배열의 요소를 흩뿌려준다.
+
+out
+1 2 3
+1 2 3
+
+
+//배열 합치기
+let numbers = [1,2,3,4]
+let newNumbers = [0,...numbers,5]
+console.log(newNumbers)
+
+out
+[0,1,2,3,4,5]
+
+
+
+//깊은 복사
+newNumbers = numbers      //numbers가 바뀌면 newNumbers도 바뀐다.
+newNumbers = [...numbers] //newNumbers가 새로운 리스트가 된다.
+```
 
 
 
@@ -860,146 +939,151 @@
 
   
 
-- 자료구조
 
-  - Array(파이썬의 리스트): 파이썬과 마찬가지로 동적(배열 크기가 정해져 있지 않음)으로 배열의 추가와 삭제가 가능
-    - 참조형 데이터로 데이터 자체가 변수에 저장되는 것이 아니라 변수에는 해당 데이터를 찾기 위한 참조(주소)만 저장된다.
+# 자료구조
 
-  ```javascript
-  const arr = [0,1,2,3]
-  
-  //인덱스 접근
-  console.log(arr[0],arr[3])
-  
-  out
-  0 3
-  
-  
-  // 맨 뒤에 추가
-  arr.push(500)
-  console.log(arr)
-  
-  out
-  [0,1,2,3,500]
-  
-  
-  //맨 앞에 추가
-  arr.unshift(100)
-  console.log(arr)
-  
-  out
-  [100,0,1,2,3,500]
-  
-  //맨 앞의 요소 삭제
-  arr.shift(100)
-  console.log(arr)
-  
-  out
-  100
-  [0,1,2,3,500]
-  
-  //가장 우측의 요소삭제 후 반환
-  console.log(arr.pop())
-  console.log(arr)
-  
-  out
-  500
-  [0,1,2,3]
-  
-  
-  //역순으로 재배열, 원본도 변한다
-  console.log(arr.reverse())
-  console.log(arr)
-  out
-  [3,2,1,0]
-  [3,2,1,0]
-  
-  
-  //포함 여부 확인
-  console.log(arr.includes(0))
-  console.log(arr.includes(10))
-  
-  out
-  true
-  false
-  
-  
-  //배열 요소 전체를 연결하여 생성한 문자열을 반환, 구분자(separator)는 생략 가능, 기본 구분자는 ','
-  console.log(arr.join())   //기본값은 ,
-  console.log(arr.join(':'))
-  console.log(arr.join(''))
-  
-  out
-  3,2,1,0
-  3:2:1:0
-  3210
-  
-  
-  //인자로 지정된 요소를 배열에서 검색하여 인덱스를 반환, 중복되는 요소가 있는 경우 첫번째 인덱스만 반환, 만일 해당하는 요소가 없는 경우, -1을 반환
-  console.log(arr.indexOf(0))
-  console.log(arr.indexOf(1))
-  ```
-  
-  - 오브젝트(파이썬의 딕셔너리)
-    - 객체의 값은 이름과 값의 쌍으로 이루어져 있으며 이 쌍을 property라고 부른다.
-    - {이름:값}
-    - property는 어떠한 데이터 타입이라도 가능하다.
-    - 함수로 된 property를 Method라고 부른다.
-  
-  ```javascript
-  const me = {
-     name : '홍길동',  //오브젝트 안에서는 따옴표를 쓰지 않아도 된다.
-     'phone number':'01012345678',  //그러나 이처럼 띄어쓰기 등을 쓰고자 하면 따옴표 써야 한다.
-     electronics:{
-          phone:'galaxy s8',
-        	laptop:'samsung notebook 11',
-        	keyboards:['happyhacking','logitech']
-    	}
-    }
-  console.log(me.name)
-  console.log(me.electronics.keyboards[0])
-  console.log(me.height) //설정하지 않은 키를 입력하면
-    
-  out
-  홍길동
-  happyhacking
-  undefined  //undefined가 출력
-    
-  console.log(Object.keys(me))    //키만 배열로 반환
-  console.log(Object.values(me))  //value만 배열로 반환
-  console.log(Object.entries(me)) //key,value를 array에 넣어서 반환
-    
-  out
-  ["name", "phone number", "electronics"]
-  ["홍길동", "01012345678", {phone: "galaxy s8", laptop: "samsung notebook 11", keyboar...}]
-  [["name", "홍길동"], ["phone number", "01012345678"], ["electronics", {…}]]
-    
-    
-    
-  //오브젝트 리터럴
-  //키와 밸류가 같을 경우 하나만 적으면 된다.
-  const a = 1
-  const b = 2
-  const c = 3
-    
-  const abc = {
-      'a':a,
-      'b':b,
-      'c':c,
+- Array(파이썬의 리스트): 파이썬과 마찬가지로 동적(배열 크기가 정해져 있지 않음)으로 배열의 추가와 삭제가 가능
+  - 참조형 데이터로 데이터 자체가 변수에 저장되는 것이 아니라 변수에는 해당 데이터를 찾기 위한 참조(주소)만 저장된다.
+
+```javascript
+const arr = [0,1,2,3]
+
+//인덱스 접근
+console.log(arr[0],arr[3])
+
+out
+0 3
+
+
+// 맨 뒤에 추가
+arr.push(500)
+console.log(arr)
+
+out
+[0,1,2,3,500]
+
+
+//맨 앞에 추가
+arr.unshift(100)
+console.log(arr)
+
+out
+[100,0,1,2,3,500]
+
+//맨 앞의 요소 삭제
+arr.shift(100)
+console.log(arr)
+
+out
+100
+[0,1,2,3,500]
+
+//가장 우측의 요소삭제 후 반환
+console.log(arr.pop())
+console.log(arr)
+
+out
+500
+[0,1,2,3]
+
+
+//역순으로 재배열, 원본도 변한다
+console.log(arr.reverse())
+console.log(arr)
+out
+[3,2,1,0]
+[3,2,1,0]
+
+
+//포함 여부 확인
+console.log(arr.includes(0))
+console.log(arr.includes(10))
+
+out
+true
+false
+
+
+//배열 요소 전체를 연결하여 생성한 문자열을 반환, 구분자(separator)는 생략 가능, 기본 구분자는 ','
+console.log(arr.join())   //기본값은 ,
+console.log(arr.join(':'))
+console.log(arr.join(''))
+
+out
+3,2,1,0
+3:2:1:0
+3210
+
+
+//인자로 지정된 요소를 배열에서 검색하여 인덱스를 반환, 중복되는 요소가 있는 경우 첫번째 인덱스만 반환, 만일 해당하는 요소가 없는 경우, -1을 반환
+console.log(arr.indexOf(0))
+console.log(arr.indexOf(1))
+```
+
+
+
+
+
+- 오브젝트(파이썬의 딕셔너리)
+  - 객체의 값은 이름과 값의 쌍으로 이루어져 있으며 이 쌍을 property라고 부른다.
+  - {이름:값}
+  - property는 어떠한 데이터 타입이라도 가능하다.
+  - 함수로 된 property를 Method라고 부른다.
+
+```javascript
+const me = {
+   name : '홍길동',  //오브젝트 안에서는 따옴표를 쓰지 않아도 된다.
+   'phone number':'01012345678',  //그러나 이처럼 띄어쓰기 등을 쓰고자 하면 따옴표 써야 한다.
+   electronics:{
+        phone:'galaxy s8',
+      	laptop:'samsung notebook 11',
+      	keyboards:['happyhacking','logitech']
+  	}
   }
-  //위와 같이 쓰지 않고 아래와 같이 쓰는 것이 가능
-  const abc = {
-      a,
-      b,
-      c,
-  }
-  console.log(abc.a)
-    
-  out
-  1
-  ```
+console.log(me.name)
+console.log(me.electronics.keyboards[0])
+console.log(me.height) //설정하지 않은 키를 입력하면
+  
+out
+홍길동
+happyhacking
+undefined  //undefined가 출력
+  
+console.log(Object.keys(me))    //키만 배열로 반환
+console.log(Object.values(me))  //value만 배열로 반환
+console.log(Object.entries(me)) //key,value를 array에 넣어서 반환
+  
+out
+["name", "phone number", "electronics"]
+["홍길동", "01012345678", {phone: "galaxy s8", laptop: "samsung notebook 11", keyboar...}]
+[["name", "홍길동"], ["phone number", "01012345678"], ["electronics", {…}]]
   
   
+  
+//오브젝트 리터럴
+//키와 밸류가 같을 경우 하나만 적으면 된다.
+const a = 1
+const b = 2
+const c = 3
+  
+const abc = {
+    'a':a,
+    'b':b,
+    'c':c,
+}
+//위와 같이 쓰지 않고 아래와 같이 쓰는 것이 가능
+const abc = {
+    a,
+    b,
+    c,
+}
+console.log(abc.a)
+  
+out
+1
+```
+
+
 
 
 
@@ -1032,4 +1116,4 @@
   object
   ```
 
-  
+

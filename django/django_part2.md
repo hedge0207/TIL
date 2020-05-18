@@ -97,7 +97,7 @@
 
   - 쿠키
   
-  - 웹 사이트에서 어떤 행동을 할 때마다 웹은 사용자에게 쿠키를 제공(쿠키는 브라우저에 저장)하게 되고 이후부터는 사용자가 가진 쿠키를 웹에서 읽어서 그 상태를 기억하게 된다.
+    - 웹 사이트에서 어떤 행동을 할 때마다 웹은 사용자에게 쿠키를 제공(쿠키는 브라우저에 저장)하게 되고 이후부터는 사용자가 가진 쿠키를 웹에서 읽어서 그 상태를 기억하게 된다.
     - 만일 사용자가 쿠키를 임의로 조작하는 경우(예를 들어 일반 회원에서 admin으로 인식되도록 쿠키를 조작하는 경우) 문제가 생길 수 있다. 따라서 django에는 이를 막는 방법이 존재한다.
 
   - 세션
@@ -114,8 +114,6 @@
 
     - 사용자가 로그인 할 경우 django_session 테이블에 기록된다.
 
-      
-  
   - 캐시는 특정 사이트에 대한 정보를 브라우저에 저장함으로써 다음에 해당 사이트에 접속했을 때 사이트가 더 빨리 로드되게 해준다. 즉 요청을 보냈을 때  매번 모든 정보를 받아오는 것이 아니라 요청한 정보에 대해서만 정보를 받아온다.
   
   - 캐시와 쿠키에 대한 정보는 웹브라우저의 개발자도구에서 application 탭에서 볼 수 있다.
@@ -1347,7 +1345,7 @@ select * from people_people
 
   - 유저 정보를 관리하는 db테이블에 각 유저가 작성한 글을 저장하는 것 보다는 게시글 정보를 관리하는 db테이블에 유저 정보를 저장하는 것이 더 낫다.
   
-  - 만일 유저 정보를 관리하는 db테이블에서 각 유저가 글을 작성할 때마다 그 글에 대한 정보를 db테이블에 장한다면 유저 정보를 관리하는 테이블은 무한히 늘어나야 할 것이다.
+  - 만일 유저 정보를 관리하는 db테이블에서 각 유저가 글을 작성할 때마다 그 글에 대한 정보를 db테이블에 저장한다면 유저 정보를 관리하는 테이블은 무한히 늘어나야 할 것이다.
   
     | user |          |                 |                 |                 |      | article |          |
     | ---- | -------- | --------------- | --------------- | --------------- | ---- | ------- | -------- |
@@ -1415,9 +1413,9 @@ select * from people_people
   post1.title = '제목1'
   post1.content = '내용1'
   # creater는 creater 오브젝트를 저장
-  post1.creater = r1
+  post1.creater = creater1
   # creater_id는 숫자(INTEGER)를 저장
-  # a1.reporter_id = 1 
+  # post1.creater_id = 1 
   post1.save()
   
   post2 = Post.objects.create(title='제목2', content='내용2', creater=creater1)
@@ -1430,7 +1428,7 @@ select * from people_people
   
   #글의 작성자
   post1 = Post.objects.get(pk=2)
-  post1.reporter
+  post1.creater
   
   # 2. 글의 작성자의 username
   post1.creater.username
@@ -1449,7 +1447,7 @@ select * from people_people
   #Post.objects.filter(creater=creater1)
   
   #creater1.post_set.all()와 Post.objects.filter(creater=creater1)의 기능은 동일하지만 느낌은 다를 수 있다.
-  #creater1.post_set.all()가 보다 creater1이 작성한 포스트를 모두 가져온다는 느낌을 강하게 주며 활용에 있어서도 더 편하다.
+  #creater1.post_set.all()가 creater1이 작성한 포스트를 모두 가져온다는 느낌을 강하게 주며 활용에 있어서도 더 편하다.
   ```
 
   
@@ -1524,7 +1522,7 @@ select * from people_people
       if form.is_valid():
           comment=form.save(commit=False)
           """
-          comment=form.save()를 하는 것이 아니라 comment=form.save(commit=False)를 하는 이유		 는 만일 바로 db에 반영(save)을 하면, 아직 post_id값은 넣어준 적이 없으므로 NULL값이다. 따		  라서 오류가 발생하게 된다. 그렇다고 save()안하고 comment=form를 할 수도 없다. form은 			save()를 하기 전까지는 반환받는 값이 없으므로, save()를 해줘야 비로소 다른 값에 할당할 수 		  있다. 따라서 post를 반환은 하되 데이터베이스에 반영은 하지 않는 처리를 해줘야 하는데 그 처리		 가 바로 .save(commit=False)이다.
+          comment=form.save()를 하는 것이 아니라 comment=form.save(commit=False)를 하는 이유		 는 만일 바로 db에 반영(save)을 하면, 아직 post_id값은 넣어준 적이 없으므로 NULL값이다. 따		  라서 오류가 발생하게 된다. 그렇다고 save()안하고 comment=form을 할 수도 없다. form은 			save()를 하기 전까지는 반환받는 값이 없으므로, save()를 해줘야 비로소 다른 값에 할당할 수 		  있다. 따라서 post를 반환은 하되 데이터베이스에 반영은 하지 않는 처리를 해줘야 하는데 그 처리		 가 바로 .save(commit=False)이다.
           """
           comment.post=post  #post_id에 post.pk를 넘겨준다.
           #굳이 comment.post_id=post.pk라고 적지 않아도 알아서 id값이 넘어가게 된다.
@@ -1755,11 +1753,13 @@ select * from people_people
 
   
 
-- 만일 기존에 등록한 데이터가 있는 상태로 마이그레이션을 한다면 아래와 같은 문구가 터미널 창에 뜨게 된다,
+- 만일 기존에 등록한 데이터가 있는 상태로 마이그레이션을 한다면 아래와 같은 문구가 터미널 창에 뜨게 된다.
+
+  - 기존에 등록한 데이터에는 NOT NULL 속성을 지닌 `ImageField`의 값이 저장되어 있지 않아 NOT NULL임에도 NULL값을 가져 발생하는 에러다.
 
   ```bash
   $ python manage.py makemigrations
-  # default값 없이 NOT NULL Field를 지정했다는 문구로 기존에 등록한 데이터들에 filed값을 지정해 줘야 한다.
+  # default값 없이 NOT NULL Field를 지정했다는 문구로 기존에 등록한 데이터들에 filed의 값을 지정해 줘야 한다.
   You are trying to add a non-nullable field 'image' to article without a default; we can't do that (the database needs something to populate existing rows).
   # 2가지 옵션 제시
   Please select a fix:
@@ -1850,23 +1850,22 @@ select * from people_people
     #저장된 미디어 파일에 접근하기 위한 경로
     MEDIA_URL = '/media/'
     ```
-  ```
     
-  - urls.py
+    - urls.py
     
     ```python
     # 아래 2개를 import 하고
     from django.conf import settings
     from django.conf.urls.static import static
-    
+      
     urlpatterns = [
         path('admin/', admin.site.urls),
         path('articles/', include('articles.urls')),
-  ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    
+    ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+      
     #+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)는 url이 넘어가서 html파일을 실행시킬 때 media파일도 함께 보내서(서빙) 실행시킨다는 것을 알려주는 것이다.
-  ```
-
+    ```
+    
     
 
 - `media`폴더는 최초로 미디어 파일을 등록하면 자동으로 생성된다.
@@ -1928,12 +1927,6 @@ select * from people_people
   
 
   
-
- 
-
-
-
-
 
 # M:N
 
@@ -2052,7 +2045,7 @@ select * from people_people
 
   - `ManyToMany`필드를 사용, `through`옵션을 통해 중개 모델을 선언
   - `ManyToMany`필드를 추가할 경우 추가적인 migrate를 할 필요가 없다. `ManyToMany`필드는 DB에 영향을 주지 않기 때문이다.
-  - `ManyToMany`필드두 모델 중 아무 쪽에나 설정하면 된다. 
+  - `ManyToMany`필드는 두 모델 중 아무 쪽에나 설정하면 된다. 
 
   ```python
   class Doctor(models.Model):
@@ -2154,6 +2147,7 @@ select * from people_people
   # article.user에서의 user는 작성자를,
   # article.users의 users는 좋아요 누른 사람을 뜻한다.
   # 그런데 user(AUTH_USER_MODEL의 오브젝트)를 기준으로 보면
+  # user=User.objects.get(id=1)을 하고
   # user.article_set을 하면 user가 작성한 글인지, 좋아요를 누른 글인지 구분이 되지 않는다.
   # 따라서 migrate를 할 경우 에러가 발생하게 된다. 따라서 아래와 같이 역참조를 설정해야 한다.
   
@@ -2174,7 +2168,7 @@ select * from people_people
 
   - `ManyToManyField`를 설정하고 DB파일을 보면 중개 테이블이 생성된 것을 확인할 수 있다.
 
-    - 중개 테이블 이름은 `앱명_모델명_``ManyToManyField를 설정한 필드명`이다. 
+    - 중개 테이블 이름은 `앱명_모델명_ManyToManyField를 설정한 필드명`이다. 
 
   - models.py
 
@@ -2190,20 +2184,18 @@ select * from people_people
     #Reservation 삭제
     ```
 
-    
-
   - 기존 방식
 
     ```python
-    # 예약 생성
+  # 예약 생성
     #d1,p1은 위에서 정의했다고 가정
     Reservation.objects.create(doctor=d1, patient=p1)
     ```
-
+  
   - 새로운 방식
 
     ```python
-    # 예약 생성
+  # 예약 생성
     #d1,p1은 위에서 정의했다고 가정
     d1.patients.add(p1) #add를 통해 추가를 하면
     
@@ -2221,7 +2213,7 @@ select * from people_people
     p1.doctors.all()   #환자 모두에서 삭제가 된다.
     <QuerySet []>
     ```
-
+  
   
 
   - 단, 중개 모델을 꼭 만들어야 하는 경우가 존재한다.
@@ -2229,7 +2221,7 @@ select * from people_people
     - 두 모델 모두에 정의되지 않은, 정의할 수 없는 필드가 필요할 경우
 
     ```python
-    #예를 들어, 예약 날짜가 필요할 경우 예약 날짜는 Doctor,Patient 중 어느 쪽에 정의하기가 어렵다. 
+  #예를 들어, 예약 날짜가 필요할 경우 예약 날짜는 Doctor,Patient 중 어느 쪽에 정의하기가 어렵다. 
     class Doctor(models.Model):
         name = models.TextField()
     
@@ -2245,7 +2237,7 @@ select * from people_people
         patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
        	date = models.DateTimeField()
     ```
-
+  
     
 
 - 좋아요 기능 구현하기

@@ -76,7 +76,7 @@
 # MTV기초
 
 - 소프트웨어 디자인 패턴
-  - 소프트웨어를 어떻게 설계할지 디자인
+  - 소프트웨어를 어떻게 설계할 것인가.
   - MVC, MTV는 모두 소프트웨어 디자인 패턴이다.
 - MTV: Model, Template, View로 장고의 기본 흐름이다. 다른 곳에서는 보통 MVC를 쓴다.
   - Model: 데이터 관리, 데이터베이스 조작, 데이터 구조화(어떻게 데이터를 넣을 것인가)
@@ -120,8 +120,8 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     - `INSTALLED_APPS`에 추가해줘야 한다.
     
     ```python
-    # $manage.py startapp pages를 통해 pages라는 app을 만들었을 경우 아래와 같이 추가해야 한다.
-      #INSTALLED_APPS는 아래에서 확인 할 수 있듯이 리스트이다.
+    # $ python manage.py startapp pages를 통해 pages라는 app을 만들었을 경우 아래와 같이 추가해야 한다.
+    #INSTALLED_APPS는 아래에서 확인 할 수 있듯이 리스트이다.
         
     INSTALLED_APPS = [
           'django.contrib.admin',
@@ -168,7 +168,6 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     #False로 해놓으면 오류 메세지만 출력된다. 따라서 만일 True로 해놓은 상태에서 오류가 발생하게 되면 다른 사람들이 내가 짠 코드를 전부 볼 수 있게 되므로 보안상의 심각한 문제가 생길 수 있다. 따라서 다른 사람들이 사용하게 할 때에는 반드시 False로 바꿔야 한다.
     
     
-    
     # Internationalization관련 설정들
     LANGUAGE_CODE = 'en-us'  #언어를 설정하는 것으로 "ko-kr"로 바꾸면 한국어가 된다.
     
@@ -180,9 +179,9 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     
     USE_TZ = True
     ```
-  
     
   
+    
   - url 연결하기
   
     - 다음으로 `urls.py`에서 어떤 url로 들어갔을 때 무엇을 처리할지를 설정해줘야 한다.
@@ -409,11 +408,8 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     ```html
     <!--index.html-->
     <!--기본-->
-    ```
-  
-    ```html
     <ul>
-          {% for m in menu %}   <!--for문과-->
+        {% for m in menu %}   <!--for문과-->
           <li>{{m}}</li>
           {% endfor %}          <!--endfor문 사이의 내용을 len(menu)번 반복-->
     </ul>
@@ -423,7 +419,7 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     피자
     햄버거
     ```
-  
+    
   - `forloop.counter`: 반복 횟수를 출력, 당연히 for문 안에만 쓸 수 있다.
   
     - `forloop.counter숫자`:입력한 숫자부터 시작한다(지정하지 않으면 1부터 시작).  숫자와 counter 사이에 띄어쓰기 안한다.
@@ -771,10 +767,12 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
 
   - 또한 템플릿 확장을 사용한 경우 base.html 파일이 모든 프로젝트에서 사용 가능하게 바꿀 수 있다.
 
-    - 만일 A어플 내의 base.html을 A어플의 다른 템플릿들에 사용했을 경우 B어플에서도 base.html을 사용하고자 한다면 base.html을 project폴더에 `templates`폴더를 만든 후 그 안에 넣으면 된다.
+    - 만일 A어플 내의 base.html을 A어플의 다른 html파일들에 사용했을 경우 B어플에서도 base.html을 사용하고자 한다면 base.html을 project폴더에 `templates`폴더를 만든 후 그 안에 넣으면 된다.
 
     - 또한 settings.py에서 `TEMPLATES`설정을 바꿔줘야 한다.
 
+    - `DIRS`에는 어떤 순서로 파일을 찾을 것인지를 입력하는 것이다. 아래에서는 root폴더(프로젝트 폴더)만 입력했으므로 당연히 root폴더 내부에 정의한 base.html파일을 가장 먼저 찾게 된다.
+    
       ```python
       TEMPLATES = [
           {
@@ -957,7 +955,7 @@ QueryDict{'content':1234,'title':5678}
 
 - 데이터
   - 데이터를 엑셀 파일에 비유했을 때 하나의 테이블은 하나의 sheet가 된다.
-  - 열(column)은 속성을 담고 있다. 속성 혹은 레코드라고도 부른다. 스키마가 만든 틀이 바로 열이다. 필드(field)는 데이터베이스의 테이블에서 열(column)을 의미한다.
+  - 열(column)은 속성을 담고 있다. 속성이라고도 부른다. 스키마가 만든 틀이 바로 열이다. 필드(field)는 데이터베이스의 테이블에서 열(column)을 의미한다.
   - 행(row)은 각 속성의 구체적인 정보를 담고 있다. 레코드라고도 부른다.
   - PK(Primary Key): 주민등록번호, 군번, 학번과 같이 식별을 위해 지정된 고유한 값 , id값의 column의 이름을 pk라 부른다.
   - 장고에서는 객체를 저장할 때 마다 PK값을 하나씩 증가시키면서  PK값을 부여한다.
@@ -988,7 +986,6 @@ QueryDict{'content':1234,'title':5678}
     article.content = '내용'  #article 객체의 content을 '내용'으로 설정한다.
     article.save()           #반드시 세이브를 해줘야 한다.
                              #models.DateTimeField(auto_now_add=True) 속성의 						   			  경우에는 위의 과정을 거치지 않아도 자동으로 생성되므로 바							      로 쓰면 된다.
-    
     #방법2
     article = Article(title='제목', content='내용')
     article.save()
@@ -996,10 +993,10 @@ QueryDict{'content':1234,'title':5678}
     #방법3
     Article.objects.create(title='제목',content='내용')
     ```
-
   
 
-  - 조회- ex. 게시글 읽기
+  
+- 조회- ex. 게시글 읽기
     
     - 전체 데이터 조회
     
@@ -1009,8 +1006,8 @@ QueryDict{'content':1234,'title':5678}
     
     #아래의 코드는 지금까지 생성된 Article의 모든 객체를 QuerySet 형태로 article에 담는 것이다.
     article=Article.object.all()
-
-    #Article.objects.order_by('-id').all()와 같이 쓰면 역순으로 조회한다.
+  
+  #Article.objects.order_by('-id').all()와 같이 쓰면 역순으로 조회한다.
     ```
     
   - 단일 데이터 조회(고유한 값인 id를 통해 가능)
@@ -1030,16 +1027,16 @@ QueryDict{'content':1234,'title':5678}
     ```
     
   - 수정- ex. 게시글 수정
-
-    ```python
+  
+  ```python
     a1 = Article.objects.get(id=1)  #수정할 대상을 정하고
-        a1.title = '제목 수정'       #수정후
-        a1.save()                  #저장
+    a1.title = '제목 수정'       #수정후
+    a1.save()                  #저장
     ```
-
-  - 삭제- ex. 게시글 삭제
-
-      ```python
+  
+- 삭제- ex. 게시글 삭제
+  
+    ```python
       a1 = Article.objects.get(id=1)
       a1.delete()
       >> (1, {'articles.Article': 1})
@@ -1141,6 +1138,7 @@ admin.site.register(Article)
       ```python
       #views.py
       from 디렉토리 파일명 import 클래스명
+      
       #동일한 디렉토리에 있을 경우 .을 입력하고 파일명은 model을 정의한 파일명을 입력하는데 보통 models.py와 views.py는 같은 폴더에 있고 model은 일반적으로 models.py에 정의하므로
       from .models import 클래스명
       #위와 같이 쓰면 된다.
@@ -1224,16 +1222,18 @@ admin.site.register(Article)
 
   - method로 POST를 쓸 경우 보내는 곳에 아래의 코드를 추가해야 한다.  보안상의 이유(사이트간 요청 변조 방지)로 붙이는 것이다.
 
-    - 특정 url에 사용자가 의도하지 않은 작동이 일어나도록 설정하여 사용자가 해당 url을 클릭 했을 때 해당 작동이 일어나게 되는 것이 사이트간 요청 변조로, 이를 막아주는 것이 csrftoken이다.
-    - 붙이지 않을 경우 403  forbidden 페이지가 뜬다.
-    - csrftoken 값은 새로고침 할 때마다(요청을 보낼 때 마다) 바뀌며, 이 값을 검증하여 변조된 요청인지 아닌지를 판단하는 방법으로 방어가 가능하다.
-    - 쿠키에도 저장되고 이를 통해서도 방어가 가능하다. 
-    - 검사를 통해 보면 csrftoken의 타입은 hidden이다.
-    - settings.pt의 `MIDDLEWARE`에 csrf관련 처리가 되어 있다. 만일 해당 코드를 주석처리 한다면 오류는 발생하지 않지만 보안이 무너지게 되므로 절대 해서는 안된다.
-
     ```html
     {% csrf_token %}
     ```
+    
+    - 특정 url에 사용자가 의도하지 않은 작동이 일어나도록 설정하여 사용자가 해당 url을 클릭 했을 때 해당 작동이 일어나게 되는 것이 사이트간 요청 변조로, 이를 막아주는 것이 csrftoken이다.
+    - 붙이지 않을 경우 403  forbidden 페이지가 뜬다.
+- csrftoken 값은 새로고침 할 때마다(요청을 보낼 때 마다) 바뀌며, 이 값을 검증하여 변조된 요청인지 아닌지를 판단하는 방법으로 방어가 가능하다.
+    - 쿠키에도 저장되고 이를 통해서도 방어가 가능하다. 
+    - 검사를 통해 보면 csrftoken의 타입은 hidden이다.
+    - settings.py의 `MIDDLEWARE`에 csrf관련 처리가 되어 있다. 만일 해당 코드를 주석처리 한다면 오류는 발생하지 않지만 보안이 무너지게 되므로 절대 해서는 안된다.
+    
+    
 
 
 
@@ -1282,7 +1282,7 @@ admin.site.register(Article)
 
 - 스타일 가이드
   - 따옴표는 하나로 통일해라.
-  - 변수할당할 때는 `=` 좌우를 한 칸씩 띄우고 그렇지 않을 때는 붙여써라.
+  - 변수를 할당할 때는 `=` 좌우를 한 칸씩 띄우고 그렇지 않을 때는 붙여써라.
   - `views.py`에서 `import`밑에는 2줄 띄우고 각 함수 사이는 1줄 띄운다.
   - 앱 이름은 반드시 복수형으로 정한다.
   - 앱 이름 외에도 복수인 것들은 복수형으로 정한다.
@@ -1388,7 +1388,7 @@ admin.site.register(Article)
     - 400 Bad Request(잘못된 문법으로 인하여 서버가 요청을 이해할 수 없음)
     - 401 Unauthorized(로그인이 필요함에도 로그인 하지 않은 경우)
     - 403 forbidden(권한이 없는 경우, {csrf_token}을 안써도 이 이슈가 발생), 클라이언트는 콘텐츠에 접근할 권리를 가지고 있지 않음
-    - 404 Not Foubd(해당 URL이 없는 경우): 요청받은 리소스를 찾을 수 없습
+    - 404 Not Foubd(해당 URL이 없는 경우): 요청받은 리소스를 찾을 수 없음
     - 405 Method Not Allowed(GET으로 처리하는데 POST로 보낸 경우)
   - 500 Internal Server Error: 서버 오류, 서버가 처리 방법을 모르는 상황과 마주침
 
@@ -1421,7 +1421,7 @@ admin.site.register(Article)
     <!--주의할 점은 템플릿 확장을 할 경우 {% load static%}은 항상 extends보다 아래에 있어야 한다는 점이다-->
     ```
 
-  - `base.html`에 사용하고 싶을 경우 프로젝트 폴더 하부 폴더로 static 폴더를 생성하고 그 하부 폴더로 적당한 이름의 폴더를 생성한 후 그 안에 static파일을 넣으면 되며, 이 경우 base.html 작성이 담긴 templates 폴더를 사용하는 것과 마찬가지로 `settings.py`에서 아래 코드를 추가해야 한다.
+  - `base.html`파일처럼 static 파일을 모든 앱으로 확장시켜 사용하고 싶을 경우 프로젝트 폴더 하부 폴더로 static 폴더를 생성하고 그 하부 폴더로 적당한 이름의 폴더를 생성한 후 그 안에 static파일을 넣으면 되며, 이 경우 base.html 작성이 담긴 templates 폴더를 사용하는 것과 마찬가지로 `settings.py`에서 아래 코드를 추가해야 한다.
 
     ```python
     #settings.py
@@ -1448,7 +1448,7 @@ admin.site.register(Article)
         <title>Document</title>
         <link rel="stylesheet" href="{% static 'articles/stylesheets/style.css' %}">
         <link rel="stylesheet" href="{% static 'bootstrap/bootstrap.min.css' %}">
-        <!--이처럼 block css를 쓴 후, 만일 다른 html파일에만 적용하고 싶은 css, js 파일이 없다면 		쓰지 않아도 된다.-->
+        <!--이처럼 block css를 쓴다. 만일 다른 html파일에만 적용하고 싶은 css, js 파일이 없다면 		쓰지 않아도 된다.-->
         {% block css %}
         {% endblock %}
     </head>
@@ -1466,7 +1466,7 @@ admin.site.register(Article)
     ```html
     <!--other.html-->
         
-    <!--base.html에 적용한 css파일은 {% extends base.html %} 만으로도 적용 된다. 즉, 굳이 {% load static %}, {% block css %}, {% endblock %}을 쓸 필요가 없다.-->
+    <!--base.html에 적용한 css파일은 {% extends 'base.html' %} 만으로도 적용 된다. 즉, 굳이 {% load static %}, {% block css %}, {% endblock %}을 쓸 필요가 없다.-->
         
     <!--그러나 other.html 파일에 base.html에 적용되지 않은 static파일을 쓰고 싶다면 아래와 같이 block사이에 작성하면 된다.-->
     {% load static %}<!--href="{% static 경로/파일' %}"을 쓰기 위해 static을 불러 오고-->
