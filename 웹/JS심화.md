@@ -4,20 +4,100 @@
 
   - HTML로 작성할 수도 있는데 굳이 JS로 작성하는 이유는 HTML은 정적으로 보여주는 것 밖에 할 수 없으나 JS는 보다 동적으로 작동하게 할 수 있기 때문이다.
   - 예를 들어 게시글을 추가하는 페이지를 만든다고 하면 HTML로만 작성할 경우 HTML은 제출 버튼, 입력 창 등을 띄울 수 있으나 입력창에 글을 입력하고 제출버튼을 누른다고 해서 그 게시글이 등록되게 할 수는 없다. 그러나 JS는 실제로 등록되게 하는 것이 가능하다.
+  - JS로 태그를 지정하는 방법
+
+  ```html
+  <h1>hello world</h1>
+  <h2 class="class1 class2 class3">hi!!</h2>
+  
+  <script>
+      //1.태그를 지정하는 방법
+      const newH1 = document.querySelector('h1')
+      console.log(newH1)
+      console.log(newH1.innerText)
+      
+      //2.지정한 태그를 활용하는 방법
+      const inText = newH1.innerText
+      console.log(inText)
+      
+      //3.지정된 클래스를 보는 방법
+      const newH2 = document.querySelector('h2')
+      console.log(newH2.classList)
+      
+      //4.클래스를 추가하는 방법
+      newH2.classList.add('class4')
+      console.log(newH2.classList)
+  </script>
+  
+  out
+  <!--1-->
+  <h1>hello world</h1> 
+  hello world
+  <!--2-->
+  hello world
+  <!--3-->
+  <!--"class1 class2 class3"라는 문자열이 parsing되어 object형태로 들어가게 된다.-->>
+  DOMTokenList(3) ["class1", "class2", "class3", value: "class1 class2 class3"]
+  <!--4-->
+  DOMTokenList(3) ["class1", "class2", "class3", "class4", value: "class1 class2 class3 class4"]
+  ```
+
   - JS로 태그를 만드는 방법
     - 아래와 같이 할 경우 변수에는 object가 담기게 된다.
     - `.`으로 접근할 수 있는 이유가 바로 이것이다. 모두 오브젝트 안에 오브젝트가 있는 형태이기 때문에 ` .`으로 접근이 가능하다.
 
   ```JS
+  //방법1. createElement활용
   const 변수명 = document.createElement('태그명')
   
   //e.g.
-  const newLabel = document.createElement('label')
+  const myH1 = document.createElement('h1')
+  myH1.innerText = "hello world"
+  console.log(myH1)
+  console.log(typeof(myH1))
+  console.log(myH1.classList)
   
-  console.log(typeof(newLabel))
   
   out
+  <h1>hello world</h1>
   object
+  DOMTokenList [value: ""]
+  
+  
+  
+  //방법2-1. innerHTML 활용
+  //innerHTML은 지정한 태그의 하부에 태그를 넣는 것이므로 상부 태그가 있을 경우 하부 태그 생성이 가능하다.
+  //일반적으로 대부분의 태그들은 <body>태그 안에 생성이 되므로 body태그를 지정하고
+  const myBody = document.querySelector('body')
+  //그 자식태그로 <h1>태그를 넣는다.
+  myBody.innerHTML="<h1>hello world</h1>"
+  console.log(myBody.innerHTML)
+  console.log(typeof(myBody.innerHTML))
+  console.log(myBody.innerHTML.classList)
+  
+  
+  out
+  //아래에서는 잘 구분이 안되지만 브라우저에서 출력해보면 태그가 아니라 문자열로 나오는 것을 알 수 있다.
+  <h1>hello world</h1>
+  string
+  undefined  //태그(오브젝트)가 아닌 문자열이므로 classList가 있을 수 없다.
+  
+  
+  //방법2-2.문자열이 아닌 태그로 만드는 방법
+  //앞 부분은 2-1과 동일
+  const myBody = document.querySelector('body')
+  myBody.innerHTML="<h1>hello world</h1>"
+  //이를 변수에 담고 출력하면
+  const myH1=document.querySelector('h1')
+  console.log(myH1)
+  console.log(typeof(myH1))
+  console.log(myH1.classList)
+  
+  
+  out
+  <h1>hello world</h1>
+  object
+  DOMTokenList [value: ""]
   ```
 
   - 태그에 각종 속성을 부여하는 방법
@@ -199,7 +279,7 @@
 
   - 이벤트 리스너를 배우기 위해 callback 함수에 대한 이해가 필요
 
-  - 함수를 직접 실행하지 않고 인자로 넘기는 것(JS의 함수는 1급 객체로 함수의 인자가 될 수 있다)
+  - 콜백 함수(A)는 다른 함수(B)의 인자로 넘겨지는 함수로 다른 함수(B)의 내부에서 실행되는 함수(A)를 말한다(JS의 함수는 1급 객체로 함수의 인자가 될 수 있다)
 
   - Array Helper Methods: callback 함수의 일종
 
@@ -281,6 +361,15 @@
 
   - addEventListener()의 첫 번째 인자에는 조건이 되는 이벤트를, 두 번째 인자에는 어떤 일(함수)을 할 지를 넣는다.
 
+    ```js
+    //기본형
+    변수명.addEventListener('이벤트', function(A) {
+          실행할 내용
+      })
+    
+    //함수를 정의하는 것이므로 A자리에는 아무거나 넣어도 되고 심지어 비워둬도 된다. 그러나 event로 적는 것이 권장된다.
+    ```
+  
     ```html
     <!DOCTYPE html>
     <html lang="en">
@@ -299,23 +388,22 @@
         // 요소.addEventListener('이벤트', 이벤트 발생시 실행할 함수)
         myButton.addEventListener('click', confirmMessage)
           
-        //위 코드는 아래 코드와 동일하다.
+      //위 코드는 아래 코드와 동일하다.
         myButton.addEventListener('click', function(event) {
-          confirm('얍!')
+        confirm('얍!')
         })
-    
       </script>
     </body>
     </html>
-    ```
-
+  ```
+    
   - `urls.py`에 작성하는 코드와 유사하다.
-
+  
     ```python
     #articles라는 경로로 접근하면 index함수를 실행한다.
     path('artilces/',views.index)
     ```
-
+  
   - event의 종류
     - click: 포인팅 장치 버튼이 엘리먼트에서 눌렸다가 놓였을 때.
     - mouseover: 포인팅 장치가 리스너가 등록된 엘리먼트나 그 자식 엘리먼트의 위로 이동했을 때.
@@ -325,7 +413,7 @@
     - keyup: 키 누름이 해제될 때
     - load:  이미지 등의 리소스와 그 의존 리소스의 로딩이 끝났을 때
     - scroll:  다큐먼트 뷰나 엘리먼트가 스크롤되었을 때. 
-    - change: 변경이 일어났을 때
+    - change: 모든 종류의 input태그 값의 변경이 일어났을 때
 
 
 
@@ -333,15 +421,99 @@
 
   - window는 JS의 최상위 객체이다.
   - JS는 객체지향(OOP)언어다.
-  - this는 무조건 자신을 호출한 어떤 object(객체)를 지칭한다.
+  - this는 무조건 자신을 호출한 어떤 object(객체)를 지칭한다. 따라서 this는 객체다(this가 지칭하는 객체) 기본적으로 window를 지칭한다.
   - method는 객체 안에 정의된 함수를 말한다(`.메소드이름()`의 형태로 실행하는 함수).
   - function에 method가 포함되지만(객체 안에 저장된 '함수'가 메소드이므로) 설명의 편의를 위해 아래에서 말하는 function은 method가 아닌 함수를 의미한다.
 
   - fucntion을 정의할 때 this가 가리키는 객체가 window가 아닌 경우
     - method 안의 this: method 안의 this는 해당 method가 정의된 객체를 말한다.
     - 생성자 함수 안의 this
+  
+  ```js
+  const obj = {
+        name: 'obj',
+        method1: function () {
+          console.log(this)  // obj
+        },
+        objInObj: {
+          name: 'object in object',
+          // 아래 코드는 oioMethod: function () {} 이 코드와 완전히 같다.
+          oioMethod () {  // 코드를 짧고 간결하게 작성하게 해주는 ES6 문법설탕
+            console.log(this) // objInObj
+          }
+        }
+  ```
+  
+  ```js
+  //this와 .target은 역할이 유사하다.
+  
+  myButton.addEventListener('click', 
+     function(event) {
+        this.classList.add('btn','btn-primary')        //이 코드와
+        event.target.classList.add('btn','btn-primary') //이 코드는 동일하다.
+        confirm('얍')									//둘 다 myButton을 가리킨다.
+     })
+  
+  //그러나 this보다 target을 쓰는 것이 권장된다. this는 어느 메소드에 쓰였냐에 따라 달라지지만 target은 정확히 하나를 지정하기 때문이다.
+  
+  
+  //아래와 같이 화살표 함수로 정의했을 경우 this는 작동하지 않는다.
+  myButton.addEventListener('click', 
+     (event) => {
+        this.classList.add('btn','btn-primary')       
+        event.target.classList.add('btn','btn-primary') 
+        confirm('얍')									
+     })
+  ```
 
 
+
+
+
+# AJAX
+
+- AJAX: Asynchronous Javascript And Xml, 비동기식 자바스크립트와 xml
+- JS로 비동기 요청을 보내는 것
+- 지금까지는 요청이 올 때마다 응답을 보내고 페이지를 새로고침하는 방식을 사용. 즉 분절이 존재했다.
+- 비동기 요청은 새로고침(분절) 없이 요청과 응답이 이루어지는 것이다.
+  - 예를 들어 검색창에 검색어를 입력하면 새로고침 없이도 연관검색어가 뜬다.
+  - non-blocking한 비동기 작업을 한다면 콜백을 쓸 수 밖에 없도록 설계되어 있다.
+    - 콜백 함수를 쓴다고 non-blocking한 비동기 작업을 한다는 것은 아니다.
+- AJAX는 XHR(XML Http Requests)만을 요청으로 보낼 수 있으며, XHR은 비동기 요청이다.
+  - XHR은 None-blocking이다. 이전 코드가 끝나기 전에 다음 코드로 넘어간다.
+  - non-blocking하게 작업이 이루어지는 경우는 외부에 요청을 보내는 경우(XHR)와 응답을 기다리는 경우(settimeout) 2가지 이다. 외부에 요청을 보내고 그 요청에 대한 응답을 한없이 기다리면 브라우저가 제대로 작동을 할 수 없으므로 non-blocking하게 작업이 이루어진다.
+  - 스레드: 한 프로그램 내에서, 특히 프로세스 내에서 실행되는 흐름의 단위를 말한다. 일꾼이라고 생각하면 된다. 프로그램 사용자의 컴퓨터 CPU를 자원으로 활용한다.
+    - JS가 사용되는 환경인 브라우저는 싱글 스레드다. 이렇게 구현한 이유에는 여러가지 설이 있으나 무한으로 줄 경우 브라우저에서 여러가지 작업을 할 경우 사용자의 컴퓨터 성능이 떨어질 수 있기 때문(CPU를 자원으로 활용하므로)이다.
+    - 싱글 스레드의 경우 페이지 내에서 console창에 while문을 활용하여 무한루프를 발생시키면 페이지 로딩, 클릭 등이 전부 막히게 된다. 싱글 스레드는 일꾼 한 명이라고 볼 수 있으므로 일꾼 한 명이 while문을 돌리느라 다른 요청을 처리하지 못하기 때문이다. 
+
+
+
+- axios
+  - XHR을 보다 쓰기 쉽게 만들어주는 것이다.
+  - django의 request와 역할이 완전히 같다고 할 수는 없지만 일반적으로 django에서 request가 올 자리에 온다고 보면 된다.
+
+
+
+- promise
+  - 불확실하고 기다려야 하는 작업(AJAX axios)을 비동기적으로 처리하기 위해서 사용한다.
+  - `axios.get()`의 return 이 promise다.
+  - 성공했을 때, 어떤 일을 할 것인가(`.then()`)
+  - 실패했을 때, 어떤 일을 할 것인가(`.catch()`)
+
+
+
+- 동기적, 비동기적 방식
+  - 동기적
+    - 보낼 메일의 내용을 생각함(data = '이메일 내용')
+    - 메일을 작성하고 전송함(requests.get(이메일 보내는 요청+data))
+    - 답장이 올 때까지 기다림, 답장이 올 때까지 아래 과정을 수행하지 않음(유튜브를 예로 들면 모든 제목과 썸네일을 전부 받기 전까지 페이지를 띄우지 않는다)
+    - 투두리스트에 이메일 보냈다고 체크함(todo.check())
+    - 다른 일을 함(otherWork())
+  - 비동기적
+    - 이메일 보낼 내용을 생각함
+    - 비서에게 메일 보내라고 시키고  다 되면 알려달라고 함(promise)
+    - 다른 일을 함
+    - 비서에게  다 되었다고 연락이 오면 todo리스트에 체크함(.then)
 
 
 

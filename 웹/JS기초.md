@@ -34,6 +34,10 @@
 
 
 
+- 이런 과정에서 발전한 만큼 JS코드는 브라우저마다 언제나 같게 동작하지는 않는다.
+
+
+
 - node js
   - Javascript는 브라우저에서 쓸 수 없다는 태생적 한계가 존재, 타 언어와 같이 컴퓨터 자체를 조작하는 것이 불가능했음
   - Ryan Dahl이라는 개발자는 Javascript가 컴퓨터 조작을 할 수 있도록 개발 환경을 만들어주는 node js를 개발(V8엔진을 활용)
@@ -53,7 +57,7 @@
 - Vanilla.js
   - Javascript관련 라이브러리가 굉장히 많이 존재, 각 라이브러리들이 서로 의존성을 가지기 시작하면서 한 라이브러리를 사용하려면 다른 라이브러리를 사용해야 하는 상황이 발생. 속도가 저하되기 시작
   - 어떤 라이브러리도 설치하지 않은 Javascript인 Vanilla.js가 각광
-  - node JS가 서버를 조작하는 데 쓰인다면, Vanilla.js는 브라우저 조작에 사용
+  - node JS가 서버를 조작하는 데 쓰인다면, Vanilla.js는 브라우저 조작에 사용(서버 조작에 사용할 수 없고 오직 브라우저 내에서만 사용 가능하다).
 
 
 
@@ -124,41 +128,71 @@
 
     - 같은 html문서라도 어떤 프로그램으로 실행시키냐에 따라 그냥 문자열이 될 수 도 있고 문자열을 해석해 해당 정보를 보여주는 창이 될 수도 있다. 예를 들어 html파일을 메모장으로 켜면 그냥 텍스트의 나열이지만 브라우저로 켜면 html 파일을 해석하하고 구조화하여 창으로 표현해준다.
 
-    - 브라우저는 HTML 파일을 객체(object, 파이썬의 딕셔너리와 대응)로 치환(문서를 객체로 모델링)하고 해석한다.  치환된 이후의 document는 HTML파일(문자열)이 아닌 Obejcect를 뜻한다.
+    - 파이썬에서는 `.loads`,  JS에서는 `.parse`를 사용하여 문자열을 각기 dict, 오브젝트로 치환한다.
 
+    - 브라우저는 문자열인 HTML 파일을 객체(object, 파이썬의 딕셔너리와 대응)로 치환(문서를 객체로 모델링)하고 해석한다.  치환된 이후의 document는 HTML파일(문자열)이 아닌 Obejcect를 뜻한다.
+  
       ```javascript
       typeof document
       
       out
-      "object"
+    "object"
       ```
 
     - 즉 DOM은 HTML파일을 컴퓨터가 이해할 수 있게 치환된 결과물인 object이다(DOM !== HTML). 따라서 DOM 조작과 HTML 조작은 다르다.
 
     - HTML파일을 트리의 형태로 구조화(DOM tree)한다고 생각하면 된다. 컴퓨터가 실제로 트리로 만든다는 것은 아니다. 단지 사람이 이해하기 쉽도록 트리로 표현하는 것이다.
-
+  
       | html |       |      |      |      |      |      |      |
       | ---- | ----- | ---- | ---- | ---- | ---- | ---- | ---- |
       | head |       |      |      | body |      |      |      |
-      | meta | style | link |      | div  | span | ul   |      |
+    | meta | style | link |      | div  | span | ul   |      |
       |      |       |      |      |      |      | li   | li   |
 
+    - DOM트리의 노드를 탐색하는 방법
+  
+      ```js
+      //방법1. 직접 탐색하는 방법
+      document.body.ul.li
+      
+      //방법2. querySelector, querySelectorAll을 활용하는 방법
+      document.querySelector('li')
+      //방법1 보다 효율적이고 방법3보다 유연하다.
+      
+      //방법3. 그 밖의 탐색 방법(getElementByid, getElementByTagName 등)
+      document.getElementByid('id값') 
+      //id값이 없을 경우 원하는 태그 잡지 못함
+      document.getElementByTagName('tag명') 
+      //다수의 동일한 tag명이 있을 경우 원하는 태그 잡지 못함
+      ```
+  
     - 이렇게 해석하고 구조화한 HTML파일을 rendering한다.
-
+  
+      
+  
   - ES(ECMAScript): DOM을 조작하기 위한 프로그래밍 언어, JS
 
 
 
-- 기본 명령어는 아래와 같다.
+- window
 
-  - 윈도우가 최상단에 위치하고 그 아래 document가 존재하며 그 아래 함수가 존재하는 형태
+  - window는 하나의 탭을 의미하며 브라우저는 탭 단위로 동작한다.
+  - 브라우저의 최상위 객체는 window고 document가 그 아래 존재하며 그 아래 함수가 존재하는 형태다.
+  - document는 윈도우(탭)에서 띄우고 있는 문서를 의미한다.
+  - print(),close(), console 함수 등 document에 속하지 않는 함수들도 있다.
   - 모든 명령어는 window를 써야 하므로 생략해도 동작한다. 
 
-  ```javascript
+  ```js
   window.document.함수
+  //window객체의 하부 객체 중 document객체의 하부 객체 중 함수 객체를 사용
+  
+  //아래와 같이 작성해도 된다.
+  document.함수
   ```
 
   
+
+
 
 - 스타일 가이드
 
@@ -166,6 +200,7 @@
 
   - airbnb나 google을 주로 기준으로 사용
   - Naming Convention은 lowerCamelCase(첫 글자는 소문자, 이후 단어 시작마다 대문자)
+  - 오브젝트는 `-`를 허용하지 않는다(하면 오류가 발생한다).
 
 
 
@@ -814,7 +849,8 @@ out
 
 
 //화살표 함수
-//화살표 함수는 함수의 선언식 & 표현식과 문법적으로 차이가 있고, 내부 동작도 다르다
+//화살표 함수는 함수의 선언식 & 표현식과 문법적으로 차이가 있고, 내부 동작도 다르다.
+//this를 사용할 경우에 차이가 존재한다.
 const ssum = (a,b) => {
     return a+b
 }
@@ -1029,63 +1065,61 @@ console.log(arr.indexOf(1))
   - {이름:값}
   - property는 어떠한 데이터 타입이라도 가능하다.
   - 함수로 된 property를 Method라고 부른다.
-
-```javascript
-const me = {
-   name : '홍길동',  //오브젝트 안에서는 따옴표를 쓰지 않아도 된다.
-   'phone number':'01012345678',  //그러나 이처럼 띄어쓰기 등을 쓰고자 하면 따옴표 써야 한다.
-   electronics:{
-        phone:'galaxy s8',
-      	laptop:'samsung notebook 11',
-      	keyboards:['happyhacking','logitech']
-  	}
+  
+  ```js
+  const me = {
+     name : '홍길동',  //오브젝트 안에서는 따옴표를 쓰지 않아도 된다.
+     'phone number':'01012345678',  //그러나 이처럼 띄어쓰기 등을 쓰고자 하면 따옴표 써야 한다.
+     electronics:{
+          phone:'galaxy s8',
+        	laptop:'samsung notebook 11',
+        	keyboards:['happyhacking','logitech']
+    	}
+    }
+  console.log(me.name)
+  console.log(me.electronics.keyboards[0])
+  console.log(me.height) //설정하지 않은 키를 입력하면
+    
+  out
+  홍길동
+  happyhacking
+  undefined  //undefined가 출력
+    
+  console.log(Object.keys(me))    //키만 배열로 반환
+  console.log(Object.values(me))  //value만 배열로 반환
+  console.log(Object.entries(me)) //key,value를 array에 넣어서 반환
+    
+  out
+  ["name", "phone number", "electronics"]
+  ["홍길동", "01012345678", {phone: "galaxy s8", laptop: "samsung notebook 11", keyboar...}]
+  [["name", "홍길동"], ["phone number", "01012345678"], ["electronics", {…}]]
+    
+    
+    
+  //오브젝트 리터럴
+  //키와 밸류가 같을 경우 하나만 적으면 된다.
+  const a = 1
+  const b = 2
+  const c = 3
+    
+  const abc = {
+      'a':a,
+      'b':b,
+      'c':c,
   }
-console.log(me.name)
-console.log(me.electronics.keyboards[0])
-console.log(me.height) //설정하지 않은 키를 입력하면
-  
-out
-홍길동
-happyhacking
-undefined  //undefined가 출력
-  
-console.log(Object.keys(me))    //키만 배열로 반환
-console.log(Object.values(me))  //value만 배열로 반환
-console.log(Object.entries(me)) //key,value를 array에 넣어서 반환
-  
-out
-["name", "phone number", "electronics"]
-["홍길동", "01012345678", {phone: "galaxy s8", laptop: "samsung notebook 11", keyboar...}]
-[["name", "홍길동"], ["phone number", "01012345678"], ["electronics", {…}]]
+  //위와 같이 쓰지 않고 아래와 같이 쓰는 것이 가능
+  const abc = {
+      a,
+      b,
+      c,
+  }
+  console.log(abc.a)
+    
+  out
+  1
+  ```
   
   
-  
-//오브젝트 리터럴
-//키와 밸류가 같을 경우 하나만 적으면 된다.
-const a = 1
-const b = 2
-const c = 3
-  
-const abc = {
-    'a':a,
-    'b':b,
-    'c':c,
-}
-//위와 같이 쓰지 않고 아래와 같이 쓰는 것이 가능
-const abc = {
-    a,
-    b,
-    c,
-}
-console.log(abc.a)
-  
-out
-1
-```
-
-
-
-
 
 - JSON과 object의 치환
 

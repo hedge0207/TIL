@@ -172,6 +172,26 @@
 
   
 
+- 회원가입 후 바로 로그인 해주는 코드
+
+  ```python
+  def signup(request):
+      if request.method == 'POST':
+          form = CustomUserCreationForm(request.POST)
+          if form.is_valid():
+              user = form.save()
+              auth_login(request, user)
+              return redirect('articles:index')
+      else:
+          form = CustomUserCreationForm()
+      context = {
+          'form': form
+      }
+      return render(request, 'accounts/signup.html', context)
+  ```
+
+  
+
 - User와 get_user_model의 차이
 
   ```python
@@ -2187,13 +2207,15 @@ select * from people_people
   - 기존 방식
 
     ```python
+    
+    ```
   # 예약 생성
     #d1,p1은 위에서 정의했다고 가정
     Reservation.objects.create(doctor=d1, patient=p1)
     ```
   
   - 새로운 방식
-
+  
     ```python
   # 예약 생성
     #d1,p1은 위에서 정의했다고 가정
@@ -2213,7 +2235,7 @@ select * from people_people
     p1.doctors.all()   #환자 모두에서 삭제가 된다.
     <QuerySet []>
     ```
-  
+
   
 
   - 단, 중개 모델을 꼭 만들어야 하는 경우가 존재한다.
@@ -2237,7 +2259,7 @@ select * from people_people
         patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
        	date = models.DateTimeField()
     ```
-  
+
     
 
 - 좋아요 기능 구현하기

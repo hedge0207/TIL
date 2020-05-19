@@ -997,7 +997,7 @@ QueryDict{'content':1234,'title':5678}
 
   
 - 조회- ex. 게시글 읽기
-    
+  
     - 전체 데이터 조회
     
     ```python
@@ -1006,10 +1006,10 @@ QueryDict{'content':1234,'title':5678}
     
     #아래의 코드는 지금까지 생성된 Article의 모든 객체를 QuerySet 형태로 article에 담는 것이다.
     article=Article.object.all()
-  
-  #Article.objects.order_by('-id').all()와 같이 쓰면 역순으로 조회한다.
-    ```
     
+  #Article.objects.order_by('-id').all()와 같이 쓰면 역순으로 조회한다.
+  ```
+  
   - 단일 데이터 조회(고유한 값인 id를 통해 가능)
     
     ```python
@@ -1032,7 +1032,7 @@ QueryDict{'content':1234,'title':5678}
     a1 = Article.objects.get(id=1)  #수정할 대상을 정하고
     a1.title = '제목 수정'       #수정후
     a1.save()                  #저장
-    ```
+  ```
   
 - 삭제- ex. 게시글 삭제
   
@@ -1040,7 +1040,7 @@ QueryDict{'content':1234,'title':5678}
       a1 = Article.objects.get(id=1)
       a1.delete()
       >> (1, {'articles.Article': 1})
-      ```
+    ```
 
 
 
