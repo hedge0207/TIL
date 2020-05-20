@@ -2207,34 +2207,34 @@ select * from people_people
   - 기존 방식
 
     ```python
-    
-    ```
-  # 예약 생성
+    #예약생성
     #d1,p1은 위에서 정의했다고 가정
     Reservation.objects.create(doctor=d1, patient=p1)
     ```
-  
+
   - 새로운 방식
-  
+
     ```python
-  # 예약 생성
+    # 예약 생성
     #d1,p1은 위에서 정의했다고 가정
     d1.patients.add(p1) #add를 통해 추가를 하면
-    
+      
     d1.patients.all()  #의사와
     <QuerySet [<Patient:Patient object (1)>]>
     p1.doctors.all()   #환자 모두에 추가가 된다.
     <QuerySet [<Doctor:Doctor object (1)>]>
-    
-    
+      
+      
     #예약 삭제
     d1.patients.remove(p1) #remove를 통해 삭제를 하면
-    
+      
     d1.patients.all()  #의사와
     <QuerySet []>
     p1.doctors.all()   #환자 모두에서 삭제가 된다.
     <QuerySet []>
     ```
+
+    
 
   
 
@@ -2873,7 +2873,7 @@ urlpatterns = [
 
     ```python
     from django.views.decorators.http import require_GET
-    from djnago.http.response import JsonResponse  #import하고
+    from djnago.http import JsonResponse  #import하고
     
 
     #기존에 templates 파일을 통해 데이터를 보여주던 방식
@@ -3052,9 +3052,134 @@ def article_list_json_1(request):
 
 
 
+# django additional
+
+- Social Login
+
+  - 다른 사이트 회원 정보로 가입하기
+  - allauth 설치
+
+  > https://django-allauth.readthedocs.io/en/latest/installation.html
+
+  ```bash
+  $ pip install django-allauth
+  ```
+
+  - 위 사이트 참고해서 추가해야 할 것들을 추가
+
+  - 이후 migrate를 실행
+
+  - 이후 admin 사이트로 들어가보면 여러 가지가 추가된 것을 볼 수 있다(admin.py를 수정하지 않아도 됨).
+
+    - 위 사이트에 나와 있는 코드 중 아래 코드를 입력해야 admin 사이트로 들어갈 수 있다.
+
+    ```python
+    SITE_ID = 1
+    ```
+
+  - 전체 url을 관리하는 urls.py에 아래 코드를 작성
+
+    ```python
+    urlpatterns = [
+        #직접 작성한 accounts url, 반드시 이 url을 먼저 적어야 한다.
+        path('accounts/', include('accounts.urls')),
+        #allauth에서 정의한 accounts url
+        path('accounts/', include('allauth.urls'))
+    ]
+    #둘이 겹쳐도 상관 없는 이유는 accounts이후의 경로가 다르기 때문이다.
+    #직접 작성한 url login,logout,signup등의 경로를 일반적으로 가지지만
+    #allauth의 url은 google이라는 경로를 가지기에 알아서 분기가 된다.
+    ```
+
+  - login 양식을 제공하는 html에 아래의 코드를 입력
+
+    ```html
+    <a href="{% provide_login_url 'google' %}">로그인</a>
+    ```
 
 
 
+- Google API
+
+  > https://console.developers.google.com/projectselector2/apis/dashboard?hl=ko&supportedpurview=project
+
+  - 프로젝트 생성-사용자 인증 정보-동의 화면 구성-내부/외부 선택 후 만들기 클릭-앱 이름 설정 후 저장
+
+  - 사용자 인증 정보로 다시 가면 `+사용자 인증 정보 만들기 버튼이 생김`-클릭 후 OAuth 클라이언트 ID
+
+  - 승인된 자바스크립트 출처에는 로컬 주소를 적어도 된다.
+
+  - 승인된 리디렉션 URL에는 아래와 같이 작성(로컬 주소 뒤의 내용은 임의로 작성하는 것이 아닌 정해진 양식대로 작성해야 한다)
+
+    ```python
+    로컬주소/accounts/google/login/callback/
+    ```
+
+  - 위 과정을 끝내면 클라이언트 ID와 클라이언트  보안 비밀번호를 받게 된다.
+    - admin 사이트로 들어가서 소셜어플리케이션-소셜어플리케이션 추가로 이동
+    - 제공자는 Google을 선택, 이름은 아무거나 넣고 키는 비워두면 된다.
+    - 클라이언트 아이디와 비밀키에 각기 클라이언트 ID와 클라이언트  보안 비밀번호를 입력
+    - 선택된 사이트에 사이트 추가
+    -  저장
+
+
+
+- 여기까지 완료하면 구글 로그인이 가능해진다. 그러나 로그인하면 allauth가 설정한 url인`accounts/profile`로 이동하게 된다. 따라서 이 경로를 수정해줘야 한다.
+
+  - `settings.py`에 아래 코드를 입력
+
+  ```python
+  LOGIN_REDIRECT_URL = '원하는 경로'
+  ```
+
+  
+
+- 소셜계정을 생성하면 개발자가 만든 accounts앱에도 user가 추가된다. 따라서 만일 소셜계정을 삭제하고자 한다면 개발자가 정의한 User 모델에서도 삭제해야 한다(?).
+
+
+
+- logout
+
+  - HTTP는 기본적으로 stateless, 따라서 로그인한 '상태'를 유지한다는 것은 불가능하다.
+  - 서버에 요청에 보낼 때 마다  쿠키에 sessionid라는 key값에 해당하는 value(즉 sessionid)를 함께 보낸다. 이를 통해 사용자를 식별한다.
+  - 따라서 sessionid를 알고 있다면 로그인 하는 것이 가능하다.
+
+  - 예를 들어 `sessionid:xyz`이고 xyz에 저장된 사용자 id가 admin이라면 xyz를 입력하면 admin으로 로그인 된 상태가 될 수 있다.
+  - 악용될 여지가 있다.
+  - 그러나 실제로는 sessionid는 로그아웃 할 때 삭제되고 로그인 할 때마다 새롭게 갱신된다. 따라서 다른 사람이 내가 로그인 한 상태에서 sessionid를 보더라도 내가 로그아웃 후 다시 로그인 한다면 나는 새로운 sessionid를 발급받게 되고 다른 사람이 가진 나의 이전 sessionid는 아예 연결 된 id가 존재하지 않게 된다. 따라서 로그아웃만 한다면 sessionid로 인해 피해 볼 일은 없다고 보면 된다.
+
+
+
+- 게시글 페이지 분할하기
+
+  ```python
+  from django.core.paginator import Paginator
+  
+  def article_list(request):
+      articles = Article.objects.all()
+      #뒤에 10이라는 숫자는 한 페이지당 몇 개를 보여줄 것인지 정하는 것
+      paginator = Paginator(articles,10)  
+      
+      page_number = request.GET.get('page')
+      page_obj = paginator.get_page(page_number)
+      
+      context = {
+          'articles':aritcles,
+          'page_obj':page_obj,
+      }
+      return render(reqeust,'articles/articles_list.html', context)
+  ```
+
+  - HTML 파일에 출력하기
+
+  > https://pypi.org/project/django-bootstrap-pagination/
+
+  ```html
+  {% for article in page_obj %} <!--articles가 아닌 page_obj를 쓴다-->
+  <li>{{ article.title }}</li>
+  ```
+
+  
 
 
 
@@ -3411,7 +3536,7 @@ class Article(models.Model):
 
 
 
-
+- bulk_create
 
 
 

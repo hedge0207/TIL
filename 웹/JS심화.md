@@ -11,22 +11,22 @@
   <h2 class="class1 class2 class3">hi!!</h2>
   
   <script>
-      //1.태그를 지정하는 방법
-      const newH1 = document.querySelector('h1')
-      console.log(newH1)
-      console.log(newH1.innerText)
+   //1.태그를 지정하는 방법
+  const newH1 = document.querySelector('h1')
+  console.log(newH1)
+  console.log(newH1.innerText)
       
-      //2.지정한 태그를 활용하는 방법
-      const inText = newH1.innerText
-      console.log(inText)
+  //2.지정한 태그를 활용하는 방법
+  const inText = newH1.innerText
+  console.log(inText)
       
-      //3.지정된 클래스를 보는 방법
-      const newH2 = document.querySelector('h2')
-      console.log(newH2.classList)
+  //3.지정된 클래스를 보는 방법
+  const newH2 = document.querySelector('h2')
+  console.log(newH2.classList)
       
-      //4.클래스를 추가하는 방법
-      newH2.classList.add('class4')
-      console.log(newH2.classList)
+  //4.클래스를 추가하는 방법
+  newH2.classList.add('class4')
+  console.log(newH2.classList)
   </script>
   
   out
@@ -114,8 +114,9 @@
   
   
   
-  //어트리뷰트 노드에의 접근/수정(클래스 또는 스타일 속성 부여)은 조금 다르다.
-  변수명.classList.add(클래스 또는 스타일1, 클래스 또는 스타일2.....)
+  //어트리뷰트 노드에의 접근/수정(클래스부여)은 조금 다르다.
+  //그냥 class가 아닌 classList를 쓴다.
+  변수명.classList.add(클래스1, 클래스2.....)
   
   
   // HTML 콘텐츠 조작(Manipulation)
@@ -128,6 +129,7 @@
   - 예시
 
   ```html
+  <!--card 만들기-->
   <!--bootstrap 코드-->
   <div class="card" style="width: 18rem;">   <!--1-->
     <img src="https://picsumphotos/200" class="card-img-top" alt="random-image">  <!--2-->
@@ -158,33 +160,41 @@
       //card를 생성하는 함수
       function createCard(title, content){
           const card = document.createElement('div')   //1에서 div 태그를 만드는 부분
-      card.classList.add('card','col-4')  //1에서 class="card" style="width: 18rem 부분
-      
-      const cardImage = document.createElement('img') //2에서 img 태그를 만드는 부분
-      cardImage.src = "https://picsumphotos/200"  //2에서 src,class,alt를 설정하는 부분
-      cardImage.classList.add("card-img-top")
-      cardImage.alt = 'random-image'
-      
-      const cardBody = document.createElement('div')
-      cardBody.classList.add('card-body')
-      
-      const cardTitle = document.createElement('h5')
-      cardTitle.classList.add('card-title')
-      catdTitle.innerText = title
-      
-      const cardText = document.createElement('p')
-      cardText.classList.add('card-text')
-      cardText.innerHTML = content
+          card.classList.add('card','col-4')  
+          //1에서 class="card" style="width: 18rem 부분
+          //col-4도 classList에 추가하는 이유는 style이 아닌 bootstrap class기 때문이다.
           
-      const cardButton = document.createElement('a')
-      cardButton.classList.add('btn','btn-primary')
-      cardButton.href = '#'
-      cardButton.innerText = 'Go somewhere'
-      
-      //appendChild:Node 한개만 추가 가능
-      //append:Node 여러 개 추가 가능, Text도 추가 가능
-      cardBody.append(cardTitle,cardText,cardButton) //cardBody에 들어가야 할 것들을 추가
-      card.append(cardImage,cardBody)  //card에 들어가야 할 것을 추가
+          const cardImage = document.createElement('img') //2에서 img 태그를 만드는 부분
+          cardImage.src = "https://picsumphotos/200"  //2에서 src,class,alt를 설정하는 부분
+          cardImage.classList.add("card-img-top")
+          cardImage.alt = 'random-image'
+  
+          const cardBody = document.createElement('div')
+          cardBody.classList.add('card-body')
+  
+          const cardTitle = document.createElement('h5')
+          cardTitle.classList.add('card-title')
+          catdTitle.innerText = title
+  
+          const cardText = document.createElement('p')
+          cardText.classList.add('card-text')
+          cardText.innerHTML = content
+  
+          const cardButton = document.createElement('a')
+          cardButton.classList.add('btn','btn-primary')
+          cardButton.href = '#'
+          cardButton.innerText = 'Go somewhere'
+  
+          //appendChild:Node 한개만 추가 가능
+          //append:Node 여러 개 추가 가능, Text도 추가 가능
+          //cardBody에 들어가야 할 것들을 추가
+          cardBody.append(cardTitle,cardText,cardButton)
+          //card에 들어가야 할 것을 추가
+          card.append(cardImage,cardBody)  
+          
+          //마지막으로 카드가 들어갈 div태그를 id를 활용하여 지정한 후 card를 추가
+          const cardArea = document.querySelector('#cardArea')
+          cardArea.appendChild(card)
       }
       //여기까지 완성된 시점에서 console창에 createCard()를 입력하면 카드가 생성된다. 그러나 개발자		가 아닌 사람에게 이렇게 카드를 생성하라고 할 수 는 없으므로 버튼은 만들어 준다.
       
@@ -194,6 +204,7 @@
       createCardButton.addEventListener('click', function() {
         const cardTitleInput = document.querySelector('#cardTitleInput')
         const cardTextInput = document.querySelector('#cardTextInput')
+        //<input>태그의 값에 접근할 때는 innerText, innerHTML이 아닌 value를 써야 한다.
         createCard(cardTitleInput.value, cardTextInput.value)
         cardTitleInput.value = null
         cardTextInput.value = null
@@ -205,10 +216,11 @@
 
 - 기본적인 순서
 
-  - 태그를 담을 변수 생성(실제로 변수에 담기는 것은 object이다).
+  - 아래 과정을 요약하면 "요소를 잡아서(혹은 만들어서) 꾸미고 붙인다."로 요약할 수 있다. 
+  - 태그를 담을 변수 생성 혹은 지정(실제로 변수에 담기는 것은 object이다).
   - 태그에 속성 부여
-  - 생성한 태그를  조상 태그에 넣기
-
+- 생성한 태그를  조상 태그에 넣기
+  
   ```html
   <!DOCTYPE html>
   <html lang="ko">
@@ -257,16 +269,14 @@
   </body>
   </html>
   ```
-
-  - DOM에서 특정 요소를 선택할 때는 아래의 두 개를 사용한다.
+  
+  - DOM에서 특정 요소를 선택할 때는 아래의 두 개를 사용한다. 
     - document.querySelector():  CSS셀렉터를 이용하여 노드를 선택함, querySelector()는 일치되는 첫 번째 노드만을 반환
     - document.querySelectorall(): CSS셀렉터를 이용하여 노드를 선택함, querySelectorAll()는 일치하는 모든 노드를 배열로 반환
-
   - DOM 조작
     - createElement(), createTextNode(): 요소와 텍스트노드의 생성
     - appendChild(): 특정 노드의 자식으로 노드를 삽입하기 위해 사용, Node 한개만 추가 가능
     - append(): Node 여러 개 추가 가능, Text도 추가 가능
-
   - HTML 콘텐츠 조작(Manipulation)
     - innerHTML: html 문서의 지정된 태그 안에 교체할 html의 코드 값을 갖는 것. 문자열을 html로 인식하여 출력됨. createElement(), createTextNode(), appendChild()를 한꺼번에 처리하는 효과
   - InnerHTML와 appendChild의 차이
@@ -275,85 +285,107 @@
 
 
 
-- callback 함수
+- callback 함수(ES의 영역)
 
   - 이벤트 리스너를 배우기 위해 callback 함수에 대한 이해가 필요
-
   - 콜백 함수(A)는 다른 함수(B)의 인자로 넘겨지는 함수로 다른 함수(B)의 내부에서 실행되는 함수(A)를 말한다(JS의 함수는 1급 객체로 함수의 인자가 될 수 있다)
-
-  - Array Helper Methods: callback 함수의 일종
-
+  - Array Helper Methods
+    - array에 사용할 수 있는 method
+    - callback 함수의 일종(인자로 함수를 받아온다.)
     - map,forEach,filter 등이 있다.
-    - 인자로 함수를 받아온다.
 
-    ```python
-    number = [0,9,99]
-    def add_one(number):
-        return number+=1
-    
-    print(list(map(add_one,number)))  #add_one이라는 함수가 map이라는 함수의 인자가 됨
-    
-    out
-    [1,10,100]
-    
-    #위처럼 리스트를 선언하고, 함수를 선언하는 복잡한 코드는 아래와 같이 한 줄에 쓸 수 있다.
-    print(list(map(lamda n: n+1,[0,9,99])))
-    
-    out
-    [1,10,100]
-    ```
+  ```python
+  #python 예시
+  number = [0,9,99]
+  def add_one(number):
+     return number+=1
+      
+  print(list(map(add_one,number)))  #add_one이라는 함수가 map이라는 함수의 인자가 됨
+  #함수를 실행한게 아니라 그냥 넘긴 것이다.
+      
+  out
+  [1,10,100]
+      
+  #위처럼 리스트를 선언하고, 함수를 선언하는 복잡한 코드는 아래와 같이 한 줄에 쓸 수 있다.
+  print(list(map(lamda n: n+1,[0,9,99])))
+      
+  out
+  [1,10,100]
+  ```
 
-    ```javascript
-    //1.JS의 map 함수
-    ['1','2','3'].map(Number)
-    
-    out
-    [1,2,3] //문자에서 숫자로 바뀜
-    
-    //위 파이썬 코드와 동일한 코드
-    const numbers = [0,99,999]
-    function addOne(number){
-        return number+1
-    }
-    const newNumbers1 = numbers.map(addOne)
-    
-    out
-    [1,10,100]
-    
-    
-    //위처럼 리스트를 선언하고, 함수를 선언하는 복잡한 코드는 아래와 같이 쓸 수 있다.
-    const newNumbers2 = [0,9,99].map(fuction(number){
-        //[0,9,99]를 순회하며, 각 요소를 (number) 자리에 넣는다.
-        //그리고 리턴된 값을 새로운 배열에 넣고 마지막에 리턴한다.
-        return number+1
-    })
-    
-    out
-    [1,10,100]
-    
-    
-    
-    //2.forEach를 활용, forEach는 return이 없다.
-    let sum = 0
-    const newNumbers = [1,2,3]
-    newNumbers.forEach(function(number){
-        //numbers의 각 요소를 number 자리에 넣고,
-        //나머지는 원하는 대로 구현한다. 리턴이 존재하지 않는다.
-        sum+=number
-    })
-    
-    
-    //3.filter
-    const odds = [1,2,3].filter(function(number){
-        //각 요소를 number 자리에 넣고
-        //return이 true인 요소들만 모아서 새로운 배열로 리턴
-        return number%2
-    })
-    ```
+  ```javascript
+  //1.JS의 map 함수
+  ['1','2','3'].map(Number)
+  
+  out
+  [1,2,3] //문자에서 숫자로 바뀜
+  
+  //위 파이썬 코드와 동일한 코드
+  const numbers = [0,9,99]
+  function addOne(number){
+      return number+1
+  }
+  const newNumbers1 = numbers.map(addOne)
+  console.log(newNumbers1)
+  
+  out
+  [1,10,100]
+  
+  //위처럼 리스트를 선언하고, 함수를 선언하는 복잡한 코드는 아래와 같이 쓸 수 있다.
+  const newNumbers2 = [0,9,99].map(fuction(number){
+      //[0,9,99]를 순회하며, 각 요소를 (number) 자리에 넣는다.
+      //그리고 리턴된 값을 새로운 배열에 넣고 마지막에 리턴한다.
+      return number+1
+  })
+  
+  out
+  [1,10,100]
+  
+  
+  //2.forEach를 활용, forEach는 return이 없다.
+  let sum = 0
+  const newNumbers = [1,2,3]
+  newNumbers.forEach(function(number){
+      //numbers의 각 요소를 number 자리에 넣고,
+      //나머지는 원하는 대로 구현한다. 리턴이 존재하지 않는다.
+      sum+=number
+  })
+  console.log(sum)
+  
+  out
+  6
+  //2-2.만일 아래와 같이 쓸 경우 error가 발생
+      let sum = 0
+      [1,2,3].forEach(function(number){
+          sum+=number
+      })
+      //error가 발생하는 이유는 ;을 붙이지 않았기 때문이다. ;를 붙이지 않았기 때문에 JS는 위 코드를 아래와 같이 해석한다.
+      let sum = 0[1,2,3].forEach(function(number){
+          sum+=number
+      })
+      //따라서 ;을 붙여줘야 한다. 이런 문제가 있음에도 ;를 붙이지 않아도 된다고 하는 이유는 위와 같은 코드를 짤 일이 거의 없기 때문이다.
+      let sum = 0;
+      [1,2,3].forEach(function(number){
+          sum+=number
+      })
+  
+  
+  //3.filter
+  const odds = [1,2,3].filter(function(number){
+      //각 요소를 number 자리에 넣고
+      //return이 true인 요소들만 모아서 새로운 배열로 리턴
+      return number%2
+  })
+  console.log(odds)
+  
+  out
+  [1,3]
+  ```
 
-    
 
-- EventListener
+​    
+
+- EventListener(DOM의 영역)
 
   - 요소가 이벤트를 기다리다 이벤트가 발생하면 특정 일을 하는 것.
 
@@ -363,40 +395,41 @@
 
     ```js
     //기본형
-    변수명.addEventListener('이벤트', function(A) {
+    요소.addEventListener('이벤트', 이벤트 발생시 실행할 함수)
+    //상세
+    요소.addEventListener('이벤트', function(A) {
           실행할 내용
       })
-    
     //함수를 정의하는 것이므로 A자리에는 아무거나 넣어도 되고 심지어 비워둬도 된다. 그러나 event로 적는 것이 권장된다.
     ```
-  
+    
     ```html
     <!DOCTYPE html>
     <html lang="en">
     <head>
-      <meta charset="UTF-8">
-      <title>event Listener</title>
+    <meta charset="UTF-8">
+    <title>event Listener</title>
     </head>
     <body>
-      <button id="myButton">얍</button>
-      <script>
-        const myButton = document.querySelector('#myButton')
-        
-        function confirmMessage(event)  {
-          confirm('얍?')
-        }
-        // 요소.addEventListener('이벤트', 이벤트 발생시 실행할 함수)
-        myButton.addEventListener('click', confirmMessage)
-          
-      //위 코드는 아래 코드와 동일하다.
-        myButton.addEventListener('click', function(event) {
-        confirm('얍!')
-        })
-      </script>
+    <button id="myButton">얍</button>
+    
+    <script>
+    const myButton = document.querySelector('#myButton')
+    function confirmMessage(event)  {
+    confirm('얍?')  //confirm은 상단에 메세지 창을 띄우는 함수다.
+    }
+    myButton.addEventListener('click', confirmMessage)
+    
+    //위 코드는 아래 코드와 동일하다.
+    const myButton = document.querySelector('#myButton')
+    myButton.addEventListener('click', function(event) {
+    confirm('얍!')
+    })
+    </script>
     </body>
     </html>
-  ```
-    
+    ```
+  
   - `urls.py`에 작성하는 코드와 유사하다.
   
     ```python
@@ -421,12 +454,19 @@
 
   - window는 JS의 최상위 객체이다.
   - JS는 객체지향(OOP)언어다.
-  - this는 무조건 자신을 호출한 어떤 object(객체)를 지칭한다. 따라서 this는 객체다(this가 지칭하는 객체) 기본적으로 window를 지칭한다.
-  - method는 객체 안에 정의된 함수를 말한다(`.메소드이름()`의 형태로 실행하는 함수).
+  - this는 무조건 자신을 호출한 어떤 object(객체)를 지칭한다. 따라서 this는 객체다(this가 지칭하는 객체). 기본적으로 window를 지칭한다.
+  
+  ```js
+console.log(this)
+  
+  out
+  Window {parent: Window, opener: null, top: Window, length: 0, frames: Window, …}
+  ```
+  
+  - method는 객체 안에 정의된 함수를 말한다(`객체.메소드이름()`의 형태로 실행하는 함수).
   - function에 method가 포함되지만(객체 안에 저장된 '함수'가 메소드이므로) 설명의 편의를 위해 아래에서 말하는 function은 method가 아닌 함수를 의미한다.
-
-  - fucntion을 정의할 때 this가 가리키는 객체가 window가 아닌 경우
-    - method 안의 this: method 안의 this는 해당 method가 정의된 객체를 말한다.
+  - fucntion을 정의할 때 this가 가리키는 객체가 window가 아닌 경우 2가지
+    - method 안의 this: method 안의 this는 해당 method가 정의된 객체를 가리킨다.
     - 생성자 함수 안의 this
   
   ```js
@@ -441,7 +481,28 @@
           oioMethod () {  // 코드를 짧고 간결하게 작성하게 해주는 ES6 문법설탕
             console.log(this) // objInObj
           }
-        }
+        },
+        arr: [0, 1, 2],
+          newArr: [],
+          method2 () {
+            this.arr.forEach(
+              /* 아래 function 은 메소드인가? No. 그러므로 this 는 window
+                function(number) {
+                  // console.log(this)
+                  this.newArr.push(number * 100)
+                  }.bind(this) //bind는 한 스코프 위의 객체를 가리키게 한다
+                */
+                //아래 화살표 함수는 bind를 해야하는 불편을 해소하기 위함이다.
+               (number) => {
+                 this.newArr.push(number * 100)
+                }
+              )
+            }
+          }
+  
+          obj.method1() // obj
+          obj.objInObj.oioMethod() // objInObj
+          obj.method2()  // 
   ```
   
   ```js
@@ -457,7 +518,7 @@
   //그러나 this보다 target을 쓰는 것이 권장된다. this는 어느 메소드에 쓰였냐에 따라 달라지지만 target은 정확히 하나를 지정하기 때문이다.
   
   
-  //아래와 같이 화살표 함수로 정의했을 경우 this는 작동하지 않는다.
+  //아래와 같이 화살표 함수로 정의했을 경우 this는 작동하지 않는다. 따라서 target을 쓰는 것이 권장됨
   myButton.addEventListener('click', 
      (event) => {
         this.classList.add('btn','btn-primary')       

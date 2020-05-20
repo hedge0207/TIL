@@ -917,7 +917,7 @@ function spreadOperator(a,b,c){
 let numbers = [1,2,3]
 
 spreadOperator(numbers[0],numbers[1],numbers[2])
-spreadOperator(...numbers) //spreadOperator 위와 정확히 동이란 코드이다.
+spreadOperator(...numbers) //spreadOperator 위와 정확히 동일한 코드이다.
 //귀찮게 인덱스로 접근해서 넣어주지 않아도 ...을 쓰면 알아서 배열의 요소를 흩뿌려준다.
 
 out
@@ -935,8 +935,10 @@ out
 
 
 
-//깊은 복사
+//복사
+//얕은 복사
 newNumbers = numbers      //numbers가 바뀌면 newNumbers도 바뀐다.
+//깊은 복사
 newNumbers = [...numbers] //newNumbers가 새로운 리스트가 된다.
 ```
 

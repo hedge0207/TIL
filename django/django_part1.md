@@ -43,6 +43,14 @@
     $ django-admin startproject ㅏ프로젝트명ㅓ
     ```
 
+    - 현재 위치에 중간 단계 없이 프로젝트 생성
+
+    ```bash
+    $ django-admin startproject ㅏ프로젝트명ㅓ .
+    ```
+
+    
+
   - 앱 생성
 
     ```bash
@@ -52,23 +60,23 @@
   - 서버 실행
 
     - 뒤의 8080은 포트 번호로, 로컬에선 쓰지 않아도 된다.
-
+  
     ```bash
-    $ python manage.py runserver 8080
+  $ python manage.py runserver 8080
     ```
 
   - 마이그레이션
-
+  
     ```bash
-    $ python manage.py makemigrations
+  $ python manage.py makemigrations
     ```
-
+  
   - 마이그레이트
-
+  
     ```bash
     $ python manage.py migrate
     ```
-
+  
     
 
 
