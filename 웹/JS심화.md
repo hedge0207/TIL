@@ -429,14 +429,14 @@
     </body>
     </html>
     ```
-  
+
   - `urls.py`에 작성하는 코드와 유사하다.
-  
+
     ```python
     #articles라는 경로로 접근하면 index함수를 실행한다.
     path('artilces/',views.index)
     ```
-  
+
   - event의 종류
     - click: 포인팅 장치 버튼이 엘리먼트에서 눌렸다가 놓였을 때.
     - mouseover: 포인팅 장치가 리스너가 등록된 엘리먼트나 그 자식 엘리먼트의 위로 이동했을 때.
@@ -446,7 +446,7 @@
     - keyup: 키 누름이 해제될 때
     - load:  이미지 등의 리소스와 그 의존 리소스의 로딩이 끝났을 때
     - scroll:  다큐먼트 뷰나 엘리먼트가 스크롤되었을 때. 
-    - change: 모든 종류의 input태그 값의 변경이 일어났을 때
+    - change: 모든 종류의 input태그 값의 변경이 일어났을 때(type="text"일 경우에는 포커스 아웃되거나 엔터를 눌렀을 때)
 
 
 
@@ -534,47 +534,252 @@ console.log(this)
 # AJAX
 
 - AJAX: Asynchronous Javascript And Xml, 비동기식 자바스크립트와 xml
-- JS로 비동기 요청을 보내는 것
-- 지금까지는 요청이 올 때마다 응답을 보내고 페이지를 새로고침하는 방식을 사용. 즉 분절이 존재했다.
-- 비동기 요청은 새로고침(분절) 없이 요청과 응답이 이루어지는 것이다.
-  - 예를 들어 검색창에 검색어를 입력하면 새로고침 없이도 연관검색어가 뜬다.
-  - non-blocking한 비동기 작업을 한다면 콜백을 쓸 수 밖에 없도록 설계되어 있다.
-    - 콜백 함수를 쓴다고 non-blocking한 비동기 작업을 한다는 것은 아니다.
-- AJAX는 XHR(XML Http Requests)만을 요청으로 보낼 수 있으며, XHR은 비동기 요청이다.
-  - XHR은 None-blocking이다. 이전 코드가 끝나기 전에 다음 코드로 넘어간다.
-  - non-blocking하게 작업이 이루어지는 경우는 외부에 요청을 보내는 경우(XHR)와 응답을 기다리는 경우(settimeout) 2가지 이다. 외부에 요청을 보내고 그 요청에 대한 응답을 한없이 기다리면 브라우저가 제대로 작동을 할 수 없으므로 non-blocking하게 작업이 이루어진다.
-  - 스레드: 한 프로그램 내에서, 특히 프로세스 내에서 실행되는 흐름의 단위를 말한다. 일꾼이라고 생각하면 된다. 프로그램 사용자의 컴퓨터 CPU를 자원으로 활용한다.
-    - JS가 사용되는 환경인 브라우저는 싱글 스레드다. 이렇게 구현한 이유에는 여러가지 설이 있으나 무한으로 줄 경우 브라우저에서 여러가지 작업을 할 경우 사용자의 컴퓨터 성능이 떨어질 수 있기 때문(CPU를 자원으로 활용하므로)이다.
+  - JS로 비동기 요청을 보내는 것
+  - 지금까지는 요청이 올 때마다 응답을 보내고 페이지를 새로고침하는 방식을 사용. 즉 분절이 존재했다.
+  - 비동기 요청은 새로고침(분절) 없이 요청과 응답이 이루어지는 것이다.
+    - 예를 들어 검색창에 검색어를 입력하면 새로고침 없이도 연관검색어가 뜬다.
+
+- AJAX 요청(비동기 요청)은 결과적으로 XHR(XML Http Requests)을 통해서 이루어진다(axios를 사용하지만 실제로 요청은 XHR이 보내진다.).
+  
+  - XHR은 AJAX를 보낼 수 있는 유일한 XHR이다.
+  - 실제 크롬 콘솔 창에서 `Log XMLHTTPRequests`옵션을 체크한 후 검색창에 검색어 한 글자를 입력할 때마다 XHR요청이 가는 것을 확인할 수 있다.
+  
+- Non-Blocking
+
+  - Non-Blocking이란 이전 코드가 완전히 끝나기 전에 다음 코드로 넘어가는 것을 의미한다.
+  - 자바스크립트는 기본적으로 Blocking하다. 그러나 경우에 따라 Non-Blocking하게 작동한다.
+    - XHR은 Non-Blocking하다.
+
+  ```html
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      // Non-Blocking
+  	const xhr = new XMLHttpRequest()
+  	xhr.open('GET', 'https://koreanjson.com/posts/1')
+  	xhr.send() //요청을 보낸다.
+  
+  	// 요청을 보낸 이후 응답이 제대로 도착하지 않았지만, 바로 res 에 값을 할당한다.
+  	const res = xhr.response
+  	console.log('RES: ', res)
+    </script>
+  </body>
+  </html>
+  
+  
+  out
+  RES: 
+  <!--만일 blocking하다면 응답을 받은 후 다음 코드가 실행되어 res에는 응답 내용이 담겼을 것이나 
+  //non-blocking하기에 응답을 받기 전에 다음 코드가 실행되어 res에는 아무것도 담기지 않게 된다.-->
+  ```
+
+  - non-blocking하게 작업이 이루어지는 경우는 외부에 요청을 보내는 경우(XHR)와 기다리는 경우(settimeout) 2가지 이다. 외부에 요청을 보내고 그 요청에 대한 응답을 한없이 기다리면 브라우저가 제대로 작동을 할 수 없으므로 non-blocking하게 작업이 이루어진다.
+
+  - Non-Blocking하게 작업이 이루어지는 이유
+    - 스레드: 한 프로그램 내에서, 특히 프로세스 내에서 실행되는 흐름의 단위를 말한다. 일꾼이라고 생각하면 된다. 프로그램 사용자의 컴퓨터 CPU를 자원으로 활용한다.
+    - JS가 사용되는 환경인 브라우저는 싱글 스레드다. 한 탭에 하나의 스레드만 존재한다. 이렇게 구현한 이유에는 여러가지 설이 있으나 무한으로 줄 경우 브라우저에서 여러가지 작업을 하면 브라우저 이외의 프로그램에서 사용할 자원이 부족해질 수 있기 때문(CPU를 자원으로 활용하므로)이다.
     - 싱글 스레드의 경우 페이지 내에서 console창에 while문을 활용하여 무한루프를 발생시키면 페이지 로딩, 클릭 등이 전부 막히게 된다. 싱글 스레드는 일꾼 한 명이라고 볼 수 있으므로 일꾼 한 명이 while문을 돌리느라 다른 요청을 처리하지 못하기 때문이다. 
+  - non-blocking한 비동기 작업을 한다면 콜백 함수를 쓸 수 밖에 없도록 설계되어 있다.
+    - 콜백함수는 지금 당장 실행되는 것이 아니라 훗날 언젠가 실행되는 함수다. non-blocking 역시 언제 끝날지 모르는 작업을 기다리는 대신 다음 작업으로 넘어가서 그 작업을 먼저 처리하는 것이므로 non-blocking한 비동기 작업에는 콜백 함수가 쓰인다.
+    - 콜백 함수를 쓴다고 non-blocking한 비동기 작업을 한다는 것은 아니다.
+  - Non-Blocking방식이 더 합리적일 때도 있다.
 
+  ```python
+  def 메일 보내기():
+      보내기
+      답장받기
+      답장확인하기
+      
+  def 점심먹기():
+      메뉴정하기
+      밥먹기
+      설거지하기
+      
+  def 공부하기():
+      공부하기
+  
+  메일보내기()
+  점심먹기()
+  공부하기()
+  
+  #위와 같이 우리의 일상을 함수로 나타냈을 때 만일 우리가 Blocking하게 움직인다면 상식적으로 이해가 가지 않게 행동할 것이다. 코드는 위에서 부터 순차적으로 실행되므로 우리는 메일을 보내고 답장이 오기 전까지 아무 행동도 하지 않을 것이고 점심을 먹을때는 공부 등의 다른 행동을 하지 않고 밥만 먹을 것이다.
+  
+  #그러나 실제로 우리는 메일을 보내 놓고 답이 오기 전까지 점심을 먹거나 공부를 한다. 또한 점심을 먹으면서 공부를 하기도 하고 그것이 더 합리적이라고 생각한다.
+  
+  #따라서 Non-Blocking하다고 비합리적인 것은 아니다.
+  ```
 
+  
 
 - axios
-  - XHR을 보다 쓰기 쉽게 만들어주는 것이다.
+
+  > https://github.com/axios/axios
+
+  - AJAX요청을 보내는 것을 도와주는 라이브러리, 즉 XHR 요청을 쉽게 보낼 수 있게 해주는 것이다.
   - django의 request와 역할이 완전히 같다고 할 수는 없지만 일반적으로 django에서 request가 올 자리에 온다고 보면 된다.
+  - axios를 사용하려면 아래 코드를 입력해야 한다.
 
+  ```html
+  <!--변수 선언과 마찬가지로 axios를 사용하기 전에 코드를 입력해야 한다.-->
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  ```
 
+  - promise
+    - `axios.get()`의 return 이 promise다.
+    - 불확실하고 기다려야 하는 작업(AJAX, axios)을 비동기적으로 처리하기 위해서 사용한다.
+    - 언제 끝날지 모른다는 불확실성, 성공할지 실패할지 모른다는 불확실성이 존재.
+    - 예를 들어 메일을 보낼 때는 답장이 언제 올지 불확실하고 답장이 올지 안 올지도 불확실하다. 그러나 미래에 답장이 오거나 오지 않거나 둘 중 하나는 발생할 것이라는 것은 확실히 알 수 있다. 따라서 promise는 성공과 실패에 대한 시나리오를 쓴다.
+      - 성공했을 때, 어떤 일을 할 것인가(`.then(함수)`)
+      - 실패했을 때, 어떤 일을 할 것인가(`.catch(함수)`)
+  - 요약하면 기다려야 하거나 외부에 요청을 보낼 경우 계속 기다리는 것이 아니라 다음에 해야 할 일을 수행하고(non-blocking) 기다리던 일이 발생하면 promise에 따라 다음 작업(함수)을 한다.
 
-- promise
-  - 불확실하고 기다려야 하는 작업(AJAX axios)을 비동기적으로 처리하기 위해서 사용한다.
-  - `axios.get()`의 return 이 promise다.
-  - 성공했을 때, 어떤 일을 할 것인가(`.then()`)
-  - 실패했을 때, 어떤 일을 할 것인가(`.catch()`)
+  ```html
+  <!--예시-->
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+      console.log(1)
+      //만일 성공적으로 요청을받는다면
+      axios.get('https://koreanjson.com/posts/1')
+      //함수에 그 응답이 인자로 들어가게 되고 그 응답의 data를 반환
+      //인자로 들어가는 결과값은 아래와 같다.
+      //{data: {…}, status: 200, statusText: "OK", headers: {…}, config: {…}, …}
+        .then(function (r) { return r.data })
+        
+      //반일 성공적으로 반환 받는다면 반환값이 아래 함수의 인자로 들어가게 되고 그 값의 content를 반환
+      //위 함수에서 반환한 data는 아래와 같은 object이다.
+      /*
+      data : {
+      	UserId: 1
+      	content: "모든 국민은 인간으로서의 존엄과 가치를 가지며..."
+      	createdAt: "2019-02-24T16:17:47.000Z"
+      	id: 1
+      	title: "정당의 목적이나 활동이 민주적 기본질서에 위배될..."
+      	updatedAt: "2019-02-24T16:17:47.000Z"
+      }
+      */
+        .then(function (d) { return d.content } )
+        
+      //만일 성공적으로 반환 받는다면 반환 값이 아래 함수의 인자로 들어가게 되고 그 값을 출력
+      //위 함수에서 반환받은 content에는 다음과 같은 값이 들어있다.
+      //"모든 국민은 인간으로서의 존엄과 가치를 가지며..."
+        .then(function (c) { console.log(c) })
+      console.log(2)
+      // callback 함수들 시작
+    </script>
+  </body> 
+  </html>
+  
+  out
+  1
+  2 <!--console.log(2)가 더 뒤에 있음에도 먼저 출력된다.-->
+  "모든 국민은 인간으로서의 존엄과 가치를 가지며..."
+  ```
 
+  - 일단 요청을 보내면 그 일이 아무리 빨리 끝날 지라도 다음 일을 먼저 처리한다. 
+    - 요청을 보낸는 것은 1순위지만 그 응답을 받은 후의 처리는 1순위가 아니다.
 
+  ```python
+  def 메일 보내기():
+      보내기
+      답장받기
+      답장확인하기
+      
+  def 점심먹기():
+      메뉴정하기
+      밥먹기
+      정리하기
+      
+  def 공부하기():
+      공부하기
+  
+  #예를 들어 메일을 보낸 즉시 답이 온다고 했을 때에도 그 응답을 기다리는 것이 아니라 점심을 먹고 공부를 한 후에 답장을 확인한다. 즉, 요청을 보내는 것은 1순위로 처리하지만 그 응답이 아무리 빨리온다고 해도 다음 일을 모두 처리한 후에 응답에 따른 작업(promise, 답장확인)을 수행한다.
+  ```
 
-- 동기적, 비동기적 방식
-  - 동기적
-    - 보낼 메일의 내용을 생각함(data = '이메일 내용')
-    - 메일을 작성하고 전송함(requests.get(이메일 보내는 요청+data))
-    - 답장이 올 때까지 기다림, 답장이 올 때까지 아래 과정을 수행하지 않음(유튜브를 예로 들면 모든 제목과 썸네일을 전부 받기 전까지 페이지를 띄우지 않는다)
-    - 투두리스트에 이메일 보냈다고 체크함(todo.check())
-    - 다른 일을 함(otherWork())
-  - 비동기적
-    - 이메일 보낼 내용을 생각함
-    - 비서에게 메일 보내라고 시키고  다 되면 알려달라고 함(promise)
-    - 다른 일을 함
-    - 비서에게  다 되었다고 연락이 오면 todo리스트에 체크함(.then)
+  
 
+- ping/pong 구현하기
 
+  ```html
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ping</title>
+  </head>
+  <body>
+  
+    <label for="myInput">input</label>: 
+    <input id="myInput" type="text">
+    <pre id="resultArea"> <!--div태그가 아닌 pre태그를 사용한 이유는 art 활용 때문이다.-->
+  
+    </pre>
+  
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+      /* 1. input#userInput 의 'input' 이벤트 때, */
+      const myInput = document.querySelector('#myInput')
+      myInput.addEventListener('input', function(event) {
+        const myText = myInput.value  //input창에 입력된 값을 myText에 담는다.
+        
+        /* 2. value 값을 AJAX 요청으로 '/art/pong' 으로 보낸다. */
+        //axio는 2번째 인자로 오브젝트를 넣을 수 있다. 그 오브젝트 안에 또 params라는 오브젝트를 넣         고 params 오브젝트의 키, 밸류를 설정하면 값을 함께 넘길 수 있다.
+        axios.get('/artii/pong/', {
+          params: {
+            myText: myText, //요청을 보낼 때 input창에 입력된 값을 함께 보낸다.
+          },
+        })
+        //위 코드는 아래 코드와 동일하다(아래 코드는 쿼리스트링을 사용한 것)
+        //axios.get(`artii/pong/?myText=${myText}`)
+  
+          /* 3. pong 이 받아서 다시 JSON 으로 응답을 보낸다. views.py 참고. 
+         	res에 응답이 담기게 된다*/
+          .then(function (res) { 
+            /* 4. 응답 JSON 의 내용을 div#resultArea 에 표시한다. */
+            const resultArea = document.querySelector('#resultArea')
+            resultArea.innerText = res.data.ccontent 
+          })
+      })
+    </script>
+  </body>
+  </html>
+  ```
 
+  - axios 요청은 DRF(Django Rest Framwork)를 사용한 view 함수로만 처리가 가능하다.
+  
+  ```python
+  #views.py
+  import art #art를 쓰기 위해선 별도의 install이 필요
+  #제대로 출력되는 것을 보고 싶다면 크롬의 설정에서 고정 폭 글꼴을 적당한 다른 것으로 바꿔주면 된다.
+  
+  from django.shortcuts import render
+  from django.http import JsonResponse
+  
+  def ping(request):
+      return render(request, 'artii/ping.html')
+  
+  def pong(request):
+      #위 html파일에서 GET 방식으로 넘어온 요청 중 key가 myText인 value가 my_input에 담긴다.
+      my_input = request.GET.get('myText')
+      art_text = art.text2art(my_input) #text2art는 art의 메소드 중 하나다.
+      data = {
+          'ccontent': art_text,
+      }
+      #JSON 으로 응답을 보낸다.
+    return JsonResponse(data)
+  ```
+  
+  

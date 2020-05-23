@@ -1456,7 +1456,7 @@ admin.site.register(Article)
         <title>Document</title>
         <link rel="stylesheet" href="{% static 'articles/stylesheets/style.css' %}">
         <link rel="stylesheet" href="{% static 'bootstrap/bootstrap.min.css' %}">
-        <!--이처럼 block css를 쓴다. 만일 다른 html파일에만 적용하고 싶은 css, js 파일이 없다면 		쓰지 않아도 된다.-->
+        <!--이처럼 block css를 쓴다. 만일 다른 html파일에 추가적으로 적용하고 싶은 css, js 파일이 		없다면 쓰지 않아도 된다.-->
         {% block css %}
         {% endblock %}
     </head>
