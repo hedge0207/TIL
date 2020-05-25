@@ -468,6 +468,7 @@ console.log(this)
   - fucntion을 정의할 때 this가 가리키는 객체가 window가 아닌 경우 2가지
     - method 안의 this: method 안의 this는 해당 method가 정의된 객체를 가리킨다.
     - 생성자 함수 안의 this
+  - Vue에서는 또 다르게 동작한다.
   
   ```js
   const obj = {
@@ -478,7 +479,7 @@ console.log(this)
         objInObj: {
           name: 'object in object',
           // 아래 코드는 oioMethod: function () {} 이 코드와 완전히 같다.
-          oioMethod () {  // 코드를 짧고 간결하게 작성하게 해주는 ES6 문법설탕
+          oioMethod () {  // 코드를 짧고 간결하게 작성하게 해주는 ES6에서 추가된 Syntactic Sugar(문법 설탕)
             console.log(this) // objInObj
           }
         },
