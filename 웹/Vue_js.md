@@ -46,6 +46,27 @@
 
 
 
+- Vue js의 코드 작성시 생각할 것들
+
+  - 화면 구성
+  - 스토리 라인 짜기
+
+  - 순수 HTML 코드 작성
+
+  - data 파악
+
+    - 변할 수 있는 데이터
+
+    - 반복이 필요한 데이터
+
+    - 시간에 따라 변하지 않거나 반복이 필요하지 않은 데이터는 그냥 템플릿에 써도 된다.
+
+  - data에 따라 html에 디렉티브 작성
+
+  - 동작이 필요한 경우, methods 작성
+
+
+
 
 - 기본형
 
@@ -297,6 +318,40 @@
   </script>
   ```
 
+  - `v-for`를 쓸 때 `v-bind:key`를 함께 줘야 하는 경우
+    - 반복을 수행하다가 출력되는 순서가 바뀔 경우 화면이 렌더링될 때 부자연스럽게 렌더링 되는 경우가 있다.
+    - 순서가 바뀔 경우 배열의 인자들의 순서를 다시 파악해야 하기에, 어떤 인자가 이전에 몇 번째로 출력되던 인자였는지 파악하는데 시간이 걸린다(예를 들어 모양이 유사한 공 3개를 일렬로 배치한 후 다시 공을 섞어서 이전에 배치했던 자리를 피해서 배치하려고 하면 이전에 어떤 공이 어떤 자리에 놓였었는지를 알고 있어야 한다. 만일 공에 번호(고유한 값)가 붙어 있다면 금방 하겠지만 그렇지 않다면 공을 유심히 관찰하고 놓아야 할 것이다). 
+    - 고유한 값을 줄 경우 보다 자연스럽게 렌더링 할 수 있다.
+
+  ```html
+  <!--위와 같은 문제가 생기면 v-bind:key를 작성하고-->
+  <div v-for="fruit in fruits" v-bind:key="fruits.id">{{ fruits.name }}</div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script>
+      // 여기에 코드를 작성하시오
+      const app = new Vue({
+        el:"#app",
+        data:{
+          fruits:[
+            {
+              id: 1,  //인자마다 고유한 값을 준다(key값의 이름이 꼭 id일 필요는 없다. 고유한 값이기만 하면 된다.)
+              name:'수박',
+            },
+            {
+              id:2,
+              name:'참외',
+            },
+            {
+              id:3,
+              name:'사과',
+            },
+          ],
+        },
+  ```
+
+  
+
   - `v-bind`: 표준 HTML 속성과 Vue 인스턴스를 연동할 때 사용한다. 줄여서 `:`만 쓰는 것이 가능하다.
 
   ```html
@@ -323,6 +378,50 @@
       }
     })
   </script>
+  ```
+
+  - 클래스 바인딩
+    - `v-bind:class="{클래스명:조건}"`
+
+  ```html
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+  
+    <style>
+      .darkmode{
+        color:white;
+        background-color: black;
+      }
+    </style>
+  
+  </head>
+  <body>
+    <div id="app" v-bind:class="{darkmode:isDarkMode}">  <!--isDarkMode가 true면 darkmode클래스를 적용하겠다.-->
+      <h1>제목</h1>
+      <button v-on:click="toggleMode">검은색</button>
+    </div>
+  
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script>
+      const app = new Vue({
+        el:"#app",
+        data:{
+          isDarkMode:false
+        },
+        methods:{
+          //함수가 실행될 때 마다 isDarkMode의 t/f가 전환
+          toggleMode: function(){
+            this.isDarkMode = !this.isDarkMode
+          }
+        }
+      })
+    </script>
+  </body>
+  </html>
   ```
 
   - `v-on`: event와 관련된 작업에 사용되는 디렉티브,  줄여서 `@`로 쓰는 것이 가능하다.
@@ -415,6 +514,12 @@
       }
     })
   </script>
+  
+  
+  <!--
+  input태그에서 type="checkbox"일때 v-model="t/f값을 가지는 데이터"를 입력하면
+  체크 여부에 따라 자동으로 t/f가 바뀐다.
+  -->
   ```
 
   - `v-show`
@@ -467,7 +572,10 @@
   </script>
   ```
 
-  
+  - `v-for`,`v-if`는 한 태그에 같이 쓰면 안된다.
+    - 공식문서에서도 둘을 같은 태그에 쓰지 않을 것을 강하게 권고
+
+
 
 - methods
 
@@ -548,6 +656,7 @@
           photoImgUrls:[],
         },
         methods:{
+          //photoCatImgUrl을 method를 정의한 것이기 때문에 function으로 정의
           photoCatImgUrl:function(){
             //console.log(this)  //Vue가 잡히고
             const API_URL = 'https://api.thecatapi.com/v1/images/search'
@@ -582,18 +691,17 @@
 - Lodash: JS 유틸리티 라이브러리
 
   - JS는 수학적 처리에 약한데 이를 보완해 줄 수 있는 라이브러리다.
-  
+
   > https://lodash.com/
->
-  > https://cdnjs.com/libraries/lodash.js/
-  
+    >
+      > https://cdnjs.com/libraries/lodash.js/
+
   ```html
   <!--적당한 것을 골라 복사 후 붙여넣기-->
   <script>
       https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js
-</script>
+  </script>
   ```
-  
   ```html
   <!--예시.lodash로 구현한 lotto-->
   <!--아래 코드에서 _.가 붙은 것은 전부 lodash에서 가져온 것이다.-->
@@ -637,5 +745,301 @@
   </body>
   </html>
   ```
+
+  
+
+  ​    
+
+- Vue의 라이프 사이클
+
+  > 공식문서-Vue인스턴스 탭에 문서가 존재
+
+  - 빨간 박스 안에 있는 내용이 개발자가 개입하는 부분이다.
+    - 많은 부분이 있지만 지금은 생성(created), 부착(mounted), 반응(update)만 기억하면 된다.
+  - 이들 라이프 사이클 훅은 우리 마음대로 이름을 정할 수 있는 것이 아니라 정해진 대로 작성해야 하며, 우리가 실행시키는 것이 아니라 자동으로 실행되는 것이다.
+
+
+
+- 무한 스크롤
+
+  - scrollmonitor 사용
+  
+  >https://cdnjs.com/libraries/scrollmonitor
+  >
+  >https://github.com/stutrek/scrollMonitor
+
+```html
+<!--무한 스크롤로 본 Vue의 라이프 사이클-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    .button-bottom {
+      position: fixed;
+      right: 20vw;
+      bottom: 20vh;
+    }
+  </style>
+  <title>Scroller</title>
+</head>
+
+<body>
+  <div id="app">
+    <div v-for="photo in photos">
+      <h5>{{ photo.title }}</h5>
+      <img :src="photo.thumbnailUrl" :alt="photo.title">  <!--thumbnailUrl은 사진을 받아온 사이트에서 제공된 object이다.-->
+    </div>
+      
+    <!--버튼을 클릭하면 최상단으로 이동-->
+    <button @click="scrollToTop" class="button-bottom">^</button>
+    
+    <!-- 
+      HTML 이 Vue 인스턴스와 연결된 순간부터(div#app 에 포함된 순간부터), 
+      Life cycle hook 의 영향을 받는다. 
+    -->
+    <!--이 태그에 도착하면 바닥에 도착했다는 것을 감지-->
+    <div id="bottomSensor"></div>
+  </div>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <!--무한 스크롤 구현을 위한 cdn-->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/scrollmonitor/1.2.0/scrollMonitor.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script>
+    const app = new Vue({
+      el: '#app',
+      data: {
+        photos: [],
+        page: 1, //pagenation을 위한 코드
+      },
+
+      methods: {
+        //사진을 불러오기 위한 메소드
+        getPhotos: function () {
+          //pagination을 위한 코드
+          const options = {
+            params: {
+              _page: this.page++, //x++는 일단 기존 x값을 쓰고, 그 후에 올린다는 뜻이다.
+              _limit: 3,
+            }
+          }
+          axios.get('https://jsonplaceholder.typicode.com/photos', options)
+            .then(res => {
+              console.log("사진을 가져 온다")
+       		  //JS에서는 배열을 특이하게 합친다.
+              //기존 사진 배열(this.photos)과 응답으로 받은 사진 배열(res.data)을 합치기
+              this.photos = [...this.photos, ...res.data]
+            })
+            //.catch((err) =>  { console.error(err) } ) 아래와 같은 코드
+            .catch(err => console.error(err))
+        },
+        
+        addScrollWatcher: function () {
+          const bottomSensor = document.querySelector('#bottomSensor')
+          const watcher = scrollMonitor.create(bottomSensor)
+          // watcher 가 화면에 들어오면, cb 하겠다.
+          watcher.enterViewport(() => {
+              console.log('바닥에 도달')
+            /*
+            요청이 왔을 때 약간의 딜레이를 주는 코드
+            요청이 계속 오면 서버가 과부화 될 수 있으므로 천천히 응답을 보낼 수 있도록 약간의 딜레이를 줄 필요가 있다.
+            기다리는 것이므로 non-blocking하게 처리 된다.
+            setTimeout은 callback 함수를 사용하므로 화살표 함수로 정의
+            setTimeout(()=>{실행할 내용},숫자) - 숫자는 100에 0.1초다.
+            */
+            setTimeout(() => {
+              this.getPhotos()
+            }, 500)
+          })
+        },
+        
+        //버튼을 클릭했을 때 최 상단으로 이동하게 해주는 함수
+        scrollToTop: function () {
+          scroll(0, 0)
+        },
+        
+        //스크롤을 내려야 새 사진을 받아오는데 표시하고 있는 사진이 화면을 다 채우지 못하면 스크롤이 생기지 않는다. 
+        //따라서 스크롤이 생길 정도로 사진을 받아오도록 하는 코드를 작성해야 한다.
+        loadUntilViewportIsFull: function () {
+          const bottomSensor = document.querySelector('#bottomSensor')
+          const watcher = scrollMonitor.create(bottomSensor)
+          if (watcher.isFullyInViewport) {  //isFullyInViewport는 scrollMonitor에 작성된 프로퍼티다.
+            this.getPhotos()
+          }
+        },
+      },
+	
+        
+      //아래 created, mounted, updated에 함수를 정의하지 않고 굳이 methods에 정의하고 아래에서 실행시키는 이유는 
+      //함수를 각 함수가 실행되는 사이클 훅 아래에 작성하면 나중에 특정 함수를 수정할 일이 있을 때, 
+      //해당 함수가 어디에 작성됐는지 찾기 힘들기 때문이다. 따라서 methods에 몰아서 작성하고 아래에서는 실행만 시킨다. 
+        
+      // created: 초기화 이후 AJAX 요청을 보내기 좋은 시점(Data, Methods 에 접근 가능.)
+      //Vue 생성시에 개입해서 할 일(실행시킬 함수)을 정하는 것
+      //이 코드의 경우 페이지를 처음 띄울 때 부터 사진을 출력하고자 하는 것이다.
+      created: function () {
+        console.log("생성됨")
+        this.getPhotos()
+      },
+
+      // mounted: DOM 과 Vue 인스턴스가 연동이 완료되고 난 이후에 실행할 일들.
+      mounted: function() {
+        console.log("부착됨")
+        this.addScrollWatcher()
+      },
+        /*
+        만일 addScrollWatcher()를 created에서 실행시키면 제대로 작동하지 않을 것이다.
+        created가 실행될 때는 아직 Dom과 Vue 인스턴스가 연동이 되지 못했을 때(mount 되지 못했을 때)이므로 
+        아직 연동도 되지 않았는데 감지를 하려 하니 잘 작동하지 않는 것이다.
+        mounted가 된 이후부터 정상적으로 작동한다.
+        */
+      
+      // updated: data({}) 가 바뀌고 나서, 화면이 다시 렌더된 이후,
+      updated: function() {
+        this.loadUntilViewportIsFull()
+      },
+    })
+  </script>
+</body>
+
+</html>
+```
+
+
+
+- computed와 watch
+  - computed
+    - create,update,delete에 해당하는 것은 method에, read에 해당하는 것은 computed에 정의한다.
+    - computed 속성은 해당 속성이 종속된 대상(아래 예시의 경우 'message')이 변경될 때만 함수를 실행한다. 매번 새로 계산해야될 필요 없는 것은, 저장(캐싱)해놓고 쓴다(메소드는 호출하면 렌더링을 다시 할 때마다 항상 함수를 실행).
+    - 함수를 선언하지만 쓸 때는 데이터 처럼 사용한다.
+    - method에 정의할 때는 이름을 동사형으로, computed에 정의할 때는 함수지만 명사형으로 정의한다.
+    - computed의 함수는 함수의 결과를 얻기 위해 사용하는 것이므로 반드시 return이 필요 하다.
+
+  ```html
+  <div id="example">
+    <p> 메시지(m): "{{ printMessage() }}"</p>
+    <p> 메시지(m): "{{ printMessage() }}"</p>
+    <p> 메시지(m): "{{ printMessage() }}"</p> <!--함수로 사용-->
+    <p> 메시지(c): "{{ printedMessage }}"</p> <!--데이터처럼 ()없이 사용-->
+    <p> 메시지(c): "{{ printedMessage }}"</p>
+    <p> 메시지(c): "{{ printedMessage }}"</p>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script>
+    var vm = new Vue({
+      el: '#example',
+      data: {
+        message: '안녕하세요'
+      },
+      methods: {
+        //동사형(print)로 정의
+        printMessage: function () {
+          console.log('methods 함수 실행')
+          return this.message
+        }
+      },
+      computed: {
+        //명사형(printedMessage)으로 정의
+        printedMessage: function () {
+          console.log('computed 함수 실행')
+          return this.message
+        }
+      }
+    })
+  </script>
+  
+  out
+  methods 함수 실행  <!--methods에 정의된 함수는 3번 다 실행이 되지만-->
+  methods 함수 실행
+  methods 함수 실행
+  computed 함수 실행 <!--computed에 정의된 함수는 1번만 실행이 된다.-->
+  ```
+
+  
+
+  - watch
+    - data 옵션의 key값들의 변경을  관찰하고 이에 반응한다.
+    - 어떤 return을 바라지 않는다.
+
+  ```html
+  <div id="app">
+    <input type="text" v-model="newInput">
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script>
+    const app = new Vue({
+      el:"#app",
+      data:{
+        newInput:''  //data 옵션의 key값인 newInput
+      },
+      watch:{
+        //반드시 data 옵션의 key값과 동일하게 적어야 한다.
+        //newInput이 변화할 때 마다 watch가 아래 함수가 실행된다.
+        //newValue에는 현재 input창의 텍스트가 그대로 들어간다.
+        //따라서 stupi에서 d를 치는 순간 아래 if문에 걸리게 되고 경고창을 띄운 후 input창이 초기화 된다.
+        newInput:function (newValue) {
+          console.log('실행됨')
+          if (newValue.includes('stupid')){
+            alert('나쁜 말은 하지 마세요')
+            this.newInput=''
+          }
+        }
+      }
+    })
+  </script>
+  
+  <!--
+  stupid를 입력했다고 했을 때
+  out
+  실행됨이 6번 출력(함수가 6번 실행)되고 입력 창이 초기화 되면서 1번 더 출력되어 함수가 총 7번 실행된다.
+  ```
+
+  
+
+- filter
+
+  - 기본적인 사용법은 JS의 필터와 동일
+
+  ```html
+  <div id="app">
+    <p>{{ findOdd() }}</p>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script>
+    const app = new Vue({
+      el:"#app",
+      data:{
+        arr:[1,2,3,4,5,6]
+      },
+      methods:{
+        findOdd:function(){
+          //arr의 인자가 순서대로 x에 들어간다.
+          const result = this.arr.filter((x) => {
+            return x%2==1  //결과가 true인 x만 result에 담긴다.
+          })
+          return result //필터링이 끝난 result를 반환
+        }
+      }
+    })
+  </script>
   
   
+  out
+  [1,3,5]
+  ```
+
+  
+
+
+
+
+
+
+
