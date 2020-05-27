@@ -440,7 +440,7 @@
     <button v-on:click="changeMessage">Change Message</button>
     <hr>
     <input v-on:keyup.enter="onInputChange" type="text">
-      <!--위 처럼 이벤트에 조건을 설정하는 것이 가능하다.-->
+      <!--위 처럼 키보드 관련 이벤트는 버튼을 설정하는 것이 가능하다.-->
   </div>
   
   
@@ -1034,12 +1034,6 @@
   out
   [1,3,5]
   ```
-
-  
-
-
-
-
 
 
 
