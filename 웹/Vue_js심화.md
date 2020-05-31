@@ -36,7 +36,7 @@ $ npm run serve
     
     <script>
     export default {
-      name: 'App',
+      name: 'App',    //name을 쓰지 않아도 에러가 발생하지 않지만 디버깅 할 때 필요하다.
       components: {
         
       }
@@ -56,13 +56,16 @@ $ npm run serve
   - `bable`: Vue 코드를 vanilla JS로 번역해준다.
 
   - `package.json`, `package-lock.json`: `requirements.txt`와 유사한 역할
+    
     - `package.json`은 django의 `manage.py`와 같이 루트라는 것을 알 수 있는 파일이다.
   - `node_modules`: python의 venv에 해당, 패키지를 설치할 경우 실제로 코드가 들어가게 되는 디렉토리
 
-- `.Vue`파일 component라 불리며 하나의 component는 template, script, style로 이루어져 있다.
+- `.Vue`파일: `component`라 불리며 하나의 `component`는 `template`, `script`, `style`로 이루어져 있다.
+  
   - 파일명은 UpperCamelCase로 작성한다.
   - VScode에서 `Vetur` 확장 프로그램을 설치했다면 폴더를 열고 `<`를 입력하고 탭을 누르면 html에서 `!`를 입력하고 탭을 누르는 것 처럼 기본 구조를 잡아준다.
   - 기본 구조는 html에 해당하는 `<template>`,  js에 해당하는 `<script>`,  css에 해당하는 `<style>`의 세 부분이다.
+    - 셋 중 하나가 없다고 동작하지 않는 것은 아니다.
 
 ```html
 <!--template 태그 안에는 하나의 root element만 존재해야 한다. 하나의 태그 안에 자식 태그가 있는 것은 괜찮지만 root에는 오직 하나의 태그만 존재해야 한다.-->
@@ -120,6 +123,8 @@ export default arr1  //객체를 내보내는 것이 아니므로 {}는 쓰지 �
 </style>
 ```
 
+
+
 - `App.vue`파일은 `root`파로 아래의 component로 직접 작성한 component는 이곳을 통해 출력한다.
 
 ```html
@@ -157,12 +162,16 @@ export default {
 <!--후략-->
 ```
 
+
+
 - axios 설치
 
 ```bash
 #i는 install의 약자로 Vue에서는 아래와 같이 설치가 가능하다.
 $ npm i axios
 ```
+
+
 
 - 프로젝트를 하나의 HTML 파일로 만들기
 
@@ -174,99 +183,121 @@ $ npm run build
 
 
 
-- vue router
 
-  - 모든 기능이 한 url에서 이루어지므로 특정 기능을 이용하기 위해 url을 입력하고 해당 기능으로 바로 이동하는 것이 불가능
-  - 새로고침 없이 url을 설정할 수 있도록 해주는 것이 vue router다.
-  - `vue add router`: vue cli가 제공하는 vue router 구조를 잡아주는 명령어
 
-  ```bash
-  $ vue add router
-  
-  #commit을 하라고 하는데 완료가 되면 App.vue의 내용이 다 날아가기 때문이다. 따라서 프로젝트 생성하자마자 하는 것이 좋다.
-  
-  #Use history mode for router? (Requires proper server setup for index fallback in production) (Y/n) 는 Y를 해준다. 이걸 y로 해줘야 뒤로가기를 눌러도 새로고침이 일어나지 않는다.
-  
-  #완료되면 src폴더에 추가 폴더가 생기고 App.vue과 main.js에도 코드가 추가된다.
-  ```
 
-  - `index.js`가 django의 urls.py의 역할을 하는 파일이다.
-    - `index.js`에서 쓸 컴포넌트를 `views`에 작성,  `views`에 작성된 컴포넌트를 다른 이름으로 페이지라고도 부른다. 또 `views`에서 import 해서 쓸 컴포넌트를 `components`에 작성한다. 
 
-  ```js
-  //생성 후 아무 것도 수정하지 않은 상태
-  import Vue from 'vue'
-  import VueRouter from 'vue-router'   //from .views와 유사한 코드
-  import Home from '../views/Home.vue'
-  import About from '../views/About.vue'
-  
-  Vue.use(VueRouter)
-  
-    //url_patterns와 유사한 코드
-    //django와 달리 :로 variable routing을 표현한다.
-    const routes = [
-    {
-      path: '/',    //이 경로로 접근하면
-      name: 'Home',  //경로의 이름
-      component: Home  //(위에서 import한)Home이라는 component를 사용하겠다. 
-    },
-    {
-      path: '/about',
-      name: 'About',
-    //routes 변수에 담긴 오브젝트를 일렬로 표현하면 다음과 같다. django의 url_pattern과 유사하다.
-    //{path: '/', name: 'Home', component: Home},
-  
-      // 아래 코드는 최적화를 위한 코드, 아직 신경쓰지 않아도 된다.
-      // route level code-splitting
-      // this generates a separate chunk (about.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import(/* webpackChunkName: "about" */ '../views/About.vue')
-    }
-  ]
-  
-  //아직 아래 코드는 신경쓰지 않아도 된다.
-  const router = new VueRouter({
-    mode: 'history',
-    base: process.env.BASE_URL,
-    routes
-  })
-  
-  export default router
-  ```
+## vue router
 
-  - `App.vue`
+- 모든 기능이 한 url에서 이루어지므로 특정 기능을 이용하기 위해 url을 입력하고 해당 기능으로 바로 이동하는 것이 불가능, 새로고침 없이 url을 설정할 수 있도록 해주는 것이 vue router다.
 
-  ```html
-  <template>
-    <div id="app">
-      <div id="nav">
-        <!--
-          <router-link>는 a태그와 달리 새로고침 없이 url을 이동시킨다.
-          <a>태그를 사용한 것은 맞지만 JS를 통해 새로고침이 일어나지 않게 설계한 것이다.
-          아래 링크를 눌러서 url이 바뀌는 것을 index.js가 인지하고 렌더링 해준다.
-        -->
-        <!--
-          django와 딜리 url 경로 뒤가 아니라 앞에 /를 붙인다.
-          이건 Vue가 특이한 것이 아니라 django가 특이한 것으로
-          대부분의 경우에는 /를 경로 앞에 붙인다.
-        -->
-        <router-link to="/">Home</router-link> |
-        <router-link to="/about">About</router-link>
-      </div>
   
+- `vue add router`: vue cli가 제공하는 vue router 구조를 잡아주는 명령어
+
+```bash
+$ vue add router
+
+#commit을 하라고 하는데 완료가 되면 App.vue의 내용이 다 날아가기 때문이다. 따라서 프로젝트 생성하자마자 하는 것이 좋다.
+
+#Use history mode for router? (Requires proper server setup for index fallback in production) (Y/n) 는 Y를 해준다. 이걸 y로 해줘야 뒤로가기를 눌러도 새로고침이 일어나지 않는다.
+
+#완료되면 src폴더에 추가 폴더가 생기고 App.vue과 main.js에도 코드가 추가된다.
+```
+
+
+
+- `index.js`가 django의 urls.py의 역할을 하는 파일이다.
+  - `index.js`에서 쓸 컴포넌트를 `views`에 작성
+  - `views`에 작성된 컴포넌트를 다른 이름으로 페이지라고도 부른다. 
+  - `views` 폴더에 작성된 컴포넌트에서 import 해서 쓸 컴포넌트를 `components`에 작성한다. 
+  - 굳이 나누는 이유는 나중에 관리가 편하기 때문이다.
+
+```js
+//생성 후 아무 것도 수정하지 않은 상태
+import Vue from 'vue'
+import VueRouter from 'vue-router'   
+import Home from '../views/Home.vue'   //from . import views와 유사한 코드
+import About from '../views/About.vue'
+
+Vue.use(VueRouter)
+
+  //url_patterns와 유사한 코드
+  //django와 달리 :로 variable routing을 표현한다.
+  const routes = [
+  {
+    path: '/',    //이 경로로 접근하면
+    name: 'Home',  //경로의 이름
+    component: Home  //(위에서 import한)Home이라는 component를 사용하겠다. 
+  },
+  {
+    path: '/about',
+    name: 'About',
+  //routes 변수에 담긴 오브젝트를 일렬로 표현하면 다음과 같다. django의 url_pattern과 유사하다.
+  //{path: '/', name: 'Home', component: Home},
+
+    // 아래 코드는 최적화를 위한 코드, 아직 신경쓰지 않아도 된다.
+    // route level code-splitting
+    // this generates a separate chunk (about.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import(/* webpackChunkName: "about" */ '../views/About.vue')
+  }
+]
+
+//아래 코드가 뒤로가기를 눌러도 새로고침이 일어나지 않게 해주는 코드다.
+const router = new VueRouter({
+  mode: 'history',
+  base: process.env.BASE_URL,
+  routes
+})
+
+export default router
+```
+
+
+
+- `App.vue`
+
+```html
+<template>
+  <div id="app">
+    <div id="nav">
       <!--
-        아래 태그가 컴포넌트를 렌더링 하는 태그다.
-        django의 {% block content %}와 유사하다.
+        <router-link>는 a태그와 달리 새로고침 없이 url을 이동시킨다.
+        <a>태그를 사용한 것은 맞지만(관리자 창에 보면 a태그로 표시되고 router-link는 class로 들어가 있다)
+	    JS를 통해 새로고침이 일어나지 않게 설계한 것이다.
+        아래 링크를 눌러서 url이 바뀌는 것을 index.js가 인지하고 렌더링 해준다.
       -->
-      <router-view/>
-        
+      <!--
+        django와 딜리 url 경로 뒤가 아니라 앞에 /를 붙인다.
+        이건 Vue가 특이한 것이 아니라 django가 특이한 것으로
+        대부분의 경우에는 /를 경로 앞에 붙인다.
+      -->
+      <router-link to="/">Home</router-link> |
+      <router-link to="/about">About</router-link>
     </div>
-  </template>
-  
-  <style>
-  
-  </style>
-  
-  ```
 
-  
+    <!--
+      아래 태그가 컴포넌트를 렌더링 하는 태그다.
+      django의 {% block content %}와 유사하다.
+    -->
+    <router-view/>
+      
+  </div>
+</template>
+
+<style>
+
+</style>
+```
+
+
+
+- 순서
+  - App.vue에 표시된 링크를 클릭한다.
+  - index.js에서 url변화를 감지한다.
+  - 해당 url경로에 정의된 컴포넌트(`views` 폴더에 정의된 컴포넌트)를 렌더링한다.
+  - views에 정의된컴포넌트에 다른 컴포넌트(`components` 폴더에 정의된 컴포넌트)가 쓰였다면
+
+
+
+- variable routing
