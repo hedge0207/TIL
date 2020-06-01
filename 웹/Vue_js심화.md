@@ -190,8 +190,9 @@ $ npm run build
 ## vue router
 
 - 모든 기능이 한 url에서 이루어지므로 특정 기능을 이용하기 위해 url을 입력하고 해당 기능으로 바로 이동하는 것이 불가능, 새로고침 없이 url을 설정할 수 있도록 해주는 것이 vue router다.
-
-  
+- url이 바뀔 때 마다 요청을 보내는 것은 아니다.
+  - 최초로 페이지에 접속할 때 페이지에서 실행시켜야 하는 모든 기능에 대한 data를 다 받아온 후 url이 바뀔 때 마다 실행시키는 것이다. 
+  - url에 #이 붙어 있으면 요청을 보내지 않았다는 것이다.
 - `vue add router`: vue cli가 제공하는 vue router 구조를 잡아주는 명령어
 
 ```bash
@@ -217,7 +218,7 @@ $ vue add router
 import Vue from 'vue'
 import VueRouter from 'vue-router'   
 import Home from '../views/Home.vue'   //from . import views와 유사한 코드
-import About from '../views/About.vue'
+import About from '../views/About.vue' //..의 shortcut이 @다.
 
 Vue.use(VueRouter)
 
@@ -226,7 +227,7 @@ Vue.use(VueRouter)
   const routes = [
   {
     path: '/',    //이 경로로 접근하면
-    name: 'Home',  //경로의 이름
+    name: 'Home',  //경로의 이름, django에서 처럼 url이름으로도 활용되지만 관리자 창에서 해당 component의 태그명으로 여기서 설정한 이름이 뜬다.
     component: Home  //(위에서 import한)Home이라는 component를 사용하겠다. 
   },
   {
@@ -301,3 +302,306 @@ export default router
 
 
 - variable routing
+
+  - `:`은 js 이외의 웹 개발에서도 variable routing에 일반적으로 사용되는 기호다.
+  - `index.js`
+
+  ```js
+  //django에서는 varable routing을 할 때 <타입:변수명>으로 지정했지만 js에서는 그냥 :변수명을 사용한다.
+  
+  import Vue from 'vue'
+  import VueRouter from 'vue-router'
+  
+  
+  import HelloName from '../views/HelloName.vue'
+  
+  
+  Vue.use(VueRouter)
+  
+  
+  const routes = [
+    { path: '/hello/:name', name: 'HelloName', component: HelloName },
+  ]
+  
+  //후략
+  ```
+
+  - `views/HelloName.vue`
+    - url에 입력된 변수(예시의 경우 name)는 route 내부의 params라는 곳에 저장되어 있다. 
+
+  ```html
+  <template>
+    <div>
+        <h1>Hello, {{ name }}</h1>
+    </div>
+  </template>
+  
+  <script>
+  export default {
+      name: 'HelloName',
+      data: function() {
+          return {
+              name: this.$route.params.name,  //name이라고 뜨는 이유는 index.js에서 :name으로 정의했기 때문이다.
+          }
+      }
+  }
+  </script>
+  
+  <style>
+  
+  </style>
+  ```
+
+  
+
+  - data를 GET요청으로 넘기는 방법(예시`ping-pong` 구현)
+
+    - `index.js`
+
+    ```js
+    //전략
+    
+    import Ping from '../views/Ping.vue'
+    import Pong from '../views/Pong.vue'
+    
+    Vue.use(VueRouter)
+    
+    const routes = [
+      { path: '/ping', name: 'Ping', component: Ping },
+      { path: '/pong', name: 'Pong', component: Pong },
+    ]
+    
+    //후략
+    ```
+
+    - `views/ping.vue`
+
+    ```html
+    <!--ping.vue-->
+    <template>
+      <div>
+          <h1>Ping</h1>    
+          <!--enter를 누르면 sendToPong 함수를 실행, inputText변수를 양방향 연걸-->
+          <input @keyup.enter="sendToPong" v-model="inputText" type="text">
+      </div>
+    </template>
+    
+    <script>
+    export default {
+        name: 'Ping',
+        data: function() {
+            return {
+                inputText: '',
+            }
+        },
+        methods: {
+            sendToPong: function() {
+                // route가 아닌 router라는 것에 주의
+                // push라는 명령어를 통해 이루어진다(django의 redirect와 유사).
+                // 원래 GET 요청은 url에 쿼리 스트링(?로 시작)에 담겨서 넘어가게 된다. 따라서 아래와 같이 쿼리 스트링을 적어서 넘겨준다.
+                this.$router.push(`/pong?message=${this.inputText}`)
+            }
+        }
+    }
+    </script>
+    
+    <!--후략-->
+    ```
+
+    - `views/pong.vue`
+
+    ```html
+    <template>
+      <div>
+        <h1>Pong</h1>
+        <h2>{{ messageFromPing }}</h2>
+      </div>
+    </template>
+    
+    <script>
+    export default {
+        name: 'Pong',
+        data: function() {
+          return {
+            //ping에서 넘어온 정보는 route의 qurey의 message에 담겨 있다.
+            messageFromPing: this.$route.query.message, //message인 이유는 ping에서 쿼리 스트링을 설정할 때 message라고 썼기 때문이다.
+          }
+        }
+    }
+    </script>
+    
+    <style>
+    
+    </style>
+    ```
+
+  
+
+- url에 설정한 name을 활용하는 방법
+
+  - 추가 url이 없을 경우
+  
+  ```html
+  <template>
+    <div id="app">
+      <div id="nav">
+          <!--바인드를 걸어준 후 to에 객체를 넘겨준다.-->
+        <router-link :to="{ name: 'Ping' }">Ping</router-link>
+      </div>
+      <router-view/>
+    </div>
+  </template>
+  
+  <!--후략-->
+  ```
+  
+  - 추가 url이 있을 경우
+  
+  ```html
+  <template>
+    <div>
+        <h1>Ping</h1>
+        <input @keyup.enter="sendToPong" v-model="inputText" type="text">
+    </div>
+  </template>
+  
+  <script>
+  export default {
+      name: 'Ping',
+      data: function() {
+          return {
+              inputText: '',
+          }
+      },
+      methods: {
+          sendToPong: function() {
+              // this.$router.push(`/pong?message=${this.inputText}`)  //위에서 이와 같이 쓴 코드는 아래와 같이 바꿀 수 있다.
+              this.$router.push({ name: 'Pong', query: { message: this.inputText } })
+          }
+      }
+  }
+  </script>
+  ```
+
+
+
+
+
+- bootstrap 적용
+  - CDN을 `public/index.html`에 붙여넣는다.
+  - 결국 최종적으로 렌더링 되는 파일이 `index.html`이므로 여기다만 적으면 적용이 된다.
+
+
+
+- `props` & `emit`
+
+  - 상위 컴포넌트(부모)와 하위 컴포넌트(자식) 간의 데이터 전달 방식
+  - props: 부모는 props를 통해 자식에게 데이터를 전달
+    - 모든 prop들은 부모와 자식 사이에 단방향으로 내려가는 바인딩 형태를 취한다. 이 말은 부모의 속성이 변경되면 자식 속성에게 전달되지만, 반대 방향으로는 전달되지 않는 다는 것을 의미
+  - emit: 자식이 부모의 데이터를 변경하는 등의 일이 필요할 때 emit을 통해 부모에게 events를 보내 부모에게 메시지를 보낸다.
+  - 데이터는 부모에서 자식관계에서만 전달가능하다.
+    - 까마득히 아래 있는 하위 컴포넌트가 까마득히 위에 있는 상위 컴포넌트의 데이터를 변경할 경우 데이터 흐름의 일관성이 사라지고 어디서 데이터가 변하고 있는지 추론하기 어려워진다.
+    - 따라서 부모가 자식에게 데이터를 props로 내려 주는 것은 가능하지만 자식은 부모의 데이터를 바꾸거나 접근할 수 없다.
+    - 다른 말로 하면 모든 컴포넌트 인스턴스는 자체 격리 된 범위가 있기 때문에 중첩된 컴포넌트의 관계에서 하위 컴포넌트는 상위 컴포넌트를 직접 참조할 수없으며 그렇게 해서도 안된다.
+
+  ```js
+  //index.js
+  import Vue from 'vue'
+  import VueRouter from 'vue-router'
+  import Parent from '../views/Parent.vue'
+  
+  Vue.use(VueRouter)
+  
+    const routes = [
+    {
+      path: '/parent',
+      name: '부모',
+      component: Parent
+    },
+  ]
+  //후략
+  ```
+
+  ```html
+  <!--views/Parent.vue-->
+  
+  <template>
+    <div class="parent">
+        <h1>부모 컴포넌트</h1>
+        <!-- P1. prop 이름="내용"(:propFromParent="parentMsg") -->
+        <Child @hungry="onHungrySignal" :propFromParent="parentMsg"/>
+        <!-- E2. emit @customEvent 를 듣고, 그다음 일을 한다(@hungry="onHungrySignal"). -->
+    </div>
+  </template>
+  
+  <script>
+  
+  import Child from '../components/Child.vue'
+  
+  export default {
+      name: 'Parent',
+      data() {
+          return {
+              parentMsg: '부모에서 내리는 메시지',
+          }
+      },
+      components: {
+          Child,
+      },
+      methods: {
+          // E3. 지정된 메소드를 실행시킨다.
+          //자식에게 받은 인자 2개(예시의 경우 '햄버거','피자')
+          onHungrySignal(menu1, menu2) {
+              console.log(menu1, menu2)
+          }
+      }
+  }
+  </script>
+  
+  <style>
+      .parent {
+          border: 3px solid red;
+          margin: 3px;
+          padding: 3px;
+      }
+  </style>
+  ```
+
+  ```html
+  <!--components/Child.vue-->
+  
+  <template>
+    <div class="child">
+        <h2>자식 컴포넌트</h2>
+        <!-- P3. 부모에게 받은 데이터를 사용한다. -->
+        {{ propFromParent }}
+        <!--button을 클릭하게 되면 부모에게 에빈트가 방출(emit)-->
+        <button @click="sendHungrySignal">배고파!</button>
+      </div>
+  </template>
+  <script>
+  export default {
+      name: 'Child',
+      // P2. 부모에게 받은 props 등록(반드시 Object로 써야지 유효성 검사(Validation) 가능)
+      props: {
+          //key값으론 변수명, value로는 type명을 쓴다.
+          propFromParent: String,
+      },
+      methods: {
+          sendHungrySignal() {
+              // E1. emit 부모한테 이벤트(시그널) 방출
+              //this.$emit('이벤트명','인자1','인자2',...)
+              this.$emit('hungry', '햄버거', '피자') //custom event
+          }
+      }
+  }
+  </script>
+  
+  <style>
+  .child {
+      border: 3px solid blue;
+      margin: 3px;
+      padding: 3px;
+  }
+  </style>
+  ```

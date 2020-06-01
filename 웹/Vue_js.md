@@ -146,7 +146,7 @@
 
   
 
-- interpolation
+- interpolation(보간법): `v-text`와 동일한 기능을 한다.
 
   ```html
   <!DOCTYPE html>
