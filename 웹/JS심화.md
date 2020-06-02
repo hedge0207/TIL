@@ -196,7 +196,7 @@
           const cardArea = document.querySelector('#cardArea')
           cardArea.appendChild(card)
       }
-      //여기까지 완성된 시점에서 console창에 createCard()를 입력하면 카드가 생성된다. 그러나 개발자		가 아닌 사람에게 이렇게 카드를 생성하라고 할 수 는 없으므로 버튼은 만들어 준다.
+      //여기까지 완성된 시점에서 console창에 createCard()를 입력하면 카드가 생성된다. 그러나 개발자가 아닌 사람에게 이렇게 카드를 생성하라고 할 수 		는 없으므로 버튼은 만들어 준다.
       
       //card 생성을 위한 버튼
       const createCardButton = document.querySelector('#createCardButton')
@@ -516,7 +516,7 @@ console.log(this)
         confirm('얍')									//둘 다 myButton을 가리킨다.
      })
   
-  //그러나 this보다 target을 쓰는 것이 권장된다. this는 어느 메소드에 쓰였냐에 따라 달라지지만 target은 정확히 하나를 지정하기 때문이다.
+  //그러나 this보다 target을 쓰는 것이 권장된다. this는 어느 메소드 안에 쓰였냐에 따라 달라지지만 target은 정확히 하나를 지정하기 때문이다.
   
   
   //아래와 같이 화살표 함수로 정의했을 경우 this는 작동하지 않는다. 따라서 target을 쓰는 것이 권장됨

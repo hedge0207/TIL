@@ -1,23 +1,33 @@
 # Vue 프로젝트
 
-- vue/cli 설치(최초 1회)
-  - VScode extention에서 `Vetur` 설치
+- SPA(Single Page Application)와 SFC(Single File Component)
+  - SPA: 하나의 페이지를 하나의 파일에 작성하는 것
+  - SFC: 파일 하나당 하나의 컴포넌트를 작성하여 컴포넌트 들을 모아서 하나의 페이지를 구성하는 것
 
-```bash
-$ npm install -g @vue/cli
-```
 
-- 프로젝트 생성
 
-```bash
-$ vue create 프로젝트명
+- 프로젝트 생성하는 방법
 
-#입력하면 디폴트 모드와 설정 모드 중 하나를 선택해 엔터
-#완료되면  $ cd 프로젝트명, $ npm run serve을 실행해 달라는 문구가 뜬다.
+  - vue/cli 설치(최초 1회)
+    - VScode extention에서 `Vetur` 설치
 
-$ vue 프로젝트명
-$ npm run serve
-```
+  ```bash
+  $ npm install -g @vue/cli
+  ```
+
+  - 프로젝트 생성
+
+  ```bash
+  $ vue create 프로젝트명
+  
+  #입력하면 디폴트 모드와 설정 모드 중 하나를 선택해 엔터
+  #완료되면  $ cd 프로젝트명, $ npm run serve을 실행해 달라는 문구가 뜬다.
+  
+  $ vue 프로젝트명
+  $ npm run serve
+  ```
+
+
 
 - 구성
 
@@ -58,10 +68,12 @@ $ npm run serve
   - `package.json`, `package-lock.json`: `requirements.txt`와 유사한 역할
     
     - `package.json`은 django의 `manage.py`와 같이 루트라는 것을 알 수 있는 파일이다.
-  - `node_modules`: python의 venv에 해당, 패키지를 설치할 경우 실제로 코드가 들어가게 되는 디렉토리
+  
+- `node_modules`: python의 venv에 해당, 패키지를 설치할 경우 실제로 코드가 들어가게 되는 디렉토리
+
+
 
 - `.Vue`파일: `component`라 불리며 하나의 `component`는 `template`, `script`, `style`로 이루어져 있다.
-  
   - 파일명은 UpperCamelCase로 작성한다.
   - VScode에서 `Vetur` 확장 프로그램을 설치했다면 폴더를 열고 `<`를 입력하고 탭을 누르면 html에서 `!`를 입력하고 탭을 누르는 것 처럼 기본 구조를 잡아준다.
   - 기본 구조는 html에 해당하는 `<template>`,  js에 해당하는 `<script>`,  css에 해당하는 `<style>`의 세 부분이다.
@@ -125,17 +137,28 @@ export default arr1  //객체를 내보내는 것이 아니므로 {}는 쓰지 �
 
 
 
-- `App.vue`파일은 `root`파로 아래의 component로 직접 작성한 component는 이곳을 통해 출력한다.
+- `component`
+  - 하나의 페이지를 구성하는 여러 요소들
+  - 재사용이 용이하므로 반복되는 일을 할 때 컴포넌트를 사용하면 더 편하게 할 수도 있다.
+  - Vue는 흔히 컴포넌트가 트리 형태로 중첩되어 사용된다.
+    - 최소 컴포넌트를 지정했다면, 컴포넌트를 그룹으로 묶어서 부모 컴포넌트를 만들 수 있다.
+  - Vue 컴포넌트는 Vue 인스턴스이기도 하다.
+  - 한 가지 컴포넌트가 하나의 일을 한다는 원칙에 기반해서 컴포넌트 설계 - 단일책임원칙
+
+
+
+- `App.vue`파일은 `root`바로 아래의 component로 직접 작성한 component는 이곳을 통해 출력한다.
 
 ```html
 <template>
   <div id="app">
     <!--3.사용하기-->
-    <First></First>
+    <First />
 	<!--
-	  혹은 아래와 같이 써도 된다.
-	  <First />
 	  태그 안에 /가 있으면 닫힘태그를 쓰지 않아도 된다
+	  혹은 아래와 같이 써도 동작은 한다.
+	  <First></First>
+	  그러나 컨벤션에 어긋나므로 하지 않는다.
 	-->
   </div>
 </template>
@@ -164,11 +187,27 @@ export default {
 
 
 
-- axios 설치
+- axios 사용
 
 ```bash
 #i는 install의 약자로 Vue에서는 아래와 같이 설치가 가능하다.
 $ npm i axios
+```
+
+```html
+<!--.vue파일-->
+<!--전략-->
+
+<script>
+import axios from 'axios'   //import해서 사용한다.
+import A from './components/A' //직접 작성한 컴포넌트보다 위에 import하는 것이 컨벤션이다.
+import B from './components/B'
+
+
+export default {
+  name: 'App',
+</script>
+<!--후략-->
 ```
 
 
@@ -187,7 +226,7 @@ $ npm run build
 
 
 
-## vue router
+# Vue router
 
 - 모든 기능이 한 url에서 이루어지므로 특정 기능을 이용하기 위해 url을 입력하고 해당 기능으로 바로 이동하는 것이 불가능, 새로고침 없이 url을 설정할 수 있도록 해주는 것이 vue router다.
 - url이 바뀔 때 마다 요청을 보내는 것은 아니다.
@@ -498,11 +537,12 @@ export default router
   - 상위 컴포넌트(부모)와 하위 컴포넌트(자식) 간의 데이터 전달 방식
   - props: 부모는 props를 통해 자식에게 데이터를 전달
     - 모든 prop들은 부모와 자식 사이에 단방향으로 내려가는 바인딩 형태를 취한다. 이 말은 부모의 속성이 변경되면 자식 속성에게 전달되지만, 반대 방향으로는 전달되지 않는 다는 것을 의미
+    - props로 전달되는 데이터는 전달받은 컴포넌트의 `data`오브젝트에 작성하지 않는다. props를 전달한 부모 컴포넌트의 `data` 오브젝트에만 작성하면 된다.
   - emit: 자식이 부모의 데이터를 변경하는 등의 일이 필요할 때 emit을 통해 부모에게 events를 보내 부모에게 메시지를 보낸다.
   - 데이터는 부모에서 자식관계에서만 전달가능하다.
     - 까마득히 아래 있는 하위 컴포넌트가 까마득히 위에 있는 상위 컴포넌트의 데이터를 변경할 경우 데이터 흐름의 일관성이 사라지고 어디서 데이터가 변하고 있는지 추론하기 어려워진다.
-    - 따라서 부모가 자식에게 데이터를 props로 내려 주는 것은 가능하지만 자식은 부모의 데이터를 바꾸거나 접근할 수 없다.
-    - 다른 말로 하면 모든 컴포넌트 인스턴스는 자체 격리 된 범위가 있기 때문에 중첩된 컴포넌트의 관계에서 하위 컴포넌트는 상위 컴포넌트를 직접 참조할 수없으며 그렇게 해서도 안된다.
+    - 따라서 부모가 자식에게 데이터를 props로 내려 주는 것은 가능하지만 자식은 부모의 데이터를 바꾸거나 접근할 수 없다. 자식은 오직 이벤트를 통해 요청만 할 수 있다. 요청을 받은 부모는 `v-on` 을 통해 이벤트 이름과 동작(methods)를 정의한다.
+  - 다른 말로 하면 모든 컴포넌트 인스턴스는 자체 격리 된 범위가 있기 때문에 중첩된 컴포넌트의 관계에서 하위 컴포넌트는 상위 컴포넌트를 직접 참조할 수없으며 그렇게 해서도 안된다.
 
   ```js
   //index.js
@@ -524,20 +564,25 @@ export default router
 
   ```html
   <!--views/Parent.vue-->
-  
+    
   <template>
     <div class="parent">
         <h1>부모 컴포넌트</h1>
-        <!-- P1. prop 이름="내용"(:propFromParent="parentMsg") -->
+        <!-- P1. prop 이름="내용"(propFromParent="parentMsg") -->
+        <!-- 
+  	       만일 아래 있는 data나 computed와 vind해서 넘기고 싶으면  
+  		   :prop 이름="내용"(:propFromParent="parentMsg")
+  		   아래의 경우 data에 정의된 parentMsg를 보내려고 하는 것이므로 :를 써준다.
+  	   -->
         <Child @hungry="onHungrySignal" :propFromParent="parentMsg"/>
         <!-- E2. emit @customEvent 를 듣고, 그다음 일을 한다(@hungry="onHungrySignal"). -->
     </div>
   </template>
-  
+    
   <script>
-  
+    
   import Child from '../components/Child.vue'
-  
+    
   export default {
       name: 'Parent',
       data() {
@@ -557,7 +602,7 @@ export default router
       }
   }
   </script>
-  
+    
   <style>
       .parent {
           border: 3px solid red;
@@ -569,7 +614,7 @@ export default router
 
   ```html
   <!--components/Child.vue-->
-  
+    
   <template>
     <div class="child">
         <h2>자식 컴포넌트</h2>
@@ -583,6 +628,8 @@ export default router
   export default {
       name: 'Child',
       // P2. 부모에게 받은 props 등록(반드시 Object로 써야지 유효성 검사(Validation) 가능)
+      // 부모에게 받은 data가 해당 타입이 맞는지에 대해 유효성 검사를 하는 것이다.
+      // 아래에서 확인할 수 있듯 props로 전달되는 데이터는 data로 쓰지 않는다.
       props: {
           //key값으론 변수명, value로는 type명을 쓴다.
           propFromParent: String,
@@ -590,13 +637,13 @@ export default router
       methods: {
           sendHungrySignal() {
               // E1. emit 부모한테 이벤트(시그널) 방출
-              //this.$emit('이벤트명','인자1','인자2',...)
+              //this.$emit('이벤트명','데이터1','데이터2',...)
               this.$emit('hungry', '햄버거', '피자') //custom event
           }
       }
   }
   </script>
-  
+    
   <style>
   .child {
       border: 3px solid blue;
@@ -605,3 +652,323 @@ export default router
   }
   </style>
   ```
+
+
+
+
+- `<style>`을 특정 class나 선택자가 없이 태그로 줄 경우 자식 컴포넌트에 작성해도 모든 컴포넌트에 적용된다.
+  - scoped 속성을 줄 경우(`<style scoped>`) 컴포넌트마다 독립적인 스타일링이 가능해진다.
+  - 그렇다고 클래스를 지정해 주지 않아도 된다는 것은 아니다. 클래스는 항상 지정해줘야 한다.
+  - 클래스를 써주지 않았을 경우 Vue가 해당 스타일링을 적용 받을 것들을 일일이 찾아야 하기 때문에 클래스를 써주는 것이 성능 면에서  더 좋다.
+
+
+
+# Youtube를 활용하여 페이지 만들기
+
+- 유튜브에서 `api key`와 `api url`을 받아서 직접 만든 페이지에 유튜브 동영상이 뜨게 하는 것이 목적 
+  - API KEY는 관리를 철저히 해야 한다. github에 올라가지 않도록 gitignore로 관리를 해줘야 한다.
+    - `.gitignore`에 최초 생성시에 `.env.local`파일이 포함되어 생성된다.
+    - `.env.local`파일에 API KEY를 관리하면 된다(구체적 방법 추가 할 것).
+    - 이렇게 한다고 완전히 숨길 수 있는 것은 아니지만 적어도 github에서는 숨길 수 있다.
+
+
+
+- 구조(총 5개의 컴포넌트) 
+
+  ```
+  App.vue--searchBar
+  	   --YoutubeList--YoutubeListItems
+  	   --YoutubeDetail
+         
+  
+  searchBar: 검색창
+  YoutubeDetail: 영상 보기
+  YoutubeList: 영상 목록 보기
+  YoutubeListItems: 영상 상세 정보
+  ```
+
+
+
+- 코드
+  - `App.vue`
+
+  ```html
+  <template>
+    <div id="app" class="container">
+        <!--검색창을 구성하는 컴포넌트-->
+        <SearchBar @search-videos="searchVideos"/>
+      <div class="row">
+        <!--영상 중 하나를 클릭했을 때 해당 영상을 띄워주는 컴포넌트-->
+        <YoutubeDetail :selectedVideoId="selectedVideoId" :selectedVideoTitle="selectedVideoTitle"/>
+        <!--영상 리스트를 띄워주는 컴포넌트-->
+        <YoutubeList :videos="videos" @select-video="selectVideo"/>
+      </div>
+    </div>
+  </template>
+  
+  <script>
+  //$npm i axios를 통해 axios를 설치 한 후 import
+  import axios from 'axios'
+  
+  //App.vue에서 사용할 컴포넌트들을 import
+  import SearchBar from './components/SearchBar'
+  import YoutubeList from './components/YoutubeList'
+  import YoutubeDetail from './components/YoutubeDetail'
+  
+  //google 클라우드 플랫폼-새 프로젝트 생성-좌측 상단 햄버거-API 및 서비스-대시보드-
+  //-API및 서비스 사용 설정-YouTube Data API v3-사용 설정-사용자 인증 정보 만들기-
+  //-API선택, API를 호출할 위치는 웹브라우저(자바스크립트)선택, 엑세스할 데이터는 공개 데이터 선택
+  //-어떤 사용자 인증 정보가 필요한가요? 클릭하면 API KEY를 발급 받을 수 있다.
+  //발급 받은 이후부터는 사용자 인증 정보 탭에서 확인 할 수 있다.
+  //아래 API_KEY는 임의로 아무 문자열을 적은 것으로 실제 API_KEY가 아니다.
+  const API_KEY = 'AbCdEfGhIjK7LMNop9QrSTU1VWx7Yz'
+  
+  //https://developers.google.com/youtube/v3/docs/search/list에 접속하면 HTTP 요청 url이 있다.
+  const API_URL = 'https://www.googleapis.com/youtube/v3/search'
+  
+  
+  export default {
+    name: 'App',
+    components:{
+      SearchBar,
+      YoutubeList,
+      YoutubeDetail,
+    },
+    data: function(){
+      return {
+        videos: [],
+        selectedVideoId: '',
+        selectedVideoTitle:'',
+      }
+    },
+    methods: {
+      searchVideos: function(keyword){
+        // 실제로 axios를 통해 요청을 보내서 videos를 변경
+        // 아래 경로는 관리자 도구-network-preview에서 확인 할 수 있다. 응답으로 json 오브젝트가 온다.
+        axios.get(API_URL, {
+          params:{
+            key: API_KEY,
+            type: 'video',
+            part: 'snippet',
+            q:keyword,
+          },
+          //화살표 함수 사용
+          //응답으로 온 json 오브젝트의 response.data.items에 요청 받은 내용이 들어 있다.
+        }).then((response)=>{
+          this.videos = response.data.items
+          //요청 받은 내용이 오지 않았을 경우 콘솔 창에 error를 출력
+        }).catch((error)=>{
+          console.error(error)
+        })
+      },
+      selectVideo:function(videoId, videoTitle){
+        this.selectedVideoId=videoId
+        this.selectedVideoTitle=videoTitle
+      },
+    }
+  }
+  </script>
+  
+  <!--후략-->
+```
+  
+- `SearchBar.vue`
+  
+  ```html
+  <template>
+    <div class="row">
+        <!--입력 받을 keyword 데이터에 v-model 설정, enter가 입력되면 searchVideos함수 실행-->
+        <input type="text" v-model="keyword" @keypress.enter="searchVideos" placeholder="보고 싶은 동영상을 검색하세요">
+    </div>
+  </template>
+  
+  <script>
+  export default {
+      name:'SearchBar',
+      data:function(){
+        return {
+          keyword: '',
+        }
+      },
+      methods: {
+        searchVideos:function(){
+          // trim은 좌우측 공백을 제거하는 함수, 만일 공백을 제거했을 때 빈 문자열이라면 입력된 것이 없다는 뜻이므로 알림창을 띄운다.
+          if (!this.keyword.trim()){
+            alert('검색어를 입력해 주세요.')
+          }else{
+            //공백이 아니라면 emit을 실행
+            //search-videos이벤트를 실행하고 keyword.trim()을 인자로 넘긴다.
+            this.$emit('search-videos', this.keyword.trim())
+          }
+        },
+      },
+  }
+  </script>
+  
+  <style>
+    input{
+      width:75%;
+      margin-bottom: 10px;
+    }
+  </style>
+```
+  
+- `YoutubeList.vue`
+  
+  ```html
+  <template>
+  <ul class="list-group col-8">
+        <!--v-for를 사용할 경우 key값을 줘야 하는데 video.etag가 유일한 값을 가지므로 key의 역할을 할 수 있다.-->
+        <!--select-video 이벤트가 실행되면 selectVideo 메소드 실행-->
+        <YoutubeListItem v-for="video in videos" :key="video.etag" :video="video" @select-video="selectVideo"/>
+    </ul>
+  </template>
+  
+  <script>
+  import YoutubeListItem from './YoutubeListItem'
+  
+  export default {
+      name:'YoutubeList',
+      components:{
+          YoutubeListItem,
+      },
+      props: {
+          videos: Array,
+      },
+      methods:{
+          selectVideo: function(videoId,videoTitle){
+              //select-video이벤트를 실행하고 자식 컴포넌트인 YoutubeListItems에서 인자로 받은 videoId,videoTitle를 부모 컴포넌트로 넘긴다.
+              //select-video는 위에서도 썼는데 자식 컴포넌트와 부모 컴포넌트의 이벤트명이 겹쳐도 상관 없다.
+              this.$emit('select-video',videoId,videoTitle)
+          },
+      },
+  }
+  </script>
+  <!--후략-->
+  ```
+  
+  - `YoutubeListItem.vue`
+  
+  ```html
+  <template>
+    <li class="list-group-item" @click="selectVideo">
+      <!--
+        :src="video.snippet.thumbnails.default.url"로 써도 되지만 길어지므로 아래에 computed에 함수를 선언해서 짧게 써준다.
+        videoTitle, videoDescription도 마찬가지로 그냥 video.snippet.title, video.snippet.description로 써도 되지만 짧게 써주기 위해 computed에 써준다.
+      -->
+      <div class="media">
+        <img :src="thumbnailUrl" :alt="thumbnailUrl" class="mr-3">
+          <div class="media-body">
+            <h5 class="mt-0 mb-1" v-html="videoTitle"></h5>
+            <p>{{ videoDescription }}</p>
+          </div>
+      </div>
+    </li>
+  </template>
+  
+  <script>
+  export default {
+      name:'YoutubeListItem',
+      // 부모 컴포넌트에서 받은 videos를 props에 저장
+      props: {
+        video: Object,
+      },
+      computed: {
+        thumbnailUrl: function () {
+          return this.video.snippet.thumbnails.default.url
+        },
+        videoTitle: function(){
+          return this.video.snippet.title
+        },
+        videoDescription: function(){
+          return this.video.snippet.description
+        },
+      },
+      methods:{
+        selectVideo: function () {
+          //아래 video.id.videoId는 개발자도구-network-preview에서 볼수 있다.
+          this.$emit('select-video',this.video.id.videoId, this.videoTitle)
+        },
+      },
+  }
+  </script>
+  
+  <style>
+  li{
+    cursor: pointer;
+  }
+  li:hover{
+    background-color: #eee;
+  }
+  </style>
+  ```
+  
+  - `YoutubeDetail.vue`
+  
+  ```html
+  <template>
+    <div class="col-4 align-center">
+        <!--
+          영상을 클릭하지 않았을 때도 기본 영상이 뜨는 것을 막기 위해 v-if를 사용, 
+          selectedVideoId가 지정되지 않았다면 빈 문자열일 것이므로 false가 되어 영상이 뜨지 않는다.
+  
+          iframe은 bootstrap-embeds에 있는 태그이다. iframeUrl은 굳이 함수로 선언하지 않고 
+          `https://www.youtube.com/embed/${this.selectedVideoId}`를 그대로 적어도 되지만
+          코드를 간결하게 작성하기 위해 computed에 작성해서 쓴다.
+        -->
+        <iframe 
+          v-if="selectedVideoId" 
+          :src="iframeUrl"
+        ></iframe>
+        <!--
+          v-text로 적을 경우 특수문자가 제대로 표시되지 않는 문제가 있어 v-html을 사용
+          v-html에 보안이슈가 있긴 하지만 아래의 경우 보안에 문제 될 것이 없다는 것이 확실하므로 사용한다.
+        -->
+        <h4 class="mt-0 mb-1" v-html="selectedVideoTitle"></h4>      
+    </div>
+  </template>
+  
+  <script>
+  export default {
+      name:"YoutubeDetail",
+      //부모에게 받은 selectedVideoId, selectedVideoTitle를 props에 저장
+      props:{
+        selectedVideoId: String,
+        selectedVideoTitle:String,
+      },
+      computed:{
+        iframeUrl: function(){
+          return `https://www.youtube.com/embed/${this.selectedVideoId}`
+        },
+      }
+  }
+  </script>
+  
+  <style>
+  .align-center{
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  </style>
+  ```
+  
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
