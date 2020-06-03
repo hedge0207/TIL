@@ -380,6 +380,34 @@
   
   out
   [1,3]
+  
+  
+  //4.find
+  //filter와 달리 배열이 아닌 요소를 return
+  //조건을 만족하는 요소를 찾으면 return이 되므로 그 뒤로는 탐색하지 않음
+  const number = [1,2,3].find(num=>num===3)
+  console.log(number)
+  
+  out
+  3
+  
+  
+  //5.some
+  //배열 내에 조건을 만족하는 것이 하나라도 있으면 true를 반환
+  const isBiggerThan20 = [10,20,30].some(num=>num>20)
+  console.log(isBiggerThan20)
+  
+  out
+  true
+  
+  
+  //6.every
+  //배열 내에 모든 요소가 조건을 만족하면 true
+  const allBiggerThan5 = [10,20,30].every(num => num>5)
+  console.log(allBiggerThan5)
+  
+  out
+  true
   ```
 
 
@@ -784,3 +812,78 @@ console.log(this)
   ```
   
   
+
+- node.js로 브라우저가 아닌 컴퓨터로 코드를 실행하면 최상위 객체는 window가 아닌 global이 된다.
+
+
+
+- destructuring(비구조화)
+
+  - array와 object를 해체
+  - ES6부터 지원하는 기능
+
+  ```js
+  const student = {
+      name:'홍길동',
+      email:'asd@zxc.com',
+      phon:'01012345678',
+  }
+  
+  //아래와 같이 오브젝트 내부의 요소들을 하나씩 작성하는 것은 비효율적
+  const name = student.name
+  const email = student.course
+  const phone = student.phone
+  
+  
+  
+  //아래와 같이 할 수 있다.
+  const {name} = student
+  const {eamil} = student
+  const {phone} = student
+  console.log(name,email,phone)
+  
+  out
+  홍길동, asd@zxc.com, 01012345678
+  
+  
+  
+  //아래와 같이 더 간단하게 할 수 있다.
+  const {name, email,phone} = student
+  console.log(name,email,phone)
+  
+  out
+  홍길동, asd@zxc.com, 01012345678
+  
+  
+  
+  //순서를 바꿔도 상관 없고 하나가 빠져도 상관 없다.
+  const {phone,name} = student
+  console.log(name,phone)
+  
+  out
+  홍길동, 01012345678
+  
+  
+  
+  //만일 오브젝트에 없는 요소로 선언 할 경우
+  //undefined가 된다. 따라서 오브젝트의 key값과 선언하려는 변수명이 같아야 함을 알 수 있다.
+  const {a,b,c} = student
+  console.log(a,b,c)
+  
+  out
+  undefined, undefined, undefined
+  
+  
+  
+  //함수에 인자로 넣을 때도 비구조화가 가능하다.
+  function abc({name,email,phone}) {
+      console.log(name,email,phone)
+  }
+  abc(student)  //실제로는 obj인자 하나를 받지만 함수가 실행될 때는 3개의 인자로 나눠진다.
+  
+  out
+  홍길동, asd@zxc.com, 01012345678
+  ```
+
+  
+

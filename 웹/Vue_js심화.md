@@ -68,6 +68,7 @@
   - `package.json`, `package-lock.json`: `requirements.txt`와 유사한 역할
     
     - `package.json`은 django의 `manage.py`와 같이 루트라는 것을 알 수 있는 파일이다.
+    - 둘 다 Vue를 동작하게 하는 라이브러리들이 작성되어 있다. 라이브러리가 설치되면 이 두 파일에 추가된다.
   
 - `node_modules`: python의 venv에 해당, 패키지를 설치할 경우 실제로 코드가 들어가게 되는 디렉토리
 
@@ -142,7 +143,7 @@ export default arr1  //객체를 내보내는 것이 아니므로 {}는 쓰지 �
   - 재사용이 용이하므로 반복되는 일을 할 때 컴포넌트를 사용하면 더 편하게 할 수도 있다.
   - Vue는 흔히 컴포넌트가 트리 형태로 중첩되어 사용된다.
     - 최소 컴포넌트를 지정했다면, 컴포넌트를 그룹으로 묶어서 부모 컴포넌트를 만들 수 있다.
-  - Vue 컴포넌트는 Vue 인스턴스이기도 하다.
+  - 모든 Vue 컴포넌트는 Vue 인스턴스이기도 하다.
   - 한 가지 컴포넌트가 하나의 일을 한다는 원칙에 기반해서 컴포넌트 설계 - 단일책임원칙
 
 
@@ -211,14 +212,6 @@ export default {
 ```
 
 
-
-- 프로젝트를 하나의 HTML 파일로 만들기
-
-```bash
-$ npm run build
-
-#위 코드를 입력하면 dist 폴더가 새로 생기고 그 안에 HTML,JS,CSS파일이 새로 생긴다.
-```
 
 
 
@@ -538,12 +531,14 @@ export default router
   - props: 부모는 props를 통해 자식에게 데이터를 전달
     - 모든 prop들은 부모와 자식 사이에 단방향으로 내려가는 바인딩 형태를 취한다. 이 말은 부모의 속성이 변경되면 자식 속성에게 전달되지만, 반대 방향으로는 전달되지 않는 다는 것을 의미
     - props로 전달되는 데이터는 전달받은 컴포넌트의 `data`오브젝트에 작성하지 않는다. props를 전달한 부모 컴포넌트의 `data` 오브젝트에만 작성하면 된다.
+    - 따라서 data를 정의할 때는 해당 데이터를 필요로하는 컴포넌트들의 가장 가까운 공통 부모에게 정의하는 것이 좋다.
   - emit: 자식이 부모의 데이터를 변경하는 등의 일이 필요할 때 emit을 통해 부모에게 events를 보내 부모에게 메시지를 보낸다.
   - 데이터는 부모에서 자식관계에서만 전달가능하다.
     - 까마득히 아래 있는 하위 컴포넌트가 까마득히 위에 있는 상위 컴포넌트의 데이터를 변경할 경우 데이터 흐름의 일관성이 사라지고 어디서 데이터가 변하고 있는지 추론하기 어려워진다.
     - 따라서 부모가 자식에게 데이터를 props로 내려 주는 것은 가능하지만 자식은 부모의 데이터를 바꾸거나 접근할 수 없다. 자식은 오직 이벤트를 통해 요청만 할 수 있다. 요청을 받은 부모는 `v-on` 을 통해 이벤트 이름과 동작(methods)를 정의한다.
-  - 다른 말로 하면 모든 컴포넌트 인스턴스는 자체 격리 된 범위가 있기 때문에 중첩된 컴포넌트의 관계에서 하위 컴포넌트는 상위 컴포넌트를 직접 참조할 수없으며 그렇게 해서도 안된다.
-
+  
+- 다른 말로 하면 모든 컴포넌트 인스턴스는 자체 격리 된 범위가 있기 때문에 중첩된 컴포넌트의 관계에서 하위 컴포넌트는 상위 컴포넌트를 직접 참조할 수없으며 그렇게 해서도 안된다.
+  
   ```js
   //index.js
   import Vue from 'vue'
@@ -561,19 +556,19 @@ export default router
   ]
   //후략
   ```
-
+  
   ```html
   <!--views/Parent.vue-->
-    
+  
   <template>
     <div class="parent">
         <h1>부모 컴포넌트</h1>
         <!-- P1. prop 이름="내용"(propFromParent="parentMsg") -->
         <!-- 
-  	       만일 아래 있는 data나 computed와 vind해서 넘기고 싶으면  
-  		   :prop 이름="내용"(:propFromParent="parentMsg")
-  		   아래의 경우 data에 정의된 parentMsg를 보내려고 하는 것이므로 :를 써준다.
-  	   -->
+            만일 아래 있는 data나 computed와 vind해서 넘기고 싶으면  
+          :prop 이름="내용"(:propFromParent="parentMsg")
+          아래의 경우 data에 정의된 parentMsg를 보내려고 하는 것이므로 :를 써준다.
+        -->
         <Child @hungry="onHungrySignal" :propFromParent="parentMsg"/>
         <!-- E2. emit @customEvent 를 듣고, 그다음 일을 한다(@hungry="onHungrySignal"). -->
     </div>
@@ -611,7 +606,7 @@ export default router
       }
   </style>
   ```
-
+  
   ```html
   <!--components/Child.vue-->
     
@@ -638,7 +633,7 @@ export default router
           sendHungrySignal() {
               // E1. emit 부모한테 이벤트(시그널) 방출
               //this.$emit('이벤트명','데이터1','데이터2',...)
-              this.$emit('hungry', '햄버거', '피자') //custom event
+              this.$emit('hungry', '짜장면', '짬뽕') //custom event
           }
       }
   }
@@ -652,6 +647,8 @@ export default router
   }
   </style>
   ```
+  
+  
 
 
 
@@ -663,12 +660,38 @@ export default router
 
 
 
+
+
+
+
+
+
+
+
 # Youtube를 활용하여 페이지 만들기
 
 - 유튜브에서 `api key`와 `api url`을 받아서 직접 만든 페이지에 유튜브 동영상이 뜨게 하는 것이 목적 
   - API KEY는 관리를 철저히 해야 한다. github에 올라가지 않도록 gitignore로 관리를 해줘야 한다.
     - `.gitignore`에 최초 생성시에 `.env.local`파일이 포함되어 생성된다.
-    - `.env.local`파일에 API KEY를 관리하면 된다(구체적 방법 추가 할 것).
+    
+    - `.env.local`파일에 API KEY를 관리하면 된다.
+    
+    - 프로젝트 폴더 내부(최상위 폴더)에 `.env.local`파일 생성 후 API KEY를 입력한다.
+    
+      ```
+      VUE_APP_API_KEY=AbCdEfGhIjK7LMNop9QrSTU1VWx7Yz
+      
+      -시작은 반드시 VUE_APP_로 시작해야 하며 = 앞뒤에 공백이 있어선 안된다.
+      ```
+    
+    - API KEY를 입력했던 파일에 아래와 같이 입력한다.
+    
+      ```js
+      const API_KEY = process.env.VUE_APP_API_KEY
+      ```
+    
+      
+    
     - 이렇게 한다고 완전히 숨길 수 있는 것은 아니지만 적어도 github에서는 숨길 수 있다.
 
 
@@ -695,10 +718,10 @@ export default router
   ```html
   <template>
     <div id="app" class="container">
-        <!--검색창을 구성하는 컴포넌트-->
+        <!--search-videos이벤트가 발생하면 searchVideos메소드를 실행-->
         <SearchBar @search-videos="searchVideos"/>
       <div class="row">
-        <!--영상 중 하나를 클릭했을 때 해당 영상을 띄워주는 컴포넌트-->
+        <!--selectedVideoId, selectedVideoTitle을 자식 컴포넌트에게 넘겨준다.-->
         <YoutubeDetail :selectedVideoId="selectedVideoId" :selectedVideoTitle="selectedVideoTitle"/>
         <!--영상 리스트를 띄워주는 컴포넌트-->
         <YoutubeList :videos="videos" @select-video="selectVideo"/>
@@ -720,8 +743,7 @@ export default router
   //-API선택, API를 호출할 위치는 웹브라우저(자바스크립트)선택, 엑세스할 데이터는 공개 데이터 선택
   //-어떤 사용자 인증 정보가 필요한가요? 클릭하면 API KEY를 발급 받을 수 있다.
   //발급 받은 이후부터는 사용자 인증 정보 탭에서 확인 할 수 있다.
-  //아래 API_KEY는 임의로 아무 문자열을 적은 것으로 실제 API_KEY가 아니다.
-  const API_KEY = 'AbCdEfGhIjK7LMNop9QrSTU1VWx7Yz'
+  const API_KEY = process.env.VUE_APP_API_KEY
   
   //https://developers.google.com/youtube/v3/docs/search/list에 접속하면 HTTP 요청 url이 있다.
   const API_URL = 'https://www.googleapis.com/youtube/v3/search'
@@ -743,8 +765,10 @@ export default router
     },
     methods: {
       searchVideos: function(keyword){
-        // 실제로 axios를 통해 요청을 보내서 videos를 변경
+        // axios를 통해 요청을 보내서 videos를 변경
         // 아래 경로는 관리자 도구-network-preview에서 확인 할 수 있다. 응답으로 json 오브젝트가 온다.
+        // params 오브젝트에 들어가는 실제 내용은 아래와 같은 쿼리 스트링이다.
+        //'?KEY=AbCdEfGhIjK7LMNop9QrSTU1VWx7Yz&part=video&part=snippet&q=임의의 값'
         axios.get(API_URL, {
           params:{
             key: API_KEY,
@@ -770,22 +794,22 @@ export default router
   </script>
   
   <!--후략-->
-```
+  ```
   
-- `SearchBar.vue`
+  - `SearchBar.vue`
   
   ```html
   <template>
     <div class="row">
         <!--입력 받을 keyword 데이터에 v-model 설정, enter가 입력되면 searchVideos함수 실행-->
-        <input type="text" v-model="keyword" @keypress.enter="searchVideos" placeholder="보고 싶은 동영상을 검색하세요">
+        <input type="text" v-model="keyword" @keypress.enter="searchVideos" placeholder="동영상을 검색하세요">
     </div>
   </template>
-  
+    
   <script>
   export default {
       name:'SearchBar',
-      data:function(){
+     data:function(){
         return {
           keyword: '',
         }
@@ -804,15 +828,14 @@ export default router
       },
   }
   </script>
-  
+    
   <style>
     input{
       width:75%;
       margin-bottom: 10px;
     }
   </style>
-```
-  
+  ```
 - `YoutubeList.vue`
   
   ```html
@@ -902,7 +925,6 @@ export default router
   }
   </style>
   ```
-  
   - `YoutubeDetail.vue`
   
   ```html
@@ -921,7 +943,7 @@ export default router
           :src="iframeUrl"
         ></iframe>
         <!--
-          v-text로 적을 경우 특수문자가 제대로 표시되지 않는 문제가 있어 v-html을 사용
+          v-text로 적을 경우 특수문자가 제대로 표시되지 않는 문제(아스키코드로 나온다)가 있어 v-html을 사용
           v-html에 보안이슈가 있긴 하지만 아래의 경우 보안에 문제 될 것이 없다는 것이 확실하므로 사용한다.
         -->
         <h4 class="mt-0 mb-1" v-html="selectedVideoTitle"></h4>      
@@ -955,12 +977,61 @@ export default router
   ```
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+# 배포
+
+- npm build
+  - Vue 프로젝트를 HTML,JS,CSS파일로 묶어준다.
+  - webpack이 묶어주는 것이다.
+
+```bash
+$ npm run build
+
+#위 코드를 입력하면 dist 폴더가 새로 생기고 그 안에 HTML,JS,CSS파일이 새로 생긴다.
+```
 
 
 
+- netlify
+
+  > https://www.netlify.com/
+
+  - 위 사이트에 로그인 후 sites 탭으로  이동해서 dist 폴더를 등록한다.
+  - 2, 3번 과정은 거치지 않아도 된다.
+  - 간단한 배포 방식이 장점이지만 단점으로는 매번 코드를 수정 할 때 마다 다시 등록을 해야 한다는 것이다.
+    - git과 연동하면 이런 단점도 사라진다.
+  - git과 연동하기
+    - `New site from git`으로 이동 후 연동된 사이트(github 등) 클릭-권한 허용-리포지토리 선택 후 install클릭
+    - 이 경우 dist 폴더를 만든 것이 아니라 프로젝트 전체를 올린 것이므로 사이트에서 배포 전에 dist 폴더를 만들도록 해야한다.
+    - Basic build settings에서 `bulid command`에 `npm run build`를 입력하면 배포하기 전에 netlify에서 해당 명령어를 실행해 준다.
+    - `Publish directory`에는 dist를 입력한다.
+    - `.gitignore`에 작성된 파일들은 git에 올라가지 않으므로 따로 관리하는 API_KEY와 같은 값들은  `Environment variables`에 입력해줘야 한다.
 
 
 
+- git으로 관리하기
+  - 기존에 git으로 관리하던 폴더(`.git`폴더가 있는 폴더) 내부에 Vue 프로젝트가 있다면 Vue 프로젝트 내부에도 `.git` 폴더가 있기 때문에 충돌이 날 수 있으므로 따로 빼서 관리해야 한다.
+  - Vue 프로젝트 내부의 `node_modules` 폴더 내부에 많은 파일이 들어 있어 복사, 붙여넣기가 너무 오래 걸린다.
+  - 따라서 `node_modules` 폴더를 통째로 지우고, 남은 폴더를 복사, 붙여넣기 한 후
+  - 실행시켜서 터미널에 `$npm i`를 입력하면 `package.json`, `package-lock.json`을 읽어서 `node_modules`를 다시 만들어준다. 
+
+
+
+- Babel
+  - 브라우저마다 지원되는 ES 버전이 다르다.
+  - ES6의 문법으로 코드를 작성하고 배포하면 ES6를 지원하지 않는 브라우저로 접속할 경우 사이트가 제대로 동작하지 않을 수 있다.
+  - Babel은 ES6로 작성한 코드를 이전 버전으로 바꿔준다.
 
 
 
