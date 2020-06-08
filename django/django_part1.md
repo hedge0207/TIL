@@ -77,6 +77,12 @@
     $ python manage.py migrate
     ```
   
+  - 설치된 pip 패키지 확인
+  
+    ```bash
+    $ pip list
+    ```
+  
     
 
 

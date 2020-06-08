@@ -278,6 +278,14 @@ cf. 자바스크립트는 웹에서 사용하는 언어이므로 vscode에서 �
     out
     20
     30
+    
+    //아래와 같이 ,로 구분하여 복수의 변수 선언 가능
+    var a2 = "aa",a3="ㅁㅁ"
+    console.log(a2,a3)  //aa ㅁㅁ
+    
+    //값 없이 변수 선언 가능
+    var a4
+    console.log(a4)  //undefined
     ```
 
   - const: 재할당, 재선언이 불가능, 값이 변화하지 않는다는 의미가 아니다.
@@ -301,6 +309,15 @@ cf. 자바스크립트는 웹에서 사용하는 언어이므로 vscode에서 �
     
     out
     [1,2,3,10]
+    
+    
+    //아래와 같이 ,로 구분하여 복수의 변수 선언 가능
+    const b2 = "aa",b3="ㅁㅁ"
+    console.log(b2,b3)   //aa ㅁㅁ
+    
+    //값 없이 변수 선언 불가
+    const b4
+    console.log(b4) //에러 발생
     ```
 
   - let: 재할당이 가능, 재선언은 불가능
@@ -318,8 +335,17 @@ cf. 자바스크립트는 웹에서 사용하는 언어이므로 vscode에서 �
     
     out
     Uncaught SyntaxError: Identifier 'y' has already been declared
-    ```
+    
 
+    //아래와 같이 ,로 구분하여 복수의 변수 선언 가능
+    let c2 = "aa",c3="ㅁㅁ"
+    console.log(c2,c3)    //aa ㅁㅁ
+    
+    //값 없이 변수 선언 가능
+    let c4
+    console.log(c4)   //undefined
+    ```
+    
     
 
 - 타입과 연산자
@@ -355,7 +381,7 @@ cf. 자바스크립트는 웹에서 사용하는 언어이므로 vscode에서 �
     - 정수와 실수 구분 하지 않음, 더 정확히는 정수 타입이 별도로 존재하지 않음.
     - 정수 리터럴과 실수 리터럴 표현 시 범위가 다르다(단, 크게 문제가 되지는 않는다)
     - 양수, 음수, 소수, e지수 표기(과학적 표기법), Infinity, -Infinity, NaN, 상수 전부 가능
-    - NaN(Not a Number): 숫자가 아님을 표시하는 것으로 자신을 포함한 어떤 것과도 같지 않다.따라서 어떤 변수가 NaN인지는 `if (a==NaN)`으로 확인할 수 없고 `isNaN(a)`함수를 사용해야 한다. 반변에 undefined과 null는 동등연산자로 비교시 같다고 나온다. NaN은 자신과 일치하지 않는 유일한 값이다.
+    - NaN(Not a Number): 숫자가 아님을 표시하는 것으로 자신을 포함한 어떤 것과도 같지 않다.따라서 어떤 변수가 NaN인지는 `if (a==NaN)`으로 확인할 수 없고 `isNaN(a)`함수를 사용해야 한다. 반변에 undefined과 null는 동등연산자로 비교시 같다고 나온다. NaN은 자신과 일치하지 않는 유일한 값이다. 타입은 number로 뜬다.
     - 상수란 미리 정해져 있는 숫자로 원주율이나 중력가속도 등이 이에 속한다.
 
     - JavaScript에서 상수를 사용할 때는 대소문자 구분이 완벽해야 한다.
@@ -417,7 +443,7 @@ cf. 자바스크립트는 웹에서 사용하는 언어이므로 vscode에서 �
     var empty2 = undefined
     
     console.log(typeof(empty1))
-    console.log(typeof(empty1))
+    console.log(typeof(empty2))
     
     out
     object
@@ -426,12 +452,31 @@ cf. 자바스크립트는 웹에서 사용하는 언어이므로 vscode에서 �
 
 
 
+# 연산자
 
-- 연산자 
+- 할당 연산자
 
-  - 할당 연산자
+  ```javascript
+  
+  //2항 연산자: 피 연산자가 2개인 연산자, +, - * , / , =등
+  //JS에서의 +와 -
+  1+1       //2
+  '1'+1     //'11'
+  '1'+'1'   //'11'
+  1-1      //0
+  '1'-1    //0
+  '1'-'1'  //0
+  ```
 
-    ```javascript
+
+
+
+- 산술연산자: 숫자의 사칙연산과 응용연산
+
+
+  - 단항 산술 연산자
+
+    ```js
     //단 항 산술 연산자: +,-,++,--
     /*
     "+","-":양수, 음수 변경 및 표현, 단, "+"는 음수를 양수로 변경하지 않는다.
@@ -472,324 +517,364 @@ cf. 자바스크립트는 웹에서 사용하는 언어이므로 vscode에서 �
     7
     8
     7
-    
-    //2항 연산자: 피 연산자가 2개인 연산자, +, - * , / , =등
-    //JS에서의 +와 -
-  1+1       //2
-    '1'+1     //'11'
-  '1'+'1'   //'11'
-    1-1      //0
-    '1'-1    //0
-    '1'-'1'  //0
     ```
-  
-- 산술연산자: 숫자의 사칙연산과 응용연산
-  
-  - 자동형변환으로 피 연산자에 문자가 포함되어도 연산 가능
-  
-  - 덧셈 연산자
-  
-    - 피 연산자 모두 숫자면 덧셈 연산을 수행하지만
-    - 피 연산자 중 하나라도 문자열이면 피연산자가 연결된 문자열이 나온다.
+
+    
+
+  - 이항 산술 연산자
+    - 자동형변환으로 피 연산자에 문자가 포함되어도 연산 가능
 
     ```js
-  1+1=2
-    1+"a"="1a"
-    1+"1"="11"
-    ```
-  
+    var a = '5',b=2
+    var str1='str1',str2='str2'
     
-  
-  - 뺄셈과 곱셈 연산자
-  
-    - 숫자 형태의 문자열을 숫자로 자동 형 변환
-  
+    //덧셈 연산자
+    //피 연산자 모두 숫자면 덧셈 연산을 수행하지만
+    //피 연산자 중 하나라도 문자열이면 피연산자가 연결된 문자열이 나온다.
+    //둘 다 숫자가 아닌 문자열일 경우에도 피연산자가 연결된 문자열이 나온다.
+    console.log(a+b)			//52
+    console.log(typeof(a+b))	//string
+    console.log(str1+str2)		//str1str2
+    console.log(typeof(str1+str2)) //string
+    
+    //피연산자가 숫자인 문자열이면 뺄셈을 수행, 숫자가 아닌 문자열이면 NaN을 반환
+    //덧셈을 제외한 모든 연산이 이와 동일
+    console.log(a-b)			//3
+    console.log(typeof(a-b))	//number
+    console.log(str1-str2)		//NaN
+    console.log(typeof(str1-str2))  //number
+    
+    console.log(a*b)			//10
+    console.log(typeof(a*b))	//number
+    console.log(str1*str2)		//NaN
+    console.log(typeof(str1*str2))	//number
+    
+    console.log(a/b)			//2.5
+    console.log(typeof(a/b))	//number
+    console.log(str1/str2)		//NaN
+    console.log(typeof(str1/str2))	//number
+    
+    console.log(a%b)			//1
+    console.log(typeof(a%b))	//number
+    console.log(str1%str2)		//NaN
+    console.log(typeof(str1%str2))	//number
+    ```
+
+    - 나눗셈 연산자
+
+    ```js
+    //피 연산자 모두가 정수라 할지라도 결과는 실수가 나올 수 있음(자바스크립트는 정수 타입이 별도로 존재하지 않음). 
+    //0으로 나누면 Infinity를 반환
+    var a=3,b=0
+    console.log(a/b) //Infinity
+    ```
+
+    - 나머지 연산자
+
+    ```js
+    //나머지를 결과값으로 취함
+    var a=5,b=2
+    console.log(a%b)  //1
+    
+    //0으로 나머지 연산을 하면 NaN을 반환
+    var a=3,b=0
+    console.log(a%b)  //NaN
+    ```
+
+
+
+
+- 비교 연산자
+
+  - 피연산자가 숫자일 경우 일반적인 상식대로 대소를 비교한다.
+
+  - 피연산자가 문자일 경우 문자 코드의 순서대로 크기를 비교한다. 따라서 대문자가 소문자보다 작다고 판단된다.
+
+  - 피연산자가 객체일 경우 객체를 숫자나 문자로 자동 변환하려고 시도하고 변환되지 않으면 false반환
+
   ```javascript
-    456-123=333
-  "456"-123=333
-    "a"-123=NaN
-  123*456=56088
-    123*"456"=56088
-  123*"a"=NaN
+  console.log(3<2)
+  console.log(3>2)
+  console.log("가">"나")
+  console.log("a">"b")
+  
+  out
+  false
+  true
+  false   //가, a는 각기 나, b 보다 사전순으로 앞에 있으므로 더 작다고 본다.
+  false
   ```
 
-  - 나눗셈 연산자
 
-    - 피 연산자 모두가 정수라 할지라도 결과는 실수가 나올 수 있음(자바스크립트는 정수 타입이 별도로 존재하지 않음). 
 
-    - 숫자형 문자열을 숫자로 자동 변환하여 연산
 
-    - 0으로 나누면 NaN을 반환
+- 동등 연산자, 일치 연산자
 
-  - 나머지 연산
-
-    - 나머지를 결과값으로 취함
-
-    - 그 외에는 나눗셈과 같다.
-
-  - 비교 연산자
-  
-    - 피연산자가 숫자일 경우 일반적인 상식대로 대소를 비교한다.
-  
-    - 피연산자가 문자일 경우 문자 코드의 순서대로 크기를 비교한다. 따라서 대문자가 소문자보다 작다고 판단된다.
-  
-    - 피연산자가 객체일 경우 객체를 숫자나 문자로 자동 변환하려고 시도하고 변환되지 않으면 false반환
-  
-    ```javascript
-    console.log(3<2)
-    console.log(3>2)
-    console.log("가">"나")
-  console.log("a">"b")
+  ```js
+  const a = 1
+  const b = '1'
     
-    out
-    false
-    true
-    false   //가, a는 각기 나, b 보다 사전순으로 앞에 있으므로 더 작다고 본다.
-    false
-    ```
-  
-  - 동등 연산자, 일치 연산자
-  
-    ```js
-    const a = 1
-    const b = '1'
-      
-    //동등 연산자
-    console.log(a==b)   //형 변환 결과 같아질 수 있으면 true를 반환
-      
-    //일치 연산자
-    console.log(a===b)  //python의 == 연산자와 동일
-      
-    out
-    true
-    false
-      
-      
+  //동등 연산자
+  console.log(a==b)   //형 변환 결과 같아질 수 있으면 true를 반환
     
-    0==''  /*true*/
-    0=='0' /*true*/
-    ''=='0'/*false*/
-      
-    //삼단 논법에 따르면 마지막도 true여야 하지만 false가 출력된다.
-    //즉, 논리적으로 모순이 생길 수 있으므로 엄격하게 비교하는 ===를 쓰는 것이 좋다.
-    ```
-  
+  //일치 연산자
+  console.log(a===b)  //python의 == 연산자와 동일
     
-  
-  - 논리 연산자(단축평가가 적용 된다)
-  
-    ```javascript
-    //and 는 &&로 표현
-    console.log(true && false)
-    //or 는 ||로 표현
-    console.log(true || false)
-    //not 은 !로 표현
-    console.log(!true)
-    
-    //단축평가
-    console.log(1 && false)
-    console.log(0 && false)
-    console.log(0 || false)
-    console.log(1 || false)
-    
-    
-    out
-    false
+  out
   true
-    false
+  false
+    
+    
   
-    false
+  0==''  /*true*/
+  0=='0' /*true*/
+  ''=='0'/*false*/
+    
+  //삼단 논법에 따르면 마지막도 true여야 하지만 false가 출력된다.
+  //즉, 논리적으로 모순이 생길 수 있으므로 엄격하게 비교하는 ===를 쓰는 것이 좋다.
+  ```
+
+  
+
+- 논리 연산자(단축평가가 적용 된다)
+
+  ```javascript
+  //and 는 &&로 표현
+  console.log(true && false)
+  //or 는 ||로 표현
+  console.log(true || false)
+  //not 은 !로 표현
+  console.log(!true)
+  
+  //단축평가
+  console.log(1 && false)
+  console.log(0 && false)
+  console.log(0 || false)
+  console.log(1 || false)
+  
+  
+  out
+  false
+  true
+  false
+  
+  false
   0
-    false
-    1
-    ```
+  false
+  1
+  ```
+
+- 삼항 연산자: 조건에 따라 어떤 값을 할당할지 결정
+
+  > ? 앞이 조건식, : 앞이 조건식이 참일 경우의 처리, : 뒤가 거짓을 경우의 처리 
+
+  ```javascript
+  const result = Math.Pi > 4 ? 'pi가 4보다 크다':'pi가 4보다 크지 않다'
+  console.log(result)
   
-  - 삼항 연산자: 조건에 따라 어떤 값을 할당할지 결정
+  out
+  pi가 4보다 크지 않다
+  ```
+
+
+
+
+
+
+
+# 제어문
+
+- 조건문
+
+  - if, else if, else
+
+  ```javascript
+  let day = 7
+  let result
+  if (day===1){
+      result = '월요일'
+  }
+  else if (day===2){
+      result = '화요일'
+  }
+  else if (day===3) result='수요일'  
+  //중괄호 안에 들어갈 것이 한 줄이라면 위처럼 쓸수 있지만 가독성이 떨어져 쓰지 않는다.
+  .
+  .
+  .
+  else {
+      result='일요일'
+  }
+  ```
+
+  - switch
+
+  ```javascript
+  day = 2
+  switch (day) {
+      case 1:
+          result = '월요일'
+      case 2 :
+          result = '화요일'
+      case 3 :
+          result = '수요일'
+      default:
+          result = '일요일'
+  }
+  console.log(result)
   
-    > ? 앞이 조건식, : 앞이 조건식이 참일 경우의 처리, : 뒤가 거짓을 경우의 처리 
+  out
+  일요일
+  // 위의 경우 day를 어떻게 설정해도 일요일이 출력됨. 순서대로 위에서부터 찾으면서 내려오는데 맨 밑에 디폴트 값으로 일요일이 있으므로 항상 변수에 일요일이 담기게 된다. 따라서 아래와 같이 break를 적어줘야 한다.
   
-    ```javascript
-    const result = Math.Pi > 4 ? 'pi가 4보다 크다':'pi가 4보다 크지 않다'
-    console.log(result)
-    
-    out
-    pi가 4보다 크지 않다
-    ```
+  day = 2
+  switch (day) {
+      case 1:
+          result = '월요일'
+          break
+      case 2 :
+          result = '화요일'
+          break
+      case 3 :
+          result = '수요일'
+          break
+      default:
+          result = '일요일'
+          break
+  }
+  console.log(result)
+  
+  out
+  화요일
+  ```
 
 
 
-- 조건문과 반복문
+- 반복문
 
-  - 조건문
+  - while: ()안의 조건의 결과가 true이면 계속 실행하고 false면 멈춘다.
 
-    - if, else if, else
+  ```javascript
+  let num = 0
+  while (num<3) {
+      console.log(num++)
+  }
+  
+  out
+  0
+  1
+  2
+  
+  let num = 0
+  while (num<3) {
+      console.log(++num)
+  }
+  
+  out
+  1
+  2
+  3
+  ```
 
-    ```javascript
-    let day = 7
-    let result
-    if (day===1){
-        result = '월요일'
+  - for
+
+  ```javascript
+  /*
+  for문 구조
+  for(카운트 변수 초기화;제어 조건;카운트 변수 증가){
+  실행코드;
+  }
+  카운트 변수 초기화: 변수 선언과 함께 꼭 키워드 재할당 가능한 var나 let을 붙임
+  제어 조건: 카운트 변수에 대한 조건
+  변수 증가: ++,-- 사용
+  두 번째 실행부터는 변수 초기화 생략하고 실행
+  */
+  
+  for (let i=0;i<3;i++){
+      console.log(i)
+  }
+  
+  out
+  0
+  1
+  2
+  
+  //중첩도 가능하다.
+  //중첩된 for문에서 내부, 외부 for문 중 어떤 for문에 break를 걸지를 레이블 문을 통해 설정 가능하다(문서 참조).
+  for (let i=1;i<=6;i++){
+      for (let j=1;j<=6;j++){
+        if (i+j===6){
+          console.log([i,j])
+      }
     }
-    else if (day===2){
-        result = '화요일'
-    }
-    else if (day===3) result='수요일'  
-    //중괄호 안에 들어갈 것이 한 줄이라면 위처럼 쓸수 있지만 가독성이 떨어져 쓰지 않는다.
-    .
-    .
-    .
-    else {
-        result='일요일'
-    }
-    ```
-
-    - switch
-
-    ```javascript
-    day = 2
-    switch (day) {
-        case 1:
-            result = '월요일'
-        case 2 :
-            result = '화요일'
-        case 3 :
-            result = '수요일'
-        default:
-            result = '일요일'
-    }
-    console.log(result)
-    
-    out
-    일요일
-    // 위의 경우 day를 어떻게 설정해도 일요일이 출력됨. 순서대로 위에서부터 찾으면서 내려오는데 맨 밑에 디폴트 값으로 일요일이 있으므로 항상 변수에 일요일이 담기게 된다. 따라서 아래와 같이 break를 적어줘야 한다.
-    
-    day = 2
-    switch (day) {
-        case 1:
-            result = '월요일'
-            break
-        case 2 :
-            result = '화요일'
-            break
-        case 3 :
-            result = '수요일'
-            break
-        default:
-            result = '일요일'
-            break
-    }
-    console.log(result)
-    
-    out
-    화요일
-    ```
-
-  - 반복문
-
-    - while: ()안의 조건의 결과가 true이면 계속 실행하고 false면 멈춘다.
-
-    ```javascript
-    let num = 0
-    while (num<3) {
-        console.log(num++)
-    }
-    
-    out
-    0
-    1
-    2
-    
-    let num = 0
-    while (num<3) {
-        console.log(++num)
-    }
-    
-    out
-    1
-    2
-    3
-    ```
-
-    - for
-
-    ```javascript
-    /*
-    for문 구조
-    for(카운트 변수 초기화;제어 조건;카운트 변수 증가){
-    실행코드;
-    }
-    카운트 변수 초기화: 변수 선언과 함께 꼭 키워드 var붙임
-    제어 조건: 카운트 변수에 대한 조건
-    변수 증가: ++,-- 사용
-    두 번째 실행부터는 변수 초기화 생략하고 실행
-    */
-    
-    for (let i=0;i<3;i++){
-        console.log(i)
-    }
-    
-    out
-    0
-    1
-    2
-    ```
-
-    - for of
-
-    ```javascript
-    const arr = ['a','b','c']
-    for (const n of arr){
+  }
+  
+  out
+  [1,5]
+  [2,4]
+  [3,3]
+  [4,2]
+  [5,1]
+  ```
+  
+  - for of
+  
+  ```js
+  const arr = ['a','b','c']
+  for (const n of arr){
     console.log(n)
-    }
+  }
     
-    out
-    a
-    b
-    c
-    ```
-
-    - for in
-
-    ```javascript
-    const fruits = {
-        'apple':2,
-        'banana':10,
-        'tomato':10,
-        'watermelon':2,
-    }
-        
-    //어차피 문자열이 올 것을 알고 있으므로 아래와 같이 문자열 안에 쓰지 않아도 된다.
-    const fruits = {
-        apple:2,
-        banana:10,
-        tomato:10,
-        watermelon:2,
-    }
-        
-    for (const fruit in fruits){
-        console.log(fruit,fruits[fruit])
-    }
-        
-    out
-    apple 2
-    banana 10
-    tomato 10
-    watermelon 2
-    ```
-
-    - continue
-
-    ```javascript
-    for (let i=0;i<4;i++){
-        if (i===3) continue
-        console.log(i)
-    }
-    
-    out
-    1
-    2
-    4
-    ```
+  out
+  a
+  b
+  c
+  ```
+  
+  - for in
+  
+  ```js
+  const fruits = {
+      'apple':2,
+      'banana':10,
+      'tomato':10,
+      'watermelon':2,
+  }
+  
+  //어차피 문자열이 올 것을 알고 있으므로 아래와 같이 문자열 안에 쓰지 않아도 된다.
+  const fruits = {
+      apple:2,
+      banana:10,
+      tomato:10,
+      watermelon:2,
+  }
+  
+  for (const fruit in fruits){
+      console.log(fruit,fruits[fruit])
+  }
+  
+  out
+  apple 2
+  banana 10
+  tomato 10
+  watermelon 2
+  ```
+  
+  - continue
+  
+  ```js
+  for (let i=0;i<4;i++){
+      if (i===3) continue
+      console.log(i)
+  }
+  
+  out
+  1
+  2
+  4
+  ```
+  
+  
 
 ​    
 
@@ -843,11 +928,11 @@ out
 
 
 //함수명을 지정
-const bar = function bar(a,b){  
-    //꼭 함수명을 변수명과 동일하게 할 필요는 없으나 일반적으로 동일하게 한다		
+const bar1 = function bar2(a,b){  
+    //꼭 함수명을 변수명과 동일하게 할 필요는 없으나 일반적으로 동일하게 한다.		
     return a+b
 }
-console.log(bar(10,20))
+console.log(bar1(10,20))  //bar2로는 실행시킬 수 없다.
 
 out
 30
@@ -962,7 +1047,11 @@ out
   3
   ```
 
-  
+
+
+
+
+
 
 
 # 자료구조

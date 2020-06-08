@@ -498,24 +498,31 @@
 
 # REST API
 
+> https://www.django-rest-framework.org/
+>
 > https://meetup.toast.com/posts/92참고
 
-- REST(Representational State Transfer)
+- REST(Representational State Transfer): URL을 사람마다 중구난방으로 적는 것을 막기 위한 규칙
   - http verb(method)에는 GET,POST,PUT/PATCH,DELETE가 있다. 
-  - http verb+복수형 명사(혹은 복수형 명사+pk)로 구성되면 RESTful하다고 할 수 있다.
+  - `http verb+복수형 명사(혹은 복수형 명사+pk)`로 구성되면 RESTful하다고 할 수 있다.
+  - 기존에 django에서 url을 설정할 때 new,update, create 등을 썼던 것은 지금까지 개발 한 것이 REST API가 아니었기 때문이다. REST API를 개발하고자 한다면 `http verb+복수형 명사(혹은 복수형 명사+pk)`형식을 맞춰야 한다.
 
 
 
 - API(Application Programming Interface):개발자용 접점, 일반 사용자를 위한 것이 아닌 개발자를 위한 것 
   - 프로그램 사이의 데이터 교환을 위한 접점을 뜻한다.
   - 결국 데이터 교환은 개발자의 요청에 의해 이루어지므로 개발자용 접점이라고 할 수 있다. 
+  - 구성
+    - 자원: URL
+    - 행위: HTTP method
+    - 표현
 
-
-
-- 구성
-  - 자원: URI
-  - 행위: HTTP method
-  - 표현
+- `REST API`를 사용하는 이유: 결국 개발자에게 진정으로 필요한 것은 data뿐이다. template은 사용자에게 보여주기 위한 것이므로 굳이 html, Js, css를 쓰면서 django로 구현할 필요는 없다. 따라서 django를 통해 JSON 형식에 맞춰 데이터만 제공하는 서버를 구현하기 위해 사용하는 것이다. 여기서 데이터를 제공 받고 Vue js를 활용하여 사용자에게 template을 보여주게 된다.
+  - data만 주고 받으면 되는 것이므로 가장 효율적으로 데이터를 주고 받을 수 있는 JSON을 사용한다.
+  - api서버란 개발자들이 요청을 보내고 응답을 받아오는 서버를 말한다. 개발자가 URL을 통해 api서버로 요청을 보내면 서버는 요청에 대한 응답을 JSON 형식으로 보내게 된다.
+  - 기존에는 사용자에게 요청을 받은 django가 MTV를 거쳐 사용자에게 HTML파일로 데이터를 제공했다면, 지금부터는 사용자는 Vue js에게 요청을 보내고 Vue js는 django에 사용자에게 받은 요청을 보낸다. django에서는 MV만 거치고 T는 거치지 않은 상태로 Vue js에게 JSON 형태의 데이터를 넘기게 되고 Vue js는 JSON 형태의 데이터를 사용자에게 HTML파일로 제공한다.
+  - 기존: 사용자 -> django(MTV), django(MTV)->사용자
+  - api: 사용자 -> Vue js -> django(MV),  django(MV) -> Vue js(T) -> 사용자
 
 
 
@@ -602,11 +609,6 @@
 
 
 
-- 기존에는 사용자에게 요청을 받은 django가 MTV를 거쳐 사용자에게 HTML파일로 데이터를 제공했다면, 지금부터는 사용자는 Vue js에게 요청을 보내고 Vue js는 django에 사용자에게 받은 요청을 보낸다. django에서는 MV만 거치고 T는 거치지 않은 상태로 Vue js에게 JSON 형태의 데이터를 넘기게 되고 Vue js는 JSON 형태의 데이터를 사용자에게 HTML파일로 제공한다.
-
-  - 기존: 사용자 -> django(MTV), django(MTV)->사용자
-  - api: 사용자 -> Vue js -> django(MV),  django(MV) -> Vue js(T) -> 사용자
-
 - Django에서의 활용
 
   ```python
@@ -614,10 +616,10 @@
   from djnago.http import JsonResponse  #import하고
   
   
-  #기존에 templates 파일을 통해 데이터를 보여주던 방식
+  #기존에 사용하던 코드, django에서 template까지 제공하는 코드
   def article_list_html(request):
       articles = Article.objects.all()
-  context = { 
+  	context = { 
           'articles': articles,
       }
       return render(request, 'board/article_list.html', context)
@@ -625,6 +627,7 @@
   
   # JSON 데이터를 넘기는 방식
   # 방법1:직관적인 코드
+  # 이 코드를 작성 후 urls.py에 작성한 경로로 가면 JSON 형식의 데이터가 출력된다.
   @require_GET  #읽기만 하는 것이므로 적어주는 것이 안전하다.
   def article_list_json_1(request):
       articles = Article.objects.all()
@@ -640,7 +643,8 @@
           #위 과정을 거치면 리스트안에 articles 수 만큼의 딕셔너리가 담기게 된다.
       return JsonResponse(data,safe=False)
   	#templates 파일 사용하지 않으므로 JsonResponse를 사용하여 JSON으로 데이터를 보낸다.
-      #safe=False는 data가 딕셔너리가 아닐 때 써줘야 하는 것이다. 위에서 data는 list이기 때		문이 써준 것이다. 그러나 대부분의 브라우저에서 safe=False를 쓰지 않아도 되도록 지원을 하기 때문		에 크게 신경쓸 부분은 아니지만 적지 않으면 django에서 에러를 출력하기에 써줘야 한다.
+      #JsonResponse는 safe라는 flag옵션이 존재한다.
+      #safe=False는 data가 딕셔너리가 아닐 때 써줘야 하는 것이다. 위에서 data는 list이기 때문이 써준 것이다. 그러나 대부분의 브라우저에서 			safe=False를 쓰지 않아도 되도록 지원을 하기 때문에 크게 신경쓸 부분은 아니지만 적지 않으면 django에서 에러를 출력하기에 써줘야 한다.
   
   #위 코드는 직관적이지만 필드가 많아질 경우 입력할 내용이 많아져 위와 같이 쓰지는 않는다.
   
@@ -656,12 +660,12 @@
       articles = Article.objects.all()
   	
       data = serializers.serialize('json',articles)
-      #aricles라는 데이터를 json으로 바꾸겠다는 의미, 이 과정을 거치면 data에는 JSON 데이터가 문자열		에 담기게 된다.
-  
+      #aricles라는 데이터를 json으로 바꾸겠다는 의미, 이 과정을 거치면 data에는 JSON 데이터가 문자열에 담기게 된다.
+  	
+      #아래와 같이 JsonResponse를 사용할 경우 에러가 발생하지는 않지만 JsonResponse는 dict나 list를 받는 것이지 str을 받는 것이 아니기 때문에 		받은 문자열로 받은 데이터를 해석하지 못하고 데이터를 문자열 형태로 그대로 보내게 된다. 따라서 설정한 url로 들어가보면 하나의 문자열로 쭉 이어진 	데이터가 나오게 된다. 따라서 JsonResponse가 아닌 HttpResponse를 쓴다.
+      return JsonResponse(data, safe=False)
       return HttpResponse(data, content_type='application/json')
                                 #str이지만 json이라고 알려주는 것
-  
-  #위와 같이 하면 모두 string에 담겨 넘어가게 된다. JsonResponse는 dict나 list를 받는 것이지 str을 받는 것이 아니다. 따라서 JsonResponse가 아닌 HttpResponse를 쓴다.
   
   #보다 간략해지긴 했지만 보낼 필드를 직접 설정할 수 없다는 단점이 있다. 1번 방법의 경우 보낼 것만 선택해서 dict안에 담아주면 됐으나 2번 방법은 무조건 필드를 전부 보내야 한다.
   ```
@@ -671,7 +675,7 @@
 - `serializer`: 직렬화, 데이터를 보내기 편하게 한 줄로 묶는 작업
 
   - 위 두 방법을 보완한 더 나은 방법
-  - `djangorestframework`설치(줄여서 `drf`라고 부른다)
+  - `django rest framework`설치(줄여서 `drf`라고 부른다)
 
   ```bash
   #설치가 필요
@@ -709,7 +713,7 @@
   class ArticleSerializer(serializers.ModelSerializer):
       class Meta:
           model = Article
-          fields = '__all__'
+          fields = '__all__'  #위에서 본 방법2와 달리 보내고자 하는 filed를 여기서 설정 가능하다.
   ```
 
   - `views.py`에서 활용
@@ -722,13 +726,14 @@
   #api_view가 화면으로 보이게 해준다.
   
   # rest framework
-  @api_view(['GET']) #쓰는게 좋은 것이 아니라 써야만 한다. 쓰지 않으면 에러 발생
+  @api_view(['GET']) #쓰는게 좋은 것이 아니라 써야만 한다. 쓰지 않으면 에러 발생, @require_GET과 유사한 역할
   def article_list_json_3(request):
       articles = Article.objects.all()
       serializer = ArticleSerializer(articles, many=True)
-      #many=True를 해주는 이유는 Article의 객체 하나가 아니라 모든 Article객체가 담긴 쿼리셋을 넘기	는 것이기 때문이다. 즉 복수의 객체를 넘길 때는 many=True를 써줘야 한다.
+      #serializer는 기본적으로 하나의 객체가 들어 있을 것이라고 가정한다. 따라서 복수의 객체를 넘길 때는 many=True를 설정해줘야 한다.
+      #Articles는 단일 객체 하나가 아니라 모든 Article객체가 담긴 쿼리셋을 넘기는 것이기 때문에 many=True를 설정해줘야 한다.
   
-      # rest_framework 의 serializer 를 리턴하려면, rest_framework.response.Reponse를 써야 		한다.
+      # rest_framework 의 serializer 를 리턴하려면, rest_framework.response.Reponse를 써야 한다.
       return Response(serializer.data)
   ```
 
@@ -783,10 +788,104 @@
       
       class Meta(ArtistSerializer.Meta): #ArtistSerializer의 Meta 클래스를 상속
         fields = ArtistSerializer.Meta.fields+['music_set','music_count']
-          #model은 쓰지 않아도 되고 fileds는 상속 받은 fields에 새로 추가한 fields를 추가해서 넘기		   면 된다.
+          #model은 쓰지 않아도 되고 fileds는 상속 받은 fields에 새로 추가한 fields를 추가해서 넘기면 된다.
   ```
 
   
+
+
+
+# Django&Vue
+
+- templates이 django에서 분리되면 session 인증 방식의 유저 확인을 할 수 없다.
+
+  - 회원가입 시 Vue가 user 정보를 넘기면 django는 유효성 검사 후 User테이블에 유저 정보를 추가한다. 로그인 역시 마찬가지로 Vue가 user 정보를 넘기면 django는 유효성 검사 후 토큰을 발급하고 토큰값과 유저_id(pk값)를 key와 value 형태로 저장한다. django는 Vue에 token을 넘기고 Vue는 다음 요청 때부터는 request의 header에 django에서 받은 토큰을 함께 보낸다. django는 해당 토큰을 보고 유저를 인식한다.
+
+  - 이를 간편하게 해주는 라이브러리가 존재
+
+    - 사용하기 위해 drf를 설치해야 한다.
+
+    > django-rest-auth 문서-1
+    >
+    > https://django-rest-auth.readthedocs.io/en/latest/index.html
+    >
+    > token기반의 authentication을 위한 문서-2
+    >
+    > https://www.django-rest-framework.org/api-guide/authentication/
+    >
+    > all-auth 문서는 django additional 파트 참고
+
+    ```bash
+    #로그인, 로그아웃에 필요
+    $ pip install django-rest-auth
+    #회원가입에 필요
+    $ pip install django-allauth
+    ```
+
+  - `settings.py`에 아래 코드를 추가(1번 문서의 내용과 2번 문서의 내용을 수정)
+
+    ```python
+    #1번 문서에 있는 내용
+    INSTALLED_APPS = (
+        ...,
+        #drf 관련 app
+        'rest_framework',
+        'rest_framework.authtoken',
+        ...,
+        #rest-auth 관련 app
+        'rest_auth',
+    )
+    
+    #2번 문서에 있는 내용 수정
+    #토큰 기반으로 인증을 하기 위한 코드
+    REST_FRAMEWORK = {
+        'DEFAULT_AUTHENTICATION_CLASSES': [
+            'rest_framework.authentication.TokenAuthentication',
+        ]
+    }
+    ```
+
+  - urls.py에 아래 코드를 추가
+
+    ```python
+    #1번 문서에 있는 내용
+    urlpatterns = [
+        ...,
+        path('rest-auth/', include('rest_auth.urls'))
+    ]
+    ```
+
+  - 회원 가입을 위해서는 아래 settings.py, urls.py에 아래 코드를 추가
+
+    - settings.py
+
+    ```python
+    INSTALLED_APPS = (
+        ...,
+        'django.contrib.sites',
+        'allauth',
+        'allauth.account',
+        'rest_auth.registration',
+    )
+    
+    SITE_ID = 1
+    ```
+
+    - urls.py
+
+    ```python
+    urlpatterns = [
+        ...,
+        url('rest-auth/', include('rest_auth.urls')),
+        url('rest-auth/registration/', include('rest_auth.registration.urls')),
+    ]
+    
+    #registration대신 쓰고 싶은 것(singup등)을 써도 된다.
+    ```
+
+  - 이후 migrate
+
+
 
 
 
@@ -1310,13 +1409,24 @@ def comment_create(request,poll_pk):
 $ pip install faker
 ```
 
-- `settings.py` 의 `INSTALLED_APPS`에 아래 코드를 추가
+- `django_extension` 설치
+  - shell plus를 쓰기 위한 것으로 쓰지 않을 것이라면 설치하지 않아도 되고 아래의 코드도 추가하지 않아도 된다.
+
+```bash
+$ pip install django_extensions
+```
+
+- `settings.py` 의 `INSTALLED_APPS`에 아래 코드를 추가(역시 shell plus를 쓰기 위한 것)
 
 ```python
 'djnago_extensions'
 ```
 
 - 이제 terminal 창에서 아래와 같이 사용이 가능하다.
+
+```bash
+$ python manage.py shell_plus
+```
 
 ```bash
 #아래에서 예시로 든 .text(), .name()외에도 다양한 옵션이 있다.
@@ -1350,7 +1460,8 @@ class Article(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     # n개의 더미 데이터를 만드는 클레스 메소드
-    # cls는 클레스 메소드를 정의한 클래스가 들어가게 된다.
+    # cls는 클레스 메소드를 정의한 클래스가 들어가게 된다. 
+    # 둘 다 인자 이름이므로 아무렇게나 해도 된다.
     @classmethod
     def dummy(cls,n): 
         for _ in range(n):
@@ -1363,6 +1474,7 @@ class Article(models.Model):
 - 터미널 창에 다음과 같이 입력
 
 ```bash
+#shell plus 실행 후
 >>> Article.dummy(10)
 
 #10개의 더미 데이터가 생성된다.
