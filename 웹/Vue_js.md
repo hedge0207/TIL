@@ -13,7 +13,7 @@
     - View: DOM(HTML) 사용자에서 보여지는 UI 부분
     - ViewModel: Vue, View를 표현하기 위해 만든 View를 위한 Model, View를 나타내 주기 위한 Model이자 View를 나타내기 위한 데이터 처리를 하는 부분
   - 반응형(Reactive)/선언형(Declatative)
-    - 반응형은 데이터가 변경되면 이에 반응하여 연결된 DOM(HTML)이 업데이트 되는 것을 의미한다.
+    - 반응형은 데이터가 변경되면 이에 반응하여 연결된 DOM(HTML)이 업데이트(다시 렌더링) 되는 것을 의미한다.
     - e.g. 페이스북에서 친구 차단을 했을 때 친구 목록, 게시글 페이지, 댓글 등에서 그 친구를 일일이 삭제해 주는 것이 아니라 반응형으로 모든 곳에서 삭제.
 
 
@@ -40,6 +40,8 @@
 
   > https://kr.vuejs.org/v2/guide/installation.html
 
+  - npm: Node Package Manager의 약자, 자바스크립트 런타임 환경 Node.js의 기본 패키지 관리자.
+  
   ```html
   <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
   ```
@@ -70,6 +72,9 @@
 
 - 기본형
 
+  
+  - 모든 Vue 앱은 Class로부터 새로운 Vue 인스턴스를 생성하는 것부터 시작
+  
   ```html
   <!DOCTYPE html>
   <html lang="en">
@@ -629,6 +634,7 @@
   
   - `v-for`,`v-if`는 한 태그에 같이 쓰면 안된다.
     - 공식문서에서도 둘을 같은 태그에 쓰지 않을 것을 강하게 권고
+    - `v-for`가 우선 순위를 가진다.
 
 
 
@@ -805,12 +811,13 @@
 
   ​    
 
-- Vue의 라이프 사이클
+- Vue의 라이프 사이클(Life Cycle Hook)
 
   > 공식문서-Vue인스턴스 탭에 문서가 존재
 
   - 빨간 박스 안에 있는 내용이 개발자가 개입하는 부분이다.
-    - 많은 부분이 있지만 지금은 생성(created), 부착(mounted), 반응(update)만 기억하면 된다.
+    - 많은 부분이 있지만 지금은 생성(created), 부착(mounted), 반응(updated)만 기억하면 된다.
+    - 각기 Vue가 생성될 때, mount될 때 , 데이터가 변경될 때를 말한다.
   - 이들 라이프 사이클 훅은 우리 마음대로 이름을 정할 수 있는 것이 아니라 정해진 대로 작성해야 하며, 우리가 실행시키는 것이 아니라 자동으로 실행되는 것이다.
 
 

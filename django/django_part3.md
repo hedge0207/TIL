@@ -714,9 +714,19 @@
       class Meta:
           model = Article
           fields = '__all__'  #위에서 본 방법2와 달리 보내고자 하는 filed를 여기서 설정 가능하다.
+   
+  #아래와 같이 동일한 모델을 가지고도 서로 다른 필드를 넘기도록 정의하여 쿼리 낭비를 줄일 수 있다. 예를 들어 title만 필요한 경우에 위와 같이 전부 보내는 것은 비효율적이므로 아래와 같이 동일한 model에서 title 필드만 따로 넘기는 serializer를 작성하면 된다.
+  class ArticleTitleSerializer(serializers.ModelSerializer):
+      class Meta:
+          model = Article
+          fields = ['title']
   ```
 
-  - `views.py`에서 활용
+  - `views.py`에서 활용(CRUD)
+    - 기존에 C, U는 POST요청과 GET 요청을 동시에 받았어야 했다. GET요청을 받은 후 응답으로 form이 담긴 HTML파일을 보내고 사용자는 해당 양식에 맞게 작성하여 POST방식으로 그 데이터(요청)를 다시 서버에 보냈다. 서버는 해당 데이터를 받고 처리(유효성 검사 등)하여 save작업을 한 후 redirect로 detail페이지에 redirect요청을 보내면 해당하는 detail페이지(HTML파일)가 최종적으로 사용자에게 전송되었다.
+    - 그러나 개발자가 요청을 보내는 rest_api에서는 template이 필요 없으므로  GET요청을 받은 후 응답으로 form이 담긴 HTML파일을 보내는 과정이 사라지고, 개발자들에게는 굳이 HTML파일을 보여줄 필요가 없으므로 redirect로 detail페이지에 redirect요청을 보내면 해당하는 detail페이지(HTML파일)가 최종적으로 사용자에게 전송되는 과정도 필요가 없어진다.
+    - 결국 남는 것은 요청을 POST로 보내고 서버는 요청을 처리(유효성 검사 등) 후 저장하고 JSON 형식으로 응답을 돌려주거나, http상태 코드만 돌려주거나, 둘 다 돌려주는 등 사용자가 정의한 응답을 보낼 수 있다. 개발자가 아닌 일반 사용자에게 제공하는 것이 아니므로 상대적으로 응답 방식이 널널하다. 그러나 이 역시 보다 적합한 방식의 JSON 응답이 존재한다.
+    - 그러나 요청을 어떻게 보낼 것이고 받아온 요청을 어떻게 꺼낼 것인지가 문제로 남는다. 기존에는 HTML파일에 data를 입력하고 해당 데이터를 전송하면 됐지만 HTML파일을 사용하지 않으므로 요청을 보낼 방법이 없다. 이를 해결해주는 것이 `Postman`으로 아래에서 살펴볼 것이다.
 
   ```python
   #views.py
@@ -726,6 +736,8 @@
   #api_view가 화면으로 보이게 해준다.
   
   # rest framework
+  
+  #R:전체 조회
   @api_view(['GET']) #쓰는게 좋은 것이 아니라 써야만 한다. 쓰지 않으면 에러 발생, @require_GET과 유사한 역할
   def article_list_json_3(request):
       articles = Article.objects.all()
@@ -735,7 +747,84 @@
   
       # rest_framework 의 serializer 를 리턴하려면, rest_framework.response.Reponse를 써야 한다.
       return Response(serializer.data)
+  
+  
+  #get_object_or_404는 404에러 페이지를 HTML로 출력해서 보여준다. 그러나 rest_api에서는 template을 쓰지 않으므로 이 에러도 JSON으로 보내는 방법이 있다.
+  from django.shortcuts import get_object_or_404
+  
+  #R:단일 조회
+  @api_view(['GET'])  #이 코드를 작성하면 에러도 JSON으로 보낸다.
+  def post_detail(request,post_pk):
+      post = get_object_or_404(Post,pk=post_pk)
+      serializer = PostSerializer(post)
+      return Response(serializer.data)
+  #위와 같이 작성한 후 존재하지 않는 post_pk를 url에 입력하면 아래와 같은 JSON 데이터를 확인할 수 있다.
+  '''
+  HTTP 404 Not Found
+  Allow: OPTIONS, GET
+  Content-Type: application/json 분명히 json 타입이다.
+  Vary: Accept
+  
+  {
+      "detail": "찾을 수 없습니다."
+  }
+  '''
+  #C: 생성
+  def create_post(request):
+      serializer = PostSerializer(data=request.data)
+      if serializer.is_valid():
+          return Response(serializer.data)
   ```
+
+
+
+- Postman
+
+  > https://www.postman.com/
+  >
+  > https://chrome.google.com/webstore/detail/postman-interceptor/aicmkgpgakddgnaphhhpliifpcfhicfo
+
+  - 첫 번째 사이트로 접속하여 다운로드 후, 두 번째 사이트로 접속하여 확장 프로그램 설치, 확장 프로그램이 없으면 쿠키에 대한 정보가 없어 요청을 보낼 수 없다.
+  - 프로그램 실행 후 우측 상단의 안테나 버튼을 클릭 후 `Cookies` - `Capture Cookies`를 on으로 - `Install Intercepter Briedge`클릭 - `Domain`에 https는 빼고 요청을 보내려는 url을 입력(ex.3fdd4...vfs.cloud9....amazonaws.com)후 추가 - request탭으로 가서 `Intercepter`클릭 후 `Capture Requests`를 on으로 변경
+    - c9을 사용하는 것이 아닌 local에서 진행할 경우 이렇게 복잡한 과정을 거치지 않아도 된다.
+  - 메인화면에서  `+` 버튼을 클릭하여 탭을 열고 요청을 보내고자 하는 url(`urls.py`에 작성한 url)을 `Enter request URL`창에 입력.
+
+  ```python
+  #실제 코드는 django-api_pract2참고
+  #urls.py
+  from django.contrib import admin
+  from django.urls import path,include
+  
+  urlpatterns = [
+      path('admin/', admin.site.urls),
+      path('posts/',include('posts.urls')),
+  ]
+  
+  #posts/urls.py
+  from django.urls import path
+  from . import views
+  
+  urlpatterns = [
+      #url이 restful하지 않지만 편의상 아래와 같이 쓴다.
+      path('post_check/',views.create_post)
+  ]
+  ```
+
+  ```python
+  #views.py
+  
+  from rest_framework.decorators import api_view
+  from .models import Post
+  
+  # Create your views here.
+  
+  @api_view(['POST'])
+  def post_check(request):
+      print('wow')
+      #만일 post 요청이 정상적으로 온다면 terminal창에 wow가 출력될 것이다.
+  ```
+
+  
 
 
 

@@ -176,20 +176,21 @@
 
 - window
 
+  - js의 최상위 객체가 window라면 node js의 최상위 객체는 global이다.
   - window는 하나의 탭을 의미하며 브라우저는 탭 단위로 동작한다.
   - 브라우저의 최상위 객체는 window고 document가 그 아래 존재하며 그 아래 함수가 존재하는 형태다.
   - document는 윈도우(탭)에서 띄우고 있는 문서를 의미한다.
   - print(),close(), console 함수 등 document에 속하지 않는 함수들도 있다.
-  - 모든 명령어는 window를 써야 하므로 생략해도 동작한다. 
-
+- 모든 명령어는 window를 써야 하므로 생략해도 동작한다. 
+  
   ```js
   window.document.함수
   //window객체의 하부 객체 중 document객체의 하부 객체 중 함수 객체를 사용
   
   //아래와 같이 작성해도 된다.
   document.함수
-  ```
-
+```
+  
   
 
 
