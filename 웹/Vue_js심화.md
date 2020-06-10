@@ -15,9 +15,9 @@
   
   ```bash
   $ npm install -g @vue/cli
-```
+  ```
   
-- 프로젝트 생성
+  - 프로젝트 생성
   
   ```bash
   $ vue create 프로젝트명
@@ -25,11 +25,11 @@
   #입력하면 디폴트 모드와 설정 모드 중 하나를 선택해 엔터
   #완료되면  $ cd 프로젝트명, $ npm run serve을 실행해 달라는 문구가 뜬다.
   
-  $ vue 프로젝트명
+  $ cd 프로젝트명
   $ npm run serve
   ```
-
-
+  
+  
 
 - 구성
 
@@ -71,8 +71,8 @@
     
     - `package.json`은 django의 `manage.py`와 같이 루트라는 것을 알 수 있는 파일이다.
     - 둘 다 Vue를 동작하게 하는 라이브러리들이 작성되어 있다. 라이브러리가 설치되면 이 두 파일에 추가된다.
-  
-- `node_modules`: python의 venv에 해당, 패키지를 설치할 경우 실제로 코드가 들어가게 되는 디렉토리
+    
+  - `node_modules`: python의 venv에 해당, 패키지를 설치할 경우 실제로 코드가 들어가게 되는 디렉토리
 
 
 
@@ -252,7 +252,13 @@ $ vue add router
 import Vue from 'vue'
 import VueRouter from 'vue-router'   
 import Home from '../views/Home.vue'   //from . import views와 유사한 코드
-import About from '../views/About.vue' //..의 shortcut이 @다.
+import About from '../views/About.vue' 
+
+//src의 shortcut이 @다.
+//from에서 확장자(.vue,js 등)는 생략할 수 있다.
+//또한 index.js에서 가져올 때는 index.js라는 파일 자체가 상징적이므로 생략하고 불러올 수 있다.
+//ex. import router from '../router/index.js'는 아래와 같이 쓸 수 있다.
+// import router form @/router
 
 Vue.use(VueRouter)
 
@@ -978,9 +984,13 @@ export default router
   }
   </style>
   ```
-  
-  
-  
+
+
+
+# 서버와 연결
+
+- django 등을 활용하여 구축한 서버와 Vue를 연결하는 방법
+
 - vue-cookies
 
 > https://www.npmjs.com/package/vue-cookies
@@ -1034,9 +1044,6 @@ $ npm run build
   - 브라우저마다 지원되는 ES 버전이 다르다.
   - ES6의 문법으로 코드를 작성하고 배포하면 ES6를 지원하지 않는 브라우저로 접속할 경우 사이트가 제대로 동작하지 않을 수 있다.
   - Babel은 ES6로 작성한 코드를 이전 버전으로 바꿔준다.
-
-
-
 
 
 

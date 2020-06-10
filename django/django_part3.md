@@ -756,7 +756,7 @@
   @api_view(['GET'])  #이 코드를 작성하면 에러도 JSON으로 보낸다.
   def post_detail(request,post_pk):
       post = get_object_or_404(Post,pk=post_pk)
-      serializer = PostSerializer(post)
+      serializer = PostSerializer(post)  #post는 단일 객체이기 때문에 many=True를 해줄 필요가 없다.
       return Response(serializer.data)
   #위와 같이 작성한 후 존재하지 않는 post_pk를 url에 입력하면 아래와 같은 JSON 데이터를 확인할 수 있다.
   '''
@@ -770,61 +770,23 @@
   }
   '''
   #C: 생성
+  #아래 두 가지는 인증된 사용자인지를 검증하기 위한 것이다.
+  from rest_framework.decorators import permission_classes
+  from rest_framework.permissions import IsAuthenticated
+  
+  @api_view(['POST'])  #개발자용 서버에 GET은 필요 없다.
+  @permisson_classes([IsAuthenticated])  #검증되지 않은 사용자일 경우 여기서 걸린다.
   def create_post(request):
-      serializer = PostSerializer(data=request.data)
-      if serializer.is_valid():
+      serializer = PostSerializer(data=request.data) #data에 요청으로 들어온 data를 넣는다.
+      #아래와 같이 print해보면 내부에 어떤 것들이 들어가는지 알 수 있다.
+      #둘 다 form-data가 들어올 경우 query dict형태로 담는다는 공통점이 있지만 차이점은 POST는 JSON 형태로 넘어온 데이터를 잡지 못하지만 data는 		JSON 형태로 넘어온 데이터를 parsing해서 딕셔너리(query dict는 아니다)에 담는다는 것이다. Postman으로 한 번은 form-data로, 한 번은 		  Json으로 요청을 보내보면 차이를 확인 가능하다.
+      #따라서 data가 더 유연하다고 할 수 있다.
+      print('POST: ', request.POST)  
+      print('data: ', request.data)
+      if serializer.is_valid(raise_exception=True): #raise_exception=True로 설정하면 유효성 검사가 실패할 때 리턴값으로 에러 내용을 준다.
+          serializer.save(uesr=request.user) #uesr=request.user를 입력하면 요청을 보낸 유저 정보가 user에 들어가게 된다.
           return Response(serializer.data)
   ```
-
-
-
-- Postman
-
-  > https://www.postman.com/
-  >
-  > https://chrome.google.com/webstore/detail/postman-interceptor/aicmkgpgakddgnaphhhpliifpcfhicfo
-
-  - 첫 번째 사이트로 접속하여 다운로드 후, 두 번째 사이트로 접속하여 확장 프로그램 설치, 확장 프로그램이 없으면 쿠키에 대한 정보가 없어 요청을 보낼 수 없다.
-  - 프로그램 실행 후 우측 상단의 안테나 버튼을 클릭 후 `Cookies` - `Capture Cookies`를 on으로 - `Install Intercepter Briedge`클릭 - `Domain`에 https는 빼고 요청을 보내려는 url을 입력(ex.3fdd4...vfs.cloud9....amazonaws.com)후 추가 - request탭으로 가서 `Intercepter`클릭 후 `Capture Requests`를 on으로 변경
-    - c9을 사용하는 것이 아닌 local에서 진행할 경우 이렇게 복잡한 과정을 거치지 않아도 된다.
-  - 메인화면에서  `+` 버튼을 클릭하여 탭을 열고 요청을 보내고자 하는 url(`urls.py`에 작성한 url)을 `Enter request URL`창에 입력.
-
-  ```python
-  #실제 코드는 django-api_pract2참고
-  #urls.py
-  from django.contrib import admin
-  from django.urls import path,include
-  
-  urlpatterns = [
-      path('admin/', admin.site.urls),
-      path('posts/',include('posts.urls')),
-  ]
-  
-  #posts/urls.py
-  from django.urls import path
-  from . import views
-  
-  urlpatterns = [
-      #url이 restful하지 않지만 편의상 아래와 같이 쓴다.
-      path('post_check/',views.create_post)
-  ]
-  ```
-
-  ```python
-  #views.py
-  
-  from rest_framework.decorators import api_view
-  from .models import Post
-  
-  # Create your views here.
-  
-  @api_view(['POST'])
-  def post_check(request):
-      print('wow')
-      #만일 post 요청이 정상적으로 온다면 terminal창에 wow가 출력될 것이다.
-  ```
-
-  
 
 
 
@@ -880,99 +842,268 @@
           #model은 쓰지 않아도 되고 fileds는 상속 받은 fields에 새로 추가한 fields를 추가해서 넘기면 된다.
   ```
 
+  - user와 post의 1:N 관계 등록
+
+  ```python
+  #model 정의
   
+  #accounts/models.py
+  from django.contrib.auth.models import AbstractUser
+  
+  class User(AbstractUser):
+      pass
+  
+  
+  
+  #articles/models.py
+  from django.db import models
+  from django.conf import settings
+  
+  class Article(models.Model):
+      user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
+      title = models.CharField(max_length=100)
+      content = models.TextField()
+  ```
+
+  ```python
+  #serializer 정의
+  
+  #accounts/serializers.py
+  from django.contrib.auth import get_user_model
+  from rest_framework import serializers
+  
+  User = get_user_model()
+  
+  class UserSerializer(serializers.ModelSerializer):
+      class Meta:
+          model = User
+          fields = ['id','username']
+  
+    
+  
+  #articles/serializers.py
+  from rest_framework import serializers
+  from accounts.serializers import UserSerializer
+  
+  class ArticleSerializer(serializers.ModelSerializer):
+      user = UserSerializer(required=False) 
+      #required=False를 주면 is_valid()에서 user의 유무 검증을 패스한다. 단, create 함수에서 추가적인 처리를 해주지 않으면 NOT NULL 			CONSTRAINT FAILED 에러가 발생한다. 왜냐하면 Article모델을 정의할 때 user칼럼에 not null이 true라는 코드를 적지 않았기 때문이다.
+      #즉, 장고에서 통과시켜줬다고 db에서도 통과되는 것은 아니며 또한 html에서도 추가적인 검증을 한다.
+      class Meta:
+          model = Article
+          fields = '__all__'
+  ```
+
+  
+
+  
+
+- Postman
+
+  > https://www.postman.com/
+  >
+  > https://chrome.google.com/webstore/detail/postman-interceptor/aicmkgpgakddgnaphhhpliifpcfhicfo
+
+  - 첫 번째 사이트로 접속하여 다운로드 후, 두 번째 사이트로 접속하여 확장 프로그램 설치, 확장 프로그램이 없으면 쿠키에 대한 정보가 없어 요청을 보낼 수 없다.
+  - 프로그램 실행 후 우측 상단의 안테나 버튼을 클릭 후 `Cookies` - `Capture Cookies`를 on으로 - `Install Intercepter Briedge`클릭 - `Domain`에 https는 빼고 요청을 보내려는 url을 입력(ex.3fdd4...vfs.cloud9....amazonaws.com)후 추가 - request탭으로 가서 `Intercepter`클릭 후 `Capture Requests`를 on으로 변경
+    - c9을 사용하는 것이 아닌 local에서 진행할 경우 이렇게 복잡한 과정을 거치지 않아도 된다.
+  - 메인화면에서  `+` 버튼을 클릭하여 탭을 열고 요청을 보내고자 하는 url(`urls.py`에 작성한 url)을 `Enter request URL`창에 입력.
+  - 데이터를 함께 넘기려면 URL 적는 input창 아래에 Body탭-`from-data` 클릭 후 key에는 변수명, Value에는 넣으려는 값을 넣으면 된다. 혹은 Body탭의 `raw` 클릭 후 타입을 JSON으로 바꿔  JSON 형식으로 보내도 된다. 
+  - Body탭은 요청에 담아 보낸 data를 적는 곳이고, Headers는 요청을 보내는 사용자에 대한 정보를 적는 곳이다.
+
+  ```python
+  #실제 코드는 django-api_pract2참고
+  #urls.py
+  from django.contrib import admin
+  from django.urls import path,include
+  
+  urlpatterns = [
+      path('admin/', admin.site.urls),
+      path('posts/',include('posts.urls')),
+  ]
+  
+  #posts/urls.py
+  from django.urls import path
+  from . import views
+  
+  urlpatterns = [
+      #url이 restful하지 않지만 편의상 아래와 같이 쓴다.
+      path('post_check/',views.create_post)
+  ]
+  ```
+
+  ```python
+  #views.py
+  
+  from rest_framework.decorators import api_view
+  from .models import Post
+  
+  # Create your views here.
+  
+  @api_view(['POST'])
+  def post_check(request):
+      print('wow')
+      #만일 post 요청이 정상적으로 온다면 terminal창에 wow가 출력될 것이다.
+  ```
+
+
+
+
 
 
 
 # Django&Vue
 
-- templates이 django에서 분리되면 session 인증 방식의 유저 확인을 할 수 없다.
+## 사용자 인증
 
-  - 회원가입 시 Vue가 user 정보를 넘기면 django는 유효성 검사 후 User테이블에 유저 정보를 추가한다. 로그인 역시 마찬가지로 Vue가 user 정보를 넘기면 django는 유효성 검사 후 토큰을 발급하고 토큰값과 유저_id(pk값)를 key와 value 형태로 저장한다. django는 Vue에 token을 넘기고 Vue는 다음 요청 때부터는 request의 header에 django에서 받은 토큰을 함께 보낸다. django는 해당 토큰을 보고 유저를 인식한다.
+- templates이 django에서 분리되면 session 인증 방식의 유저 확인을 할 수 없다. 따라서 token을 활용하여 유저 확인을 해야 한다.
+- 과정
+- 회원가입 시 Vue가 user 정보를 넘기면 django는 유효성 검사 후 User테이블에 유저 정보를 추가한다. 
+  - 로그인 역시 마찬가지로 Vue가 user 정보를 넘기면 django는 유효성 검사 후 토큰을 발급하고 토큰값과 유저_id(pk값)를 key와 value 형태로 저장한다. 
+- django는 Vue에 token을 넘기고 Vue는 다음 요청 때부터는 request의 header에 django에서 받은 토큰을 함께 보낸다(`Authorization`:`Token`  `토큰값` 형태로 만들어서 보낸다. Authorization이 key에 해당하고 Token이 value에 해당한다). django는 해당 토큰을 보고 유저를 인식한다.
+  - 로그아웃을 하면 발급한 토큰을 삭제한다.
 
-  - 이를 간편하게 해주는 라이브러리가 존재
 
-    - 사용하기 위해 drf를 설치해야 한다.
 
-    > django-rest-auth 문서-1
-    >
-    > https://django-rest-auth.readthedocs.io/en/latest/index.html
-    >
-    > token기반의 authentication을 위한 문서-2
-    >
-    > https://www.django-rest-framework.org/api-guide/authentication/
-    >
-    > all-auth 문서는 django additional 파트 참고
+- 사용 방법
 
-    ```bash
-    #로그인, 로그아웃에 필요
-    $ pip install django-rest-auth
-    #회원가입에 필요
-    $ pip install django-allauth
-    ```
+  >  사용하기 위해 drf를 설치해야 한다.
 
+  > django-rest-auth 문서-1
+  >
+  > https://django-rest-auth.readthedocs.io/en/latest/index.html
+  >
+  > token기반의 authentication을 위한 문서-2
+  >
+  > https://www.django-rest-framework.org/api-guide/authentication/
+  >
+  > all-auth 문서는 django additional 파트 참고
+
+  ```bash
+  #로그인, 로그아웃에 필요
+  $ pip install django-rest-auth
+  #회원가입에 필요(혼자 회원가입을 하게 해주는 것이 아니라 위의 rest-auth를 함께 깔아야 회원가입이 가능하다.)
+  $ pip install django-allauth
+  ```
   - `settings.py`에 아래 코드를 추가(1번 문서의 내용과 2번 문서의 내용을 수정)
 
-    ```python
-    #1번 문서에 있는 내용
-    INSTALLED_APPS = (
-        ...,
-        #drf 관련 app
-        'rest_framework',
-        'rest_framework.authtoken',
-        ...,
-        #rest-auth 관련 app
-        'rest_auth',
-    )
-    
-    #2번 문서에 있는 내용 수정
-    #토큰 기반으로 인증을 하기 위한 코드
-    REST_FRAMEWORK = {
-        'DEFAULT_AUTHENTICATION_CLASSES': [
-            'rest_framework.authentication.TokenAuthentication',
-        ]
-    }
-    ```
+  ```python
+  #1번 문서(Installaion 파트)에 있는 내용
+  INSTALLED_APPS = (
+      ...,
+      #drf 관련 app
+      'rest_framework',
+      'rest_framework.authtoken', #토큰 기반의 인증에 필요한 app
+      ...,
+      #rest-auth 관련 app
+      'rest_auth',
+  )
+  
+  #2번 문서에 있는 내용 수정
+  #토큰 기반으로 인증을 하기 위한 코드
+  REST_FRAMEWORK = {
+      'DEFAULT_AUTHENTICATION_CLASSES': [
+          'rest_framework.authentication.TokenAuthentication',
+          #원래 'rest_framework.authentication.SessionAuthentication',지만 세션 기반이 아닌 토큰 기반이므로 위와 같이 수정해준다.
+      ]
+  }
+  ```
 
-  - urls.py에 아래 코드를 추가
+  - `프로젝트폴터/urls.py`에 아래 코드를 추가
 
-    ```python
-    #1번 문서에 있는 내용
-    urlpatterns = [
-        ...,
-        path('rest-auth/', include('rest_auth.urls'))
-    ]
-    ```
+  ```python
+  #1번 문서에 있는 내용
+  urlpatterns = [
+      ...,
+      path('rest-auth/', include('rest_auth.urls'))
+      #위 경로로 들어갈 경우 404에러 페이지가 뜨는데 해당 페이지의 내용을 보면 rest-auth에서 할 수 있는 것들의 목록이 나온다.
+  ]
+  ```
+  - rest-auth는 app의 일종이므로 `models`를 가지고 있다. 따라서 migrate를 해줘야 한다.
+
+  - 여기까지 완료하면 로그인이 가능해지고 login을 하면 token을 받을 수 있다.
+    - token은 db.sqlite3의 `authtoken_token`테이블의 key 값에서 확인하거나 Postman으로 요청을 보내거나 rest-auth/login 경로에서 요청을 보냄으로써 확인 할 수 있다.
 
   - 회원 가입을 위해서는 아래 settings.py, urls.py에 아래 코드를 추가
 
-    - settings.py
+  ```python
+  #settings.py
+  
+  #문서 1번의 코드
+  INSTALLED_APPS = (
+      ...,
+      'django.contrib.sites',
+      'allauth',
+      'allauth.account',
+      'rest_auth.registration',
+  )
+  
+  SITE_ID = 1
+  ```
 
-    ```python
-    INSTALLED_APPS = (
-        ...,
-        'django.contrib.sites',
-        'allauth',
-        'allauth.account',
-        'rest_auth.registration',
-    )
-    
-    SITE_ID = 1
-    ```
+  ```python
+  #urls.py
+  urlpatterns = [
+      ...,
+      url('rest-auth/', include('rest_auth.urls')),
+      url('rest-auth/registration/', include('rest_auth.registration.urls')),
+  ]
+  
+  #경로는 registration대신 쓰고 싶은 것(singup등)을 써도 된다(단, 당연히 include 내부는 건들면 안된다)
+  ```
 
-    - urls.py
+  - allauth 역시 마찬가지로 app의 일종이므로 `models`를 가지고 있다. 따라서 migrate를 해줘야 한다.
 
-    ```python
-    urlpatterns = [
-        ...,
-        url('rest-auth/', include('rest_auth.urls')),
-        url('rest-auth/registration/', include('rest_auth.registration.urls')),
-    ]
-    
-    #registration대신 쓰고 싶은 것(singup등)을 써도 된다.
-    ```
+  - 회원가입할 때 보내야 하는 데이터는 내부적으로 username, password1, password2로 지정되어 있다.
 
-  - 이후 migrate
+  - logout을 했을 때는발급한 token이 사라지게 해야 한다.
+    - Postman에서 Body, Params 등이 있는 곳에 Headers 탭이 존재하는데 여기에 사용자 정보가 담기게 된다. 따라서 이곳의 key에 `Authorization`을 입력하고 value에 `Token 발급받은 토큰`을 입력한 후 전송을 누르면 유저 정보가 데이터와 함께 넘어가게 된다.
+    - 로그아웃 요청을 보내고자 한다면 위와 같이 Headers에 로그아웃 하고자 하는 계정의 token을 함께 넘겨주면 로그아웃이 되면서 토큰이 삭제된다(토큰이 삭제되지 않아도 로그아웃이 성공적으로 처리되었다는 메세지가 출력되므로 반드시 token이 삭제되었는지 확인해 볼 것).
+
+
+
+- JWT: 단순한 무작위 문자열이 아닌 데이터가 담긴 토큰으로, 위조가 불가능한 사인도 포함된 토큰이기에  보안상으로도 안전하고 서버에 session, token 아무것도 남기지 않는다. 회원가입을 해도 id와 사인이 서버의 db에 저장되는 것이 아니라 토큰에 저장이되고  토큰에 저장된 user id와 사인을 토대로 검증을 거쳐 로그인이 이루어진다. 최근에 유행하는 인증 방식이다.
+
+
+
+## CORS
+
+- CORS(교차 출처 리소스 공유)
+
+  > https://pypi.org/project/django-cors-headers/
+
+  - 한 웹 사이트에서 다른 웹사이트로 비동기 요청을 보내는 것은 브라우저가 막고 있다. 따라서 비동기 요청을 보낼 경우 `has been blocked by CORS policy`가 포함된 에러가 발생한다.
+  - 에러의 뒷 부분에 `No 'Access-Control-Allow-Origin' header is present on the requested resource.`와 같은 메세지를 확인 할 수 있는데,  `Access-Control-Allow-Origin`라는 header가 응답하는 곳에 존재해야 한다는 의미이다.
+  - 응답하는 곳은 서버인 django이므로 아래코드를 추가해야 한다(위 공식문서에 코드 있음).
+
+  ```bash
+  $pip install django-cors-headers
+  ```
+
+  ```python
+  #settings.py
+  
+  INSTAILLED_APP = [
+      ...
+      'corsheaders',
+      ...
+  ]
+  
+  #기본적으로 작성된'django.middleware.common.CommonMiddleware'보다 위에 작성해야 한다.
+  MIDDLEWARE = [
+      ...
+      'corsheaders.middleware.CorsMiddleware',
+      ...
+  ]
+  
+  #CORS_ORIGIN_ALLOW_ALL=True 와 같이 작성하면 모든 사이트에서 오는 비동기 요청을 허용하는 것이다.
+  
+  CORS_ORIGIN_WHITELIST = [
+      "https://example.com",  #허용할 주소를 입력
+  ]
+  ```
+
+  
 
 
 
