@@ -1,226 +1,3 @@
-# Vue 프로젝트
-
-- SPA(Single Page Application)와 SFC(Single File Component)
-  - SPA: 기존 웹 서비스는 요청시마다 서버로부터 리소스들과 데이터를 해석하고 화면에 렌더링하는 방식이다. SPA는 브라우저에 최초에 한번 페이지 전체를 로드하고, 이후부터는 특정 부분만 Ajax를 통해 데이터를 바인딩하는 방식
-  - SFC: 파일 하나당 하나의 컴포넌트를 작성하여 컴포넌트 들을 모아서 하나의 페이지를 구성하는 것
-    - Vue 인스턴스와 Vue 컴포넌트는 다르다.
-
-
-
-- 프로젝트 생성하는 방법
-
-  - vue/cli 설치(최초 1회)
-    - vue-cli없이도 프로젝트 시작은 가능하다.
-  - VScode extention에서 `Vetur` 설치
-  
-  ```bash
-  $ npm install -g @vue/cli
-  ```
-  
-  - 프로젝트 생성
-  
-  ```bash
-  $ vue create 프로젝트명
-  
-  #입력하면 디폴트 모드와 설정 모드 중 하나를 선택해 엔터
-  #완료되면  $ cd 프로젝트명, $ npm run serve을 실행해 달라는 문구가 뜬다.
-  
-  $ cd 프로젝트명
-  $ npm run serve
-  ```
-  
-  
-
-- 구성
-
-  - src(실제 사용하는 건 이 폴더 뿐)
-
-    - `main.js`가 분리해서 개발한 모든 파일을 관리하는 최상위 파일이다. mount를 담담
-    - `App.vue`: component들의 관리자, 최종 component
-
-    ```html
-    <!--기본 구조-->
-    <template>
-      <div id="app">
-    
-      </div>
-    </template>
-    
-    <script>
-    export default {
-      name: 'App',    //name을 쓰지 않아도 에러가 발생하지 않지만 디버깅 할 때 필요하다.
-      components: {
-        
-      }
-    }
-    </script>
-    
-    <style>
-    
-    </style>
-    ```
-
-    - `components`: component들을 모아 놓은 폴더 
-    - `assets`: 정적인 파일들(img 등) 모아 놓은 곳
-
-  - public: `main.js`가 바라보는 최종 HTML파일이 있는 곳
-
-  - `bable`: Vue 코드를 vanilla JS로 번역해준다.
-
-  - `package.json`, `package-lock.json`: `requirements.txt`와 유사한 역할
-    
-    - `package.json`은 django의 `manage.py`와 같이 루트라는 것을 알 수 있는 파일이다.
-    - 둘 다 Vue를 동작하게 하는 라이브러리들이 작성되어 있다. 라이브러리가 설치되면 이 두 파일에 추가된다.
-    
-  - `node_modules`: python의 venv에 해당, 패키지를 설치할 경우 실제로 코드가 들어가게 되는 디렉토리
-
-
-
-- `.Vue`파일: `component`라 불리며 하나의 `component`는 `template`, `script`, `style`로 이루어져 있다.
-  - 파일명은 UpperCamelCase로 작성한다.
-  - VScode에서 `Vetur` 확장 프로그램을 설치했다면 폴더를 열고 `<`를 입력하고 탭을 누르면 html에서 `!`를 입력하고 탭을 누르는 것 처럼 기본 구조를 잡아준다.
-  - 기본 구조는 html에 해당하는 `<template>`,  js에 해당하는 `<script>`,  css에 해당하는 `<style>`의 세 부분이다.
-    - 셋 중 하나가 없다고 동작하지 않는 것은 아니다.
-
-```html
-<!--template 태그 안에는 하나의 root element만 존재해야 한다. 하나의 태그 안에 자식 태그가 있는 것은 괜찮지만 root에는 오직 하나의 태그만 존재해야 한다.-->
-<template>
-  <div>{{message}}</div>
-</template>
-
-<script>
-export default {
-    name:'First',  //name은 default로 넘어가므로 아무렇게나 지정해도 된다.
-    /*
-    Vue에서 데이터는 함수로 넘긴다.
-    data를 객체가 아닌 함수로 넘기는 이유는 component를 재사용하므로 component는 계속 새로고침 없이 재사용되는데,
-    data를 객체로 선언하면 계속 같은 값이 변하게 된다. 
-    예를 들어 데이터를 a=1이라는 데이터가 있고 component가 사용될 때 마다 a+=1씩 해주는 함수를 작성했을 때,
-    a를 객체로 만들었을 경우 매번 component가 재사용 될 때 마다 계속 +1씩 증가한다.
-    반면에 a를 함수로 선언하면 component가 재사용 될 때 마다 a를 선언하는 함수도 다시 실행되면서 a의 복사본이 생기므로 
-    몇 번을 재사용해도 a=2가 된다.
-    */
-    data: function(){ 
-        return {
-            message: '안녕하세요'
-        }
-    }
-}
-</script>
-
-<style>
-
-</style>
-
-
-<!--export default 내보내고 싶은 대상-->
-<!--default는 옵션이다. default로 내보내면 다른 곳에서 import할 때 이름을 마음대로 붙여서 사용할 수 있다. default는 내보낼 것이 하나일 때만 사용할 수 있다.-->
-
-<template>
-  <div>
-    <h1>Hello World</h1>
-
-    </div>
-</template>
-
-<script>
-const arr1 = [1,2,3]
-const arr2 = [4,5,6]
-//export default는 내보낼 것을 지정하는 것이다.
-//아래에 작성하지 않은 것은 다른 파일에서 이 파일을 import해도 사용할 수 없다.
-//arr1은 내보냈으므로 다른 곳에서 import해서 사용이 가능하지만 arr2는 불가능하다.
-export default arr1  //객체를 내보내는 것이 아니므로 {}는 쓰지 않아도 된다.
-
-</script>
-
-<style>
-
-</style>
-```
-
-
-
-- `component`
-  - 하나의 페이지를 구성하는 여러 요소들
-  - 재사용이 용이하므로 반복되는 일을 할 때 컴포넌트를 사용하면 더 편하게 할 수도 있다.
-  - Vue는 흔히 컴포넌트가 트리 형태로 중첩되어 사용된다.
-    - 최소 컴포넌트를 지정했다면, 컴포넌트를 그룹으로 묶어서 부모 컴포넌트를 만들 수 있다.
-  - 모든 Vue 컴포넌트는 Vue 인스턴스이기도 하다.
-  - 한 가지 컴포넌트가 하나의 일을 한다는 원칙에 기반해서 컴포넌트 설계 - 단일책임원칙
-
-
-
-- `App.vue`파일은 `root`바로 아래의 component로 직접 작성한 component는 이곳을 통해 출력한다.
-
-```html
-<template>
-  <div id="app">
-    <!--3.사용하기-->
-    <First />
-	<!--
-	  태그 안에 /가 있으면 닫힘태그를 쓰지 않아도 된다
-	  혹은 아래와 같이 써도 동작은 한다.
-	  <First></First>
-	  그러나 컨벤션에 어긋나므로 하지 않는다.
-	-->
-  </div>
-</template>
-
-<script>
-//1. import하기
-// import 변수이름 from 경로
-// 만일 import한 파일에서 export할 때 default 설정을 줬다면 설정하고 싶은 대로 설정하면 된다.
-// 그러나 일반적으로 import한 파일명과 동일하게 설정하는 것이 관례다.
-import First from './components/FirstComponent.vue'
-
-export default {
-  name: 'App',
-  components: {
-    HelloWorld,
-    //2. 등록하기
-    //본래 object이므로 'key':value(e.g. 'First':first)형태로 적어야 하지만
-    //JS의 object에서 key는 ''를 생략 가능하고, key와 value가 같으면 value는 안 적어도 된다.
-    First,
-  }
-}
-</script>
-
-<!--후략-->
-```
-
-
-
-- axios 사용
-
-```bash
-#i는 install의 약자로 Vue에서는 아래와 같이 설치가 가능하다.
-$ npm i axios
-```
-
-```html
-<!--.vue파일-->
-<!--전략-->
-
-<script>
-import axios from 'axios'   //import해서 사용한다.
-import A from './components/A' //직접 작성한 컴포넌트보다 위에 import하는 것이 컨벤션이다.
-import B from './components/B'
-
-
-export default {
-  name: 'App',
-</script>
-<!--후략-->
-```
-
-
-
-
-
-
-
-
-
 # Vue router
 
 - 모든 기능이 한 url에서 이루어지므로 특정 기능을 이용하기 위해 url을 입력하고 해당 기능으로 바로 이동하는 것이 불가능, 새로고침 없이 url을 설정할 수 있도록 해주는 것이 vue router다.
@@ -989,68 +766,38 @@ export default router
 
 # 서버와 연결
 
-- django 등을 활용하여 구축한 서버와 Vue를 연결하는 방법
+> django 등을 활용하여 구축한 서버와 Vue를 연결
+
+## 사용자 인증
+
+- 로그인
+
+  - django에서 설정한 URL로 username과 password를 담아서 POST 요청을 보낸다.
+
+  ```js
+  import axios from 'axios'
+  
+  methods: {
+      login(loginData) {
+            //POST요청을 보내야 하므로 post를 써준다.
+            axios.post(SERVER_URL + 'django에서 설정한 url', loginData)
+              .then(res => {
+                this.setCookie(res.data.key)
+                this.$router.push({ name: 'Home' })
+              })
+          	//에러 내용을 보고자 한다면 console.log(err.response)와 같이 보면 된다(catch의 첫 인자를 일반적으로 error, err로 정의한다). 
+          	//catch의 첫 인자의 response에 자세한 에러 내용이 담겨있다.
+              .catch(err => this.errorMessages = err.response.data)
+          },
+  }
+  ```
+
+  - 이 요청에 대한 응답으로 token이 문자열로 key에 담겨서 온다.
+
+
 
 - vue-cookies
 
 > https://www.npmjs.com/package/vue-cookies
-
-
-
-
-
-
-
-# 배포
-
-- npm build
-  - Vue 프로젝트를 HTML,JS,CSS파일로 묶어준다.
-  - webpack이 묶어주는 것이다.
-
-```bash
-$ npm run build
-
-#위 코드를 입력하면 dist 폴더가 새로 생기고 그 안에 HTML,JS,CSS파일이 새로 생긴다.
-```
-
-
-
-- netlify
-
-  > https://www.netlify.com/
-
-  - 위 사이트에 로그인 후 sites 탭으로  이동해서 dist 폴더를 등록한다.
-  - 2, 3번 과정은 거치지 않아도 된다.
-  - 간단한 배포 방식이 장점이지만 단점으로는 매번 코드를 수정 할 때 마다 다시 등록을 해야 한다는 것이다.
-    - git과 연동하면 이런 단점도 사라진다.
-  - git과 연동하기
-    - `New site from git`으로 이동 후 연동된 사이트(github 등) 클릭-권한 허용-리포지토리 선택 후 install클릭
-    - 이 경우 dist 폴더를 만든 것이 아니라 프로젝트 전체를 올린 것이므로 사이트에서 배포 전에 dist 폴더를 만들도록 해야한다.
-    - Basic build settings에서 `bulid command`에 `npm run build`를 입력하면 배포하기 전에 netlify에서 해당 명령어를 실행해 준다.
-    - `Publish directory`에는 dist를 입력한다.
-    - `.gitignore`에 작성된 파일들은 git에 올라가지 않으므로 따로 관리하는 API_KEY와 같은 값들은  `Environment variables`에 입력해줘야 한다.
-
-
-
-- git으로 관리하기
-  - 기존에 git으로 관리하던 폴더(`.git`폴더가 있는 폴더) 내부에 Vue 프로젝트가 있다면 Vue 프로젝트 내부에도 `.git` 폴더가 있기 때문에 충돌이 날 수 있으므로 따로 빼서 관리해야 한다.
-  - Vue 프로젝트 내부의 `node_modules` 폴더 내부에 많은 파일이 들어 있어 복사, 붙여넣기가 너무 오래 걸린다.
-  - 따라서 `node_modules` 폴더를 통째로 지우고, 남은 폴더를 복사, 붙여넣기 한 후
-  - 실행시켜서 터미널에 `$npm i`를 입력하면 `package.json`, `package-lock.json`을 읽어서 `node_modules`를 다시 만들어준다. 
-
-
-
-- Babel
-  - 브라우저마다 지원되는 ES 버전이 다르다.
-  - ES6의 문법으로 코드를 작성하고 배포하면 ES6를 지원하지 않는 브라우저로 접속할 경우 사이트가 제대로 동작하지 않을 수 있다.
-  - Babel은 ES6로 작성한 코드를 이전 버전으로 바꿔준다.
-
-
-
-
-
-
-
-
 
 

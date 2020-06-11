@@ -100,7 +100,7 @@ $ git clone ㅏ다운받고자 하는 주소ㅓ(프로젝트 내에  clone or do
 2. 원래 있던 폴더(다운 받은 파일을 업로드한 폴더)에서 다운 받은 폴더에서 업로드한 파일을 받기
 
 ```bash
-$ git pull 식별자 master
+$ git pull origin master
 ```
 
 
@@ -147,7 +147,13 @@ $ git pull 식별자 master
    (master) $ git branch
    ```
 
-6. 브랜치 병합
+6. git에 브랜치 생성
+
+   ```bash
+   $ git push origin branch명
+   ```
+
+7. 브랜치 병합
 
    ```bash
    (master) $ git merge ㅏ브랜치명ㅓ
@@ -155,13 +161,13 @@ $ git pull 식별자 master
 
    * master 브랜치에서 ㅏ브랜치명ㅓ을 병합
 
-7. 브랜치 상황 그래프로 확인하기
+8. 브랜치 상황 그래프로 확인하기
 
    ```bash
    $ git log --oneline --graph
    ```
 
-8. branch 삭제
+9. branch 삭제
 
    ```bash
    $ git branch -d feature/signup

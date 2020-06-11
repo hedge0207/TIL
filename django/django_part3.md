@@ -960,7 +960,7 @@
 - 과정
 - 회원가입 시 Vue가 user 정보를 넘기면 django는 유효성 검사 후 User테이블에 유저 정보를 추가한다. 
   - 로그인 역시 마찬가지로 Vue가 user 정보를 넘기면 django는 유효성 검사 후 토큰을 발급하고 토큰값과 유저_id(pk값)를 key와 value 형태로 저장한다. 
-- django는 Vue에 token을 넘기고 Vue는 다음 요청 때부터는 request의 header에 django에서 받은 토큰을 함께 보낸다(`Authorization`:`Token`  `토큰값` 형태로 만들어서 보낸다. Authorization이 key에 해당하고 Token이 value에 해당한다). django는 해당 토큰을 보고 유저를 인식한다.
+- django는 Vue에 token을 넘기고 Vue는 다음 요청 때부터는 request의 header에 django에서 받은 토큰을 함께 보낸다.(`Authorization`:`Token`  `토큰값` 형태로 만들어서 보낸다. Authorization이 key에 해당하고 Token이 value에 해당한다). django는 해당 토큰을 보고 유저를 인식한다.
   - 로그아웃을 하면 발급한 토큰을 삭제한다.
 
 
@@ -1015,7 +1015,7 @@
   #1번 문서에 있는 내용
   urlpatterns = [
       ...,
-      path('rest-auth/', include('rest_auth.urls'))
+      path('rest-auth/', include('rest_auth.urls')),
       #위 경로로 들어갈 경우 404에러 페이지가 뜨는데 해당 페이지의 내용을 보면 rest-auth에서 할 수 있는 것들의 목록이 나온다.
   ]
   ```
@@ -1045,8 +1045,8 @@
   #urls.py
   urlpatterns = [
       ...,
-      url('rest-auth/', include('rest_auth.urls')),
-      url('rest-auth/registration/', include('rest_auth.registration.urls')),
+      path('rest-auth/', include('rest_auth.urls')),
+      path('rest-auth/registration/', include('rest_auth.registration.urls')),
   ]
   
   #경로는 registration대신 쓰고 싶은 것(singup등)을 써도 된다(단, 당연히 include 내부는 건들면 안된다)
