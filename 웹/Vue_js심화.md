@@ -764,6 +764,10 @@ export default router
 
 
 
+
+
+
+
 # 서버와 연결
 
 > django 등을 활용하여 구축한 서버와 Vue를 연결
@@ -774,30 +778,174 @@ export default router
 
   - django에서 설정한 URL로 username과 password를 담아서 POST 요청을 보낸다.
 
+  - 쿠키에 token을 저장해야 한다.
+
+    >  https://www.npmjs.com/package/vue-cookies
+
+    - 설치
+
+      ```bash
+      $ npm i vue-cookies
+      ```
+
+    - `main.js`에 아래 코드를 추가(아무대나 작성해도 되지만 일반적으로 main.js에 작성한다.)
+
+      ```js
+      import Vue from 'vue'
+      import App from './App.vue'
+      import router from './router'
+      import VueCookies from 'vue-cookies'  //이 코드와
+      
+      Vue.use(VueCookies)  //이 코드를 추가
+      
+      Vue.config.productionTip = false
+      
+      new Vue({
+        router,
+        render: h => h(App)
+      }).$mount('#app')
+      ```
+
+  - 예시
+
   ```js
+  //전략
   import axios from 'axios'
   
-  methods: {
-      login(loginData) {
-            //POST요청을 보내야 하므로 post를 써준다.
-            axios.post(SERVER_URL + 'django에서 설정한 url', loginData)
-              .then(res => {
-                this.setCookie(res.data.key)
-                this.$router.push({ name: 'Home' })
-              })
-          	//에러 내용을 보고자 한다면 console.log(err.response)와 같이 보면 된다(catch의 첫 인자를 일반적으로 error, err로 정의한다). 
-          	//catch의 첫 인자의 response에 자세한 에러 내용이 담겨있다.
-              .catch(err => this.errorMessages = err.response.data)
-          },
+  //django의 서버 주소, 반복해서 사용하므로 변수에 저장한다.
+  const DURL = 'http://localhost:8000'
+  
+  export default {
+    name: 'App',
+    data() {
+      return {
+        isLoggedIn: false,  //로그인 상태인지 확인하기 위한 변수
+        errorMessages: null,
+        tmp_token:''
+      }
+    },
+  
+    methods: {
+        /*
+        cookieAndIsloggedin(token){
+            this.$cookies.set('auth-token', token)
+            this.isLoggedIn = true
+        }
+        */
+        login(loginData) {
+              //POST요청을 보내야 하므로 post를 써준다.
+            	//.post(요청을 보낼 url, body에 담을 data, header에 담을 데이터)의 형식으로 작성한다. header에 담을 것이 없으므로 작성하지X
+              axios.post(DURL + 'django에서 설정한 url', loginData)
+                //이 요청에 대한 응답의 data에는 {key:'토큰값'} 형태의 오브젝트가 온다.
+                .then(res => {
+                  //이 토큰에 대한 정보를 저장해야 토큰을 활용할 수 있는데 아래와 같이 할 경우 새로고침을 하면 tmp_token이 다시 ''값으로 초기화 					된다. 따라서 아래 방법으로는 토큰을 저장할 수 없다.
+                  //this.token=res.data.key
+                  
+                  //토큰을 로그아웃하기 전까지 저장하기 위해서 쿠키를 활용한다.
+                  //쿠키는 documnet.cookie를 통해 접근 가능하다.
+                  
+                  //쿠키에 토큰값을 저장하기 위해서는 아래와 같이 작성해야 한다(token은 cookie의 key에 들어갈 변수명으로 아무거나 해도 된다).
+                  //document.cookie = "token=토큰값"
+                  
+                  //보다 축약하면 아래와 같이 쓸 수 있지만 이 역시 불편하다.
+                  //document.cookie = "token="+res.data.key
+                  
+                  //vue-cookies를 사용하면 훨씬 간략하게 작성 가능하다(auth-token은 cookie의 key에 들어갈 변수명으로 아무거나 해도 된다).
+                  //set은 vue-cookies가 정의한 함수로 위와 같이 타이핑하지 않아도 cookie에 key:토큰값 형태로 저장되게 해준다.
+                  //$는 vue-cookies제작자가 정한 기호이다.
+                  this.$cookies.set('auth-token', res.data.key)
+                  this.isLoggedIn = true //로그인 상태로 바꾼다.
+                  //위 두 코드는 반복해서 쓸 것이 예상되므로 함수로 만들어서 써도 된다.  
+                  //this.cookieAndIsloggedin(res.data.key) 위에 주석 처리한 함수, 토큰 정보를 인자로 받는다.
+                    
+                  //this.$router.push(경로)는 django의 redirect와 같은 역할을 한다.
+                  this.$router.push({ name: 'Home' })
+                })
+                //에러 내용을 보고자 한다면 console.log(err.response)와 같이 보면 된다(catch의 첫 인자를 일반적으로 error, err로 정의한다). 
+                //catch의 첫 인자의 response에 자세한 에러 내용이 담겨있다.
+                .catch(err => this.errorMessages = err.response.data)
+            },
+      },
+      mounted() {
+      // .isKey는 vue-cookies에서 제공하는 함수로 cookie 에 auth-token 이 존재하는가 체크, 있으면 true, 없으면 false를 반환
+      //토큰은 로그인시 발급되고 로그아웃시 삭제되므로 토큰이 존재한다는 것은 로그인 상태라는 뜻이다. 따라서 토큰 유무에 따라 로그인 유무를 판별할 수 		있고 아래가 그 코드다.
+      //주의할 점은 회원가입을 할 경우 토근값을 리턴하는데 회원가입 로직을 짤 때 자동을로 쿠키에 토큰이 저장되도록 한다면 회원가입만 해도 isLoggedIn		이 true가 될 수 있다.
+      this.isLoggedIn = this.$cookies.isKey('auth-token')
+    },
   }
+  
+  //후략
   ```
 
-  - 이 요청에 대한 응답으로 token이 문자열로 key에 담겨서 온다.
 
 
 
-- vue-cookies
+- 로그 아웃
 
-> https://www.npmjs.com/package/vue-cookies
+  ```html
+  <template>
+    <div id="app">
+      <div id="nav">
+        <router-link to="/">Home</router-link> |
+        <!--컴포넌트는 이벤트를 들을 때 자식 컴포넌트에서 올라온 이벤트를 듣도록 설정되어 있다. 따라서 현재 컴포넌트에 설정한 이벤트를 듣게 하려면 			.navive를 붙여줘야 한다. router-link도 컴포넌트이므로 현재 컴포넌트에서 이벤트를 듣고자 한다면 .native를 붙여야 한다.-->
+        <router-link v-if="isLoggedIn" to="/accounts/logout" @click.native="logout" >Logout</router-link>>
+      </div>
+      <router-view/>
+    </div>
+  </template>
+  
+  
+  <script>
+  //각종 변수명은 위 로그인 코드에 작성된 것을 그대로 쓴다고 가정
+  //전략
+  logout() {
+        //Postman으로 요청을 보낼 때와 마찬가지로(django_part3 참고) header에 Authorization:Token 토큰값의 형태로 데이터를 보내야 한다.
+        //따라서, 보다 간결하게 보내기 위해 아래와 같이 변수에 저장한다. 굳이 object안에 object의 형태로 보내는 이유는 이렇게 보내야하기 때문이다.
+        const config = {
+          headers: {
+              //.get은 ue-cookies에서 제공하는 함수로 key(auth-token)에 해당하는 토큰값을 가져오는 함수다.
+            'Authorization': `Token ${this.$cookies.get('auth-token')}` 
+          }
+        }
+        //위 로그인 코드에서 보았듯 .post(요청을 보낼 url, body에 담을 data, header에 담을 데이터)의 형식으로 작성하는데 위에서 정의한 config는 	  body가 아닌 header에 담을 데이터이다. 따라서 body에는 보낼 것이 없지만 3번째 위치에 넣기 위해 body에 담을 data가 들어가는 두 번째 자리에 	   null값을 채워준다.
+        axios.post(SERVER_URL + '/rest-auth/logout/', null, config)
+          // .then(() => {})
+          .catch(err => console.log(err.response))
+          .finally(() => {
+            //.remove역시 vue-cookies에서 제공하는 함수로 토큰을 제거하는 것이다. auth-token은 위(로그인 코드)에서 token을 담을 때 auth-			  token에 담았기에 써준 것이지 고정적인 변수가 아니다.
+            this.$cookies.remove('auth-token')
+            this.isLoggedIn = false
+            this.$router.push({ name: 'Home' })
+          })
+      },
+  </script>
+  <!--후략-->
+  ```
 
+
+
+- 회원가입
+
+  ```js
+  //각종 변수명은 위 로그인 코드에 작성된 것을 그대로 쓴다고 가정
+  //로그인 코드와 유사하다.
+  
+  //전략
+  signup(signupData) {
+         axios.post(SERVER_URL + '/rest-auth/signup/', signupData)
+          .then(res => {
+            this.$cookies.set('auth-token', res.data.key)
+            this.isLoggedIn = true
+          })
+      	//errorMessages는 위 로그인 코드에 작성된 변수이다.
+          .catch(err => this.errorMessages = err.response.data)
+      },
+  //후략
+  ```
+
+  
+
+- loginrequired 구현하기: 아래 문서 참고하여 `index.js`에 코드 작성
+
+> https://router.vuejs.org/kr/guide/advanced/navigation-guards.html
 
