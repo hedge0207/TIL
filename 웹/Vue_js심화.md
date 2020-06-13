@@ -476,7 +476,7 @@ export default router
       const API_KEY = process.env.VUE_APP_API_KEY
       ```
     
-      
+    - 위 과정을 거친 후 serve를 한번 껐다 켜야한다.
     
     - 이렇게 한다고 완전히 숨길 수 있는 것은 아니지만 적어도 github에서는 숨길 수 있다.
 
