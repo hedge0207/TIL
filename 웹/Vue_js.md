@@ -747,7 +747,16 @@
   </html>
   ```
 
-  
+  - //Vue에서 form 태그를 쓸 경우 아래와 같이 methods에  event.preventDefault()을 실행시키는 메소드를 넣어줘야 한다. preventDefault()는 Vue에서 제공하는 기능이다.
+
+  ```js
+  methods:{
+        signup:function(){
+          event.preventDefault()
+          this.$emit('submit-signup-data',this.signupData)
+        },
+      },
+  ```
 
 - Lodash: JS 유틸리티 라이브러리
 

@@ -170,7 +170,7 @@ $ git pull origin master
 9. branch 삭제
 
    ```bash
-   $ git branch -d feature/signup
+   $ git branch -d 브랜치명
    ```
 
 
