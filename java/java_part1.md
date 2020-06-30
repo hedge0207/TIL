@@ -4,6 +4,11 @@
 
 ## Hello World
 
+- 객체 지향 언어
+  - 객체 지향 프로그래밍: 프로그램을 구성하는 요소는 객체이며 이것이 상호작용하도록 프로그래밍 하는 것
+
+
+
 - JAVA의 실행 순서: 코드 작성-컴파일(작성한 코드를 실행 가능한 파일로 변환)-코드 실행
   - 우리가 작성한 코드는 `.java`라는 확장자명을 가지고 있다.
   - 컴파일러는 컴파일 과정을 거쳐 우리가 작성한 `.java` 파일을 `.class` 파일로 변환시킨다.
@@ -45,7 +50,10 @@
 
 
 
-- `eclipse`에서는 저장할 때마다 컴파일이 이루어진다.
+- `eclipse`
+  - `eclipse`에서는 저장할 때마다 컴파일이 이루어진다.
+  - `file`-`new`-`other`-`Java Project`를 통해 프로젝트 생성
+  - `src`우클릭-`new`-`class`를 통해 새로운 파일 생성(`public static void main~`체크)
 
 
 
@@ -145,9 +153,37 @@
 
 ## 자료형
 
+- 기본형(primitive)과 참조형(reference)
+
+  - 기본형(원시 자료형)
+    - 숫자(정수형, 실수형), 문자형,논리형
+    - 클래스가 아니다.
+    - 원시 자료형은 리터럴로 값을 세팅할 수 있다. 리터럴이란 계산식 없이 소스코드에 표기하는 상수 값을 의미한다.
+    -  원시 자료형은 `new` 키워드로 생성할 수 없다.
+    - String은 원시 자료형은 아니지만 리터럴 표현식을 사용할 수 있도록 자바에서 특별 대우 해주는 자료형이다.
+  - 참조형
+    - 기본형 타입을 제외한 모든 타입, 문자열 등
+
+  ```java
+  //예를 들어 아래와 같이 기본형 int 변수와 참조형 String 변수가 있을 경우
+  
+  //리터럴 표현식
+  int num = 1;
+  
+  //new를 사용한 객체 생성 방식
+  //String 역시 위와 마찬가지로 리터럴 표현식으로 생성할 수 있도록 Java에서 허용하고 있으나 참조형이라는 것을 강조하기 위해 여기서는 아래와 같이 객체 생성 방식으로 선언
+  String str = new String "asd";
+      
+      
+  //기본 자료형인 int형인 변수 num의 경우 1이라는 값을 저장하고 있다.
+  //그러나 참조형인 String 형인 변수 str의 경우 asd를 저장하고 있는 것이 아니라 asd를 저장하고 있는 String 객체를 참조하고 있는 것이다. 정확히는 str에 참조하는 String 객체의 주소값이 저장되어 있다.
+  ```
+
+
+
 - 숫자
   - 정수형(크기순)
-    - long(8byte), int(4byte),  short(2byte), char(2byte), byte 등의 키워드가 있으며 int가 가장 많이 쓰인다.
+    - long(8byte), int(4byte),  short(2byte), byte 등의 키워드가 있으며 int가 가장 많이 쓰인다.
     - int는 -2147483648 ~ 2147483647를 표현 할 수 있다.
     - 8진수, 16진수는 int 자료형으로 표현한다.
     - long은 -9223372036854775808 ~ 9223372036854775807를 표현 할 수 있다.
@@ -204,11 +240,12 @@
     public class HelloWorld {
     
     	public static void main(String[] args) {
-            //방법1. 리터럴 표가 방법
+            ////String은 원시 자료형은 아니지만 리터럴 표현식을 사용할 수 있도록 자바에서 특별 대우해주기에 아래와 같이 리터럴 표현식으로 쓸 수 있고
     		String a = "Hi";
     		String b = "My name is";
     		String c = "Java";
-            //방법2. new 사용 방법
+            
+            //방법2. new 사용 방법, String은 기본적으로 클래스이므로 아래와 같이 객체를 생성하는 키워드인 new를 사용 가능하다.
     		String a2 = new String("Hi");
     		String b2 = new String("My name is");
     		String c2 = new String("Java");
@@ -222,14 +259,6 @@
     }
     ```
 
-  - 원시(primitive)자료형
-
-    - int, long, double, float, boolean, char 등은 원시 자료형이라 부르며 이런 원시 자료형은 `new` 키워드로 생성할 수 있다.
-    - 원시 자료형은 리터럴로 값을 세팅할 수 있다.
-    - 리터럴이란 계산식 없이 소스코드에 표기하는 상수 값을 의미한다.
-
-    - String은 원시 자료형은 아니지만 리터럴 표현식을 사용할 수 있도록 자바에서 특별 대우 해주는 자료형이다.
-
   - String 자료형과 관련된 메소드들
 
     ```java
@@ -240,15 +269,30 @@
     public class HelloWorld {
     
     	public static void main(String[] args) {
+            //리터럴 표기법
     		String a = "My name is";
     		String b = "My name is";
     		String c = "My name Is";
+            
+            //생성자 방식
     		String d = new String("My name is");
+            String e = new String("My name is");
     		System.out.println(a.equals(b));   //true
+            
+            //둘이 같다고 나오는 이유는 객체를 생성하는 방식이 아닌 리터럴을 저장하는 방식이기 때문이다.
             System.out.println(a==b);          //true
+            
+            //c에 Is라고 썼으므로 다르다고 나온다.
     		System.out.println(a.equals(c));   //false
+            
+            //equals는 값이 같은지를 판단하기에 true가 출력
             System.out.println(a.equals(d));   //true
+            
+            //==는 같은 객체인지를 판단하기에 false가 출력
     		System.out.println(a==d);          //false
+            
+            //d와 e도 마찬가지로 값은 같지만서로 다른 객체를 지칭하고 있으므로 다르다고 출력된다.
+            System.out.println(d==e);          //false
     	}
     }
     
@@ -374,6 +418,21 @@
   num[0]=1;
   num[1]=2;
   num[2]=3;
+  
+  System.out.println(num); //[I@65b3120a, java에서는 이와 같이 출력을 하면 배열의 내용이 아닌 배열의 주소값이 출력된다.
+  
+  //내용을 보고자 한다면 아래와 같이 출력해야 한다.
+  import java.util.Arrays; //Arrays를 import하고
+  
+  System.out.println(Arrays.toString(num)); //[1, 2, 3]
+      
+      
+  //만일 선언하고 값을 지정해 주지 않을 경우 아래와 같이 null값이 들어가게 된다.
+  //이는 자료형마다 기본값이 다른데 String은 null, int는 0, double은 0.0, boolean은 false가 기본값으로 들어가게 된다. 
+  String[] arr = new String[3];
+  arr[0]="a";
+  arr[1]="b";
+  System.out.println(Arrays.toString(arr));  //[a, b, null]
   ```
 
   - 인덱싱
@@ -393,6 +452,31 @@
   ```
 
   - `ArrayIndexOutOfBoundsException`에러는 파이썬의 index out of range와 동일한 에러다.
+
+  -  2차원 배열 
+
+  ```java
+  //기본 구조
+  package first;
+  
+  public class HelloWorld {
+  
+  	public static void main(String[] args) {
+  		자료형[][] 변수명 = new 자료형[행크기][열크기];
+  	}
+  }
+  
+  //아래와 같이 행 별로 다른 크기의 배열을 생성할 수도 있다.
+  int[][] arr = new int[3][];
+  arr[0]=new int[1];
+  arr[1]=new int[2];
+  arr[2]=new int[3];
+  System.out.println(Arrays.toString(arr[0]));  //[0]
+  System.out.println(Arrays.toString(arr[1]));  //[0,0]
+  System.out.println(Arrays.toString(arr[2]));  //[0,0,0]
+  ```
+
+  
 
 
 
@@ -842,7 +926,7 @@
   
   	public static void main(String[] args) {
   		int[] numbers = {1,2,3};
-  		for(Integer number: numbers) {
+  		for(int number: numbers) {
   		    System.out.println(number);
   		}
   	}
@@ -852,9 +936,275 @@
   1
   2
   3
+      
+//2차원 배열에서 for each
+  package first;
+  
+  import java.util.Arrays;
+  
+  public class HelloWorld {
+  
+  	public static void main(String[] args) {
+  		int[][] arr = new int[3][];
+  		arr[0]=new int[1];
+  		arr[1]=new int[2];
+  		arr[2]=new int[3];
+          
+          //a의 type은 (위에서 인트가 담기는 배열로 선언했으므로)int가 담긴 배열이 될 것이므로 int[]가 된다.
+  		for(int[] a:arr) {
+  			System.out.println(Arrays.toString(a));
+  		}
+  	}
+  }
+  
+  out
+  [0]
+  [0, 0]
+  [0, 0, 0]
+  ```
+  
+  
+
+
+
+
+
+# 클래스
+
+## 클래스 기초
+
+- Java는 객체 지향 언어로 클래스에 대해 이해하는 것이 중요하다.
+
+
+
+- 클래스: 객체를 만들기 위한 틀
+
+  - 붕어빵을 예로 들면, 붕어빵이 객체라면 붕어빵 틀이 클래스라고 할 수 있다.
+
+  - 클래스를 생성 후 `new` 키워드를 통해 객체(인스턴스)를 생성 
+    - 만일 dog이라는 인스턴스를 생성한다고 하면 dog에는 사실 인스턴스 그 자체가 아닌 생성된 인스턴스를 가리키고 있는 주소가 저장되어 있다.
+  - 클래스에 의해 만들어진 객체를 인스턴스라고 한다.
+    - 아래 예시를 보았을 때 'dog은 인스턴스'라는 표현보다는 'dog은 객체'라는 표현이 자연스럽다.
+    - 'dog은 Animal의 객체'라는 표현보다는 'dog은 Animal의 인스턴스'라는 표현이 자연스럽다.
+
+  ```java
+  //클래스 생성
+  public class Animal {
+  
+  }
+  
+  //객체 생성
+  Animal dog = new Animal()
+  ```
+
+
+
+- 객체 변수
+
+  - 클래스에 선언된 변수를 객체 변수라고 부른다.
+  - 혹은 인스턴스 변수, 멤버 변수, 속성이라고도 부른다.
+  - 객체 변수는 도트 연산자 `.`를 통해 접근 가능하다.
+  - 객체 변수는 공유되지 않는다. 즉 개별 객체 마다 객체 변수의 값이 독립적으로 유지된다. 예를 들어 cat, dog이라는 두 인스턴스가 있을 경우 name이라는 객체 변수를 각기 Summer, Spring이라는 다른 이름으로 가지고 있다.
+
+  ```java
+  //클래스 생성
+  package first;
+  
+  public class Animal {
+      //name이라는 객체 변수 추가
+  	String name;
+  }
+  
+  
+  //객체 생성
+  Animal dog = new Animal();
+  dog.name="Spring";
+  System.out.println(dog.name); //Spring
+  ```
+
+
+
+## 메소드
+
+- 메소드
+
+  ```java
+  //기본형
+  
+  public 리턴자료형 메소드명(입력자료형1 입력변수1, 입력자료형2 입력변수2, ...) {
+      ...    
+      return 리턴값;  // 리턴자료형이 void 인 경우에는 return 문이 필요없다.
+  }
+  ```
+
+  - 클래스 내에 구현된 함수를 메소드라고 한다. 
+  - Java는 클래스를 떠나 존재하는 것이 있을 수 없기에 자바에는 함수가 따로 존재하지 않고 메소드만 존재한다고 볼 수 있다.
+  - 사용하는 이유는 다른 언어와 마찬가지로 반복 작업을 보다 편하게 하기 위해서이다.
+  - 객체 변수와 마찬가지로 도트 연산자를 통해 접근이 가능하다.
+  - `this`: 메소드 내부에 사용된 `this`는 클래스에 의해서 생성된 객체를 지칭한다.
+
+  ```java
+  package first;
+  
+  public class Animal {
+  	String name;
+      
+      //setName이라는 메소드를 작성
+      //void는 리턴값(출력)이없다는 의미이고, String name은 name이라는 문자열을 입력으로 받는 메소드라는 뜻이다.
+  	public void setName(String iname) {
+          //여기서 this는 Animal class에 의해 생성되어 이 함수를 실행시킨 객체인 cat을 가리킨다.
+  		this.name=iname;
+          //즉 아래 예시에 따라 아래 코드를 풀어쓰면 다음과 같다.
+          //cat.name="Summer";
+  	}
+  }
+  
+  //객체 생성
+  Animal cat = new Animal();
+  cat.setName("Summer");
+  System.out.println(cat.name);  //Summer
+  ```
+
+  - 리턴값이 있을 경우의 메소드
+
+  ```java
+  public class Example {
+      //sum이라는 메소드는 두 개의 int형 데이터를 입력값으로 받아 그 둘의 합을 int형으로 리턴한다.
+      //리턴 값이 없을 경우 void를 쓰지만, 있을 경우 리턴값의 자료형(아래의 경우 int)을 적는다.
+      public int sum(int a, int b) {
+          return a+b;
+      }
+  
+      public static void main(String[] args) {
+          int a = 1;
+          int b = 2;
+  		
+          //Example 클래스의 객체를 하나 생성하고
+          Example ex1 = new Example();
+          //sum 메소드를 실행시키면 그 결과값이 c에 담기게 된다.
+          int c = ex1.sum(a, b);
+  
+          System.out.println(c); //3
+      }
+  }
+  ```
+
+
+
+- return만 단독으로 써서 메소드를 즉시 빠져나가는 방법
+
+  - 파이썬과 달리 이러한 방법은 리턴 자료형이 void인 메소드에서만 사용할 수 있다. 
+  - 리턴자료형이 명시되어 있는 메소드에서 return 문만 작성하면 컴파일 시 오류가 발생한다.
+
+  ```java
+  public void say_nick(String nickname) {
+      if ("바보".equals(nickname)) {
+          return;  //return문만 작성
+      }
+      System.out.println("나의 별명은 "+nickname+" 입니다.");
+  }
+  ```
+
+
+
+- 메소드 내에서 선언된 변수의 효력 범위
+
+  - 로컬변수: 메소드 내에서만 쓰이는 변수
+
+  ```java
+  class Example {
+      //plus라는 메소드 내에서의 a와
+      public void plus(int a) {
+          a++;
+      }
+  
+      //main 메소드에서의 a는 서로 다른 변수이다.
+      public static void main(String[] args) {
+          int a = 1;
+          Example ex2 = new Example();
+          ex2.plus(a);
+          System.out.println(a);  //1
+      }
+  }
+  ```
+
+  - 객체를 넘길 경우
+    - 위와 마찬가지로 메인 메소드와 동일한 이름의 객체를 조작
+    - 위와는 다르게 객체 ex의 객체변수인 a의 값이 실제로 변한 것을 볼 수 있다.
+    - 메소드의 입력 파라미터가 값이 아닌 객체일 경우 메소드 내의 객체는 전달 받은 객체 그 자체로 수행된다.
+    - 메소드의 입력항목이 값인지 객체인지를 구별하는 기준은 입력항목의 자료형이 primitive 자료형인지 아닌지에 따라 나뉜다.
+
+  ```java
+  public class Example {
+  
+      int a;  // 객체변수 a를 선언
+  	
+      //메소드
+      public void plus(Example ex) {  //main메소드에 쓰인 ex와 동일한 이름으로 인자를 받아온다.
+          ex.a++;
+      }
+  	
+      //메인 메소드
+      public static void main(String[] args) {
+          Example ex = new Example();
+          ex.a = 1;
+          ex.plus(ex);
+          System.out.println(ex.a); //2
+      }
+  }
+  
+  
+  
+  //this를 사용하여 아래와 같이 쓸 수도 있다.
+  public class Example {
+  
+      int a;
+  	
+      //메소드
+      public void plus() {  //굳이 인자를 적지 않고
+          //this를 활용
+          this.a++;
+      }
+  	
+      //메인 메소드
+      public static void main(String[] args) {
+          Example ex = new Example();
+          ex.a = 1;
+          ex.plus(); //인자를 넘기지 않는다.
+          System.out.println(ex.a); //2
+      }
+  }
   ```
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
