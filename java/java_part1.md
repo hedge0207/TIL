@@ -240,12 +240,12 @@
     public class HelloWorld {
     
     	public static void main(String[] args) {
-            ////String은 원시 자료형은 아니지만 리터럴 표현식을 사용할 수 있도록 자바에서 특별 대우해주기에 아래와 같이 리터럴 표현식으로 쓸 수 있고
+            //String은 원시 자료형은 아니지만 리터럴 표현식을 사용할 수 있도록 자바에서 특별 대우해주기에 아래와 같이 리터럴 표현식으로 쓸 수 있			다. 이 경우 변수는 문자열 자체가 저장되어 있다.
     		String a = "Hi";
     		String b = "My name is";
     		String c = "Java";
             
-            //방법2. new 사용 방법, String은 기본적으로 클래스이므로 아래와 같이 객체를 생성하는 키워드인 new를 사용 가능하다.
+            //방법2. new 사용 방법, String은 기본적으로 클래스이므로 아래와 같이 객체를 생성하는 키워드인 new를 사용 가능하다. 이 경우 변수에는 		문자열 자체가 아닌 문자열 객체를 가리키는 주소가 저장되어 있다.
     		String a2 = new String("Hi");
     		String b2 = new String("My name is");
     		String c2 = new String("Java");
@@ -275,6 +275,7 @@
     		String c = "My name Is";
             
             //생성자 방식
+            //part2에 적혀 있듯 new가 생성자가 아니라 클래스명과 메소드명이 동일하고 리턴 자료형이 없는 메소드를 생성자라고 말하는데 생성자는 객체가 생성될 때 호출되고 객체가 생성될 때는 new라는 키워드로 객체가 만들어질 때이다.
     		String d = new String("My name is");
             String e = new String("My name is");
     		System.out.println(a.equals(b));   //true
@@ -342,14 +343,30 @@
     		System.out.println(a.toLowerCase());  //my name is
     	}
     }
+  
+    //6.concat: 문자열과 문자열을 결합
+  package first;
+    
+    public class HelloWorld {
+    
+  	public static void main(String[] args) {
+    		String a = "My";
+    		System.out.println(a.concat(" name is")); //My name is
+            System.out.println(a) //My, 값이 변경되는 것은 아니다.
+                
+            //아래와 같이 하면 변경시킬 수 있다.
+            a = a.concat(" name is")
+            System.out.println(a)  //My name is
+    	}
+    }
     ```
-
+  
   - StringBuffer: 문자열을 추가하거나 변경할 때 주로 사용하는 자료형
-
+  
     - 아래 과정에서 String과 StringBuffer는 완전히 동일해 보이지만 그렇지 않다. 두 변수의 값은 동일하지만 StringBuffer 타입은 객체를 단 한번반 생성시키는 반면에 String은 +연산을 할 때마다 새로운 객체가 생성된다(따라서 아래 예시에서는 총 4개의 객체가 생성된다). 
     - 이는 String 객체가 값을 변경할 수 없기(immutable)때문으로 위에서 살펴본 toUpperCase등도 마찬가지로 기존의 String 객체를 모두 대문자로 변화시키는 것이 아니라  모두 대문자로 변환 된 새로운 객체를 생성하는 것이다. StringBuffer 는 이와 반대로 값을 변경할 수 있다(mutable)
     - StringBuffer 자료형은 String 자료형보다 무거운 편에 속한다. `new StringBuffer()` 로 객체를 생성하는 것은 일반 String을 사용하는 것보다 메모리 사용량도 많고 속도도 느리다. 따라서 문자열 추가나 변경등의 작업이 많을 경우에는 StringBuffer를, 문자열 변경 작업이 거의 없는 경우에는 그냥 String을 사용하는 것이 유리하다.
-
+  
     ```java
     //append를 사용하여 문자열을 추가 가능
     package first;
@@ -620,7 +637,53 @@
 
   
 
+- 열거형(`enum`)
 
+  - JDK5에서 추가된 문법, 이전까지는 상수형을 열거형 대신 사용
+  - 즉, 어떤 변수가 자유로운 값이 아닌 특정한 값만을 가지기를 원할 때 사용하는 것이 `enum`이다
+
+  ```java
+  //기본형
+  enum 변수명{
+      값1,값2,...
+  }
+  ```
+
+  ```java
+  package first;
+  
+  public class Example {
+  	//상수형을 선언할 때는 전부 대문자를 사용하는 것이 컨벤션
+  	public static final String MALE="MALE";
+  	public static final String FEMALE="FEMALE";
+  	
+      //메인 메소드
+      public static void main(String[] args) {
+      	//gender1이라는 변수에는 MALE, FEMALE 둘 중의 한 값만 넣고 싶을 경우
+      	String gender1;
+      	
+      	//cf.staitc변수는 아래와 같이 class로 직접 접근이 가능하다(part2 static 참고)
+      	gender1 = Example.MALE;    //에러 발생X
+      	gender1 = Example.FEMALE;  //에러 발생X
+          
+      	//위 까지는 원하는 대로 동작하지만 문제는 아래와 같은 경우에도 에러가 출력되지 않는다는 것이다.
+      	gender1 = "boy";  //에러 출력X
+          
+      	//MALE, FEMALE 둘 중 하나만 넣고자 했으나 위와 같은 방식으로는 String이기만 하면 컴파일시 에러로 인식하지 않아 모든 값을 넣을 수 있으므			로 원하는 대로 동작시킬 수 없다.
+      	//따라서 enum을 사용한다.
+      	Gender gender2;
+      	gender2 = Gender.MALE;
+      	gender2 = Gender.FEMALE;
+      	gender2 = Gender.boy; //에러 발생
+      }  
+  }
+  //class 밖에 정의한다.
+  enum Gender{
+  	MALE,FEMALE;
+  }
+  ```
+
+  
 
 ## 연산자
 
@@ -936,25 +999,24 @@
   1
   2
   3
+  
       
-//2차원 배열에서 for each
+  //2차원 배열에서 for each
   package first;
   
   import java.util.Arrays;
   
   public class HelloWorld {
   
-  	public static void main(String[] args) {
-  		int[][] arr = new int[3][];
-  		arr[0]=new int[1];
-  		arr[1]=new int[2];
-  		arr[2]=new int[3];
-          
-          //a의 type은 (위에서 인트가 담기는 배열로 선언했으므로)int가 담긴 배열이 될 것이므로 int[]가 된다.
-  		for(int[] a:arr) {
-  			System.out.println(Arrays.toString(a));
-  		}
-  	}
+      public static void main(String[] args) {
+          int[][] arr = new int[3][];
+          arr[0]=new int[1];
+          arr[1]=new int[2];
+          arr[2]=new int[3];
+          for(int[] a:arr) {   //a의 type은 (위에서 인트가 담기는 배열로 선언했으므로)int가 담긴 배열이 될 것이므로 int[]가 된다.
+              System.out.println(Arrays.toString(a));
+          }
+      }
   }
   
   out
@@ -962,249 +1024,3 @@
   [0, 0]
   [0, 0, 0]
   ```
-  
-  
-
-
-
-
-
-# 클래스
-
-## 클래스 기초
-
-- Java는 객체 지향 언어로 클래스에 대해 이해하는 것이 중요하다.
-
-
-
-- 클래스: 객체를 만들기 위한 틀
-
-  - 붕어빵을 예로 들면, 붕어빵이 객체라면 붕어빵 틀이 클래스라고 할 수 있다.
-
-  - 클래스를 생성 후 `new` 키워드를 통해 객체(인스턴스)를 생성 
-    - 만일 dog이라는 인스턴스를 생성한다고 하면 dog에는 사실 인스턴스 그 자체가 아닌 생성된 인스턴스를 가리키고 있는 주소가 저장되어 있다.
-  - 클래스에 의해 만들어진 객체를 인스턴스라고 한다.
-    - 아래 예시를 보았을 때 'dog은 인스턴스'라는 표현보다는 'dog은 객체'라는 표현이 자연스럽다.
-    - 'dog은 Animal의 객체'라는 표현보다는 'dog은 Animal의 인스턴스'라는 표현이 자연스럽다.
-
-  ```java
-  //클래스 생성
-  public class Animal {
-  
-  }
-  
-  //객체 생성
-  Animal dog = new Animal()
-  ```
-
-
-
-- 객체 변수
-
-  - 클래스에 선언된 변수를 객체 변수라고 부른다.
-  - 혹은 인스턴스 변수, 멤버 변수, 속성이라고도 부른다.
-  - 객체 변수는 도트 연산자 `.`를 통해 접근 가능하다.
-  - 객체 변수는 공유되지 않는다. 즉 개별 객체 마다 객체 변수의 값이 독립적으로 유지된다. 예를 들어 cat, dog이라는 두 인스턴스가 있을 경우 name이라는 객체 변수를 각기 Summer, Spring이라는 다른 이름으로 가지고 있다.
-
-  ```java
-  //클래스 생성
-  package first;
-  
-  public class Animal {
-      //name이라는 객체 변수 추가
-  	String name;
-  }
-  
-  
-  //객체 생성
-  Animal dog = new Animal();
-  dog.name="Spring";
-  System.out.println(dog.name); //Spring
-  ```
-
-
-
-## 메소드
-
-- 메소드
-
-  ```java
-  //기본형
-  
-  public 리턴자료형 메소드명(입력자료형1 입력변수1, 입력자료형2 입력변수2, ...) {
-      ...    
-      return 리턴값;  // 리턴자료형이 void 인 경우에는 return 문이 필요없다.
-  }
-  ```
-
-  - 클래스 내에 구현된 함수를 메소드라고 한다. 
-  - Java는 클래스를 떠나 존재하는 것이 있을 수 없기에 자바에는 함수가 따로 존재하지 않고 메소드만 존재한다고 볼 수 있다.
-  - 사용하는 이유는 다른 언어와 마찬가지로 반복 작업을 보다 편하게 하기 위해서이다.
-  - 객체 변수와 마찬가지로 도트 연산자를 통해 접근이 가능하다.
-  - `this`: 메소드 내부에 사용된 `this`는 클래스에 의해서 생성된 객체를 지칭한다.
-
-  ```java
-  package first;
-  
-  public class Animal {
-  	String name;
-      
-      //setName이라는 메소드를 작성
-      //void는 리턴값(출력)이없다는 의미이고, String name은 name이라는 문자열을 입력으로 받는 메소드라는 뜻이다.
-  	public void setName(String iname) {
-          //여기서 this는 Animal class에 의해 생성되어 이 함수를 실행시킨 객체인 cat을 가리킨다.
-  		this.name=iname;
-          //즉 아래 예시에 따라 아래 코드를 풀어쓰면 다음과 같다.
-          //cat.name="Summer";
-  	}
-  }
-  
-  //객체 생성
-  Animal cat = new Animal();
-  cat.setName("Summer");
-  System.out.println(cat.name);  //Summer
-  ```
-
-  - 리턴값이 있을 경우의 메소드
-
-  ```java
-  public class Example {
-      //sum이라는 메소드는 두 개의 int형 데이터를 입력값으로 받아 그 둘의 합을 int형으로 리턴한다.
-      //리턴 값이 없을 경우 void를 쓰지만, 있을 경우 리턴값의 자료형(아래의 경우 int)을 적는다.
-      public int sum(int a, int b) {
-          return a+b;
-      }
-  
-      public static void main(String[] args) {
-          int a = 1;
-          int b = 2;
-  		
-          //Example 클래스의 객체를 하나 생성하고
-          Example ex1 = new Example();
-          //sum 메소드를 실행시키면 그 결과값이 c에 담기게 된다.
-          int c = ex1.sum(a, b);
-  
-          System.out.println(c); //3
-      }
-  }
-  ```
-
-
-
-- return만 단독으로 써서 메소드를 즉시 빠져나가는 방법
-
-  - 파이썬과 달리 이러한 방법은 리턴 자료형이 void인 메소드에서만 사용할 수 있다. 
-  - 리턴자료형이 명시되어 있는 메소드에서 return 문만 작성하면 컴파일 시 오류가 발생한다.
-
-  ```java
-  public void say_nick(String nickname) {
-      if ("바보".equals(nickname)) {
-          return;  //return문만 작성
-      }
-      System.out.println("나의 별명은 "+nickname+" 입니다.");
-  }
-  ```
-
-
-
-- 메소드 내에서 선언된 변수의 효력 범위
-
-  - 로컬변수: 메소드 내에서만 쓰이는 변수
-
-  ```java
-  class Example {
-      //plus라는 메소드 내에서의 a와
-      public void plus(int a) {
-          a++;
-      }
-  
-      //main 메소드에서의 a는 서로 다른 변수이다.
-      public static void main(String[] args) {
-          int a = 1;
-          Example ex2 = new Example();
-          ex2.plus(a);
-          System.out.println(a);  //1
-      }
-  }
-  ```
-
-  - 객체를 넘길 경우
-    - 위와 마찬가지로 메인 메소드와 동일한 이름의 객체를 조작
-    - 위와는 다르게 객체 ex의 객체변수인 a의 값이 실제로 변한 것을 볼 수 있다.
-    - 메소드의 입력 파라미터가 값이 아닌 객체일 경우 메소드 내의 객체는 전달 받은 객체 그 자체로 수행된다.
-    - 메소드의 입력항목이 값인지 객체인지를 구별하는 기준은 입력항목의 자료형이 primitive 자료형인지 아닌지에 따라 나뉜다.
-
-  ```java
-  public class Example {
-  
-      int a;  // 객체변수 a를 선언
-  	
-      //메소드
-      public void plus(Example ex) {  //main메소드에 쓰인 ex와 동일한 이름으로 인자를 받아온다.
-          ex.a++;
-      }
-  	
-      //메인 메소드
-      public static void main(String[] args) {
-          Example ex = new Example();
-          ex.a = 1;
-          ex.plus(ex);
-          System.out.println(ex.a); //2
-      }
-  }
-  
-  
-  
-  //this를 사용하여 아래와 같이 쓸 수도 있다.
-  public class Example {
-  
-      int a;
-  	
-      //메소드
-      public void plus() {  //굳이 인자를 적지 않고
-          //this를 활용
-          this.a++;
-      }
-  	
-      //메인 메소드
-      public static void main(String[] args) {
-          Example ex = new Example();
-          ex.a = 1;
-          ex.plus(); //인자를 넘기지 않는다.
-          System.out.println(ex.a); //2
-      }
-  }
-  ```
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
