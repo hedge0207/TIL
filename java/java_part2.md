@@ -1,6 +1,4 @@
-#  객체지향 프로그래밍
-
-## 클래스
+# 클래스
 
 - Java는 객체 지향 언어로 클래스에 대해 이해하는 것이 중요하다.
 
@@ -54,12 +52,85 @@
   dog.name="Spring";
   System.out.println(dog.name); //Spring
   ```
+  
+  
+
+- 접근제한자
+
+  - 클래스 내에서 멤버의 접근을 제한하는 역할
+  - 클래스는 필드(객체변수)와 메소드를 가진다. 클래스와 관련 없는 필드나 메소드는 막을 필요가 있다.
+  - 캡슐화: 해당 클래스와 관련된 내용을 모아서 가지고 있는 것
+  - 종류
+    - public: 어떤 클래스든 접근할 수 있다.
+    - protected: 자기 자신, 같은 패키지에 속한 클래스, 서로 다른 패키지의 상속받은 자식 클래스에는 접근할 수 있다.
+    - private: 자기 자신만 접근할 수 있다.
+    - default: 접근 제한자를 적지 않은 경우, 같은 패키지만 접근 가능
+
+  ```java
+  package first;
+  
+  public class Example {
+  	public String pub = "pub";
+  	protected String pro = "pro";
+  	private String pri = "pri";
+  	String def = "def";
+  }
+  
+  
+  //같은 패키지의 다른 클래스
+  package first;
+  
+  public class Example2 {
+  	public static void main(String[] args) {
+  		Example ex1 = new Example();
+  		System.out.println(ex1.pub); //pub
+  		System.out.println(ex1.pro); //pro
+  		//System.out.println(ex1.pri); //error가 발생
+  		System.out.println(ex1.def); //def
+  	}
+  }
+  
+  
+  //다른 패키지의 다른 클래스
+  package com.eightcruz.javastudy;
+  
+  import first.Example;
+  
+  public class Hello {
+  	public static void main(String[] args) {
+  		Example ex1 = new Example();
+  		System.out.println(ex1.pub); //pub
+  //		System.out.println(ex1.pro); //error
+  //		System.out.println(ex1.pri); //error
+  //		System.out.println(ex1.def); //error
+  	}
+  }
+  
+  
+  //다른 패키지의 다른 클래스에서 상속을 받은 경우
+  package com.eightcruz.javastudy;
+  
+  import first.Example;
+  
+  public class Hello extends Example {
+  	public static void main(String[] args) {
+          //상속 받아서 상속 받은 클래스로 객체를 생성하면
+  		Hello ex1 = new Hello();
+  		System.out.println(ex1.pub); //pub
+  		System.out.println(ex1.pro); //pro
+  //		System.out.println(ex1.pri); //error
+  //		System.out.println(ex1.def); //error
+  	}
+  }
+  ```
 
 
 
+## 추상 클래스
 
 
-## 메소드
+
+# 메소드
 
 - 메소드
 
@@ -77,12 +148,69 @@
   - Java는 클래스를 떠나 존재하는 것이 있을 수 없기에 자바에는 함수가 따로 존재하지 않고 메소드만 존재한다고 볼 수 있다.
   - 사용하는 이유는 다른 언어와 마찬가지로 반복 작업을 보다 편하게 하기 위해서이다.
   - 객체 변수와 마찬가지로 도트 연산자를 통해 접근이 가능하다.
+  
+  
+  
   - `this`: 메소드 내부에 사용된 `this`는 클래스에 의해서 생성된 객체를 지칭한다.
+  
+  ```java
+    //아래와 같은 코드의 경우 별 문제가 없지만
+    package first;
+    
+    public class Example {
+    	String name1="이름1";
+    	public Example(String name2) {
+    		name1=name2;
+    	}
+    }  
+    
+    //아래 코드의 경우 객체변수와 매개변수의 변수명이 같으므로 문제가 생긴다.
+    package first;
+    
+    public class Example {
+    	String name;
+        
+    	public Example(String name) {
+    		name=name; //이 줄에 사용 된 2개의 name은 모두 매개변수 name을 가리키게 된다.
+            //즉 예시에 따르면
+            //"이름2"="이름2"와 마찬가지인 코드다.
+            System.out.println(name);  //이름2
+  	}
+        
+      public static void main(String[] args) {
+            Example e1 = new Example("이름2");
+            
+            //따라서 객체변수 name은 바뀐 적이 없으므로 null값이 출력된다.
+            System.out.println(e1.name);  //null
+    	}
+    }
+    
+    //this를 사용하면 위와 같은 문제를 해결할 수 있다.
+    package first;
+    
+    public class Example {
+    	String name="이름1";
+    	public Example(String name) {
+            //this는 객체 자신을 가리키므로 아래 코드는 다음과 같다.
+            //e1.name=name;
+    		this.name=name;
+            System.out.println(name); //이름2
+    	}
+        public static void main(String[] args) {
+            Example e1 = new Example("이름2");
+            System.out.println(e1.name);  //이름2
+    	}
+    }  
+    ```
+  
+    
+  
   - 입력변수: 매개변수 혹은 인자라고 불린다.
     - 매개변수(Parameter): 전달된 인자를 받아들이는 변수
     - 인자(Argument): 어떤 함수를 호출시에 전달되는 값
+    
   - 클래스에 정의된 메소드를 사용하기 위해서는 객체를 만들어야 한다.
-
+  
   ```java
   package first;
   
@@ -104,9 +232,9 @@
   cat.setName("Summer");
   System.out.println(cat.name);  //Summer
   ```
-
+  
   - 리턴값이 있을 경우의 메소드
-
+  
   ```java
   public class Example {
       //sum이라는 메소드는 두 개의 int형 데이터를 입력값으로 받아 그 둘의 합을 int형으로 리턴한다.
@@ -306,11 +434,14 @@
   //반면에 method1에서 에러가 발생하지 않는 이유는 method1은 static 메소드가 아니기 때문이다.
   ```
 
-  
 
 
 
-## 상속
+
+
+
+
+# 상속
 
 - 클래스 상속
 
@@ -364,7 +495,7 @@
   }
   ```
 
-  - `IS-A`
+  - `IS-A`(혹은 kind of 관계)
     - 하위 클래스가 상위 클래스에서 상속을 받을 경우 하위 클래스는 상위 클래스에 포함된다고 할 수 있다.
     - 자바에서는 이 관계를 `IS-A`관계라고 표현한다.
     - 아래의 예시에서는 `Dog is a Animal`과 같이 말할 수 있다.
@@ -428,8 +559,10 @@
 
 - 메소드 오버로딩
 
-  -  입력항목이 다른 경우 동일한 이름의 메소드를 만드는 것
-
+  - 매개변수의 수, 매개변수의 타입이 다른 경우 동일한 이름으로 메소드를 여러 개 정의할 수 있다.
+- 즉, 입력항목이 다른 경우 동일한 이름의 메소드를 만들 수 있다.
+  - 매개변수의 이름이 달라도 매개변수의 수,매개변수의 타입이 같다면 오버로딩이 불가능
+  
   ```java
   public class HouseDog extends Dog {
       //이 메소드와
@@ -480,12 +613,12 @@
       }
   }
   ```
+  
+  
 
 
 
-
-
-## 생성자
+# 생성자
 
 - 메소드명이 클래스명과 동일하고 리턴 자료형이 없는 메소드를 생성자(Constructor)라고 말한다.
 
@@ -496,7 +629,8 @@
     - 생성자는 객체가 생성될 때 호출된다.
     - 객체가 생성될 때는 `new`라는 키워드로 객체가 만들어질 때이다.
     - 즉, 생성자는 `new`라는 키워드가 사용될 때 호출된다.
-
+- 생성자를 만드는 이유는 객체를 생성할 때 필드를 초기화 하기 위함이다. 예를 들어 만일 동물 객체를 생성할 때 이름이라는 필드를 사용자가 지정한 이름으로 초기화 하여 생성하고자 할 때 사용한다. 
+  
   ```java
   //Animal, Dog, 클래스는 위에서 작성한 것과 동일, HouseDog클래스는 아래와 같이 main 메소드 수정
   public class HouseDog extends Dog {
@@ -622,9 +756,111 @@
   }
   ```
 
+  - `this` 와 생성자 오버로딩
+    - `this` 바로 뒤에 `()`를 붙이면 자신의 생성자를 호출하는 것이 된다.
+  
+  ```java
+  package first;
+  
+  public class Example {
+  	String name;
+  	int number;
+  	
+  	//매개변수 입력 없이 생성할 경우 이름은 미정으로, 숫자는 0000으로 초기화 하고자 작성한 생성자
+  	public Example() {
+  		this.name = "미정";
+  		this.number = 0000;
+  	}
+  	
+  	//매개변수를 입력 받았을 경우 매개변수로 초기화 하고자 하는 생성자
+  	public Example(String name, int number) {
+  		this.name = name;
+  		this.number = number;
+  	}
+      
+  }
+  
+  
+  //위에서 두 생성자는 내용이 거의 겹치는데 굳이 유사한 코드를 반복작성하지 않고 this를 사용하면 아래와 같이 작성이 가능하다.
+  package first;
+  
+  public class Example {
+  	String name;
+  	int number;
+  	
+      //생성자1번
+  	public Example() {
+  		this("미정",0000); //이를 통해 입력 타입과 갯수가 맞는 아래 생성자 2번이 호출, 실행된다.
+  	}
+  	
+      //생성자2번
+  	public Example(String name, int number) {
+  		this.name = name;
+  		this.number = number;
+  	}
+      
+  	public static void main(String[] args) {
+  		Example e1 = new Example();
+  		System.out.println(e1.name);    //미정
+  		System.out.println(e1.number);  //0000
+  	}
+  }  
+  ```
+  
   
 
 
+
+# 패키지
+
+- 패키지
+  - 서로 관련 있는 클래스 또는 인터페이스들을 묶어 놓은 묶음
+  - 클래스들이 필요할 때만 사용될 수 있도록 할 수 있고, 다른 그룹에 속한 클래스와 발생할 수 있는 클래스 이름간 충돌을 막아줌으로써 클래스의 관리를 편하게 해준다.
+  - 패키지 이름은 대부분 도메인 이름을 거꾸로 적은 후 프로젝트 이름을 붙여 사용, 패키지가 있는 클래스를 사용할 때는 `import`사용
+  - 도메인을 거꾸로 적기에 `.`을 사용하게 되는데 `.`으로 분절된 바로 첫 글자로 숫자는 올 수 없다.
+
+
+
+- 생성 방법
+
+  - src디렉토리에서 `new`선택 -  `Package` 선택
+
+  - 패키지 이름 작성
+
+    - 예를 들어 도메인 명이 `javastudy.eightcruz.com`이면 `com.eightcruz.javastudy`와 같이 작성
+    - 생성된 패키지 파일 우클릭 후 클래스 생성
+
+    ```java
+    package com.eightcruz.javastudy;  //package이름
+    
+    public class Hello {
+    
+    }
+    ```
+
+
+
+- 다른 디렉토리에서 사용하는 방법
+
+  - `import` 를 써야 한다.
+  - 패키지의 특정 클래스가 아닌 모든 클래스를 쓰고자 한다면 `package이름.*`으로 작성한다.
+  - `ctrl`+`shift`+`o`를 누르면 작성한 코드 중 import 해야 하는 import문이 자동으로 작성된다.
+
+  ```java
+  package first;   //first 디렉토리(다른 디렉토리)에서 사용하려면
+  
+  import com.eightcruz.javastudy.Hello;  //import 해야 한다.
+  //아래와 같이 쓰면 Hello 클래스 뿐 아니라 package의 모든 클래스를 전부 import하겠다는 뜻이다.
+  //import com.eightcruz.javastudy.*;
+  
+  public class PackageExample {
+  	Hello h1 = new Hello();
+      //만일 import 하지 않았을 경우 아래와 같이 작성해야 한다.
+      //com.eightcruz.javastudy.Hello hello = new com.eightcruz.javastudy.Hello()
+  }
+  ```
+
+  
 
 
 
