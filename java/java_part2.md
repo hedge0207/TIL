@@ -128,7 +128,55 @@
 
 ## 추상 클래스
 
+- 동물 이라고 했을 때 사람에 따라 강아지, 고양이, 사자, 호랑이 등 다양한 동물을 떠올릴 것이다. 이렇듯 구체적이지 않은 클래스를 추상 클래스라고 한다.
 
+
+
+- 추상 클래스는 부모로서의 역할은 수행할수 있지만 객체는 생성할 수 없다.
+
+
+
+- 클래스 내부의 메소드 중 하나라도 추상 메소드라면 해당 클래스는 추상 클래스가 된다.
+
+  ```java
+  //Bird.java
+  package first;
+  
+  public abstract class Bird {
+      
+      //sing이라는 메소드는 새 마다 울음 소리가 다르므로 추상 메소드로 선언해야 한다. 따라서 이 클래스는 추상 클래스가 되어야 한다.
+      //구체적으로 어떻게 울지 정할 수 없으므로 선언만 한다. ()가 붙으면 선언이 된 것으로 간주한다.
+  	public abstract void sing();
+      
+      //추상 클래스라고 하더라도 추상 메소드가 아닌 메소드도 사용할 수 있다.
+  	public void fly() {
+  		System.out.println("날다");
+  	}
+  }
+  ```
+
+  ```java
+  //Sparrow.java
+  package first;
+  
+  public class Sparrow extends Bird {
+  
+  	@Override
+      //부모 클래스에서 추상 메소드로 선언했으므로 상속 받은 클래스에서 구체적으로 내용을 입력해줘야 한다.
+      //그렇지 않을 경우 에러가 발생한다.
+  	public void sing() {
+  		System.out.println("짹짹");
+  	}
+  	public static void main(String[] args) {
+          //객체 생성 가능
+  		Sparrow sp1 = new Sparrow();
+  		sp1.sing();  //짹짹
+  		sp1.fly();   //날다
+  	}
+  }
+  ```
+
+  
 
 # 메소드
 
@@ -201,7 +249,7 @@
             System.out.println(e1.name);  //이름2
     	}
     }  
-    ```
+  ```
   
     
   
@@ -447,6 +495,7 @@
 
   - `extends` 키워드를 사용
   - `자식클래스 extends 부모클래스`
+  - 이클립스에서는 상속 받을 클래스 생성시에 `Superclass`에서 상속 받을 클래스를 선택할 수 있다.
 
   ```java
   //animal.java
@@ -864,7 +913,153 @@
 
 
 
+# 인터페이스
+
+- 인터페이스: 서로 관계가 없는 물체들이 상호 작용을 하기 위해서 사용하는 장치나 시스템
 
 
 
+- 사용 이유
+
+  - 개에게는 사과를, 고양이에게는 바나나를 먹이로 준다고 가정하고 이를 코드로 표현하면 다음과 같다.
+
+  ```java
+  //Animal.java
+  package first;
+  
+  public class Animal {
+  	String name;
+  	public void setName(String name) {
+  		this.name=name;
+  	}
+  }
+  
+  //Dog.java
+  public class Dog extends Animal{
+      
+  }
+  
+  //Cat.java
+  public class Cat extends Animal{
+      
+  }
+  
+  //Zookeeper.java
+  package first;
+  
+  public class Zookeeper{
+    
+    //입력값의 자료형 타입이 다를 경우 메소드 명을 동일하게 사용할 수 있다(메소드 오버로딩)
+    //class는 하나의 자료형이 될 수 있다.
+    //아래 예시에서 첫 번재 feed 메소드는 Dog이라는 자료형(클래스인 자료형)을 입력값으로 받고, 두 번째 feed 메소드는 Cat이라는 자료형(클래스인 자료	형)을 입력값으로 받으므로 서로 다른 타입의 자료형을 받으므로 메소드 오버로딩이 가능하다.
+    public void feed(Dog dog){
+        System.out.println("사과를 먹였습니다.");
+    }
+    public void feed(Cat cat) {
+  	  System.out.println("바나나를 먹였습니다.");
+    }
+    public static void main(String[] args) {
+  	  Zookeeper zk1 = new Zookeeper();
+  	  Dog d1 = new Dog();
+  	  Cat c1 = new Cat();
+  	  zk1.feed(d1);   //사과를 먹였습니다.
+  	  zk1.feed(c1);   //바나나를 먹였습니다.
+    }
+  }
+  ```
+
+  - 만일 개, 고양이 뿐 아니라 먹여야 할 동물이 수 백가지라면 수 백개의 메소드를 일일이 작성해야 할 것이다.
+
+  ```java
+  //Zookeeper.java
+  //...전략
+  public void feed(Snake snake){
+      System.out.println("수박을 먹였습니다.");
+  }
+  public void feed(Parrot parrot) {
+      System.out.println("키위를 먹였습니다.");
+  }
+  //...후략
+  ```
+
+  - 이럴 때 인터페이스를 사용하면 훨씬 간편하게 작성이 가능하다.
+    - 인터페이스의 메소드에는 입출력에 대한 정의만 있고 내용은 없는데 메소드의 내용은 인터페이스를 `implements`한 클래스들에 구현한다.
+
+  ```java
+  //ZooAnimals.java
+  package first;
+  
+  //class가 아닌 interface를 사용
+  public interface ZooAnimal{
+      //동물 별로 다른 먹이를 주기 위한 메소드
+      //다른 메소드와 달리 입출력에 대한 정의만 있고 내용은 없다.
+  	public String getFood();
+  }
+  
+  //Dog, Cat 클래스도 아래와 같이 변경
+  //Dog.java
+  public class Dog extends Animal implements ZooAnimal{
+      //인터페이스에서 다 정의하지 않은 메소드의 내용을 정의
+      public String getFood(){
+          return "사과";
+      }
+  }
+  
+  //Cat.java
+  public class Cat extends Animal implements ZooAnimal{
+      //인터페이스에서 다 정의하지 않은 메소드의 내용을 정의
+      public String getFood(){
+          return "바나나";
+      }
+  }
+  
+  //Zookeeper.java
+  package first;
+  
+  public class Zookeeper{
+  	public void feed(ZooAnimal zooanimal) {
+  	    System.out.println(zooanimal.getFood()+"를 먹였습니다.");
+  	}
+    public static void main(String[] args) {
+  	  Zookeeper zk1 = new Zookeeper();
+  	  Dog d1 = new Dog();
+  	  Cat c1 = new Cat();
+  	  zk1.feed(d1);  //사과를 먹였습니다.
+  	  zk1.feed(c1);  //바나나를 먹였습니다.
+    }
+  }
+  ```
+
+  - 이제 변경된 class에서 선언된 객체들(d1,c1)은 각기 Dog, Cat라는 class의 객체이게도 하지만 ZooAnimal라는 interface의 객체이기도 하다. 따라서 위 처럼 ZooAnimal을 자료형 타입으로 사용가능하다.
+    - 이와 같이 객체가 한 개 이상의 자료형 타입을 갖게 되는 특성을 다형성(폴리모피즘)이라 한다.
+  - 만일 새로운 동물을 추가하고 싶을 경우 새로운 동물 클래스를 작성할 때 아래와 같이 하기만 하면 된다.
+
+  ```java
+  //Snake.java
+  package first;
+  
+  public class Snake extends Animal {
+  	public String getFood(){
+          return "수박";
+      }
+  }
+  
+  //Parrot.java
+  package first;
+  
+  public class Parrot extends Animal {
+  	public String getFood(){
+          return "키위";
+      }
+  }
+  ```
+
+  - 위의 예시를 통해 알 수 있는 인터페이스의 핵심은 필요한 메소드의 갯수가 줄었다는 점이 **아니라** `ZooKeeper` class가 동물들의 종류에 의존적인 클래스에서 동물들의 종류와 무관한 **독립적인 클래스**가 되었다는 점이다. 바로 이 점이 인터페이스를 사용하는 이유이다.
+
+
+
+- 인터페이스는 USB포트와 유사하다.
+  - 만일 USB포트가 없을 경우 컴퓨터(위 예시에서 ZooKeeper)에는 컴퓨터에 연결 할 수 있는 각종 기기들(마우스, 키보드, 외장하드 등, 위 예시에서 각종 동물들)을 컴퓨터와 연결할 수 있는 단자를 모두 구비해야 할 것이다. 
+  - 이런 상황에서는 컴퓨터에 연결 할 수 있는 기기가 늘어날수록  컴퓨터 역시 이에 맞춰서 단자를 늘리며 변화해야 한다(즉, 컴퓨터는 주변 기기에 독립적이지 못하고 주변 기기에 의존적으로 변화해야 한다).
+  - 그러나 모든 기기들이 규격화된 USB 포트를 사용할 경우 컴퓨터는 USB 단자만 있으면 되고 어떤 기기들이 새로 만들어졌는지 신경쓸 필요가 없어진다(독립적).
 
