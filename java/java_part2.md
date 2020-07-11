@@ -496,6 +496,7 @@
   - `extends` 키워드를 사용
   - `자식클래스 extends 부모클래스`
   - 이클립스에서는 상속 받을 클래스 생성시에 `Superclass`에서 상속 받을 클래스를 선택할 수 있다.
+  - 단일상속만 가능하다.
 
   ```java
   //animal.java
@@ -664,6 +665,109 @@
   ```
   
   
+
+- super
+
+  - 부모 객체를 나타내는 키워드, 나를 가리키는 키워드가 this라면 부모를 가리키는 키워드는 super이다. 또한 `super()`는 부모의 생성자를 실행시키는 것이다.
+  - super키워드는 자식 클래스에서 부모의 메서드나 필드를 사용할 때에도 사용 가능하다.
+  - 자식 생성자가 실행 될 때 부모 생성자도 함께 실행된다.
+
+  ```java
+  //Car.java
+  package first;
+  
+  public class Car {
+  	public Car() {
+  		System.out.println("Car의 기본 생성자");
+  	}
+  }
+  
+  //Taxi.java
+  package first;
+  
+  //Car 클래스를 상속
+  public class Taxi extends Car{
+  	public Taxi() {
+  		System.out.println("Taxi의 기본생성자");
+  	}
+  	public static void main(String[] args) {
+          //Taxi의 객체가 생성되면 아래 out과 같은 메세지가 출력된다.
+          //즉 Taxi의 기본생성자 뿐 아니라 Car의 기본생성자도 함께 실행된다.
+          //또한 Car의 기본생성자가 먼저 실행된다.
+  		Taxi taxi1 = new Taxi();
+  	}
+  }
+  
+  out
+  Car의 기본 생성자  
+  Taxi의 기본생성자
+  
+  //즉 Taxi.java의 코드는 사실 다음과 같다.
+  package first;
+  
+  public class Taxi extends Car{
+  	public Taxi() {
+          super(); //이 코드가 생략된 것이다.
+  		System.out.println("Taxi의 기본생성자");
+  	}
+  	public static void main(String[] args) {
+  		Taxi taxi1 = new Taxi();
+  	}
+  }
+  ```
+
+  - 자동으로 실행됨에도 알아야 하는 이유는 다음과 같다.
+    - 자식 생성자가 실행될 경우 컴파일러가 자동으로 실행하는 것은 부모 생성자의 기본생성자 뿐이다.
+    - 따라서 부모의 생성자가 기본 생성자가 아닐 경우에 컴파일러가 자동으로 부모 생성자를 호출하지 못하게 되어 에러가 발생한다.
+    - 따라서 생성자를 직접 호출해야 한다.
+
+  ```java
+  //Car.java
+  package first;
+  
+  public class Car {
+      //만일 부모의 생성자의 디폴트 생성자(기본생성자)를 없애고 아래와 같이 수정할 경우
+  	public Car(String name) {
+  		System.out.println("Car의 기본 생성자");
+  	}
+  }
+  
+  
+  //Taxi.java
+  //아래 코드는 실행되지 않는다.
+  package first;
+  
+  public class Taxi extends Car{
+  	public Taxi() {
+  		System.out.println("Taxi의 기본생성자");
+  	}
+  	public static void main(String[] args) {
+  		Taxi taxi1 = new Taxi();
+  	}
+  }
+  
+  
+  //따라서 아래와 같이 수정해줘야 한다.
+  //Taxi.java
+  //아래 코드는 실행되지 않는다.
+  package first;
+  
+  public class Taxi extends Car{
+  	public Taxi() {
+          super("택시")
+  		System.out.println("Taxi의 기본생성자");
+  	}
+  	public static void main(String[] args) {
+  		Taxi taxi1 = new Taxi();
+  	}
+  }
+  ```
+
+  
+
+
+
+
 
 
 
@@ -992,14 +1096,14 @@
   //class가 아닌 interface를 사용
   public interface ZooAnimal{
       //동물 별로 다른 먹이를 주기 위한 메소드
-      //다른 메소드와 달리 입출력에 대한 정의만 있고 내용은 없다.
+      //다른 메소드와 달리 입출력에 대한 정의만 있고 내용은 없다(추상 메소드와 유사).
   	public String getFood();
   }
   
   //Dog, Cat 클래스도 아래와 같이 변경
   //Dog.java
   public class Dog extends Animal implements ZooAnimal{
-      //인터페이스에서 다 정의하지 않은 메소드의 내용을 정의
+      //인터페이스에서 다 정의하지 않은 메소드의 내용을 정의(추상 메소드와 유사하게 implements 해놓고 작성하지 않으면 에러가 발생한다.)
       public String getFood(){
           return "사과";
       }
@@ -1062,4 +1166,170 @@
   - 만일 USB포트가 없을 경우 컴퓨터(위 예시에서 ZooKeeper)에는 컴퓨터에 연결 할 수 있는 각종 기기들(마우스, 키보드, 외장하드 등, 위 예시에서 각종 동물들)을 컴퓨터와 연결할 수 있는 단자를 모두 구비해야 할 것이다. 
   - 이런 상황에서는 컴퓨터에 연결 할 수 있는 기기가 늘어날수록  컴퓨터 역시 이에 맞춰서 단자를 늘리며 변화해야 한다(즉, 컴퓨터는 주변 기기에 독립적이지 못하고 주변 기기에 의존적으로 변화해야 한다).
   - 그러나 모든 기기들이 규격화된 USB 포트를 사용할 경우 컴퓨터는 USB 단자만 있으면 되고 어떤 기기들이 새로 만들어졌는지 신경쓸 필요가 없어진다(독립적).
+
+
+
+- 다형성(Polymorphism)
+
+  - 객체지향 프로그래밍의 특징 중 하나
+  - 객체가 한 개 이상의 자료형 타입을 갖게 되는 특성을 말한다.
+
+  ```java
+  //Bouncer.java, Dog, Cat등은 위에서 작성한 코드와 동일
+  package first;
+  
+  public class Bouncer {
+  	//Animal 자료형임에도 Dog나 Cat 객체를 인자로 받을 수 있는 이유는 두 클래스가 Animal을 상속받기 때문이다.
+      //자식클래스에 의해서 만들어진 객체는 언제나 부모 클래스의 자료형으로 사용할 수가 있다.
+  	//즉 다음과 같은 코딩이 가능하다.
+  	//Animal dog1 = new Dog();
+  	//Animal cat1 = new Cat();
+  	public void barkAnimal(Animal animal) {
+      	//만일 입력받은 Animal 클래스의 객체가 Dog 클래스의 객체면 멍멍을 출력
+          if (animal instanceof Dog) {
+              System.out.println("멍멍");
+            //만일 입력받은 Animal 클래스의 객체가 Cat 클래스의 객체면 야옹을 출력
+          } else if (animal instanceof Cat) {
+              System.out.println("야옹");
+          }
+      }
+  
+      public static void main(String[] args) {
+          Tiger dog1 = new Dog();
+          Lion cat1 = new Cat();
+  
+          Bouncer bouncer= new Bouncer();
+          bouncer.barkAnimal(dog1);
+          bouncer.barkAnimal(cat1);
+      }
+  }
+  ```
+
+  - 위 예시에서 Snake, Parrot등이 추가되면 메소드 역시 아래와 같이 바뀌게 된다.
+    - 동물이 하나씩 증가할 때마다 이런 식으로 증가시키는 것은 비효율적이다.
+    - 따라서 이를 인터페이스로 작성할 필요가 있다.
+
+  ```java
+  public void barkAnimal(Animal animal) {
+      if (animal instanceof Dog) {
+          System.out.println("멍멍");
+      } else if (animal instanceof Cat) {
+          System.out.println("야옹");
+      } else if (animal instanceof Snake) {
+          System.out.println("쉭쉭");
+      } else if (animal instanceof Parrot) {
+          System.out.println("짹짹");
+      }
+  }
+  ```
+
+  - 인터페이스를 적용하기 위해 코드를 수장하면 다음과 같다.
+
+  ```java
+  //Barkable.java파일 생성
+  public interface Barkable {
+      public void bark();
+  }
+  
+  //Dog.java
+  package first;
+  
+  //인터페이스는 아래에서 알 수 있듯이 ,로 구분하여 여러 개를 implements 할 수 있다.
+  public class Dog extends Animal implements ZooAnimal, Barkable{
+      public String getFood(){
+          return "사과";
+      }
+      
+      //아래 코드를 추가
+      public void bark() {
+          System.out.println("멍멍");
+      }
+  }
+  
+  //Cat.java
+  package first;
+  
+  public class Cat extends Animal implements ZooAnimal, Barkable{
+      public String getFood(){
+          return "바나나";
+      }
+      
+      //아래 코드를 추가
+      public void bark() {
+          System.out.println("야옹");
+      }
+  }
+  
+  
+  //Bouncer.java의 barkAnimal메소드는 아래와 같이 수정
+  //Tiger의 객체와 Lion의 객체는 Animal의 객체이기도 하고 ZooAnimal의 객체이기도 하다.
+  //따라서 아래 메소드의 인자의 자료형을 Animal에서 Barkable로 바꿔서 사용할 수 있다.
+  public void barkAnimal(Barkable animal) {
+      animal.bark();
+  }
+  ```
+
+  - 지금까지 살펴본 바에 따르면 Dog 클래스의 객체는 Dog의 객체이면서, Animal의 객체이고, Barkable의 객체며, ZooAnimal의 객체이기도하다. 
+    - 이와 같이 하나의 객체가 여러개의 자료형 타입을 갖는 것을 다형성이라한다.
+    - 따라서 아래와 같이 여러 자료형으로 표현할 수 있다.
+
+  ```java
+  Tiger tiger1 = new Dog();
+  Animal animal1 = new Dog();
+  ZooAniaml zooAniaml1 = new Dog();
+  Barkable barkable1 = new Dog();
+  ```
+
+  - 단, 각기 다른 클래스로 선언된 객체들은 사용할 수 있는 메소드가 서로 다르다.
+    - ZooAniaml 인터페이스의 객체인 zooAniaml1은 ZooAniaml 에 선언된 getFood메소드만 호출이 가능하고 bark메소드는 호출할 수 없다.
+    - 각기 다른 클래스로 선언된 객체들이 자신이 생성된 클래스가 아닌 다른 클래스의 메소드를 사용하게 하고자 한다면 아래 두 방법중 하나를 사용하면 된다.
+    - 두 번째 방법이 가능한 이유는 인터페이스는 일반 클래스와 달리 `extends` 를 이용하여 여러개의 인터페이스를 동시에 상속 받을 수 있기 때문이다(일반 클래스는 단일 상속만 가능하다.).
+
+  ```java
+  //BarkableZooAniaml.java
+  //방법1.사용하고자 하는 메소드를 모두 합해 새로운 인터페이스를 생성
+  public interface BarkableZooAniaml  {
+      public void bark();
+      public String getFood();
+  }
+  
+  //BarkableZooAniaml.java
+  //방법2. 사용하고자 하는 메소드가 있는 인터페이스를 상속 받아 생성
+  public interface BarkablePredator extends Predator, Barkable {
+  }
+  
+  
+  
+  //위 두 방식 중 한 방식으로 인터페이스 생성 후 각 동물 클래스를 아래와 같이 수정
+  //Dog.java
+  public class Dog extends Animal implements BarkableZooAniaml {
+      public String getFood() {
+          return "사과";
+      }
+  
+      public void bark() {
+          System.out.println("멍멍");
+      }
+  }
+  
+  //Cat.java
+  package first;
+  
+  public class Cat extends Animal implements BarkableZooAniaml{
+      public String getFood(){
+          return "바나나";
+      }
+      
+      //아래 코드를 추가
+      public void bark() {
+          System.out.println("야옹");
+      }
+  }
+  ```
+
+  - 자식 인터페이스로 생성한 객체의 자료형은 부모 인터페이스로 사용하는 것이 가능하다.
+    - 예를 들어 위에서 Bouncer 클래스의 barkAnimal 메소드의 입력 자료형이 Barkable이더라도 BarkablePredator를 구현한 Dog 클래스의 객체를 인자로 전달 할 수 있다. 
+    - 자식 클래스의 객체 자료형을 부모 클래스의 자료형으로 사용가능하다는 점과 동일하다.
+
+  
 
