@@ -176,7 +176,129 @@
   }
   ```
 
+
+
+
+
+
+## 클래스 형변환
+
+- 부모 클래스를 타입으로 가지는 자식 클래스의 인스턴스를 생성할 수 있다.
+
+  - 이 때 부모가 가지고 있는 내용(메소드, 변수 등)만 사용 가능하며 비록 자식 클래스의 인스턴스라 할지라도 자식 클래스의 내용은 사용이 불가능하다.
+
+  ```java
+  //Car.java
+  package first;
   
+  public class Car {
+  	//run 메소드
+  	public void run() {
+  		System.out.println("차가 달립니다.");
+  	}
+  }
+  
+  
+  //Taxi.java
+  package first;
+  
+  public class Taxi extends Car{
+  	public void pickuppassenger() {
+  		System.out.println("손님을 태웠습니다.");
+  	}
+  	public static void main(String[] args) {
+  		//부모 타입으로 자식 클래스의 객체를 생성할 수 있다.
+  		Car car1 = new Taxi();
+  		//이 경우 부모가 가지고 있는 내용(메소드, 변수 등)만 사용 가능하다.
+  		car1.run();   //차가 달립니다.
+  		//비록 car1이 Taxi의 인스턴스라 할지라도 타입은 Car 타입이므로 아래 코드는 불가능하다.
+  		//car1.pickuppassenger()
+  	}
+  }
+  ```
+
+  - 이 때 필요한 것이 형변환이다.
+
+  ```java
+  //Taxi.java
+  package first;
+  
+  public class Taxi extends Car{
+  	public void pickuppassenger() {
+  		System.out.println("손님을 태웠습니다.");
+  	}
+  	public static void main(String[] args) {
+  		Car car1 = new Taxi();
+  		car1.run();
+          //단순히 아래와 같이 할 수는 없다. Car 타입임에도 Taxi 타입인 변수에 담으려 하므로 에러가 발생
+          //Taxi taxi1 = car1;
+          //따라서 아래와 같이 형변환 후 담아야 한다.
+          Taxi taxi1 = (Taxi)car1;
+          
+          //이제 아래와 같이 부모, 자식 클래스의 메소드를 모두 사용 가능하다.
+          taxi1.run();   //차가 달립니다.
+          taxi1.pickuppassenger() //손님을 태웠습니다.
+  	}
+  }
+  ```
+
+
+
+
+
+## 내부 클래스
+
+- 내부 클래스: 클래스 안에 선언된 클래스
+
+
+
+- 종류
+
+  ```java
+  package first;
+  
+  public class InnerClass {
+      //1.중첩 클래스(인스턴스 클래스): 인스턴스 변수(필드)를 선언하는 위치에 선언하는 경우
+  	class Inner1{
+          //내부 클래스의 인스턴스 변수
+  		int val = 1;
+          //내부 클래스의 메소드
+  		public void hello1() {
+  			System.out.println("Inner Class1");
+  		}
+  	}
+      
+      //2.정적 중첩 클래스(스태틱 클래스): static 키워드를 사용
+     	static class Inner2{
+          int val = 2;
+          //내부 클래스의 메소드
+  		public void hello1() {
+  			System.out.println("Inner Class2");
+  		}
+      }
+      
+      public static void main(String[] args) {
+          
+          //1. 중첩 클래스 사용 방법
+  		InnerClass tmp = new InnerClass();
+  		InnerClass.Inner1 ic1 = tmp.new Inner1(); 
+  		System.out.println(ic1.val);   //1
+  		ic1.hello1();  //Inner Class1
+          
+          //2.정적 중첩 클래스 사용 방법: 정적 클래스이기에 1번과 다른 방법으로 사용
+          InnerClass.Inner2 ic2 = new InnerClass.Inner2();
+          System.out.println(ic2.val);  //2
+          ic2.hello1();  //Inner Class2
+  	}
+  }
+  
+  ```
+
+  
+
+
+
+
 
 # 메소드
 
@@ -670,6 +792,7 @@
 
   - 부모 객체를 나타내는 키워드, 나를 가리키는 키워드가 this라면 부모를 가리키는 키워드는 super이다. 또한 `super()`는 부모의 생성자를 실행시키는 것이다.
   - super키워드는 자식 클래스에서 부모의 메서드나 필드를 사용할 때에도 사용 가능하다.
+    - 예를 들어 부모 클래스에 run이라는 메소드가 있다면 자식 클래스에서는 이를 `super.run()`으로 실행 가능하다.
   - 자식 생성자가 실행 될 때 부모 생성자도 함께 실행된다.
 
   ```java
@@ -1333,3 +1456,109 @@
 
   
 
+- default 메소드와 static 메소드
+
+  - JAVA 8부터 적용되는 개념
+  - 본래 인터페이스 파일에 작성하는 메소드는 추상 클래스에 작성하는 메소드와 마찬가지로 간략하게 적고 실제 메소드의 내용은 해당 인터페이스를 사용하는 클래스에 작성했다. 
+  - 그러나, 인터페이스에서 `default`, `static` 키워드를 사용하면 메소드의 내용까지 인터페이스에 작성이가능하다. 
+  - 이 경우 굳이 클래스에 해당 메소드를 다시 구현할 필요가 없다. 
+
+  ```java
+  //Calculator.java
+  package first;
+  
+  public interface Calculator {
+      //기존 방식
+  	public int plus(int a , int b);
+  	public int minus(int a, int b);
+  	
+      //default 키워드를 사용하여 인터페이스 내부에 메소드의 내용까지 구현
+  	default int exec(int a, int b) {
+  		return a+b;
+  	}
+      
+      //static 키워드를 사용
+      public static int exec2(int a, int b) {
+  		return a+b;
+  	}
+  }
+  
+  
+  
+  //Cal.java
+  //class파일 생성시 interface를 추가 할 때 Calculator.java를 추가하고 생성하면 기본적인 코드가 작성된 채로 생성된다.
+  package first;
+  
+  public class Cal implements Calculator {
+  	
+      
+      //아래 두 메소드와 달리 default, static으로 구현한 메소드는 다시 구현하지 않아도 사용이 가능하다.
+  	@Override
+  	public int plus(int a, int b) {
+  		// TODO Auto-generated method stub
+  		return a+b;
+  	}
+  
+  	@Override
+  	public int minus(int a, int b) {
+  		// TODO Auto-generated method stub
+  		return a-b;
+  	}
+  	public static void main(String[] args) {
+          
+          //default 메소드 실행 방법
+  		Calculator cal1 = new Cal();
+  		System.out.println(cal1.plus(1,2)); //3
+  		System.out.println(cal1.exec(1,2)); //3
+          
+          
+          //satatic 메소드는 위와 같은 방법으로 실행시킬 수 없다.
+          //cal1.exec2(1,2)  //error 발생
+          
+          //static 메소드는 아래와 같이 인터페이스명.메소드명()형식으로 사용이 가능하다.
+          System.out.println(Calculator.exec2(1,2)); //3
+  	}
+  }
+  ```
+
+  - default 키워드가 사용된 메소드의 경우 오버라이딩도 가능하다(static 키워드가 사용된 메소드는 불가능)
+
+  ```java
+  package first;
+  
+  public class Cal implements Calculator {
+  
+  	@Override
+  	public int plus(int a, int b) {
+  		// TODO Auto-generated method stub
+  		return a+b;
+  	}
+  
+  	@Override
+  	public int minus(int a, int b) {
+  		// TODO Auto-generated method stub
+  		return a-b;
+  	}
+  	
+  	public int exec(int a, int b) {
+  		return a*b;
+  	}
+  	
+  	public int exec2(int a, int b) {
+  		return a/b;
+  	}
+  	
+  	public static void main(String[] args) {
+  		Calculator cal1 = new Cal();
+          //오버라이딩 적용되어 3*2가 실행
+  		System.out.println(cal1.exec(3,2));  //6
+  		
+          //오버라이딩 적용되지 않아 9+3이 실행
+  		System.out.println(Calculator.exec2(9,3));  //12
+  	}
+  }
+  ```
+
+  
+
+  
