@@ -252,12 +252,14 @@
 
 
 
-- 종류
+- 종류(4가지로 구분 가능)
 
   ```java
   package first;
   
   public class InnerClass {
+      
+      
       //1.중첩 클래스(인스턴스 클래스): 인스턴스 변수(필드)를 선언하는 위치에 선언하는 경우
   	class Inner1{
           //내부 클래스의 인스턴스 변수
@@ -268,30 +270,99 @@
   		}
   	}
       
-      //2.정적 중첩 클래스(스태틱 클래스): static 키워드를 사용
+      
+      
+      //2.정적 중첩 클래스(스태틱 클래스): static 키워드를 사용, 필드를 선언할 때 스태틱으로 선언한 것과 유사하다고 생각하면 된다.
      	static class Inner2{
           int val = 2;
           //내부 클래스의 메소드
-  		public void hello1() {
+  		public void hello2() {
   			System.out.println("Inner Class2");
   		}
       }
       
+      
+      
+      //3.지역 중첩 클래스(지역 클래스): 메소드 안에 클래스로 선언한 경우
+      public void example(){
+          class Inner2{
+              int val = 3;
+              //내부 클래스의 메소드
+              public void hello3() {
+                  System.out.println("Inner Class2");
+              }
+      	}
+          //3) 지역 중첩 클래스 사용 방법: 메소드 안에서만 사용이 가능하다.
+          Inner3 ic3 = new Inner3();
+          System.out.println(ic3.val);
+          ic3.hello3();
+      }
+      
+      
+      
       public static void main(String[] args) {
           
-          //1. 중첩 클래스 사용 방법
+          //1) 중첩 클래스 사용 방법
   		InnerClass tmp = new InnerClass();
   		InnerClass.Inner1 ic1 = tmp.new Inner1(); 
   		System.out.println(ic1.val);   //1
   		ic1.hello1();  //Inner Class1
           
-          //2.정적 중첩 클래스 사용 방법: 정적 클래스이기에 1번과 다른 방법으로 사용
+          //2)정적 중첩 클래스 사용 방법: 정적 클래스이기에 1번과 다른 방법으로 사용
           InnerClass.Inner2 ic2 = new InnerClass.Inner2();
           System.out.println(ic2.val);  //2
-          ic2.hello1();  //Inner Class2
+          ic2.hello2();  //Inner Class2
+          
+          //3) 지역 중첩 클래스 사용 방법: 메소드 안에서만 사용이 가능하므로 메소드를 실행시켜야 한다.
+          InnerClass tmp2 = new InnerClass();
+          tmp2.example(); //3 /n  Inner Class2 
   	}
   }
   
+  ```
+
+
+
+- 익명 중첩 클래스(익명 클래스)
+
+  - 내부 클래스의 한 종류지만 내용이 길어 따로 분리
+  - 부모 클래스를 상속받는 클래스를 굳이 만들 필요가 없을 경우에 사용한다.
+  - 즉, 상속받는 클래스가 해당 클래스에서만 사용되고 다른 클래스에서는 사용되지 않는 경우에 사용한다.
+
+  ```java
+  //AbstClass.java
+  package first;
+  
+  public abstract class AbstClass {
+  	public abstract void example();
+  }
+  
+  
+  //InnerClass4.java
+  package first;
+  
+  public class InnerClass4 extends AbstClass{
+  	public void example() {
+  		System.out.println("메세지 출력1");
+  	}
+  	
+  	public static void main(String[] args) {
+  		//아래는 기존의 방식
+  		//AbstClass tmp = new InnerClass4();
+  		//tmp.example();
+  		
+  		//익명 클래스는 위와 같은 방식으로 사용하지 않는다. 부모 클래스를 상속 받은 익명 클래스를 만들어서 사용한다.
+          //생성자 다음에 중괄호 열고 닫고가 나오면, 해당 생성자 이름에 해당하는 클래스를 상속받는 이름없는 객체를 만든다는 것을 뜻한다.
+          //중괄호 안에는 메소드를 구현하거나 메소드를 추가할 수 있다. 이렇게 생성된 이름 없는 객체를 tmp라는 참조변수가 참조하도록 하고, 
+          //example()메소드를 호출하는 코드이다.
+  		AbstClass tmp = new AbstClass() {
+  			public void example() {
+  				System.out.println("메세지 출력2");
+  			}
+  		};
+  		tmp.example();
+  	}
+  }
   ```
 
   
