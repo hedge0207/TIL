@@ -949,3 +949,8 @@ export default router
 
 > https://router.vuejs.org/kr/guide/advanced/navigation-guards.html
 
+
+
+- 백 엔드에서 유저 정보를 받아올 수 없을 경우 현재 유저 로그인한 유저 정보를 활용하는 방법
+
+>  https://developer.mozilla.org/ko/docs/Web/API/Window/localStorage 참고

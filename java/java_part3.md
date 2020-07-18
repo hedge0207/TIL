@@ -484,3 +484,21 @@
   - 예를 들어 `package animal.mammalia.dog;` 패키지의 클래스들은 아래와 같은 경로에 생성된다.
     - src/animal/mammalia/dog/Dog1.java
     - bin/animal/mammalia/dog/Dog1.class
+
+
+
+- 패키지 사용하기
+
+  - 패키지 사용을 위해선 import를 해야한다.
+  - `*`를 사용하면 패키지 내의 모든 클래스를 import 한다는 뜻이다.
+  - 만일 동일한 패키지 내에 있는 클래스라면 굳이 동일한 패키지 내에 있는 다른 클래스를 사용하기 위해 import 할 필요는 없다.
+
+  ```java
+  //Dog1 클래스만 import
+  import animal.mammalia.dog.Dog1;
+  
+  //dog 패키지 내의 모든 클래스 import
+  import animal.mammalia.dog.*;
+  ```
+
+  

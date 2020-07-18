@@ -195,6 +195,12 @@ $ git remote rm 식별자
 
 
 
+2. repository에 push 된 내용 삭제하기
+
+```bash
+$ git rm -r --cached .
+```
+
 
 
 ---
