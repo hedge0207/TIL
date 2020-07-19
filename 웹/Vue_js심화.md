@@ -97,6 +97,7 @@ export default router
     <!--
       아래 태그가 컴포넌트를 렌더링 하는 태그다.
       django의 {% block content %}와 유사하다.
+	  url이 변경될 때 해당 경로에 해당하는 컴포넌트가 아래 태그의 위치에 띄어진다.
     -->
     <router-view/>
       
@@ -434,7 +435,7 @@ export default router
   </style>
   ```
   
-  
+  - `App.vue`에서는 별도의 import 없이 `<router-view/>` 태그를 통해 emit과 props를 하면 된다.
 
 
 
@@ -788,7 +789,7 @@ export default router
       $ npm i vue-cookies
       ```
 
-    - `main.js`에 아래 코드를 추가(아무대나 작성해도 되지만 일반적으로 main.js에 작성한다.)
+    - `main.js`에 아래 코드를 추가(아무 데나 작성해도 되지만 일반적으로 main.js에 작성한다.)
 
       ```js
       import Vue from 'vue'

@@ -351,7 +351,7 @@
   - `v-for`
 
   ```html
-  <div id="app">
+  ㅂ<div id="app">
     <ul>
       <li v-for="number in numbers">{{ number + 1 }}</li>
     </ul>

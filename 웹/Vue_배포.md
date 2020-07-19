@@ -3,6 +3,7 @@
 - npm build
   - Vue 프로젝트를 HTML,JS,CSS파일로 묶어준다.
   - webpack이 묶어주는 것이다.
+    - 배포시에 HTML, CSS, JS, 이미지 등의 코드를 묶어주는 역할을 한다.
 
 ```bash
 $ npm run build
@@ -34,6 +35,7 @@ $ npm run build
   - Vue 프로젝트 내부의 `node_modules` 폴더 내부에 많은 파일이 들어 있어 복사, 붙여넣기가 너무 오래 걸린다.
   - 따라서 `node_modules` 폴더를 통째로 지우고, 남은 폴더를 복사, 붙여넣기 한 후
   - 실행시켜서 터미널에 `$npm i`를 입력하면 `package.json`, `package-lock.json`을 읽어서 `node_modules`를 다시 만들어준다. 
+  - `$ npm ls`는 설치한 모듈들을 보여준다.
 
 
 
@@ -41,6 +43,8 @@ $ npm run build
   - 브라우저마다 지원되는 ES 버전이 다르다.
   - ES6의 문법으로 코드를 작성하고 배포하면 ES6를 지원하지 않는 브라우저로 접속할 경우 사이트가 제대로 동작하지 않을 수 있다.
   - Babel은 ES6로 작성한 코드를 이전 버전으로 바꿔준다.
+
+
 
 
 
