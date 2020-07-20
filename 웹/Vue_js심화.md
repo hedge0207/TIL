@@ -948,10 +948,93 @@ export default router
 
 - loginrequired 구현하기: 아래 문서 참고하여 `index.js`에 코드 작성
 
-> https://router.vuejs.org/kr/guide/advanced/navigation-guards.html
+  > https://router.vuejs.org/kr/guide/advanced/navigation-guards.html
+
+  ```js
+  //from에는 온 페이지가, to에는 가려는 페이지가 담긴다. 각기 찍어보면 오브젝트 형태로 name이라는 ket의 value로 가려는 페이지의 name이 담겨 있다.
+  router.beforeEach((to, from, next) => {
+    const publicPages = ['Login', 'Signup', 'Home', 'List']  // Login 안해도 되는 것들
+    const authPages = ['Login', 'Signup']  // Login 되어있으면 안되는 것들
+    
+    //publicPages.include(to.name)은 publicPages에 to.name이 담겨 있다는 것이다.
+    //따라서, !publicPages.includes(to.name)는 publicPages에 to.name이 담겨있지 않다는 것이다.
+    //to.name에 어떤 값이 담겨 있는가에 따라 authRequired에 true 또는 false 값이 담기게 된다.
+    const authRequired = !publicPages.includes(to.name)  // 로그인 해야 함.
+    const unauthRequired = authPages.includes(to.name)  // 로그인 해서는 안됨.
+    const isLoggedIn = !!Vue.$cookies.isKey('auth-token')
+    
+    //로그인 해서는 안되는 페이지에 로그인된 상태로 들어가려 할 경우 메인 화면으로
+    if(unauthRequired && isLoggedIn) {
+      next('/')
+    }
+      
+    //로그인 해야하는 페이지에 로그인 하지 않은 상태로 들어가려 할 경우 login 페이지로'
+    if (authRequired && !isLoggedIn){
+        next({name:'Login'})
+     //아니면 본래 가려 했던 페이지로
+    }else{
+        next()
+    }
+    //위 코드는 삼항연산자로 아래와 같이 표현 가능하다.
+    //authRequired && !isLoggedIn ? next({ name: 'Login'}) : next()
+  ```
 
 
 
 - 백 엔드에서 유저 정보를 받아올 수 없을 경우 현재 유저 로그인한 유저 정보를 활용하는 방법
 
 >  https://developer.mozilla.org/ko/docs/Web/API/Window/localStorage 참고
+
+
+
+
+
+# 기타 팁
+
+- 자주 사용하는 값들을 저장하여 사용하는 방법
+
+  - src폴더의 하부 폴더 하나 생성(이름은 마음대로 정해도 된다).
+  - 생성한 폴더 내부에 `.js` 파일 생성(역시 이름은 마음대로 정해도 된다).
+  - 이후 해당 파일에 자주 쓰는 값들을 아래와 같이 정리
+
+  ```js
+  //src/폴더명/파일명.js
+  모든 이름은 마음대로 지정하면 된다.
+  export default {
+      BACK_URL: 'http://localhost:8000',
+      BACK_ROUTES: {
+          signup: '/rest-auth/signup/',
+          login: '/rest-auth/login/',
+          logout: '/rest-auth/logout/',
+      }
+  }
+  ```
+
+  - 사용할 때는 아래와 같이 import 해서 사용하면 된다.
+
+  ```html
+  <!--전략-->
+  <script>
+      
+  import server from @/폴더명/파일명.js  //import하고
+  
+  export default {
+      methods:{
+          signup: function(signupData){
+              //아래와 같이 적으면 위 파일에서 정의한대로 들어가게 된다.
+              axios.post(server.BACK_URL+server.BACK_ROUTES.singup,signupData)
+              .then((response)=>{
+                  this.setCookiesAndLogin(response.data.key)
+                  this.$router.push('/login')
+              })
+              .catch(()=>{
+                  this.$alert("다시 입력 해주세요.");
+              })
+          },
+      }
+  }
+  </script>
+  <!--후략-->
+  ```
+  
+  

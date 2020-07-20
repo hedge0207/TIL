@@ -189,23 +189,17 @@
   
   //아래와 같이 작성해도 된다.
   document.함수
-```
-  
-  
-
-
-
+  ```
 - 스타일 가이드
 
   > https://github.com/airbnb/javascript/tree/master/css-in-javascript
 
   - airbnb나 google을 주로 기준으로 사용
-  - Naming Convention은 lowerCamelCase(첫 글자는 소문자, 이후 단어 시작마다 대문자)
-  - 오브젝트는 `-`를 허용하지 않는다(하면 오류가 발생한다).
+    - Naming Convention은 lowerCamelCase(첫 글자는 소문자, 이후 단어 시작마다 대문자)
+    - 오브젝트는 `-`를 허용하지 않는다(하면 오류가 발생한다).
+    - cf. 자바스크립트는 웹에서 사용하는 언어이므로 vscode에서 작상할 경우 vscode저장-웹 페이지 새로고침을 해야 작성 결과를 볼 수 있다. 그러나 vscode에서 Live Server를 설치하면 VScode에서 저장만 하면 자동으로 새로고침이 된다. vscode의 코드 창에서 우클릭 후 Open With Live Server를 클릭하면 된다.
 
 
-
-cf. 자바스크립트는 웹에서 사용하는 언어이므로 vscode에서 작상할 경우 vscode저장-웹 페이지 새로고침을 해야 작성 결과를 볼 수 있다. 그러나 vscode에서 Live Server를 설치하면 VScode에서 저장만 하면 자동으로 새로고침이 된다. vscode의 코드 창에서 우클릭 후 Open With Live Server를 클릭하면 된다.
 
 
 
@@ -243,26 +237,28 @@ cf. 자바스크립트는 웹에서 사용하는 언어이므로 vscode에서 �
   - 변수는 어떠한 데이터 타입이라도 담을 수 있다.
 
     - 단 변수는 그 크기가 정해져 있으므로 숫자나 boolean 등의 고정된 크기의 데이터 타입은 그대로 담을 수 있지만 문자열이나 객체 같은 크기가 정해져 있지 않은 데이터 타입은 변수에 담을 수 없다. 대신 문자열이나 객체의 참조만을 가지고 있다. 이런 종류의 데이터 타입을 참조 타임이라 부른다.
-
-    ```javascript
-    //기본 타입
-    var a=true;
-    var b=a;
-    a=false;
-    document.writeln(b);
-    
-    out
-    true  //a의 값을 바꿔도 b의 값에는 영향이 없음, b는 a를 참조하는 것이 아니라 아예 새로운 변수이기 때문이다.
-    
-    //참조 타입
-    var a=[1,2,3,4];
-    var b=a
-    a[0]=100
-    document.writeln(b);
-    
-    out
-    100,2,3,4   //a의 값을 바꾸면 b의 값도 함께 바뀐다. b는 a를 참조하기 때문이다.
-    ```
+  
+  ```js
+  //기본 타입
+  var a=true;
+  var b=a;
+  a=false;
+  document.writeln(b);
+  
+  out
+  true  //a의 값을 바꿔도 b의 값에는 영향이 없음, b는 a를 참조하는 것이 아니라 아예 새로운 변수이기 때문이다.
+  
+  //참조 타입
+  var a=[1,2,3,4];
+  var b=a
+  a[0]=100
+  document.writeln(b);
+  
+  out
+  100,2,3,4   //a의 값을 바꾸면 b의 값도 함께 바뀐다. b는 a를 참조하기 때문이다.
+  ```
+  
+  
 
   
 
@@ -646,6 +642,11 @@ cf. 자바스크립트는 웹에서 사용하는 언어이므로 vscode에서 �
   console.log(true || false)
   //not 은 !로 표현
   console.log(!true)
+  //true, false값이 아닌 값 앞에 !를 붙이면 해당 값은 true, false값 중 하나가 된다.
+  console.log("A") //A
+  console.log(!"A") //false, 본래 비어있지 않은 문자열은 true값이므로 부정은 false가 된다
+  console.log(!!"A") //true, false의 부정이므로 true가 된다.
+  //즉 !!는 boolean 타입이 아닌 값을 boolean 타입으로 바꿔주는 역할을 한다고 보면 된다.
   
   //단축평가
   console.log(1 && false)

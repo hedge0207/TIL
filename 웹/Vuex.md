@@ -1,4 +1,4 @@
-# Vuex
+# Vuex 기초
 
 > https://vuex.vuejs.org/kr/
 
@@ -78,6 +78,7 @@
     // state 를 변경하는 함수들(state를 변경하는 코드는 mutations에 작성해야만 동작한다.)
     // 모든 mutation 함수들은 동기적으로 동작하는 코드여야 한다.
     // commit 을 통해 실행한다.
+    // mutations에 작성한 함수들중 상수나 매우 중요한 함수는 함수명을 전부 대문자로 정의하기도 한다.
     mutations: {
     },
       
@@ -96,6 +97,16 @@
 
 
 
+- `v-model`은 해당 컴포넌트의 data 중 하나와  연결이 되는데 이 경우 다른 코드를 Vuex로 옮기는 것에 비해 까다로울 수 있다.
+
+  > https://vuex.vuejs.org/kr/guide/forms.html
+
+  - Vuex를 엄격히 적용하고자 하는 경우 위의 공식 문서를 참고해서 하면 된다.
+  - 그러나 굳이 Vuex에 옮겨적지 않고 개별 컴포넌트에 그대로 두는 것도 하나의 방법일 수 있다.
+    - 일반적으로 v-model과 연결된 데이터는 local한 데이터이기에 굳이 Vuex로 옮기지 않아도 된다.
+
+
+
 - 사용 예시
 
   - 파일 구조
@@ -105,50 +116,53 @@
   	 -Ab
      -B-Ba-Cb
   	 -Bb
-  ```
-  
+```
+
   - Ca에서 Cb까지 데이터를 보내려면 Ca-Aa-A-App-B-Ba-Cb의 여러 단계를 거쳐야 한다.
+    
     - Vuex를 사용하면 이를 훨씬 편하게 보낼 수 있다.
-  
-  ```html
-  <!--Cb.vue-->
-  <template>
-    <div>
-        <h1>Ca</h1>
-        <div>{{Aac}},Ca</div>
-        <button @click="sendToAa">Send To A</button>
-        <button @click="sendToCb">Send To Cb</button>
-    </div>
-  </template>
-  
-  <script>
-  export default {
-      name: 'Ca',
-      data: function(){
-          return {
-              CaToA:'message from Ca to A',
-              CaToCb:'message from Ca to Cb',
-          }
-      },
-      props:{
-          Aac:String,
-      },
-      methods:{
-          sendToAa(){
-              this.$emit('sendToAa',this.CaToA)
-          },
-          sendToCb(){
-              this.$emit('sendToCb',this.CaToCb)
-          },
-      }
-  }
-  </script>
-  
-  <style>
-  
-  </style>
-  ```
-  
+    
+    ```html
+    <!--Cb.vue-->
+    <template>
+      <div>
+          <h1>Ca</h1>
+          <div>{{Aac}},Ca</div>
+          <button @click="sendToAa">Send To A</button>
+          <button @click="sendToCb">Send To Cb</button>
+      </div>
+    </template>
+      
+    <script>
+    export default {
+        name: 'Ca',
+        data: function(){
+            return {
+                CaToA:'message from Ca to A',
+                CaToCb:'message from Ca to Cb',
+            }
+        },
+        props:{
+            Aac:String,
+        },
+        methods:{
+            sendToAa(){
+                this.$emit('sendToAa',this.CaToA)
+            },
+            sendToCb(){
+                this.$emit('sendToCb',this.CaToCb)
+            },
+        }
+    }
+    </script>
+      
+    <style>
+      
+    </style>
+    ```
+    
+    
+
   
 
 
@@ -377,7 +391,7 @@
   </script>
   ```
 
-  - searchBar.vue
+  - `searchBar.vue`
 
   ```html
   <template>
@@ -519,3 +533,479 @@
   
 
 - state, getters,mutations,actions 모두 매핑이 가능하다. 각기 매핑되는 위치가 다르므로 공식문서 참고(6.8 1부 1:20분 경 참고)
+
+
+
+
+
+
+
+# Vuex로 사용자 인증 구현
+
+- auth-token을 state에 구현
+
+  ```js
+  import Vue from 'vue'
+  import Vuex from 'vuex'
+  
+  import cookies from 'vue-cookies'  //1)import하고
+  import axios from 'axios'
+  
+  import router from '@/router'
+  import SERVER from '@/aaa/bbb'
+  
+  Vue.use(Vuex)
+  
+  export default new Vuex.Store({
+    state: {
+      // auth
+   	//auth-token의 경우 아래와 같이 쓸 수도 있으나
+      //authToken:document.cookies.auth-token
+      
+      //아래와 같이 쓰는 것이 권장된다.
+      authToken: cookies.get('auth-token'), //2)사용
+      // articles
+      articles: []
+    },
+  //후략
+  ```
+
+- 로그인 구현
+
+  - `Login.vue`
+
+  ```html
+  <template>
+    <div>
+      <h1>Login</h1>
+      <div>
+        <label for="username">username:</label>
+        <input v-model="loginData.username" id="username" type="text" />
+      </div>
+      <div>
+        <label for="password">password:</label>
+        <input v-model="loginData.password" id="password" type="password" />
+      </div>
+      <div>
+        <!--state에 정의되지 않고 특정 컴포넌트에만 있는 local한 변수를 index.js에 있는 함수에 인자로 넘기려 한다면 아래와 같이 하면 된다.-->
+        <!--아래에서 mapping한 login 함수를 실행하면 아래 data에 정의된 loginData가 인자로 넘어가게 된다.-->
+        <!--loginData는 state에 정의하지 않고 local변수로 남겨뒀는데 그 이유는 v-model과 연결되어 있고 local한 변수이기 때문이다.-->
+        <button @click="login(loginData)">Login</button>
+      </div>
+    </div>
+  </template>
+  <script>
+  import { mapActions } from 'vuex' //mapping하기 위해 import
+  export default {
+    name: "LoginView",
+    data() {
+      return {
+        loginData: {
+          username: null,
+          password: null
+        }
+      }
+    },
+    //index.js에 작성한 login함수와 mapping
+    methods: {
+      ...mapActions(['login'])
+    }
+  };
+  </script>
+  ```
+
+  - `index.js`
+
+  ```js
+  import Vue from 'vue'
+  import Vuex from 'vuex'
+  
+  import cookies from 'vue-cookies'
+  import axios from 'axios'
+  
+  import router from '@/router'
+  import SERVER from '@/aaa/bbb'
+  
+  Vue.use(Vuex)
+  
+  export default new Vuex.Store({
+    state: {
+      authToken: cookies.get('auth-token'),
+    },
+      
+      
+    getters: {
+      //화살표 함수 에서는 화살표가 return을 대신하므로 isLoggedIn 함수는 true나 false 값을 리턴한다.
+  	isLoggedIn: state => !!state.authToken,
+      config: state => ({ headers: { Authorization: `Token ${state.authToken}` } })
+    },
+      
+      
+    mutations: {
+      SET_TOKEN(state, token) {
+        state.authToken = token
+        cookies.set('auth-token', token)
+      },
+    },
+  
+    actions: {
+      //destructuring으로 context 오브젝트 내부의 여러 key값중 사용할 값만 중괄호 안에 넣으면 해당 값만 사용할 수 있게 된다.
+      login({commit},loginData){
+        axios.post(SERVER.BACK_URL+SERVER.BACK_ROUTES.login,loginData)
+          .then(res =>{
+            commit('SET_TOKEN',res.data.key)
+            router.push({name:'Main'})
+          })
+          .catch(err=>console.log(err))
+      }
+    },
+      
+      
+    modules: {
+    }
+  })
+  ```
+
+  - 순서
+    - `Login.vue`에서 Login버튼을 클릭하면 `Login.vue`의 data에 정의된 loginData가 인자로 넘어가고 `index.js`의 actions에 있는 login 함수가 실행된다.
+    - login함수는 서버에서 받아온 토큰값을 인자로 넘겨 mutations에 있는 SET_TOKEN함수를 실행시키고 state의 authToken변수에 인자로 받아온 토큰값이 담기게 되고 cookie에 토큰값이 저장된다.
+
+
+
+- 회원가입 구현
+
+  - `Signup.vue`
+
+  ```html
+  <template>
+    <div>
+      <h1>Signup</h1>
+      <div>
+        <label for="username">id:</label>
+        <input v-model="signupData.username" id="username" type="text" />
+      </div>
+      <div>
+        <label for="password1">password:</label>
+        <input v-model="signupData.password1" id="password1" type="password" />
+      </div>
+      <div>
+        <label for="password2">password2:</label>
+        <input v-model="signupData.password2" id="password2" type="password" />
+      </div>
+      <div>
+        <button @click="signup(signupData)">Signup</button>
+      </div>
+    </div>
+  </template>
+  
+  <script>
+  import { mapActions } from "vuex"
+  export default {
+    name: "SignupView",
+    data() {
+      return {
+        signupData: {
+          id: null,
+          password1: null,
+          password2: null
+        }
+      };
+    },
+    methods: {
+      ...mapActions(["signup"])
+    }
+  };
+  </script>
+  <!--후략-->
+  ```
+
+  - `index.js`
+
+  ```js
+  //전략, login 파트에 적은 index.js와 동일
+  actions: {
+    signup({commit},signupData){
+      axios.post(SERVER.BACK_URL+SERVER.BACK_ROUTES.signup,signupData)
+        .then(res =>{
+          commit('SET_TOKEN',res.data.key)
+          router.push({name:'Main'})
+        })
+        .catch(err=>console.log(err))
+    }
+  },
+  //후략, login 파트에 적은 index.js와 동일
+  ```
+
+  
+
+- 로그인, 회원가입 통합
+
+  - 위에서 확인할 수 있듯이 로그인과 회원가입은 로직이 상당히 유사하다. 따라서 공통되는 부분을 따로 빼서 하나의 함수를 만들고 로그인과 회원가입 함수 각각에서 해당 함수를 실행시키도록 코드를 작성할 수도 있다.
+
+  ```js
+  //전략, login 파트에 적은 index.js와 동일
+  actions: {
+      //login, signup 함수에 공통으로 들어가던 부분을 따로 뽑아 만든 함수
+      postAuthData({ commit }, info) {
+        axios.post(SERVER.URL + info.location, info.data)
+          .then(res => {
+            commit('SET_TOKEN', res.data.key)
+            router.push({ name: 'Main' })
+          })
+          .catch(err => console.log(err.response.data))
+      },
+       
+          
+      //actions에 정의된 함수는 dispatch로 실행한다.
+  	login({ dispatch }, loginData) {
+        //굳이 아래와 같이 오브젝트를 선언해서 인자로 넘기는 이유는 dispatch에는 인자를 하나 밖에 넘길 수 없기 때문이다. 
+        const info = {
+          data: loginData,
+          location: SERVER.ROUTES.login
+        }
+        dispatch('postAuthData', info) //상단에 정의한 공통 로직을 수행하는 함수를 실행
+      },
+              
+  
+      signup({ dispatch }, signupData) {
+        const info = {
+          data: signupData,
+          location: SERVER.ROUTES.signup
+        }
+        dispatch('postAuthData', info) //상단에 정의한 공통 로직을 수행하는 함수를 실행
+      },.       
+  }
+  //후략, login 파트에 적은 index.js와 동일
+  ```
+
+
+
+- 로그아웃 구현
+
+  - `Logout.vue`
+
+  ```html
+  <template>
+    <div></div>
+  </template>
+  <!--위와 같이 아무런 내용을 띄우지 않아도 사용자는 전혀 어색함을 느끼지 못할 것인데 그 이유는 index.js에 정의된 logout함수는 함수 실행이 완료되면 Main페이지로 이동되기 때문에 이 페이지는 사실상 볼 틈도 없기 때문이다.-->
+  <script>
+  import { mapActions } from 'vuex'
+  
+  export default {
+      name: 'LogoutView',
+      methods: {
+          ...mapActions(['logout'])
+      },
+      created() {
+          this.logout()
+      }
+  }
+  </script>
+  ```
+
+  - `index.js`
+
+  ```js
+  //전략, login 파트에 적은 index.js와 동일
+  actions: {
+    logout({ getters, commit }) {
+        //logout 요청을 보낼 때에는 data는 담아서 보낼 필요가 없으므로 null값을 주었으나 header에는 토큰을 담아서 보내야 하므로 getters.config			와 같이 써준다.
+        axios.post(SERVER.URL + SERVER.ROUTES.logout, null, getters.config)
+        	// 요청이 성공적으로 보내진 순간(then으로 빠진 순간) Django DB 에서는 삭제되지만 cookie, state 에는 아직 남아있다.
+          .then(() => {
+            //state에서 삭제하기 위해서는 아래와 같이 state의 authToken값을 null값으로 변경해야 한다.
+            //state는 오직 mutations에 정의된 함수에 의해서만 변경해야 하므로 mutations함수를 실행
+         	  //반드시 state에서 먼저 지운 후 cookies에서 지워야 한다.
+            commit('SET_TOKEN', null)
+            // cookie 에서도 삭제
+            cookies.remove('auth-token')  
+            router.push({ name: 'Main' })
+          })
+          .catch(err => console.log(err.response.data))
+      },
+  },
+  //후략, login 파트에 적은 index.js와 동일
+  ```
+
+  
+
+
+
+
+
+# Vuex로 게시글 생성, 조회 구현
+
+- 게시글 조회
+
+  - `PostList.vue`
+
+  ```html
+  <template>
+    <div>
+      <h1>Article List</h1>
+      <ul>
+        <li v-for="post in posts" :key="`post_${post.id}`">
+          {{ post.title }}
+        </li>
+      </ul>
+    </div>
+  </template>
+  
+  <script>
+  import { mapState, mapActions } from 'vuex'
+  export default {
+    name: "PostList",
+    computed: {
+      ...mapState(['posts'])
+    },
+    methods: {
+      ...mapActions(['fetchPosts'])
+    },
+    created() {
+      this.fetchPosts()
+    }
+  };
+  </script>
+  
+  <style>
+  </style>
+  
+  ```
+
+  - `index.js`
+
+  ```js
+  import Vue from 'vue'
+  import Vuex from 'vuex'
+  
+  import axios from 'axios'
+  
+  import router from '@/router'
+  import SERVER from '@/aaa/bbb'
+  
+  Vue.use(Vuex)
+  
+  export default new Vuex.Store({
+    state: {
+      posts: []
+    },
+    getters: {
+      config: state => ({ headers: { Authorization: `Token ${state.authToken}` } })
+    },
+    mutations: {
+      GET_POSTS(state, posts) {
+        state.posts = posts
+      }
+    },
+    actions: {
+      getPosts({ commit }) {
+        axios.get(SERVER.URL + SERVER.ROUTES.postList)
+          .then(res => commit('SET_ARTICLES', res.data))
+          .catch(err => console.error(err))
+      },
+  
+      createPost({ getters }, postData) {
+        axios.post(SERVER.URL + SERVER.ROUTES.createPost, postData, getters.config)
+          .then(() => { 
+            router.push({ name: 'List' })
+          })
+          .catch(err => console.log(err.response.data))
+      },
+  
+    },
+    modules: {
+    }
+  })
+  ```
+
+  
+
+
+
+- 게시글 생성
+
+  - `CreatePost.vue`
+
+  ```html
+  <template>
+    <div>
+      <h1>새 글 쓰기h1>
+      <div>
+        <label for="title">title:</label>
+        <input v-model="postData.title" id="title" type="text" />
+      </div>
+      <div>
+        <label for="content">content:</label>
+        <textarea v-model="postData.content" id="content" cols="30" rows="10"></textarea>
+      </div>
+      <div>
+        <button @click="createPost(postData)">작성하기</button>
+      </div>
+    </div>
+  </template>
+  
+  <script>
+  import { mapActions } from 'vuex'
+  export default {
+    name: "CreatePost",
+    data() {
+      return {
+        postData: {
+          title: null,
+          content: null,
+        }
+      }
+    },
+    methods: {
+      ...mapActions(['createPost'])
+    },
+  };
+  </script>
+  
+  <style>
+  </style>
+  
+  ```
+
+  - `index.js`
+
+  ```js
+  import Vue from 'vue'
+  import Vuex from 'vuex'
+  
+  import axios from 'axios'
+  
+  import router from '@/router'
+  import SERVER from '@/aaa/bbb'
+  
+  Vue.use(Vuex)
+  
+  export default new Vuex.Store({
+    state: {
+      posts: []
+    },
+    getters: {
+      config: state => ({ headers: { Authorization: `Token ${state.authToken}` } })
+    },
+    mutations: {
+      GET_POSTS(state, posts) {
+        state.posts = posts
+      }
+    },
+    actions: {
+      createPost({ getters }, postData) {
+        axios.post(SERVER.URL + SERVER.ROUTES.createPost, postData, getters.config)
+          .then(() => { 
+            router.push({ name: 'List' })
+          })
+          .catch(err => console.log(err.response.data))
+      },
+  
+    },
+    modules: {
+    }
+  })
+  ```
+
+  
