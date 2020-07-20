@@ -317,6 +317,8 @@
   <script>
   //computed와 getters를 매핑 1)import
   import { mapGetters } from 'vuex' //computed와 getters 매핑을 위해 import(공식문서에 코드가 있다.) 
+  //아래와 같이 한 번에 import도 가능하다.
+  //import {mapGetters, mapState, mapMutatsions, mapActions} from 'vuex'
       
   export default {
       name: 'VideoDetail',
@@ -339,6 +341,13 @@
           'videoUrl',
           'videoTitle',
           'videoDescription'
+          
+          //아래와 같이 key값을 주고 key값을 대신 쓸 수도 있다.
+          //...mapGetters([   //...mapGetters([매핑하고자 하는 변수들])
+          //url: 'videoUrl',
+          //title: 'videoTitle',
+          //description: 'videoDescription'
+          //위와 같이 하면 {{url}}과 같이 작성 가능하다.
         ])
       }
   }
@@ -407,7 +416,7 @@
   <script>
   import { mapActions } from 'vuex' //actions와 매핑을 위한 코드, 공식문서 참고
   //만일 mutations와 매핑하고 싶다면 아래와 같이 적으면 된다.
-  import { mutations } from 'vuex'
+  import { mapMutations } from 'vuex'
       
   export default {
       name: 'SearchBar',
