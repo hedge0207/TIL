@@ -870,7 +870,7 @@ export default router
       mounted() {
       // .isKey는 vue-cookies에서 제공하는 함수로 cookie 에 auth-token 이 존재하는가 체크, 있으면 true, 없으면 false를 반환
       //토큰은 로그인시 발급되고 로그아웃시 삭제되므로 토큰이 존재한다는 것은 로그인 상태라는 뜻이다. 따라서 토큰 유무에 따라 로그인 유무를 판별할 수 		있고 아래가 그 코드다.
-      //주의할 점은 회원가입을 할 경우 토근값을 리턴하는데 회원가입 로직을 짤 때 자동을로 쿠키에 토큰이 저장되도록 한다면 회원가입만 해도 isLoggedIn		이 true가 될 수 있다.
+      //주의할 점은 회원가입을 할 경우 토근값을 리턴하는데 회원가입 로직을 짤 때 자동으로 쿠키에 토큰이 저장되도록 한다면 회원가입만 해도 isLoggedIn		이 true가 될 수 있다.
       this.isLoggedIn = this.$cookies.isKey('auth-token')
     },
   }
@@ -908,12 +908,12 @@ export default router
             'Authorization': `Token ${this.$cookies.get('auth-token')}` 
           }
         }
-        //위 로그인 코드에서 보았듯 .post(요청을 보낼 url, body에 담을 data, header에 담을 데이터)의 형식으로 작성하는데 위에서 정의한 config는 	  body가 아닌 header에 담을 데이터이다. 따라서 body에는 보낼 것이 없지만 3번째 위치에 넣기 위해 body에 담을 data가 들어가는 두 번째 자리에 	   null값을 채워준다.
+        //위 로그인 코드에서 보았듯 .post(요청을 보낼 url, body에 담을 data, header에 담을 데이터)의 형식으로 작성하는데 위에서 정의한 config는 body가 아닌 header에 담을 데이터이다. 따라서 body에는 보낼 것이 없지만 3번째 위치에 넣기 위해 body에 담을 data가 들어가는 두 번째 자리에 null값을 채워준다.
         axios.post(SERVER_URL + '/rest-auth/logout/', null, config)
           // .then(() => {})
           .catch(err => console.log(err.response))
           .finally(() => {
-            //.remove역시 vue-cookies에서 제공하는 함수로 토큰을 제거하는 것이다. auth-token은 위(로그인 코드)에서 token을 담을 때 auth-			  token에 담았기에 써준 것이지 고정적인 변수가 아니다.
+            //.remove역시 vue-cookies에서 제공하는 함수로 토큰을 제거하는 것이다. auth-token은 위(로그인 코드)에서 token을 담을 때 auth-token에 담았기에 써준 것이지 고정적인 변수가 아니다.
             this.$cookies.remove('auth-token')
             this.isLoggedIn = false
             this.$router.push({ name: 'Home' })
@@ -1037,4 +1037,8 @@ export default router
   <!--후략-->
   ```
   
-  
+
+
+
+- Vue는 template에 쓰인 data의 변화가 있을 때마다 자동으로 re-rendering한다.
+  - 만일 re-rendering되지 않는다면 이는 data의 변화가 없기 때문이다.

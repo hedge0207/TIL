@@ -147,13 +147,23 @@ $ git pull origin master
    (master) $ git branch
    ```
 
-6. git에 브랜치 생성
+6. commit, push, add
+
+   ```bash
+   $ git add .
+   $ git commit -m '메세지'
+   $ git push origin 브랜치명
+   ```
+
+   -----------여기까지-------------
+
+7. git에 브랜치 생성
 
    ```bash
    $ git push origin branch명
    ```
 
-7. 브랜치 병합
+8. 브랜치 병합
 
    ```bash
    (master) $ git merge ㅏ브랜치명ㅓ
@@ -161,13 +171,13 @@ $ git pull origin master
 
    * master 브랜치에서 ㅏ브랜치명ㅓ을 병합
 
-8. 브랜치 상황 그래프로 확인하기
+9. 브랜치 상황 그래프로 확인하기
 
    ```bash
    $ git log --oneline --graph
    ```
 
-9. branch 삭제
+10. branch 삭제
 
    ```bash
    $ git branch -d 브랜치명

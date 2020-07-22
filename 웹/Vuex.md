@@ -939,7 +939,7 @@
   ```html
   <template>
     <div>
-      <h1>새 글 쓰기h1>
+      <h1>새 글 쓰기<h1>
       <div>
         <label for="title">title:</label>
         <input v-model="postData.title" id="title" type="text" />
