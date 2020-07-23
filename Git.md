@@ -1,3 +1,17 @@
+# 초기 설정
+
+- 최초 1회 실행
+
+  ```bash
+  git config --global user.name "your_name"
+  ```
+
+  ```bash
+  git config --global user.email "your_email@example.com"
+  ```
+
+
+
 # git push
 
 0. git 시작하기
