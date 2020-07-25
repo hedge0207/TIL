@@ -79,6 +79,7 @@
     // 모든 mutation 함수들은 동기적으로 동작하는 코드여야 한다.
     // commit 을 통해 실행한다.
     // mutations에 작성한 함수들중 상수나 매우 중요한 함수는 함수명을 전부 대문자로 정의하기도 한다.
+    // mutations에 정의한 한 함수에서 mutations에 정의한 다른 함수를 호출할 수는 없다.
     mutations: {
     },
       
@@ -632,8 +633,8 @@
   import cookies from 'vue-cookies'
   import axios from 'axios'
   
-  import router from '@/router'
-  import SERVER from '@/aaa/bbb'
+  import router from '@/router'  //router를 import해야 한다.
+  import SERVER from '@/aaa/bbb' //server_url을 저장해 놓은 파일
   
   Vue.use(Vuex)
   
