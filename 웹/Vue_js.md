@@ -830,6 +830,7 @@
   - 많은 부분이 있지만 지금은 생성(created), 부착(mounted), 반응(updated)만 기억하면 된다.
   - 각기 Vue가 생성될 때, mount될 때 , 데이터가 변경될 때를 말한다.
 - 이들 라이프 사이클 훅은 우리 마음대로 이름을 정할 수 있는 것이 아니라 정해진 대로 작성해야 하며, 우리가 실행시키는 것이 아니라 자동으로 실행되는 것이다.
+- 일반적으로 초기화 이후(새로고침 혹은 페이지 첫 생성 시) ajax 요청을 보내기 가장 적합한 시점은 created다.
 
 
 
@@ -852,10 +853,11 @@
   <style>
     .button-bottom {
       position: fixed;
-      right: 20vw;
+      right: 20vw;  
       bottom: 20vh;
     }
   </style>
+  <!--vw(viewport width),vh(viewport height)는 각기 화면 비율에 따라 높이와 너비를 조정하는 단위이다.-->
   <title>Scroller</title>
 </head>
 
@@ -887,13 +889,13 @@
       el: '#app',
       data: {
         photos: [],
-        page: 1, //pagenation을 위한 코드
+        page: 1,
       },
 
       methods: {
         //사진을 불러오기 위한 메소드
         getPhotos: function () {
-          //pagination을 위한 코드
+          //요청을 보낼 때 본래 쿼리스트링으로 넘기던 값을 아래와 같이 변수에 담아서 넘긴다.
           const options = {
             params: {
               _page: this.page++, //x++는 일단 기존 x값을 쓰고, 그 후에 올린다는 뜻이다.
@@ -904,7 +906,7 @@
             .then(res => {
               console.log("사진을 가져 온다")
        		  //JS에서는 배열을 특이하게 합친다.
-              //기존 사진 배열(this.photos)과 응답으로 받은 사진 배열(res.data)을 합치기
+              //먼저 응답으로 받은 사진 배열(this.photos)과 후에 응답으로 받은 사진 배열(res.data)을 합치기
               this.photos = [...this.photos, ...res.data]
             })
             //.catch((err) =>  { console.error(err) } ) 아래와 같은 코드
@@ -914,7 +916,7 @@
         addScrollWatcher: function () {
           const bottomSensor = document.querySelector('#bottomSensor')
           const watcher = scrollMonitor.create(bottomSensor)
-          // watcher 가 화면에 들어오면, cb 하겠다.
+          // watcher 가 화면에 들어오면 실행할 내용을 .enterVieport 내부에 적는다.
           watcher.enterViewport(() => {
               console.log('바닥에 도달')
             /*
@@ -939,8 +941,12 @@
         //따라서 스크롤이 생길 정도로 사진을 받아오도록 하는 코드를 작성해야 한다.
         loadUntilViewportIsFull: function () {
           const bottomSensor = document.querySelector('#bottomSensor')
+          //아래 한 줄의 코드는 scrollmonitor에서 지정한 양식에 따라 쓴 것이다.
           const watcher = scrollMonitor.create(bottomSensor)
-          if (watcher.isFullyInViewport) {  //isFullyInViewport는 scrollMonitor에 작성된 프로퍼티다.
+          
+          //isFullyInViewport는 scrollMonitor에 작성된 프로퍼티로 watcher가 화면 안에 있는지 확인하는 프로퍼티다.
+          //만일 화면 내부에 있을 경우 true를 반환하고 화면 내부에 없을 경우 false를 반환한다.
+          if (watcher.isFullyInViewport) {  
             this.getPhotos()
           }
         },
