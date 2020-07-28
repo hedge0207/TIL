@@ -86,7 +86,7 @@
     
     // 범용적인 함수들을 작성(범용적인 함수를 작성하기에 state, mutations 등 위에 있는 모든 것들에 접근이 가능하다), mutations 에 정의한 함수를 	actions 에서 실행 가능하다.
     // 비동기 로직은 actions 에서 정의한다.
-    // dispatch 를 통해 실행한다.
+    // dispatch 를 통해 실행한다. actions에 정의된 함수에서 actions에 정의된 다른 함수를 실행시키는 것이 가능하며 이 때에도 dispatch를 사용한다.
     actions: {
     },
       
@@ -542,7 +542,10 @@
 
   
 
-- state, getters,mutations,actions 모두 매핑이 가능하다. 각기 매핑되는 위치가 다르므로 공식문서 참고(6.8 1부 1:20분 경 참고)
+- state, getters,mutations,actions 모두 매핑이 가능하다.
+
+  - state는 data에 mapping이 가능은 하지만 주로 computed 내부에 매핑한다.
+  - actions는 methods에 매핑한다.
 
 
 
