@@ -193,11 +193,21 @@ $ git pull origin master
 
 10. branch 삭제
 
-   ```bash
-   $ git branch -d 브랜치명
-   ```
+    ```bash
+    $ git branch -d 브랜치명
+    ```
+
+    
 
 
+
+- 특정 branch 클론
+
+  ```bash
+  git clone -b branch명 --single-branch 저장소 URL
+  ```
+
+  
 
 
 
