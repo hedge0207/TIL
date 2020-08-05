@@ -989,6 +989,86 @@ export default router
 
 
 
+# 믹스 인
+
+- 함수를 재사용하기 위한 기능으로 한 컴포넌트에 정의된 함수를 다른 컴포넌트에서 사용할 수 있게 해준다.
+- HTML, CSS 는 믹스 인을 사용하지 않으며 순수 JS만 믹스 인 한다.
+  - 가능은 하지만 사용해선 안된다.
+- 믹스 인과 믹스인을 사용하는 컴포넌트에 동일한 이름의 함수, 데이터를 선언할 경우 컴포넌트에 선언된 값을 우선하여 병합한다.
+
+- 예시
+
+  - myMixin.js
+
+  ```js
+  let myMixin = {
+      data:function(){     //data에 정의한 변수 뿐 아니라 props에 정의한 변수도 사용이 가능하다.
+          return{
+              msg:'mixin!!'
+          }
+      },
+      created() {
+          console.log('mixin')
+      },
+      methods:{
+          onClick(){
+              this.data++;  //사용하려는 컴포넌트에 정의된 데이터를 사용 가능하고
+          }
+      }
+  };
+  export default myMixin;
+  ```
+
+  - app.vue
+
+  ```html
+  <template>
+  <!--App.vue-->
+      <div id="app">
+          <div id="sub" @click="onClick" @contextmenu.prevent="onRightClick">{{data}}</div>
+      </div>
+  </template>
+  
+  <script>
+      import myMixin from './components/myMixin' //import하고
+  
+      export default {
+          mixins: [myMixin],  //등록한 후
+          name: 'app',
+          created(){
+              console.log(this.data)
+              console.log(this.msg)   //믹스 인에 저장된 데이터도 사용 가능하다.
+          },
+          data: function () {
+              return {
+                  data: 10,
+              }
+          },
+          methods: {
+              onRightClick(){
+                  alert(this.msg)
+              }
+          }
+      }
+  </script>
+  
+  <style>
+  
+  </style>
+  ```
+
+  
+
+
+
+# 이벤트 버스
+
+
+
+
+
+
+
 # 기타 팁
 
 - 자주 사용하는 값들을 저장하여 사용하는 방법
