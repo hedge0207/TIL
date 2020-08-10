@@ -458,30 +458,59 @@ export default router
 # Youtube를 활용하여 페이지 만들기
 
 - 유튜브에서 `api key`와 `api url`을 받아서 직접 만든 페이지에 유튜브 동영상이 뜨게 하는 것이 목적 
+
+
+
+- 환경변수 관리(`.env`)
+
+  - 뷰 CLI로 생성하여 애플리케이션을 제작하게 되면 기본적으로 웹팩을 사용한다. 따라서, 모드에 따라 웹팩의 설정이 달라진다.
+
+  - Vue CLI는 3가지 모드를 가지고 있다. 
+
+    - development: 개발 용도, `npm run serve` 명령어로 실행할 때의 모드
+    - production: 배포 용도, `npm run build` 명령어로 실행할 때의 모드
+    - test: 테스트 용도, `npm run test:unit` 명령어로 실행할 때의 모드
+
+  - CLI에서는 프로젝트 루트 폴더에 아래와 같은 규칙으로 환경 변수 파일을 생성할 수 있다.
+
+    - .env: 모든 모드에 적용되는 환경 변수 파일
+    - .env.local: 모든 모드에 적용되나 개인만 사용하는 파일
+    - .env.[mode]: 특정 모드에 해당하는 환경 변수 파일
+    - .env.[mode].local: 특정 모드에 해당하지만 개인이 사용하는 파일
+
+  - 각 환경 변수 파일의 우선 순위는 환경에 따라 달라진다.
+
+    - 예를 들어 배포 환경일 때는 `.env.production`의 우선권이 `.env.development`의 우선권 보다 높고, 개발 환경일 때는 그 반대이다.
+
   - API KEY는 관리를 철저히 해야 한다. github에 올라가지 않도록 gitignore로 관리를 해줘야 한다.
+
     - `.gitignore`에 최초 생성시에 `.env.local`파일이 포함되어 생성된다.
-    
+
     - `.env.local`파일에 API KEY를 관리하면 된다.
-    
+
     - 프로젝트 폴더 내부(최상위 폴더)에 `.env.local`파일 생성 후 API KEY를 입력한다.
-    
+
       ```
       VUE_APP_API_KEY=AbCdEfGhIjK7LMNop9QrSTU1VWx7Yz
       
       -시작은 반드시 VUE_APP_로 시작해야 하며 = 앞뒤에 공백이 있어선 안된다.
       ```
-    
+
     - API KEY를 입력했던 파일에 아래와 같이 입력한다.
-    
+
       ```js
       const API_KEY = process.env.VUE_APP_API_KEY
       ```
-    
+
     - 위 과정을 거친 후 serve를 한번 껐다 켜야한다.
-    
+
     - 이렇게 한다고 완전히 숨길 수 있는 것은 아니지만 적어도 github에서는 숨길 수 있다.
 
+  - `NODE_ENV`: 애플리케이션 모드를 가리키는 변수(development, production, test)
 
+  - `BASE_URL`: `vue.config.js` 파일에 정의된 `publicPath`의 값과 동일한 변수
+
+  
 
 - 구조(총 5개의 컴포넌트) 
 
@@ -993,6 +1022,7 @@ export default router
 
 - 함수를 재사용하기 위한 기능으로 한 컴포넌트에 정의된 함수를 다른 컴포넌트에서 사용할 수 있게 해준다.
 - HTML, CSS 는 믹스 인을 사용하지 않으며 순수 JS만 믹스 인 한다.
+  
   - 가능은 하지만 사용해선 안된다.
 - 믹스 인과 믹스인을 사용하는 컴포넌트에 동일한 이름의 함수, 데이터를 선언할 경우 컴포넌트에 선언된 값을 우선하여 병합한다.
 
