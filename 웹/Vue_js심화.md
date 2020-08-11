@@ -471,6 +471,37 @@ export default router
     - production: 배포 용도, `npm run build` 명령어로 실행할 때의 모드
     - test: 테스트 용도, `npm run test:unit` 명령어로 실행할 때의 모드
 
+
+  - 위의 3가지 모드 이외에 직접 모드를 커스텀 해서 사용할 수 있다.
+
+    - 정의
+
+    ```javascript
+    //package.json
+    
+    "scripts": {
+      //기존의 3가지 모드
+      "serve": "vue-cli-service serve",
+      "build": "vue-cli-service build",
+      "lint": "vue-cli-service lint",
+      
+      //직접 커스텀한 모드
+      "goguma":"vue-cli-service serve --mode goguma"
+      //vue-cli-service serve까지는 그냥 입력하면 되며 --mode goguma는 goguma 모드로 사용하겠다는 뜻이다.
+    },
+    ```
+
+    - 실행
+
+    ```bash
+    #아래와 같이 실행하면 goguma 모드로 실행된다.
+    $npm run goguma
+    ```
+
+    
+
+  
+
   - CLI에서는 프로젝트 루트 폴더에 아래와 같은 규칙으로 환경 변수 파일을 생성할 수 있다.
 
     - .env: 모든 모드에 적용되는 환경 변수 파일
@@ -478,7 +509,47 @@ export default router
     - .env.[mode]: 특정 모드에 해당하는 환경 변수 파일
     - .env.[mode].local: 특정 모드에 해당하지만 개인이 사용하는 파일
 
-  - 각 환경 변수 파일의 우선 순위는 환경에 따라 달라진다.
+  
+
+  - 예시
+
+    - `NODE_ENV`: 애플리케이션 모드를 가리키는 변수(development, production, test)
+    - `BASE_URL`: `vue.config.js` 파일에 정의된 `publicPath`의 값과 동일한 변수
+
+    ```
+    //.env.development
+    
+    VUE_APP_ANIMAL="cat"
+    ```
+
+    ```
+    .env.goguma
+    
+    NODE_ENV="goguma"
+    VUE_APP_ANIMAL="dog"
+    ```
+
+    - 위와 같이 각기 다른 모드에 대한 환경 변수 파일이 있을 때 `npm run serve`로 실행하면 아래와 같은 결과가 나온다.
+
+    ```javascript
+    console.log(env.proecess.VUE_APP_ANIMAL)
+    
+    //cat
+    ```
+
+    - `npm run goguma`로 실행하면 아래와 같은 결과가 나온다
+
+    ```javascript
+    console.log(env.proecess.VUE_APP_ANIMAL)
+    
+    //dog
+    ```
+
+    
+
+  
+
+  - 각 환경 변수 파일의 우선 순위는 모드에 따라 달라진다.
 
     - 예를 들어 배포 환경일 때는 `.env.production`의 우선권이 `.env.development`의 우선권 보다 높고, 개발 환경일 때는 그 반대이다.
 
@@ -505,10 +576,6 @@ export default router
     - 위 과정을 거친 후 serve를 한번 껐다 켜야한다.
 
     - 이렇게 한다고 완전히 숨길 수 있는 것은 아니지만 적어도 github에서는 숨길 수 있다.
-
-  - `NODE_ENV`: 애플리케이션 모드를 가리키는 변수(development, production, test)
-
-  - `BASE_URL`: `vue.config.js` 파일에 정의된 `publicPath`의 값과 동일한 변수
 
   
 
