@@ -75,7 +75,8 @@
     },
       
     
-    // state 를 변경하는 함수들(state를 변경하는 코드는 mutations에 작성해야만 동작한다.)
+    // state 를 변경하는 함수들(state를 변경하는 코드는 mutations에 작성해야한다)
+    // mutations가 아닌 곳에서도 state를 변경하는 것이 가능하지만 그렇게 해선 안된다. vuex의 큰 장점 중 하나는 action-	mutations-state로 이어지는 state의 변경 내역 추적이 가능하다는 것인데 다른 곳에서 수정할 경우 이러한 vuex의 장점이 	사라지는 것이므로 명백한 안티 패턴이다.
     // 모든 mutation 함수들은 동기적으로 동작하는 코드여야 한다.
     // commit 을 통해 실행한다.
     // mutations에 작성한 함수들중 상수나 매우 중요한 함수는 함수명을 전부 대문자로 정의하기도 한다.
@@ -84,7 +85,7 @@
     },
       
     
-    // 범용적인 함수들을 작성(범용적인 함수를 작성하기에 state, mutations 등 위에 있는 모든 것들에 접근이 가능하다), mutations 에 정의한 함수를 	actions 에서 실행 가능하다.
+    // 범용적인 함수들을 작성(범용적인 함수를 작성하기에 state, mutations 등 위에 있는 모든 것들에 접근이 가능하다), 	mutations 에 정의한 함수를 actions 에서 실행 가능하다.
     // 비동기 로직은 actions 에서 정의한다.
     // dispatch 를 통해 실행한다. actions에 정의된 함수에서 actions에 정의된 다른 함수를 실행시키는 것이 가능하며 이 때에도 dispatch를 사용한다.
     actions: {
