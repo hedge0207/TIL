@@ -887,3 +887,5 @@ console.log(this)
 
   
 
+- `setTimeout`을 이용해 일정 시간이 지난 후에 함수를 실행하는 방법
+- `setInterval`을 이용해 일정 시간 간격을 두고 함수를 실행하는 방법

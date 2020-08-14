@@ -162,7 +162,7 @@
       //방법3. 그 밖의 탐색 방법(getElementByid, getElementByTagName 등)
       document.getElementByid('id값') 
       //id값이 없을 경우 원하는 태그 잡지 못함
-      document.getElementByTagName('tag명') 
+      document.getElementsByTagName('tag명') 
       //다수의 동일한 tag명이 있을 경우 원하는 태그 잡지 못함
       ```
   
@@ -218,7 +218,7 @@
     - 한 줄 주석: //
   
   - 타입 확인
-    - type of: 타입을 출력
+    - typeof 변수명: 타입을 출력
 
 
 
@@ -673,6 +673,17 @@
   
   out
   pi가 4보다 크지 않다
+  
+  
+  //아래와 같이 쓸 수도 있다.
+  const name="C"
+  function nameState(name) {
+      return name.length > 2 ? true : false
+  }
+  console.log(nameState(name))
+  
+  out
+  false
   ```
 
 
@@ -1276,4 +1287,25 @@ out
   object
   ```
 
+
+
+
+
+# 예외처리
+
+- try, catch, finally를 사용하여 예외처리
+
+  ```js
+  try {
+  //정상이라면 이 코드는 아무런 문제없이 블록의 시작부터 끝까지 실행됨.
+  
+  } catch(error) {
+  //이 블록 내부의 문장들은 오직 try 블록에서 예외가 발생할 경우에만 실행된다.
+  
+  } finally(){
+  //try 블록에서 일어난 일에 관계없이 무조건 실행될 코드가 위치한다.
+  }
+  ```
+
+- throw는사용자 지정 에러를 지정하여 예외를 발생시킬 수 있게 해준다.
 

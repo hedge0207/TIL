@@ -266,6 +266,7 @@
   ```
 
   - `v-if`
+    - 한 태그에 조건은 하나만 달 수 있다. 따라서 여러개의 조건문이 필요할 경우 HTML에 실제로 렌더링 되지 않는 태그인 `<template>`를 사용하여 여러개의 조건문을 달 수 있다.
 
   ```html
   <!-- v-if -->
@@ -997,7 +998,9 @@
     - 함수를 선언하지만 쓸 때는 데이터 처럼 사용한다.
     - method에 정의할 때는 이름을 동사형으로, computed에 정의할 때는 함수지만 명사형으로 정의한다.
     - computed의 함수는 함수의 결과를 얻기 위해 사용하는 것이므로 반드시 return이 필요 하다.
-
+  - 기본적으로는 getter함수(인자를 받지 않는 함수)지만 설정하면 setter함수로 쓸 수 있다. 한 메소드 안에서 `get`, `set` 을 나누어 정의하여 실행한다.
+    - computed는 메소드 내부에 선언된 값이 변할 때 다시 실행된다. 아래의 경우 만일 message가 변경된다면 다시 실행 될 것.
+  
   ```html
   <div id="example">
     <p> 메시지(m): "{{ printMessage() }}"</p>
@@ -1036,15 +1039,15 @@
   methods 함수 실행  <!--methods에 정의된 함수는 3번 다 실행이 되지만-->
   methods 함수 실행
   methods 함수 실행
-  computed 함수 실행 <!--computed에 정의된 함수는 1번만 실행이 된다.-->
+computed 함수 실행 <!--computed에 정의된 함수는 1번만 실행이 된다.-->
   ```
 
   
-
+  
   - watch
-    - data 옵션의 key값들의 변경을  관찰하고 이에 반응한다.
+  - data 옵션의 key값들의 변경을  관찰하고 이에 반응한다.
     - 어떤 return을 바라지 않는다.
-
+  
   ```html
   <div id="app">
     <input type="text" v-model="newInput">
@@ -1076,11 +1079,37 @@
   <!--
   stupid를 입력했다고 했을 때
   out
-  실행됨이 6번 출력(함수가 6번 실행)되고 입력 창이 초기화 되면서 1번 더 출력되어 함수가 총 7번 실행된다.
+실행됨이 6번 출력(함수가 6번 실행)되고 입력 창이 초기화 되면서 1번 더 출력되어 함수가 총 7번 실행된다.
   ```
 
+  ```html
+  <template>
+    <div>
+      <p>원본 메시지: "{{ message }}"</p>
+      <p>역순으로 표시한 메시지: "{{ reversedMessage }}"</p>
+    </div>
+  </template>
   
-
+  <script>
+  export default {
+    name: 'test',
+    data(){
+      return {
+        message: '안녕하세요',
+        reversedMessage: ''
+      }
+    },
+    watch: {
+      message: function (newVal, oldVal) {
+        this.reversedMessage = newVal.split('').reverse().join('')
+      }
+    }
+  }
+  </script>
+  ```
+  
+  
+  
 - filter
 
   - 기본적인 사용법은 JS의 필터와 동일
