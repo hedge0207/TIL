@@ -1045,8 +1045,9 @@ computed 함수 실행 <!--computed에 정의된 함수는 1번만 실행이 된
   
   
   - watch
-  - data 옵션의 key값들의 변경을  관찰하고 이에 반응한다.
+    - data 옵션의 key값들의 변경을  관찰하고 이에 반응한다.
     - 어떤 return을 바라지 않는다.
+    - watch와 computed를 동시에 사용할 경우 watch가 먼저 실행되는 것으로 보인다.
   
   ```html
   <div id="app">
@@ -1078,10 +1079,10 @@ computed 함수 실행 <!--computed에 정의된 함수는 1번만 실행이 된
   
   <!--
   stupid를 입력했다고 했을 때
-  out
-실행됨이 6번 출력(함수가 6번 실행)되고 입력 창이 초기화 되면서 1번 더 출력되어 함수가 총 7번 실행된다.
-  ```
-
+out
+  실행됨이 6번 출력(함수가 6번 실행)되고 입력 창이 초기화 되면서 1번 더 출력되어 함수가 총 7번 실행된다.
+```
+  
   ```html
   <template>
     <div>
@@ -1108,8 +1109,37 @@ computed 함수 실행 <!--computed에 정의된 함수는 1번만 실행이 된
   </script>
   ```
   
+  ```javascript
+  //computed와 watch 실행 순서
+  data(){
+      return{
+          nickname:'',
+          lenCheck:'',
+      }
+  }
+  
+  computed: {
+      nameState() {
+      	if(this.nickname.length>=2){
+              this.lenCheck=true
+          }else{
+              this.lenCheck=false
+          }
+      }
+  },
+  watch:{
+      nickname(){
+          console.log(this.lenCheck)
+      }   
+  }
+  
+  //만일 nickname에 v-model을 걸었을 때 2자 이상 입력하면 computed가 먼저 실행될 경우 watch에 입력된 console.log(this.lenCheck)가 true 를 반환하겠지만 false를 반환한다. 이는 computed가 실행되기 전에 watch가 먼저 실행되기 때문일 것이다, 정확한 결과는 그 반대의 경우(watch에서 값을 변경한 후 computed에서 확인)도 확인해 봐야 알 수 있을 것이다.
+  ```
   
   
+
+
+
 - filter
 
   - 기본적인 사용법은 JS의 필터와 동일
