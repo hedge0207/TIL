@@ -1319,3 +1319,12 @@ out
 
 - 닉네임, 비밀번호 검증을 위한 정규표현식이 존재, 양식과 구체적인 예시는 구글링해서 정리할 것
 
+
+
+
+
+# 기타
+
+- 현재 페이지의 url을 가져오는 방법
+  - 현재 페이지의 url 전체 가져오기: `document.location.href`
+  - 현재 페이지 url의 쿼리문만 가져오기: `document.location.href.split("?")`
