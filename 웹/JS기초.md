@@ -1326,5 +1326,5 @@ out
 # 기타
 
 - 현재 페이지의 url을 가져오는 방법
-  - 현재 페이지의 url 전체 가져오기: `document.location.href`
+  - 현재 페이지의 url 전체 가져오기: `document.location.href` 또는 `document.URL`
   - 현재 페이지 url의 쿼리문만 가져오기: `document.location.href.split("?")`

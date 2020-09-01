@@ -1079,6 +1079,8 @@ computed 함수 실행 <!--computed에 정의된 함수는 1번만 실행이 된
     })
   </script>
   
+  ```
+
 <!--
   stupid를 입력했다고 했을 때
   out
@@ -1110,7 +1112,7 @@ computed 함수 실행 <!--computed에 정의된 함수는 1번만 실행이 된
   }
   </script>
   ```
-  
+
   ```javascript
   //computed와 watch 실행 순서
   data(){
@@ -1393,3 +1395,8 @@ export default {
 </script>
 <!--후략-->
 ```
+
+
+
+- router, params, go
+  - vue에서 다른 페이지로 이동시켜주는 3가지
