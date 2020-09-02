@@ -1,5 +1,428 @@
 # 기초
 
+## Pandas
+
+- Pandas
+
+  - 파이썬의 데이터 분석 라이브러리로 행과 열로 이루어진 데이터 객체를 만들어 다룰 수 있게 해줘 보다 안정적으로 대용량 데이터를 처리할 수 있게 도와준다.
+
+  - Anaconda에 기본적으로 제공되지만, 아나콘다를 사용하지 않을 경우에는 설치해야 한다.
+  - import해서 사용해야 한다.
+
+
+
+- pandas의 자료 구조
+
+  - Series
+
+    - 1차원 자료구조로 리스트와 같은 시퀀스 데이터를 받아들이는데, 별도의 인덱스 레이블을 지정하지 않으면 자동으로 0부터 시작되는 디폴트 정수 인덱스를 사용한다.
+
+    ```python
+    import pandas as pd
+     
+    data = [1, 3, 5, 7, 9]
+    s = pd.Series(data)
+    print(s)
+    
+    #out
+    0  1
+    1  3
+    2  5
+    3  7
+    4  9
+    dtype:int64
+    ```
+
+    - Series의 메소드
+
+    ```python
+    #Series의 값만 확인하기
+    print(s.values)
+    #Series의 인덱스만 확인
+    print(s.index)
+    #Series의 자료형 확인
+    print(s.dtype)
+    
+    #인덱스를 직접 설정하기
+    s2 = pd.Series([2,4,6,8],index=['a','b','c','d'])
+    print(s2)
+    
+    #out
+    [1 3 5 7 9]
+    RangeIndex(start=0, stop=5, step=1)
+    int64
+    a    2
+    b    4
+    c    6
+    d    8
+    dtype: int64
+    ```
+
+    - dictionary 자료형을 Series로 변경하면 dictionary의 key가 Series의 index가 된다.
+
+    ```python
+    dic = {'a':1,'b':2,'c':3}
+    s2 = pd.Series(dic)
+    
+    print(s2)
+    
+    #out
+    a    1
+    b    2
+    c    3
+    dtype: int64
+    ```
+
+    - Series, index의 이름을 설정하는 것도 가능하다.
+
+    ```python
+    s2.name='이름'
+    s2.index.name="인"
+    print(s2)
+    
+    #out
+    인
+    a    1
+    b    2
+    c    3
+    Name: 이름, dtype: int64
+    ```
+
+    
+
+  - DataFrame
+
+    - 2차원 자료구조로 행과 열이 있는 테이블 데이터를 받아들인다.
+
+    ```python
+    data = {
+        'year': [2016, 2017, 2018],
+        'name': ['김', '이', '박'],
+        'height': ['1.637M', '1.73M', '1.83M']
+    }
+     
+    df = pd.DataFrame(data)
+    print(df)
+    
+    #out
+       year name  height
+    0  2016    김  1.637M
+    1  2017    이   1.73M
+    2  2018    박   1.83M
+    ```
+
+    - DataFrame의 메소드
+
+    ```python
+    #행의 인덱스
+    print(df.index)
+    #열의 인덱스
+    print(df.columns)
+    #값 얻기
+    print(df.values)
+    
+    #out
+    RangeIndex(start=0, stop=3, step=1)
+    Index(['year', 'name', 'height'], dtype='object')
+    [[2016 '김' 1.637]
+     [2017 '이' 1.73]
+     [2018 '박' 1.83]]
+    
+    
+    #연산 메소드
+    
+    #sum():합계
+    print(df['height'].sum())
+    #mean(): 평균
+    print(df['height'].mean())
+    #min(): 최소
+    print(df['height'].min())
+    #max(): 최대
+    print(df['height'].max())
+    #describe():기본적인 통계치 전부
+    print(df.describe())
+    #head(): 처음 5개의 행 표시
+    #tail(): 마지막 5개의 행 표시
+    
+    #out
+    5.197
+    1.7323333333333333
+    1.637
+    1.83
+             year    height
+    count     3.0  3.000000
+    mean   2017.0  1.732333
+    std       1.0  0.096521
+    min    2016.0  1.637000
+    25%    2016.5  1.683500
+    50%    2017.0  1.730000
+    75%    2017.5  1.780000
+    max    2018.0  1.830000
+    ```
+
+    - 행, 열 인덱스의 이름 설정하기
+
+    ```python
+    df.index.name = 'Num'
+    df.columns.name = 'Info'
+    print(df)
+    
+    #out
+    Info  year name  height
+    Num
+    0     2016    김   1.637
+    1     2017    이   1.730
+    2     2018    박   1.830
+    ```
+
+    - DataFrame을 생성하면서 columns와 index를 설정 가능.
+
+    ```python
+    data = {
+        'year': [2016, 2017, 2018],
+        'name': ['김', '이', '박'],
+        'height': ['1.637M', '1.73M', '1.83M']
+    }
+     
+    df = pd.DataFrame(data,columns=['name','height','year','weight'],index=['one','two','three'])
+    
+    #out
+    #아래에서 확인 가능한 것 처럼 data의 순서와 DataFrame을 정의할 때의 columns의 순서가 달라도 key값을 알아서 찾아서 정의해준다. 단, data에 포함되어 있지 않았던 값(예시의 경우 weigth)은 NaN으로 나타나게 된다. 
+          name  height  year weight
+    one      김   1.637  2016    NaN
+    two      이   1.730  2017    NaN
+    three    박   1.830  2018    NaN
+    ```
+
+    - 열 추가
+
+    ```python
+    df['gender']='male'
+    print(df)
+    
+    
+    df['gender']=['female','male','male']
+    print(df)
+    
+    
+    #out
+          name  height  year weight gender
+    one      김   1.637  2016    NaN   male
+    two      이   1.730  2017    NaN   male
+    three    박   1.830  2018    NaN   male
+          name  height  year weight  gender
+    one      김   1.637  2016    NaN  female
+    two      이   1.730  2017    NaN    male
+    three    박   1.830  2018    NaN    male
+    
+    
+    #Series를 추가할 수도 있다.
+    val = pd.Series([1,8],index=['one','three'])
+    df['some']=val
+    print(df)
+    
+    
+    #out
+          name  height  year weight  gender  some
+    one      김   1.637  2016    NaN  female   1.0
+    two      이   1.730  2017    NaN    male   NaN
+    three    박   1.830  2018    NaN    male   8.0
+    
+    
+    #계산후 열 추가
+    df['some2']=df['heigth']+df['year']
+    print(df)
+    
+    #out
+          name  height  year weight  gender     some2
+    one      김   1.637  2016    NaN  female  2017.637
+    two      이   1.730  2017    NaN    male  2018.730
+    three    박   1.830  2018    NaN    male  2019.830
+    ```
+
+    - 열 삭제
+
+    ```python
+    del df['some']
+    print(df)
+    
+    #out
+          name  height  year weight  gender
+    one      김   1.637  2016    NaN  female
+    two      이   1.730  2017    NaN    male
+    three    박   1.830  2018    NaN    male
+    ```
+
+    - 행 추가
+
+    ```python
+    df.loc['four']=['최',2017,1,701,68,'male']
+    print(df)
+    
+          name  height    year weight  gender    some2
+    one      김   1.637  2016.0    NaN  female  2017.64
+    two      이   1.730  2017.0    NaN    male  2018.73
+    three    박   1.830  2018.0    NaN    male  2019.83
+    four     최   1.000  2017.0  1,701      68     male
+    ```
+
+    
+
+  - Panel
+    - 3차원 자료 구조로 Axis 0(items), Axis 1(major_axis), Axis 2(minor_axis) 등 3개의 축을 가지고 있는데 Axis 0은 그 한 요소가 DataFrame에 해당되며, Axis 1은 DataFrame의 행에 해당되고, Axis 2는 DataFrame의 열에 해당된다.
+
+
+
+- Data 접근
+
+  - 인덱싱 혹은 속성을 사용하여 데이터에 접근한다.
+
+  ```python
+  data = {
+      'year': [2016, 2017, 2018],
+      'name': ['김', '이', '박'],
+      'height': ['1.637M', '1.73M', '1.83M']
+  }
+   
+  df = pd.DataFrame(data)
+  
+  print(df['year'])   #인덱싱
+  print(df.year)      #속성
+  
+  #out
+  # 결과는 같다.
+  0    2016
+  1    2017
+  2    2018
+  Name: year, dtype: int64
+  0    2016
+  1    2017
+  2    2018
+  Name: year, dtype: int64
+  ```
+
+  - boolean indexing:  특정 조건의 데이터만 필터링
+
+  ```python
+  #df는 위에서 선언한 것과 같다.
+  print(df['gender']=='male')
+  print(df[df['year']>2016])  
+  
+  
+  #out
+  one      False
+  two       True
+  three     True
+  four     False
+  Name: gender, dtype: bool
+     year name height
+  1  2017    이  1.73
+  2  2018    박  1.83
+  
+  
+  #새로운 값도 대입 가능
+  df.loc[df['year']>2017,'weight']=71
+  print(df)
+  
+  #out
+        name  height    year weight  gender    some2
+  one      김   1.637  2016.0    NaN  female  2017.64
+  two      이   1.730  2017.0    NaN    male  2018.73
+  three    박   1.830  2018.0     71    male  2019.83
+  four     최   1.000  2017.0  1,701      68     male
+  ```
+  - 행 인덱싱
+
+  ```python
+  print(df[0:2]) #0번째 부터 2번째 앞까지 가져온다.
+  
+  #out
+      name  height  year weight  gender     some2
+  one    김   1.637  2016    NaN  female  2017.637
+  two    이   1.730  2017    NaN    male  2018.730
+  
+  print(df['one':'three']) #앞에 쓴 인덱스부터 뒤에 쓴 인덱스까지 가져온다.
+  
+  #out
+        name  height  year weight  gender     some2
+  one      김   1.637  2016    NaN  female  2017.637
+  two      이   1.730  2017    NaN    male  2018.730
+  three    박   1.830  2018    NaN    male  2019.830
+  
+  
+  
+  #loc를 사용하면 특정 행의 정보만 가져올 수 있다. Series 형태로 반환한다.
+  print(df.loc['two'])
+  
+  #out
+  name            이
+  height       1.73
+  year         2017
+  weight        NaN
+  gender       male
+  some2     2018.73
+  Name: two, dtype: object
+          
+  print(df.loc['one':'two'])
+  
+  #out
+      name  height  year weight  gender     some2
+  one    김   1.637  2016    NaN  female  2017.637
+  two    이   1.730  2017    NaN    male  2018.730
+  
+  
+  
+  #특정 행의 특정 열을 가져오는 것도 가능하다.
+  print(df.loc[:,['year','gender']])
+  print(df.loc['one':'two','year':'gender'])
+  
+  #out
+         year  gender
+  one    2016  female
+  two    2017    male
+  three  2018    male
+       year weight  gender
+  one  2016    NaN  female
+  two  2017    NaN    male
+  
+  
+  #iloc을 사용하는 방법, 인덱스 번호를 사용한다는 것만 제외하면 loc과 동일하다.
+  print(df.iloc[0:2,2:5])
+  print(df.iloc[[0,1],[2,3,4]])  # 결과는 같다.
+  
+  #out
+         year weight  gender
+  one  2016.0    NaN  female
+  two  2017.0    NaN    male
+         year weight  gender
+  one  2016.0    NaN  female
+  two  2017.0    NaN    male
+  
+  
+  
+  #boolean indexing과 함께 사용
+  print(df.loc[df['gender']=='male',['year','height']])
+  
+  #out
+           year  height
+  two    2017.0    1.73
+  three  2018.0    1.83
+  ```
+
+  
+
+  
+
+  
+
+- 외부 데이터 읽고 쓰기
+
+  - pandas는 CSV, 텍스트, Excel, SQL, HDF5 포맷 등 다양한 외부 리소스 데이터를 일고 쓸 수 있는 기능을 제공한다.
+  - 읽는 경우 `read_파일유형`, 쓰는 경우 `to_파일유형`을 통해 가능하다.
+    - excel의 경우 read_excel, to_excel로 사용하면 된다.
+
+
+
 
 
 # 추천 시스템
@@ -59,6 +482,7 @@
     - 마찬가지 방식으로 러브레터와 어번제스, 존윅 , 인터스텔라의 유사도를 계산하면 모두 0이 나온다.
     - 따라서 어바웃 타임이 러브레터와 가장 유사도가 높은 영화라고 할 수 있다.
   - 영화의 유사도에 기반해서 D에게 어바웃 타임을 추천해준다.
+    
     - D가 높게 평가한 러브레터와 유사도가 가장 높지만 아직 D가 보지 않은 어바웃 타임을 추천해준다.
 
 
@@ -92,3 +516,16 @@
     - 예를 들어 A는 어벤져스에 고평가를 했다고 했을 때
     - SF 장르에, 영국인 배우가 출연하는 마션이라는 영화가 개봉을 했다면, 마션은 A가 고평가한 어벤져스와 특성을 기반으로 계산한 유사도가 높을 것이므로 A에게 마션을 추천해준다.
 
+
+
+# 통계
+
+- Linear Regression(선형 회귀): 종속변수 y와 한 개 이상의 독립변수 x와의 선형 상관 관계를 모델링 하는 회귀 분석 기법이다.
+- Gradient descent
+- 예측 과정
+  - 임의 값 weight, bias 생성
+  - error 값들을 구한다
+  - MSE(mean square error)의 미분 결과*learning_rate를 구한다.
+  - 3번 결과 값을 weight, bias에 반영한다.
+  - MSE(Cost,Loss)가 최소값에 가까워 질 때까지 2~4번을 반복한다.
+  - 최적의 weight, bias를 가지고 predict 한다. 
