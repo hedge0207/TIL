@@ -5,9 +5,9 @@
 - Pandas
 
   - 파이썬의 데이터 분석 라이브러리로 행과 열로 이루어진 데이터 객체를 만들어 다룰 수 있게 해줘 보다 안정적으로 대용량 데이터를 처리할 수 있게 도와준다.
-
-  - Anaconda에 기본적으로 제공되지만, 아나콘다를 사용하지 않을 경우에는 설치해야 한다.
+- Anaconda에 기본적으로 제공되지만, 아나콘다를 사용하지 않을 경우에는 설치해야 한다.
   - import해서 사용해야 한다.
+    - import 할 때 파일명을 import할 module 이름과 다르게 설정해야 한다.
 
 
 
@@ -269,6 +269,7 @@
     
 
   - Panel
+    
     - 3차원 자료 구조로 Axis 0(items), Axis 1(major_axis), Axis 2(minor_axis) 등 3개의 축을 가지고 있는데 Axis 0은 그 한 요소가 DataFrame에 해당되며, Axis 1은 DataFrame의 행에 해당되고, Axis 2는 DataFrame의 열에 해당된다.
 
 
@@ -420,6 +421,97 @@
   - pandas는 CSV, 텍스트, Excel, SQL, HDF5 포맷 등 다양한 외부 리소스 데이터를 일고 쓸 수 있는 기능을 제공한다.
   - 읽는 경우 `read_파일유형`, 쓰는 경우 `to_파일유형`을 통해 가능하다.
     - excel의 경우 read_excel, to_excel로 사용하면 된다.
+
+
+
+## Matplotlib
+
+- Matplotlib:  파이썬에서 데이타를 차트나 플롯(Plot)으로 그려주는 라이브러리 패키지로서 가장 많이 사용되는 데이타 시각화(Data Visualization) 패키지
+
+
+
+- 기초
+
+  - 그래프 선언과 출력
+
+    - 그래프 선언 후 show()를 사용하여 그래프 출력
+
+    ```python
+    from matplotlib import pyplot as plt
+     
+    # 처음에 넣는 리스트가 x축이 되고, 두 번째로 넣는 리스트가 y축이 된다.
+    plt.plot(["a","b","c"], [100,120,90])
+    # show()를 사용하여 출력
+    plt.show()
+    
+    plt.plot([1,2,3], ["A","B","C"])
+    plt.show()
+    ```
+
+    <img src="C:\Users\multicampus\Desktop\주석 2020-09-03 231408.jpg" style="zoom: 67%;" />
+
+    <img src="C:\Users\multicampus\Desktop\주석 2020-09-03 231304.jpg" style="zoom: 67%;" />
+
+  - x,y축 레이블과 그래프의 제목 붙이기.
+
+    ```python
+    plt.plot(["a","b","c"], [48,67,58])
+    plt.xlabel('Participant')
+    plt.ylabel('Weight')
+    plt.title('Participant Weigth')
+    plt.show()
+    ```
+
+    <img src="C:\Users\multicampus\Desktop\주석 2020-09-03 232123.jpg" style="zoom: 67%;" />
+
+  - 범례 추가
+
+    ```python
+    plt.plot(["a","b","c"], [48,67,58])
+    plt.plot(["a","b","c"], [52,68,68])
+    plt.xlabel('Participant')
+    plt.ylabel('Weight')
+    plt.title('Participant Weigth')
+    plt.legend(['Before', 'After'])
+    plt.show()
+    ```
+
+    <img src="C:\Users\multicampus\Desktop\주석 2020-09-03 232652.jpg" style="zoom:67%;" />
+
+  - DataFrame 사용
+
+    ```python
+    from matplotlib import pyplot as plt
+    import pandas as pd
+    
+    df = pd.DataFrame({'Before': [48,67,58],'After': [52,67,68]},
+                        index=["a","b","c"]
+                        )
+    plt.plot(df)
+    plt.show()
+    ```
+
+    <img src="C:\Users\multicampus\Desktop\주석 2020-09-03 235805.jpg" style="zoom:67%;" />
+
+  - 다른 형태의 그래프
+
+    - 위에서 살펴본 직선 이외에도 아래와 같이 막대 그래프로 표현할 수 있다.
+
+    ```python
+    plt.bar(["a","b","c"], [48,67,58],width=0.5,color="blue")
+    plt.xlabel('Participant')
+    plt.ylabel('Weight')
+    plt.title('Participant Weigth')
+    plt.show()
+    
+    #DataFrame 자료형을 통해 여러개의 막대를 표현할 수 있다.
+    ```
+
+    <img src="C:\Users\multicampus\Desktop\주석 2020-09-03 234319.jpg" style="zoom:67%;" />
+
+
+
+
 
 
 
