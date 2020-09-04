@@ -8,269 +8,328 @@
 - Anaconda에 기본적으로 제공되지만, 아나콘다를 사용하지 않을 경우에는 설치해야 한다.
   - import해서 사용해야 한다.
     - import 할 때 파일명을 import할 module 이름과 다르게 설정해야 한다.
+- numpy
 
 
 
-- pandas의 자료 구조
 
-  - Series
 
-    - 1차원 자료구조로 리스트와 같은 시퀀스 데이터를 받아들이는데, 별도의 인덱스 레이블을 지정하지 않으면 자동으로 0부터 시작되는 디폴트 정수 인덱스를 사용한다.
+## Pandas의 자료 구조
 
-    ```python
-    import pandas as pd
-     
-    data = [1, 3, 5, 7, 9]
-    s = pd.Series(data)
-    print(s)
-    
-    #out
-    0  1
-    1  3
-    2  5
-    3  7
-    4  9
-    dtype:int64
-    ```
+- Series
 
-    - Series의 메소드
+  - 1차원 자료구조로 리스트와 같은 시퀀스 데이터를 받아들이는데, 별도의 인덱스 레이블을 지정하지 않으면 자동으로 0부터 시작되는 디폴트 정수 인덱스를 사용한다.
+  - 파이썬의 리스트를 기초로 만든 자료형이다.
 
-    ```python
-    #Series의 값만 확인하기
-    print(s.values)
-    #Series의 인덱스만 확인
-    print(s.index)
-    #Series의 자료형 확인
-    print(s.dtype)
-    
-    #인덱스를 직접 설정하기
-    s2 = pd.Series([2,4,6,8],index=['a','b','c','d'])
-    print(s2)
-    
-    #out
-    [1 3 5 7 9]
-    RangeIndex(start=0, stop=5, step=1)
-    int64
-    a    2
-    b    4
-    c    6
-    d    8
-    dtype: int64
-    ```
+  ```python
+  import pandas as pd
+   
+  data = [1, 3, 5, 7, 9]
+  s = pd.Series(data)
+  print(s)
+  
+  #out
+  0  1
+  1  3
+  2  5
+  3  7
+  4  9
+  dtype:int64
+  ```
 
-    - dictionary 자료형을 Series로 변경하면 dictionary의 key가 Series의 index가 된다.
+  - Series의 메소드
 
-    ```python
-    dic = {'a':1,'b':2,'c':3}
-    s2 = pd.Series(dic)
-    
-    print(s2)
-    
-    #out
-    a    1
-    b    2
-    c    3
-    dtype: int64
-    ```
+  ```python
+  #Series의 값만 확인하기
+  print(s.values)
+  #Series의 인덱스만 확인
+  print(s.index)
+  #Series의 자료형 확인
+  print(s.dtype)
+  
+  #인덱스를 직접 설정하기
+  s2 = pd.Series([2,4,6,8],index=['a','b','c','d'])
+  print(s2)
+  
+  #out
+  [1 3 5 7 9]
+  RangeIndex(start=0, stop=5, step=1)
+  int64
+  a    2
+  b    4
+  c    6
+  d    8
+  dtype: int64
+  ```
 
-    - Series, index의 이름을 설정하는 것도 가능하다.
+  - dictionary 자료형을 Series로 변경하면 dictionary의 key가 Series의 index가 된다.
 
-    ```python
-    s2.name='이름'
-    s2.index.name="인"
-    print(s2)
-    
-    #out
-    인
-    a    1
-    b    2
-    c    3
-    Name: 이름, dtype: int64
-    ```
+  ```python
+  dic = {'a':1,'b':2,'c':3}
+  s2 = pd.Series(dic)
+  
+  print(s2)
+  
+  #out
+  a    1
+  b    2
+  c    3
+  dtype: int64
+  ```
 
-    
+  - Series, index의 이름을 설정하는 것도 가능하다.
 
-  - DataFrame
+  ```python
+  s2.name='이름'
+  s2.index.name="인"
+  print(s2)
+  
+  #out
+  인
+  a    1
+  b    2
+  c    3
+  Name: 이름, dtype: int64
+  ```
 
-    - 2차원 자료구조로 행과 열이 있는 테이블 데이터를 받아들인다.
+  
 
-    ```python
-    data = {
-        'year': [2016, 2017, 2018],
-        'name': ['김', '이', '박'],
-        'height': ['1.637M', '1.73M', '1.83M']
-    }
-     
-    df = pd.DataFrame(data)
-    print(df)
-    
-    #out
-       year name  height
-    0  2016    김  1.637M
-    1  2017    이   1.73M
-    2  2018    박   1.83M
-    ```
+- DataFrame
 
-    - DataFrame의 메소드
+  - Series의 결합체
 
-    ```python
-    #행의 인덱스
-    print(df.index)
-    #열의 인덱스
-    print(df.columns)
-    #값 얻기
-    print(df.values)
-    
-    #out
-    RangeIndex(start=0, stop=3, step=1)
-    Index(['year', 'name', 'height'], dtype='object')
-    [[2016 '김' 1.637]
-     [2017 '이' 1.73]
-     [2018 '박' 1.83]]
-    
-    
-    #연산 메소드
-    
-    #sum():합계
-    print(df['height'].sum())
-    #mean(): 평균
-    print(df['height'].mean())
-    #min(): 최소
-    print(df['height'].min())
-    #max(): 최대
-    print(df['height'].max())
-    #describe():기본적인 통계치 전부
-    print(df.describe())
-    #head(): 처음 5개의 행 표시
-    #tail(): 마지막 5개의 행 표시
-    
-    #out
-    5.197
-    1.7323333333333333
-    1.637
-    1.83
-             year    height
-    count     3.0  3.000000
-    mean   2017.0  1.732333
-    std       1.0  0.096521
-    min    2016.0  1.637000
-    25%    2016.5  1.683500
-    50%    2017.0  1.730000
-    75%    2017.5  1.780000
-    max    2018.0  1.830000
-    ```
+  ```python
+  s1 = pd.core.series.Series([1,2,3])
+  s2 = pd.core.series.Series(['a','b','c'])
+  
+  df=pd.DataFrame(data=dict(num=s1,word=s2))
+  print(df)
+  
+  
+  #out
+     num word
+  0    1    a
+  1    2    b
+  2    3    c
+  ```
 
-    - 행, 열 인덱스의 이름 설정하기
+  - 생성
 
-    ```python
-    df.index.name = 'Num'
-    df.columns.name = 'Info'
-    print(df)
-    
-    #out
-    Info  year name  height
-    Num
-    0     2016    김   1.637
-    1     2017    이   1.730
-    2     2018    박   1.830
-    ```
+  ```python
+  #기본적인 생성 방법
+  변수명 = pd.DataFrame(data=데이터로 넣을 값, index=인덱스(행)로 넣을 값, columns=열로 넣을 값)
+  
+  #방법1. python의 dictionary를 사용
+  data = {
+      'year': [2016, 2017, 2018],
+      'name': ['김', '이', '박'],
+      'height': ['1.637M', '1.73M', '1.83M']
+  }
+   
+  df = pd.DataFrame(data)
+  print(df)
+  
+  #out
+     year name  height
+  0  2016    김  1.637M
+  1  2017    이   1.73M
+  2  2018    박   1.83M
+  
+  #방법2-1. python의 list를 사용
+  data = [
+      [2016,'김','1.637M'],
+      [2017,'이','1.73M'],
+      [2018,'박','1.83M']
+  ]
+  column_name = ['year','name','height']
+  df = pd.DataFrame(data,columns=column_name)
+  print(df)
+  
+  
+  #out
+     year name  height
+  0  2016    김  1.637M
+  1  2017    이   1.73M
+  2  2018    박   1.83M
+  
+  #방법2-2. 위 방법을 한 번에 하는 방법
+  data = [
+      ['year',[2016,2017,2018,]],
+      ['name',['김','이','박']],
+      ['height',['1.637M','1.73M','1.83M']]
+  ]
+  df = pd.DataFrame.from_items(data)
+  print(df)
+  
+  
+  #out
+     year name  height
+  0  2016    김  1.637M
+  1  2017    이   1.73M
+  2  2018    박   1.83M
+  ```
 
-    - DataFrame을 생성하면서 columns와 index를 설정 가능.
+  - DataFrame의 메소드
 
-    ```python
-    data = {
-        'year': [2016, 2017, 2018],
-        'name': ['김', '이', '박'],
-        'height': ['1.637M', '1.73M', '1.83M']
-    }
-     
-    df = pd.DataFrame(data,columns=['name','height','year','weight'],index=['one','two','three'])
-    
-    #out
-    #아래에서 확인 가능한 것 처럼 data의 순서와 DataFrame을 정의할 때의 columns의 순서가 달라도 key값을 알아서 찾아서 정의해준다. 단, data에 포함되어 있지 않았던 값(예시의 경우 weigth)은 NaN으로 나타나게 된다. 
-          name  height  year weight
-    one      김   1.637  2016    NaN
-    two      이   1.730  2017    NaN
-    three    박   1.830  2018    NaN
-    ```
+  ```python
+  #행의 인덱스
+  print(df.index)
+  #열의 인덱스
+  print(df.columns)
+  #값 얻기
+  print(df.values)
+  
+  #out
+  RangeIndex(start=0, stop=3, step=1)
+  Index(['year', 'name', 'height'], dtype='object')
+  [[2016 '김' 1.637]
+   [2017 '이' 1.73]
+   [2018 '박' 1.83]]
+  
+  
+  #연산 메소드
+  
+  #sum():합계
+  print(df['height'].sum())
+  #mean(): 평균
+  print(df['height'].mean())
+  #min(): 최소
+  print(df['height'].min())
+  #max(): 최대
+  print(df['height'].max())
+  #describe():기본적인 통계치 전부
+  print(df.describe())
+  #head(): 처음 5개의 행 표시, 괄호 안에 숫자를 넣을 경우 해당 숫자 만큼의 행 표시
+  #tail(): 마지막 5개의 행 표시, 괄호 안에 숫자를 넣을 경우 해당 숫자 만큼의 열 표시
+  
+  #out
+  5.197
+  1.7323333333333333
+  1.637
+  1.83
+           year    height
+  count     3.0  3.000000
+  mean   2017.0  1.732333
+  std       1.0  0.096521
+  min    2016.0  1.637000
+  25%    2016.5  1.683500
+  50%    2017.0  1.730000
+  75%    2017.5  1.780000
+  max    2018.0  1.830000
+  ```
 
-    - 열 추가
+  - 행, 열 인덱스의 이름 설정하기
 
-    ```python
-    df['gender']='male'
-    print(df)
-    
-    
-    df['gender']=['female','male','male']
-    print(df)
-    
-    
-    #out
-          name  height  year weight gender
-    one      김   1.637  2016    NaN   male
-    two      이   1.730  2017    NaN   male
-    three    박   1.830  2018    NaN   male
-          name  height  year weight  gender
-    one      김   1.637  2016    NaN  female
-    two      이   1.730  2017    NaN    male
-    three    박   1.830  2018    NaN    male
-    
-    
-    #Series를 추가할 수도 있다.
-    val = pd.Series([1,8],index=['one','three'])
-    df['some']=val
-    print(df)
-    
-    
-    #out
-          name  height  year weight  gender  some
-    one      김   1.637  2016    NaN  female   1.0
-    two      이   1.730  2017    NaN    male   NaN
-    three    박   1.830  2018    NaN    male   8.0
-    
-    
-    #계산후 열 추가
-    df['some2']=df['heigth']+df['year']
-    print(df)
-    
-    #out
-          name  height  year weight  gender     some2
-    one      김   1.637  2016    NaN  female  2017.637
-    two      이   1.730  2017    NaN    male  2018.730
-    three    박   1.830  2018    NaN    male  2019.830
-    ```
+  ```python
+  df.index.name = 'Num'
+  df.columns.name = 'Info'
+  print(df)
+  
+  #out
+  Info  year name  height
+  Num
+  0     2016    김   1.637
+  1     2017    이   1.730
+  2     2018    박   1.830
+  ```
 
-    - 열 삭제
+  - DataFrame을 생성하면서 columns와 index를 설정 가능.
 
-    ```python
-    del df['some']
-    print(df)
-    
-    #out
-          name  height  year weight  gender
-    one      김   1.637  2016    NaN  female
-    two      이   1.730  2017    NaN    male
-    three    박   1.830  2018    NaN    male
-    ```
+  ```python
+  data = {
+      'year': [2016, 2017, 2018],
+      'name': ['김', '이', '박'],
+      'height': ['1.637M', '1.73M', '1.83M']
+  }
+   
+  df = pd.DataFrame(data,columns=['name','height','year','weight'],index=['one','two','three'])
+  
+  #out
+  #아래에서 확인 가능한 것 처럼 data의 순서와 DataFrame을 정의할 때의 columns의 순서가 달라도 key값을 알아서 찾아서 정의해준다. 단, data에 포함되어 있지 않았던 값(예시의 경우 weigth)은 NaN으로 나타나게 된다. 
+        name  height  year weight
+  one      김   1.637  2016    NaN
+  two      이   1.730  2017    NaN
+  three    박   1.830  2018    NaN
+  ```
 
-    - 행 추가
+  - 열 추가
 
-    ```python
-    df.loc['four']=['최',2017,1,701,68,'male']
-    print(df)
-    
-          name  height    year weight  gender    some2
-    one      김   1.637  2016.0    NaN  female  2017.64
-    two      이   1.730  2017.0    NaN    male  2018.73
-    three    박   1.830  2018.0    NaN    male  2019.83
-    four     최   1.000  2017.0  1,701      68     male
-    ```
+  ```python
+  df['gender']='male'
+  print(df)
+  
+  
+  df['gender']=['female','male','male']
+  print(df)
+  
+  
+  #out
+        name  height  year weight gender
+  one      김   1.637  2016    NaN   male
+  two      이   1.730  2017    NaN   male
+  three    박   1.830  2018    NaN   male
+        name  height  year weight  gender
+  one      김   1.637  2016    NaN  female
+  two      이   1.730  2017    NaN    male
+  three    박   1.830  2018    NaN    male
+  
+  
+  #Series를 추가할 수도 있다.
+  val = pd.Series([1,8],index=['one','three'])
+  df['some']=val
+  print(df)
+  
+  
+  #out
+        name  height  year weight  gender  some
+  one      김   1.637  2016    NaN  female   1.0
+  two      이   1.730  2017    NaN    male   NaN
+  three    박   1.830  2018    NaN    male   8.0
+  
+  
+  #계산후 열 추가
+  df['some2']=df['heigth']+df['year']
+  print(df)
+  
+  #out
+        name  height  year weight  gender     some2
+  one      김   1.637  2016    NaN  female  2017.637
+  two      이   1.730  2017    NaN    male  2018.730
+  three    박   1.830  2018    NaN    male  2019.830
+  ```
 
-    
+  - 열 삭제
 
-  - Panel
-    
-    - 3차원 자료 구조로 Axis 0(items), Axis 1(major_axis), Axis 2(minor_axis) 등 3개의 축을 가지고 있는데 Axis 0은 그 한 요소가 DataFrame에 해당되며, Axis 1은 DataFrame의 행에 해당되고, Axis 2는 DataFrame의 열에 해당된다.
+  ```python
+  del df['some']
+  print(df)
+  
+  #out
+        name  height  year weight  gender
+  one      김   1.637  2016    NaN  female
+  two      이   1.730  2017    NaN    male
+  three    박   1.830  2018    NaN    male
+  ```
+
+  - 행 추가
+
+  ```python
+  df.loc['four']=['최',2017,1,701,68,'male']
+  print(df)
+  
+  #out
+        name  height    year weight  gender    some2
+  one      김   1.637  2016.0    NaN  female  2017.64
+  two      이   1.730  2017.0    NaN    male  2018.73
+  three    박   1.830  2018.0    NaN    male  2019.83
+  four     최   1.000  2017.0  1,701      68     male
+  ```
+
+  
+
+- Panel
+  
+  - 3차원 자료 구조로 Axis 0(items), Axis 1(major_axis), Axis 2(minor_axis) 등 3개의 축을 가지고 있는데 Axis 0은 그 한 요소가 DataFrame에 해당되며, Axis 1은 DataFrame의 행에 해당되고, Axis 2는 DataFrame의 열에 해당된다.
 
 
 
@@ -418,9 +477,41 @@
 
 - 외부 데이터 읽고 쓰기
 
-  - pandas는 CSV, 텍스트, Excel, SQL, HDF5 포맷 등 다양한 외부 리소스 데이터를 일고 쓸 수 있는 기능을 제공한다.
-  - 읽는 경우 `read_파일유형`, 쓰는 경우 `to_파일유형`을 통해 가능하다.
+  - pandas는 CSV, txt, Excel, SQL, HDF5 포맷 등 다양한 외부 리소스 데이터를 일고 쓸 수 있는 기능을 제공한다.
+  
+  - 읽을 때는 `read_파일유형`, 쓸 때는 `to_파일유형`을 통해 가능하다.
+    
     - excel의 경우 read_excel, to_excel로 사용하면 된다.
+    - txt는 `read_csv`로 가져온다.
+    
+  - 각 열이 `,`로 구분되어 있으면 추가적인 코드 없이 `,`를 기준으로 분절되어 들어오지만 다른 것으로 구분되어 있을 경우 아래와 같이 `delimiter`라는 인자를 넘겨줘야 한다.
+  
+    ```python
+    # 탭으로 구분된 경우
+    df = pd.read_csv('data/list.txt',delimiter='\t')
+    ```
+  
+  - 또한 읽어올 때 별도의 코드가 없으면 가장 첫 행이 열의 이름이 된다. 따라서 아래와 같이 `header=None`을 입력하면 열의 이름은 자동으로 0부터 시작하는 숫자가 들어가게 된다.
+  
+    ```python
+    df=pd.read_csv('data/list.txt',header=None)
+    
+    #만일 header를 넣고 싶으면 아래와 같이 해주면 된다.
+    df.columns = ['a','b','c']
+    
+    #두 과정을 동시에 하려면 아래와 같이 하면 된다.
+    df=pd.read_csv('data/list.txt',header=None, names=['a','b','c'])
+    ```
+  
+    
+  
+  
+
+
+
+
+
+
 
 
 
@@ -448,26 +539,24 @@
     plt.show()
     ```
 
-    <img src="C:\Users\multicampus\Desktop\주석 2020-09-03 231408.jpg" style="zoom: 67%;" />
-
-    <img src="C:\Users\multicampus\Desktop\주석 2020-09-03 231304.jpg" style="zoom: 67%;" />
+    
 
   - x,y축 레이블과 그래프의 제목 붙이기.
 
     ```python
-    plt.plot(["a","b","c"], [48,67,58])
+  plt.plot(["a","b","c"], [48,67,58])
     plt.xlabel('Participant')
     plt.ylabel('Weight')
     plt.title('Participant Weigth')
     plt.show()
     ```
-
-    <img src="C:\Users\multicampus\Desktop\주석 2020-09-03 232123.jpg" style="zoom: 67%;" />
+  
+    
 
   - 범례 추가
 
     ```python
-    plt.plot(["a","b","c"], [48,67,58])
+  plt.plot(["a","b","c"], [48,67,58])
     plt.plot(["a","b","c"], [52,68,68])
     plt.xlabel('Participant')
     plt.ylabel('Weight')
@@ -475,13 +564,15 @@
     plt.legend(['Before', 'After'])
     plt.show()
     ```
-
-    <img src="C:\Users\multicampus\Desktop\주석 2020-09-03 232652.jpg" style="zoom:67%;" />
+  
+    
 
   - DataFrame 사용
 
+    - 아래와 같이 pandas의 dataframe 자료형을 사용하여 표현할 수 있다.
+
     ```python
-    from matplotlib import pyplot as plt
+  from matplotlib import pyplot as plt
     import pandas as pd
     
     df = pd.DataFrame({'Before': [48,67,58],'After': [52,67,68]},
@@ -490,15 +581,15 @@
     plt.plot(df)
     plt.show()
     ```
-
-    <img src="C:\Users\multicampus\Desktop\주석 2020-09-03 235805.jpg" style="zoom:67%;" />
+  
+    
 
   - 다른 형태의 그래프
 
     - 위에서 살펴본 직선 이외에도 아래와 같이 막대 그래프로 표현할 수 있다.
 
     ```python
-    plt.bar(["a","b","c"], [48,67,58],width=0.5,color="blue")
+  plt.bar(["a","b","c"], [48,67,58],width=0.5,color="blue")
     plt.xlabel('Participant')
     plt.ylabel('Weight')
     plt.title('Participant Weigth')
@@ -506,10 +597,8 @@
     
     #DataFrame 자료형을 통해 여러개의 막대를 표현할 수 있다.
     ```
-
-    <img src="C:\Users\multicampus\Desktop\주석 2020-09-03 234319.jpg" style="zoom:67%;" />
-
-
+  
+    
 
 
 
