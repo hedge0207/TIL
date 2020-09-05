@@ -347,6 +347,9 @@
   df = pd.DataFrame(data)
   
   print(df['year'])   #인덱싱
+  #혹은 아래와 같이 filter를 사용할 수도 있다. sql문과 동일하게 like, regex 등의 문법을 사용 가능하다.
+  #df.filter(itmes=['year'])
+  
   print(df.year)      #속성
   
   #out
@@ -366,7 +369,9 @@
   ```python
   #df는 위에서 선언한 것과 같다.
   print(df['gender']=='male')
-  print(df[df['year']>2016])  
+  #혹은 query를 통해서도 가능하다.
+  # ex.df.query('gender==male')
+  print(df[df['year']>2016])
   
   
   #out
@@ -412,7 +417,9 @@
   
   
   #loc를 사용하면 특정 행의 정보만 가져올 수 있다. Series 형태로 반환한다.
-  print(df.loc['two'])
+  print(df.loc['two']) 
+  #,로 구분하여 복수의 행 정보를 가져올 수 있다.
+  #ex.df.loc['one','three'] 
   
   #out
   name            이
@@ -447,6 +454,7 @@
   
   
   #iloc을 사용하는 방법, 인덱스 번호를 사용한다는 것만 제외하면 loc과 동일하다.
+  #.iloc[행,열]
   print(df.iloc[0:2,2:5])
   print(df.iloc[[0,1],[2,3,4]])  # 결과는 같다.
   
@@ -501,6 +509,28 @@
     
     #두 과정을 동시에 하려면 아래와 같이 하면 된다.
     df=pd.read_csv('data/list.txt',header=None, names=['a','b','c'])
+    ```
+  
+  - Dataframe을 파일로 저장
+  
+    ```python
+    data = {
+        'year': [2016, 2017, 2018],
+        'name': ['김', '이', '박'],
+        'height': ['1.637M', '1.73M', '1.83M']
+    }
+     
+    df = pd.DataFrame(data)
+    
+    df.to_csv('파일명.csv')
+    
+    #코드를 작성한 파일이 있는 폴더에 파일명.csv 파일이 생성된다.
+    
+    #기본적으로 인덱스와 헤더가 함께 저장이 되는데 이를 막고 싶으면 아래와 같이 작성하면 된다.
+    df.to_csv('파일명.csv',index=False,header=False)
+    
+    #또한 데이터가 비어있을 경우 기본적으로 빈칸이 되는데 이를 빈 칸이 아닌 다른 값으로 하고 싶다면 아래와 같이 하면된다.
+    df.to_csv('파일명.csv',na_rap='대신할 값')
     ```
   
     
