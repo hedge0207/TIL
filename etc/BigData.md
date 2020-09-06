@@ -20,10 +20,12 @@
 
   - 1차원 자료구조로 리스트와 같은 시퀀스 데이터를 받아들이는데, 별도의 인덱스 레이블을 지정하지 않으면 자동으로 0부터 시작되는 디폴트 정수 인덱스를 사용한다.
   - 파이썬의 리스트를 기초로 만든 자료형이다.
+  - 생성
 
   ```python
   import pandas as pd
    
+  # 방법1.
   data = [1, 3, 5, 7, 9]
   s = pd.Series(data)
   print(s)
@@ -35,6 +37,31 @@
   3  7
   4  9
   dtype:int64
+      
+      
+  #방법2. 인덱스를 직접 설정
+  s2 = pd.Series([2,4,6,8],index=['a','b','c','d'])
+  print(s2)
+  
+  #out
+  a    2
+  b    4
+  c    6
+  d    8
+  dtype: int64
+      
+  
+  #방법3. 딕셔너리를 사용
+  obj = {'a':1,'b':2,'c':3,'d':4}
+  s3 = pd.Series(obj)
+  print(s3)
+  
+  #out
+  a    1
+  b    2
+  c    3
+  d    4
+  dtype: int64
   ```
 
   - Series의 메소드
@@ -47,37 +74,14 @@
   #Series의 자료형 확인
   print(s.dtype)
   
-  #인덱스를 직접 설정하기
-  s2 = pd.Series([2,4,6,8],index=['a','b','c','d'])
-  print(s2)
   
   #out
   [1 3 5 7 9]
   RangeIndex(start=0, stop=5, step=1)
   int64
-  a    2
-  b    4
-  c    6
-  d    8
-  dtype: int64
   ```
 
-  - dictionary 자료형을 Series로 변경하면 dictionary의 key가 Series의 index가 된다.
-
-  ```python
-  dic = {'a':1,'b':2,'c':3}
-  s2 = pd.Series(dic)
-  
-  print(s2)
-  
-  #out
-  a    1
-  b    2
-  c    3
-  dtype: int64
-  ```
-
-  - Series, index의 이름을 설정하는 것도 가능하다.
+  - Series, index의 이름을 설정하는 것도 가능하다(value에 이름 넣는 것은 불가능).
 
   ```python
   s2.name='이름'
@@ -119,55 +123,72 @@
   #기본적인 생성 방법
   변수명 = pd.DataFrame(data=데이터로 넣을 값, index=인덱스(행)로 넣을 값, columns=열로 넣을 값)
   
-  #방법1. python의 dictionary를 사용
+  #방법1-1. python의 dictionary를 사용
   data = {
-      'year': [2016, 2017, 2018],
-      'name': ['김', '이', '박'],
-      'height': ['1.637M', '1.73M', '1.83M']
+      'name':['Kim','Lee','Park'],
+      'age':[23,25,27],
   }
    
   df = pd.DataFrame(data)
   print(df)
   
   #out
-     year name  height
-  0  2016    김  1.637M
-  1  2017    이   1.73M
-  2  2018    박   1.83M
+     name  age
+  0   Kim   23
+  1   Lee   25
+  2  Park   27
+  
+  
+  #방법1-2. 인덱스와 컬럼을 함께 설정
+  data = {
+      'name':['Kim','Lee','Park'],
+      'age':[23,25,27],
+  }
+  df = pd.DataFrame(data,columns=['age','name'],index=['one','two','three'])
+  print(df)
+  
+  #out
+  #아래에서 확인 가능한 것 처럼 data의 순서와 DataFrame을 정의할 때의 columns의 순서가 달라도 key값을 알아서 찾아서 정의해준다. 단, data에 포함되어 있지 않았던 값(예시의 경우 weigth)은 NaN으로 나타나게 된다.
+  #단, index의 경우 data의 개수와 맞지 않으면 에러가 발생하게 된다.
+         age  name weight
+  one     23   Kim    NaN
+  two     25   Lee    NaN
+  three   27  Park    NaN
+  
   
   #방법2-1. python의 list를 사용
   data = [
-      [2016,'김','1.637M'],
-      [2017,'이','1.73M'],
-      [2018,'박','1.83M']
+      ['Kim',23],
+      ['Lee',25],
+      ['Park',27]
   ]
-  column_name = ['year','name','height']
-  df = pd.DataFrame(data,columns=column_name)
+  col_name=['name','age']
+  df=pd.DataFrame(data,columns=col_name)
   print(df)
   
-  
   #out
-     year name  height
-  0  2016    김  1.637M
-  1  2017    이   1.73M
-  2  2018    박   1.83M
+     name  age
+  0   Kim   23
+  1   Lee   25
+  2  Park   27
+  
   
   #방법2-2. 위 방법을 한 번에 하는 방법
   data = [
-      ['year',[2016,2017,2018,]],
-      ['name',['김','이','박']],
-      ['height',['1.637M','1.73M','1.83M']]
+      ['name',['Kim','Lee','Park']],
+      ['age',[23,25,27]]
   ]
   df = pd.DataFrame.from_items(data)
   print(df)
   
-  
   #out
-     year name  height
-  0  2016    김  1.637M
-  1  2017    이   1.73M
-  2  2018    박   1.83M
+     name  age
+  0   Kim   23
+  1   Lee   25
+  2  Park   27
   ```
+
+  
 
   - DataFrame의 메소드
 
@@ -181,10 +202,10 @@
   
   #out
   RangeIndex(start=0, stop=3, step=1)
-  Index(['year', 'name', 'height'], dtype='object')
-  [[2016 '김' 1.637]
-   [2017 '이' 1.73]
-   [2018 '박' 1.83]]
+  Index(['name', 'age'], dtype='object')
+  [['Kim' 23]
+   ['Lee' 25]
+   ['Park' 27]]
   
   
   #연산 메소드
@@ -203,268 +224,113 @@
   #tail(): 마지막 5개의 행 표시, 괄호 안에 숫자를 넣을 경우 해당 숫자 만큼의 열 표시
   
   #out
-  5.197
-  1.7323333333333333
-  1.637
-  1.83
-           year    height
-  count     3.0  3.000000
-  mean   2017.0  1.732333
-  std       1.0  0.096521
-  min    2016.0  1.637000
-  25%    2016.5  1.683500
-  50%    2017.0  1.730000
-  75%    2017.5  1.780000
-  max    2018.0  1.830000
+  75
+  25.0
+  23
+  27
+          age
+  count   3.0
+  mean   25.0
+  std     2.0
+  min    23.0
+  25%    24.0
+  50%    25.0
+  75%    26.0
+  max    27.0
   ```
+
+  
 
   - 행, 열 인덱스의 이름 설정하기
 
   ```python
-  df.index.name = 'Num'
-  df.columns.name = 'Info'
+  print('before')
+  print(df)
+  df.index.name='index'
+  df.columns.name='info'
+  print()
+  print('after')
   print(df)
   
   #out
-  Info  year name  height
-  Num
-  0     2016    김   1.637
-  1     2017    이   1.730
-  2     2018    박   1.830
-  ```
-
-  - DataFrame을 생성하면서 columns와 index를 설정 가능.
-
-  ```python
-  data = {
-      'year': [2016, 2017, 2018],
-      'name': ['김', '이', '박'],
-      'height': ['1.637M', '1.73M', '1.83M']
-  }
-   
-  df = pd.DataFrame(data,columns=['name','height','year','weight'],index=['one','two','three'])
+  before
+     name  age
+  0   Kim   23
+  1   Lee   25
+  2  Park   27
   
-  #out
-  #아래에서 확인 가능한 것 처럼 data의 순서와 DataFrame을 정의할 때의 columns의 순서가 달라도 key값을 알아서 찾아서 정의해준다. 단, data에 포함되어 있지 않았던 값(예시의 경우 weigth)은 NaN으로 나타나게 된다. 
-        name  height  year weight
-  one      김   1.637  2016    NaN
-  two      이   1.730  2017    NaN
-  three    박   1.830  2018    NaN
-  ```
-
-  - 열 추가
-
-  ```python
-  df['gender']='male'
-  print(df)
-  
-  
-  df['gender']=['female','male','male']
-  print(df)
-  
-  
-  #out
-        name  height  year weight gender
-  one      김   1.637  2016    NaN   male
-  two      이   1.730  2017    NaN   male
-  three    박   1.830  2018    NaN   male
-        name  height  year weight  gender
-  one      김   1.637  2016    NaN  female
-  two      이   1.730  2017    NaN    male
-  three    박   1.830  2018    NaN    male
-  
-  
-  #Series를 추가할 수도 있다.
-  val = pd.Series([1,8],index=['one','three'])
-  df['some']=val
-  print(df)
-  
-  
-  #out
-        name  height  year weight  gender  some
-  one      김   1.637  2016    NaN  female   1.0
-  two      이   1.730  2017    NaN    male   NaN
-  three    박   1.830  2018    NaN    male   8.0
-  
-  
-  #계산후 열 추가
-  df['some2']=df['heigth']+df['year']
-  print(df)
-  
-  #out
-        name  height  year weight  gender     some2
-  one      김   1.637  2016    NaN  female  2017.637
-  two      이   1.730  2017    NaN    male  2018.730
-  three    박   1.830  2018    NaN    male  2019.830
-  ```
-
-  - 열 삭제
-
-  ```python
-  del df['some']
-  print(df)
-  
-  #out
-        name  height  year weight  gender
-  one      김   1.637  2016    NaN  female
-  two      이   1.730  2017    NaN    male
-  three    박   1.830  2018    NaN    male
-  ```
-
-  - 행 추가
-
-  ```python
-  df.loc['four']=['최',2017,1,701,68,'male']
-  print(df)
-  
-  #out
-        name  height    year weight  gender    some2
-  one      김   1.637  2016.0    NaN  female  2017.64
-  two      이   1.730  2017.0    NaN    male  2018.73
-  three    박   1.830  2018.0    NaN    male  2019.83
-  four     최   1.000  2017.0  1,701      68     male
+  after
+  info   name  age
+  index
+  0       Kim   23
+  1       Lee   25
+  2      Park   27
   ```
 
   
 
-- Panel
-  
-  - 3차원 자료 구조로 Axis 0(items), Axis 1(major_axis), Axis 2(minor_axis) 등 3개의 축을 가지고 있는데 Axis 0은 그 한 요소가 DataFrame에 해당되며, Axis 1은 DataFrame의 행에 해당되고, Axis 2는 DataFrame의 열에 해당된다.
-
-
-
-- Data 접근
-
-  - 인덱싱 혹은 속성을 사용하여 데이터에 접근한다.
+  - data에 접근
 
   ```python
-  data = {
-      'year': [2016, 2017, 2018],
-      'name': ['김', '이', '박'],
-      'height': ['1.637M', '1.73M', '1.83M']
-  }
-   
-  df = pd.DataFrame(data)
-  
-  print(df['year'])   #인덱싱
-  #혹은 아래와 같이 filter를 사용할 수도 있다. sql문과 동일하게 like, regex 등의 문법을 사용 가능하다.
-  #df.filter(itmes=['year'])
-  
-  print(df.year)      #속성
-  
-  #out
-  # 결과는 같다.
-  0    2016
-  1    2017
-  2    2018
-  Name: year, dtype: int64
-  0    2016
-  1    2017
-  2    2018
-  Name: year, dtype: int64
-  ```
-
-  - boolean indexing:  특정 조건의 데이터만 필터링
-
-  ```python
-  #df는 위에서 선언한 것과 같다.
-  print(df['gender']=='male')
-  #혹은 query를 통해서도 가능하다.
-  # ex.df.query('gender==male')
-  print(df[df['year']>2016])
-  
-  
-  #out
-  one      False
-  two       True
-  three     True
-  four     False
-  Name: gender, dtype: bool
-     year name height
-  1  2017    이  1.73
-  2  2018    박  1.83
-  
-  
-  #새로운 값도 대입 가능
-  df.loc[df['year']>2017,'weight']=71
-  print(df)
-  
-  #out
-        name  height    year weight  gender    some2
-  one      김   1.637  2016.0    NaN  female  2017.64
-  two      이   1.730  2017.0    NaN    male  2018.73
-  three    박   1.830  2018.0     71    male  2019.83
-  four     최   1.000  2017.0  1,701      68     male
-  ```
-  - 행 인덱싱
-
-  ```python
+  #행에 접근: 행 인덱싱을 통해 접근
   print(df[0:2]) #0번째 부터 2번째 앞까지 가져온다.
   
-  #out
-      name  height  year weight  gender     some2
-  one    김   1.637  2016    NaN  female  2017.637
-  two    이   1.730  2017    NaN    male  2018.730
-  
-  print(df['one':'three']) #앞에 쓴 인덱스부터 뒤에 쓴 인덱스까지 가져온다.
   
   #out
-        name  height  year weight  gender     some2
-  one      김   1.637  2016    NaN  female  2017.637
-  two      이   1.730  2017    NaN    male  2018.730
-  three    박   1.830  2018    NaN    male  2019.830
+  info  name  age
+  index
+  0      Kim   23
+  1      Lee   25
   
   
   
-  #loc를 사용하면 특정 행의 정보만 가져올 수 있다. Series 형태로 반환한다.
-  print(df.loc['two']) 
-  #,로 구분하여 복수의 행 정보를 가져올 수 있다.
-  #ex.df.loc['one','three'] 
+  # 열에 접근1. 인덱싱
+  print(df['age'])   
+  
+  # 열에 접근2. 속성
+  print(df.age)      
+  
+  # 열에 접근3-1.filter를 사용할 수도 있다. sql문과 동일하게 like, regex 등의 문법을 사용 가능하다.
+  print(df.filter(items=['age']))
+  
   
   #out
-  name            이
-  height       1.73
-  year         2017
-  weight        NaN
-  gender       male
-  some2     2018.73
-  Name: two, dtype: object
+  index
+  0    23
+  1    25
+  2    27
+  Name: age, dtype: int64
           
-  print(df.loc['one':'two'])
+  index
+  0    23
+  1    25
+  2    27
+  Name: age, dtype: int64
+  
+  #위 두 방식과 결과가 다르다.
+  info   age
+  index
+  0       23
+  1       25
+  2       27
+  
+  #열에 접근 3-2. filter의 like,regex 활용
+  #axis=1은 열을 필터링 하겠다는 뜻이다. 따라서 아래 코드는 열 중에서 m이 포함된 열을 찾는 것이다.
+  print(df.filter(like='m',axis=1))
+  #아래 코드는 열 중에서 e로 끝나는 열을 찾는 것이다.
+  print(df.filter(regex='e$',axis=1))
   
   #out
-      name  height  year weight  gender     some2
-  one    김   1.637  2016    NaN  female  2017.637
-  two    이   1.730  2017    NaN    male  2018.730
-  
-  
-  
-  #특정 행의 특정 열을 가져오는 것도 가능하다.
-  print(df.loc[:,['year','gender']])
-  print(df.loc['one':'two','year':'gender'])
-  
-  #out
-         year  gender
-  one    2016  female
-  two    2017    male
-  three  2018    male
-       year weight  gender
-  one  2016    NaN  female
-  two  2017    NaN    male
-  
-  
-  #iloc을 사용하는 방법, 인덱스 번호를 사용한다는 것만 제외하면 loc과 동일하다.
-  #.iloc[행,열]
-  print(df.iloc[0:2,2:5])
-  print(df.iloc[[0,1],[2,3,4]])  # 결과는 같다.
-  
-  #out
-         year weight  gender
-  one  2016.0    NaN  female
-  two  2017.0    NaN    male
-         year weight  gender
-  one  2016.0    NaN  female
-  two  2017.0    NaN    male
+  info   name
+  index
+  0       Kim
+  1       Lee
+  2      Park
+  info   name  age
+  index
+  0       Kim   23
+  1       Lee   25
+  2      Park   27
   
   
   
@@ -479,9 +345,359 @@
 
   
 
+  - loc과 iloc의 차이
+    - 공통점: 둘 다 첫 번째 인자로 행을 두 번째 인자로 열을 받는다.
+    - 차이점: loc은 label(index명, column 명)을 통해서 값을 찾지만 iloc은 interger position을 통해서 값을 찾는다.
+
+  ```python
+  #인덱스, 컬럼이 숫자일 경우
+  data = [
+      ['Kim',23,71,178],
+      ['Lee',25,68,175],
+      ['Park',27,48,165],
+      ['Choi',22,57,168],
+      ['Jeong',29,77,188],
+  ]
+  col_name=[1,2,3,4]
+  df=pd.DataFrame(data,columns=col_name)
+  # print('loc output')
+  # print(df.loc['one':'three','age':'weight'])
+  # print()
+  # print('iloc output')
+  # print(df.iloc[0:3,1:3])
+  
+  print('loc output')
+  print(df.loc[0:3,1:3])  #인덱스의 이름이 0인 것부터 3인 것 까지, 컬럼의 이름이 1인것 부터 3인것 까지
+  print()
+  print('iloc output')
+  print(df.iloc[0:3,1:3]) #0 번째 인덱스 부터 2번째 인덱스 까지, 1번째 컬럼부터 2번째 컬럼 까지, 
+  
+  #out
+  loc output
+        1   2   3
+  0   Kim  23  71
+  1   Lee  25  68
+  2  Park  27  48
+  3  Choi  22  57
+  
+  iloc output
+      2   3
+  0  23  71
+  1  25  68
+  2  27  48
+  
+  
+  
+  #인덱스, 컬럼이 숫자가 아닐 경우
+  data = [
+      ['Kim',23,71,178],
+      ['Lee',25,68,175],
+      ['Park',27,48,165],
+      ['Choi',22,57,168],
+      ['Jeong',29,77,188],
+  ]
+  col_name=['name','age','weight','height']
+  df=pd.DataFrame(data,columns=col_name, index = ['one','two','three','four','five'])
+  
+  print('loc output')
+  print(df.loc['one':'three','age':'weight'])
+  print()
+  print('iloc output')
+  print(df.iloc[0:3,1:3])
+  
+  #out
+  loc output
+         age  weight
+  one     23      71
+  two     25      68
+  three   27      48
+  
+  iloc output
+         age  weight
+  one     23      71
+  two     25      68
+  three   27      48
+  ```
+
   
 
   
+
+  - boolean indexing:  특정 조건의 데이터만 필터링
+    - 어떤 방식으로 접근했는 가에 따라 결과 값이 다르다.
+
+  ```python
+  #인덱스로 접근
+  print(df[df['age']>=25])
+  print(df[df.age>=25])
+  #속성으로 접근
+  print(df.age>=25)
+  #sql문 사용
+  print(df.query('age>=25'))
+  
+  #out
+  #일치하는 행만 반환
+  info   name  age
+  index
+  1       Lee   25
+  2      Park   27
+  info   name  age
+  index
+  1       Lee   25
+  2      Park   27
+  
+  #각 행별 조건에 부합하는지 여부를 boolean 값으로 반환
+  index
+  0    False
+  1     True
+  2     True
+  Name: age, dtype: bool
+          
+  #일치하는 행만 반환
+  info   name  age
+  index
+  1       Lee   25
+  2      Park   27
+  
+  
+  #새로운 값도 대입 가능, 새로운 값을 추가하는 것은 불가능
+  df.loc[df['age']>25,'name']='Jeong'
+  print(df)
+  
+  info    name  age
+  index
+  0        Kim   23
+  1        Lee   25
+  2      Jeong   27
+  ```
+
+  
+
+  - 열 추가
+
+  ```python
+  df['gender']='male'
+  print(df)
+  
+  df['gender']=['male','female','male']
+  print(df)
+  
+  
+  #out
+  info   name  age gender
+  index
+  0       Kim   23   male
+  1       Lee   25   male
+  2      Park   27   male
+  info   name  age  gender
+  index
+  0       Kim   23    male
+  1       Lee   25  female
+  2      Park   27    male
+  
+  
+  #Series를 추가할 수도 있다.
+  s = pd.Series([170,180],index=[0,2])
+  df['some']=s
+  print(df)
+  
+  
+  #out
+  #위에서 index를 지정한 0, 2번 행은 각기 some열에 값이 들어갔으나 지정해주지 않은 1번 행은 값이 들어가지 않았다. 
+  info   name  age  gender   some
+  index
+  0       Kim   23    male  170.0
+  1       Lee   25  female    NaN  
+  2      Park   27    male  180.0
+  
+  
+  #계산후 열 추가
+  df['lifetime']=df['age']+70
+  print(df)
+  
+  #out
+  info   name  age  gender   some  lifetime
+  index
+  0       Kim   23    male  170.0        93
+  1       Lee   25  female    NaN        95
+  2      Park   27    male  180.0        97
+  ```
+
+  - 열 수정
+
+  ```python
+  # 함수를 사용하여 열 수정, apply 사용
+  # 추가는 되지 않고 기존 값을 수정하는 것만 가능하다.
+  def A_or_B(age):
+      print(age)
+      if age>24:
+          return "A"
+      else:
+          return "B"
+  df.some=df.age.apply(A_or_B)
+  #위 함수에서 바꿀 열의 값은 some이고 함수에 인자로 넘어가게 되는 값은 age이다.
+  print(df)
+  
+  #out
+  23
+  25
+  27
+     name  age  gender some  lifetime
+  0   Kim   23    male    B        93
+  1   Lee   25  female    A        95
+  2  Park   27    male    A        97
+  ```
+
+  
+
+  - 열 삭제
+
+  ```python
+  #방법1. del을 사용
+  del df['some']
+  print(df)
+  
+  #out
+  info   name  age  gender  lifetime
+  index
+  0       Kim   23    male        93
+  1       Lee   25  female        95
+  2      Park   27    male        97
+  
+  
+  #방법2-1. drop을 사용
+  #drop은 기본적으로 행을 삭제할 때 사용하는 메소드이므로 열을 삭제하고자 한다면 axis=1을 입력하여 열을 삭제하려 한다는 것을 알려줘야 한다.
+  df = df.drop('age',axis=1)
+  print(df)
+  
+  #out
+     name  gender  lifetime
+  0   Kim    male        93
+  1   Lee  female        95
+  2  Park    male        97
+  
+  
+  #방법2-2. 행 삭제와 마찬가지로 inplace 설정을 True로 하면 재할당 없이 바로 적용시킬 수 있다.
+  df.drop('gender',axis=1, inplace=True)
+  print(df)
+  #out
+     name  lifetime
+  0   Kim        93
+  1   Lee        95
+  2  Park        97
+  ```
+
+  
+
+  - 행 추가
+
+  ```python
+  #방법1. loc을 사용
+  df.loc[3]=['Choi',21,'female',88]  #이 때 한 열의 값이라도 빠지면 에러가 발생
+  print(df)
+  
+  #out
+  info   name  age  gender  lifetime
+  index
+  0       Kim   23    male        93
+  1       Lee   25  female        95
+  2      Park   27    male        97
+  3      Choi   21  female        88
+  
+  
+  #방법2. append 를 사용
+  df2 = pd.DataFrame([['Jeong',22,'male',89]],columns=['name','age','gender','lifetime'])
+  
+  #값이 실제로 바뀌진 않는다.
+  print(df.append(df2))
+  #ignore_index를 해주는 이유는 df2 역시 index가 0부터 시작될 것이므로 합치면 인덱스가 중복되게 되는데 ignore_index를 하면 합쳐지는 쪽의 인덱스가 합치는 쪽의 인덱스에 맞게 수정되어 들어가게 된다.
+  print(df.append(df2,ignore_index=True))
+  
+  #out
+  #인덱스 중복
+      name  age  gender  lifetime
+  0    Kim   23    male        93
+  1    Lee   25  female        95
+  2   Park   27    male        97
+  3   Choi   21  female        88
+  0  Jeong   22    male        89
+  
+  #gnore_index를 설정하여 인덱스가 중복이 일어나지 않았다.
+      name  age  gender  lifetime
+  0    Kim   23    male        93
+  1    Lee   25  female        95
+  2   Park   27    male        97
+  3   Choi   21  female        88
+  4  Jeong   22    male        89
+  ```
+
+  
+
+  - 행 삭제
+
+  ```python
+  #실제로 행이 삭제되지는 않는다.
+  print(df.drop([2,3]))
+  print()
+  print(df)
+  
+  #out
+  info  name  age  gender  lifetime
+  index
+  0      Kim   23    male        93
+  1      Lee   25  female        95
+  
+  info   name  age  gender  lifetime
+  index
+  0       Kim   23    male        93
+  1       Lee   25  female        95
+  2      Park   27    male        97
+  3      Choi   21  female        88
+  
+  
+  # 삭제 1-1.drop한 DataFrame을 변수에 할당
+  df = df.drop([1])
+  print(df)
+  
+  #out
+  info   name  age  gender  lifetime
+  index
+  0       Kim   23    male        93
+  2      Park   27    male        97
+  3      Choi   21  female        88
+  
+  
+  # 삭제 1-2.drop할 때 inplace 설정을 True로
+  df.drop(0,inplace=True)
+  print(df)
+  
+  #out
+  info   name  age  gender  lifetime
+  index
+  2      Park   27    male        97
+  3      Choi   21  female        88
+  
+  
+  #삭제 2. boolean indexing을 활용하여 조건에 맞지 않는 값을 삭제
+  df = df[df.age>=25]
+  print(df)
+  
+  #out
+  info   name  age
+  index
+  1       Lee   25
+  2      Park   27
+  ```
+
+  
+
+- Panel
+  
+  - 3차원 자료 구조로 Axis 0(items), Axis 1(major_axis), Axis 2(minor_axis) 등 3개의 축을 가지고 있는데 Axis 0은 그 한 요소가 DataFrame에 해당되며, Axis 1은 DataFrame의 행에 해당되고, Axis 2는 DataFrame의 열에 해당된다.
+
+
+
+## 데이터 읽고 쓰기
 
 - 외부 데이터 읽고 쓰기
 
@@ -537,7 +753,35 @@
   
   
 
+## 그룹화
 
+- group by
+
+```python
+data = [
+    ['Kim',23,71,178,'male','psy'],
+    ['Lee',25,68,175,'female','psy'],
+    ['Park',27,48,165,'female','phil'],
+    ['Choi',22,57,168,'male','phil'],
+    ['Jeong',29,77,188,'male','psy'],
+    ['Han',34,47,158,'female','eco'],
+    ['An',18,57,172,'male','phil'],
+    ['Shin',37,71,178,'female','eco'],
+    ['Song',29,48,168,'female','eco'],
+]
+col_name=['name','age','weight','height','gender','major']
+df=pd.DataFrame(data,columns=col_name)
+
+groupby_major = df.groupby('major')
+print(groupby_major)
+print()
+print(groupby_major.groups)
+
+#out
+<pandas.core.groupby.generic.DataFrameGroupBy object at 0x00000297D560F780>
+
+{'eco': Int64Index([5, 7, 8], dtype='int64'), 'phil': Int64Index([2, 3, 6], dtype='int64'), 'psy': Int64Index([0, 1, 4], dtype='int64')}
+```
 
 
 
