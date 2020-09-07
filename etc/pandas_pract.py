@@ -191,14 +191,28 @@ df['some']=s
 df['lifetime']=df['age']+70
 # # print(df)
 
+
 #함수를 통해 열 추가
+# def A_or_B(gender):
+#     if gender=="male":
+#         return "A"
+#     else:
+#         return "B"
+# df['some2']=df['gender'].apply(A_or_B)
+# print(df)
+
+
+#열 전체 수정
+df['some']=111
+# print(df)
+
+#함수를 통해 열 수정
 def A_or_B(age):
-    print(age)
     if age>24:
         return "A"
     else:
         return "B"
-# df.some=df.age.apply(A_or_B)
+df.some=df.age.apply(A_or_B)
 # print(df)
 
 
@@ -219,6 +233,11 @@ df2 = pd.DataFrame([['Jeong',22,'male',89]],columns=['name','age','gender','life
 
 # print(df.append(df2))
 
+
+#행 수정
+# print(df)
+# df.loc[3]=['Cha',22,'male',60]
+# print(df)
 
 
 
@@ -247,10 +266,194 @@ data = [
     ['An',18,57,172,'male','phil'],
     ['Shin',37,71,178,'female','eco'],
     ['Song',29,48,168,'female','eco'],
+    ['Kim',23,71,178,'male','psy'],
 ]
 col_name=['name','age','weight','height','gender','major']
 df=pd.DataFrame(data,columns=col_name)
 
 groupby_major = df.groupby('major')
-print(groupby_major)
-print(groupby_major.groups)
+# print(groupby_major)
+# print(groupby_major.groups)
+
+#활용
+# for n, g in groupby_major:
+#     print(n+":"+str(len(g))+'명')
+#     print(g)
+#     print()
+
+#각 전공별 인원수를 DataFrame으로 만들기
+dic = {
+    'count':groupby_major.size()
+    }
+df_major_cnt = pd.DataFrame(dic)
+# print(df_major_cnt)
+
+#위에서 major가 각각의 행을 형성하고 있는데 이를 column으로 옮기려면 아래와 같이 reset_index()를 해주면 된다.
+df_major_cnt = pd.DataFrame(dic).reset_index()
+# print(df_major_cnt)
+
+
+#중복 처리
+data = [
+    ['Kim',23,71,178,'male','psy'],
+    ['Lee',23,71,178,'male','psy'],  #하나만 다르다.
+    ['Kim',23,71,178,'male','psy'],  #완전히 중복.
+]
+col_name=['name','age','weight','height','gender','major']
+df=pd.DataFrame(data,columns=col_name)
+
+# print(df.duplicated())
+
+# print(df.drop_duplicates())
+
+# print(df.duplicated(['name']))
+
+# print("keep='first'")
+# print(df.drop_duplicates(['name'],keep='first'))
+# print("keep='last'")
+# print(df.drop_duplicates(['name'],keep='last'))
+
+
+
+
+#NaN 값을 찾아서 다른 값으로 변경하기
+data = [
+    ['Kim',23,71,178,'male','psy'],
+    ['Park',27,48,165,'female','phil'],
+    ['Song',29,48,168,'female','eco'],
+    ['Lee',23,71,None,'male',None],
+    ['Lee',23,52,None,'female',None],
+]
+col_name=['name','age','weight','height','gender','major']
+df=pd.DataFrame(data,columns=col_name)
+# print(df)
+# print()
+# print(".shape")
+# print(df.shape)
+# print()
+# print(".info()")
+# print(df.info())
+# print()
+# print(".isna()")
+# print(df.isna())
+# print()
+# print(".isnull()")
+# print(df.isnull())
+
+
+#변경하기
+# df.height = df.height.fillna(0)
+# df.major.fillna(0)
+# print(df)
+
+# df['height'].fillna(0,inplace=True)
+# df['major'].fillna(0,inplace=True)
+# print(df)
+
+# df['height'].fillna(df.groupby('gender')['height'].transform('median'),inplace=True)
+# print(df)
+
+def decide_major(weight):
+    if weight>=60:
+        return "eco"
+    else:
+        return "psy"
+df.major.fillna(df.weight.apply(decide_major),inplace=True)
+# print(df)
+
+data = [
+    ['Kim',23,71,178,'male','psy'],
+    ['Park',27,48,165,'female','phil'],
+    ['Song',29,48,168,'female','eco'],
+    ['Lee',23,71,180,'male','psy'],
+    ['Lee',23,52,170,'female','eco'],
+]
+col_name=['name','age','weight','height','gender','major']
+df=pd.DataFrame(data,columns=col_name)
+
+def get_birth(age,current_year):
+    return current_year-age+1
+df['birth']=df['age'].apply(get_birth,current_year=2020)
+# print(df)
+
+def cal_bmi(row):
+    return round(row.weight/(row.height**2)*10000,2)
+
+df['BMI']=df.apply(cal_bmi,axis=1)
+# print(df)
+
+data = [
+    ['1997-02-04'],
+    ['1992-07-18'],
+]
+col_name=['date']
+df=pd.DataFrame(data,columns=col_name)
+
+
+def year(date):
+    return date.split('-')[0]
+
+df['year']=df['date'].map(year)
+# print(df)
+
+df.year = df.year.map({'1997':197, '1992':192})
+# print(df)
+
+def change_all(df):
+    return 0
+
+df = df.applymap(change_all)
+# print(df)
+
+
+data = [
+    ['Kim',23,'male','psy'],
+    ['Park',27,'female','phil'],
+    ['Song',29,'female','eco'],
+    ['Lee',23,'male','psy'],
+    ['Lee',23,'female','eco'],
+    ['Jeong',23,'female','geo'],
+]
+col_name=['name','age','gender','major']
+df=pd.DataFrame(data,columns=col_name)
+
+# print(df.major.unique())
+# print(type(df.major.unique()))
+
+# print(df.major.value_counts)
+
+
+data1 = {
+    'name':['Kim','Lee','Park'],
+    'age':[23,25,27],
+}
+df1 = pd.DataFrame(data1)
+
+data2 = {
+    'name':['Choi','Jeong','An'],
+    'age':[31,35,33],
+}
+df2 = pd.DataFrame(data2)
+
+# result = pd.concat([df1,df2])
+# print(result)
+# print()
+# result = pd.concat([df1,df2],ignore_index=True)
+# print(result)
+
+result = df1.append(df2, ignore_index=True)
+# print(result)
+
+
+data3 = {
+    'major':['psy','eco','phil'],
+    'gender':['male','male','female'],
+}
+df3 = pd.DataFrame(data3)
+
+
+result = pd.concat([df1,df3],axis=1)
+# print(result)
+
+result = df1.append(df3,axis=1)
+print(result)

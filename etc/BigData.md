@@ -521,13 +521,41 @@
   0       Kim   23    male  170.0        93
   1       Lee   25  female    NaN        95
   2      Park   27    male  180.0        97
+  
+  
+  
+  #함수를 사용하여 열 추가
+  def A_or_B(gender):
+      if gender=="male":
+          return "A"
+      else:
+          return "B"
+  df['some2']=df['gender'].apply(A_or_B)
+  #df.some2=df['gender'].apply(A_or_B) -> 이 코드로는 수정은 돼도 추가는 안 된다.
+  print(df)
+  
+  #out
+     name  age  gender   some  lifetime some2
+  0   Kim   23    male  170.0        93     A
+  1   Lee   25  female    NaN        95     B
+  2  Park   27    male  180.0        97     A
   ```
 
   - 열 수정
 
   ```python
-  # 함수를 사용하여 열 수정, apply 사용
-  # 추가는 되지 않고 기존 값을 수정하는 것만 가능하다.
+  #열 전체 수정, 열 추가와 같다.
+  df['some']=111
+  print(df)
+  
+  #out
+     name  age  gender  some  lifetime
+  0   Kim   23    male   111        93
+  1   Lee   25  female   111        95
+  2  Park   27    male   111        97
+  
+  
+  # 함수를 사용하여 열 수정, apply 사용, 열을 추가 할 때도 사용 가능.
   def A_or_B(age):
       print(age)
       if age>24:
@@ -630,6 +658,39 @@
   3   Choi   21  female        88
   4  Jeong   22    male        89
   ```
+
+  
+
+  - 행 수정
+
+  ```python
+  # 행 추가와 마찬가지로 작성하면 되며 기존 행에 덮어씌워진다.
+  print("before")
+  print(df)
+  print()
+  
+  df.loc[3]=['Cha',22,'male',60]
+  print("after")
+  print(df)
+  
+  
+  #out
+  before
+     name  age  gender  lifetime
+  0   Kim   23    male        93
+  1   Lee   25  female        95
+  2  Park   27    male        97
+  3  Choi   21  female        88
+  
+  after
+     name  age  gender  lifetime
+  0   Kim   23    male        93
+  1   Lee   25  female        95
+  2  Park   27    male        97
+  3   Cha   22    male        60
+  ```
+
+  
 
   
 
@@ -753,9 +814,9 @@
   
   
 
-## 그룹화
+## 데이터 처리
 
-- group by
+- 그룹화(`groupby`)
 
 ```python
 data = [
@@ -781,7 +842,505 @@ print(groupby_major.groups)
 <pandas.core.groupby.generic.DataFrameGroupBy object at 0x00000297D560F780>
 
 {'eco': Int64Index([5, 7, 8], dtype='int64'), 'phil': Int64Index([2, 3, 6], dtype='int64'), 'psy': Int64Index([0, 1, 4], dtype='int64')}
+
+
+#활용
+for n, g in groupby_major:
+    print(n+":"+str(len(g))+'명')
+    print(g)
+    print()
+
+#out
+eco:3명
+   name  age  weight  height  gender major
+5   Han   34      47     158  female   eco
+7  Shin   37      71     178  female   eco
+8  Song   29      48     168  female   eco
+
+phil:3명
+   name  age  weight  height  gender major
+2  Park   27      48     165  female  phil
+3  Choi   22      57     168    male  phil
+6    An   18      57     172    male  phil
+
+psy:3명
+    name  age  weight  height  gender major
+0    Kim   23      71     178    male   psy
+1    Lee   25      68     175  female   psy
+4  Jeong   29      77     188    male   psy
+
+
+#각 전공별 인원수를 DataFrame으로 만들기
+dic = {
+    'count':groupby_major.size()
+    }
+df_major_cnt = pd.DataFrame(dic)
+print(df_major_cnt)
+
+#out
+       count
+major
+eco        3
+phil       3
+psy        3
+
+# .reset_index()
+#위에서 major가 각각의 행을 형성하고 있는데 이를 column으로 옮기려면 아래와 같이 reset_index()를 해주면 된다.
+df_major_cnt = pd.DataFrame(dic).reset_index()
+print(df_major_cnt)
+
+#out
+  major  count
+0   eco      3
+1  phil      3
+2   psy      3
 ```
+
+
+
+
+
+- 중복 데이터 삭제
+  - `.duplicated()`: 중복 데이터가 있는지 확인
+  - `.drop_duplicates()`
+
+```python
+data = [
+    ['Kim',23,71,178,'male','psy'],
+    ['Lee',23,71,178,'male','psy'],  #하나만 다르다.
+    ['Kim',23,71,178,'male','psy'],  #완전히 중복.
+]
+col_name=['name','age','weight','height','gender','major']
+df=pd.DataFrame(data,columns=col_name)
+
+#중복 데이터가 있는지 확인
+print(df.duplicated())
+
+#out
+0    False
+1    False
+2     True  #완전히 중복이어야 True를 반환
+dtype: bool
+    
+
+#중복 데이터 삭제
+print(df.drop_duplicates())  #실제로 삭제되지는 않는다. 실제로 삭제하려면 재할당 필요
+
+#out
+  name  age  weight  height gender major
+0  Kim   23      71     178   male   psy
+1  Kim   23      71     178   male   eco
+
+
+#특정 열의 값이 중복되는 행을 확인
+print(df.duplicated(['name']))
+
+#out
+0    False
+1    False
+2     True
+dtype: bool
+    
+    
+    
+#특정 열의 값이 중복되는 행을 삭제
+#첫 번째 인자로 중복을 확인해 삭제할 열을, 두 번째 인자로 중복된 행 중 어떤 행을 살릴 것인지를 keep을 통해 설정해준다. keep값을 주지 않을 경우  default는 first다.
+print("keep='first'")
+print(df.drop_duplicates(['name'],keep='first'))
+print("keep='last'")
+print(df.drop_duplicates(['name'],keep='last'))
+
+#out
+keep='first'
+  name  age  weight  height gender major
+0  Kim   23      71     178   male   psy
+1  Lee   23      71     178   male   psy
+keep='last'
+  name  age  weight  height gender major
+1  Lee   23      71     178   male   psy
+2  Kim   23      71     178   male   psy
+```
+
+
+
+
+
+- NaN을 찾아서 원하는 값으로 변경하기
+
+  - Pandas에서는 숫자가 올 열에 `None`을 넣으면 `NaN`이 들어가고 문자가 올 열에 넣으면 그대로 `None`이 들어간다.
+  - `.shape`: DataFrame의 크기를 확인하는 메소드, `(행의 개수, 열의 개수)` 형태로 결과가 출력된다.
+  - `.info()`: DataFrame의 정보를 확인하는 메소드
+  - `.isna()`, `.isnull()`: `None` 값을 확인하는 메소드, 둘의 기능은 같다.
+    - pandas의 소스 코드를 보면 `isnull=isna` 부분을 확인할 수 있다. 즉, `isnull`은 `isna`의 별칭이다.
+
+  ```python
+  data = [
+      ['Kim',23,71,178,'male','psy'],
+      ['Park',27,48,165,'female','phil'],
+      ['Song',29,48,168,'female','eco'],
+      ['Lee',23,71,None,'male',None],
+      ['Lee',23,52,None,'female',None],
+  ]
+  col_name=['name','age','weight','height','gender','major']
+  df=pd.DataFrame(data,columns=col_name)
+  print(df)
+  print()
+  print(".shape")
+  print(df.shape)
+  print()
+  print(".info()")
+  print(df.info())
+  print()
+  print(".isna()")
+  print(df.isna())
+  print()
+  print(".isnull()")
+  print(df.isnull())
+  
+  #out
+     name  age  weight  height  gender major
+  0   Kim   23      71   178.0    male   psy
+  1  Park   27      48   165.0  female  phil
+  2  Song   29      48   168.0  female   eco
+  3   Lee   23      71     NaN    male  None
+  4   Lee   23      52     NaN  female  None
+  
+  .shape
+  (5, 6)
+  
+  .info()
+  <class 'pandas.core.frame.DataFrame'>
+  RangeIndex: 5 entries, 0 to 4
+  Data columns (total 6 columns):
+  name      5 non-null object
+  age       5 non-null int64
+  weight    5 non-null int64    #5개의 행 중 5개가 null 값이 아님
+  height    3 non-null float64  #5개의 행 중 3개가 null 값이 아님
+  gender    5 non-null object
+  major     3 non-null object
+  dtypes: float64(1), int64(2), object(3)
+  memory usage: 368.0+ bytes
+  None
+  
+  .isna()
+      name    age  weight  height  gender  major
+  0  False  False   False   False   False  False
+  1  False  False   False   False   False  False
+  2  False  False   False   False   False  False
+  3  False  False   False    True   False   True
+  4  False  False   False    True   False   True
+  
+  .isnull()
+      name    age  weight  height  gender  major
+  0  False  False   False   False   False  False
+  1  False  False   False   False   False  False
+  2  False  False   False   False   False  False
+  3  False  False   False    True   False   True
+  4  False  False   False    True   False   True
+  ```
+
+  
+
+  - `.fillna()`: `Nan`을 괄호 안에 있는 값으로 변경
+
+  ```python
+  #방법1. 재할당
+  df.height = df.height.fillna(0)
+  df.major = df.major.fillna(0)   #다른 열에 들어 있는 자료형과 달라도 변경이 가능하다.
+  print(df)
+  
+  #out
+     name  age  weight  height  gender major
+  0   Kim   23      71   178.0    male   psy
+  1  Park   27      48   165.0  female  phil
+  2  Song   29      48   168.0  female   eco
+  3   Lee   23      71     0.0    male     0
+  4   Lee   23      52     0.0  female     0
+  
+  
+  
+  #방법2. inplace 사용으로 재할당 없이
+  df['height'].fillna(0,inplace=True)
+  df['major'].fillna(0,inplace=True)
+  print(df)
+  
+  #out
+     name  age  weight  height  gender major
+  0   Kim   23      71   178.0    male   psy
+  1  Park   27      48   165.0  female  phil
+  2  Song   29      48   168.0  female   eco
+  3   Lee   23      71     0.0    male     0
+  4   Lee   23      52     0.0  female     0
+  
+  
+  
+  #다른 열의 데이터에 따라 다른 값을 넣고자 할 때
+  #null 값이 있어야 fillna를 쓸 수 있으므로 재선언 한 후
+  #남자면 height를 남자의 평균으로, 여자면 height를 여자의 평균으로 넣으려 한다면
+  # 아래 코드에서 df.groupby('gender')['height'].transform('median')까지가 넣을 값을 결정하는 코드다.
+  df['height'].fillna(df.groupby('gender')['height'].transform('median'),inplace=True)
+  print(df)
+  
+  #out
+     name  age  weight  height  gender major
+  0   Kim   23      71   178.0    male   psy
+  1  Park   27      48   165.0  female  phil
+  2  Song   29      48   168.0  female   eco
+  3   Lee   23      71   178.0    male  None
+  4   Lee   23      52   166.5  female  None
+  
+  
+  
+  #몸무게가 60 이상이면 경제학, 미만이면 심리학을 전공으로 넣으려 한다면
+  def decide_major(weight):
+      if weight>=60:
+          return "eco"
+      else:
+          return "psy"
+  df.major.fillna(df.weight.apply(decide_major),inplace=True)
+  print(df)
+  
+  #out
+     name  age  weight  height  gender major
+  0   Kim   23      71   178.0    male   psy
+  1  Park   27      48   165.0  female  phil
+  2  Song   29      48   168.0  female   eco
+  3   Lee   23      71   178.0    male   eco
+  4   Lee   23      52   166.5  female   psy
+  ```
+
+
+
+
+
+- `apply` 심화
+
+  ```python
+  #추가 인자 전달(같은 방법으로 복수의 추가 인자를 넘기는 것이 가능)
+  def get_birth(age,current_year):
+      return current_year-age+1
+  
+  df['birth']=df['age'].apply(get_birth,current_year=2020)
+  print(df)
+  
+  #out
+     name  age  weight  height  gender major  birth
+  0   Kim   23      71     178    male   psy   1998
+  1  Park   27      48     165  female  phil   1994
+  2  Song   29      48     168  female   eco   1992
+  3   Lee   23      71     180    male   psy   1998
+  4   Lee   23      52     170  female   eco   1998
+  
+  
+  
+  #복수의 열을 인자로 넘기는 방법
+  def cal_bmi(row):
+      return round(row.weight/(row.height**2)*10000,2)
+  
+  #df를 통째로 인자로 넘기는 코드로 axis=1을 줘서 행을 넘기는 것이다.
+  df['BMI']=df.apply(cal_bmi,axis=1)
+  print(df)
+  
+  #out
+     name  age  weight  height  gender major  birth    BMI
+  0   Kim   23      71     178    male   psy   1998  22.41
+  1  Park   27      48     165  female  phil   1994  17.63
+  2  Song   29      48     168  female   eco   1992  17.01
+  3   Lee   23      71     180    male   psy   1998  21.91
+  4   Lee   23      52     170  female   eco   1998  17.99
+  
+  
+  
+  #lambda 식을 사용하는 것도 가능하다.
+  ```
+
+  
+
+
+
+- `map`, `applymap`
+
+  - `.map()`: apply와 사용법이 동일하다. 다만 `map`은 `apply` 와 달리 함수를 사용하지 않고 dictionary로 직접 값을 변경 가능하다.
+
+  ```python
+  #apply와 동일한 사용법
+  data = [
+      ['1997-02-04'],
+      ['1992-07-18'],
+  ]
+  col_name=['date']
+  df=pd.DataFrame(data,columns=col_name)
+  
+  def year(date):
+      return date.split('-')[0]
+  
+  df['year']=df['date'].map(year)
+  print(df)
+  
+  #out
+           date  year
+  0  1997-02-04  1997
+  1  1992-07-18  1992
+  
+  
+  
+  #apply와 다른 사용법
+  df.year = df.year.map({'1997':197, '1992':192})
+  print(df)
+  
+  #out
+           date  year
+  0  1997-02-04   197
+  1  1992-07-18   192
+  ```
+
+  
+
+  - `.applymap()`: DataFrame 내의 모든 값을 일괄적으로 변경시키기 위해 사용
+
+  ```python
+  def change_all(df):
+      return 0
+  
+  df = df.applymap(change_all)
+  print(df)
+  
+  #out
+     date  year
+  0     0     0
+  1     0     0
+  ```
+
+  
+
+
+
+- `unique`, `value_counts`
+
+  - `.unique()`: 컬럼 내의 데이터를 중복되지 않게 뽑을 때 사용
+
+  ```python
+  data = [
+      ['Kim',23,'male','psy'],
+      ['Park',27,'female','phil'],
+      ['Song',29,'female','eco'],
+      ['Lee',23,'male','psy'],
+      ['Lee',23,'female','eco'],
+      ['Jeong',23,'female','geo'],
+  ]
+  col_name=['name','age','gender','major']
+  df=pd.DataFrame(data,columns=col_name)
+  
+  print(df.major.unique())
+  print(type(df.major.unique()))
+  
+  #out
+  ['psy' 'phil' 'eco' 'geo']
+  <class 'numpy.ndarray'>
+  ```
+
+  
+
+  - `.value_counts()`: 각 데이터 별 개수 확인
+    - `.value_counts` 처럼 `()`를 붙이지 않고 쓸 경우 완전히 다른 결과를 반환하므로 주의
+
+  ```python
+  print(df.major.value_counts())
+  
+  eco     2
+  psy     2
+  geo     1
+  phil    1
+  Name: major, dtype: int64
+  ```
+
+  
+
+
+
+- 두 개의 DataFrame 합치기
+
+  - `.concat()`: Pandas의 함수로 인자로 합칠 데이터 프레임 2개를 넘긴다.
+  - `.append()`: DataFrame의 메소드로 합쳐질 데이터 프레임을 인자로 넘긴다.
+
+  ```python
+  # 행으로 합치기
+  # 방법1. .concat()사용
+  data1 = {
+      'name':['Kim','Lee','Park'],
+      'age':[23,25,27],
+  }
+  df1 = pd.DataFrame(data1)
+  
+  data2 = {
+      'name':['Choi','Jeong','An'],
+      'age':[31,35,33],
+  }
+  df2 = pd.DataFrame(data2)
+  
+  result = pd.concat([df1,df2])
+  print(result)
+  
+  #인덱스를 겹치지 않게 하려면 아래와 같이
+  result = pd.concat([df1,df2],ignore_index=True)
+  print(result)
+  
+  #out
+      name  age
+  0    Kim   23
+  1    Lee   25
+  2   Park   27
+  0   Choi   31
+  1  Jeong   35
+  2     An   33
+  
+      name  age
+  0    Kim   23
+  1    Lee   25
+  2   Park   27
+  3   Choi   31
+  4  Jeong   35
+  5     An   33
+  
+  
+  
+  #방법2. .append()사용
+  result = df1.append(df2, ignore_index=True)
+  
+  #out
+      name  age
+  0    Kim   23
+  1    Lee   25
+  2   Park   27
+  3   Choi   31
+  4  Jeong   35
+  5     An   33
+  
+  
+  
+  
+  #열로 합치기
+  #열로 합칠 때 ingnore_index=True를 주면 열의 이름이 0부터 시작하는 숫자로 변하게 된다.
+  data3 = {
+      'major':['psy','eco','phil'],
+      'gender':['male','male','female'],
+  }
+  df3 = pd.DataFrame(data3)
+  
+  #.concat()사용, .append()는 사용 불가
+  result = pd.concat([df1,df3],axis=1)
+  print(result)
+  ```
+
+  
+
+
+
+
+
+
+
+
 
 
 
