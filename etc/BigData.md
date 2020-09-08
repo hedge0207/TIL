@@ -346,7 +346,7 @@
   
 
   - loc과 iloc의 차이
-    - 공통점: 둘 다 첫 번째 인자로 행을 두 번째 인자로 열을 받는다.
+    - 공통점: 둘 다 첫 번째 인자로 행을, 두 번째 인자로 열을 받는다.
     - 차이점: loc은 label(index명, column 명)을 통해서 값을 찾지만 iloc은 interger position을 통해서 값을 찾는다.
 
   ```python
