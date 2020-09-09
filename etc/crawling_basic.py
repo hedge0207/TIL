@@ -12,6 +12,7 @@ ex1 = '''
 </html>
 '''
 
+# HTML 코드를 파싱(분석)하고 파싱한 내용을 soup라는 변수에 저장
 soup = BeautifulSoup(ex1, 'html.parser')
 # print(soup.find('div'))
 # print(soup.find('title'))

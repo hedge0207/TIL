@@ -1,27 +1,4 @@
-# pyvisual code로 수업자료 여는법
-
-
-
-1. https://git-scm.com/download/win-구글에 git windows검색후 설치(최초 1회)
-2. 수업자료 파일을 폴더에 넣고 해당 파일을 코드로 열기 실행
-3. ctrl+`(~표) 를 누르면 terminal창을 열 수 있고 terminal 창에서 X표는 최소화, 휴지통 모양이 삭제를 의미한다.`
-4. terminal-select defalt shell에서 git bash 선택후 ctrl+`로 terminal창 닫았다 열기
-5. terminal에 pip install note book(최초 1회)
-6. terminal에 jupyter notebook입력
-7. Jupyter: h를 누르면 단축키 확인 가능, ctrl+enter: run, shift+enter: run 후 다음으로
-8. 만약 안될 경우 파이썬 버전을 낮춰서 재설치하고 다시 해 볼 것.
-
-
-
-
-
-cf. 아래의 정리에서 ㅏㅓ부분은 ()를 나타내기 위함이다.
-
-
-
-
-
-# Day1-기초
+# 기초
 
 ### 1. 식별자와 예약어
 
@@ -1883,3 +1860,115 @@ print(s)
 out
 12					#retrun을 만나는 순간 아래의 코드는 실행되지 않는다.
 ```
+
+
+
+
+
+
+
+
+
+# python을 통한 운영체제 조작
+
+- os를 import
+
+  ```python
+  import os
+  ```
+
+  
+
+- 디렉토리 조회 및 이동
+
+  - `.getcwd()`: 현재 디렉토리 조회
+  - `.chdir()`: 디렉토리 이동
+  - `.listdir()`: 입력한 경로의 파일과 폴더 목록을 리스트로 반환
+  - `.path.exists()`: 특정 폴더의 유무를 boolean 값으로 반환
+
+  ```python
+  import os
+  
+  print("현재 디렉토리: ", os.getcwd())
+  os.chdir("C:\\Users\Desktop\참고\TIL")
+  print("변경 디렉토리: ", os.getcwd())
+  print(os.listdir("C:\\Users\Desktop\참고\TIL"))
+  print(os.path.exists("C:\\Users\Desktop\참고\TIL"))
+  print(os.path.exists("C:\\Users\Desktop\참고\TILL"))
+  
+  #out
+  현재 디렉토리:  C:\Users\Desktop\참고\TIL\etc
+  변경 디렉토리:  C:\Users\Desktop\참고\TIL
+  ['.git', '.idea', 'django', 'error.md', 'etc', 'Git.md', 'java', 'spring', '기타.md', '수학', '알고리즘', '웹']
+  True
+  False
+  ```
+
+
+
+- 디렉토리 생성, 삭제
+
+  - `.mkdir()`: 경로의 제일 마지막에 적힌 하나의 폴더만 생성
+  - `.mkdirs()`: 경로에 적힌 모든 폴더를 생성
+  - 두 메소드 모두 생성하려는 폴더가 이미 있는 경우 에러 발생
+
+  - `.rmdir()`: 경로의 제일 마지막에 적힌 하나의 폴더만 삭제
+  - `.removedirs()`: 경로에 적힌 모든 폴더를 삭제
+  - 두 메소드 모두 삭제하려는 폴더가 비어있지 않은 경우 에러 발생
+
+
+
+- 텍스트 파일 읽고 쓰기
+
+  - 파일을 생성하거나 조회할 때 모드를 지정할 수 있다.
+
+  | 기호 | 모드         |
+  | ---- | ------------ |
+  | t    | 텍스트(기본) |
+  | b    | 바이너리     |
+  | r    | 읽기(기본)   |
+  | w    | 쓰기         |
+  | a    | 이어쓰기     |
+  | +    | 읽기, 쓰기   |
+
+  
+
+  - 파일에 내용을 작성하는 순서는 `open`→`write`→`close` 순이다.
+
+  ```python
+  #열고, open 함수의 3번째 인자로 encoding 방식을 줄 수 있다.
+  file = open("test.txt", "w")
+  #쓰고
+  file.write("내용내용")
+  #닫고
+  file.close()
+  ```
+
+  
+
+  - 파일의 내용을 읽기
+
+  ```python
+  txt = open("c:\\tmep\test.txt")
+  
+  print(f.readlines())
+  ```
+
+  
+
+- 엑셀, csv 파일 읽고 쓰기
+
+  - txt 파일과 방식이 다르고 별도의 패키지 설치가 필요하다.
+
+  - 추후 추가
+
+
+
+
+
+# python의 모듈
+
+- sys
+  - 변수와 함수를 직접 제어할 수 있게 해주는 모듈이다.
+  -  대화형 인터프리터(터미널)를 종료하는 것도 가능하다(`sys.exit()`).
+  - `sys.stdin`은 대화형 인터프리터에 값을 입력받겠다는 것이다.
