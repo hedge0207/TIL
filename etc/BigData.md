@@ -764,11 +764,17 @@
 
   - pandas는 CSV, txt, Excel, SQL, HDF5 포맷 등 다양한 외부 리소스 데이터를 일고 쓸 수 있는 기능을 제공한다.
   
+  - 엑셀 파일 저장을 위해선 `openpyxl`을 설치해야 한다.
+  
+    ```bash
+    $ pip install openpyxl
+    ```
+  
   - 읽을 때는 `read_파일유형`, 쓸 때는 `to_파일유형`을 통해 가능하다.
-    
+  
     - excel의 경우 read_excel, to_excel로 사용하면 된다.
     - txt는 `read_csv`로 가져온다.
-    
+  
   - 각 열이 `,`로 구분되어 있으면 추가적인 코드 없이 `,`를 기준으로 분절되어 들어오지만 다른 것으로 구분되어 있을 경우 아래와 같이 `delimiter`라는 인자를 넘겨줘야 한다.
   
     ```python
@@ -800,6 +806,8 @@
     df = pd.DataFrame(data)
     
     df.to_csv('파일명.csv')
+    #엑셀 파일로 저장할경우
+    #df.to_excel("test.xlsx")("파일명.xlsx")
     
     #코드를 작성한 파일이 있는 폴더에 파일명.csv 파일이 생성된다.
     
