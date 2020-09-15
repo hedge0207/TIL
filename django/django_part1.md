@@ -262,7 +262,7 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
       def index(request):
           return redirect('가고자 하는 url')
       
-      #redirect는 경로로 들어가는 것이므로 urls로 갔다가 views를 실행하고 views에 입력한 대로 html파일이 렌더링되는 경로를 거치지만 render는 위의 과정을 거치지 않고 바로 렌더링한다. 따라서 위의 경우처럼 특정 경로로 돌아가야 하는 경우에느 redirect를 써야한다.
+      #redirect는 경로로 들어가는 것이므로 urls로 갔다가 views를 실행하고 views에 입력한 대로 html파일이 렌더링되는 경로를 거치지만 render는 위의 과정을 거치지 않고 바로 렌더링한다. 따라서 위의 경우처럼 특정 경로로 돌아가야 하는 경우에는 redirect를 써야한다.
       
       #bitly, bit.do 등의 사이트는 리다이렉트를 해주는 사이트이다.
       ```
@@ -1152,6 +1152,8 @@ admin.site.register(Article)
       ```python
       #views.py
       from 디렉토리 파일명 import 클래스명
+      #ex.reviews 앱에서 movies에 정의한 Movie 모델을 쓰고자 할 경우
+      #from movies.models import Movie
       
       #동일한 디렉토리에 있을 경우 .을 입력하고 파일명은 model을 정의한 파일명을 입력하는데 보통 models.py와 views.py는 같은 폴더에 있고 model은 일반적으로 models.py에 정의하므로
       from .models import 클래스명

@@ -241,7 +241,7 @@ $ git rm -r --cached .
 
 
 
-
+3. `.gitignore` 파일을 추가하기 전에 `.gitignore`에 포함된 파일을 올리면 `.gitignore`에 포함되어 있다고 하더라도 commit이 된다.
 
 
 

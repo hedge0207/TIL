@@ -1105,7 +1105,7 @@ select * from people_people
 - ORM 문법
 
   - `makemigrations`
-  - 마이그레이션 생성
+    - 마이그레이션 생성
   - `migrate`
     - 마이그레이션 파일의 내용을 DB에 최종 반영
   - `showmigrations`
