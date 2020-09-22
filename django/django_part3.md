@@ -896,6 +896,24 @@
 
   
 
+- 여러 데이터를 넘기고자 할 경우 아래와 같이 하면 된다.
+
+  ```python
+  # 아래와 같이 dictionary 형식으로 묶어서 return 해주면 된다.
+  @api_view(['GET'])
+  def moviedetail(request, movie_pk):
+      movie = Movie.objects.filter(docid=movie_pk)
+      genres = Genre.objects.filter(movie_id=movie_pk)
+      actors = Actor.objects.filter(movie_id=movie_pk)
+      keywords = Keyword.objects.filter(movie_id=movie_pk)
+      return Response({
+          'movie':MovieSerializer(movie,many=True).data,
+          'genre':GenreSerializer(genres, many=True).data,
+          'actor':ActorSerializer(actors, many=True).data,
+          'keyword':KeywordSerializer(keywords, many=True).data
+          })
+  ```
+
   
 
 - Postman
