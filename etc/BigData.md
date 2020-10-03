@@ -818,9 +818,35 @@
     df.to_csv('파일명.csv',na_rap='대신할 값')
     ```
   
+  
+  
+
+- sql 데이터를 읽어오는 방법
+
+  > https://swalloow.github.io/db-to-dataframe/ 참고
+
+  - sql 데이터를 읽고 쓰기 위해서는 `sqlalchemy`를 필수로 사용해야한다.
+
+    ```bash
+    $pip install sqlalchemy
+    ```
+
+  - 읽는 방법
+
+    ```python
+    import pandas as pd
+    from sqlalchemy import create_engine
     
+    engine = create_engine("mysql+pymysql://root:비밀번호@호스트:포트번호/db명", convert_unicode=True)
+    conn = engine.connect()
+    data = pd.read_sql_table('테이블명',conn)
+    ```
+
+    
+
   
-  
+
+
 
 ## 데이터 처리
 

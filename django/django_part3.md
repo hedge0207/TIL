@@ -1158,49 +1158,44 @@
         'allauth.socialaccount.providers.google',
     ]
     
+    SOCIALACCOUNT_PROVIDERS = {
+          'google': {
+            'SCOPE': [  #구글에서 가져올 정보 중에서 profile과 email을 가져오겠다.
+                  'profile', 
+                'email',
+              ],
+            'AUTH_RARAMS': {
+                  'access_type':'online'
+              }
+          }
+    }
     
-  SOCIALACCOUNT_PROVIDERS = {
-        'google': {
-          'SCOPE': [  #구글에서 가져올 정보 중에서 profile과 email을 가져오겠다.
-                'profile', 
-              'email',
-            ],
-          'AUTH_RARAMS': {
-                'access_type':'online'
-            }
-        }
-  }
-    
-  AUTHENTICATION_BACKENDS = (
-        'django.contrib.auth.backends.ModelBackend',
-        'allauth.account.auth_backends.AuthenticationBackend',
-    )
+    AUTHENTICATION_BACKENDS = (
+          'django.contrib.auth.backends.ModelBackend',
+          'allauth.account.auth_backends.AuthenticationBackend',
+      )
     
     SITE_ID = 1
     ```
   
-  - 이후 migrate를 실행
   
-  - 이후 admin 사이트로 들어가보면 우리가 추가한 적 없는 여러 테이블이 추가된 것을 볼 수 있다(admin.py를 수정하지 않아도 됨).
   
-  - 위 사이트에 나와 있는 코드 중 아래 코드를 settings.py에 입력해야 admin 사이트로 들어갈 수 있다.
+  - 이후 migrate를 실행한 후 admin 사이트로 들어가보면 우리가 추가한 적 없는 여러 테이블이 추가된 것을 볼 수 있다(admin.py를 수정하지 않아도 됨).
   
-  ```python
-    SITE_ID = 1
-    ```
+  
   
   - 전체 url을 관리하는 urls.py에 아래 코드를 작성
   
-  ```python
-    urlpatterns = [
-        #직접 정의한 accounts url, 반드시 이 url을 먼저 적어야 한다.
-        path('accounts/', include('accounts.urls')),
-        #allauth에서 정의한 accounts url
-        path('accounts/', include('allauth.urls'))
-    ]
-    #둘이 겹쳐도 상관 없는 이유는 accounts이후의 경로가 다르기 때문이다.
-    #직접 작성한 url login,logout,signup등의 경로를 일반적으로 가지지만
-    #allauth의 url은 google이라는 경로를 가지기에 알아서 분기가 된다.
+    ```python
+      urlpatterns = [
+          #직접 정의한 accounts url, 반드시 이 url을 먼저 적어야 한다.
+          path('accounts/', include('accounts.urls')),
+          #allauth에서 정의한 accounts url
+          path('accounts/', include('allauth.urls'))
+      ]
+      #둘이 겹쳐도 상관 없는 이유는 accounts이후의 경로가 다르기 때문이다.
+      #직접 작성한 url login,logout,signup등의 경로를 일반적으로 가지지만
+      #allauth의 url은 google이라는 경로를 가지기에 알아서 분기가 된다.
     ```
   
   - login 양식을 제공하는 html에 아래의 코드를 입력
