@@ -1252,6 +1252,18 @@ select * from people_people
   
   #e.g.
   User.objects.filter(Q(balance__gte=2000)|Q(age__lte=40)).count()
+  
+  
+  #여러 데이터를 한 번에 가져와야 할 경우
+  #예를 들어 각각 1,3,5,7,9의 pk 값을 가지는 영화들을 가져와야 할 경우 아래와 같이 하면 된다.
+  #꼭 아래와 같이 list가 아니라 queryset이라도 이름만 맞춰주면 알아서 id값이 들어가게 된다.
+  def aaa(request):
+      li = [1,2]
+      users = User.objects.filter(pk__in=li)
+      print(users)
+      
+  #out
+  <QuerySet [<User: qqq@qqq.com>, <User: www@www.com>]>
   ```
 
 
