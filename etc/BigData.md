@@ -820,7 +820,6 @@
   
   
   
-
 - sql 데이터를 읽어오는 방법
 
   > https://swalloow.github.io/db-to-dataframe/ 참고
@@ -1476,6 +1475,10 @@ keep='last'
 # 추천 시스템
 
 > https://www.youtube.com/watch?v=_YndKkun2Sw 참고
+>
+> https://lsjsj92.tistory.com/568 참고
+
+- 프로젝트에 위 사이트를 참고하여 짠 user, item based 코드가 있으므로 추후에 작성할 것
 
 ## Collaborative filtering
 
@@ -1523,7 +1526,7 @@ keep='last'
   
   - 영화의 유사성을 계산한다.
     - 역시  `Cosine similarity`로 어바웃 타임과 러브레터의 유사도를 계산하면 다음과 같다.
-    - 러브레터는 B와 C에게 높은 평가를 받았다.
+    - 러브레터는 B와 D에게 높은 평가를 받았다.
     - 어바웃 타임은 B에게만 높은 평가를 받았다.
     - 이 때  `Cosine similarity`로 어바웃 타임과 러브레터의 유사도를 비교해보면 0.71이 나온다.
     - B는 어벤져스, 존윅, 인터스텔라에는 높은 평가를 하지 않았다.
