@@ -403,14 +403,14 @@
     	}
     }
     
-    //substring: String자료형과 동일
+    //substring: String자료형의 substring 메소드와 사용법이 동일
     package first;
     
     public class HelloWorld {
     
     	public static void main(String[] args) {
     		StringBuffer a = new StringBuffer();
-            a.append("Hello  my name is java.");
+            a.append("Hello my name is java.");
             System.out.println(a.substring(0,4)); //Hell
     	}
     }
@@ -468,7 +468,7 @@
   System.out.println(weeks.length);  //3
   ```
 
-  - `ArrayIndexOutOfBoundsException`에러는 파이썬의 index out of range와 동일한 에러다.
+  - `ArrayIndexOutOfBoundsException`에러는 파이썬의 `index out of range`와 동일한 에러다.
 
   -  2차원 배열 
 
@@ -582,6 +582,9 @@
 
   - Key와 Value를 가진 자료형으로 파이썬의 딕셔너리에 해당.
   - import를 해서 사용해야 한다.
+  - 아래에서 사용한 `HashMap`뿐 아니라 입력된 순서대로 데이터가 출력되는  `LinkedHashMap`과, key의 소트순으로 데이터가 출력되는 `TreeMap`도 있다.
+    - Map의 가장 큰 특징은 순서에 의존하지 않고 key로 value를 가져오는데 있다. 하지만 가끔은 Map에 입력된 순서대로 데이터를 가져오고 싶은 경우도 있고 때로는 입력된 key에 의해 소트된 데이터를 가져오고 싶을 수도 있다.
+    - 위와 같은 경우 `LinkedHashMap`과 `TreeMap`을 사용하면 된다.
 
   ```java
   package first;
@@ -640,7 +643,7 @@
 - 열거형(`enum`)
 
   - JDK5에서 추가된 문법, 이전까지는 상수형을 열거형 대신 사용
-  - 즉, 어떤 변수가 자유로운 값이 아닌 특정한 값만을 가지기를 원할 때 사용하는 것이 `enum`이다
+  - 즉, 어떤 변수가 자유로운 값이 아닌 특정한 값만을 가지기를 원할 때 사용하는 것이 `enum`이다.
 
   ```java
   //기본형
@@ -724,8 +727,6 @@
 
     
 
-
-
 - 증감연산
 
   - `++`, `--`가 존재, 파이썬의 +=1, -=1과 동일 
@@ -744,7 +745,7 @@
   		int a=5;
   		int b=5;
   		a++;
-  		System.out.println(a);   //
+  		System.out.println(a);   //6
   		b--;
   		System.out.println(b);   //4
   	}
@@ -970,10 +971,16 @@
       <수행할 문장3>
       ...
   }
+  
+//예시
+  String[] numbers = {"one", "two", "three"};
+for(int i=0; i<numbers.length; i++) {
+      System.out.println(numbers[i]);
+  }
   ```
-
+  
   - for each
-
+  
   ```java
   //기본 구조
   for (type 변수: iterate) {

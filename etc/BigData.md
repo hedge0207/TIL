@@ -1371,16 +1371,6 @@ keep='last'
 
 
 
-
-
-
-
-
-
-
-
-
-
 ## Matplotlib
 
 - Matplotlib:  파이썬에서 데이타를 차트나 플롯(Plot)으로 그려주는 라이브러리 패키지로서 가장 많이 사용되는 데이타 시각화(Data Visualization) 패키지
