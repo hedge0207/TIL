@@ -377,15 +377,14 @@
 
   ```java
   //기본형
-  
   //입력변수를 매개변수 혹은 인자라고도 부른다.
   public 리턴자료형 메소드명(입력자료형1 입력변수1, 입력자료형2 입력변수2, ...) {
       ...    
       return 리턴값;  // 리턴자료형이 void 인 경우에는 return 문이 필요없다.
   }
   ```
-
-  - 클래스 내에 구현된 함수를 메소드라고 한다. 
+  
+- 클래스 내에 구현된 함수를 메소드라고 한다. 
   - Java는 클래스를 떠나 존재하는 것이 있을 수 없기에 자바에는 함수가 따로 존재하지 않고 메소드만 존재한다고 볼 수 있다.
   - 사용하는 이유는 다른 언어와 마찬가지로 반복 작업을 보다 편하게 하기 위해서이다.
   - 객체 변수와 마찬가지로 도트 연산자를 통해 접근이 가능하다.
@@ -394,55 +393,64 @@
   
   - `this`: 메소드 내부에 사용된 `this`는 클래스에 의해서 생성된 객체를 지칭한다.
   
-  ```java
+    - 아래 예시의 경우 메소드가 아닌 생성자이지만 `this`를 설명하는데는 지장이 없다.
+  
+    ```java
     //아래와 같은 코드의 경우 별 문제가 없지만
-    package first;
+    package pract;
     
-    public class Example {
-    	String name1="이름1";
-    	public Example(String name2) {
+    public class method {
+    	String name1= "이름";
+    	
+    	public method(String name2) {
     		name1=name2;
     	}
-    }  
-    
+    	
+    	public static void main(String[] args) {
+    		method m1 = new method("이름2");
+    		System.out.println(m1.name1); //이름2
+    	}
+    }
+      
     //아래 코드의 경우 객체변수와 매개변수의 변수명이 같으므로 문제가 생긴다.
-    package first;
+    package pract;
     
-    public class Example {
-    	String name;
-        
-    	public Example(String name) {
-    		name=name; //이 줄에 사용 된 2개의 name은 모두 매개변수 name을 가리키게 된다.
-            //즉 예시에 따르면
+    public class method {
+    	String name= "이름";
+    	
+    	public method(String name) {
+    		name=name;  //이 줄에 사용 된 2개의 name은 모두 매개변수 name을 가리키게 된다.
+            //즉 예시에 따르면 아래에서 이 메소드의 인자로 "이름2"를 받으므로
             //"이름2"="이름2"와 마찬가지인 코드다.
-            System.out.println(name);  //이름2
-  	}
-        
-      public static void main(String[] args) {
-            Example e1 = new Example("이름2");
-            
-            //따라서 객체변수 name은 바뀐 적이 없으므로 null값이 출력된다.
-            System.out.println(e1.name);  //null
+    		System.out.println(name); //이름2
+    	}
+    	
+    	public static void main(String[] args) {
+    		method m1 = new method("이름2");
+            //따라서 객체변수 name은 바뀐 적이 없으므로 "이름"이 출력된다.
+    		System.out.println(m1.name); //이름
     	}
     }
     
     //this를 사용하면 위와 같은 문제를 해결할 수 있다.
-    package first;
-    
-    public class Example {
-    	String name="이름1";
-    	public Example(String name) {
-            //this는 객체 자신을 가리키므로 아래 코드는 다음과 같다.
+    package pract;
+      
+    public class method {
+      	String name="이름1";
+      	public method(String name) {
+    		//this는 객체 자신을 가리키므로 아래 코드는 다음과 같다.
             //e1.name=name;
-    		this.name=name;
-            System.out.println(name); //이름2
-    	}
-        public static void main(String[] args) {
-            Example e1 = new Example("이름2");
-            System.out.println(e1.name);  //이름2
-    	}
-    }  
-  ```
+      		this.name=name;
+      		System.out.println(name); //이름2
+      	}
+      	public static void main(String[] args) {
+      		method m1 = new method("이름2");
+          System.out.println(m1.name);  //이름2
+      	}
+    }
+    ```
+  
+    
   
     
   
@@ -453,25 +461,26 @@
   - 클래스에 정의된 메소드를 사용하기 위해서는 객체를 만들어야 한다.
   
   ```java
-  package first;
+  package pract;
   
-  public class Animal {
+  public class animal {
   	String name;
       
       //setName이라는 메소드를 작성
-      //void는 리턴값(출력)이없다는 의미이고, String name은 name이라는 문자열을 입력으로 받는 메소드라는 뜻이다.
+      //void는 리턴값(출력)이없다는 의미이고, String iname은 iname이라는 문자열을 입력으로 받는 메소드라는 뜻이다.
   	public void setName(String iname) {
           //여기서 this는 Animal class에 의해 생성되어 이 함수를 실행시킨 객체인 cat을 가리킨다.
   		this.name=iname;
           //즉 아래 예시에 따라 아래 코드를 풀어쓰면 다음과 같다.
           //cat.name="Summer";
   	}
+  	public static void main(String[] args) {
+  		//객체 생성
+  		animal cat = new animal();
+  		cat.setName("Summer");
+  		System.out.println(cat.name);  //Summer
+  	}
   }
-  
-  //객체 생성
-  Animal cat = new Animal();
-  cat.setName("Summer");
-  System.out.println(cat.name);  //Summer
   ```
   
   - 리턴값이 있을 경우의 메소드
@@ -972,6 +981,11 @@
   - 즉, 생성자는 다음의 규칙을 따른다
     - 클래스명과 메소드명이 동일하다.
     - 리턴타입을 정의하지 않는다.
+  - 생성자의 특징
+    - 생성자는 자바 클래스의 멤버가 아니다.
+    - 상속되지 않는다.
+    - 오버라이딩의 대상이 될 수 없다.
+    - 일반적인 메소드 호출 방법으로 호출할 수 없다.
   - `new`
     - 생성자는 객체가 생성될 때 호출된다.
     - 객체가 생성될 때는 `new`라는 키워드로 객체가 만들어질 때이다.

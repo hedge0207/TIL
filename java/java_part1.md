@@ -28,7 +28,7 @@
     - main 메소드는 반드시 필요하다. main 메소드는 프로그램 실행 시 파라미터를 입력으로 받을 수 있는데 입력 받은 파라미터는 메소드의 입력 파라미터`String[] args`에 저장된다.
     - `public`: 메소드의 접근제어자로, 누구나 이 메소드에 접근할 수 있다는 의미다.
     - `static`: 메소드에 static이 지정되어 있는 경우 이 메소드는 인스턴스 생성 없이 실행 할 수 있음을 의미
-    - `void`: 메소드의 리턴 값이 없음을 의미한다
+    - `void`: 메소드의 리턴 값이 없음을 의미한다.
     - `String`: 문자열
     - `args`: string 자료형에 대한 변수명으로 String 뒤에 []가 있으므로 한 개가 아닌 여러 개의 값으로 이루어진 배열임을 의미
     - `System.out.println`: 표준출력으로 데이터를 보내는 자바의 내장 메소드로 println 메소드로 들어오는 문자열 값을 화면에 출력한다.
@@ -972,62 +972,64 @@
       ...
   }
   
-//예시
+  //예시
   String[] numbers = {"one", "two", "three"};
-for(int i=0; i<numbers.length; i++) {
-      System.out.println(numbers[i]);
-  }
+  	for(int i=0; i<numbers.length; i++) {
+        System.out.println(numbers[i]);
+    	}
   ```
-  
+
   - for each
-  
+
   ```java
   //기본 구조
   for (type 변수: iterate) {
       body-of-loop
   }
-  
+    
   //예시
   package first;
-  
+    
   import java.util.HashMap;
-  
+    
   public class HelloWorld {
-  
-  	public static void main(String[] args) {
-  		int[] numbers = {1,2,3};
-  		for(int number: numbers) {
-  		    System.out.println(number);
-  		}
-  	}
+    
+   public static void main(String[] args) {
+    	int[] numbers = {1,2,3};
+    	for(int number: numbers) {
+    	   System.out.println(number);
+   	}
+    }
   }
-  
+    
   out
   1
   2
   3
-  
-      
+    
+        
   //2차원 배열에서 for each
   package first;
-  
+    
   import java.util.Arrays;
-  
+    
   public class HelloWorld {
-  
+    
       public static void main(String[] args) {
           int[][] arr = new int[3][];
           arr[0]=new int[1];
           arr[1]=new int[2];
           arr[2]=new int[3];
           for(int[] a:arr) {   //a의 type은 (위에서 인트가 담기는 배열로 선언했으므로)int가 담긴 배열이 될 것이므로 int[]가 된다.
-              System.out.println(Arrays.toString(a));
+          	System.out.println(Arrays.toString(a));
           }
       }
   }
-  
+    
   out
   [0]
   [0, 0]
   [0, 0, 0]
   ```
+
+  
