@@ -32,6 +32,9 @@
     - sout까지 입력하면 `System.out.println`이 뜨는데 관련 옵션이 많이 있으므로 살펴보는 것도 좋다.
     - ctrl+d는 표시한 영역을 전부 복사 붙여넣기 하는 단축키다.
     - 복붙 한 뒤 복붙한 코드의 일부를 기존 코드와 바꾸려 할 경우 shift+f6으로 쉽게 변경 가능하다.
+    - ctrl+alt+v는 리턴 값을 저장할 변수를 자동으로 생성해준다.
+    - 메서드로 만들고자 하는 코드 블럭을 하이라이트 한 후 ctrl+alt+M을 누르면 해당 코드블럭을 메서드로 만들어준다.
+    - 테스트 하려는 파일의 클레스 레벨에서 ctrl+shift+T를 누르면 테스트 파일을 생성할 수 있다.
 
 
 
@@ -150,11 +153,13 @@
   - 스프링 부트에서는 `src/main/resources/static`폴더 내부에 `index.html` 파일을 만들면 사이트에 처음 들어갔을 때 해당 페이지를 띄워 준다.
 
     - 파일명이 반드시 `index.html`이어야 한다.
+  - 단, 컨트롤러에 기본 url(`http://localhost:8080/`)에 해당하는 주소가 없어야 한다.
+    - 만일 컨트롤러에 `@GetMapping("/")`와 같이 기본 경로에 대한 메서드가 존재하면 컨트롤러가 우선권을 지닌다.
 
   - `src/main/resources/static/index.html`
 
     - 아래와 같이 작성 후 서버가 켜져 있었을 경우 서버를 재실행 하고 `localhost:8080`으로 접속해보면 hello!가 떠 있는 것을 확인할 수 있다.
-
+  
     ```html
     <!DOCTYPE html>
     <html lang="en">
@@ -571,7 +576,11 @@
 
 
 
-## 회원 관리 예제
+
+
+
+
+# 회원 관리 예제
 
 - 주의 사항
   - 아직 데이터 저장소를 설정하지 않은 상태라고 가정
@@ -771,7 +780,7 @@
           
           //저장 후 제대로 저장이 되었는지 검사
           //만일 제대로 저장이 되었다면 map에 id:name 묶음이 저장되었을 것이므로 id값으로도 찾을 수 있을 것이다.
-          //Optional이 붙은 값을 가져 올 때는 아래와 같이 .get()을 붙여줘야 한다.
+          //Optional이 붙은 값을 가져 올 때는 아래와 같이 .get()을 붙여줘야 한다(그러나 권장하는 방법은 아니다. 아래 회원 서비스 개발 참조).
           Member result = repository.findById(member.getId()).get();
   
           //결과를 확인할 때는 아래와 같이 print 해봐도 되지만
@@ -853,19 +862,573 @@
 
 
 
+## 회원 서비스 개발
+
+- 서비스는 전체적인 네이밍을 일반적으로 비즈니스에서 사용하는 용어로 사용하는 것이 관례다. 도메인, 리포지토리와는 달리 비즈니스 로직은 개발자 이외의 사람들과도 소통을 하면서 개발해야 하는 부분이 많기에 자신만 알아 볼 수 있는 용어 보다는 개발자가 아닌 사람도 알아 볼 수 있게 네이밍을 해야 한다.
 
 
 
+- 예제
+
+  - 기존에 패키지들을 만들었던 폴더에 service라는 패키지를 추가로 생성한다.
+  - `main/java/프로젝트명/프로젝트그룹명/service/MemberService`
+
+  ```java
+  package hello.hellospring.sevice;
+  
+  import hello.hellospring.domain.Member;
+  import hello.hellospring.repository.MemberRepository;
+  import hello.hellospring.repository.MemoryMemberRepository;
+  
+  import java.util.List;
+  import java.util.Optional;
+  
+  public class MemberServiece {
+  	//아래와 같이 했을 때 이 파일에서 사용하는 repository와 test 파일에서 사용하는 repository가 달라지는 문제가 존재.
+      //private final MemberRepository memberRepository = new MemoryMemberRepository();
+      
+      //따라서 아래와 같이 정의한다.
+      //아래 코드에서 MemberServiece 메서드는 memberRepositoryPara를 인자로 받아 memberRepository에 넣어주는데 
+      //이를 Dependency Injection(DI)이라 한다.
+      private final MemberRepository memberRepository;
+  
+      public MemberServiece(MemberRepository memberRepositoryPara){
+          this.memberRepository = memberRepositoryPara;
+      }
+      
+      //회원 가입
+      public Long join(Member member){
+          //중복된 이름 검사
+          //memberRepository.findByName(member.getName())까지만 입력하고 ctrl+alt+v를 입력하면 아래와 같이 자동완성이 된다.
+          //Optional<Member> byName = memberRepository.findByName(member.getName());
+          Optional<Member> result = memberRepository.findByName(member.getName());
+  
+          //만일 result가 null이 아니면, 즉 동일한 회원명이 있으면 IllegalStateException를 발생시킨다.
+          //result.get()을 쓰지 않는 경우는 .get()을 쓰는 것을 권장하지 않기 때문이다(그러나 간편하기에 예제에서는 get을 사용).
+          //때문에 보통 아래와 같이 .ifPresent()를 사용하며, 부득이 get을 사용해야 할 경우 orElseGet을 사용한다.
+          //단, ifPresent를 사용하기 위해서는 findBy~를 정의할 때 반드시 Optional로 감싸줘야 한다.
+          //그래야 찾는 값이 없을 때 null값을 반환해 ifPresent가 null값인지를 판단할 수 있기 때문이다.
+          result.ifPresent(m -> {
+              throw new IllegalStateException("이미 존재하는 회원입니다.");
+          });
+  
+          //위 코드를 축약하면 아래와 같이 쓸 수 있다.
+          /*
+          memberRepository.findByName(member.getName())
+                  .ifPresent(m -> {
+                      throw new IllegalStateException("이미 존재하는 회원입니다.");
+                  });
+          */
+  
+          memberRepository.save(member);
+          return member.getId();
+      }
+  
+      //혹은 아래와 같이 중복 검사 부분을 메서드로 빼서 실행시킬 수도 있다(ctrl+alt+M)
+      /*
+      public Long join(Member member) {
+          validateDuMember(member);
+          memberRepository.save(member);
+          return member.getId();
+      }
+  
+      private void validateDuMember(Member member) {
+          Optional<Member> result = memberRepository.findByName(member.getName());
+          result.ifPresent(m -> {
+              throw new IllegalStateException("이미 존재하는 회원입니다.");
+          });
+      }
+      */
+  
+  
+      //전체 회원 조회
+      public List<Member> findMembers(){
+          return memberRepository.findAll();
+      }
+  
+      //특정 회원 조회
+      public Optional<Member> findOne(Long MemberId){
+          return memberRepository.findById(MemberId);
+      }
+  }
+  ```
 
 
 
+- 테스트
+
+  - 보다 쉽게 테스트 생성하는 방법
+    - 테스트 하려는 파일의 클레스 레벨에서 ctrl+shift+T를 누르면 테스트 파일을 생성할 수 있다.
+    - `Testing library`는 `JUnit5`를 선택하고 테스트 할 메서드를 선택하면 된다.
+  - 테스트 메서드는 한글을 사용하는 경우도 있다.
+    - 빌드 될 때 테스트 코드는 포함되지 않으므로 한글로 해도 상관 없다.
+  - 대부분의 테스트는 given/when/then으로 나눌 수 있다.
+    - given: 주어진 상황에서
+    - when: 코드를 실행했을 때
+    - then: 기대한 결과가 나와야 한다.
+  - `main/test/프로젝트명/프로젝트그룹명/service/MemberServieceTest`
+
+  ```java
+  package hello.hellospring.sevice;
+  
+  import hello.hellospring.domain.Member;
+  import hello.hellospring.repository.MemoryMemberRepository;
+  import org.junit.jupiter.api.AfterEach;
+  import org.junit.jupiter.api.BeforeEach;
+  import org.junit.jupiter.api.Test;
+  
+  import static org.assertj.core.api.Assertions.*;
+  import static org.junit.jupiter.api.Assertions.assertThrows;
+  
+  class MemberServieceTest {
+  	//아래와 같이 할 경우 테스트 할 파일에서 사용하는 repository와 test 파일에서 사용하는 repository가 달라지는 문제가 존재.
+      //MemberServiece memberServiece = new MemberServiece();
+      //MemoryMemberRepository memberRepository = new MemoryMemberRepository();
+  	
+      //따라서 아래와 같이 작성한다.
+      MemberServiece memberServiece;
+      MemoryMemberRepository memberRepository;
+  
+      //각 메서드가 실행되기 전에, MemberServiece를 실행시키면서 빈 memberRepository를 인자로 넘겨 repository를 초기화 해준다.
+      @BeforeEach
+      public void beforeEach(){
+          memberRepository = new MemoryMemberRepository();
+          memberServiece = new MemberServiece(memberRepository);
+      }
+  
+      //data clear용 메서드
+      @AfterEach
+      public void afterEachRun(){
+          memberRepository.clearUserList();
+      }
+  
+      //정상 플로우
+      @Test
+      void 회원가입() {
+          //given: hello라는 이름으로 회원가입 하는 상황에서
+          Member member = new Member();
+          member.setName("hello");
+  
+          //when: 회원가입이 실행될 때
+          Long saveId = memberServiece.join(member);
+  
+          //then: 동일하지 않으면 정상적으로 가입이 완료되어야 한다.
+          Member findMember = memberServiece.findOne(saveId).get();
+          assertThat(member.getName()).isEqualTo(findMember.getName());
+      }
+  
+      //에러 플로우
+      @Test
+      public void 중복_회원_예외(){
+          //given
+          Member member1 = new Member();
+          member1.setName("spring");
+  
+          Member member2 = new Member();
+          member2.setName("spring");
+  
+          //when
+          //예외처리 방법
+          //방법1. lambda식 이용
+          memberServiece.join(member1);
+          //member2가 회원가입 할 때, IllegalStateException이 발생한다면, error가 발생하지 않고 정상 실행된다.
+          assertThrows(IllegalStateException.class, () -> memberServiece.join(member2));
+          
+          //메세지가 동일한지 확인하는 방식으로 검증
+  //        IllegalStateException e = assertThrows(IllegalStateException.class, () -> memberServiece.join(member2));
+  //        //만일 IllegalStateException error의 메세지가 "실패!!"와 다르다면 에러를 띄운다.
+  ////      //MemberServiece에서 정의한 IllegalStateException error의 메세지는 "이미 존재하는 회원입니다." 이므로 error가 발생한다.
+  //        assertThat(e.getMessage()).isEqualTo("실패!!");
+  
+  
+  
+          //아래와 같이 try, catch를 써도 되지만 구성이 까다롭다면 위 방식으로 하면 된다.
+          //방법2. try, catch 사용
+  //        memberServiece.join(member1);
+  //        try {
+  //            memberServiece.join(member2);
+  //            fail("예외가 발생해야 합니다.");
+  //        } catch (IllegalStateException e) {
+  //            //만일 IllegalStateException error의 메세지가 "실패!!"와 다르다면 에러를 띄운다.
+  //            //MemberServiece에서 정의한 IllegalStateException error의 메세지는 "이미 존재하는 회원입니다." 이므로 error가 발생한다.
+  //            assertThat(e.getMessage()).isEqualTo("실패!!");
+  //        }
+  
+      }
+  
+      @Test
+      void findMembers() {
+      }
+  
+      @Test
+      void findOne() {
+      }
+  }
+  ```
+
+  
+
+  
+
+## *스프링 빈과 의존관계
+
+- 회원 컨트롤러와 서비스가 리포지토리를 사용 할 수 있게 의존관계를 준비
+  - 컨테이너에 등록된 객체를 스프링 빈(Bean)이라고 한다.
+  - 빈 사이의 의존관계를 연결해 주는 역할은 스프링의 컨테이너가 담당한다.
+  - 당연하게도 컨테이너에 등록이 되어 있어야 의존관계 설정이 가능하다.
+  - 스프링 컨테이너에 스프링 빈을 등록할 때 기본으로 싱글 톤으로 등록한다(유일하게 하나만 등록해서 공유한다).
+    - 예를 들어 배달 어플을 만든다고 할 때, 주문자와 회원 정보를 모두 Member라는 한 클래스를 사용한다고 하면
+    - 주문자 정보 관리 때 Member의 객체를 빈으로 등록하고, 회원 정보 관리 때 다시 Member의 객체를 빈으로 등록하지 않는다.
+    - 주문자 정보 관리 때 빈으로 등록했다면 회원정보 관리때는 해당 빈을 공유하여 사용한다. 
 
 
 
+- 스프링 빈 등록 방법1. 컴포넌트 스캔을 통한 자동 의존관계 설정
+
+  - 개발자가 Controller, Service, Repository에 각기 `@Controller`, `@Service`, `@Repository`라고 작성해 주는 방법.
+    - component 관련 어노테이션이 붙어 있으면 스프링은 해당 어노테이션이 사용된 클래스의 인스턴스를 하나씩 생성하여 컨테이너에 등록한다.
+    - 컨테이너는 등록된 인스턴스들의 의존관계를 설정해 주기에, component 관련 어노테이션을 써줘야 연결이 가능하다.
+    -  `@Controller`, `@Service`, `@Repository` 세 가지 모두 내부 코드를 보면 `@Component`가 사용되었다.
+    - 따라서 위 3가지를 써주면 컨테이너에 등록이 되고 컨테이너가 의존관계를 자동을 설정해준다.
+  - 스프링이 component 관련 어노테이션이 있는지 탐색해서 컨테이너에 등록해준는 파일들은 실행 파일(`~Application`파일)이 속한 폴더(`/프로젝트명/프로젝트그룹명`)의 하위폴더들만이다. 따라서 이외의 폴더에 파일을 만들어 놓고 component 관련 어노테이션을 사용하더라도 등록은 되지 않는다.
+  - `main/java/프로젝트명/프로젝트그룹명/controller/MemberController`
+
+  ```java
+  package hello.hellospring.controller;
+  
+  import hello.hellospring.sevice.MemberServiece;
+  import org.springframework.beans.factory.annotation.Autowired;
+  import org.springframework.stereotype.Controller;
+  
+  @Controller
+  public class MemberController {
+      //Controller에서 MemberService를 쓰기 위해서 아래와 같이 인스턴스를 생성해서 써도 되지만 권장하지않는다.
+      //만일 MemberController 뿐 아니라 다양한 컨트롤러에서 MemberServiece를 써야 할 경우, 각 컨트롤러에서 MemberService 클래스의
+      //각기 다른 인스턴스를 사용하는 셈이 되기 때문이다. 물론 그래야 하는 경우에는 아래와 같이 해야 겠지만 일반적으로 아래와 같이 새용하지 않는다.
+      //private final MemberServiece memberServiece = new MemberService();
+  
+      //따라서 아래와 같이 spring container에 동록하여 사용한다.
+      //먼저 선언해주고
+      private final MemberService memberService;
+  
+      @Autowired
+      //아래와 같은 생성자가 호출 될 때 @Autowired가 있으면 자동으로 빈이 등록되고 spring container에서 MemberServiece를 가져와 MemberController와 자동으로 연결해준다.
+      //그러나 아래 코드만 작성해서는 연결할 수 없다. 열결 하고자 하는 클래스에도 별도의 코드를 작성해야 한다.
+      public MemberController(MemberServiece memberService){
+          this.memberService = memberServiece;
+      }
+  
+  }
+  ```
+
+  - `main/java/프로젝트명/프로젝트그룹명/service/MemberService`
+
+  ```java
+  package hello.hellospring.sevice;
+  
+  import hello.hellospring.domain.Member;
+  import hello.hellospring.repository.MemberRepository;
+  import hello.hellospring.repository.MemoryMemberRepository;
+  //import 해야 한다.
+  import org.springframework.stereotype.Service;
+  import org.springframework.beans.factory.annotation.Autowired;
+  
+  import java.util.List;
+  import java.util.Optional;
+  
+  //아래와 같이 @Service를 입력해야 container가 찾을 수 있다.
+  @Service
+  public class MemberServiece {
+  
+      private final MemberRepository memberRepository;
+  	
+      //마찬가지로 생성자에 @Autowired를 붙여준다.
+      @Autowired
+      public MemberServiece(MemberRepository memberRepositoryPara){
+          this.memberRepository = memberRepositoryPara;
+      }
+      //후략
+  }
+  ```
+
+  - `main/java/프로젝트명/프로젝트그룹명/repository/MemberRepositroy`
+    - 리포지토리 역시 컨트롤러, 서비스와 마찬가지로 아래와 같이 추가해준다.
+
+  ```java
+  package hello.hellospring.repository;
+  
+  
+  import hello.hellospring.domain.Member;
+  import org.junit.jupiter.api.AfterEach;
+  //import 해주고
+  import org.springframework.stereotype.Repository;
+  
+  import java.util.*;
+  
+  //추가 해준다.
+  @Repository
+  public class MemoryMemberRepository implements MemberRepository{
+      private static Map<Long,Member> userList = new HashMap<>();
+      private static long n = 0L;
+  
+      @Override
+      public Member save(Member member) {
+          member.setId(++n);
+          userList.put(member.getId(),member);
+          return member;
+      }
+  
+      //후략
+  }
+  ```
+
+  
+
+- 스프링 빈 등록 방법2. 자바 코드로 직접 빈 등록하기
+
+  - Controller는 방법1. 컴포넌트 스캔을 통해 위와 동일하게 등록한다.
+  - `main/java/프로젝트명/프로젝트그룹명/SpringConfig`
+
+  ```java
+  package hello.hellospring.sevice;
+  
+  import hello.hellospring.sevice.MemberServiece;
+  import hello.hellospring.repository.MemberRepository;
+  import hello.hellospring.repository.MemoryMemberRepository;
+  import org.springframework.context.annotation.Bean;
+  import org.springframework.context.annotation.Configuration;
+  
+  @Configuration
+  public class SpringConfig {
+      
+      //MemberServiece을 Spring Bean에 등록하겠다는 코드
+      @Bean
+      public MemberServiece memberServiece(){
+          //bean에 등록된 memberRepository를 MemberServiece에 넣어준다.
+          return new MemberServiece(memberRepository());
+      }
+      
+      //MemberRepository를 Spring Bean에 등록하겠다는 코드
+      @Bean
+      public MemberRepository memberRepository(){
+          return new MemoryMemberRepository();
+      }
+  }
+  ```
 
 
 
+- 스프링 빈 등록 방법3. XML로 설정하는 방법
+  - 이러한 방법이 존재는 하지만 요즘에는 잘 사용하지 않는 방법이다.
 
 
 
+- 실무에서는 주로 정형화된 컨트롤러, 서비스, 리포지토리 같은 코드는 컴포넌트 스캔을 사용하고 정형화 되지 않거나 상황에 따라 구현 클래스를 변경해야 할 경우에는 설정을 통해 스프링 빈으로 등록한다.
+
+
+
+- 의존성 주입
+
+  - 의존성 주입에는 필드 주입, setter 주입, 생성자 주입의 3가지 방법이 있다.
+
+  - 의존관계가 실행중에 동적으로 변하는 경우는 거의 없으므로 생성자 주입을 권장한다.
+
+  - 예시
+
+    - 생성자 주입
+
+    ```java
+    package hello.hellospring.controller;
+    
+    import hello.hellospring.sevice.MemberServiece;
+    import org.springframework.beans.factory.annotation.Autowired;
+    import org.springframework.stereotype.Controller;
+    
+    @Controller
+    public class MemberController {
+    
+        private final MemberService memberService;
+    
+        @Autowired
+        //아래의 생성자를 통해서 memberService가 MemberController에 주입되는 생성자 주입 방식이다.
+        public MemberController(MemberServiece memberService){
+            this.memberService = memberServiece;
+        }
+    
+    }
+    ```
+
+    - 필드 주입: 권장되지 않는 방식으로 ide 설정에 따라 경고 문구가 뜨기도 한다.
+
+    ```java
+    package hello.hellospring.controller;
+    
+    import hello.hellospring.sevice.MemberServiece;
+    import org.springframework.beans.factory.annotation.Autowired;
+    import org.springframework.stereotype.Controller;
+    
+    @Controller
+    public class MemberController {
+        
+        @Autowired private MemberServiece memberServiece;
+    }
+    ```
+
+    - setter 주입
+
+    ```java
+    package hello.hellospring.controller;
+    
+    import hello.hellospring.sevice.MemberServiece;
+    import org.springframework.beans.factory.annotation.Autowired;
+    import org.springframework.stereotype.Controller;
+    
+    //setter 주입
+    @Controller
+    public class MemberController {
+    
+        private MemberServiece memberServiece;
+    
+        @Autowired
+        //아래 보이다 싶이 setMemberServiece가 public으로 설정되어야 하기에 어지간해서는 수정할 일이 없음에도 노출이 되어 수정이 가능해진다는 문	제가 있다.
+        public void setMemberServiece(MemberServiece memberServiece){
+            this.memberServiece = memberServiece;
+        }
+    }
+    ```
+
+  
+
+  
+
+  
+
+## 웹 MVC 개발
+
+- 홈 화면 만들기
+
+  - 컨트롤러(`main/java/프로젝트명/프로젝트그룹명/controller/HomeController`)
+
+  ```java
+  package hello.hellospring.controller;
+  
+  import org.springframework.stereotype.Controller;
+  import org.springframework.web.bind.annotation.GetMapping;
+  
+  @Controller
+  public class HomeController {
+      @GetMapping("/")
+      public String home(){
+          return "home";
+      }
+  }
+  ```
+
+  - html(`main/resources/templates/home.html`)
+
+  ```html
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <title>Title</title>
+  </head>
+  <body>
+      <div class="container">
+          <h1>Hello Spring</h1>
+          <p>회원 기능</p>
+          <p>
+              <a href="/member/join">회원 가입</a>
+              <a href="/members">회원 목록</a>
+          </p>
+      </div>
+  </body>
+  </html>
+  ```
+
+- 회원 가입 화면 만들기
+
+  - 컨트롤러(`main/java/프로젝트명/프로젝트그룹명/controller/MemberController`)
+
+  ```java
+  package hello.hellospring.controller;
+  
+  import hello.hellospring.domain.Member;
+  import hello.hellospring.sevice.MemberServiece;
+  import org.springframework.beans.factory.annotation.Autowired;
+  import org.springframework.stereotype.Controller;
+  import org.springframework.web.bind.annotation.GetMapping;
+  import org.springframework.web.bind.annotation.PostMapping;
+  
+  @Controller
+  public class MemberController {
+  
+      private final MemberServiece MemberService;
+  
+      @Autowired
+      public MemberController(MemberServiece memberService){
+          this.MemberService = memberService;
+      }
+  	
+      //회원가입 화면으로 이동
+      @GetMapping("/member/join")
+      public String createForm(){
+          return "members/createMemberForm";
+      }
+  	
+      //회원가입 실행
+      @PostMapping("/member/join")
+      public String create(MemberForm form){
+          Member member = new Member();
+          member.setName(form.getName());
+  
+          MemberService.join(member);
+  
+          return "redirect:/";
+      }
+  }
+  ```
+
+  - html(`main/resources/templates/members/home.html`)
+
+  ```html
+  <!DOCTYPE HTML>
+  <html xmlns:th="http://www.thymeleaf.org">
+  <body>
+  <div class="container">
+      <!--action에 요청을 보낼 경로와 방식을 입력한다.-->
+      <form action="/member/join" method="post">
+          <div class="form-group">
+              <label for="name">이름</label>
+              <!--아래 name="name"과 MemberForm의 name이 매칭되는 것이다.-->
+              <input type="text" id="name" name="name" placeholder="이름을 입력하세요">
+          </div>
+          <button type="submit">등록</button>
+      </form>
+  </div> <!-- /container -->
+  </body>
+  </html>
+  ```
+
+  - 회원 데이터 처리(`main/java/프로젝트명/프로젝트그룹명/controller/MemberForm`)
+
+  ```java
+  package hello.hellospring.controller;
+  
+  public class MemberForm {
+      private String name;
+  
+      public String getName() {
+          return name;
+      }
+  
+      public void setName(String name) {
+          this.name = name;
+      }
+  }
+  ```
+
+  
+
+  
 
