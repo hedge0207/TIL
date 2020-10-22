@@ -54,24 +54,18 @@
 
 
 
-- `IoC`(Inversion of Control)
+- `IoC`(Inversion of Control)/`DI(Dependency Injection)`
 
-  - 정의: 객체 지향 언어에서 객체 간의 연결 관계(의존성)를 컨테이나가 결정하게 하는 방법
+  - 정의: 객체 지향 언어에서 객체 간의 연결 관계(의존성)를 컨테이나가 결정하게 하는 방법, 객체의 생성과 생명주기를 컨테이너가 관리한다.
     - 어떤 객체가 사용할 객체(의존적인 객체)를 직접 선언하여 사용하는 것이 아니라, 어떤 방법을 사용하여 주입 받아 사용하는 방법
     - 기존에는 의존성(객체 간의 연결 관계 설정)에 대한 제어권이 개발자에게 있었다면 IoC는 개발자가 아닌 컨테이너가 제어권을 가지게 된다(제어의 역전).
-  - 객체 간의 관계가 느슨하게 연결된다.
-    - A와 B 객체가 바로 연결 된 것을(`A-B`) 강하게 연결되었다고 하고
-    - A와 B 객체가 C라는 인터페이스를 통해 연결 된 것을(`A-B-C`) 느슨하게 연결되었다고 한다.
-    - 느슨하게 연결했을 때의 장점은 수정, 삭제 후 새로운 클래스 이식 등이 비교적 자유롭다는 점이다.
-  - `IoC`의 구현 방법 중 하나가 `DI`(Dependency Injection)다.
-  - 예시
 
   ```java
   //일반적인 제어권 관리
   //BookService에서 BookRepository를 사용하고자 할 경우 아래와 같이 작성했다.
   @Service
   public class BookService {
-      //의존적인 객체를 직접 생성하여 사용
+      //의존적인 객체를 개발자가 직접 생성하여 사용
       private BookRepository bookRepository = new BookRepository();
   }
   
@@ -79,30 +73,187 @@
   //IoC
   @Service
   public class BookService {
-      
+      //사용은 하지만 new를 통해 만들진 않는다.
       private BookRepository bookRepository;
-      //생성자를 통해서 의존성을 관리
+      //BookService 밖에서 의존성을 줄 수 있도록 생성자를 통해서 의존성을 주입
       public BookService(BookRepository bookRepository){
           this.bookRepository = bookRepository
       }
   }
   ```
 
-  
-
-
-
-
-
-- java의 method는 아래의 형태를 가진다.
+  - 객체 간의 관계가 느슨하게 연결된다.
+    - A와 B 객체가 바로 연결 된 것을(`A-B`) 강하게 연결되었다고 하고
+    - A와 B 객체가 C라는 인터페이스를 통해 연결 된 것을(`A-B-C`) 느슨하게 연결되었다고 한다.
+    - 느슨하게 연결했을 때의 장점은 수정, 삭제 후 새로운 클래스 이식 등이 비교적 자유롭다는 점이다.
+  - `IoC`의 구현 방법 중 하나가 `DI`(Dependency Injection)다.
+  - 의존성 관리 방법1.클래스와 클래스를 직접 연결(강한 연결)
+    - 처음에는 "안녕! "이라는 문구를 넣었는데 영어로 "Hello! "라고 바꿔야 한다면 직접 수정해야 한다.
 
   ```java
-  반환타입 method명(매개변수 목록){ 선언부
-      구현부;
+  //Hello.java
+  
+  package step1;
+  
+  public class Hello {
+  	public void sayHello(String name) {
+  		//System.out.println("안녕! "+name);
+          System.out.println("Hello! "+name);
+  	}
+  }
+  
+  
+  //HelloTest.java
+  package step1;
+  
+  public class HelloTest {
+  	public static void main(String[] args) {
+          //연결된 class인 Hello로 객체를 생성한 후 객체를 지칭하고 있는 hello를 가지고 sayHello() 메서드를 호출한다.
+  		Hello hello = new Hello();
+  		hello.sayHello("홍길동");
+  	}
   }
   ```
 
+  - 의존성 관리 방법2. 인터페이스를 사용하여 느슨한 연결
+    - 인터페이스를 사용하는 클래스를 생성
+    - 처음에는 "안녕! "이라는 문구를 넣었는데 영어로 "Hello! "라고 바꿔야 한다면 코드를 수정해야 한다.
+
+  ```java
+  //Hello.java
+  package step2;
+  //인터페이스 생성
+  public interface Hello {
+  	//선언된 메서드
+  	public void sayHello(String name);
+  }
   
+  
+  //HelloKo.java
+  package step2;
+  
+  public class HelloKo implements Hello{
+  
+  	@Override
+  	public void sayHello(String name) {
+  		System.out.println("안녕! "+name);
+  	}
+  }
+  
+  
+  //HelloEn.java
+  package step2;
+  
+  public class HelloEn implements Hello{
+  
+  	@Override
+  	public void sayHello(String name) {
+  		System.out.println("Hello! "+name);
+  	}
+  }
+  
+  
+  //HelloTest.java
+  package step2;
+  
+  public class HelloTest {
+  	public static void main(String[] args) {
+          //이 부분을 직접 수정해야 한다.
+  		//Hello hello = new HelloKo();
+  		//hello1.sayHello("홍길동");
+  		Hello hello = new HelloEn();
+  		hello2.sayHello("홍길동");
+  	}
+  }
+  ```
+
+  - 의존성 관리 방법3. IoC
+    - 이 방법을 사용하기 위해선 spring이 필요
+    - 만일 수정하고 싶다면 xml 파일만 수정하면 된다.
+
+  ```xml
+  <!--applicationContext.xml-->
+  <?xml version="1.0" encoding="UTF-8"?>
+  <beans xmlns="http://www,springframework.org/chema/beans"
+  	   xmlns:xsi="http://www.w3.org/2001/XNLSchema-istance"
+  	   xsi:schmaLocation="http://www.springframework.org/schema/beans
+  	   						http://www.springframework.org/schema/beans/spring-beans.xsd">
+  	   <!--xml의 태그 명은 데이터에 대한 서술, 설명-->
+  	   <!-- 등록할 Bean을 정의, 추상 클래스, 인터페이스는 등록 불가 -->
+      
+  	   <!-- 아래 코드는 HelloKo hk = new HelloKo() 와 동일한 코드 -->
+  	   <!--
+      	<Bean class="step3.HelloKo"
+  	   		 id="hi"</Bean>
+      	-->
+      
+      	<!-- 영어로 표시하고 싶다면 아래와 같이 class명만 바꾸면 된다. -->
+      	<Bean class="step3.HelloEn"
+  	   		 id="hi"</Bean>
+  </beans>
+  ```
+
+  ```java
+  //Hello.java
+  package step3;
+  
+  public interface Hello {
+  	public void sayHello(String name);
+  }
+  
+  
+  //HelloKo.java
+  package step3;
+  
+  public class HelloKo implements Hello{
+  	
+  	//생성자
+  	public HelloTestKo() {
+  		System.out.println("기본 생성자가 호출되었습니다.");
+  	}
+  
+  	@Override
+  	public void sayHello(String name) {
+  		System.out.println("안녕! "+name);
+  	}
+  }
+  
+  
+  //HelloEn.java
+  package step3;
+  
+  public class HelloEn implements Hello{
+  
+  	@Override
+  	public void sayHello(String name) {
+  		System.out.println("Hello! "+name);
+  	}
+  }
+  
+  
+  //HelloTest.java
+  package step3;
+  
+  import org.springframework.context.ApplicationContext;
+  import org.springframework.context.support.ClassPathXmlApplicationContext;
+  
+  public class HelloTest {
+  	public static void main(String[] args) {
+  		//테스트가 실행되면 HelloKo의 생성자가 실행되어 "기본 생성자가 호출되었습니다."가 출력된다.
+  		ApplicationContext ctx = new ClassPathXmlApplicationContext
+            		//step3/applicationContext.xml은 src부터 applicationContext.xml파일 까지의 경로이다.
+  				("step3/applicationContext.xml");
+          //.getBean("hi")에 들어간 "hi"는 xml에서 지정해준 id이다.  
+          Hello hello = (Hello) ctx.getBean("hi");
+          hello.sayHello("홍길동");
+          //xml파일에 어떤 클래스를 작성했는가에 따라 "안녕! 홍길동"이 나오기도 하고 "Hello! 홍길동"이 나오기도 한다.
+  	}
+  }
+  ```
+
+
+
+
 
 
 
