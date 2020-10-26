@@ -104,3 +104,19 @@
 
   
 
+
+
+
+
+- `@NotNull`, `@NotEmpty`, `@NotBlank`의 차이
+  - `@NotNull`: null만 허용하지 않음, ""(초기화된 문자열), " "(공백)은 허용
+    - 모든 타입에 적용 가능
+  -  `@NotEmpty`: null, "" 허용하지 않음, " "은 허용
+    - CharSequence(문자 자료형들)
+    - Collection
+    - Map
+    - Array
+    - 위 타입에만 적용 가능
+    - boolean은 적용 불가
+  - `@NotBlank`: null, "", " "모두 허용하지 않음
+    - CharSequence에만 적용 가능
