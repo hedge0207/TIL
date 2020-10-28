@@ -82,7 +82,35 @@
 
     - create나 create-drop으로 설정 시 classpath 경로의 import.sql 파일이 있으면 파일 내의 query들을 hibernate가 자동으로 실행(spring boot와는 관계 없음)
 
-  ​	
+​	
+
+## @Query
+
+- JPA 사용시 `@Query` 어노테이션을 사용하여 `sql`문처럼 쓸 수 있다.
+
+  ```java
+  import java.util.List;
+  import org.springframework.data.jpa.repository.Query;
+  import org.springframework.data.repository.CrudRepository;
+  import org.springframework.data.repository.query.Param;
+  
+  public interface MemberRepository extends CrudRepository<Member, Long> {
+  	//아래와 같이 @Query어노테이션을 붙이면 사용 가능하다.
+  	@Query("select t from Member t where name=:name and age < :age")
+  	List<Member> findByNameAndAgeLessThanSQL(@Param("name") String name, @Param("age") int age);
+      //또한 아래와 같이 nativeQuery 속성을 true로 주면 네이티브 쿼리를 사용하는 것이 가능하다.
+  	@Query(value = "SELECT ID FROM Member WHERE AGE>=20 AND AGE<=30;\n", nativeQuery = true)
+      List<Member> findUser(@Param("age") int age);
+  }
+  ```
+
+- 주의사항
+
+  - @Query annotation에 들어갈 field 이름은 테이블이 아닌 Entity 클래스와 Entity의 속성이름이다.
+
+  - Entity클래스 이름이 Location이고 Table 이름이 locations이면 Location을 사용해야만 동작한다.
+
+  - field이름도 Entity의 property가 들어가야 한다. table의 column이름이 들어가면 동작하지 않는다.
 
 
 
