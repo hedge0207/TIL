@@ -104,13 +104,81 @@
   }
   ```
 
+- 아래와 같이 복잡한 쿼리도 작성 가능하다.
+
+  ```java
+  package com.web.backend.dao.accounts;
+  
+  import com.web.backend.model.accounts.User;
+  import org.springframework.data.jpa.repository.JpaRepository;
+  import org.springframework.data.jpa.repository.Query;
+  import org.springframework.data.repository.query.Param;
+  import org.springframework.security.core.parameters.P;
+  import org.springframework.stereotype.Repository;
+  
+  import java.util.List;
+  import java.util.Optional;
+  
+  @Repository
+  public interface UserDao extends JpaRepository<User, Long> {
+  
+      @Query(value = "SELECT * FROM user u WHERE u.age >= :low AND u.age <= :high AND u.location = :location AND u.gender = :gender",nativeQuery = true)
+      //사용할 값들을 모두 @Param으로 받은 후 위의 쿼리문에서 사용한다.
+      List<User> findUserByProfile(@Param("low") int low, @Param("high") int high, @Param("location") String location, @Param("gender") int gender);
+  }
+  
+  ```
+
+  
+
 - 주의사항
 
   - @Query annotation에 들어갈 field 이름은 테이블이 아닌 Entity 클래스와 Entity의 속성이름이다.
-
-  - Entity클래스 이름이 Location이고 Table 이름이 locations이면 Location을 사용해야만 동작한다.
-
+- Entity클래스 이름이 Location이고 Table 이름이 locations이면 Location을 사용해야만 동작한다.
+  
   - field이름도 Entity의 property가 들어가야 한다. table의 column이름이 들어가면 동작하지 않는다.
+- `:`와 변수명 사이에 공백이 존재해선 안된다. 즉, 위 예시에서 low를 인자로 받았으면 `: low`가 아닌 `:low`로 사용해야 한다. 
+
+
+
+## @OnDelete
+
+- django의 on_delete와 같이 `@OnDelete`어노테이션을 사용하여 부모가 삭제될 때 자식을 삭제시킬 수 있다.
+
+  ```JAVA
+  package com.web.backend.model.Keyword;
+  
+  import com.web.backend.model.accounts.User;
+  import com.web.backend.model.question.Question;
+  import lombok.Builder;
+  import lombok.Getter;
+  import lombok.NoArgsConstructor;
+  import lombok.Setter;
+  import org.hibernate.annotations.OnDelete;
+  import org.hibernate.annotations.OnDeleteAction;
+  
+  import javax.persistence.*;
+  import javax.validation.constraints.NotBlank;
+  
+  @Entity
+  @Getter
+  @Setter
+  @NoArgsConstructor
+  public class Child {
+  	///전략
+      
+      //아래와 같이 ManyToMany에 (cascade = CascadeType.REMOVE)을 주면 잘못 건들 경우 db가 전부 날아갈 수 있으므로 주의해야 한다.
+      @ManyToOne(cascade = CascadeType.REMOVE)
+      @JoinColumn(name="parent_id")
+      //아래와 같이  @OnDelete 어노테이션을 주면 된다.
+      @OnDelete(action = OnDeleteAction.CASCADE)
+      private Parent parent;
+      
+  	//후략
+  }
+```
+  
+  
 
 
 
