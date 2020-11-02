@@ -543,10 +543,15 @@
           //5.contains: 리스트 내에 특정 값의 존재 유무에 따라 true,false를 리턴
           System.out.println(lotto.contains(3));   //true
           System.out.println(lotto.contains(123)); //false
+          
+          //6.ArrayList 합치기
+          ArrayList<Integer> lotto2 = new ArrayList<Integer>();
+        lotto2.add(15);
+          lotto.addAll(lotto2)
   	}
   }
   ```
-
+  
   ```java
   //제네릭스를 사용하지 않은 경우의 문제점
   //상기했듯 별도의 자료형을 입력하지 않을 경우 Object 타입이 된다.
