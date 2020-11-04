@@ -176,8 +176,151 @@
       
   	//후략
   }
-```
+  ```
   
+  
+
+
+
+## 연결 테이블의 변수를 사용하여 원하는 값을 찾는 방법
+
+- Sns, Tag 두 테이블이 M:N 관계로 연결되어 있고 TagDao에서 Sns아이디로 Tag들을 찾고자 하는 경우에 아래와 같이 작성하면 된다.
+
+  - `찾을 컬럼의 테이블명_컬럼명`
+
+  ```java
+  //전략
+  
+  @Repository
+  public interface TagDao extends JpaRepository<Tag,String> {
+  	//예를 들어 snsId로 Tag를 찾으려 하는 경우 아래와 같이 작성하면 된다.
+      //Sns 테이블의 SnsId라는 컬럼으로 값을 찾겠다는 것이다.
+      ArrayList<Tag> getTagBySns_SnsId(Long snsId);
+  }
+  
+  ```
+
+
+
+
+
+
+
+## 다대 다 관계 설정
+
+> https://leoheo.github.io/JPA-ManyToMany/ 참고
+
+- 다대 다(N:N) 관계 설정하기
+
+  - 아래와 같이 설정하면 JPA가 연결 테이블을 자동생성해준다.
+
+  ```java
+  @Entity
+  public class Member {
+    
+    @Id
+    @Column(name = "MEMBER_ID")
+    private Long id;
+  
+    @ManyToMany
+    private List<Party> party = new ArrayList<>();
+  }
+  
+  @Entity
+  public class Party {
+  
+    @Id
+    @Column(name = "PARTY_ID")
+    private Long id;
+    
+    @ManyToMany(mappedBy = "party")
+    private List<Member> members = new ArrayList<>();
+  }
+  ```
+
+  - JPA가 자동으로 생성해주는 연결 테이블의 구조
+
+  ```java
+  CREATE TABLE MEMBER_PARTY (
+    MEMBERS_MEMBER_ID Long NOT NULL,
+    PRODUCT_PRODUCT_ID Long NOT NULL
+  )
+  ```
+
+  - 위 구조를 보면 알 수 있지만 MEMBER, PRODUCT가 반복된다. 이를 막기 위해서는 아래와 같이 `@JoinTable`을 사용하면 된다.
+    - name, joinColumn, inverseJoinColumn을 지정해줘야 한다.
+
+  ```java
+  @Entity
+  public class Member {
+    
+    @Id
+    @Column(name = "MEMBER_ID")
+    private Long id;
+    
+    @ManyToMany
+    @JoinTable(
+      name = "MEMBER_PRODUCT",                              // 연결테이블 이름
+      joinColumns = @JoinColumn(name = "MEMBER_ID"),        // Member와 매핑할 조인 컬럼 정보를 지정
+      inverseJoinColumns = @JoinColumn(name = "PRODUCT_ID") // Party와 매핑할 조인 컬럼 정보를 지정
+    )
+    private List<Product> products = new ArrayList<>();
+  }
+  
+  @Entity
+  public class Party {
+  
+    @Id
+    @Column(name = "PARTY_ID")
+    private Long id;
+    
+    @ManyToMany(mappedBy = "party")
+    private List<Member> members = new ArrayList<>();
+  }
+  ```
+
+
+
+
+- `@JoinTable`을 사용했을 때 JPA가 자동으로 생성해주는 연결 테이블의 구조
+
+  ```java
+  CREATE TABLE MEMBER_PARTY (
+    MEMBERS_ID Long NOT NULL,
+    PRODUCT_ID Long NOT NULL
+  )
+  ```
+
+  
+
+- 자동 생성은 PK값끼리 연결 할 때만 가능 하고 다른 컬럼을 다대 다로 묶고자 할 때는 중계 테이블을 따로 만들어야 한다.
+
+
+
+- 다대 다에서도 `@OnDelete(action = OnDeleteAction.CASCADE)`를 사용할 수 있다.
+
+
+
+- 다대 대 관계에서 중계 테이블을 수정하고자 한다면 아래와 같이 한 테이블을 수정하면 자동으로 수정된다.
+
+  - 아래 메서드에서 Sns와 Tag가 다대 다 관계를 맺고 있는데 Sns를 수정할 때 중계테이블을 수정하고자 한다면 아래와 같이 그냥 set만 해주면 자동으로 수정된다.
+
+  ```java
+  @PutMapping("/{snsId}")
+  public Object update(@PathVariable Long snsId, @CurrentUser UserPrincipal requser, SnsRequest req){
+      Sns sns = snsDao.findSnsBySnsId(snsId);
+      User curuser = userDao.getUserById(requser.getId());
+      ArrayList<Tag> tags = new ArrayList<>();
+      tags.append(new Tag(사과));
+      tags.append(new Tag(배));
+  
+      //아래와 같이 그냥 set으로 넣어주면 중계테이블이 자동으로 수정된다.
+      sns.setTags(tags)
+          snsDao.save(sns);
+  
+      return sns;
+  ```
+
   
 
 
@@ -188,19 +331,14 @@
 
   ```java
   //전략
-  
   dependencies {
-  	//...
+      //...
       //아래와 같이 작성 후 설치가 완료되었다면 아래 코드를 삭제하거나 주석처리해도 해당 라이브러리를 그대로 사용이 가능하다.
-  	implementation 'org.springframework.boot:spring-boot-starter-security'
-  	//...
+      implementation 'org.springframework.boot:spring-boot-starter-security'
+      //...
   }
   //후략
   ```
-
-  
-
-
 
 
 
@@ -216,3 +354,22 @@
     - boolean은 적용 불가
   - `@NotBlank`: null, "", " "모두 허용하지 않음
     - CharSequence에만 적용 가능
+
+
+
+- image, sound 등을 리퀘스트로 받는 방법
+
+  - `@RequestPart(required = false) MultipartFile`을 사용하면 받을 수 있다. 이 때 postman의 `body`-`form-data`에서 key에서 text가 아닌 file을 선택하면 된다.
+  - 단, 이 경우 `@RequestBody`는 쓸 수 없다. 아래와 같이 Request를 정의한 후 사용해야 한다.
+
+  ```java
+  
+  @PostMapping("/create")
+  //MultipartFile을 받을 때는 SnsRequest를 정의해서 사용해야 한다.
+  public Object create(SnsRequest req, @RequestPart(required = false) MultipartFile image, @RequestPart(required = false) MultipartFile sound){
+          //중략
+          return new ResponseEntity<>("게시글 등록 완료",HttpStatus.OK);
+      }
+  ```
+
+  
