@@ -373,3 +373,81 @@
   ```
 
   
+
+## 자바에서 파이썬을 실행하는 방법
+
+> https://yookeun.github.io/java/2020/07/12/java-call-python/ 참고
+
+- `build.gradle`에 아래 코드를 추가
+
+  ```java
+  implementation 'org.apache.commons:commons-exec:1.3'
+  ```
+
+- 파이썬 파일 작성
+
+  ```python
+  import sys
+  
+  def sum(v1,v2):
+      result = int(v1) + int(v2)
+      print(result)
+  
+  
+  def main(argv):
+      sum(argv[1], argv[2])
+  
+  if __name__ == "__main__":
+      main(sys.argv)
+  ```
+
+- java 파일에서 실행
+
+  ```java
+  package com.call.python;
+  
+  import org.apache.commons.exec.CommandLine;
+  import org.apache.commons.exec.DefaultExecutor;
+  import org.apache.commons.exec.PumpStreamHandler;
+  
+  import java.io.ByteArrayOutputStream;
+  import java.io.IOException;
+  
+  public class CallMain {
+      public static void main(String[] args)  {
+      	System.out.println("Python Call");
+          String[] command = new String[4];
+          command[0] = "python";
+          //아래 주석 처럼 하거나
+          //command[1] = "\\workspace\\java-call-python\\src\\main\\resources\\test.py";
+          //아래 처럼 실행하면 된다.
+          command[1] = "/Users/workspace/java-call-python/src/main/resources/test.py";
+          command[2] = "10";
+          command[3] = "20";
+          try {
+              execPython(command);
+          } catch (Exception e) {
+              e.printStackTrace();
+          }
+      }
+      
+      public static void execPython(String[] command) throws IOException, InterruptedException {
+          CommandLine commandLine = CommandLine.parse(command[0]);
+          for (int i = 1, n = command.length; i < n; i++) {
+              commandLine.addArgument(command[i]);
+          }
+  
+          ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+          PumpStreamHandler pumpStreamHandler = new PumpStreamHandler(outputStream);
+          DefaultExecutor executor = new DefaultExecutor();
+          executor.setStreamHandler(pumpStreamHandler);
+          int result = executor.execute(commandLine);
+          System.out.println("result: " + result);
+          System.out.println("output: " + outputStream.toString());
+  
+      }    
+          
+  }
+  ```
+
+  
