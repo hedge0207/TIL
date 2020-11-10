@@ -343,13 +343,13 @@
     		System.out.println(a.toLowerCase());  //my name is
     	}
     }
-  
+    
     //6.concat: 문자열과 문자열을 결합
-  package first;
+    package first;
     
     public class HelloWorld {
     
-  	public static void main(String[] args) {
+    public static void main(String[] args) {
     		String a = "My";
     		System.out.println(a.concat(" name is")); //My name is
             System.out.println(a) //My, 값이 변경되는 것은 아니다.
@@ -359,7 +359,20 @@
             System.out.println(a)  //My name is
     	}
     }
+    
+    //7.charAt(숫자): 인덱스에 해당하는 문자를 반환
+    package first;
+    
+    public class HelloWorld {
+    
+    public static void main(String[] args) {
+    		String a = "My";
+            System.out.println(a.charAt(1))  //M
+    	}
+    }
     ```
+  
+  
   
   - StringBuffer: 문자열을 추가하거나 변경할 때 주로 사용하는 자료형
   
