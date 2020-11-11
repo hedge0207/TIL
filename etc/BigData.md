@@ -752,6 +752,73 @@
 
   
 
+  - 데이터 프레임 정렬하기
+    - `.sort_values()`: 특정 컬럼의 value를 기준으로 정렬
+    - `.sort_index()`: index를 기준으로 정렬
+
+  ```python
+  name_age = pd.DataFrame({
+    'name':['Kim','Lee','Park'],
+    'age':[30,20,40]
+  })
+  print("정렬 안 한 상태")
+  print(name_age)
+  
+  print("sort_values로 정렬하기")
+  # .sort_values의 경우 column이 2개 이상일 때에는 by=''속성을 사용하여 어떤 컬럼을 기준으로 정렬할지 지정해 줘야 한다.
+  print(name_age.sort_values(by="age"))
+  print("내림 차순으로 정렬하기")
+  # 내림 차순으로 정렬하려면 아래와 같이 ascending=boolean 속성을 사용한다.
+  print(name_age.sort_values(by="age",ascending=False))
+  
+  print("sort_index로 정렬하기")
+  print(name_age.sort_index())
+  
+  # 정렬해도 실제로 dataframe 자체가 변화하지는 않는데 실제로 변화시키기 위해서는 아래와 같이 implace=boolean 속성을 줘야 한다.
+  name_age.sort_values(by='age',inplace=True)
+  print("실제 변동된 값")
+  print(name_age)
+  
+  #정렬시에 결측치를 처음과 끝 중 어디에 위치시킬지는 na_postion='first'/'last' 속성을 통해 결정 할 수 있다.
+  
+  #어떤 알고리즘으로 정렬할지는 kind='알고리즘명' 을 사용하여 설정 가능하다. quicksort 등 사용 가능 
+  
+  out
+  정렬 안 한 상태
+     name  age
+  0   Kim   30
+  1   Lee   20
+  2  Park   40
+  
+  sort_values로 정렬하기
+     name  age
+  1   Lee   20
+  0   Kim   30
+  2  Park   40
+  
+  내림 차순으로 정렬하기
+     name  age
+  2  Park   40
+  0   Kim   30
+  1   Lee   20
+  
+  sort_index로 정렬하기
+     name  age
+  0   Kim   30
+  1   Lee   20
+  2  Park   40
+  
+  실제 변동된 값
+     name  age
+  1   Lee   20
+  0   Kim   30
+  2  Park   40
+  ```
+
+  
+
+  
+
 - Panel
   
   - 3차원 자료 구조로 Axis 0(items), Axis 1(major_axis), Axis 2(minor_axis) 등 3개의 축을 가지고 있는데 Axis 0은 그 한 요소가 DataFrame에 해당되며, Axis 1은 DataFrame의 행에 해당되고, Axis 2는 DataFrame의 열에 해당된다.
