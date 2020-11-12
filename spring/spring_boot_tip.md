@@ -442,12 +442,14 @@
           DefaultExecutor executor = new DefaultExecutor();
           executor.setStreamHandler(pumpStreamHandler);
           int result = executor.execute(commandLine);
+          //이 때 result에는 정상 실행 여부가 담기게 된다. 0이면 정상 실행 된 것이고 이외의 숫자는 에러가 난 것이다.
           System.out.println("result: " + result);
+          //python의 터미널 창에 출력되는 값들이 outputStream에 담기게 되고 이 데이터를 활용하면 된다.
           System.out.println("output: " + outputStream.toString());
   
       }    
           
-  }
+}
   ```
-
+  
   

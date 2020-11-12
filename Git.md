@@ -46,6 +46,12 @@ $ git status
 $ git add ㅏ파일명ㅓ
 ```
 
+- add 취소하기
+
+```bash
+$ git reset HEAD ㅏ파일명ㅓ #입력하지 않을 경우 전부 초기화 된다.
+```
+
 
 
 3. 커밋하기(사진찍기)
