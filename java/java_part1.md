@@ -372,6 +372,49 @@
     }
     ```
   
+  - 반복문 안에서 String을 초기화 하는 방법
+  
+    - 파이썬 처럼 반복문이 도는 중간에 문자열을 `""`로 초기화 하려고 하면 error가 발생할 때가 있다.
+    - 이 때는 `초기화 하려는 변수명= new String();` 과 같이 초기화를 시켜줘야 한다.
+  - 확인 결과 그래도 안되는 경우가 있었다. 원인을 명확히 알 수 없음
+    
+    ```java
+    String recommendUserId = "";
+    for(int i = 0; i < array_word.length; i++){
+        if(array_word[i].equals(" ")){
+            continue;
+        }
+    
+        if(array_word[i].equals(",")){
+            int userId = Integer.parseInt(recommendUserId);
+            simUserIdList.add(userId);
+            //아래와 같이 하거나
+            //recommendUserId= "";
+            //아래와 같이 하면 초기화가 되지 않는다.
+            //recommendUserId= null;
+            //아래와 같이 초기화를 해야 한다.
+            recommendUserId= new String();
+            continue;
+        }
+    
+        if(array_word[i].equals("]")){
+            break;
+        }
+        if(flag){
+            recommendUserId+=array_word[i];
+        }
+        if(array_word[i].equals("[")){
+            flag = true;
+        }
+    }
+  ```
+    
+  
+    
+  
+    
+    
+  
   
   
   - StringBuffer: 문자열을 추가하거나 변경할 때 주로 사용하는 자료형
