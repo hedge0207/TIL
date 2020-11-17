@@ -60,7 +60,7 @@
     - Artifact는 빌드되어 나오는 결과물을 적는다.
     - Name, Descrition, Package name 등은 그대로 둬도 된다.
 
-  - Dependencies에는 아래의 것들을 추가한다.
+  - Dependencies에는 아래의 것들을 추가한다(나중에 추가해도 된다).
 
     -  `Spring Web `: Spring으로 웹 프로젝트를 생성하기 위해 설치
     - `Thymeleaf`: HTML을 만들어주는 템플릿 엔진, 다양한 종류가 있으나 `Thymeleaf`가 그나마 낫다.
@@ -70,6 +70,41 @@
     - 압축파일이 다운 받아지는데 압축 해제 후 사용하면 된다.
 
 
+
+- 생성 후 `build.gradle`파일을 보면 아래와 같이 되어있을 것이다(아래 코드의 경우 `Dependencies`를 아무것도 추가하지 않고 생성한 것이다).
+
+  ```java
+  plugins {
+      //스프링 부트 버전
+  	id 'org.springframework.boot' version '2.4.0'
+      //의존관계 설정
+  	id 'io.spring.dependency-management' version '1.0.10.RELEASE'
+  	id 'java'
+  }
+  
+  group = 'hello'
+  version = '0.0.1-SNAPSHOT'
+  //자바 버전
+  sourceCompatibility = '11'
+  
+  repositories {
+  	mavenCentral()
+  }
+  
+  //의존성
+  dependencies {
+      //스프링 부트 실행에 반드시 필요한 spring-boot-starter
+  	implementation 'org.springframework.boot:spring-boot-starter'
+      //테스트 관련 라이브러리
+  	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+  }
+  
+  test {
+  	useJUnitPlatform()
+  }
+  ```
+
+  
 
 - 라이브러리
   - 스프링 프로젝트를 생성하면 `External Libraries` 폴더에서 설치된 라이브러리들을 볼 수 있는데 프로젝트 생성시 자동으로 추가되는 라이브러리만 수십가지 이다.
@@ -104,16 +139,17 @@
 
 
 
-- 실행하기
+- 실행하기	
 
+  - 프로젝트 경로에 한글 폴더명이 있으면 실행되지 않는다.
   - `main/java/프로젝트명/프로젝트그룹명/프로젝트그룹명Application파일` 클릭
   - 코드 창 우클릭 후 `run` 클릭하여 실행
   - `Tomcat`
     - 아래 터미널 창을 확인해보면 맨 아래에서 두번째 줄에 아래와 같은 메세지를 확인할 수 있다.
     - `Tomcat started on port(s): 8080 (http) with context path ''`
     - `Tomcat`은 스프링에 내장된 웹 서버이다.
-    - 과거에는 내장되어 있지 않아 `Tomcat` 서버를 별도로 실행해줘야 했다.
-
+  - 과거에는 내장되어 있지 않아 `Tomcat` 서버를 별도로 실행해줘야 했다.
+  
   ```java
   ![화면 캡처 2020-10-15 221017](../../../화면 캡처 2020-10-15 221017.jpg)package hello.hellospring;
   
@@ -129,12 +165,10 @@
   
   }
   ```
-
+  
   - 이후 `http://localhost:8080/`으로 접속 시 아래와 같이 뜨면 정상적으로 작동한 것이다.
-
-    <img src="spring_boot_part1.assets/화면 캡처 2020-10-15 221017-1602768211229.jpg"/>
-
-
+  
+  <img src="spring_boot_part1.assets/화면 캡처 2020-10-15 221017-1602768211229.jpg"/>
 
 
 
@@ -369,6 +403,14 @@
 
 ## MVC와 Template Engine
 
+- 일반적인 웹 애플리케이션 계층 구조
+  - 컨트롤러: MVC의 컨트롤러
+  - 서비스: 핵심 비즈니스 로직 구현(ex. 동일인 중복가입 불가, 이메일 인증 필수 등)
+  - 리포지토리: 데이터베이스에 접근, 도메인 객체를 DB에 저장하고 관리
+  - 도메인: 비즈니스 도메인 객체(model과 유사한 개념)
+
+
+
 - MVC 패턴
   - 개요: Model, View, Controller의 두문자를 딴 것으로 소프트웨어 디자인 패턴이다.
     - 디자인 패턴: 구현자들 간의 의사소통 효율성을 높이는 기법
@@ -582,21 +624,6 @@
 
 
 # 회원 관리 예제
-
-- 주의 사항
-  - 아직 데이터 저장소를 설정하지 않은 상태라고 가정
-  - 데이터 저장소 없이 개발을 진행하기 위해 구현체로 가벼운 메모리 기반의 데이터 저장소를 사용
-  - 이름과 아이디로만 구성된 유저 모델을 구현
-
-
-
-- 일반적인 웹 애플리케이션 계층 구조
-  - 컨트롤러: MVC의 컨트롤러
-  - 서비스: 핵심 비즈니스 로직 구현(ex. 동일인 중복가입 불가, 이메일 인증 필수 등)
-  - 리포지토리: 데이터베이스에 접근, 도메인 객체를 DB에 저장하고 관리
-  - 도메인: 비즈니스 도메인 객체(model과 유사한 개념)
-
-
 
 ## 회원 도메인과 리포지토리 만들기
 
