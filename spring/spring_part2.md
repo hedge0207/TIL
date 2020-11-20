@@ -642,27 +642,26 @@
   ```java
   package start.first.member;
   
-public class MemberServiceImpl implements MemberService{
+  public class MemberServiceImpl implements MemberService{
+  //기존에는 아래와 같이 MemberServiceImpl에서 MemberRepository도 의존하고 MemoryMemberRepository에도 의존했다.
+    //이는 배우가 기획과 캐스팅을 하는 것과 마찬가지인 것이다.
+    //private final MemberRepository memberRepository = new MemoryMemberRepository();
+    private final MemberRepository memberRepository;
   
-    //기존에는 아래와 같이 MemberServiceImpl에서 MemberRepository도 의존하고 MemoryMemberRepository에도 의존했다.
-      //이는 배우가 기획과 캐스팅을 하는 것과 마찬가지인 것이다.
-      //private final MemberRepository memberRepository = new MemoryMemberRepository();
-      private final MemberRepository memberRepository;
-
-      //생성자를 만든다.
-      public MemberServiceImpl(MemberRepository memberRepository) {
-          this.memberRepository = memberRepository;
-      }
-  
-      @Override
-      public void join(Member member) {
-          memberRepository.save(member);
-      }
-  
-      @Override
-      public Member findMember(Long memberId) {
-          return memberRepository.findById(memberId);
-      }
+    //생성자를 만든다.
+    public MemberServiceImpl(MemberRepository memberRepository) {
+        this.memberRepository = memberRepository;
+    }
+    
+    @Override
+    public void join(Member member) {
+        memberRepository.save(member);
+    }
+    
+    @Override
+    public Member findMember(Long memberId) {
+        return memberRepository.findById(memberId);
+    }
   }
   ```
   
@@ -703,7 +702,414 @@ public class MemberServiceImpl implements MemberService{
   }
   ```
   
-  - 이제 `MemberServiceImpl`,  `OrderServiceImpl`는 더 이상 객체에 의존하지 않는다. 이들의 입장에서 생성자를 통해 어떤 구현 객체가 주입될지는 알 수 없다. 이는 오직 `AppConfig`에서 결정되며, 이들은 의존 관계에 대한 고민은 `AppConfig`에 맡기고 실행에만 집중하면 된다(관심사의 분리).
+    - 이제 `MemberServiceImpl`,  `OrderServiceImpl`는 더 이상 객체에 의존하지 않는다. 이들의 입장에서 생성자를 통해 어떤 구현 객체가 주입될지는 알 수 없다. 이는 오직 `AppConfig`에서 결정되며, 이들은 의존 관계에 대한 고민은 `AppConfig`에 맡기고 실행에만 집중하면 된다(관심사의 분리).
+
+
+
   - 의존성 주입(Dependency Injection)
     - `MemberServiceImpl`,  `OrderServiceImpl`의 입장에서 보면 의존관계를 마치 외부에서 주입해주는 것과 같다고 해서 의존관계 주입, 혹은 의존성 주입이라 한다.
+
+
+
+- 위 `AppConfig.java`의 코드는 관심사를 분리하기 위해 작성하긴 했으나 역할이 잘 드러나고 있다고 보기는 힘들다. 따라서 역할이 더 잘 드러날 수 있도록 코드를 수정해야 한다.
+
+  -  `AppConfig.java`
+
+  ```java
+  package start.first;
+  
+  import start.first.discount.FixDiscountPolicy;
+  import start.first.member.MemberService;
+  import start.first.member.MemberServiceImpl;
+  import start.first.member.MemoryMemberRepository;
+  import start.first.order.OrderService;
+  import start.first.order.OrderServiceImpl;
+  
+  
+  /* 기존코드
+  public class AppConfig {
+  
+      public MemberService memberService(){
+      //intelliJ기준 'new MemoryMemberRepository()' 부분을 드래그 후 ctrl+alt+m을 누르고 memberRepository를 입력후 replace를 누르면
+      아래 변경 코드처럼 리팩터링해준다.
+          return new MemberServiceImpl(new MemoryMemberRepository());
+      }
+  
+      public OrderService orderService(){
+          //생성자 주입(OrderServiceImpl MemoryMemberRepository와 FixDiscountPolicy의 객체의 참조값을 주입, 연결)
+          //구현 객체를 생성
+          return new OrderServiceImpl(new MemoryMemberRepository(),new FixDiscountPolicy());
+      }
+  }
+  */
+  
+  //역할이 더 잘 드러나도록 변경된 코드
+  public class AppConfig {
+  	
+      //memberService의 역할
+      public MemberService memberService(){
+          return new MemberServiceImpl(memberRepository());
+      }
+  	
+      //MemberRepository의 역할, 저장방식을 MemoryMemberRepository로 쓰겠다는 것이 더 잘드러난다.
+      //나중에 저장소를 바꿔야 한다면 아래 return 부분만 바꾸면 된다.
+      public MemoryMemberRepository memberRepository() {
+          return new MemoryMemberRepository();
+      }
+  
+      //orderService의 역할
+      public OrderService orderService(){
+          return new OrderServiceImpl(memberRepository(),discountPolicy());
+      }
+      
+      //discountPolicy의 역할, 할인 정책을 FixDiscountPolicy를 쓰겠다는 것이 더 잘 드러난다.
+      //나중에 할인 정책을 바꿔야 한다면 아래 return 부분만 바꾸면 된다.
+      public DiscountPolicy discountPolicy(){
+          return new FixDiscountPolicy();
+      }
+  }
+  ```
+
+  - 이제 할인 정책을 바꿔야 한다면 기존과 달리 client 코드는 건들 필요 없이 `AppConfig.java`만 수정하면 된다.
+
+  ```java
+  package start.first;
+  
+  import start.first.discount.FixDiscountPolicy;
+  import start.first.discount.RateDiscountPolicy;
+  import start.first.member.MemberService;
+  import start.first.member.MemberServiceImpl;
+  import start.first.member.MemoryMemberRepository;
+  import start.first.order.OrderService;
+  import start.first.order.OrderServiceImpl;
+  
+  public class AppConfig {
+  	
+      public MemberService memberService(){
+          return new MemberServiceImpl(memberRepository());
+      }
+  	
+      public MemoryMemberRepository memberRepository() {
+          return new MemoryMemberRepository();
+      }
+  
+      public OrderService orderService(){
+          return new OrderServiceImpl(memberRepository(),discountPolicy());
+      }
+  
+      public DiscountPolicy discountPolicy(){
+          //고정 할인 정책에서
+          //return new FixDiscountPolicy();
+          //비율 할인 정책으로 변경
+          return new FixDiscountPolicy();
+      }
+  }
+  ```
+
+
+
+
+
+# IoC, DI, 컨테이너
+
+- 제어의 역전(IoC,Inversion of Control)
+  - 일반적으로 개발자가 객체를 생성하고 호출하고 제어하지만 개발자가 제어하지 않고 프레임워크 등이 제어를 하는 것을 제어의 역전이라고 부른다.
+  - 기존 프로그램은 클라이언트 구현 객체가 스스로 필요한 서버 구현 객체를 생성하고, 연결하고, 실행했다. 즉, 구현 객체가 프로그램의 제어 흐름을 스스로 조종했다, 개발자 입장에서는 자연스러운 흐름이다.
+  - 반면에 `AppConfig`가 등장한 이후에 구현 객체는 자신의 로직을 실행하는 역할만 담당한다. 이제 제어의 흐름은 `AppConfig`가 가져간다. 예를 들어 `OrderServiceImple`은 필요한 인터페이스들을 호출할 뿐 어떤 구현 객체들이 실행될지는 모른다.
+  - 프로그램의 제어 흐름에 대한 권한은 모두 `AppConfig`가 가지고 있으며, 심지어 `OrderServiceImpl`조차도 `AppConfig`가 생성한다. 따라서 `AppConfig`는 `OrderServiceImpl`이 아닌 `OrderService` 인터페이스의 다른 구현 객체를 생성하고 실행할 수 도 있다.
+  - 이렇듯 프로그램 제어 흐름을 직접 제어하는 것이 아니라 외부에서 관리하는 것을 제어의 역전이라 한다.
+  - 프레임 워크와 라이브러리
+    - 프레임워크가 내가 작성한 코드를 제어하고, 대신 실행하면 그것은 프레임 워크가 맞다.
+    - 내가 작성한 코드가 직접 제어의 흐름을 담당한다면 그것은 프레임 워크가 아니라 라이브러리다.
+
+
+
+- 의존관계 주입(Dependency Injection)
+  -  `OrderServiceImpl`은 `MemberRepositoty`,  `DiscountPolicy` 인터페이스에 의존한다. 그러나 실제 어떤 구현 객체가 사용될지는 모른다.
+  - 의존관계는 정적인 클래스 의존관계와, 실행 시점에서 결정되는 동적인 객체 의존관계를 분리해서 생각해야 한다.
+  - 정적인 클래스 의존관계
+    - 애플리케이션을 실행하지 않아도 분석할 수 있다.
+    - 클래스가 사용하는 import 코드만 보고도 의존관계를 쉽게 파악할 수 있다.
+  - 정적인 클래스 의존관계 만으로는 실제 어떤 객체가 `OrderServiceImpl`에 주입될 지 알 수 없다.
+  - 동적인 객체 인스턴스  의존 관계
+    - 애플리케이션 실행 시점에 실제 생성된 객체 인스턴스의 참조가 연결된 의존 관계
+  - 애플리 케이션 실행 시점(런타임)에 외부(`AppConfig`)에서 실제 구현 객체를 생성하고 클라이언트에 전달해서 클라이언트와 서버의 실제 의존 관계가 연결되는 것을 **의존관계 주입**이라 한다.
+  - 외부(`AppConfig`)에서 객체 인스턴스를 생성하고, 그 참조값을 클라이언트에 전달해서 연결한다.
+  - 의존관계 주입을 사용하면 클라이언트 코드를 변경하지 않고, 클라이언트가 호출하는 대상의 타입 인스턴스를 변경할 수 있다.
+  - 의존관계 주입을 사용하면 정적인 클래스 의존관계를 변경하지 않고, 동적인 객체 인스턴스 의존관계를 쉽게 변경할 수 있다.
+
+
+
+- IoC 컨테이너, DI 컨테이너
+  - `AppConfig`와 같이 객체를 생성하고 관리하면서 의존관계를 연결해 주는 것을 IoC 컨테이너 혹은 DI 컨테이너 라고 한다.
+  - 의존관계 주입에 초점을 맞춰 최근에는 주로 DI 컨테이너라 한다.
+  - 또는 어샘블러, 오브젝토 팩도리 등으로 불리기도 한다.
+
+
+
+
+
+
+
+# 스프링으로 개발하기
+
+## 회원 관리 예제
+
+- 순수한 자바 코드로 DI를 적용한 코드르 스프링으로 변경해서 작성한다.
+
+
+
+- 변경
+
+  - `AppConfigSpring.java`
+
+  ```java
+  package start.first;
+  
+  import org.springframework.context.annotation.Bean;
+  import org.springframework.context.annotation.Configuration;
+  import start.first.discount.DiscountPolicy;
+  import start.first.discount.FixDiscountPolicy;
+  import start.first.discount.RateDiscountPolicy;
+  import start.first.member.MemberService;
+  import start.first.member.MemberServiceImpl;
+  import start.first.member.MemoryMemberRepository;
+  import start.first.order.OrderService;
+  import start.first.order.OrderServiceImpl;
+  
+  //구성 정보, 설정 정보라는 것을 알리기 위해 @Configuration 어노테이션을 달아 준다.
+  @Configuration
+  public class AppConfigSpring {
+  
+      //@Bean 어노테이션을 사용하면 스프링 컨테이너에 등록이 된다.
+      @Bean
+      public MemberService memberService(){
+          return new MemberServiceImpl(memberRepository());
+      }
+  
+      @Bean
+      public MemoryMemberRepository memberRepository() {
+          return new MemoryMemberRepository();
+      }
+  
+      @Bean
+      public OrderService orderService(){
+          return new OrderServiceImpl(memberRepository(),discountPolicy());
+      }
+  
+      @Bean
+      public DiscountPolicy discountPolicy(){
+          return new FixDiscountPolicy();
+      }
+  }
+  ```
+
+  - `MemberAppSpring.java`
+
+  ```java
+  package start.first.member;
+  
+  import org.springframework.context.ApplicationContext;
+  import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+  import start.first.AppConfigSpring;
+  
+  public class MemberAppSpring {
+  
+      public static void main(String[] args) {
+  		
+          //컨테이너에 등록하기
+          //ApplicationContext를 스프링 컨테이너라고 보면 된다.
+          //AnnotationConfigApplicationContext는 @Configuration 어노테이션이 달린 클래스를 관리하기 위해 쓰는 것이고 인자로 구성 정보가 담긴 		   클래스를 받는다.
+          //아래 코드가 실행되면 객체들이 생성되어 컨테이너에 등록되고 관리되게 된다.
+          ApplicationContext applicationContext = new AnnotationConfigApplicationContext(AppConfigSpring.class);
+          
+          //등록된 객체(빈) 조회하기
+          //getBean은 컨테이너에 등록된 Bean을 가져오는 것으로 첫 번째 인자로 메서드 이름, 두 번째 인자로 타입을 받는다.
+          //@Bean 어노테이션의 속성 중 'name=' 이 있는데 이를 등록했다면 등록된 이름으로 하면 된다. 예를 들어 @Bean(name="ms")로 했다면 아래 코			드도 `applicationContext.getBean("ms",MemberService.class)`로 작성하면 된다. 그러나 관례상 바꾸지 않는다.
+          MemberService memberService = applicationContext.getBean("memberService",MemberService.class);
+          
+          //기존의 객체 조회 방법, AppConfig를 사용해서 직접 조회
+          /*
+          AppConfig appConfig = new AppConfig();
+          MemberService memberService = appConfig.memberService();
+          OrderService orderService = appConfig.orderService();
+          */
+          
+  
+          Member member = new Member(1L,"memberA", Grade.VIP);
+          memberService.join(member);
+  
+          //회원 조회
+          Member findMember = memberService.findMember(1L);
+          System.out.println("join member: " + member.getName());      //join member: memberA
+          System.out.println("find member: " + findMember.getName());  //find member: memberA
+      }
+  }
+  ```
+
+  - 여기까지 변경 후 `MemberAppSpring.java`를 실행하면 아래와 같은 메세지가 터미널에 출력된다.
+
+  ```
+  --전략--
+  //아래 부분이 스프링 컨테이너에 빈이 등록되는 것이다.
+  15:26:22.506 [main] DEBUG org.springframework.beans.factory.support.DefaultListableBeanFactory - Creating shared instance of singleton bean 'appConfigSpring'
+  15:26:22.511 [main] DEBUG org.springframework.beans.factory.support.DefaultListableBeanFactory - Creating shared instance of singleton bean 'memberService'
+  15:26:22.530 [main] DEBUG org.springframework.beans.factory.support.DefaultListableBeanFactory - Creating shared instance of singleton bean 'memberRepository'
+  15:26:22.532 [main] DEBUG org.springframework.beans.factory.support.DefaultListableBeanFactory - Creating shared instance of singleton bean 'orderService'
+  15:26:22.533 [main] DEBUG org.springframework.beans.factory.support.DefaultListableBeanFactory - Creating shared instance of singleton bean 'discountPolicy'
+  join member: memberA
+  find member: memberA
+  
+  Process finished with exit code 0
+  ```
+
+  - `OrderAppSpring`
+
+  ```java
+  package start.first.order;
+  
+  import org.springframework.context.ApplicationContext;
+  import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+  import start.first.AppConfigSpring;
+  import start.first.member.Grade;
+  import start.first.member.Member;
+  import start.first.member.MemberService;
+  
+  public class OrderAppSpring {
+  
+      public static void main(String[] args) {
+  
+          ApplicationContext applicationContext = new AnnotationConfigApplicationContext(AppConfigSpring.class);
+          MemberService memberService = applicationContext.getBean("memberService",MemberService.class);
+          OrderService orderService = applicationContext.getBean("orderService",OrderService.class);
+  
+          Long memberId = 1L;
+          Member member = new Member(memberId, "memberA", Grade.VIP);
+          memberService.join(member);
+  
+          Order order = orderService.createOrder(memberId,"itemA",10000);
+  
+          System.out.println("order: " + order);
+          System.out.println("calculate price: " + order.calculatePrice());
+  
+      }
+  }
+  ```
+
+  
+
+
+
+- 코드 설명
+  - `AppclicationContext`를 스프링 컨테이너라 한다.
+    - 더 정확히는 `BeanFactory`, `ApplicationContext`로 구분하여 스프링 컨테이너를 지칭하지만 `BeanFactory`를 직접 사용하는 경우는 거의 없으므로 일반적으로 `ApplicationContext`를 스프링 컨테이너라 한다.
+  - 기존에는 개발자가 `AppConfig`를 통해 직접 객체를 생성하고 DI를 했지만, 이제부터는 스프링 컨테이너를 통해서 사용한다.
+  - 스프링 컨테이너는 `@Configuration`이 붙은 `AppConfig`를 설정(구성) 정보로 사용한다. 여기서 `@Bean`이라 적힌 메서드를 모두 호출해서 반환된 객체를 스프링 컨테이너에 등록한다. 그렇게 스프링 컨테이너에 등록된 객체를 스프링 빈이라 한다.
+  - 스프링 빈은 `@Bean`이 붙은 메서드의 명을 스프링 빈의 이름으로 사용한다.
+  - 이전에는 개발자가 필요한 객체를 `AppConfig`를 사용해서 직접 조회했지만 이제부터는 스프링 컨테이너를 통해서 필요한 스프링 빈(객체)을 찾아야 한다. 스프링 빈은 `applicationContext.getBean()` 메서드를 사용해서 찾을 수 있다.
+
+
+
+
+
+
+
+# 스프링 컨테이너와 스프링 빈
+
+## 스프링 컨테이너 생성
+
+- 스프링 컨테이너의 생성
+  - `AppclicationContext`를 통해 생성한다. `AppclicationContext`는 인터페이스로 `AnnotationConfigApplicationContext`는 그 구현체중 하나이다.
+  - 스프링 컨테이너는 XML 기반으로 만들 수 있고, 어노테이션 기반의 자바 설정 클래스로 만들 수 있다.
+  -  `AppConfigSpring`에서 사용했던 방식이 어노테이션 기반의 자바 설정 클래스로 스프링 컨테이너를 만든 것이다.
+
+
+
+- 생성 과정
+
+  - 구성 정보를 인자로 받아 스프링 컨테이너 생성, 컨테이너 내부에서는 스프링 빈 저장소에 `빈 이름:빈 객체` 형식으로 빈을 저장
+  - 인자로 받은 구성 정보 중에서 `@Bean`이 붙은 메서드들의 리턴값으로 받은 객체를 스프링 빈 저장소에 등록(빈 이름은 메소드명으로 등록)
+    - 주의할 점은 `@Bean` 어노테이션의 속성 중 `name=`을 사용할 경우 빈 이름은 중복되선 안된다.
+    - 중복될 경우 다른 빈이 무시되거나, 기존 빈을 덮어버리거나, 설정에 따라 에러가 발생한다.
+  - 의존관계 설정
+    - 인자로 받은 구성 정보를 참고해서 의존관계를 주입한다.
+    - `AppConfigSpirng.java` 코드에서 `memberService`는 `memberRepository`에 의존하고, `orderService`는 `memberRepository`와 `discountPolicy`에 의존하는데 이러한 의존관계를 설정한다.
+
+  - 개념적으로는 스프링 빈을 생성하는 단계와 의존관계를 설정하는 단계로 나뉘어져 있다. 
+  - 그런데 이렇게 자바 코드로 스프링 빈을 등록하면 생성자를 호출하면서 의존관계 주입도 한번에 처리된다.
+
+
+
+## 스프링 빈 조회
+
+- 컨테이너에 등록된 모든 빈 조회
+
+  - `src/test/java/start/first/beanfind`에 `ApplicationContextInfoTest.java` 생성
+
+  ```java
+  package start.first.beanfind;
+  
+  import org.junit.jupiter.api.DisplayName;
+  import org.junit.jupiter.api.Test;
+  import org.springframework.beans.factory.config.BeanDefinition;
+  import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+  import start.first.AppConfigSpring;
+  
+  public class ApplicationContextInfoTest {
+  
+      AnnotationConfigApplicationContext ac = new AnnotationConfigApplicationContext(AppConfigSpring.class);
+  
+      @Test
+      @DisplayName("모든 빈 출력하기")
+      void findAllBean(){
+          String[] beanDefinitionNames = ac.getBeanDefinitionNames();
+  
+          for (String beanDefinitionName : beanDefinitionNames) {
+              Object bean = ac.getBean(beanDefinitionName);
+              //name은 key, object는 value에 해당
+              System.out.println("name = " + beanDefinitionName + " object = " + bean);
+          }
+      }
+      
+      //spirng 내부에서 등록하는 Bean은 제외하고 내가 등록했거나 외부 라이브러리에서 등록한 Bean만 검색
+      @Test
+      @DisplayName("애플리케이션 빈 출력하기")
+      void findApplicationBean() {
+          String[] beanDefinitionNames = ac.getBeanDefinitionNames();
+          for (String beanDefinitionName : beanDefinitionNames) {
+              BeanDefinition beanDefinition =
+                      ac.getBeanDefinition(beanDefinitionName);
+              //Role ROLE_APPLICATION: 직접 등록한 애플리케이션 빈
+              //Role ROLE_INFRASTRUCTURE: 스프링이 내부에서 사용하는 빈
+              //beanDefinition의 역할이 APPLICATION일 때만 출력
+              if (beanDefinition.getRole() == BeanDefinition.ROLE_APPLICATION) {
+                  Object bean = ac.getBean(beanDefinitionName);
+                  System.out.println("name=" + beanDefinitionName + " object=" +
+                          bean);
+              }
+          }
+      }
+  
+  }
+  ```
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
