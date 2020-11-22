@@ -1095,19 +1095,410 @@
 
   
 
+- 빈 타입 혹은 이름으로 조회
+
+  - `.getBean(빈 이름, 빈 타입)`을 사용
+
+  ```java
+  package start.first.beanfind;
+  
+  import org.assertj.core.api.Assertions;
+  import org.junit.jupiter.api.DisplayName;
+  import org.junit.jupiter.api.Test;
+  import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+  import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+  import start.first.AppConfigSpring;
+  import start.first.member.MemberService;
+  import start.first.member.MemberServiceImpl;
+  
+  public class ApplicationContextBasicFindtest {
+  
+      AnnotationConfigApplicationContext ac = new AnnotationConfigApplicationContext(AppConfigSpring.class);
+  
+      @Test
+      @DisplayName("빈 이름으로 조회하기")
+      void findBeanByName(){
+          //getBean은 빈 타입만 넘겨도 되고 빈 이름과 타입을 함께 넘겨도 된다.
+          MemberService memberService = ac.getBean("memberService",MemberService.class);
+          //memberService가 MemberService의 인스턴스면 성공
+          Assertions.assertThat(memberService).isInstanceOf(MemberService.class);
+      }
+  
+      @Test
+      @DisplayName("이름 없이 타입으로만 조회")
+      void findBeanByType(){
+          MemberService memberService = ac.getBean(MemberService.class);
+          Assertions.assertThat(memberService).isInstanceOf(MemberServiceImpl.class);
+      }
+  
+      @Test
+      @DisplayName("구체 타입으로 조회")
+      void findBeanByName2(){
+          //findBeanByName과 달리 인터페이스인 MemberService가 아닌 구체인 MemberServiceImpl의 타입으로 조회한다.
+          //인터페이스가 아닌 구체에 의존하기에 좋은 코드는 아니다. 그러나 필요한 때도 있으므로 구체 타입으로도 조회가 가능하다는 것만 알면 된다.
+          MemberService memberService = ac.getBean("memberService",MemberServiceImpl.class);
+          Assertions.assertThat(memberService).isInstanceOf(MemberServiceImpl.class);
+      }
+  
+      //실패 테스트, 테스트는 항상 실패 테스트를 함께 만드는 것이 좋다.
+      @Test
+      @DisplayName("빈 이름으로 조회 실패")
+      void findBeanByNameX(){
+          //xxxxx라는 이름의 빈이 없으므로 NoSuchBeanDefinitionException예외가 발생
+          //ac.getBean("xxxxx",MemberService.class)가 실행될 때 NoSuchBeanDefinitionException예외가 발생하면 성공
+          org.junit.jupiter.api.Assertions.assertThrows(NoSuchBeanDefinitionException.class, () -> ac.getBean("xxxxx",MemberService.class));
+      }
+  }
+  ```
+
+
+
+- 동일한 타입이 둘 이상일 때 조회
+
+  ```java
+  package start.first.beanfind;
+  
+  import org.junit.jupiter.api.DisplayName;
+  import org.junit.jupiter.api.Test;
+  import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
+  import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+  import org.springframework.context.annotation.Bean;
+  import org.springframework.context.annotation.Configuration;
+  import start.first.member.MemberRepository;
+  import start.first.member.MemoryMemberRepository;
+  
+  import java.util.Map;
+  
+  import static org.junit.jupiter.api.Assertions.assertThrows;
+  
+  public class ApplicationContextSameBeanFindTest {
+  
+  
+      //기존의 AppConfigSpring에는 동알한 타입이 없으므로 SameBeanConfig를 새로 만든다.
+      AnnotationConfigApplicationContext ac = new AnnotationConfigApplicationContext(SameBeanConfig.class);
+  
+      //동일한 타입을 만들기 위한 Config 생성
+      @Configuration
+      static class SameBeanConfig {
+  
+          @Bean
+          public MemberRepository memberRepository1() {
+              return new MemoryMemberRepository();
+          }
+  
+          @Bean
+          public MemberRepository memberRepository2() {
+              return new MemoryMemberRepository();
+          }
+  
+      }
+  
+      @Test
+      @DisplayName("타입으로 조회시 같은 타입이 둘 이상 있으면, 중복 오류가 발생한다.")
+      void findBeanByTypeDuplicate(){
+          //아래와 같이 실행할 경우 MemoryMemberRepository 타입에 해당하는 빈이 2개 있으므로 NoUniqueBeanDefinitionException error가 발생
+          //MemberRepository memberRepository = ac.getBean(MemberRepository.class);
+  
+          //따라서 assertThrows를 사용한다.
+          assertThrows(NoUniqueBeanDefinitionException.class,()->ac.getBean(MemberRepository.class));
+      }
+  
+      @Test
+      @DisplayName("타입으로 조회시 같은 타입이 둘 이상 있으면, 빈 이름을 지정하면 된다.")
+      void findBeanByName(){
+          MemberRepository memberRepository = ac.getBean("memberRepository1",MemberRepository.class);
+          org.assertj.core.api.Assertions.assertThat(memberRepository).isInstanceOf(MemberRepository.class);
+      }
+  
+      @Test
+      @DisplayName("같은 타입이 둘 이상 있을 때 특정 타입을 모두 조회하기기")
+      void findAllBeanByType(){
+          //getBeansOfType을 사용
+          Map<String, MemberRepository> beansOfType = ac.getBeansOfType(MemberRepository.class);
+          for(String key : beansOfType.keySet()){
+              System.out.println("key = " + key +" value = " + beansOfType.get(key));
+          }
+          System.out.println("beansOfType = " + beansOfType);
+          //SameBeanConfig에서 생성한 빈이 2개이므로 beansOfType에 2개가 들어 있다면 성공한 것이다.
+          org.assertj.core.api.Assertions.assertThat(beansOfType.size()).isEqualTo(2);
+      }
+  
+  
+  }
+  ```
+
+  
+
+- 상속관계 일 때 빈 조회
+
+  - 부모 타입을 조회하면 자식 빈들은 함께 조회 된다.
+  - 모든 자바 객체의 부모인 Object 타입으로 조회하면 모든 스프링 빈을 조회한다.
+
+  ```java
+  package start.first.beanfind;
+  
+  import org.junit.jupiter.api.Assertions;
+  import org.junit.jupiter.api.DisplayName;
+  import org.junit.jupiter.api.Test;
+  import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
+  import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+  import org.springframework.context.annotation.Bean;
+  import org.springframework.context.annotation.Configuration;
+  import start.first.discount.DiscountPolicy;
+  import start.first.discount.FixDiscountPolicy;
+  import start.first.discount.RateDiscountPolicy;
+  
+  import java.util.Map;
+  
+  import static org.assertj.core.api.Assertions.assertThat;
+  
+  public class ApplicationContextExtendsFindTest {
+  
+      AnnotationConfigApplicationContext ac = new AnnotationConfigApplicationContext(TestConfig.class);
+  
+      //DiscountPolicy타입으로 조회했을 때 자식 타입인 RateDiscountPolicy와 FixDiscountPolicy가 조회되게 하기 위한 Config를 작성
+      @Configuration
+      static class TestConfig {
+          @Bean
+          public DiscountPolicy rateDiscountPolicy() {
+              return new RateDiscountPolicy();
+          }
+  
+          @Bean
+          public DiscountPolicy fixDiscountPolicy() {
+              return new FixDiscountPolicy();
+          }
+      }
+  
+      @Test
+      @DisplayName("부모 타입으로 조회시 자식이 둘 이상 있으면 중복 에러가 발생")
+      void findBeanByParentTypeDuplicate() {
+          //아래 코드를 실행하면 NoUniqueBeanDefinitionException 에러가 발생한다.
+          //DiscountPolicy bean = ac.getBean(DiscountPolicy.class);
+  
+          Assertions.assertThrows(NoUniqueBeanDefinitionException.class, () -> ac.getBean(DiscountPolicy.class));
+      }
+  
+      @Test
+      @DisplayName("부모 타입으로 자식이 둘 이상 있으면 빈 이름을 지정하면 된다.")
+      void findBeanByParentTypeBeanName(){
+          DiscountPolicy rateDiscountPolicy = ac.getBean("rateDiscountPolicy",DiscountPolicy.class);
+          assertThat(rateDiscountPolicy).isInstanceOf(RateDiscountPolicy.class);
+      }
+  
+      @Test
+      @DisplayName("부모 타입으로 자식이 둘 이상 있으면 특정 자식 타입으로 조회해도 된다.")
+      //현재 Config에는 부모 타입의 자식 타입 중 중복된 것이 없어 상관이 없으나 자식 타입 중 중복된 것이 있을 경우 에러가 발생할 수 있다.
+      //따라서 좋은 방법은 아니다.
+      void findBeanBySubType(){
+          RateDiscountPolicy bean = ac.getBean(RateDiscountPolicy.class);
+          assertThat(bean).isInstanceOf(RateDiscountPolicy.class);
+      }
+  
+      @Test
+      @DisplayName("부모 타입으로 모두 조회하기")
+      void findAllBeanByParentType(){
+          Map<String, DiscountPolicy> beansOfType = ac.getBeansOfType(DiscountPolicy.class);
+          assertThat(beansOfType.size()).isEqualTo(2);
+          for(String key : beansOfType.keySet()){
+              System.out.println("key = " + key +" value = " + beansOfType.get(key));
+          }
+      }
+      
+      @Test
+      @DisplayName("Object 타입으로 조회해보기")
+      //Object는 자바의 모든 객체의 부모이므로 모든 빈이 다 조회된다.
+      void findAllBeanByObjectType(){
+          Map<String, Object> beansOfType = ac.getBeansOfType(Object.class);
+          for(String key : beansOfType.keySet()){
+              System.out.println("key = " + key +" value = " + beansOfType.get(key));
+          }
+      }
+  
+  }
+  ```
+
+  
+
+
+
+## BeanFactory와 ApplicationContext
+
+- BeanFactory나 ApplicationContext를 스프링 컨테이너라 한다.
+
+
+
+- BeanFactory
+  - 스프링 컨테이너의 최상위 인터페이스
+  - 스프링 빈을 관리하고 조회하는 역할을 담당
+  - `.getBean()`을 제공한다.
+  - 위에서 사용했던 대부분의 기능은 BeanFactory가 제공하는 기능이다.
+
+
+
+- ApplicationContext
+  - BeanFactory를 상속 받은 인터페이스
+  - BeanFactory의 기능을 모두 상속 받아서 제공한다.
+  - BeanFactory 외에도 아래와 같은 인터페이스들을 상속받아 수 많은 부가 기능을 제공한다.
+    - MessageSource: 메세지 소스를 활용한 국제화 기능, 한국에서 접속하면 한국어로, 외국에서 접속하면 외국어로 출력되는 것이 이를 통해 가능해진다.
+    - EnvironmentCapable: 환경 변수 관리, 로컬, 개발, 운영 등을 구분해서 처리
+    - ApplicationEventPublisher: 이벤트를 발행하고 구독하는 모델을 편리하게 지원
+    - ResourceLoader: 파일, 클래스패스, 외부 등에서 리소스를 편리하게 조회
 
 
 
 
 
+## 다양한 설정 형식
+
+- 스프링 컨테이너는 자바 코드, XML, Groovy 등 다양한 형식의 설정 정보를 받아드릴 수 있게 유연하게 설계되어 있다.
 
 
 
+- 자바 코드
+  - 지금까지 했던 것이 애노테이션 기반 자바 코드 설정이다.
+  - `AnnotationConfigApplicationContext`를 사용하여 자바 코드로 된 설정 정보를 넘기면 된다.
+  - 최근에 많이 사용한다.
 
 
 
+- XML
+
+  - 최근에는 스프링 부트를 많이 사용하면서 XML 기반의 설정은 잘 사용하지 않는다.
+  - `GenericXmlApplicationContext`를 사용하여 xml 설정 파일을 넘기면 된다.
+  - 컴파일 없이 빈 설정 정보를 변경할 수 있는 장점이 있다.
+  - `src/main/resources`에 `appConfig.xml` 파일을 생성
+
+  ```xml
+  <?xml version="1.0" encoding="UTF-8"?>
+  <beans xmlns="http://www.springframework.org/schema/beans"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+  
+      <!--아래 3줄이 AppConfigSpring에서 memberService를 등록하는 부분에 해당한다.-->
+      <bean id="memberService" class="start.first.member.MemberServiceImpl">
+          <!--의존성을 작성-->
+          <constructor-arg name="memberRepository" ref="memberRepository" />
+      </bean>
+  
+      <!--아래 1줄이 AppConfigSpring에서 memberRepository를 등록하는 부분에 해당한다.-->
+      <bean id="memberRepository" class="start.first.member.MemoryMemberRepository" />
+  
+      <!--아래 3줄이 AppConfigSpring에서 orderService를 등록하는 부분에 해당한다.-->
+      <bean id="orderService" class="start.first.order.OrderServiceImpl">
+          <!--의존성을 작성-->
+          <constructor-arg name="memberRepository" ref="memberRepository" />
+          <constructor-arg name="discountPolicy" ref="discountPolicy" />
+      </bean>
+  
+      <bean id="discountPolicy" class="start.first.discount.RateDiscountPolicy" />
+  </beans>
+  ```
+
+  - test할 파일 작성
+
+  ```java
+  package start.first.xml;
+  
+  import org.assertj.core.api.Assertions;
+  import org.junit.jupiter.api.Test;
+  import org.springframework.context.ApplicationContext;
+  import org.springframework.context.support.GenericXmlApplicationContext;
+  import start.first.member.MemberService;
+  
+  public class XmlAppContext {
+  
+      @Test
+      void xmlAppContext(){
+          ApplicationContext ac = new GenericXmlApplicationContext("appConfig.xml");
+          MemberService memberService = ac.getBean("memberService", MemberService.class);
+          Assertions.assertThat(memberService).isInstanceOf(MemberService.class);
+      }
+  }
+  ```
+
+  
 
 
+
+## 스프링 빈 설정 메타 정보(BeanDefinition)
+
+> 아래 내용은 실무에서도 잘 쓰지 않으므로 이해가 안되면 넘어가도 무방
+
+
+
+- BeanDefinition
+  - BeanDefinition을 빈 설정 메타정보라 한다.
+    - 자바 코드의 `@Bean`, XML의 `<bean>` 하나 당 각각 하나씩 메타 정보가 생성된다.
+    - 스프링 컨테이너는 이 메타 정보를 기반으로 스프링 빈을 생성한다.
+  - 스프링이 다양한 설정 형식을 지원할 수 있는 것은 BeanDefinition이라는 추상화 덕분이다.
+  - BeanDefinition이란 역할과 구현을 개념적으로 나눈 것이라고 할 수 있다.
+  - 스프링 컨테이너는 구현이 자바 코드인지, XML 파일인지 몰라도 된다. 오직 BeanDefinition이라는 역할만 알면 된다.
+    - XML을 읽어서 BeanDefinition을 만들고
+    - 자바 코드를 읽어서 BeanDefinition을 만들면 그만이다.
+
+
+
+- 다양한 설정 형식 지원 원리
+  - 자바 코드에서 `AnnotationConfigApplicationContext`는 spring에 내장된 `AnnotatedBeanDefinitionReader`를 통해서 `AppConfig.class`를 읽고 BeanDefinition을 생성한다.
+  - XML 파일을 사용할 때 `GenericXmlApplicationContext`는  spring에 내장된 `XmlBeanDefinitionReader`를 통해서 `appConfg.xml`을 읽고 BeanDefinition을 생성한다.
+  - 따라서 새로운 형식의 설정 정보가 추가되면 `XXXBeanDefinitionReader`를 개발자가 직접 만들어서 BeanDefinition을 생성하면 된다.
+
+
+
+- BeanDefinition 정보
+  - BeanClassName: 생성할 빈의 클래스명(자바 설정 처럼 팩토리 역할의 빈을 사용하면 없음)
+  - factoryBeanName: 팩토리 역할의 빈을 사용할 경우 이름(e.g. appConfig) 
+  - factoryMethodName: 빈을 생성할 팩토리 메서드 지정(e.g. memberService) 
+  - Scope: 싱글톤(기본값) 
+  - lazyInit: 스프링 컨테이너를 생성할 때 빈을 생성하는 것이 아니라, 실제 빈을 사용할 때 까지 최대한 생성을 지연처리 하는지 여부 
+  - InitMethodName: 빈을 생성하고, 의존관계를 적용한 뒤에 호출되는 초기화 메서드 명 
+  - DestroyMethodName: 빈의 생명주기가 끝나서 제거하기 직전에 호출되는 메서드 명 
+  - Constructor arguments, Properties: 의존관계 주입에서 사용한다. (자바 설정 처럼 팩토리 역할 의 빈을 사용하면 없음)
+
+
+
+- BeanDefinition 정보 직접 확인해보기
+
+  ```java
+  package start.first.beandefinition;
+  
+  import start.first.AppConfigSpring;
+  import org.junit.jupiter.api.DisplayName;
+  import org.junit.jupiter.api.Test;
+  import org.springframework.beans.factory.config.BeanDefinition;
+  import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+  
+  
+  public class BeanDefinitionTest {
+  	
+      //자바 코드일 때 메타 정보 확인
+      AnnotationConfigApplicationContext ac = new AnnotationConfigApplicationContext(AppConfigSpring.class);
+      //XML일 때 메타 정보 확인
+      // GenericXmlApplicationContext ac = new GenericXmlApplicationContext("appConfig.xml");
+  
+      @Test
+      @DisplayName("빈 설정 메타정보 확인")
+      void findApplicationBean() {
+          String[] beanDefinitionNames = ac.getBeanDefinitionNames();
+          for (String beanDefinitionName : beanDefinitionNames) {
+              BeanDefinition beanDefinition =
+                      ac.getBeanDefinition(beanDefinitionName);
+              if (beanDefinition.getRole() == BeanDefinition.ROLE_APPLICATION) {
+                  System.out.println("beanDefinitionName" + beanDefinitionName +
+                          " beanDefinition = " + beanDefinition);
+              }
+          }
+      }
+  }
+  
+  //out
+  //전략
+  beanDefinitionNameappConfigSpring beanDefinition = Generic bean: class [start.first.AppConfigSpring$$EnhancerBySpringCGLIB$$b0b643e9]; scope=singleton; abstract=false; lazyInit=null; autowireMode=0; dependencyCheck=0; autowireCandidate=true; primary=false; factoryBeanName=null; factoryMethodName=null; initMethodName=null; destroyMethodName=null
+  //후략
+  ```
+
+  
 
 
 
