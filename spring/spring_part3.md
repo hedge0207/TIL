@@ -649,6 +649,7 @@
     - 그러나 이제 컴포넌트 스캔을 할 때 빈이 자동으로 등록되므로 그렇게 할 수 없다.
     - 따라서 `@Autowired` 어노테이션을 통해 의존관계를 자동으로 주입해야 한다.
     - 생성자에 `@Autowired`가 붙어 있으면 의존성이 자동으로 주입된다.
+    - `@Autowired`의 기본 동작은 주입할 대상이 없으면 오류가 발생하는 것이다. 주입할 대상이 없어도 동작하게 하려면 `@Autowired(required=false)`로 지정하면 된다.
 
   ```java
   package start.first.member;
