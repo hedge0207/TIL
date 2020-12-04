@@ -787,5 +787,134 @@
 
 # 빈 생명주기 콜백
 
-- 빈 생명주기 콜백 시작
-  - 
+## 빈 생명주기 콜백 시작
+
+- 데이터베이스 커넥션 풀이나, 네트워크 소켓처럼 애플리케이션 시작 시점에 필요한 연결을 미리 해두고, 애플리케이션 종료 시점에 연결을 모두 종료하는 작업을 진행하려면, 객체의 초기화와 종료 작업이 필요하다.
+
+
+
+- 스프링 빈의 이벤트 라이프 사이클
+  - 스프링 컨테이너 생성
+  - 스프링 빈 생성
+  - 의존관계 주입(수정자 주입, 필드 주입의 경우에 해당, 생성자 주입은 빈이 생성될 때 주입이 함께 일어남)
+  - 초기화 콜백(사용할 수 있는 준비가 모두 끝난 상태)
+  - 사용
+  - 소멸전 콜백(빈이 소멸되기 직전에 호출)
+  - 스프링 종료
+
+
+
+- 객체의 생성과 초기화를 분리해야 한다.
+  - 생성자는 필수 정보(파라미터)를 받고, 메모리를 할당해서 객체를 생성하는 책임을 가진다.
+  - 반면에 초기화는 이렇게 생성된 값들을 활용하여 외부 커넥션을 연결하는등 무거운 동작을 수행한다.
+  - 따라서 생성자 안에서 무거운 초기화 작업을 함께 하는 것 보다는 객체를 생성하는 부분과 초기화 하는 부분을 명확하게 나누는 것이 유지보수 관점에서 좋다. 물론 초기화 작업이 내부 값들만 약간 변경하는 정도로 단순한 경우에는 생성자에서 한번에 다 처리하는 것이 더 나을 수 도 있다.
+
+
+
+- 네트워크에 미리 연결하는 객체를 하나 생성한다고 가정한 예시(실제 네트워크에 연결하는 것은 아니다)
+
+  - 서버가 뜰 때 미리 외부 네트워크와 연결되어야 한다.
+  - 서버가 종료될 때 미리 외부 네트워크와 연결이 끊어져야 한다.
+  - 코드
+
+  ```java
+  package start.first.lifecycle;
+  
+  public class NetworkClient {
+  
+      private String url;
+  
+      public NetworkClient(){
+          System.out.println("생성자 호출, url = " + url);
+          connect();
+          call("초기화 연결 메세지");
+      }
+  
+      public void setUrl(String url){
+          this.url = url;
+      }
+  
+      //서비스 시작시 호출
+      public void connect(){
+          System.out.println("connect " + url);
+      }
+      
+      //연결이 된 상태
+      public void call(String message){
+          System.out.println("call: " + url + " message = " + message);
+      }
+  
+      //서비스 종료시 호출
+      public void disconnect(){
+          System.out.println("close " + url);
+      }
+      
+  }
+  ```
+
+  - 테스트
+
+  ```java
+  //전략
+  
+  public class BeanLifeCycleTest {
+  
+      @Test
+      public void lifeCycleTest(){
+          //close를 사용하기 위해서는 ConfigurableApplicationContext 타입이어야 한다.
+          //ConfigurableApplicationContext는 ApplicationContext를 상속 받는다.
+          //AnnotationConfigApplicationContext는 ConfigurableApplicationContext를 상속 받는다.
+          ConfigurableApplicationContext ac = new AnnotationConfigApplicationContext(LifeCycleConfig.class);
+          NetworkClient client = ac.getBean(NetworkClient.class);
+          ac.close();
+      }
+  
+      @Configuration
+      static class LifeCycleConfig{
+          @Bean
+          public NetworkClient networkClient(){
+              NetworkClient networkClient = new NetworkClient();  //객체 생성
+              networkClient.setUrl("http://hello-word.dev");		//수정자를 통한 의존관계 주입
+              return networkClient;
+          }
+      }
+  }
+  
+  //out
+  생성자 호출, url = null  //url이 null이 뜬다. 만일 실제 연결하려 했다면, url이 잘못 되었으므로 연결 되지 않았을 것이다.
+  connect null
+  call: null message = 초기화 연결 메세지
+  ```
+
+  - 실행 결과를 보면 null이 라고 출력 되는데, 그 이유는 객체를 생성하고 의존관계가 주입되기 때문이다.
+
+    - 스프링 빈은 기본적으로 객체 생성 후 의존관계가 주입된다(생성자 주입은 예외).
+    - 스프링 빈은 객체를 생성하고, 의존관계 주입이 다 끝난 다음에야 필요한 데이터를 사용할 수 있는 준비가 완료된다.
+    - 따라서 초기화 작업(외부 네트워크와 연결하는 작업)은 의존관계 주입이 모두 완료되고 난 다음에 호출해야 한다.
+    - 그렇다면 개발자가 의존관계 주입이 모두 완료된 시점을 어떻게 알 수 있는가?
+
+    
+
+- 스프링의 빈 생명주기 콜백 지원
+  - 인터페이스
+  - 설정 정보에 초기화 메서드, 종료 메서드 지정
+  - @PostConstruct, @PreDestroy 애노티에션 지원
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
