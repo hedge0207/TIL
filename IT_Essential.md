@@ -40,10 +40,95 @@
     - 기능요구사항: 학사 관리 기능, 수업 관리 기능, 수강 관리 기능, 사용자 관리 기능
     - 비기능요구사항(품질속성): 강의신청 기간에 원활한 진행, 언제 어디서나 접근 가능, 모바일에서도 접속 가능, 데이터 손실 방지 등.
     - 비기능요구사항(품질속성) 때문에 아키텍처를 그린다고 봐도 될 정도로 비기능요구사항은 매우 중요한 사항이다.
+  - 결정요인들의 연관관계를 도식화(유스 케이스 다이어그램 사용)
 
-  - 결정요인들의 연관관계를 도식화
 
-    ![](IT_Essential.assets/유스케이스 다이어그램.jpg)
+  > 아래 다이어 그램을 그린 사이트 : https://app.diagrams.net/
+
+  ​		![](IT_Essential.assets/유스케이스다이어그램-1607178918780.jpg)
+
+  - 비기능 요구사항 기반으로 품질 속성 시나리오 작성
+
+    - 스파이크 성 트래픽에 대한 처리(수강 신청 기간에 몰리는 접속량), public 환경(언제 어디서나 접근 가능), 하이브리드 웹(모바일에서 접속 가능), 권한을 통한 정보 보안, 주기적 데이터 백업(데이터 손실 방지) 등
+    - 실제 서비스를 위해서는 기능 구현만을 목적으로 해선 안되며 위와 같은 품질 속성을 고려해야 한다.
+    - 스파이크 성 트래픽에 대한 처리: 4000명의 학생이 학년별로 각기 다른 날짜에, 4일에 걸쳐 수강 신청을 한다고 할 때, 최악의 경우를 학생 1100명이 동시에 접속하는 상황을 상정(해당 일자에 수강신청하는 1000명+다른 용무로 접속하는 학생 100명)하여 먼저 신청한 학생 순서대로 5초이내에 처리 완료한다.
+    - public환경: 학생과 교수는 본 시스템에 외부, 내부 네트워크 환경에서 모두 접속하여 수강신청을 할 수 있다.
+    - 하이브리드 웹: 학생과 교수는 안드로이드, iOS, PC로 접속하여 수강신청을 할 수 있다. 지원 브라우저는 IE 11, Chrome 80, safary 13 버전 이상이다.
+    - 권한을 통한 정보 보안: 권한이 있는 교직원 외에는 인사관리 데이터에 아무도 접근할 수 없다. 권한이 없는 교수와 교직원 외에는 학사관리 시스템에 아무도 접근할 수 없다.
+    - 주기적 데이터 백업: 수강신청 기간에는 매일 오전 03시에 수강신청 데이터를 백업한다. 수강신청 완료 후에는, 데이터의 영구보존을 위해 수강신청 데이터를 백업하여 별도 디스크에 저장한다.
+
+  - 품질 속성 시나리오에 따른 아키텍처 전략 수립
+
+    ![](IT_Essential.assets/품질속성시나리오전략.jpg)
+
+  - 아키텍처 도식화
+
+    ![](IT_Essential.assets/아키텍처.jpg)
+
+  - 아키텍처 검증(평가)하기
+
+
+
+
+
+# Server & Client Architecture
+
+- DNS(Domain Name Server)
+  - 클라이언트가 서버에 요청을 보낼 때 DNS를 통해 보내게 된다.
+  - ISP(Internet Service Provider, 인터넷 서비스 제공) 업체(SKT, KT, LG)별로 DNS의 주소가 다르다.
+  - DNS Cache: 매번 DNS에 요청을 보내는 대신 최초로 DNS에 요청을 보냈을 때 그 응답으로 받은 IP를 저장해둔다.
+    - 저장 위치: 브라우저, 운영체제, 라우터, ISP 등에 저장한다.
+  - TCP(Transmission Control Protocol) 3 Way HandShake
+    - SYN(Synch): IP 주소에 해당하는 서버에 요청을 보낸다.
+    - ACK(acknowledge)+SYN: 싱크가 맞으면 서버는 요청을 받았다는 확인을 클라이언트에 보낸다.
+    - ACK: 클라이언트 역시 서버에 확인 응답을 보낸다.
+  - DNS는 반의 모든 사람의 전화번호를 알고 있는 반장과 같고, DNS IP는 반장 직통 번호로 비유했을 때 번호를 모르는 같은 반 친구에게 연락하고자 한다면 아래의 과정을 거치게 된다.
+    - 반장에게 연락한다
+    - 반장에게 친구의 이름을 알려주고 전화번호를 물어본다.
+    - 반장이 해당 학생의 번호를 찾아본다.
+    - 전화번호를 전달 받는다.
+    - 받은 번호를 저장한다(따라서 이후에는 이 친구의 번호를 얻기 위해서는 굳이 반장에게 연락할 필요가 없다).
+    - 받은 번호로 전화한다.
+  - 이를 Server & Client의 관계에 대입하여, 주소창에 www.google.com을 입력한 이후의 과정은 다음과 같다.
+    - Client는 DNS Resolver에게  www.google.com라는 도메인과 함께 요청을 보낸다.
+    -  DNS Resolver는 Root Name Server로 www.google.com라는 도메인과 함께 요청을 보내는데,  Root Name Server는 도메인 중 마지막에 달린 `.com`, `.co.kr` 등을 분석하여 이들에 대한 정보를 가진 Server의 IP(TLD Name Server IP)를 DNS Resolver로 반환한다.
+    - DNS Resolver는 이 응답을 가지고 www.google.com라는 도메인과 함께 TLD(Top Level Domain) Name Server로 다시 요청을 보낸다.  TLD Name Server는 `google.com`까지 분석하여 이 주소에 대한 정보를 가진 Server의 IP(Authoritative Name Server IP)를 DNS Resolver로 반환한다.
+    - DNS Resolver는 이 정보를 가지고 Authoritative Name Server에 www.google.com라는 도메인과 함께 요청을 보내는데 Authoritative Name Server는 이를 분석하여 해당 도메인의 IP 주소를 반환한다.
+    - DNS Resolver는 반환 받은  IP 주소를 Client에 반환한다.
+    - DNS Cache를 통해 이를 저장한다.
+    - TCP 3 Way HandShake를 통해 서버에 요청을 보낸다.
+
+
+
+- HTTP request, response
+  - 이는 TCP 연결이 이루어진 뒤의 과정이다.
+  - HTTP(HyperText Transfer Protocol): HTML을 요청하고 전달 받기 위한 규약
+  - Client는 Server에 Request Method(GET, POST 등)와 함께 요청을 보낸다.
+  - 일반적으로 최초의 요청은 GET 메서드로 index.html을 요청한다. 서버는 이에 대한 요청으로 index.html과 함께 status code(성공했을 경우 200)를 반환한다.
+
+
+
+- 위 내용을 정리하여, 구글 홈페이지가 브라우저에 보여지기까지의 과정은 당음과 같다.
+  - 브라우저에 www.google.com을 입력한다.
+  - DNS를 통해 IP 주소를 획득한다.
+  - 획득한 IP 주소에 있는 서버와 TCP 3 Way Handshake를 진행한다.
+  - 통신을 맺은 서버에 HTTP Request를 한다.
+  - 서버에 보낸 HTTP Request를 통해 html 파일을 받는다.
+  - 브라우저가 html을 분석하여 화면으로 그린다.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

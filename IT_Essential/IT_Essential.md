@@ -70,6 +70,10 @@
 
 
 
+# Client / Server Architecture
+
+- 클라이언트
+
 
 
 
