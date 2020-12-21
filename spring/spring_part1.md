@@ -2,8 +2,8 @@
 
 - [스프링 기초 개념](#스프링-기초-개념)
   - [객체 지향 설계](#객체 지향 설계)
-  - [POJO](#POJO(Plain-Old-Java-Object))
-  - [PSA](#PSA(Portable-Service-Abstraction))
+  - [POJO](#pojo(Plain-Old-Java-Object))
+  - [PSA](#psa(portable-service-abstraction))
   - [IOC/DI](#IoC(Inversion-of-Control)/DI(Dependency-Injection))
   - [AOP](#AOP(Aspect-Oriented-Programming))
 - [프로젝트 생성](#프로젝트 생성)
