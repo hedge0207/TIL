@@ -4,7 +4,7 @@
   - [객체 지향 설계](#객체-지향-설계)
   - [POJO](#pojo)
   - [PSA](#psa)
-  - [IOC과 DI](#IoC과-DI)
+  - [IoC와 DI](#IoC와-DI)
   - [AOP](#AOP)
 - [프로젝트 생성](#프로젝트-생성)
 
@@ -98,7 +98,7 @@
 
 
 
-## IoC과 DI
+## IoC와 DI
 
 - IoC(Inversion of Control)/DI(Dependency Injection)
 
