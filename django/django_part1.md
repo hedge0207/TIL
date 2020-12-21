@@ -1,3 +1,19 @@
+# 목차
+
+- [Django란](#Django)
+- [MTV기초](#MTV기초)
+- [DTL](#DTL)
+- [MTV확장](#MTV-확장)
+- [form태그와 input태그](#form태그와-input태그)
+- [Model](#Model)
+- [HTTP](#HTTP)
+- [정적 파일 관리](#정적-파일-관리)
+- [form](#form)
+
+
+
+
+
 # Django
 
 - Static web page와 Dynamic web page
@@ -551,60 +567,63 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
 
 
   - variable routing에서 str이 기본값이라 문자열을 쓸 경우 str을 적지 않아도 된다.
+    
     - 아래에서 name뒤에 숫자를 붙였는데 숫자가 같은 것 끼리는 변수명이 동일해야 한다.
+    
+    ```python
+    #예시1
+    #urls.py
+    urlpatterns = [
+        path('hi/<str:name1>', views.Hi),
+    ]
+    ```
+    
+    ```python
+    #views.py
+    def Hi(request,name1):
+        context = {
+            'name2': name1
+        }
+        return render(request, 'hi.html', context)
+    ```
+    
+    ```html
+    <!--hi.html-->
+    <h1>안녕, {{ name2 }}</h1>
+    
+    <!--경로에 ~/hi/John-->
+    out
+    안녕, John
+    ```
+    
+    ```python
+    #예시2
+    #urls.py
+    urlpatterns = [
+        path('sum/<int:a>/<int:b>/', views.sum),
+    ]
+    ```
+    
+    ```python
+    #views.py
+    def Hi(request,a,b):
+        result=a+b
+        context = {
+            's_result': result
+        }
+        return render(request, 'sum.html', context)
+    ```
+    
+    ```html
+    <!--sum.html-->
+    <h1>{{ s_result }}</h1>
+    
+    <!--경로에 ~/sum/6/7-->
+    out
+    13
+    ```
 
-  ```python
-  #예시1
-  #urls.py
-  urlpatterns = [
-      path('hi/<str:name1>', views.Hi),
-  ]
-  ```
 
-  ```python
-  #views.py
-  def Hi(request,name1):
-      context = {
-          'name2': name1
-      }
-      return render(request, 'hi.html', context)
-  ```
-
-  ```html
-  <!--hi.html-->
-  <h1>안녕, {{ name2 }}</h1>
-  
-  <!--경로에 ~/hi/John-->
-  out
-  안녕, John
-  ```
-
-  ```python
-  #예시2
-  #urls.py
-  urlpatterns = [
-      path('sum/<int:a>/<int:b>/', views.sum),
-  ]
-  ```
-
-  ```python
-  #views.py
-  def Hi(request,a,b):
-      result=a+b
-      context = {
-          's_result': result
-      }
-      return render(request, 'sum.html', context)
-  ```
-
-  ```html
-  <!--sum.html-->
-  <h1>{{ s_result }}</h1>
-  
-  <!--경로에 ~/sum/6/7-->
-  out
-  13
-  ```
 
   - 주의사항
 
@@ -627,7 +646,6 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     ]
     ```
 
-    
 
 
 
@@ -933,7 +951,10 @@ QueryDict{'content':1234,'title':5678}
   ⓕurls.py는 접근을 감지하고 views의  complete함수를 실행시킨다.
   
   ⓖcomplete함수 complete.html을 렌더링 해 화면에 출력한다.
-  
+
+
+
+
 - 수정을 하고자 할 때 form태그와 input 태그
 
     ```html
@@ -999,7 +1020,7 @@ QueryDict{'content':1234,'title':5678}
     article.title = '제목'    #article 객체의 title을 '제목'으로,
     article.content = '내용'  #article 객체의 content을 '내용'으로 설정한다.
     article.save()           #반드시 세이브를 해줘야 한다.
-                             #models.DateTimeField(auto_now_add=True) 속성의 						   			  경우에는 위의 과정을 거치지 않아도 자동으로 생성되므로 바							      로 쓰면 된다.
+                             #models.DateTimeField(auto_now_add=True) 속성의 경우에는 위의 과정을 거치지 않아도 자동으로 생성되므로 바로 쓰면 된다.
     #방법2
     article = Article(title='제목', content='내용')
     article.save()
@@ -1014,18 +1035,18 @@ QueryDict{'content':1234,'title':5678}
   
     - 전체 데이터 조회
     
-    ```python
-    Article.objects.all()
-    >> <QuerySet [<Article: Article object (1)>]>
-    
-    #아래의 코드는 지금까지 생성된 Article의 모든 객체를 QuerySet 형태로 article에 담는 것이다.
-    article=Article.object.all()
-    
-  #Article.objects.order_by('-id').all()와 같이 쓰면 역순으로 조회한다.
-  ```
+      ```python
+      Article.objects.all()
+      >> <QuerySet [<Article: Article object (1)>]>
+      
+      #아래의 코드는 지금까지 생성된 Article의 모든 객체를 QuerySet 형태로 article에 담는 것이다.
+      article=Article.object.all()
+      
+    #Article.objects.order_by('-id').all()와 같이 쓰면 역순으로 조회한다.
+    ```
   
   - 단일 데이터 조회(고유한 값인 id를 통해 가능)
-    
+  
     ```python
     #방법1
     Article.objects.get(id=1)
@@ -1034,26 +1055,30 @@ QueryDict{'content':1234,'title':5678}
     Article.objects.all()[0]  #[]안에 음수는 올 수 없다.
     
     #방법3
-  Article.objects.all().first()  #첫번째 데이터 조회
+    Article.objects.all().first()  #첫번째 데이터 조회
     <Article: Article object (1)>
         
     Article.objects.all().last()   #마지막 데이터 조회
     ```
-    
-  - 수정- ex. 게시글 수정
-  
-  ```python
+
+
+
+- 수정- ex. 게시글 수정
+
+    ```python
     a1 = Article.objects.get(id=1)  #수정할 대상을 정하고
     a1.title = '제목 수정'       #수정후
     a1.save()                  #저장
-  ```
-  
+    ```
+
+    
+
 - 삭제- ex. 게시글 삭제
   
     ```python
-      a1 = Article.objects.get(id=1)
-      a1.delete()
-      >> (1, {'articles.Article': 1})
+    a1 = Article.objects.get(id=1)
+    a1.delete()
+    >> (1, {'articles.Article': 1})
     ```
 
 
@@ -1106,6 +1131,9 @@ admin.site.register(Article)
    
    admin.site.register(Article, ArticleAdmin)
    ```
+
+
+
 - Model의 조작
 
   - `models.py`파일을 통해 클래스를 정의하는데 이것이 DB를 모델링 하는 것이다. 열에 어떤 내용이 올지를 정의하는 것이라고 볼 수 있다.
@@ -1244,11 +1272,13 @@ admin.site.register(Article)
     
     - 특정 url에 사용자가 의도하지 않은 작동이 일어나도록 설정하여 사용자가 해당 url을 클릭 했을 때 해당 작동이 일어나게 되는 것이 사이트간 요청 변조로, 이를 막아주는 것이 csrftoken이다.
     - 붙이지 않을 경우 403  forbidden 페이지가 뜬다.
+
+
+
 - csrftoken 값은 새로고침 할 때마다(요청을 보낼 때 마다) 바뀌며, 이 값을 검증하여 변조된 요청인지 아닌지를 판단하는 방법으로 방어가 가능하다.
     - 쿠키에도 저장되고 이를 통해서도 방어가 가능하다. 
     - 검사를 통해 보면 csrftoken의 타입은 hidden이다.
     - settings.py의 `MIDDLEWARE`에 csrf관련 처리가 되어 있다. 만일 해당 코드를 주석처리 한다면 오류는 발생하지 않지만 보안이 무너지게 되므로 절대 해서는 안된다.
-    
     
 
 
@@ -1492,11 +1522,6 @@ admin.site.register(Article)
     {% endblock %}
     ```
     
-    
-
-
-
-
 
 
 

@@ -1,8 +1,20 @@
+# 목차
+
+- [스프링 기초 개념](#스프링-기초-개념)
+  - [객체 지향 설계](#객체 지향 설계)
+  - [POJO](#POJO(Plain-Old-Java-Object))
+  - [PSA](#PSA(Portable-Service-Abstraction))
+  - [IOC/DI](#IoC(Inversion-of-Control)/DI(Dependency-Injection))
+  - [AOP](#AOP(Aspect-Oriented-Programming))
+- [프로젝트 생성](#프로젝트 생성)
+
+
+
 # 스프링 기초 개념
 
 ## 객체 지향 설계
 
-> 객체지향 설계 자체에 대한 내용은 `java_part1` 참고
+> 객체지향 설계 자체에 대한 내용은 [java_part1](https://github.com/hedge0207/TIL/blob/master/java/java_part1.md) 참고
 
 - 스프링은 다형성과 객체 지향 설계의 5가지 원칙 중 OCP, DIP를 가능하게 지원해준다.
   - 스프링이 존재하기 전에는 좋은 객체 지향 개발을 하려고 OCP,DIP 원칙을 지키다보면 개발에 들어가는 시간보다 OCP, DIP를 지키기 위해 들어가는 시간이 더 많아졌다.
@@ -82,7 +94,7 @@
 
 
 
-## IoC(Inversion of Control)/`DI(Dependency Injection)`
+## IoC(Inversion of Control)/DI(Dependency Injection)
 
 - 정의: 객체 지향 언어에서 객체 간의 연결 관계(의존성)를 컨테이나가 결정하게 하는 방법, 객체의 생성과 생명주기를 컨테이너가 관리한다.
 

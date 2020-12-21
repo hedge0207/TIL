@@ -1,3 +1,25 @@
+# 목차
+
+- [미디어 파일 관리](#미디어-파일-관리)
+- [Query 최적화](#Query-최적화)
+- [REST API](#REST-API)
+- [Django&Vue](#Django&Vue)
+  - [사용자 인증](#사용자-인증)
+  - [CORS](#CORS)
+- [django additional](#django-additional)
+  - [Social Login](#Social-Login)
+  - [게시글 페이지 분할하기](#게시글-페이지-분할하기)
+- [기타](#기타)
+  - [투표 구현 방법](#투표-구현-방법)
+  - [Gravartar](#Gravartar)
+  - [faker](#faker)
+
+
+
+
+
+
+
 # 미디어 파일 관리
 
 - static과 차이는 static은 개발자가 사용한 이미지, css, js파일이고 media는 사용자가 사용하는 이미지 등의 파일이라는 것이다.

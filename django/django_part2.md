@@ -1,3 +1,14 @@
+# 목차
+
+- [사용자 인증 관리](#사용자-인증-관리)
+- [데이터 베이스](#데이터-베이스)
+- [SQL 기본](#SQL(Structured Query Language)-기본)
+- [ORM](#ORM)
+- [1:N](#1:N)
+- [M:N](#M:N)
+
+
+
 # 사용자 인증 관리
 
 - django에서 사용자 정보는 다른 정보와는 다르게 특별한 처리를 해줘야 한다.
@@ -2229,40 +2240,40 @@ urlpatterns = [
   - views.py
 
   ```python
-  def follow(request, pk):
-      User = get_user_model()
-      # 아래의 user는 팔로우 당하는 사람, 팔로우를 요청한 사람은 request.user
-      user = get_object_or_404(User, pk=pk)
-      if user != request.user:
-          # 팔로우가 되어 있다면,
-          if user.followers.filter(pk=request.user.pk).exists():
-              # 삭제
-              user.followers.remove(request.user)
-          else:
-            # 추가
-              user.followers.add(request.user)
-    return redirect('accounts:detail', user.pk)
+def follow(request, pk):
+    User = get_user_model()
+    # 아래의 user는 팔로우 당하는 사람, 팔로우를 요청한 사람은 request.user
+    user = get_object_or_404(User, pk=pk)
+    if user != request.user:
+        # 팔로우가 되어 있다면,
+        if user.followers.filter(pk=request.user.pk).exists():
+            # 삭제
+            user.followers.remove(request.user)
+        else:
+          # 추가
+            user.followers.add(request.user)
+  return redirect('accounts:detail', user.pk)
   ```
 
   - detail.html(유저 프로필)
 
   ```html
-  {% with user_followers=user.followers.all %}
-      {% if request.user == user %}
-          <a href="{% url 'accounts:update' %}">회원 수정</a>
-          <form action="{% url 'accounts:delete' %}" method="POST">
-              {% csrf_token %}
-              <button class="btn btn-secondary">회원 탈퇴</button>
-          </form>
-      {% else %}
-          <hr>
-              {% if request.user in user_followers %}
-                  <a href="{% url 'accounts:follow' user.pk %}">팔로우 취소</a>
-              {% else %}
-                  <a href="{% url 'accounts:follow' user.pk %}">팔로우</a>
-              {% endif %}
-      {% endif %}
-      <p> {{ user_followers|length }}명이 팔로우</p>
-      <p> {{ user.followings.count }}명을 팔로우</p>
-  {% endwith %}
+{% with user_followers=user.followers.all %}
+    {% if request.user == user %}
+        <a href="{% url 'accounts:update' %}">회원 수정</a>
+        <form action="{% url 'accounts:delete' %}" method="POST">
+            {% csrf_token %}
+            <button class="btn btn-secondary">회원 탈퇴</button>
+        </form>
+    {% else %}
+    <hr>
+            {% if request.user in user_followers %}
+                <a href="{% url 'accounts:follow' user.pk %}">팔로우 취소</a>
+            {% else %}
+                <a href="{% url 'accounts:follow' user.pk %}">팔로우</a>
+            {% endif %}
+    {% endif %}
+    <p> {{ user_followers|length }}명이 팔로우</p>
+    <p> {{ user.followings.count }}명을 팔로우</p>
+{% endwith %}
   ```

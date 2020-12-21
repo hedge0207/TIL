@@ -2,7 +2,19 @@
 
 - [JAVA 기초](#JAVA-기초)
 
+  - [객체지향 프로그래밍](#객체지향-프로그래밍)
+  - [Hello World](#Hello-World)
+  - [변수](#변수)
+  - [자료형](#자료형)
+  - [연산자](#연산자)
+
 - [제어문](#제어문)
+
+  - [조건문](#조건문)
+
+  - [반복문](#반복문)
+
+
 
 
 
@@ -425,52 +437,6 @@
     }
     ```
   
-  - 반복문 안에서 String을 초기화 하는 방법
-  
-    - 파이썬 처럼 반복문이 도는 중간에 문자열을 `""`로 초기화 하려고 하면 error가 발생할 때가 있다.
-    - 이 때는 `초기화 하려는 변수명= new String();` 과 같이 초기화를 시켜줘야 한다.
-  - 확인 결과 그래도 안되는 경우가 있었다. 원인을 명확히 알 수 없음
-    
-    ```java
-    String recommendUserId = "";
-    for(int i = 0; i < array_word.length; i++){
-        if(array_word[i].equals(" ")){
-            continue;
-        }
-    
-        if(array_word[i].equals(",")){
-            int userId = Integer.parseInt(recommendUserId);
-            simUserIdList.add(userId);
-            //아래와 같이 하거나
-            //recommendUserId= "";
-            //아래와 같이 하면 초기화가 되지 않는다.
-            //recommendUserId= null;
-            //아래와 같이 초기화를 해야 한다.
-            recommendUserId= new String();
-            continue;
-        }
-    
-        if(array_word[i].equals("]")){
-            break;
-        }
-        if(flag){
-            recommendUserId+=array_word[i];
-        }
-        if(array_word[i].equals("[")){
-            flag = true;
-        }
-    }
-    ```
-  ```
-    
-  
-    
-  
-    
-    
-  
-  
-  
   - StringBuffer: 문자열을 추가하거나 변경할 때 주로 사용하는 자료형
   
     - 아래 과정에서 String과 StringBuffer는 완전히 동일해 보이지만 그렇지 않다. 두 변수의 값은 동일하지만 StringBuffer 타입은 객체를 단 한번반 생성시키는 반면에 String은 +연산을 할 때마다 새로운 객체가 생성된다(따라서 아래 예시에서는 총 4개의 객체가 생성된다). 
@@ -483,8 +449,8 @@
     
     public class HelloWorld {
     
-    	public static void main(String[] args) {
-    		StringBuffer a = new StringBuffer();
+        public static void main(String[] args) {
+            StringBuffer a = new StringBuffer();
             a.append("hello");
             a.append(" ");
             a.append("my name is java.");
@@ -497,7 +463,7 @@
             b += " ";
             b += "my name is java.";
             System.out.println(b);  		   //hello my name is java.
-    	}
+        }
     }
     
     //insert를 사용하여 특정 위치에 원하는 문자열 삽입 가능
@@ -505,12 +471,12 @@
     
     public class HelloWorld {
     
-    	public static void main(String[] args) {
-    		StringBuffer a = new StringBuffer();
+        public static void main(String[] args) {
+            StringBuffer a = new StringBuffer();
             a.append("my name is java.");
             a.insert(0,"Hello ");  //첫 번째 인자로 인덱스, 두 번째 인자로 삽입할 문자열
             System.out.println(a); //Hello my name is java.
-    	}
+        }
     }
     
     //substring: String자료형의 substring 메소드와 사용법이 동일
@@ -518,13 +484,15 @@
     
     public class HelloWorld {
     
-    	public static void main(String[] args) {
-    		StringBuffer a = new StringBuffer();
+        public static void main(String[] args) {
+            StringBuffer a = new StringBuffer();
             a.append("Hello my name is java.");
             System.out.println(a.substring(0,4)); //Hell
-    	}
+        }
     }
-  ```
+    ```
+  
+    
 
 
 
