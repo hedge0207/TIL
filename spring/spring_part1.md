@@ -1,12 +1,12 @@
 # 목차
 
 - [스프링 기초 개념](#스프링-기초-개념)
-  - [객체 지향 설계](#객체 지향 설계)
-  - [POJO](#pojo(Plain-Old-Java-Object))
-  - [PSA](#psa(portable-service-abstraction))
-  - [IOC/DI](#IoC(Inversion-of-Control)/DI(Dependency-Injection))
-  - [AOP](#AOP(Aspect-Oriented-Programming))
-- [프로젝트 생성](#프로젝트 생성)
+  - [객체 지향 설계](#객체-지향-설계)
+  - [POJO](#pojo)
+  - [PSA](#psa)
+  - [IOC과 DI](#IoC과-DI)
+  - [AOP](#AOP)
+- [프로젝트 생성](#프로젝트-생성)
 
 
 
@@ -24,13 +24,13 @@
 
 
 
-## POJO(Plain Old Java Object)
+## POJO
 
 - 정의: Java의 언어 규약에서 강제된 것 이외에는 특별한 제한에 종속받지 않는 일반적인 Java Object.
 
 
 
-- 진정한 POJO란 객체지향적인 원리에 충실하면서 환경과 기술에 종속되지 않고 필요에 따라 재활용 될 수 있는 방식으로 설계된 오브젝트를 말한다.
+- 진정한 POJO(Plain Old Java Object)란 객체지향적인 원리에 충실하면서 환경과 기술에 종속되지 않고 필요에 따라 재활용 될 수 있는 방식으로 설계된 오브젝트를 말한다.
 
   - 어떤 클래스가 특정 기술, 부모 클래스, 인터페이스에 종속되는 순간부터 사용에 제약이 걸리게 된다.
   - 따라서 새로운 기능을 만들어 낼 때 마다 기존 클래스를 재활용 하는 방식이 아닌 새로운 클래스를 생성해야 하는 상황에 처하게 되고 이는 비효율을 초래한다.
@@ -82,7 +82,9 @@
 
 
 
-## PSA(Portable Service Abstraction)
+## PSA
+
+- PSA(Portable Service Abstraction)
 
 - 환경의 변화와 관계 없이 일관된 방식의 기술로의 접근 환경을 제공하려는 추상화 구조를 말한다.
 - 배경
@@ -96,7 +98,11 @@
 
 
 
-## IoC(Inversion of Control)/DI(Dependency Injection)
+## IoC과 DI
+
+- IoC(Inversion of Control)/DI(Dependency Injection)
+
+
 
 - 정의: 객체 지향 언어에서 객체 간의 연결 관계(의존성)를 컨테이나가 결정하게 하는 방법, 객체의 생성과 생명주기를 컨테이너가 관리한다.
 
@@ -316,10 +322,10 @@
 
 
 
-## AOP(Aspect Oriented Programming)
+## AOP
 
-- 정의: 관심사의 분리를 통해 소프트웨어의 모듈성을 향상시키고자 하는 프로그래밍 패러다임
-
+- AOP(Aspect Oriented Programming)
+  - 정의: 관심사의 분리를 통해 소프트웨어의 모듈성을 향상시키고자 하는 프로그래밍 패러다임
   - 프로젝트를 진행하다 보면 여러 기능이 필요하게 되고 여러 기능에 공통적으로 들어가야 하는 코드가 생기게 된다.
   - 이러한 공통 코드를 따로 작성(메서드)하여 각 기능에서 활용하는 것
 
