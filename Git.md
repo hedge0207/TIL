@@ -1,3 +1,11 @@
+# 참고 사이트
+
+> https://git-scm.com/book/ko/v2/%EC%8B%9C%EC%9E%91%ED%95%98%EA%B8%B0-%EB%B2%84%EC%A0%84-%EA%B4%80%EB%A6%AC%EB%9E%80%3F
+
+
+
+
+
 # 초기 설정
 
 - 최초 1회 실행
@@ -205,8 +213,6 @@ $ git pull origin master
 
     
 
-
-
 - 특정 branch 클론
 
   ```bash
@@ -293,6 +299,78 @@ $ git push --mirror
 $ java -jar bfg_x.x.x.jar --strip-blobs-bigger-than 100M # bfg의 버전과 jar 파일의 경로에 주의해야 한다.
 $ git push --mirror # 다시 원격 저장소로 push
 ```
+
+
+
+
+
+# commit message 작성하기
+
+- 커밋 템플릿 만들기
+
+  - `gitmesssage.txt`파일 생성
+
+  ```bash
+  touch gitmessage.txt
+  ```
+
+  - 텍스트 에디터로 진입
+
+  ```bash
+  vim gitmessage.txt
+  ```
+
+  - 아래 내용을 복붙 후 저장(`esc` -> `:wq`)
+
+  ```txt
+  # <타입>: <제목>
+  
+  ##### 제목은 최대 50 글자까지만 입력 ############## -> |
+  
+  
+  # 본문은 위에 작성
+  ######## 본문은 한 줄에 최대 72 글자까지만 입력 ########################### -> |
+  
+  # 꼬릿말은 아래에 작성: ex) #이슈 번호
+  
+  # --- COMMIT END ---
+  # <타입> 리스트
+  #   feat    : 기능 (새로운 기능)
+  #   fix     : 버그 (버그 수정)
+  #   refactor: 리팩토링
+  #   style   : 스타일 (코드 형식, 세미콜론 추가: 비즈니스 로직에 변경 없음)
+  #   docs    : 문서 (문서 추가, 수정, 삭제)
+  #   test    : 테스트 (테스트 코드 추가, 수정, 삭제: 비즈니스 로직에 변경 없음)
+  #   chore   : 기타 변경사항 (빌드 스크립트 수정 등)
+  # ------------------
+  #     제목 첫 글자를 대문자로
+  #     제목은 명령문으로
+  #     제목 끝에 마침표(.) 금지
+  #     제목과 본문을 한 줄 띄워 분리하기
+  #     본문은 "어떻게" 보다 "무엇을", "왜"를 설명한다.
+  #     본문에 여러줄의 메시지를 작성할 땐 "-"로 구분
+  # ------------------
+  ```
+
+  - commit.template에 이 파일을 저장
+
+  ```bash
+  git config --global commit.template gitmessage.txt
+  ```
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
