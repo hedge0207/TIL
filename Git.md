@@ -306,18 +306,96 @@ $ git push --mirror # 다시 원격 저장소로 push
 
 # commit message 작성하기
 
+- 커밋 메세지 컨벤션
+
+  - 동명사 보다는 명사를 사용한다
+    - 동사를 명사화시키지 말고 그 의미를 잘 표현하는 명사를 찾아서 사용한다.
+    - 문장이 장황하지 않고 간결해진다.
+
+  - 꼭 필요한 경우가 아니면 관사는 사용하지 않는다.
+  - 부정문은 Don't를 사용한다(ex.  Not use가 아니라 Don’t use).
+
+  - 오타 수정은 ` Fix typo`라고만 하면 된다.
+
+
+
+- 커밋 메세지를 위한 영단어 목록
+
+  > https://blog.ull.im/engineering/2019/03/10/logs-on-git.html 참고
+
+  - Fix: 올바르지 않은 동작을 고친 경우에 사용
+    - `Fix A`: A를 수정
+    - `Fix A in B`: B의 A를 수정
+    - `Fix A which B`, `Fix A that B`: B절인 A를 수정
+    - `Fix A to B`, `Fix A to be B`: B를 위해 A를 수정
+    - `Fix A so that B`: A를 수정해서 B가 되었다.
+    - `Fix A where B`: B라는 문제가 발생하는 A를 수정
+    - `Fix A when B`: B일때 발생하는 A를 수정
+  - Add: 코드, 테스트, 예제, 문서 등의 추가가 있을 때 사용
+    - `Add A`: A를 추가
+    - `Add A for B`: B를 위해 A를 추가
+    - `Add A to B`: B에 A를 추가
+  - Remove: 코드의 삭제가 있을 때 사용,  ‘Clean’이나 ‘Eliminate’를 사용하기도 한다.
+    - `Remove A`: A를 삭제
+    - `Remove A from B`: B에서 A를 삭제
+  - Use: 무언가를 사용해 구현하는 경우
+    - `Use A`: A를 사용
+    - `Use A for B`: B에 A를 사용
+    - `Use A to B`: B가 되도록 A를 사용
+    - `Use A in B`: B에서 A를 사용
+    - `Use A instead of B`: B 대신 A를 사용
+  - Refactor: 전면적인 수정이 있을 때 사용
+    - `Refactor A`: A를 전면적으로 수정
+  - Simplify: 복잡한 코드를 단순화 할 때 사용
+    - `Simplify A`: A를 단순화
+  - Update: 개정이나 버전 업데이트가 있을 때 사용, Fix와는 달리 잘못된 것을 바로잡는 것이 아님에 주의, 코드보다는 주로 문서나 리소스, 라이브러리등에 사용
+    - `Update A to B`: A를 B로 업데이트 한다, A를 B하기 위해 업데이트 한다.
+  - Improve: 향상이 있을 때 사용
+    - `Improve A`: A를 향상시킨다.
+  - Make: 기존 동작의 변경을 명시
+    - `Make A B`: A를 B하게 만든다.
+  - Implement: 코드가 추가된 정도보다 더 주목할 만한 구현체를 완성시켰을 때 사용
+    - `Implement A`: A를 구현한다.
+    - `Implement A to B`: B를 위해 A를 구현한다.
+  - Revise: update와 비슷하나 주로 문서의 개정이 있을 때 사용
+    - `Revise A`: A 문서를 개정
+  - Correct: 주로 문법의 오류나 타입의 변경, 이름 변경 등에 사용
+    - `Correct A`: A를 고친다.
+  - Ensure: 무엇이 확실하게 보장받는다.
+    - `Ensure A`: A가 확실히 보장되도록 수정.
+  - Prevent: 특정 처리를 못하게 막는다.
+    - `Prevent A`: A를 못하게 막는다.
+    - `Prevent A from B`: A를 B하지 못하게 막는다.
+  - Avoid: 막는 것은 아니지만 회피하게 한다.
+    - `Avoid A`: A를 회피한다.
+    - `Avoid A if B`, `Avoid A when B`: B라면 A를 회피한다.
+  - Move: 코드의 이동이 있들 때 사용한다.
+    - `Move A to B`, `Move A into B`: A를 B로 옮긴다.
+  - Rename: 이름 변경이 있을 때 사용한다.
+    - `Rename A to B`: A를 B로 이름을 변경한다.
+  - Allow: Make와 비슷하지만, 허용을 표현할 때 사용한다.
+    - `Allow A to B`: A가 B를 할 수 있도록 허용한다.
+  - Verify: 검증 코드를 넣을 때 주로 사용한다.
+    - `Verify A`: A를 검증한다.
+  - Set: 변수 값을 변경하는 등의 작은 수정에 주로 사용
+    - `Set A to B`: A를 B로 설정한다.
+  - Pass: 파라미터를 넘기는 처리에 주로 사용한다.
+    - `Pass A to B`: A를 B에 넘긴다.
+
+
+
 - 커밋 템플릿 만들기
 
-  - `gitmesssage.txt`파일 생성
+  - `gitmesssage.txt`파일 생성(꼭 파일 이름이 동일할 필요는 없다)
 
   ```bash
-  touch gitmessage.txt
+  touch ~/.gitmessage.txt  #~는 home 디렉토리를 뜻하므로 일반적으로 c/user 에 생성되게 된다.
   ```
 
   - 텍스트 에디터로 진입
 
   ```bash
-  vim gitmessage.txt
+  vim ~/.gitmessage.txt
   ```
 
   - 아래 내용을 복붙 후 저장(`esc` -> `:wq`)
@@ -355,7 +433,34 @@ $ git push --mirror # 다시 원격 저장소로 push
   - commit.template에 이 파일을 저장
 
   ```bash
-  git config --global commit.template gitmessage.txt
+  git config --global commit.template ~/.gitmessage.txt
+  ```
+
+  - add 후 `git commit`을 입력하면 위에서 등록한 템플릿이 나오게 되고 해당 템플릿을 수정하여 commit message를 작성하면 된다.
+
+
+
+- commit message 변경 방법
+
+  - 아직 push 하지 않은 커밋 메세지 변경
+
+  ```bash
+  #가장 마지막에 커밋한 메세지를 수정하는 방법
+  #아래 명령어를 입력하면 커밋을 수정할 수 있는 창이 뜨는데 수저 후 esc -> :wq를 입력하면 된다.
+  git commit --amend
+  
+  #더 오래 된 커밋 메세지 혹은 여러 커밋 메세지 동시 수정
+  #아래 명령어를 입력하면 커밋을 수정할 수 있는 창이 뜨는데 수정하고 싶은 커밋 옆의 pick 이라는 문구를 reword 로 바꿔 주고 수정 후 esc->:wq를 입력하면 된다.
+  git rebase -i HEAD~불러올 커밋 숫자
+  
+  ```
+
+  - 이미 push 한 커밋 메세지를 수정하고자 할 때
+    - 위 방법으로 수정 후 아래 명령어를 입력한다.
+    - 단, push 된 커밋의 로그를 갖고 있던 다른 팀원들이 로그를 수동으로 수정해줘야 하기 때문에 이는 지양해야 한다.
+
+  ```bash
+  git push --force 브랜치이름
   ```
 
   
