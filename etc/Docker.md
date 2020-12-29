@@ -132,6 +132,7 @@
   
   - 이는 비단 docker에만 한정되는 것은 아니다.
   - 그 후 아래와 같이 sql문을 사용하여 DB를 조작하면 된다.
+  - 굳이 mariaDB를 컴퓨터에 설치하지 않아도, docker에서 컨테이너만 실행하면 mariaDB를 실행할 수 있다.
   
   ```sql
   create database ㅏdb명ㅓ
