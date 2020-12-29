@@ -25,6 +25,12 @@
 
 
 
+## [최신 IT 기술](https://github.com/hedge0207/TIL/blob/master/CS/%EC%B5%9C%EC%8B%A0%20IT%20%EA%B8%B0%EC%88%A0%20%EC%A0%95%EB%A6%AC.md)
+
+- Big Data
+- 블록체인
+- 인공지능
+
 
 
 # React
@@ -341,11 +347,5 @@
 
 
 
-## [최신 IT 기술](https://github.com/hedge0207/TIL/blob/master/etc/%EC%B5%9C%EC%8B%A0%20IT%20%EA%B8%B0%EC%88%A0%20%EC%A0%95%EB%A6%AC.md)
-
-- Big Data
-- 블록체인
-- 인공지능
-
-
+## Docker(https://github.com/hedge0207/TIL/blob/master/etc/Docker.md)
 

@@ -52,7 +52,7 @@
   - django 설치
 
     ```bash
-    $ pip install django==ㅏ버전ㅓ
+    $ pip install django==ㅏ버전ㅓ  #버전을 적지 않을 경우 최신 버전이 설치된다.
     ```
 
   - 프로젝트 시작
@@ -167,7 +167,10 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
   - settings.py에 있는 각종 옵션들
 
     ```python
+    #디버그
     DEBUG = True  #True로 되어 있으면 개발 모드다. 배포시에는 반드시 False로 바꿔야 한다.
+    # True로 놓으면 오류 페이지가 상세하게 떠서 어떤 오류가 발생했고 어떤 코드에서 발생했는지 알 수 있다.
+    #False로 해놓으면 오류 메세지만 출력된다. 따라서 만일 True로 해놓은 상태에서 오류가 발생하게 되면 다른 사람들이 내가 짠 코드를 전부 볼 수 있게 되므로 보안상의 심각한 문제가 생길 수 있다. 따라서 다른 사람들이 사용하게 할 때에는 반드시 False로 바꿔야 한다.
     
     ALLOWED_HOSTS = [] #프로젝트에서 생성한 사이트(경로)로 들어올 권한을 정하는 것이다.
     #'*'를 대괄호 사이에 넣으면 누구나 입장 가능한 상태가 된다.
@@ -191,13 +194,6 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
         },
     ]
     
-    
-    #디버그
-    DEBURG = True
-    # True로 놓으면 오류 페이지가 상세하게 떠서 어떤 오류가 발생했고 어떤 코드에서 발생했는지 알 수 있다.
-    #False로 해놓으면 오류 메세지만 출력된다. 따라서 만일 True로 해놓은 상태에서 오류가 발생하게 되면 다른 사람들이 내가 짠 코드를 전부 볼 수 있게 되므로 보안상의 심각한 문제가 생길 수 있다. 따라서 다른 사람들이 사용하게 할 때에는 반드시 False로 바꿔야 한다.
-    
-    
     # Internationalization관련 설정들
     LANGUAGE_CODE = 'en-us'  #언어를 설정하는 것으로 "ko-kr"로 바꾸면 한국어가 된다.
     
@@ -209,17 +205,17 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     
     USE_TZ = True
     ```
-
+  
     
-
+  
   - url 연결하기
 
     - 다음으로 `urls.py`에서 어떤 url로 들어갔을 때 무엇을 처리할지를 설정해줘야 한다.
 
       ```python
-      from django.contrib import admin
+    from django.contrib import admin
       from django.urls import path
-      from pages import views   #pages에서 views를 가져오고 
+    from pages import views   #pages에서 views를 가져오고 
       #기본 구조
       #from app이름 import 함수정의된 파일 이름
       # 서버를 실행시켰을 때 urlpatterns가 비어 있다고 오류가 발생하지는 않으나(물론 관련 경로로 보내고자 한다면 오류가 발생하겠으나, 서버'만' 실행시켰을 때는)urlpatterns라는 리스트 자체를 정의하지 않으면 오류가 발생한다. 따라서 빈 리스트라도 만들어 두어야 한다.
@@ -238,17 +234,17 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
           path('bboong/', views.index),
       ]
       ```
-
+  
     
-
+  
   - 함수 정의하기
 
     - 위에서 어떤 url에서 어떤 함수가 처리될지 정의했으니 이제 처리될 함수를 정의해야 한다.
 
       ```python
-      #위에서 views의 index라는 함수를 처리할 것이라고 했으므로 views.py에서 해당 함수를 정의해야 한다.
+    #위에서 views의 index라는 함수를 처리할 것이라고 했으므로 views.py에서 해당 함수를 정의해야 한다.
       from django.shortcuts import render
-      
+    
       
       #해당 함수를 실행시키는 url에 접속해야 실행되기에 request라는 이름을 붙인다.
       
@@ -268,13 +264,13 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
       def index(re):
           return render(re,'qwert.html')
       ```
-
+  
     - redirect
-
+  
       ```python
-      #특정 html파일을 렌더링 하는 것이 아니라 처리가 모두 끝난 후 특정 url로 넘어가고자 할 때에는 redirect를 쓰면 된다. 물론 임폴트를 해야 한다.
+    #특정 html파일을 렌더링 하는 것이 아니라 처리가 모두 끝난 후 특정 url로 넘어가고자 할 때에는 redirect를 쓰면 된다. 물론 임폴트를 해야 한다.
       from django.shortcuts import render,redirect  #import 해주고
-      
+    
       def index(request):
           return redirect('가고자 하는 url')
       
@@ -282,9 +278,9 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
       
       #bitly, bit.do 등의 사이트는 리다이렉트를 해주는 사이트이다.
       ```
-
+  
       
-
+  
     
 
   - HTML문서 작성하기
@@ -294,7 +290,7 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     - 함수에서 반환할 `html` 파일은 항상 `templates`폴더 안에 생성해야 한다.
 
       ```html
-      <h1>Hello!</h1>
+    <h1>Hello!</h1>
       ```
 
   - 여기까지가 한 과정이며 이제 누군가 `index/`라는 주소로 접근하게 되면 장고는 `urls.py`에 작성된 대로`view`의  `index`함수를 실행시키게 된다. `index`함수는 `html`파일을 retrun하고 작성한 `html`파일 대로 `index`가 포함된 해당 주소에는  `Hello!`가 출력된다.
@@ -1043,13 +1039,10 @@ QueryDict{'content':1234,'title':5678}
     #아래의 코드는 지금까지 생성된 Article의 모든 객체를 QuerySet 형태로 article에 담는 것이다.
     article=Article.object.all()
     
-    ```
-
-  #Article.objects.order_by('-id').all()와 같이 쓰면 역순으로 조회한다.
-
+    #Article.objects.order_by('-id').all()와 같이 쓰면 역순으로 조회한다.
   ```
-    
-  - 단일 데이터 조회(고유한 값인 id를 통해 가능)
+  
+- 단일 데이터 조회(고유한 값인 id를 통해 가능)
   
     ```python
     #방법1
@@ -1061,11 +1054,10 @@ QueryDict{'content':1234,'title':5678}
     #방법3
     Article.objects.all().first()  #첫번째 데이터 조회
     <Article: Article object (1)>
-        
     Article.objects.all().last()   #마지막 데이터 조회
-  ```
-
-
+    ```
+  
+    
 
 - 수정- ex. 게시글 수정
 
