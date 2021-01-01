@@ -998,9 +998,9 @@
 
 - templates이 django에서 분리되면 session 인증 방식의 유저 확인을 할 수 없다. 따라서 token을 활용하여 유저 확인을 해야 한다.
 - 과정
-- 회원가입 시 Vue가 user 정보를 넘기면 django는 유효성 검사 후 User테이블에 유저 정보를 추가한다. 
+  - 회원가입 시 Vue가 user 정보를 넘기면 django는 유효성 검사 후 User테이블에 유저 정보를 추가한다. 
   - 로그인 역시 마찬가지로 Vue가 user 정보를 넘기면 django는 유효성 검사 후 토큰을 발급하고 토큰값과 유저_id(pk값)를 key와 value 형태로 저장한다. 
-- django는 Vue에 token을 넘기고 Vue는 다음 요청 때부터는 request의 header에 django에서 받은 토큰을 함께 보낸다.(`Authorization`:`Token`  `토큰값` 형태로 만들어서 보낸다. Authorization이 key에 해당하고 Token이 value에 해당한다). django는 해당 토큰을 보고 유저를 인식한다.
+  - django는 Vue에 token을 넘기고 Vue는 다음 요청 때부터는 request의 header에 django에서 받은 토큰을 함께 보낸다.(`Authorization`:`Token`  `토큰값` 형태로 만들어서 보낸다. Authorization이 key에 해당하고 Token이 value에 해당한다). django는 해당 토큰을 보고 유저를 인식한다.
   - 로그아웃을 하면 발급한 토큰을 삭제한다.
 
 
@@ -1009,24 +1009,28 @@
 
   >  사용하기 위해 drf를 설치해야 한다.
 
+  ```bash
+  $ pip install django-rest-framework
+  ```
+  
   > django-rest-auth 문서-1
   >
   > https://django-rest-auth.readthedocs.io/en/latest/index.html
   >
   > token기반의 authentication을 위한 문서-2
-  >
+>
   > https://www.django-rest-framework.org/api-guide/authentication/
   >
   > all-auth 문서는 django additional 파트 참고
-
+  
   ```bash
   #로그인, 로그아웃에 필요
   $ pip install django-rest-auth
-  #회원가입에 필요(혼자 회원가입을 하게 해주는 것이 아니라 위의 rest-auth를 함께 깔아야 회원가입이 가능하다.)
+#회원가입에 필요(혼자 회원가입을 하게 해주는 것이 아니라 위의 rest-auth를 함께 깔아야 회원가입이 가능하다.)
   $ pip install django-allauth
   ```
   - `settings.py`에 아래 코드를 추가(1번 문서의 내용과 2번 문서의 내용을 수정)
-
+  
   ```python
   #1번 문서(Installaion 파트)에 있는 내용
   INSTALLED_APPS = (
@@ -1044,28 +1048,28 @@
   REST_FRAMEWORK = {
       'DEFAULT_AUTHENTICATION_CLASSES': [
           'rest_framework.authentication.TokenAuthentication',
-          #원래 'rest_framework.authentication.SessionAuthentication',지만 세션 기반이 아닌 토큰 기반이므로 위와 같이 수정해준다.
+        #원래 'rest_framework.authentication.SessionAuthentication',지만 세션 기반이 아닌 토큰 기반이므로 위와 같이 수정해준다.
       ]
-  }
+}
   ```
-
+  
   - `프로젝트폴터/urls.py`에 아래 코드를 추가
-
+  
   ```python
   #1번 문서에 있는 내용
   urlpatterns = [
       ...,
       path('rest-auth/', include('rest_auth.urls')),
-      #위 경로로 들어갈 경우 404에러 페이지가 뜨는데 해당 페이지의 내용을 보면 rest-auth에서 할 수 있는 것들의 목록이 나온다.
+    #위 경로로 들어갈 경우 404에러 페이지가 뜨는데 해당 페이지의 내용을 보면 rest-auth에서 할 수 있는 것들의 목록이 나온다.
   ]
   ```
-  - rest-auth는 app의 일종이므로 `models`를 가지고 있다. 따라서 migrate를 해줘야 한다.
-
-  - 여기까지 완료하면 로그인이 가능해지고 login을 하면 token을 받을 수 있다.
+- rest-auth는 app의 일종이므로 `models`를 가지고 있다. 따라서 migrate를 해줘야 한다.
+  
+- 여기까지 완료하면 로그인이 가능해지고 login을 하면 token을 받을 수 있다.
     - token은 db.sqlite3의 `authtoken_token`테이블의 key 값에서 확인하거나 Postman으로 요청을 보내거나 rest-auth/login 경로에서 요청을 보냄으로써 확인 할 수 있다.
-
+  
   - 회원 가입을 위해서는 아래 settings.py, urls.py에 아래 코드를 추가
-
+  
   ```python
   #settings.py
   
@@ -1076,29 +1080,36 @@
       'allauth',
       'allauth.account',
       'rest_auth.registration',
-  )
+)
   
   SITE_ID = 1
   ```
-
+  
   ```python
   #urls.py
   urlpatterns = [
       ...,
       path('rest-auth/', include('rest_auth.urls')),
       path('rest-auth/registration/', include('rest_auth.registration.urls')),
-  ]
+]
   
-  #경로는 registration대신 쓰고 싶은 것(singup등)을 써도 된다(단, 당연히 include 내부는 건들면 안된다)
+#경로는 registration대신 쓰고 싶은 것(singup등)을 써도 된다(단, 당연히 include 내부는 건들면 안된다)
   ```
 
   - allauth 역시 마찬가지로 app의 일종이므로 `models`를 가지고 있다. 따라서 migrate를 해줘야 한다.
-
+  
   - 회원가입할 때 보내야 하는 데이터는 내부적으로 username, password1, password2로 지정되어 있다.
-
+  
   - logout을 했을 때는발급한 token이 사라지게 해야 한다.
     - Postman에서 Body, Params 등이 있는 곳에 Headers 탭이 존재하는데 여기에 사용자 정보가 담기게 된다. 따라서 이곳의 key에 `Authorization`을 입력하고 value에 `Token 발급받은 토큰`을 입력한 후 전송을 누르면 유저 정보가 데이터와 함께 넘어가게 된다.
     - 로그아웃 요청을 보내고자 한다면 위와 같이 Headers에 로그아웃 하고자 하는 계정의 token을 함께 넘겨주면 로그아웃이 되면서 토큰이 삭제된다(토큰이 삭제되지 않아도 로그아웃이 성공적으로 처리되었다는 메세지가 출력되므로 반드시 token이 삭제되었는지 확인해 볼 것).
+
+
+
+- rest-auth는 별도의 코드 없이도 기본 유저로 등록되어 바로 사용이 가능하다.
+  - 본래 개발자가 User 모델을 커스텀 해서 사용할 경우 `settings.py`에 `AUTH_USER_MODEL = '앱이름.모델명'`코드를 추가해야 한다.
+  - 그러나 `AUTH_USER_MODEL `의 기본값이 `AUTH_USER_MODEL = 'auth.User'`이다.
+  - rest-auth는 앱 이름이 `auth`, 모델명이 `User`로 등록되므로 굳이 변경하지 않아도 된다.
 
 
 

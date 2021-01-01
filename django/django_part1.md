@@ -279,10 +279,8 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
       #bitly, bit.do 등의 사이트는 리다이렉트를 해주는 사이트이다.
       ```
   
-      
   
-    
-
+  
   - HTML문서 작성하기
 
     - 위에서 처리될 함수를 정의했으니 이제 그 함수에 들어있는 `index.html`을 작성해줘야 한다.
@@ -292,6 +290,8 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
       ```html
     <h1>Hello!</h1>
       ```
+  
+  
 
   - 여기까지가 한 과정이며 이제 누군가 `index/`라는 주소로 접근하게 되면 장고는 `urls.py`에 작성된 대로`view`의  `index`함수를 실행시키게 된다. `index`함수는 `html`파일을 retrun하고 작성한 `html`파일 대로 `index`가 포함된 해당 주소에는  `Hello!`가 출력된다.
 
@@ -1040,6 +1040,9 @@ QueryDict{'content':1234,'title':5678}
     article=Article.object.all()
     
     #Article.objects.order_by('-id').all()와 같이 쓰면 역순으로 조회한다.
+    ```
+  ```
+  
   ```
   
 - 단일 데이터 조회(고유한 값인 id를 통해 가능)

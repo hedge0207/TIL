@@ -50,7 +50,7 @@
   DATABASES = {
       'default': {
           'ENGINE':'django.db.backends.mysql',
-          'NAME':'react',      # 세션명 입력
+          'NAME':'react',      # database명 입력
           'USER':'root',       # 사용자명 입력
           'PASSWORD':'1234',
           'HOST':'127.0.0.1',  # 사용하려는 host 입력
