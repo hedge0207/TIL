@@ -10,13 +10,13 @@
 
 - 가입 완료 하면 아래와 같은 dashboard가 뜨는데  `Email Services`- `Add New Service` 클릭 후 원하는 메일 선택
 
-![](C:\Users\hedge\OneDrive\바탕 화면\dashborad.png)
+![](Emailjs.assets/dashborad.png)
 
 
 
 - 다음과 같은 창이 뜨면 `Connect Service` 버튼 클릭 후 인증 과정을 마무리하고 `Create Service` 버튼을 클릭한다.
 
-![](C:\Users\hedge\OneDrive\바탕 화면\config_service.png)
+![](Emailjs.assets/config_service.png)
 
 
 
@@ -24,7 +24,7 @@
   - 여기서 변수로 받을 내용 들은 아래와 같이 `{{}}`로 묶어 줘야 한다.
   - `Auto-Reply` 탭에 가보면 자동으로 답장을 전달하는 것도 가능하다.
 
-![](C:\Users\hedge\OneDrive\바탕 화면\template.png)
+![](Emailjs.assets/template.png)
 
 
 
