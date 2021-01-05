@@ -33,6 +33,10 @@
 
 
 
+## [IT 기술 용어](https://github.com/hedge0207/TIL/blob/master/CS/IT%20%EA%B8%B0%EC%88%A0%20%EC%9A%A9%EC%96%B4.md)
+
+
+
 # React
 
 [React Tutorial](https://github.com/hedge0207/TIL/blob/master/React/React_tutorial.md) 
