@@ -99,7 +99,7 @@
     $ pip list
     ```
 
-    
+- django 공식문서에서 [ ]는 필수로 입력해야 하는 것이 아닌 옵션이다.
 
 
 
@@ -112,7 +112,7 @@
   - Model: 데이터 관리, 데이터베이스 조작, 데이터 구조화(어떻게 데이터를 넣을 것인가)
   - Template: 사용자와 웹 브라우저사이의 인터페이스(화면) 구성, 단순히 html파일을 의미하는 것이 아니라 html파일을 만드는 것을 의미, 데이터를 표시하는 곳
   - View: 중간 관리(상호 동작)
-- MVC: Model, View, Controller 순서대로 MTV와 하나씩 대응
+- MVC: Model, View, Controller로, 순서대로 MTV와 하나씩 대응
 
 
 
@@ -288,7 +288,7 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     - 함수에서 반환할 `html` 파일은 항상 `templates`폴더 안에 생성해야 한다.
 
       ```html
-    <h1>Hello!</h1>
+      <h1>Hello!</h1>
       ```
   
   
@@ -312,6 +312,9 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
   - HTML파일에 넘겨줄 변수가 있는 경우
 
     - 항상 딕셔너리로 넘겨준다.
+
+
+
 
 - 일반적으로 html파일에 넘겨줄 내용들을 context라는 딕셔너리에 담아서 넘기며 꼭 리스트만 넘길 수 있는 것은 아니고 문자열, 빈 리스트도 넘길 수 있다.
 
@@ -1032,36 +1035,32 @@ QueryDict{'content':1234,'title':5678}
 
   - 전체 데이터 조회
 
-    ```python
-    Article.objects.all()
-    >> <QuerySet [<Article: Article object (1)>]>
-    
-    #아래의 코드는 지금까지 생성된 Article의 모든 객체를 QuerySet 형태로 article에 담는 것이다.
-    article=Article.object.all()
-    
-    #Article.objects.order_by('-id').all()와 같이 쓰면 역순으로 조회한다.
-    ```
+  ```python
+  Article.objects.all()
+  >> <QuerySet [<Article: Article object (1)>]>
+  
+  #아래의 코드는 지금까지 생성된 Article의 모든 객체를 QuerySet 형태로 article에 담는 것이다.
+  article=Article.object.all()
+  
+  #Article.objects.order_by('-id').all()와 같이 쓰면 역순으로 조회한다.
   ```
   
+  - 단일 데이터 조회(고유한 값인 id를 통해 가능)
+  ```python
+  #방법1
+  Article.objects.get(id=1)
+  
+  #방법2
+  Article.objects.all()[0]  #[]안에 음수는 올 수 없다.
+  
+  #방법3
+  Article.objects.all().first()  #첫번째 데이터 조회
+  <Article: Article object (1)>
+  Article.objects.all().last()   #마지막 데이터 조회
   ```
   
-- 단일 데이터 조회(고유한 값인 id를 통해 가능)
   
-    ```python
-    #방법1
-    Article.objects.get(id=1)
-    
-    #방법2
-    Article.objects.all()[0]  #[]안에 음수는 올 수 없다.
-    
-    #방법3
-    Article.objects.all().first()  #첫번째 데이터 조회
-    <Article: Article object (1)>
-    Article.objects.all().last()   #마지막 데이터 조회
-    ```
   
-    
-
 - 수정- ex. 게시글 수정
 
   ```python
@@ -1190,11 +1189,6 @@ admin.site.register(Article)
 
 
 
-
-- 만일 git에 push한다면 반드시 빼놓고 push해야 하는 파일들이 있으므로 꼭 `.gitignore`파일을 생성하여 빼놓을 파일을 작성해야 한다.
-
-
-
 - 게시판에서 게시글을 클릭했을 때 해당 게시글이 보이도록 연결하는 방법
 
   - 모든 오브젝트들은 id(pk값)를 가지므로 이를 활용하여 어떤 글을 띄울지 설정할 수 있다.
@@ -1234,11 +1228,6 @@ admin.site.register(Article)
     {% endblock %}
     #출력하면 된다.
     ```
-
-
-
-
-- django 공식문서에서 [ ]는 필수로 입력해야 하는 것이 아닌 옵션이다.
 
 
 

@@ -23,6 +23,10 @@
 
 
 
+- https://www.favicon-generator.org/: favicon을 생성해주는 사이트
+
+
+
 - https://dog.ceo/api/breeds/image/random:랜덤한 강아지 이미지를 보여주는 API
 
 
@@ -213,8 +217,10 @@
 
 - 설치 완료 후 Extensions에서 설치할 것들
   - python
-  - open in browser: 웹 개발 시 브라우저로 바로 열어볼 수 있도록 해준다
+  - open in browser: 웹 개발 시 브라우저로 바로 열어볼 수 있도록 해준다.
+  - Live server: 소스코드를 수정할 때마다 수정 사항을 자동으로 반영해준다.
   - Vetur: Vue.js 사용시 Vue 코드를 하이라이팅 해준다.
+  - Code Runner:  JS파일을 웹이 아닌 VSCode로 실행해준다.
 
 
 

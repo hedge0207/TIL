@@ -1091,41 +1091,38 @@ computed 함수 실행 <!--computed에 정의된 함수는 1번만 실행이 된
       }
     })
   </script>
-  
-  ```
-
-<!--
-  stupid를 입력했다고 했을 때
-  out
-  실행됨이 6번 출력(함수가 6번 실행)되고 입력 창이 초기화 되면서 1번 더 출력되어 함수가 총 7번 실행된다.
+  <!--
+    stupid를 입력했다고 했을 때
+    out
+    실행됨이 6번 출력(함수가 6번 실행)되고 입력 창이 초기화 되면서 1번 더 출력되어 함수가 총 7번 실행된다.
   ```
   
   ```html
   <template>
     <div>
-      <p>원본 메시지: "{{ message }}"</p>
-      <p>역순으로 표시한 메시지: "{{ reversedMessage }}"</p>
+        <p>원본 메시지: "{{ message }}"</p>
+        <p>역순으로 표시한 메시지: "{{ reversedMessage }}"</p>
     </div>
   </template>
-    
+  
   <script>
   export default {
-    name: 'test',
-    data(){
-      return {
-        message: '안녕하세요',
-        reversedMessage: ''
+      name: 'test',
+      data(){
+          return {
+              message: '안녕하세요',
+              reversedMessage: ''
+          }
+      },
+      watch: {
+          message: function (newVal, oldVal) {
+              this.reversedMessage = newVal.split('').reverse().join('')
+          }
       }
-    },
-    watch: {
-      message: function (newVal, oldVal) {
-        this.reversedMessage = newVal.split('').reverse().join('')
-      }
-    }
   }
   </script>
   ```
-
+  
   ```javascript
   //computed와 watch 실행 순서
   data(){
@@ -1134,22 +1131,22 @@ computed 함수 실행 <!--computed에 정의된 함수는 1번만 실행이 된
           lenCheck:'',
       }
   }
-    
+  
   computed: {
       nameState() {
-       if(this.nickname.length>=2){
+          if(this.nickname.length>=2){
               this.lenCheck=true
           }else{
               this.lenCheck=false
           }
       }
   },
-  watch:{
-      nickname(){
-          console.log(this.lenCheck)
-      }   
-  }
-    
+      watch:{
+          nickname(){
+              console.log(this.lenCheck)
+          }   
+      }
+      
   //만일 nickname에 v-model을 걸었을 때 2자 이상 입력하면 computed가 먼저 실행될 경우 watch에 입력된 console.log(this.lenCheck)가 true 를 반환하겠지만 false를 반환한다. 이는 computed가 실행되기 전에 watch가 먼저 실행되기 때문일 것이다, 정확한 결과는 그 반대의 경우(watch에서 값을 변경한 후 computed에서 확인)도 확인해 봐야 알 수 있을 것이다.
   ```
 
@@ -1207,11 +1204,12 @@ computed 함수 실행 <!--computed에 정의된 함수는 1번만 실행이 된
 
   - vue/cli 설치(최초 1회)
     - vue-cli없이도 프로젝트 시작은 가능하다.
-  - VScode extention에서 `Vetur` 설치
 
   ```bash
   $ npm install -g @vue/cli
   ```
+
+  - VScode extention에서 `Vetur` 설치
 
   - 프로젝트 생성
 

@@ -63,107 +63,109 @@
 
 
 
-- HTML 문서에 CSS 적용과 연결
+- HTML 요소 속성으로 CSS 적용(임베딩 스타일)
 
-  - HTML 요소 속성으로 CSS 적용(임베딩 스타일)
+  ```html
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <style>
+        h1 { color: red; }
+        p  { background: aqua; }
+      </style>
+    </head>
+    <body>
+      <h1>Hello World</h1>
+      <p>This is a web page.</p>
+    </body>
+  </html>
+  ```
 
-    ```html
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <style>
-          h1 { color: red; }
-          p  { background: aqua; }
-        </style>
-      </head>
-      <body>
-        <h1>Hello World</h1>
-        <p>This is a web page.</p>
-      </body>
-    </html>
-    ```
+    - 선택지를 통하여 직접 요소에 CSS 스타일 추가
 
-    
+    - 방법: 스타일 속성을 통하여 CSS 스타일 적용
 
-      - 선택지를 통하여 직접 요소에 CSS 스타일 추가
+    - CSS 속성 선언: ;(세미콜론)으로 분리하여 선언
 
-      - 방법: 스타일 속성을 통하여 CSS 스타일 적용
+  - 이와 같은 방법은 편리하다는 장점이 있지만 아래와 같은 단점이 존재하므로 피해야하고 테스트용으로만 사용해야 한다.
 
-      - CSS 속성 선언: ;(세미콜론)으로 분리하여 선언
+    - 동일 요소 공통으로 적용 불가
 
-    - 이와 같은 방법은 편리하다는 장점이 있지만 아래와 같은 단점이 존재하므로 피해야하고 테스트용으로만 사용해야 한다.
+    - 수정 및 변경 시 모든 HTML 코드 검토
 
-      -동일 요소 공통으로 적용 불가
+    - 체계적인 관리와 변경 불가능
 
-      -수정 및 변경 시 모든 HTML 코드 검토
 
-      -체계적인 관리와 변경 불가능
 
-  - Style 요소를 사용한 CSS적용(인라인 스타일)
 
-    - 방법: head 부분에 선택자를 이용하여 style 요소 정의
-    - CSS코드가 위치한 HTML 파일에만 적용
-    - 전체 수정 시 모든 HTML 파일을 수정해야 한다는 단점이 존재
-    - style요소의 속성
-      - type:stlye언어가 어떤 MIME 타입인지 지정
-      - media: 현재 CSS코드가 어떤 매체일 경우 지정되는지 지정
+- Style 요소를 사용한 CSS적용(인라인 스타일)
 
-    ```html
-    <!DOCTYPE html>
-    <html>
-      <body>
-        <h1 style="color: red">Hello World</h1>
-        <p style="background: aqua">This is a web page.</p>
-      </body>
-    </html>
-    ```
+  - 방법: head 부분에 선택자를 이용하여 style 요소 정의
+  - CSS코드가 위치한 HTML 파일에만 적용
+  - 전체 수정 시 모든 HTML 파일을 수정해야 한다는 단점이 존재
+  - style요소의 속성
+    - type:stlye언어가 어떤 MIME 타입인지 지정
+    - media: 현재 CSS코드가 어떤 매체일 경우 지정되는지 지정
 
-  - 외부 CSS 파일을 HTML파일에 연결(링크 스타일)
+  ```html
+  <!DOCTYPE html>
+  <html>
+    <body>
+      <h1 style="color: red">Hello World</h1>
+      <p style="background: aqua">This is a web page.</p>
+    </body>
+  </html>
+  ```
 
-    ```html
-    <!DOCTYPE html>
-    <html>
-      <head>
-          <link rel="stylesheet" href="css/style.css">
-      </head>
-      <body>
-        <h1>Hello World</h1>
-        <p>This is a web page.</p>
-      </body>
-    </html>
-    ```
 
-    ```css
-      h1 { color: red; }
-      p  { background: blue; }
-    ```
 
-    - 여러 HTML 파일에 공통으로 사용
 
-      - 수정 시 HTML 파일을 전체 수정할 필요 없음
+- 외부 CSS 파일을 HTML파일에 연결(링크 스타일)
 
-      - 체계적이고 구조적인 스타일 관리 가능
+  ```html
+  <!DOCTYPE html>
+  <html>
+    <head>
+        <link rel="stylesheet" href="css/style.css">
+    </head>
+    <body>
+      <h1>Hello World</h1>
+      <p>This is a web page.</p>
+    </body>
+  </html>
+  ```
 
-      - 파일 크기를 줄일 수 있어 전체 전송량이 줄어듬
+  ```css
+    h1 { color: red; }
+    p  { background: blue; }
+  ```
 
-      - 외부 스타일 시트 파일: .css를 가지는 파일, 텍스트로 이루어짐
+  - 여러 HTML 파일에 공통으로 사용
 
-      - HTML에서 외부 CSS 파일의 연결 순서
+    - 수정 시 HTML 파일을 전체 수정할 필요 없음
 
-        -HTML 코드 작성
+    - 체계적이고 구조적인 스타일 관리 가능
 
-        -비어있는 파일을 작성하고 확장자 .css로 저장
+    - 파일 크기를 줄일 수 있어 전체 전송량이 줄어듬
 
-        -CSS파일 경로 지정(HTML 코드 header 부분에 link요소 사용)
+    - 외부 스타일 시트 파일: .css를 가지는 파일, 텍스트로 이루어짐
 
-        -CSS 파일 열어 CSS 스타일 지정
+    - HTML에서 외부 CSS 파일의 연결 순서
 
-      - link 요소: HTML 문서와 외부 리소스 연결을 위해 사용, 대부분 CSS 파일 연결
+      - HTML 코드 작성
 
-      - link 요소의 속성
+      - 비어있는 파일을 작성하고 확장자 .css로 저장
 
-        - rel: 생략 불가능한 속성, 현재 HTML과 연결할 파일 간의 관계를 나타냄, 다양한 값을 가진다.
-        - href: 연결하고자 하는 리소스 파일 경로 지정
+      - CSS파일 경로 지정(HTML 코드 header 부분에 link요소 사용)
+
+      - CSS 파일 열어 CSS 스타일 지정
+
+    - link 요소: HTML 문서와 외부 리소스 연결을 위해 사용, 대부분 CSS 파일 연결
+
+    - link 요소의 속성
+
+      - rel: 생략 불가능한 속성, 현재 HTML과 연결할 파일 간의 관계를 나타냄, 다양한 값을 가진다.
+      - href: 연결하고자 하는 리소스 파일 경로 지정
 
 
 
@@ -297,134 +299,133 @@
       </html>
       ```
 
-  - 고급 선택자
 
-    - HTML 문서의 요소들의 계층관계를 이용하여 선택하는 선택자
 
-    - CSS는 상속을 통해 부모 요소의 속성을 자식에게 상속한다.
 
-      - 상속 되는 것: Text 관련 요소(font, color 등)
-      - 상속 되지 않는 것: Box model 관련 요소(width, height 등)와 position관련 요소(position, left, right 등)
+- 고급 선택자
 
-      - MDN에서 상속 여부를 확인 할 수 있다.
+  - HTML 문서의 요소들의 계층관계를 이용하여 선택하는 선택자
 
-    - HTML 요소들의 계층관계: 요소들 간의 포함 관계에 따라 자손요소, 직계 자손 요소, 형제 요소, 인접 형제 요소등으로 나뉜다.
+  - CSS는 상속을 통해 부모 요소의 속성을 자식에게 상속한다.
 
-      - 자손 요소: 특정 요소의 내부에 포함된 요소
+    - 상속 되는 것: Text 관련 요소(font, color 등)
+    - 상속 되지 않는 것: Box model 관련 요소(width, height 등)와 position관련 요소(position, left, right 등)
 
-      - 직계 자손 요소: 특정 요소의 바로 아래 있는 요소
+    - MDN에서 상속 여부를 확인 할 수 있다.
 
-      - 형제 요소: 같은 계층 단계에 있는 요소
+  - HTML 요소들의 계층관계: 요소들 간의 포함 관계에 따라 자손요소, 직계 자손 요소, 형제 요소, 인접 형제 요소등으로 나뉜다.
 
-      - 인접 형제 요소: 바로 아래 있는 형제 요소
+    - 자손 요소: 특정 요소의 내부에 포함된 요소
 
-      - 고급 선택자의 종류
+    - 직계 자손 요소: 특정 요소의 바로 아래 있는 요소
 
-        -하위 선택자: 어떤 요소 하위에 있는 특정 자손 요소 선택 시 사용. 대괄호로 표현
+    - 형제 요소: 같은 계층 단계에 있는 요소
 
-        -형제 선택자: 특정 요소 다음에 나오는 형제 관계 요소들 선택. ~(물결무늬)로 표현
+    - 인접 형제 요소: 바로 아래 있는 형제 요소
 
-        ```html
-        <!DOCTYPE html>
-        <html>
-          <head>
-              <style>
-                /* p 요소의 형제 요소 중에 p 요소 뒤에 위치하는 ul 요소를 모두 선택한다.*/
-                p ~ ul { color: red; }
-              </style>
-          </head>
-          <body>
-              <div>A div element.</div>
-              <ul>
-                <li>Coffee</li>
-                <li>Tea</li>
-                <li>Milk</li>
-              </ul>
-            
-              <p>The first paragraph.</p>
-              <ul>
-                <li>Coffee</li>	<!--p 요소의 형제 요소 중에 p 요소 뒤에 위치하는 ul 요소-->
-                <li>Tea</li>	<!--p 요소의 형제 요소 중에 p 요소 뒤에 위치하는 ul 요소-->
-                <li>Milk</li>	<!--p 요소의 형제 요소 중에 p 요소 뒤에 위치하는 ul 요소-->
-              </ul>
-            
-              <h2>Another list</h2>
-              <ul>
-                <li>Coffee</li>	<!--p 요소의 형제 요소 중에 p 요소 뒤에 위치하는 ul 요소-->
-                <li>Tea</li>	<!--p 요소의 형제 요소 중에 p 요소 뒤에 위치하는 ul 요소-->
-                <li>Milk</li>	<!--p 요소의 형제 요소 중에 p 요소 뒤에 위치하는 ul 요소-->
+    - 고급 선택자의 종류
+
+      -하위 선택자: 어떤 요소 하위에 있는 특정 자손 요소 선택 시 사용. 대괄호로 표현
+
+      -형제 선택자: 특정 요소 다음에 나오는 형제 관계 요소들 선택. ~(물결무늬)로 표현
+
+      ```html
+      <!DOCTYPE html>
+      <html>
+        <head>
+            <style>
+              /* p 요소의 형제 요소 중에 p 요소 뒤에 위치하는 ul 요소를 모두 선택한다.*/
+              p ~ ul { color: red; }
+            </style>
+        </head>
+        <body>
+            <div>A div element.</div>
+            <ul>
+              <li>Coffee</li>
+              <li>Tea</li>
+              <li>Milk</li>
             </ul>
-          </body>
-        </html>
-        ```
-
-        
-
-        -직계 자손 선택자: 바로 하위에 있는 요소 선택 시 사용, 여러 단계에 있는 자손을 모두 선택하는 하위 선택자와는 다름. 꺽쇠로 표현
-
-        ```html
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            /* div 요소의 자식요소 중 p 요소 */
-            div > p { color: red; }
-          </style>
-        </head>
-        <body>
-          <h1>Heading</h1>
-          <div>
-            <p>paragraph 1</p>	<!--div 요소의 자식요소 중 p 요소-->
-            <p>paragraph 2</p>	<!--div 요소의 자식요소 중 p 요소-->
-            <span><p>paragraph 3</p></span> <!--div요소의 자식요소지만 p요소가 아님-->
-          </div>
-        <p>paragraph 4</p>	<!--p요소지만 div 요소의 자식요소가 아님--
+          
+            <p>The first paragraph.</p>
+            <ul>
+              <li>Coffee</li>	<!--p 요소의 형제 요소 중에 p 요소 뒤에 위치하는 ul 요소-->
+              <li>Tea</li>	<!--p 요소의 형제 요소 중에 p 요소 뒤에 위치하는 ul 요소-->
+              <li>Milk</li>	<!--p 요소의 형제 요소 중에 p 요소 뒤에 위치하는 ul 요소-->
+            </ul>
+          
+            <h2>Another list</h2>
+            <ul>
+              <li>Coffee</li>	<!--p 요소의 형제 요소 중에 p 요소 뒤에 위치하는 ul 요소-->
+              <li>Tea</li>	<!--p 요소의 형제 요소 중에 p 요소 뒤에 위치하는 ul 요소-->
+              <li>Milk</li>	<!--p 요소의 형제 요소 중에 p 요소 뒤에 위치하는 ul 요소-->
+          </ul>
         </body>
-        </html>
-        ```
+      </html>
+      ```
 
-        
+      - 직계 자손 선택자: 바로 하위에 있는 요소 선택 시 사용, 여러 단계에 있는 자손을 모두 선택하는 하위 선택자와는 다름. 꺽쇠로 표현
 
-        -인접 형제 선택자: 특정 요소 바로 다음에 오는 형제 관계 요소 선택.+로 표현
+      ```html
+<!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          /* div 요소의 자식요소 중 p 요소 */
+          div > p { color: red; }
+        </style>
+      </head>
+      <body>
+        <h1>Heading</h1>
+        <div>
+          <p>paragraph 1</p>	<!--div 요소의 자식요소 중 p 요소-->
+          <p>paragraph 2</p>	<!--div 요소의 자식요소 중 p 요소-->
+          <span><p>paragraph 3</p></span> <!--div요소의 자식요소지만 p요소가 아님-->
+        </div>
+      <p>paragraph 4</p>	<!--p요소지만 div 요소의 자식요소가 아님--
+      </body>
+      </html>
+      ```
+      
+      - 인접 형제 선택자: 특정 요소 바로 다음에 오는 형제 관계 요소 선택.+로 표현
 
-        ```html
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            /* p 요소의 형제 요소 중에 p 요소 바로 뒤에 위치하는 ul 요소를 선택한다. */
-            p + ul { color: red; }
-          </style>
-        </head>
-        <body>
-          <div>A div element.</div>
-          <ul>
-            <li>Coffee</li>
-            <li>Tea</li>
-            <li>Milk</li>
-          </ul>
-        
-          <p>The first paragraph.</p>
-          <ul>
-          	<!--p 요소의 형제 요소 중에 p 요소 바로 뒤에 위치하는 ul 요소-->
-            <li>Coffee</li>
-            <!--p 요소의 형제 요소 중에 p 요소 바로 뒤에 위치하는 ul 요소-->
-            <li>Tea</li>
-            <!--p 요소의 형제 요소 중에 p 요소 바로 뒤에 위치하는 ul 요소-->
-            <li>Milk</li>	
-          </ul>
-        
-          <h2>Another list</h2>
-          <ul>
-            <li>Coffee</li>
-            <li>Tea</li>
-            <li>Milk</li>
-        	</ul>
-          </body>
-        </html>
-        ```
-
-        
+      ```html
+<!DOCTYPE html>
+      <html>
+<head>
+        <style>
+          /* p 요소의 형제 요소 중에 p 요소 바로 뒤에 위치하는 ul 요소를 선택한다. */
+          p + ul { color: red; }
+        </style>
+      </head>
+      <body>
+        <div>A div element.</div>
+        <ul>
+          <li>Coffee</li>
+          <li>Tea</li>
+          <li>Milk</li>
+        </ul>
+      
+        <p>The first paragraph.</p>
+        <ul>
+        	<!--p 요소의 형제 요소 중에 p 요소 바로 뒤에 위치하는 ul 요소-->
+          <li>Coffee</li>
+          <!--p 요소의 형제 요소 중에 p 요소 바로 뒤에 위치하는 ul 요소-->
+          <li>Tea</li>
+          <!--p 요소의 형제 요소 중에 p 요소 바로 뒤에 위치하는 ul 요소-->
+          <li>Milk</li>	
+        </ul>
+      
+        <h2>Another list</h2>
+        <ul>
+          <li>Coffee</li>
+          <li>Tea</li>
+          <li>Milk</li>
+      	</ul>
+        </body>
+      </html>
+      ```
+      
+      
 
 
 - CSS 적용 우선 순위
@@ -531,7 +532,7 @@
 
 ---
 
-- 텍스트 표현(있다는 것만 알아 둘것)
+- 텍스트 표현
 
   - 폰트 패밀리: 비슷한 모양의 서체를 묶어서 제시, 만일 지정한 서체가 없을 경우 대안 서체를 사용하게 된다.
 
@@ -596,7 +597,7 @@
 
 
 
-- 배경(있다는 것만 알아 둘 것)
+- 배경
   - 배경 색 설정: background-color 속성 
   - 배경 이미지 설정 : background-image 속성 사용 
   - 배경 이미지 반복 설정 : background-repeat 속성 사용 
@@ -1066,7 +1067,7 @@
 
 
 
-- CSS네비게이션(X)
+- CSS네비게이션
 
   - 인터렉티브 이미지 버튼:  HTML 이용 시 이미지 버튼 만들 수 있음 
 
@@ -1096,7 +1097,7 @@
 
 
 
-- CSS변형과 트랜지션(X)
+- CSS변형과 트랜지션
 
   - 요소의 변형
 

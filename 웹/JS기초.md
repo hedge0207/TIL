@@ -42,6 +42,7 @@
   - Javascript는 브라우저에서 쓸 수 없다는 태생적 한계가 존재, 타 언어와 같이 컴퓨터 자체를 조작하는 것이 불가능했음
   - Ryan Dahl이라는 개발자는 Javascript가 컴퓨터 조작을 할 수 있도록 개발 환경을 만들어주는 node js를 개발(V8엔진을 활용)
   - 서버 조작에 사용됨, DOM,BOM 조작과 무관
+  - npm은 자바스크립트 패키지 매니저로 Node.js에서 사용할 수 있는 모듈들을 패키지화 하여 모아둔 저장소 역할과 패키지 설치 및 관리를 위한 CLI(Commant Line interface)를 제공한다.
 
 
 
@@ -214,56 +215,100 @@
     - 키워드 뒤에 쉼표, 괄호, 연산자가 모두 존재하면 공백을 넣지 않아도 된다.
     - 필요할때가 아니라도 공백과 들여쓰기를 사용하면 코드의 가독성을 높여준다.
   - 주석: 코드에 대한 설명과 노트
-    - 여러줄 주석: /\*~~~\*/
+    - 여러줄 주석: /\*\*/
     - 한 줄 주석: //
   
-  - 타입 확인
-    - typeof 변수명: 타입을 출력
+
+
+
+- 타입 확인
+  
+  - `typeof 변수명`
+    - 피연산자의 변수 타입을 문자열로 반환한다. 
+    - 그러나, null과 배열, 그리고 거의 모든 객체를 object를 반환하므로 객체의 종류까지는 체크하지 못한다.
+  
+  ```javascript
+  typeof [];   //object
+  typeof null; //object
+  typeof {};   //object
+  ```
+  
+  - `Object.prototype.toString.call`
+    - 피연산자 변수 타입을 문자열로 반환한다.
+    - `Object.prototype.toString.call`를 활용하여 객체의 종류를 알아낼 수 있다.
+    - 그러나 이 경우에도 객체의 상속 관계까지는 알 수 없다.
+  
+  ```javascript
+  Object.prototype.toString.call([]);    // [object Array]
+  Object.prototype.toString.call(null);  // [object Null]
+  Object.prototype.toString.call({});    // [object Object]
+  ```
+  
+  - `X instanceof Y`
+    - X가 Y 타입의 인스턴스인지 알려준다.
+  
+  ```javascript
+  function A(){}
+  function B(){}
+  
+  const a = new A();
+  
+  a instanceof A       //true
+  a instanceof B       //false
+  a instanceof Object  //true
+  ```
+  
+  
 
 
 
 - 변수의 선언 
 
-  - 변수 선언시 키워드를 쓰지 않으면 암묵적 전역으로 설정되므로 반드시 키워드를 설정해야 한다.
+  - 변수를 선언하고 해당 변수에 리터럴을 값으로 할당한다.
 
-  - 변수의 유효 범위는 함수를 기준으로 결정된다.
-
+    - `var a = "hello"`와 같이 썼을 때, a는 변수, hello는 리터럴이다.
+- 위와 같이 변수를 선언함과 동시에 그 값을 지정해주는 리터럴 표기법을 사용하여 선언이 가능하다.
+    
+- 리터럴
+  
+  - 변수 및 상수에 저장되는 값 그 자체를 리터럴이라 부른다.
+  
+- 변수 선언시 키워드를 쓰지 않으면 암묵적 전역으로 설정되므로 반드시 키워드를 설정해야 한다.
+  
+- 변수의 유효 범위는 함수를 기준으로 결정된다.
+  
     - 지역변수: 함수 안에 선언된 변수로 함수 내부로 사용이 제한된다. 함수 내부에서 선언된 변수는 함수 내부의 모든 곳에서 사용이 가능하지만 만약 중첩된 함수 내부에서 부모 함수의 변수와 같은 이름의 변수 선언 시 부모 함수의 변수에 가려진다.
-
+  
     - 전역변수: 모든 함수에서 사용할 수 있는 변수, 전역 변수가 다른 코드에 영향을 주어 오류 발생 위험 존재, 따라서 최소한의 전여 변수만 사용할 것을 권장. 전역변수의 정의는 최상위 위치에서 변수를 선언하여 이루어진다.
-
+  
   - 대부분의 변수 선언은 호이스팅 방지를 위해 let과 const를 통해 이루어진다.
-
+  
   - 변수는 어떠한 데이터 타입이라도 담을 수 있다.
-
+  
     - 단 변수는 그 크기가 정해져 있으므로 숫자나 boolean 등의 고정된 크기의 데이터 타입은 그대로 담을 수 있지만 문자열이나 객체 같은 크기가 정해져 있지 않은 데이터 타입은 변수에 담을 수 없다. 대신 문자열이나 객체의 참조만을 가지고 있다. 이런 종류의 데이터 타입을 참조 타임이라 부른다.
   
-  ```js
-  //기본 타입
-  var a=true;
-  var b=a;
-  a=false;
-  document.writeln(b);
-  
-  out
-  true  //a의 값을 바꿔도 b의 값에는 영향이 없음, b는 a를 참조하는 것이 아니라 아예 새로운 변수이기 때문이다.
-  
-  //참조 타입
-  var a=[1,2,3,4];
+    ```javascript
+    //기본 타입
+    var a=true;
+    var b=a;
+    a=false;
+    document.writeln(b);
+    
+    out
+    true  //a의 값을 바꿔도 b의 값에는 영향이 없음, b는 a를 참조하는 것이 아니라 아예 새로운 변수이기 때문이다.
+    
+    //참조 타입
+    var a=[1,2,3,4];
   var b=a
-  a[0]=100
-  document.writeln(b);
+    a[0]=100
+    document.writeln(b);
+    
+    out
+    100,2,3,4   //a의 값을 바꾸면 b의 값도 함께 바뀐다. b는 a를 참조하기 때문이다.
+    ```
   
-  out
-  100,2,3,4   //a의 값을 바꾸면 b의 값도 함께 바뀐다. b는 a를 참조하기 때문이다.
-  ```
-  
-  
-
-  
-
   - var: 재할당, 재선언 모두 가능
-
+  
     ```javascript
     var y = 10
     y = 20    //재할당
@@ -284,45 +329,47 @@
     var a4
     console.log(a4)  //undefined
     ```
-
+  
   - const: 재할당, 재선언이 불가능, 값이 변화하지 않는다는 의미가 아니다.
-
+  
     ```javascript
     const x = 1
     
-    /*
+    ```
+  
+  /*
     민일 재선언하면 오류가 발생
     */
     const x = 1
     x = 2
-    
+  
     Uncaught SyntaxError: Identifier 'x' has already been declared
-    
+  
     //변화는 가능하다.
     //∵array,object 등은 참조형 데이터로 array,object 자체가 변수에 할당된 것이 아닌 이들의 주소가 변수에 저장된 것이기 때문이다. 즉, 주소 자체를 변경시키는 것은 불가능하지만 주소값을 타고 내부의 데이터를 변경시키는 것은 가능하다.
     const arr [1,2,3]
     arr.push(10)
     console.log(arr)
-    
+  
     out
     [1,2,3,10]
-    
-    
+  
+  
     //아래와 같이 ,로 구분하여 복수의 변수 선언 가능
     const b2 = "aa",b3="ㅁㅁ"
     console.log(b2,b3)   //aa ㅁㅁ
-    
+  
     //값 없이 변수 선언 불가
     const b4
     console.log(b4) //에러 발생
     ```
-
+  
   - let: 재할당이 가능, 재선언은 불가능
-
+  
     ```javascript
-    let y = 10
+  let y = 10
     y = 20
-    console.log(y)
+  console.log(y)
     
     out
     20
@@ -333,18 +380,18 @@
     out
     Uncaught SyntaxError: Identifier 'y' has already been declared
     
-
+  
     //아래와 같이 ,로 구분하여 복수의 변수 선언 가능
     let c2 = "aa",c3="ㅁㅁ"
     console.log(c2,c3)    //aa ㅁㅁ
-    
+  
     //값 없이 변수 선언 가능
     let c4
     console.log(c4)   //undefined
     ```
+  
     
-    
-
+  
 - 타입과 연산자
 
   - 원시타입과 객체 타입
@@ -1073,6 +1120,10 @@ out
   ```js
   const arr = [0,1,2,3]
   
+  
+  //배열인지 확인
+  Array.isArray(arr)  //true
+  
   //인덱스 접근
   console.log(arr[0],arr[3])
   
@@ -1317,7 +1368,7 @@ out
 
 > https://poiemaweb.com/js-regexp
 
-- 닉네임, 비밀번호 검증을 위한 정규표현식이 존재, 양식과 구체적인 예시는 구글링해서 정리할 것
+- 닉네임, 비밀번호 검증을 위한 정규표현식이 존재
 
 
 

@@ -1172,9 +1172,205 @@ export default router
 
 # 이벤트 버스
 
+- 이벤트 버스를 사용해야 하는 이유
+  - Vue를 사용하다 보면 형제 컴포넌트 사이에 데이터를 주고 받아야 할 일이 빈번하게 생긴다.
+  - 그때마다 부모 컴포넌트로 올린 후 다시 형제 컴포넌트에 내리는 과정을 거치면 지나치게 복잡해진다.
+  - 이벤트 버스는 부모 컴포넌트를 거치지 않고도 형제 컴포넌트 사이에 데이터를 주고 받을 수 있게 해준다.
 
 
 
+- 예시1
+
+  > https://github.com/hedge0207/web/tree/master/Vue/vue_eventbus
+
+  - main.js
+
+  ```javascript
+  //꼭 main.js에 하지 않아도 된다.
+  import Vue from 'vue'
+  import App from './App.vue'
+  
+  Vue.config.productionTip = false
+  
+  // new Vue()를 통해 새로운 Vue 인스턴스를 생성하고 이를 내보낸다(export)
+  export const eventBus = new Vue()
+  
+  new Vue({
+    render: h => h(App),
+  }).$mount('#app')
+  ```
+
+  - Sender.vue
+
+  ```vue
+  <template>
+    <div>
+        <button @click="sendEventBus">클릭하세요</button>
+    </div>
+  </template>
+  
+  <script>
+  import { eventBus } from '../main'  //main.js에서 export한 eventBus를 오브젝트 형태로 import 한다.
+  export default {
+      data(){
+          return {
+  
+          }
+      },
+      methods:{
+          sendEventBus(){
+              // $emit을 통해 보내고자 하는 데이터와 이벤트 명을 보낸다.
+              // 부모 컴포넌트에 데이터를 보낼 때도 $emit을 사용한다.
+              // 마찬가지로 Vue 인스턴스인 evnetBus를 부모 컴포넌트처럼 사용하는 것이다.
+              eventBus.$emit("eventWasSended", "잘 받으셨나요?")
+              console.log("이벤트를 실은 버스가 출발했습니다.")
+          }
+      }
+  }
+  </script>
+  //후략
+  ```
+
+  - Receiver.vue
+
+  ```vue
+  <template>
+    <div>{{receivedMessage}}</div>
+  </template>
+  
+  <script>
+  import { eventBus } from "../main"
+  export default {
+      data(){
+          return {
+              receivedMessage: "아직 못 받았어요!!"
+          }
+      },
+      created(){
+          //eventBus에서 온 신호를 듣는다.
+          eventBus.$on('eventWasSended', (msg)=>{
+              this.receivedMessage = msg
+          })
+      }
+  
+  }
+  </script>
+  
+  <style>
+  
+  </style>
+  ```
+
+  
+
+- 예시2
+
+  - 새로운 Vue 인스턴스를 생성하는 것이므로 아래와 같이 하는 것도 가능하다.
+
+  - main.js
+
+  ```javascript
+  import Vue from 'vue'
+  import App from './App.vue'
+  
+  Vue.config.productionTip = false
+  
+  //기존 방식
+  export const eventBus = new Vue()
+  
+  //확장된 방식
+  export const evnetBusTwo = new Vue({
+    methods:{
+      changeMessage(msg){
+        this.$emit('MessageWasChanged',msg)
+      }
+    }
+  })
+  
+  new Vue({
+    render: h => h(App),
+  }).$mount('#app')
+  
+  ```
+
+  - Sender.vue
+
+  ```vue
+  <template>
+    <div>
+        <button @click="sendEventBus">클릭하세요</button>
+        <button @click="changeMessage">메시지를 바꾸려면 클릭하세요</button>
+    </div>
+  </template>
+  
+  <script>
+  import { eventBus,evnetBusTwo } from '../main'  //main.js에서 export한 eventBus를 오브젝트 형태로 import 한다.
+  export default {
+      data(){
+          return {
+  
+          }
+      },
+      methods:{
+          //기존 방식
+          sendEventBus(){
+              eventBus.$emit("eventWasSended", "잘 받으셨나요?")
+              console.log("이벤트를 실은 버스가 출발했습니다.")
+          },
+          //확장된 방식
+          changeMessage(){
+              evnetBusTwo.changeMessage("메시지가 바뀌었나요???")
+          }
+      }
+      
+  
+  }
+  </script>
+  
+  <style>
+  
+  </style>
+  ```
+
+  - Receiver.vue
+
+  ```vue
+  <template>
+    <div>
+        <div>{{receivedMessage}}</div>
+        <div>{{changedMessage}}</div>
+    </div>
+  </template>
+  
+  <script>
+  import { eventBus,evnetBusTwo } from "../main"
+  export default {
+      data(){
+          return {
+              receivedMessage: "아직 못 받았어요!!",
+              changedMessage: "아직 안 바뀌었어요!!"
+          }
+      },
+      created(){
+          //기존 방식
+          eventBus.$on('eventWasSended', (msg)=>{
+              this.receivedMessage = msg
+          })
+          //확장된 방식
+          evnetBusTwo.$on('MessageWasChanged', (msg)=>{
+              this.changedMessage=msg
+          })
+      }
+  
+  }
+  </script>
+  
+  <style>
+  
+  </style>
+  ```
+
+  
 
 
 
