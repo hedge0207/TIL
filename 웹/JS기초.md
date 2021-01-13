@@ -114,7 +114,7 @@
   - 장점
 
     - 텍스트 에디터와 웹 브라우저만 있으면 프로그래밍이 가능하다.
-    - 데이터 타입 및 형 변환이 쉬워 쉡게 학습 가능하다.
+    - 데이터 타입 및 형 변환이 쉬워 쉽게 학습 가능하다.
     - 컴파일을 거치지 않아 작성한 코드 테스트가 수월하다.
 
 
@@ -257,29 +257,45 @@
   a instanceof B       //false
   a instanceof Object  //true
   ```
+
+
+
+
+
+## 변수의 선언 
+
+- 변수를 선언하고 해당 변수에 리터럴을 값으로 할당한다.
+
+  - `var a = "hello"`와 같이 썼을 때, a는 변수, hello는 리터럴이다.
+  - 값은 프로그램에 의해 조작될 수 있는 대상을 말한다.
+  - 위와 같이 변수를 선언함과 동시에 그 값을 지정해주는 리터럴 표기법을 사용하여 값을 생성할 수 있다.
   
-  
 
 
 
-- 변수의 선언 
-
-  - 변수를 선언하고 해당 변수에 리터럴을 값으로 할당한다.
-
-    - `var a = "hello"`와 같이 썼을 때, a는 변수, hello는 리터럴이다.
-- 위와 같이 변수를 선언함과 동시에 그 값을 지정해주는 리터럴 표기법을 사용하여 선언이 가능하다.
-    
 - 리터럴
-  
   - 변수 및 상수에 저장되는 값 그 자체를 리터럴이라 부른다.
+  - 값과의 차이는 리터럴은 조작될 수 있는 대상이 아니지만 값은 조작될 수 있는 대상이라는 점이다.
+  - 예를 들어 숫자 2와 3은 그 자체로는 아직 어떠한 조작의 대상도 아니므로 리터럴이다.
+  - 그러나 2+3과 같이 쓰는 순간 연산자의 피연산자가 되어 조작의 대상이 되었으므로 값이다.
+
+
+
+- 자바스크립트는 동적 타이핑 언어다.
+  - 변수를 선언할 때 타입을 지정해 주지 않는다.
+  - 파이썬과 동일하다.
+
+
+
+- 변수 선언시 키워드(var, const, let 등)를 쓰지 않으면 암묵적 전역으로 설정되므로 반드시 키워드를 설정해야 한다.
   
-- 변수 선언시 키워드를 쓰지 않으면 암묵적 전역으로 설정되므로 반드시 키워드를 설정해야 한다.
+  - 키워드는 수행할 동작을 규정한 것으로 var, const, let, function, return, while 등이 이에 속한다.
+    
+  - 변수의 유효 범위는 함수를 기준으로 결정된다.
   
-- 변수의 유효 범위는 함수를 기준으로 결정된다.
+  - 지역변수: 함수 안에 선언된 변수로 함수 내부로 사용이 제한된다. 함수 내부에서 선언된 변수는 함수 내부의 모든 곳에서 사용이 가능하지만 만약 중첩된 함수 내부에서 부모 함수의 변수와 같은 이름의 변수 선언 시 부모 함수의 변수에 가려진다.
   
-    - 지역변수: 함수 안에 선언된 변수로 함수 내부로 사용이 제한된다. 함수 내부에서 선언된 변수는 함수 내부의 모든 곳에서 사용이 가능하지만 만약 중첩된 함수 내부에서 부모 함수의 변수와 같은 이름의 변수 선언 시 부모 함수의 변수에 가려진다.
-  
-    - 전역변수: 모든 함수에서 사용할 수 있는 변수, 전역 변수가 다른 코드에 영향을 주어 오류 발생 위험 존재, 따라서 최소한의 전여 변수만 사용할 것을 권장. 전역변수의 정의는 최상위 위치에서 변수를 선언하여 이루어진다.
+  - 전역변수: 모든 함수에서 사용할 수 있는 변수, 전역 변수가 다른 코드에 영향을 주어 오류 발생 위험 존재, 따라서 최소한의 전여 변수만 사용할 것을 권장. 전역변수의 정의는 최상위 위치에서 변수를 선언하여 이루어진다.
   
   - 대부분의 변수 선언은 호이스팅 방지를 위해 let과 const를 통해 이루어진다.
   
@@ -299,7 +315,7 @@
     
     //참조 타입
     var a=[1,2,3,4];
-  var b=a
+    var b=a
     a[0]=100
     document.writeln(b);
     
@@ -334,42 +350,39 @@
   
     ```javascript
     const x = 1
+    /*
+      민일 재선언하면 오류가 발생
+      */
+      const x = 1
+      x = 2
     
-    ```
-  
-  /*
-    민일 재선언하면 오류가 발생
-    */
-    const x = 1
-    x = 2
-  
-    Uncaught SyntaxError: Identifier 'x' has already been declared
-  
-    //변화는 가능하다.
-    //∵array,object 등은 참조형 데이터로 array,object 자체가 변수에 할당된 것이 아닌 이들의 주소가 변수에 저장된 것이기 때문이다. 즉, 주소 자체를 변경시키는 것은 불가능하지만 주소값을 타고 내부의 데이터를 변경시키는 것은 가능하다.
-    const arr [1,2,3]
-    arr.push(10)
-    console.log(arr)
-  
-    out
-    [1,2,3,10]
-  
-  
-    //아래와 같이 ,로 구분하여 복수의 변수 선언 가능
-    const b2 = "aa",b3="ㅁㅁ"
-    console.log(b2,b3)   //aa ㅁㅁ
-  
-    //값 없이 변수 선언 불가
-    const b4
-    console.log(b4) //에러 발생
+      Uncaught SyntaxError: Identifier 'x' has already been declared
+    
+      //변화는 가능하다.
+      //∵array,object 등은 참조형 데이터로 array,object 자체가 변수에 할당된 것이 아닌 이들의 주소가 변수에 저장된 것이기 때문이다. 즉, 주소 자체를 변경시키는 것은 불가능하지만 주소값을 타고 내부의 데이터를 변경시키는 것은 가능하다.
+      const arr [1,2,3]
+      arr.push(10)
+      console.log(arr)
+    
+      out
+      [1,2,3,10]
+    
+    
+      //아래와 같이 ,로 구분하여 복수의 변수 선언 가능
+      const b2 = "aa",b3="ㅁㅁ"
+      console.log(b2,b3)   //aa ㅁㅁ
+    
+      //값 없이 변수 선언 불가
+      const b4
+      console.log(b4) //에러 발생
     ```
   
   - let: 재할당이 가능, 재선언은 불가능
   
     ```javascript
-  let y = 10
+    let y = 10
     y = 20
-  console.log(y)
+    console.log(y)
     
     out
     20
@@ -380,11 +393,11 @@
     out
     Uncaught SyntaxError: Identifier 'y' has already been declared
     
-  
+    
     //아래와 같이 ,로 구분하여 복수의 변수 선언 가능
     let c2 = "aa",c3="ㅁㅁ"
     console.log(c2,c3)    //aa ㅁㅁ
-  
+    
     //값 없이 변수 선언 가능
     let c4
     console.log(c4)   //undefined
@@ -392,102 +405,181 @@
   
     
   
-- 타입과 연산자
+    
 
-  - 원시타입과 객체 타입
+## 타입
 
-    - 원시타입(primitive)
+- 타입이란
+  - 변수는 값의 위치(주소)를 기억하는 저장소이다.
+  - 즉, 변수란 값이 위치하고 있는 메모리 주소에 접근하기 위해 사람이 이해할 수 있는 언어로 명명한 식별자이다.
+  - 값의 종류에 따라 확보해야 할 메모리의 크기가 다르기에, 메모리에 값을 저장하기 위해서는 먼저 확보해야 할 메모리의 크기를 알아야 한다.
+  - 이때 값의 종류, 즉 데이터의 종류를 데이터 타입이라 한다.
 
-      -변경 불가능한 값(imuutable)
 
-      -불린, 숫자, null undefined, 문자열, symbol이 해당
 
-    - 객체타입(object)
+- 변경불가성(immutability)
 
-      -원시타입을 제외한 모든 데이터
+  - 정의: 객체가 생성된 이후 그 상태를 변경할 수 없는 디자인 패턴
+    - 함수형 프로그래밍의 핵심 원리이다.
+    - 원시타입은 변경 불가능한 값이다.
+    - 객체 타입은 변경 가능한 값이다.
+  - 개념이 생겨난 이유
+    - 객체는 참조 형태로 전달하고 전달 받는다. 객체가 참조를 통해 공유되어 있다면 그 상태가 언제든지 변경될 수 있기 때문에 문제가 될 가능성도 커지게 된다.
+    - 이는 객체의 참조를 가지고 있는 어떤 장소에서 객체를 변경하면 참조를 공유하는 모든 장소에서 그 영향을 받기 때문인데 이것이 의도한 동작이 아니라면 참조를 가지고 있는 다른 장소에 변경 사실을 통지하고 대처하는 추가 대응이 필요하다.
+    - 의도하지 않은 객체의 변경이 발생하는 원인의 대다수는 “레퍼런스를 참조한 다른 객체에서 객체를 변경”하기 때문이다. 
+    - 이 문제의 해결 방법은 비용은 조금 들지만 객체를 불변객체로 만들어 프로퍼티의 변경을 방지하며 객체의 변경이 필요한 경우에는 참조가 아닌 객체의 방어적 복사(defensive copy)를 통해 새로운 객체를 생성한 후 변경한다.
 
-      -객체란 키와 값으로 구성된 속성(property)의 집합이며, 프로퍼티 값이 함수일 경우 구분을 위해 메소드라고 부른다.
+  - 예시1.
 
-      -일반객체, function,array,data,RegExp
+  ```javascript
+  //첫 번째 구문이 실행되면 메모리에 문자열 'Hello'가 생성되고 식별자 str은 메모리에 생성된 문자열 'Hello'의 메모리 주소를 가리킨다.
+  var str = 'Hello';
+  //두 번째 구문이 실행되면 이전에 생성된 문자열 'Hello'를 수정하는 것이 아니라 새로운 문자열 'World'를 메모리에 생성하고 식별자 str은 이것을 가리키게 된다.
+  str = 'World';
+  
+  //즉  문자열 'Hello'와 'World'는 모두 메모리에 존재하고 있고, 변수 str은 문자열 'Hello'를 가리키고 있다가 'World'를 가리키도록 변경된 것 뿐이다.
+  ```
+
+  - 예시2.
+
+  ```javascript
+  //someStr은 str 변수에 저장된 문자열을 실제로 변경하는 것이 아니라 새로운 문자열을 생성하여 반환하는 것이다.
+  //문자열은 변경할 수 없는 immutable value이기 때문이다.
+  var str = "Hello World!"
+  var someStr = str.slice(2,5)
+  console.log(someStr) //llo
+  
+  //배열은 객체이므로 mutable value이기 때문에 arr값 자체를 변경 가능하다.
+  //따라서 아래와 같이 array의 메서드는 직접 대상이 되는 배열을 변경한다.
+  var arr = [];
+  console.log(arr.length); // 0
+  
+  var arrLength = arr.push(2);    // .push()는 메소드 실행 후 array의 length를 반환한다.
+  console.log(arr.length); // 1
+  ```
+
+  - 예시3.
+
+  ```javascript
+  var person = {
+      name: 'Cha',
+      pet: {
+          dog: 'Spring',
+      }
+  }
+  
+  var myName = person.name;
+  
+  //person.name은 문자열로 immutable한 값이기에 myName이 참조하는 person.name 자체가 변하지 않고 메모리에 새로운 값인 Lee가 생성된다.
+  person.name = 'Lee';
+  console.log(myName);  //Cha
+  
+  myName = person.name;
+  console.log(myName)   //Lee
+  
+  
+  // 변수 somePerson는 객체 타입이다.
+  var somePerson = person;
+  somePerson.name = "Lee";
+  console.log(person.name);       //Lee  
+  console.log(somePerson.name);   //Lee
+  ```
+
+  
+
+  
+
+  
+
+- 원시타입과 객체 타입
+
+  - 원시타입(primitive)
+
+    - 변경 불가능한 값(immutable)
+
+    - 불린, 숫자, null undefined, 문자열, symbol이 해당
+
+  - 객체타입(object)
+
+    - 원시타입을 제외한 모든 데이터
+  - 변경 가능한 값(mutable)
+    
+  - 객체란 키와 값으로 구성된 속성(property)의 집합이며, 프로퍼티 값이 함수일 경우 구분을 위해 메소드라고 부른다.
+    
+    - 일반객체, function,array,data,RegExp
 
 
 
 - 기본 데이터 타입
-
-  cf. 리터럴(literal): 그 자신으로 해석되어야 하는 값
-
-    ```javascript
-  a = 28//라고 하면 a라는 변수에 28이라는 정수형 리터럴을 할당해준 것이다. 
-    ```
 
   - Number
 
     - 정수와 실수 구분 하지 않음, 더 정확히는 정수 타입이 별도로 존재하지 않음.
     - 정수 리터럴과 실수 리터럴 표현 시 범위가 다르다(단, 크게 문제가 되지는 않는다)
     - 양수, 음수, 소수, e지수 표기(과학적 표기법), Infinity, -Infinity, NaN, 상수 전부 가능
-    - NaN(Not a Number): 숫자가 아님을 표시하는 것으로 자신을 포함한 어떤 것과도 같지 않다.따라서 어떤 변수가 NaN인지는 `if (a==NaN)`으로 확인할 수 없고 `isNaN(a)`함수를 사용해야 한다. 반변에 undefined과 null는 동등연산자로 비교시 같다고 나온다. NaN은 자신과 일치하지 않는 유일한 값이다. 타입은 number로 뜬다.
+  - NaN(Not a Number): 숫자가 아님을 표시하는 것으로 자신을 포함한 어떤 것과도 같지 않다.따라서 어떤 변수가 NaN인지는 `if (a==NaN)`으로 확인할 수 없고 `isNaN(a)`함수를 사용해야 한다. 반변에 undefined과 null는 동등연산자로 비교시 같다고 나온다. NaN은 자신과 일치하지 않는 유일한 값이다. 타입은 number로 뜬다.
     - 상수란 미리 정해져 있는 숫자로 원주율이나 중력가속도 등이 이에 속한다.
 
     - JavaScript에서 상수를 사용할 때는 대소문자 구분이 완벽해야 한다.
-
+  
     - 파이썬과 달리 0으로 나눌 경우 에러를 발생시키는 것이 아니라 Infinity를 반환
-
+  
     ```javascript
-    var x = 1  //var는 요즘은 쓰지 않지만 명시적 표기를 위해 적는다.
+  var x = 1  //var는 요즘은 쓰지 않지만 명시적 표기를 위해 적는다.
     ```
 
     
 
   - String: 큰 따옴표, 작은 따옴표로 생성
-
+  
     - JavaScript에는 char 데이터 타입이 없음
-    - 문자열 리터럴은 따옴표로 둘러싸인 문자 집합이다.
+  - 문자열 리터럴은 따옴표로 둘러싸인 문자 집합이다.
     - 이스케이프 시퀀스는 파이썬과 마찬가지로 \키를 쓴다.
 
     ```javascript
-    var x = '문자열1'
+  var x = '문자열1'
     var y = "문자열2"
     ```
-
-    - Template Literal
-
+  
+  - Template Literal
+  
     ```javascript
     //줄 바꿈: 따옴표가 아닌 ``를 사용
     const x = `자바스크
-       립트`
+     립트`
     console.log(x)
-    
+  
     out
     자바스크
        립트
        
     //문자열 내에 변수 사용: `${변수}`
     const message1 = 'hi'
-    const message2 = `I said, ${message1}``
+    const message2 = `I said, ${message1}`
     ```
-
+  
   - Boolean: 소문자 true,false(파이썬과 달리 소문자로 적는다)
-
+  
     - 문자와 숫자 변환이 자동으로 이루어진다.
-
+  
     ```javascript
-    var x = true
+  var x = true
     var y = false
-    ```
-
-  - Empty Value: null, undefined
-
+  ```
+  
+- Empty Value: null, undefined
+  
     - null: 어떠한 데이터 타입도 가지고 있지 않음, 변수에 아무 값이 담겨있지 않음, 의도적으로 변수에 값이 없다는 것을 명시하기 위해 사용
     - undefine: 정의되어 있지 않음, 값이 할당된 적 없는 변수, 생성되지 않는 객체에 접근할 때 나옴, 선언 이후 값을 할당하지 않으면 undefine이 디폴트 값으로 할당됨. 즉 null은 의도적으로 변수에 값을 지정하지 않겠다고 표시한 것이라면 undefine은 변수에 값을 아직, 혹은 실수로 할당하지 않은 것이다.
     - empty value를 둘이나 설정한 것은 JS 개발자들의 실수다.
-    - 둘의 타입은 다르다. 이 역시 JS 개발자들의 실수다
-
-    ```javascript
+  - 둘의 타입은 다르다. 이 역시 JS 개발자들의 실수다
+  
+  ```javascript
     var empty1 = null
     var empty2 = undefined
     
     console.log(typeof(empty1))
-    console.log(typeof(empty2))
+  console.log(typeof(empty2))
     
     out
     object
@@ -512,115 +604,117 @@
   ```
 
 
+
+
 - 산술연산자: 숫자의 사칙연산과 응용연산
 
 
-  - 단항 산술 연산자
+    - 단항 산술 연산자
 
-    ```js
-    //단 항 산술 연산자: +,-,++,--
-    /*
-    "+","-":양수, 음수 변경 및 표현, 단, "+"는 음수를 양수로 변경하지 않는다.
-    숫자 형 문자열의 경우 숫자로 자동 형변환된다.
-    "++","--": 증가 연산자와 감소 연산자. 피연산자 앞에 오는지 뒤에 오는지에 따라 효과가 달라진다.
-    */
-    
-    var x = 5, result;
-    // 선대입 후증가 (Postfix increment operator)
-    result = x++;
-    console.log(result, x); // 5 6
-    
-    // 선증가 후대입 (Prefix increment operator)
-    result = ++x;
-    console.log(result, x); // 7 7
-    
-    // 선대입 후감소 (Postfix decrement operator)
-    result = x--;
-    console.log(result, x); // 7 6
-    
-    // 선감소 후대입 (Prefix decrement operator)
-    result = --x;
-    console.log(result, x); // 5 5 
-    
-    
-    let c = 0
-    c += 10
-    console.log(c)
-    c -= 3
-    console.log(c)
-    c++     //++는 +1을 해준다.
-    console.log(c)
-    c--		//--는 -1을 해준다.
-    console.log(c)
-    
-    out
-    10
-    7
-    8
-    7
-    ```
+  ```js
+  //단 항 산술 연산자: +,-,++,--
+  /*
+  "+","-":양수, 음수 변경 및 표현, 단, "+"는 음수를 양수로 변경하지 않는다.
+  숫자 형 문자열의 경우 숫자로 자동 형변환된다.
+  "++","--": 증가 연산자와 감소 연산자. 피연산자 앞에 오는지 뒤에 오는지에 따라 효과가 달라진다.
+  */
+  
+  var x = 5, result;
+  // 선대입 후증가 (Postfix increment operator)
+  result = x++;
+  console.log(result, x); // 5 6
+  
+  // 선증가 후대입 (Prefix increment operator)
+  result = ++x;
+  console.log(result, x); // 7 7
+  
+  // 선대입 후감소 (Postfix decrement operator)
+  result = x--;
+  console.log(result, x); // 7 6
+  
+  // 선감소 후대입 (Prefix decrement operator)
+  result = --x;
+  console.log(result, x); // 5 5 
+  
+  
+  let c = 0
+  c += 10
+  console.log(c)
+  c -= 3
+  console.log(c)
+  c++     //++는 +1을 해준다.
+  console.log(c)
+  c--		//--는 -1을 해준다.
+  console.log(c)
+  
+  out
+  10
+  7
+  8
+  7
+  ```
 
-    
 
-  - 이항 산술 연산자
-    - 자동형변환으로 피 연산자에 문자가 포함되어도 연산 가능
+    - 이항 산술 연산자
 
-    ```js
-    var a = '5',b=2
-    var str1='str1',str2='str2'
-    
-    //덧셈 연산자
-    //피 연산자 모두 숫자면 덧셈 연산을 수행하지만
-    //피 연산자 중 하나라도 문자열이면 피연산자가 연결된 문자열이 나온다.
-    //둘 다 숫자가 아닌 문자열일 경우에도 피연산자가 연결된 문자열이 나온다.
-    console.log(a+b)			//52
-    console.log(typeof(a+b))	//string
-    console.log(str1+str2)		//str1str2
-    console.log(typeof(str1+str2)) //string
-    
-    //피연산자가 숫자인 문자열이면 뺄셈을 수행, 숫자가 아닌 문자열이면 NaN을 반환
-    //덧셈을 제외한 모든 연산이 이와 동일
-    console.log(a-b)			//3
-    console.log(typeof(a-b))	//number
-    console.log(str1-str2)		//NaN
-    console.log(typeof(str1-str2))  //number
-    
-    console.log(a*b)			//10
-    console.log(typeof(a*b))	//number
-    console.log(str1*str2)		//NaN
-    console.log(typeof(str1*str2))	//number
-    
-    console.log(a/b)			//2.5
-    console.log(typeof(a/b))	//number
-    console.log(str1/str2)		//NaN
-    console.log(typeof(str1/str2))	//number
-    
-    console.log(a%b)			//1
-    console.log(typeof(a%b))	//number
-    console.log(str1%str2)		//NaN
-    console.log(typeof(str1%str2))	//number
-    ```
+      - 자동형변환으로 피 연산자에 문자가 포함되어도 연산 가능
 
-    - 나눗셈 연산자
+  ```js
+  var a = '5',b=2
+  var str1='str1',str2='str2'
+  
+  //덧셈 연산자
+  //피 연산자 모두 숫자면 덧셈 연산을 수행하지만
+  //피 연산자 중 하나라도 문자열이면 피연산자가 연결된 문자열이 나온다.
+  //둘 다 숫자가 아닌 문자열일 경우에도 피연산자가 연결된 문자열이 나온다.
+  console.log(a+b)			//52
+  console.log(typeof(a+b))	//string
+  console.log(str1+str2)		//str1str2
+  console.log(typeof(str1+str2)) //string
+  
+  //피연산자가 숫자인 문자열이면 뺄셈을 수행, 숫자가 아닌 문자열이면 NaN을 반환
+  //덧셈을 제외한 모든 연산이 이와 동일
+  console.log(a-b)			//3
+  console.log(typeof(a-b))	//number
+  console.log(str1-str2)		//NaN
+  console.log(typeof(str1-str2))  //number
+  
+  console.log(a*b)			//10
+  console.log(typeof(a*b))	//number
+  console.log(str1*str2)		//NaN
+  console.log(typeof(str1*str2))	//number
+  
+  console.log(a/b)			//2.5
+  console.log(typeof(a/b))	//number
+  console.log(str1/str2)		//NaN
+  console.log(typeof(str1/str2))	//number
+  
+  console.log(a%b)			//1
+  console.log(typeof(a%b))	//number
+  console.log(str1%str2)		//NaN
+  console.log(typeof(str1%str2))	//number
+  ```
 
-    ```js
-    //피 연산자 모두가 정수라 할지라도 결과는 실수가 나올 수 있음(자바스크립트는 정수 타입이 별도로 존재하지 않음). 
-    //0으로 나누면 Infinity를 반환
-    var a=3,b=0
-    console.log(a/b) //Infinity
-    ```
+  - 나눗셈 연산자
 
-    - 나머지 연산자
+  ```js
+  //피 연산자 모두가 정수라 할지라도 결과는 실수가 나올 수 있음(자바스크립트는 정수 타입이 별도로 존재하지 않음). 
+  //0으로 나누면 Infinity를 반환
+  var a=3,b=0
+  console.log(a/b) //Infinity
+  ```
 
-    ```js
-    //나머지를 결과값으로 취함
-    var a=5,b=2
-    console.log(a%b)  //1
-    
-    //0으로 나머지 연산을 하면 NaN을 반환
-    var a=3,b=0
-    console.log(a%b)  //NaN
-    ```
+  - 나머지 연산자
+
+  ```js
+  //나머지를 결과값으로 취함
+  var a=5,b=2
+  console.log(a%b)  //1
+  
+  //0으로 나머지 연산을 하면 NaN을 반환
+  var a=3,b=0
+  console.log(a%b)  //NaN
+  ```
 
 
 
@@ -710,6 +804,10 @@
   1
   ```
 
+
+
+
+
 - 삼항 연산자: 조건에 따라 어떤 값을 할당할지 결정
 
   > ? 앞이 조건식, : 앞이 조건식이 참일 경우의 처리, : 뒤가 거짓을 경우의 처리 
@@ -740,6 +838,34 @@
 
 
 # 제어문
+
+- 표현식
+
+  - 표현식
+    - 하나의 값으로 평가된다.
+    - 표현식은 하나의 값이 되기 때문에 다른 표현식의 일부가 되어 조금 더 복잡한 표현식을 구성할 수도 있다.
+
+  ```javascript
+  // 표현식
+  5 + 5  //10
+  // 5+5라는 표현식이 또 다른 표현식의 일부가 된다.
+  5 + 5 >8 //true
+  ```
+
+  - 표현식과 문의 차이
+    - 문이 자연어에서 완전한 문장이라면 표현식은 문을 구성하는 요소이다.
+    - 표현식은 그 자체로 하나의 문이 될 수도 있다.
+    - 표현식은 평가되어 값을 만들지만 그 이상의 행위는 할 수 없다. 
+    - 문은 var, function과 같은 선언 키워드를 사용하여 변수나 함수를 생성하기도 하고 if, for 문과 같은 제어문을 생성하여 프로그램의 흐름을 제어하기도 한다.
+
+  ```javascript
+  // 아래 자체가 표현식이지만 완전한 문이기도 하다.
+  a = 10; 
+  ```
+
+  
+
+
 
 - 조건문
 
@@ -1116,6 +1242,7 @@ out
 - Array(파이썬의 리스트): 파이썬과 마찬가지로 동적(배열 크기가 정해져 있지 않음)으로 배열의 추가와 삭제가 가능
   
   - 참조형 데이터로 데이터 자체가 변수에 저장되는 것이 아니라 변수에는 해당 데이터를 찾기 위한 참조(주소)만 저장된다.
+  - 자바스크립트에서 배열은 객체이다.
   
   ```js
   const arr = [0,1,2,3]
@@ -1252,7 +1379,7 @@ out
   - 객체의 값은 이름과 값의 쌍으로 이루어져 있으며 이 쌍을 property라고 부른다.
   - {이름:값}
   - property는 어떠한 데이터 타입이라도 가능하다.
-  - 함수로 된 property를 Method라고 부른다.
+  - property 값이 함수일 경우, 일반 함수와 구분하기 위해 method라 부른다.
 
   ```js
   const me = {
@@ -1305,10 +1432,19 @@ out
     
   out
   1
-  ```
-
   
 
+  //메소드
+var Person = {
+      // Person이라는 객체 내부에 위치한 sayHello라는 method
+      sayHello: function(){
+          console.log('Hello!')
+      }
+  }
+  ```
+  
+  
+  
 - JSON과 object의 치환
 
   ```javascript
