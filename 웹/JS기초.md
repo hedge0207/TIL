@@ -350,31 +350,32 @@
   
     ```javascript
     const x = 1
-    /*
-      민일 재선언하면 오류가 발생
-      */
-      const x = 1
-      x = 2
     
-      Uncaught SyntaxError: Identifier 'x' has already been declared
+    // 민일 재선언하면 오류가 발생
     
-      //변화는 가능하다.
-      //∵array,object 등은 참조형 데이터로 array,object 자체가 변수에 할당된 것이 아닌 이들의 주소가 변수에 저장된 것이기 때문이다. 즉, 주소 자체를 변경시키는 것은 불가능하지만 주소값을 타고 내부의 데이터를 변경시키는 것은 가능하다.
-      const arr [1,2,3]
-      arr.push(10)
-      console.log(arr)
+    const x = 1
+    x = 2
     
-      out
-      [1,2,3,10]
+    Uncaught SyntaxError: Identifier 'x' has already been declared
+    
+    // 변화는 가능하다.
+    // ∵array,object 등은 참조형 데이터로 array,object 자체가 변수에 할당된 것이 아닌 이들의 주소가 변수에 저장된 것이기 때문이다. 즉, 주소 자체를 변경시키는 것은 불가능하지만 주소값을 타고 내부의 데이터를 변경시키는 것은 가능하다.
+    // 객체도 마찬가지로 객체가 참조하는 주소값 자체를 변경하는 것은 불가능하지만 객체의 프로퍼티를 변경하는 것은 가능하다.
+    const arr [1,2,3]
+    arr.push(10)
+    console.log(arr)
+    
+    out
+    [1,2,3,10]
     
     
-      //아래와 같이 ,로 구분하여 복수의 변수 선언 가능
-      const b2 = "aa",b3="ㅁㅁ"
-      console.log(b2,b3)   //aa ㅁㅁ
+    //아래와 같이 ,로 구분하여 복수의 변수 선언 가능
+    const b2 = "aa",b3="ㅁㅁ"
+    console.log(b2,b3)   //aa ㅁㅁ
     
-      //값 없이 변수 선언 불가
-      const b4
-      console.log(b4) //에러 발생
+    //값 없이 변수 선언 불가
+    const b4
+    console.log(b4) //에러 발생
     ```
   
   - let: 재할당이 가능, 재선언은 불가능
@@ -402,10 +403,43 @@
     let c4
     console.log(c4)   //undefined
     ```
+
+
+
+- 호이스팅(Hoisting)
+
+  - 정의: var 선언문이나 function 선언문 등 모든 선언문이 해당 Scope의 선두로 옮겨진 것처럼 동작하는 특성.
+  - JavaScript는 모든 선언문(var, let, const, function, class 등)이 선언되기 이전에 참조 가능하다.
+  - 파이썬과 달리 변수를 선언하기 전에 활용할 수 있다.
+  - 얼핏 편리해 보이지만 많은 오류를 발생시킬 수 있기에 사용해선 안되는 기능이다.
+
+  ```javascript
+  console.log(a) //undefined  
+  var a = 3 
+  console.log(a) //3
   
-    
-  
-    
+  //함수 호출 전에 함수를 사용했음에도 결과가 정상적으로 나오는데 이는 호이스팅 때문이다.
+  console.log(f(3))  //13
+  function f(a){
+      return 10+a
+  }
+  ```
+
+  - 변수는 3 단계에 걸쳐 생성된다.
+    - 선언 단계: 변수 객체에 변수를 등록한다. 이 변수 객체는 스코프가 참조하는 대상이 된다.
+    - 초기화 단계: 변수 객체에 등록된 변수를 메모리에 할당한다. 이 단계에서 변수는 undefined로 초기화된다.
+    - 할당 단계: undefined로 초기화된 변수에 실제값을 할당한다.
+    - `var` 키워드로 선언된 변수는 선언 단계와 초기화 단계가 한 번에 이루어진다. 즉, 스코프에 변수가 등록되고 변수는 메모리에 공간을 확보한 후 undefined로 초기화된다. 따라서 변수 선언문 이전에 변수에 접근하여도 변수 객체에 변수가 존재하기 때문에 에러가 발생하지 않는다. 다만 undefined를 반환한다.
+  - 위 예시에서 호이스팅이 발생하는 과정
+    - 첫 번째 줄이 실행되기 이전에  `var a = 3 `이 호이스팅 되어 첫 번째 줄 앞에 `var a = 3 `가 옮겨진다.
+    - 실제로 변수 선언이 코드 레벨(코드 상에서)로 옮겨진 것은 아니고 변수 객체에 등록되고 undefined로 초기화 된 것이다.
+    - 세 번째 줄이 실행 될 때는 변수에 값이 할당되었기에 3이 출력된다. 
+
+
+
+
+
+
 
 ## 타입
 
@@ -478,18 +512,149 @@
   console.log(myName)   //Lee
   
   
-  // 변수 somePerson는 객체 타입이다.
+  // 변수 somePerson은 객체 타입이다.immutable한 값이 아니기에 객체 somePerson은 변경된다. 그런데 person과 someperson은 같은 어드레스를 참조하고 있기에 person도 변경된다.
   var somePerson = person;
   somePerson.name = "Lee";
   console.log(person.name);       //Lee  
   console.log(somePerson.name);   //Lee
   ```
 
+
+
+- 불변 데이터 패턴(immutable data pattern)
+
+  - 의도하지 않은 객체의 변경이 발생하는 원인의 대다수는 레퍼런스를 참조한 다른 객체에서 객체를 변경하기 때문이다. 이 문제의 해결 방법은 다음과 같다.
+  - 객체의 방어적 복사(새로운 객체를 생성한 후 변경)
+    - `Object.assign(target, source)`은 타깃 객체로 소스 객체의 프로퍼티를 복사한다.
+    - 이때 객체의 프로퍼티와 동일한 프로퍼티를 가진 타겟 객체의 프로퍼티들은 소스 객체의 프로퍼티로 덮어쓰기가 된다.
+    - 리턴값으로 타깃 객체를 반환한다. ES6에서 추가된 메소드이며 Internet Explorer는 지원하지 않는다.
+    - 완전한 깊은 복사(deep copy)를 지원하지 않는다. 객체 내부의 객체(Nested Object)는 얕은 복사(Shallow copy) 된다.
+
+  ```javascript
+  // 복사
+  const obj = { x: 1 };
+  const copy = Object.assign({}, obj);
+  console.log(copy);		  //{ x: 1 }
+  console.log(obj == copy); //false
   
+  // 병합
+  const obj1 = {x:1};
+  const obj2 = {y:2};
+  const obj3 = {z:3};
+  const merge1 = Object.assign(obj1,obj2,obj3)
+  //타깃 객체인 obj1을 반환한다.
+  console.log(merge1) //{ x: 1, y: 2, z: 3 }
+  //타깃 객체인 obj1만 변경된다.
+  console.log(obj1)   //{ x: 1, y: 2, z: 3 }
+  console.log(obj2)   //{ y: 2 }
+  
+  
+  //얕은 복사(Shallow copy)
+  const user1 = {
+      name: 'Cha',
+      address: {
+          city: 'Seoul'
+      }
+  };
+  
+  const user2 = Object.assign({}, user1);
+  //참조값이 다르다
+  console.log(user1 === user2); //false
+  
+  user2.name = 'Park';
+  console.log(user1.name);  //Cha
+  console.log(user2.name);  //Park
+  
+  //객체 내부의 객체는 얕은 복사 된다.
+  console.log(user1.address === user2.address);  //true
+  
+  user1.address.city = 'Daegu';
+  console.log(user1.address.city);  //Daegu
+  console.log(user2.address.city);  //Daegu
+  ```
+
+  - 불변객체화를 통한 객체 변경 방지
+    - `Object.freeze()`를 사용하여 불변 객체로 만들수 있다.
+    - `Object.isFrozen()`을 사용하여 불변 객체인지 확인할 수 있다.
+    - 내부 객체까지 변경 불가능하려면 Deep freeze를 하여야 한다.
+
+  ```javascript
+  const user1 = {
+      name: 'Cha',
+      address: {
+          city: 'Daejeon'
+      }
+  }
+  
+  const user2 = Object.assign({},user1,{name:'Park'})
+  
+  console.log(user1.name)   //Cha
+  console.log(user2.name)   //Park
+  
+  Object.freeze(user1)
+  
+  user1.name="Lee" 
+  user1.address.city = 'Deagu'
+  
+  //변경 되지 않았다.
+  console.log(user1.name)  //Cha
+  console.log(Object.isFrozen(user1))  //true
+  
+  //객체 내부의 객체는 변경된다.
+  console.log(user1.address.city)  //Deagu
+  
+  
+  //Deep freeze
+  function deepFreeze(obj) {
+      const props = Object.getOwnPropertyNames(obj);
+  
+      props.forEach((name) => {
+          const prop = obj[name];
+          if(typeof prop === 'object' && prop !== null) {
+              deepFreeze(prop);
+          }
+      });
+      return Object.freeze(obj);
+  }
+  
+  const user = {
+      name: 'Cha',
+      address: {
+          city: 'Seoul'
+      }
+  };
+  
+  deepFreeze(user);
+  
+  user.name = 'Lee';           
+  user.address.city = 'Ulsan';
+  
+  // 변경이 전부 무시된다.
+  console.log(user);  //{ name: 'Cha', address: { city: 'Seoul' } }
+  ```
+
+  - Immutable.js
+    - 위 두 방법은 번거러울 뿐더러 성능상 이슈가 존재하기에 큰 객체에는 사용하지 않는 것이 좋다.
+    - Facebook에서 제공하는 Immutable.js를 사용하는 방법이 있다.
+
+  ```bash
+  # 먼저 설치를 해야 한다.
+  $ npm install immutable
+  ```
+
+  ```javascript
+  //Immutable.js의 Map 모듈을 임포트하여 사용한다.
+  const { Map } = require('immutable')
+  const map1 = Map({ a: 1, b: 2, c: 3 })
+  const map2 = map1.set('b', 50)
+  // 깊은 복사가 되었다.
+  map1.get('b') // 2
+  map2.get('b') // 50
+  ```
 
   
 
-  
+
 
 - 원시타입과 객체 타입
 
@@ -565,6 +730,9 @@
     ```javascript
   var x = true
     var y = false
+    ```
+  ```
+  
   ```
   
 - Empty Value: null, undefined
@@ -584,7 +752,7 @@
     out
     object
     undefined
-    ```
+  ```
 
 
 
@@ -656,7 +824,7 @@
 
 
     - 이항 산술 연산자
-
+    
       - 자동형변환으로 피 연산자에 문자가 포함되어도 연산 가능
 
   ```js
@@ -1199,41 +1367,6 @@ out
 
 
 
-- 호이스팅: 가능은 하지만 사용해선 안된다. 자바스크립트에서는 모든 선언을 호이스팅한다.
-
-  - 파이썬과 달리 변수를 선언하기 전에 활용할 수 있다.
-  - 얼핏 편리해 보이지만 많은 오류를 발생시킬 수 있기에 사용해선 안되는 기능이다.
-
-  ```javascript
-  console.log(f(3))
-  function f(a){
-      return 10+a
-  }
-  
-  out
-  13
-  
-  //함수 호출 전에 함수를 사용했음에도 결과가 정상적으로 나오는데 이는 호이스팅 때문이다.
-  
-  파이썬의 경우
-  print(a)
-  a = 3
-  
-  out
-  error
-  
-  자바스크립트의 경우
-  console.log(a)
-  var a = 3
-  
-  out
-  3
-  ```
-
-
-
-
-
 
 
 
@@ -1376,12 +1509,11 @@ out
 
 
 - 오브젝트(파이썬의 딕셔너리)
-  - 객체의 값은 이름과 값의 쌍으로 이루어져 있으며 이 쌍을 property라고 부른다.
-  - {이름:값}
+  - 객체의 값은 이름과 값의 쌍(`{이름:값}`)으로 이루어져 있으며 이 쌍을 property라고 부른다.
   - property는 어떠한 데이터 타입이라도 가능하다.
   - property 값이 함수일 경우, 일반 함수와 구분하기 위해 method라 부른다.
-
-  ```js
+  
+```js
   const me = {
      name : '홍길동',  //오브젝트 안에서는 따옴표를 쓰지 않아도 된다.
      'phone number':'01012345678',  //그러나 이처럼 띄어쓰기 등을 쓰고자 하면 따옴표 써야 한다.
@@ -1433,10 +1565,10 @@ out
   out
   1
   
-
-  //메소드
-var Person = {
-      // Person이라는 객체 내부에 위치한 sayHello라는 method
+  
+//메소드
+  var Person = {
+    // Person이라는 객체 내부에 위치한 sayHello라는 method
       sayHello: function(){
           console.log('Hello!')
       }
