@@ -258,11 +258,7 @@
   a instanceof Object  //true
   ```
 
-
-
-
-
-## 변수의 선언 
+# 변수의 선언 
 
 - 변수를 선언하고 해당 변수에 리터럴을 값으로 할당한다.
 
@@ -435,13 +431,7 @@
     - 실제로 변수 선언이 코드 레벨(코드 상에서)로 옮겨진 것은 아니고 변수 객체에 등록되고 undefined로 초기화 된 것이다.
     - 세 번째 줄이 실행 될 때는 변수에 값이 할당되었기에 3이 출력된다. 
 
-
-
-
-
-
-
-## 타입
+# 타입
 
 - 타입이란
   - 변수는 값의 위치(주소)를 기억하는 저장소이다.
@@ -667,74 +657,85 @@
   - 객체타입(object)
 
     - 원시타입을 제외한 모든 데이터
-  - 변경 가능한 값(mutable)
-    
-  - 객체란 키와 값으로 구성된 속성(property)의 집합이며, 프로퍼티 값이 함수일 경우 구분을 위해 메소드라고 부른다.
-    
+    - 변경 가능한 값(mutable)
+    - 객체란 키와 값으로 구성된 속성(property)의 집합이며, 프로퍼티 값이 함수일 경우 구분을 위해 메소드라고 부른다.
     - 일반객체, function,array,data,RegExp
 
+## 기본 데이터 타입
 
+- Number
 
-- 기본 데이터 타입
-
-  - Number
-
-    - 정수와 실수 구분 하지 않음, 더 정확히는 정수 타입이 별도로 존재하지 않음.
-    - 정수 리터럴과 실수 리터럴 표현 시 범위가 다르다(단, 크게 문제가 되지는 않는다)
-    - 양수, 음수, 소수, e지수 표기(과학적 표기법), Infinity, -Infinity, NaN, 상수 전부 가능
-  - NaN(Not a Number): 숫자가 아님을 표시하는 것으로 자신을 포함한 어떤 것과도 같지 않다.따라서 어떤 변수가 NaN인지는 `if (a==NaN)`으로 확인할 수 없고 `isNaN(a)`함수를 사용해야 한다. 반변에 undefined과 null는 동등연산자로 비교시 같다고 나온다. NaN은 자신과 일치하지 않는 유일한 값이다. 타입은 number로 뜬다.
-    - 상수란 미리 정해져 있는 숫자로 원주율이나 중력가속도 등이 이에 속한다.
-
-    - JavaScript에서 상수를 사용할 때는 대소문자 구분이 완벽해야 한다.
+  - 정수와 실수 구분 하지 않음, 더 정확히는 정수 타입이 별도로 존재하지 않음.
+  - 정수 리터럴과 실수 리터럴 표현 시 범위가 다르다(단, 크게 문제가 되지는 않는다)
+  - 양수, 음수, 소수, e지수 표기(과학적 표기법), Infinity, -Infinity, NaN, 상수 전부 가능
   
-    - 파이썬과 달리 0으로 나눌 경우 에러를 발생시키는 것이 아니라 Infinity를 반환
-  
-    ```javascript
-  var x = 1  //var는 요즘은 쓰지 않지만 명시적 표기를 위해 적는다.
-    ```
+- NaN(Not a Number): 숫자가 아님을 표시하는 것으로 자신을 포함한 어떤 것과도 같지 않다.따라서 어떤 변수가 NaN인지는 `if (a==NaN)`으로 확인할 수 없고 `isNaN(a)`함수를 사용해야 한다. 반변에 undefined과 null는 동등연산자로 비교시 같다고 나온다. NaN은 자신과 일치하지 않는 유일한 값이다. 타입은 number로 뜬다.
+  - 상수란 미리 정해져 있는 숫자로 원주율이나 중력가속도 등이 이에 속한다.
 
-    
+  - JavaScript에서 상수를 사용할 때는 대소문자 구분이 완벽해야 한다.
 
-  - String: 큰 따옴표, 작은 따옴표로 생성
+  - 파이썬과 달리 0으로 나눌 경우 에러를 발생시키는 것이 아니라 Infinity를 반환
+
+  ```javascript
+var x = 1  //var는 요즘은 쓰지 않지만 명시적 표기를 위해 적는다.
+  ```
+
   
-    - JavaScript에는 char 데이터 타입이 없음
+
+- String: 큰 따옴표, 작은 따옴표로 생성
+
+  - JavaScript에는 char 데이터 타입이 없음
   - 문자열 리터럴은 따옴표로 둘러싸인 문자 집합이다.
-    - 이스케이프 시퀀스는 파이썬과 마찬가지로 \키를 쓴다.
-
-    ```javascript
+  - 이스케이프 시퀀스는 파이썬과 마찬가지로 \키를 쓴다.
+  
+  ```javascript
   var x = '문자열1'
-    var y = "문자열2"
-    ```
+  var y = "문자열2"
+  ```
   
   - Template Literal
   
-    ```javascript
-    //줄 바꿈: 따옴표가 아닌 ``를 사용
-    const x = `자바스크
-     립트`
-    console.log(x)
+  ```javascript
+  //줄 바꿈: 따옴표가 아닌 ``를 사용
+  const x = `자바스크
+   립트`
+  console.log(x)
   
-    out
-    자바스크
-       립트
-       
-    //문자열 내에 변수 사용: `${변수}`
-    const message1 = 'hi'
-    const message2 = `I said, ${message1}`
-    ```
+  out
+  자바스크
+     립트
+     
+  //문자열 내에 변수 사용: `${변수}`
+  const message1 = 'hi'
+  const message2 = `I said, ${message1}`
+  ```
   
-  - Boolean: 소문자 true,false(파이썬과 달리 소문자로 적는다)
+  - 문자열은 유사 배열이다.
+    - 유사배열: 배열처럼 인덱스를 통해 접근할 수 있는 데이터
+    - 이미 생성된 문자열의 일부 문자를 변경해도 반영되지 않는다(에러는 발생하지 않는다).
   
-    - 문자와 숫자 변환이 자동으로 이루어진다.
+  ```javascript
+  var str = 'String'
+  console.log(str[0])   //S
   
-    ```javascript
+  str[0] = 'D'
+  console.log(str)      //String
+  ```
+
+
+
+- Boolean: 소문자 true,false(파이썬과 달리 소문자로 적는다)
+
+  - 문자와 숫자 변환이 자동으로 이루어진다.
+  - 빈 문자열, null, undefined, 숫자 0은 false로 간주된다.
+
+  ```javascript
   var x = true
-    var y = false
-    ```
+  var y = false
   ```
-  
-  ```
-  
+
+
+
 - Empty Value: null, undefined
   
     - null: 어떠한 데이터 타입도 가지고 있지 않음, 변수에 아무 값이 담겨있지 않음, 의도적으로 변수에 값이 없다는 것을 명시하기 위해 사용
@@ -743,907 +744,136 @@
   - 둘의 타입은 다르다. 이 역시 JS 개발자들의 실수다
   
   ```javascript
-    var empty1 = null
-    var empty2 = undefined
-    
-    console.log(typeof(empty1))
+  var empty1 = null
+  var empty2 = undefined
+  
+  console.log(typeof(empty1))
   console.log(typeof(empty2))
-    
-    out
-    object
-    undefined
-  ```
-
-
-
-# 연산자
-
-- 할당 연산자
-
-  ```javascript
-  //2항 연산자: 피 연산자가 2개인 연산자, +, - * , / , =등
-  //JS에서의 +와 -
-  1+1       //2
-  '1'+1     //'11'
-  '1'+'1'   //'11'
-  1-1      //0
-  '1'-1    //0
-  '1'-'1'  //0
-  ```
-
-
-
-
-- 산술연산자: 숫자의 사칙연산과 응용연산
-
-
-    - 단항 산술 연산자
-
-  ```js
-  //단 항 산술 연산자: +,-,++,--
-  /*
-  "+","-":양수, 음수 변경 및 표현, 단, "+"는 음수를 양수로 변경하지 않는다.
-  숫자 형 문자열의 경우 숫자로 자동 형변환된다.
-  "++","--": 증가 연산자와 감소 연산자. 피연산자 앞에 오는지 뒤에 오는지에 따라 효과가 달라진다.
-  */
-  
-  var x = 5, result;
-  // 선대입 후증가 (Postfix increment operator)
-  result = x++;
-  console.log(result, x); // 5 6
-  
-  // 선증가 후대입 (Prefix increment operator)
-  result = ++x;
-  console.log(result, x); // 7 7
-  
-  // 선대입 후감소 (Postfix decrement operator)
-  result = x--;
-  console.log(result, x); // 7 6
-  
-  // 선감소 후대입 (Prefix decrement operator)
-  result = --x;
-  console.log(result, x); // 5 5 
-  
-  
-  let c = 0
-  c += 10
-  console.log(c)
-  c -= 3
-  console.log(c)
-  c++     //++는 +1을 해준다.
-  console.log(c)
-  c--		//--는 -1을 해준다.
-  console.log(c)
   
   out
-  10
-  7
-  8
-  7
-  ```
-
-
-    - 이항 산술 연산자
-    
-      - 자동형변환으로 피 연산자에 문자가 포함되어도 연산 가능
-
-  ```js
-  var a = '5',b=2
-  var str1='str1',str2='str2'
-  
-  //덧셈 연산자
-  //피 연산자 모두 숫자면 덧셈 연산을 수행하지만
-  //피 연산자 중 하나라도 문자열이면 피연산자가 연결된 문자열이 나온다.
-  //둘 다 숫자가 아닌 문자열일 경우에도 피연산자가 연결된 문자열이 나온다.
-  console.log(a+b)			//52
-  console.log(typeof(a+b))	//string
-  console.log(str1+str2)		//str1str2
-  console.log(typeof(str1+str2)) //string
-  
-  //피연산자가 숫자인 문자열이면 뺄셈을 수행, 숫자가 아닌 문자열이면 NaN을 반환
-  //덧셈을 제외한 모든 연산이 이와 동일
-  console.log(a-b)			//3
-  console.log(typeof(a-b))	//number
-  console.log(str1-str2)		//NaN
-  console.log(typeof(str1-str2))  //number
-  
-  console.log(a*b)			//10
-  console.log(typeof(a*b))	//number
-  console.log(str1*str2)		//NaN
-  console.log(typeof(str1*str2))	//number
-  
-  console.log(a/b)			//2.5
-  console.log(typeof(a/b))	//number
-  console.log(str1/str2)		//NaN
-  console.log(typeof(str1/str2))	//number
-  
-  console.log(a%b)			//1
-  console.log(typeof(a%b))	//number
-  console.log(str1%str2)		//NaN
-  console.log(typeof(str1%str2))	//number
-  ```
-
-  - 나눗셈 연산자
-
-  ```js
-  //피 연산자 모두가 정수라 할지라도 결과는 실수가 나올 수 있음(자바스크립트는 정수 타입이 별도로 존재하지 않음). 
-  //0으로 나누면 Infinity를 반환
-  var a=3,b=0
-  console.log(a/b) //Infinity
-  ```
-
-  - 나머지 연산자
-
-  ```js
-  //나머지를 결과값으로 취함
-  var a=5,b=2
-  console.log(a%b)  //1
-  
-  //0으로 나머지 연산을 하면 NaN을 반환
-  var a=3,b=0
-  console.log(a%b)  //NaN
-  ```
-
-
-
-
-- 비교 연산자
-
-  - 피연산자가 숫자일 경우 일반적인 상식대로 대소를 비교한다.
-
-  - 피연산자가 문자일 경우 문자 코드의 순서대로 크기를 비교한다. 따라서 대문자가 소문자보다 작다고 판단된다.
-
-  - 피연산자가 객체일 경우 객체를 숫자나 문자로 자동 변환하려고 시도하고 변환되지 않으면 false반환
-
-  ```javascript
-  console.log(3<2)
-  console.log(3>2)
-  console.log("가">"나")
-  console.log("a">"b")
-  
-  out
-  false
-  true
-  false   //가, a는 각기 나, b 보다 사전순으로 앞에 있으므로 더 작다고 본다.
-  false
-  ```
-
-
-
-
-- 동등 연산자, 일치 연산자
-
-  ```js
-  const a = 1
-  const b = '1'
-    
-  //동등 연산자
-  console.log(a==b)   //형 변환 결과 같아질 수 있으면 true를 반환
-    
-  //일치 연산자
-  console.log(a===b)  //python의 == 연산자와 동일
-    
-  out
-  true
-  false
-    
-    
-  
-  0==''  /*true*/
-  0=='0' /*true*/
-  ''=='0'/*false*/
-    
-  //삼단 논법에 따르면 마지막도 true여야 하지만 false가 출력된다.
-  //즉, 논리적으로 모순이 생길 수 있으므로 엄격하게 비교하는 ===를 쓰는 것이 좋다.
-  ```
-
-  
-
-- 논리 연산자(단축평가가 적용 된다)
-
-  ```javascript
-  //and 는 &&로 표현
-  console.log(true && false)
-  //or 는 ||로 표현
-  console.log(true || false)
-  //not 은 !로 표현
-  console.log(!true)
-  //true, false값이 아닌 값 앞에 !를 붙이면 해당 값은 true, false값 중 하나가 된다.
-  console.log("A") //A
-  console.log(!"A") //false, 본래 비어있지 않은 문자열은 true값이므로 부정은 false가 된다
-  console.log(!!"A") //true, false의 부정이므로 true가 된다.
-  //즉 !!는 boolean 타입이 아닌 값을 boolean 타입으로 바꿔주는 역할을 한다고 보면 된다.
-  
-  //단축평가
-  console.log(1 && false)
-  console.log(0 && false)
-  console.log(0 || false)
-  console.log(1 || false)
-  
-  
-  out
-  false
-  true
-  false
-  
-  false
-  0
-  false
-  1
-  ```
-
-
-
-
-
-- 삼항 연산자: 조건에 따라 어떤 값을 할당할지 결정
-
-  > ? 앞이 조건식, : 앞이 조건식이 참일 경우의 처리, : 뒤가 거짓을 경우의 처리 
-
-  ```javascript
-  const result = Math.Pi > 4 ? 'pi가 4보다 크다':'pi가 4보다 크지 않다'
-  console.log(result)
-  
-  out
-  pi가 4보다 크지 않다
-  
-  
-  //아래와 같이 쓸 수도 있다.
-  const name="C"
-  function nameState(name) {
-      return name.length > 2 ? true : false
-  }
-  console.log(nameState(name))
-  
-  out
-  false
-  ```
-
-
-
-
-
-
-
-# 제어문
-
-- 표현식
-
-  - 표현식
-    - 하나의 값으로 평가된다.
-    - 표현식은 하나의 값이 되기 때문에 다른 표현식의 일부가 되어 조금 더 복잡한 표현식을 구성할 수도 있다.
-
-  ```javascript
-  // 표현식
-  5 + 5  //10
-  // 5+5라는 표현식이 또 다른 표현식의 일부가 된다.
-  5 + 5 >8 //true
-  ```
-
-  - 표현식과 문의 차이
-    - 문이 자연어에서 완전한 문장이라면 표현식은 문을 구성하는 요소이다.
-    - 표현식은 그 자체로 하나의 문이 될 수도 있다.
-    - 표현식은 평가되어 값을 만들지만 그 이상의 행위는 할 수 없다. 
-    - 문은 var, function과 같은 선언 키워드를 사용하여 변수나 함수를 생성하기도 하고 if, for 문과 같은 제어문을 생성하여 프로그램의 흐름을 제어하기도 한다.
-
-  ```javascript
-  // 아래 자체가 표현식이지만 완전한 문이기도 하다.
-  a = 10; 
-  ```
-
-  
-
-
-
-- 조건문
-
-  - if, else if, else
-
-  ```javascript
-  let day = 7
-  let result
-  if (day===1){
-      result = '월요일'
-  }
-  else if (day===2){
-      result = '화요일'
-  }
-  else if (day===3) result='수요일'  
-  //중괄호 안에 들어갈 것이 한 줄이라면 위처럼 쓸수 있지만 가독성이 떨어져 쓰지 않는다.
-  .
-  .
-  .
-  else {
-      result='일요일'
-  }
-  ```
-
-  - switch
-
-  ```javascript
-  day = 2
-  switch (day) {
-      case 1:
-          result = '월요일'
-      case 2 :
-          result = '화요일'
-      case 3 :
-          result = '수요일'
-      default:
-          result = '일요일'
-  }
-  console.log(result)
-  
-  out
-  일요일
-  // 위의 경우 day를 어떻게 설정해도 일요일이 출력됨. 순서대로 위에서부터 찾으면서 내려오는데 맨 밑에 디폴트 값으로 일요일이 있으므로 항상 변수에 일요일이 담기게 된다. 따라서 아래와 같이 break를 적어줘야 한다.
-  
-  day = 2
-  switch (day) {
-      case 1:
-          result = '월요일'
-          break
-      case 2 :
-          result = '화요일'
-          break
-      case 3 :
-          result = '수요일'
-          break
-      default:
-          result = '일요일'
-          break
-  }
-  console.log(result)
-  
-  out
-  화요일
-  ```
-
-
-
-- 반복문
-
-  - while: ()안의 조건의 결과가 true이면 계속 실행하고 false면 멈춘다.
-
-  ```javascript
-  let num = 0
-  while (num<3) {
-      console.log(num++)
-  }
-  
-  out
-  0
-  1
-  2
-  
-  let num = 0
-  while (num<3) {
-      console.log(++num)
-  }
-  
-  out
-  1
-  2
-  3
-  ```
-
-  - for
-
-  ```javascript
-  /*
-  for문 구조
-  for(카운트 변수 초기화;제어 조건;카운트 변수 증가){
-  실행코드;
-  }
-  카운트 변수 초기화: 변수 선언과 함께 꼭 키워드 재할당 가능한 var나 let을 붙임
-  제어 조건: 카운트 변수에 대한 조건
-  변수 증가: ++,-- 사용
-  두 번째 실행부터는 변수 초기화 생략하고 실행
-  */
-  
-  for (let i=0;i<3;i++){
-      console.log(i)
-  }
-  
-  out
-  0
-  1
-  2
-  
-  //중첩도 가능하다.
-  //중첩된 for문에서 내부, 외부 for문 중 어떤 for문에 break를 걸지를 레이블 문을 통해 설정 가능하다(문서 참조).
-  for (let i=1;i<=6;i++){
-      for (let j=1;j<=6;j++){
-        if (i+j===6){
-          console.log([i,j])
-      }
-    }
-  }
-  
-  out
-  [1,5]
-  [2,4]
-  [3,3]
-  [4,2]
-  [5,1]
-  ```
-  
-  - for of
-  
-  ```js
-  const arr = ['a','b','c']
-  for (const n of arr){
-    console.log(n)
-  }
-    
-  out
-  a
-  b
-  c
-  ```
-  
-  - for in
-  
-  ```js
-  const fruits = {
-      'apple':2,
-      'banana':10,
-      'tomato':10,
-      'watermelon':2,
-  }
-  
-  //어차피 문자열이 올 것을 알고 있으므로 아래와 같이 문자열 안에 쓰지 않아도 된다.
-  const fruits = {
-      apple:2,
-      banana:10,
-      tomato:10,
-      watermelon:2,
-  }
-  
-  for (const fruit in fruits){
-      console.log(fruit,fruits[fruit])
-  }
-  
-  out
-  apple 2
-  banana 10
-  tomato 10
-  watermelon 2
-  ```
-  
-  - continue
-  
-  ```js
-  for (let i=0;i<4;i++){
-      if (i===3) continue
-      console.log(i)
-  }
-  
-  out
-  1
-  2
-  4
-  ```
-  
-  
-
-​    
-
-# 함수
-
-- Javascript의 객체는 1급 객체다.
-  - 변수에 저장할 수 있다.
-  - 함수의 리턴값이 될 수 있다.
-  - 함수의 인자가 될 수 있다.
-
-```javascript
-// 함수의 선언식
-// 인자 없이
-function f(){
-    return 10
-}
-console.log(f())
-
-out
-10
-
-//인자가 있을 때
-function f(a){
-    return 10+a
-}
-console.log(f(3))
-
-out
-13
-
-//디폴트값 설정
-function f(a=3){
-    return 10+a
-}
-console.log(f())
-
-out
-13
-
-
-
-//함수의 표현식
-//익명함수(파이썬의 lamda와 유사), 주로 한 번 쓰고 쓰지 않을 함수를 지정할때 사용
-const bar = function(a,b){ //함수의 이름이 존재X
-    return a+b
-}
-console.log(bar(10,20))  //변수로 함수를 실행시킨다.
-
-out
-30
-
-
-//함수명을 지정
-const bar1 = function bar2(a,b){  
-    //꼭 함수명을 변수명과 동일하게 할 필요는 없으나 일반적으로 동일하게 한다.		
-    return a+b
-}
-console.log(bar1(10,20))  //bar2로는 실행시킬 수 없다.
-
-out
-30
-
-
-//화살표 함수
-//화살표 함수는 함수의 선언식 & 표현식과 문법적으로 차이가 있고, 내부 동작도 다르다.
-//this를 사용할 경우에 차이가 존재한다.
-const ssum = (a,b) => {
-    return a+b
-}
-console.log(ssum(10,20))
-
-out
-30
-
-//매개변수가 1개일 경우 괄호를 안쓰는 것도 가능하다(그러나 괄호를 쓰는 것이 권장된다).
-const pprint = a => {
-    return a
-}
-
-// 중괄호 안에 들어가는 내용이 한 줄이면 중괄호 없이 가능하다
-const pprint = a => return a
-
-
-
-// 함수의 인자의 개수가 부족하거나 넘치거나 없어도 에러가 발생하지 않는다.
-function wrong(a,b){
-    console.log(a,b)
-}
-
-wrong()
-wrong(1)
-wrong(1,2,3)
-
-out
-undefined undefined  //입력을 안하면 에러가 아닌 undefined를 출력
-1 undefined //모자라면 받은 것만 출력
-1 2         //넘치면 필요한 만큼만 받는다.
-
-
-
-
-// rest parameter라는 python의 *args와 유사한 기능이 존재
-// *의 역할을 ...이 한다.
-function restOperator1(...numbers){
-    console.log(numbers)
-}
-
-restOperator1(1,2,3,4,5)
-
-out
-[1,2,3,4,5]
-
-function restOperator2(a,b,...numbers){
-    console.log(a,b,numbers)
-}
-
-restOperator2(1,2,3,4,5)
-
-out
-1 2 [3,4,5]
-
-
-
-//spead operator
-function spreadOperator(a,b,c){
-    console.log(a,b,c)
-}
-
-let numbers = [1,2,3]
-
-spreadOperator(numbers[0],numbers[1],numbers[2])
-spreadOperator(...numbers) //spreadOperator 위와 정확히 동일한 코드이다.
-//귀찮게 인덱스로 접근해서 넣어주지 않아도 ...을 쓰면 알아서 배열의 요소를 흩뿌려준다.
-
-out
-1 2 3
-1 2 3
-```
-
-
-
-
-
-
-# 자료구조
-
-- Array(파이썬의 리스트): 파이썬과 마찬가지로 동적(배열 크기가 정해져 있지 않음)으로 배열의 추가와 삭제가 가능
-  
-  - 참조형 데이터로 데이터 자체가 변수에 저장되는 것이 아니라 변수에는 해당 데이터를 찾기 위한 참조(주소)만 저장된다.
-  - 자바스크립트에서 배열은 객체이다.
-  
-  ```js
-  const arr = [0,1,2,3]
-  
-  
-  //배열인지 확인
-  Array.isArray(arr)  //true
-  
-  //인덱스 접근
-  console.log(arr[0],arr[3])
-  
-  out
-  0 3
-  
-  
-  // 맨 뒤에 추가
-  arr.push(500)
-  console.log(arr)
-  
-  out
-  [0,1,2,3,500]
-  
-  
-  //맨 앞에 추가
-  arr.unshift(100)
-  console.log(arr)
-  
-  out
-  [100,0,1,2,3,500]
-  
-  //맨 앞의 요소 삭제
-  arr.shift(100)
-  console.log(arr)
-  
-  out
-  100
-  [0,1,2,3,500]
-  
-  //가장 우측의 요소삭제 후 반환
-  console.log(arr.pop())
-  console.log(arr)
-  
-  out
-  500
-  [0,1,2,3]
-  
-  
-  //역순으로 재배열, 원본도 변한다
-  console.log(arr.reverse())
-  console.log(arr)
-  out
-  [3,2,1,0]
-  [3,2,1,0]
-  
-  
-  //포함 여부 확인
-  console.log(arr.includes(0))
-  console.log(arr.includes(10))
-  
-  out
-  true
-  false
-  
-  
-  //배열 요소 전체를 연결하여 생성한 문자열을 반환, 구분자(separator)는 생략 가능, 기본 구분자는 ','
-  console.log(arr.join())   //기본값은 ,
-  console.log(arr.join(':'))
-  console.log(arr.join(''))
-  
-  out
-  3,2,1,0
-  3:2:1:0
-  3210
-  
-  
-  //인자로 지정된 요소를 배열에서 검색하여 인덱스를 반환, 중복되는 요소가 있는 경우 첫번째 인덱스만 반환, 만일 해당하는 요소가 없는 경우, -1을 반환
-  console.log(arr.indexOf(0))
-  console.log(arr.indexOf(1))
-  
-  
-  //자바스크립트의 배열은 이상하게 작동한다.
-  //[1,111,11,222,22,2]를 정렬하면 [1,11,111,2,22,222]로 정렬된다. 문자열로 인식해서 맨 앞 글자만 보고 정렬하기 때문이다.
-  //원하는 대로 정렬 하기 위해서는 아래와 같이 해야 한다.
-  arr.sort((a,b) => a - b)
-  
-  //위 코드가 가능한 것 역시 Js의 이상한 사칙연산 때문이다.
-  //위의 이항 연산자 부분 참고
-  
-  
-  //배열 합치기
-  const a=[1,2,3]
-  const b=[4,5,6]
-  console.log(a.push(b))  //[1,2,3,[4,5,6]]
-  console.log(a+b)        //"1,2,34,5,6"
-  
-  console.log(a.concat(b))  //[1,2,3,4,5,6]
-  console.log([...a, ...b]) //[1,2,3,4,5,6]
-  const c = a.push(...b)    //[1,2,3,4,5,6]
-  //세 방법 중 어느 방법이 가장 나을지는 아래 사이트를 참고
-  //https://www.measurethat.net/Benchmarks/Show/4223/0/array-concat-vs-spread-operator-vs-push
-  
-  
-  
-  //복사
-  //얕은 복사
-  newNumbers = numbers      //numbers가 바뀌면 newNumbers도 바뀐다.
-  //깊은 복사
-  newNumbers = [...numbers] //newNumbers가 새로운 리스트가 된다.
-  ```
-  
-  - Array helper methods
-  
-    - filter: 원하는 요소 정리하여 새로운 배열 반환
-  
-    ```js
-    a = [1,2,3,4,5,6]
-    const b = a.filter((x) => {
-      return x%2==1  //결과가 true인 것만 b에 들어가게 된다.
-    })
-    console.log(b)
-    
-    
-    out
-    [1,3,5]
-    ```
-  
-    - forEach: 배열의 엘리먼트 하나하나 조작 시 사용, 엘리먼트 하나하나 콜 백 함수에 전달하여 처리
-  
-    - map: 배열 요소 하나 하나에 콜 백 함수 처리 후 새로운 배열 반환
-
-
-
-- 오브젝트(파이썬의 딕셔너리)
-  - 객체의 값은 이름과 값의 쌍(`{이름:값}`)으로 이루어져 있으며 이 쌍을 property라고 부른다.
-  - property는 어떠한 데이터 타입이라도 가능하다.
-  - property 값이 함수일 경우, 일반 함수와 구분하기 위해 method라 부른다.
-  
-```js
-  const me = {
-     name : '홍길동',  //오브젝트 안에서는 따옴표를 쓰지 않아도 된다.
-     'phone number':'01012345678',  //그러나 이처럼 띄어쓰기 등을 쓰고자 하면 따옴표 써야 한다.
-     electronics:{
-          phone:'galaxy s8',
-        	laptop:'samsung notebook 11',
-        	keyboards:['happyhacking','logitech']
-    	}
-    }
-  console.log(me.name)
-  console.log(me.electronics.keyboards[0])
-  console.log(me.height) //설정하지 않은 키를 입력하면
-    
-  out
-  홍길동
-  happyhacking
-  undefined  //undefined가 출력
-    
-  console.log(Object.keys(me))    //키만 배열로 반환
-  console.log(Object.values(me))  //value만 배열로 반환
-  console.log(Object.entries(me)) //key,value를 array에 넣어서 반환
-    
-  out
-  ["name", "phone number", "electronics"]
-  ["홍길동", "01012345678", {phone: "galaxy s8", laptop: "samsung notebook 11", keyboar...}]
-  [["name", "홍길동"], ["phone number", "01012345678"], ["electronics", {…}]]
-    
-    
-    
-  //오브젝트 리터럴
-  //키와 밸류가 같을 경우 하나만 적으면 된다.
-  const a = 1
-  const b = 2
-  const c = 3
-    
-  const abc = {
-      'a':a,
-      'b':b,
-      'c':c,
-  }
-  //위와 같이 쓰지 않고 아래와 같이 쓰는 것이 가능
-  const abc = {
-      a,
-      b,
-      c,
-  }
-  console.log(abc.a)
-    
-  out
-  1
-  
-  
-//메소드
-  var Person = {
-    // Person이라는 객체 내부에 위치한 sayHello라는 method
-      sayHello: function(){
-          console.log('Hello!')
-      }
-  }
-  ```
-  
-  
-  
-- JSON과 object의 치환
-
-  ```javascript
-  const color = {     //꼭 오브젝트가 아니라도 상관 없다.
-      red : '빨강',
-      blue : '파랑',
-      yellow : '노랑',
-  } 
-  
-  //object를 JSON으로 치환
-  const jsonData = JSON.stringify(color)
-  console.log(jsonData)
-  console.log(typeof jsonData)
-  
-  out
-  {"red":"빨강","blue":"파랑","yellow":"노랑"}
-  string
-  
-  
-  //JSON을 object로 치환
-  const parsedData = JSON.parse(jsonData)
-  console.log(parsedData)
-  console.log(typeof parsedData)
-  
-  out
-  {red: "빨강", blue: "파랑", yellow: "노랑"}
   object
+  undefined
   ```
 
 
 
+- symbol
 
+  - ES6에서 새롬게 추가된 타입
+  - 주로 이름의 충돌 위험이 없는 유일한 객체의 프로퍼티 키를 만들기 위해 사용한다.
+  - `Symbol()` 함수를 호출해 생성한다.
+  - 생성된 심볼 값은 다른 심볼 값들과 다른 유일한 심볼 값이다.
 
-# 예외처리
-
-- try, catch, finally를 사용하여 예외처리
-
-  ```js
-  try {
-  //정상이라면 이 코드는 아무런 문제없이 블록의 시작부터 끝까지 실행됨.
+  ```javascript
+  var k = Symbol('key')
+  console.log(typeof k)   //symbol
   
-  } catch(error) {
-  //이 블록 내부의 문장들은 오직 try 블록에서 예외가 발생할 경우에만 실행된다.
-  
-  } finally(){
-  //try 블록에서 일어난 일에 관계없이 무조건 실행될 코드가 위치한다.
-  }
+  var obj = {}
+  obj[k] = 'value'
+  console.log(obj         //{Symbol(key): "value"}
+  console.log(obj[k])     //value
   ```
 
-- throw는사용자 지정 에러를 지정하여 예외를 발생시킬 수 있게 해준다.
+## 타입 변환
+
+- 명시적 타입 변환
+
+  - 개발자에 의해 의도적으로 값의 타입을 변경하는 것
+  - 타입 캐스팅이라고도 한다.
+
+  ```javascript
+  var x = 123;
+  
+  var xStr = x.toString()
+  console.log(typeof xStr)  //string
+  ```
+
+  - 문자열 타입으로 변환
+    - String 생성자 함수를 new 연산자 없이 호출
+    - Object.prototype.toString 메소드를 사용
+
+  ```javascript
+  console.log(String(10))  	    //"10"
+  console.log(String(NaN)) 	    //"NaN"
+  
+  console.log((10).toString());   //"10"
+  console.log((NaN).toString());  //"NaN"
+  ```
+
+  - 숫자 타입으로 변환
+    - Number 생성자 함수를 new 연산자 없이 호출
+    - parseInt, parseFloat 함수를 사용(문자열만 변환 가능)
+    - 단항 연결 연산자를 이용
+
+  ```javascript
+  console.log(Number('10'));    //10
+  console.log(Number(true));    //1
+  
+  console.log(parseInt('10'));  //10
+  
+  console.log(+'10');           //10
+  console.log(+true);           //1
+  ```
+
+  - Boolean 타입으로 변환
+    - Boolean 생성자 함수를 new 연산자 없이 호출
+    - `! `부정 논리 연산자를 두번 사용
+
+  ```javascript
+  console.log(Boolean(1));     //true
+  console.log(Boolean(''));    //false
+  console.log(Boolean([]));    //true
+  
+  console.log(!!0);            //false
+  console.log(!!1);            //true
+  ```
+
+  
 
 
 
+- 암묵적 타입 변환
 
+  - 개발자의 의도와 무관하게 JS의 엔진에 의해 암묵적으로 타입이 자동으로 변환
+  - 타입 강제 변환이라고도 한다.
 
-# 정규표현식
+  ```javascript
+  var x = 123;
+  var xStr = x + ''
+  console.log(typeof xStr, xStr)  // string 123
+  
+  //변수 x의 값이 변경되지는 않는다.
+  console.log(x)					// 123
+  ```
 
-> https://poiemaweb.com/js-regexp
+  - 문자열 타입으로 변환
+    - `+` 연산자는 피연산자 중 하나 이상이 문자열이면 문자열 연결 연산자로 동작하여 결과값이 문자열이 된다는 점을 이용.
 
-- 닉네임, 비밀번호 검증을 위한 정규표현식이 존재
+  ```javascript
+  1+''              // "1"
+  NaN + ''          // "NaN"
+  Infinity + ''     // "Infinity"
+  true + ''         // "true"
+  null + ''         // "null"
+  undefined + ''    // "undefined"
+  (Symbol()) + ''     // TypeError: Cannot convert a Symbol value to a string
+  ({}) + ''           // "[object Object]"
+  (function(){}) + '' // "function(){}"
+  Array + ''          // "function Array() { [native code] }"
+  ```
 
+  - 숫자 타입으로 변환
+    - `+`를 제외한 산술 연산자는 숫자 값을 만드는 것이라는 점을 이용
+    - 단, 피연산자는 문맥 상 숫자 타입이어야 한다.
 
+  ```javascript
+  3 - '2'    //1
+  3 * '2'    //6
+  3 / '1'    //3
+  3 - 'one'  //NaN
+  ```
 
+  - Boolean 타입으로 변환
+    - 빈 문자열, 0, -0, NaN, null, undefined는 Falsy값(거짓으로 인식할 값)으로 false로 변환된다.
+    - 비어 있지 않은 문자열, 0이 아닌 숫자 등은 Truthy값(참으로 인식할 값)으로 true로 변환된다. 
 
-
-# 기타
-
-- 현재 페이지의 url을 가져오는 방법
-  - 현재 페이지의 url 전체 가져오기: `document.location.href` 또는 `document.URL`
-  - 현재 페이지 url의 쿼리문만 가져오기: `document.location.href.split("?")`
