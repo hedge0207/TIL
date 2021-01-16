@@ -98,12 +98,9 @@
       void save(Member member);
   
       Member findById(Long memberId);
+  }
+  ```
   
-  ```
-
-}
-  ```
-
   - db없이 데이터를 메모리상에 저장하기 위한 `MemoryMemberRepository.java` 생성
   
   ```java
@@ -113,7 +110,7 @@
   import java.util.Map;
   
   public class MemoryMemberRepository implements MemberRepository{
-  	
+  
       //임시 db의 역할을 할 Map을 생성
       private static Map<Long,Member> store = new HashMap<>();
   
@@ -125,41 +122,47 @@
       @Override
       public Member findById(Long memberId) {
           return store.get(memberId);
-    }
+      }
   }
   ```
-
+  
+  
+  
   - `MemberService.java`를 interface로 생성
 
-  ```java
-  package start.first.member;
-  
-  public interface MemberService {
-      void join(Member member);
-    Member findMember(Long memberId);
-  }
-  ```
+    ```java
+    package start.first.member;
+    
+    public interface MemberService {
+        void join(Member member);
+        Member findMember(Long memberId);
+    }
+    ```
+
+    
 
   - `MemberService.java`의 구현체인 `MemberServiceImpl.java`를 생성
 
-  ```java
-  package start.first.member;
-  
-  public class MemberServiceImpl implements MemberService{
-  
-      private final MemberRepository memberRepository = new MemoryMemberRepository();
-  
-      @Override
-      public void join(Member member) {
-          memberRepository.save(member);
-      }
-  
-      @Override
-      public Member findMember(Long memberId) {
-          return memberRepository.findById(memberId);
+    ```java
+    package start.first.member;
+    
+    public class MemberServiceImpl implements MemberService{
+    
+        private final MemberRepository memberRepository = new MemoryMemberRepository();
+    
+        @Override
+        public void join(Member member) {
+            memberRepository.save(member);
+        }
+    
+        @Override
+        public Member findMember(Long memberId) {
+            return memberRepository.findById(memberId);
+        }
     }
-  }
-  ```
+    ```
+
+    
 
 
 
@@ -604,7 +607,7 @@
 
 - 완전한 해결법
   - 누군가가 클라이언트인 `OrderServiceImpl`에 `DiscountPolicy`의 구현 객체를 대신 생성하고 주입해주어야 한다.
-  - 아래 관심사의 분리 파트 참조
+  - 관심사의 분리 참조
 
 
 

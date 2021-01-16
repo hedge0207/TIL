@@ -2,7 +2,7 @@
 
 ## 할당 연산자
 
-- 할다 연산자
+- 할당 연산자
 
   - 우항에 있는 피연산자의 평가 결과를 좌항에 있는 변수에 할당
 
@@ -34,9 +34,9 @@
 - 단항 산술 연산자
 
 
-  - "+","-":양수, 음수 변경 및 표현, 단, "+"는 음수를 양수로 변경하지 않는다.
-  - 숫자 형 문자열의 경우 숫자로 자동 형변환된다.
-  - "++","--": 증가 연산자와 감소 연산자. 피연산자 앞에 오는지 뒤에 오는지에 따라 효과가 달라진다.
+    - "+","-":양수, 음수 변경 및 표현, 단, "+"는 음수를 양수로 변경하지 않는다.
+    - 숫자 형 문자열의 경우 숫자로 자동 형변환된다.
+    - "++","--": 증가 연산자와 감소 연산자. 피연산자 앞에 오는지 뒤에 오는지에 따라 효과가 달라진다.
 
   ```javascript
   var x = 5, result;
@@ -73,6 +73,8 @@
   8
   7
   ```
+
+  
 
   
 
@@ -115,24 +117,20 @@
   console.log(str1%str2)		//NaN
   console.log(typeof(str1%str2))	//number
   ```
-
-
-    - 나눗셈 연산자
-
-        - 피 연산자 모두가 정수라 할지라도 결과는 실수가 나올 수 있음(자바스크립트는 정수 타입이 별도로 존재하지 않음). 
-        - 0으로 나누면 Infinity를 반환
-
+  
+  - 나눗셈 연산자
+    - 피 연산자 모두가 정수라 할지라도 결과는 실수가 나올 수 있음(자바스크립트는 정수 타입이 별도로 존재하지 않음). 
+    - 0으로 나누면 Infinity를 반환
+  
   ```javascript
   var a=3,b=0
   console.log(a/b) //Infinity
   ```
-
-
-    - 나머지 연산자
-
-        - 나머지를 결과값으로 취함
-        - 0으로 나머지 연산을 하면 NaN을 반환
-
+  
+  - 나머지 연산자
+    - 나머지를 결과값으로 취함
+    - 0으로 나머지 연산을 하면 NaN을 반환
+  
   ```javascript
   var a=5,b=2
   console.log(a%b)  //1
@@ -141,6 +139,10 @@
   var a=3,b=0
   console.log(a%b)  //NaN
   ```
+  
+  
+
+
 
   
 
@@ -512,7 +514,8 @@
   ```
 
   - for of
-
+  - 배열의 요소를 순회하기 위해 사용.
+  
   ```js
   const arr = ['a','b','c']
   for (const n of arr){
@@ -524,18 +527,15 @@
   b
   c
   ```
-
-  - for in
-
-  ```js
-  const fruits = {
-      'apple':2,
-      'banana':10,
-      'tomato':10,
-      'watermelon':2,
-  }
+```
   
-  //어차피 문자열이 올 것을 알고 있으므로 아래와 같이 문자열 안에 쓰지 않아도 된다.
+- for in
+    - 객체의 문자열 키(key)를 순회하기 위한 문법.
+    - 배열에는 사용하지 않는 것이 좋다.
+    - 배열은 순서를 보장하는 데이터 구조이지만 for in은 객체에 사용할 것을 염두했기에 순서를 보장하지 않기 때문이다.
+  
+  ```js
+  //객체
   const fruits = {
       apple:2,
       banana:10,
@@ -546,17 +546,31 @@
   for (const fruit in fruits){
       console.log(fruit,fruits[fruit])
   }
-  
-  out
+  /*
   apple 2
   banana 10
   tomato 10
   watermelon 2
-  ```
+  */
+  
+  
+  //배열
+  var lst = ['one', 'two', 'three']
+
+  for (var ldx in lst) {
+    console.log(idx+': '+lst[idx])
+  }
+  
+  /*
+  0: one
+  1: two
+  2: three
+  */
+```
 
   - continue
 
-  ```js
+```js
   for (let i=0;i<4;i++){
       if (i===3) continue
       console.log(i)
@@ -566,148 +580,7 @@
   1
   2
   4
-  ```
-
-  
-
-​    
-
-# 함수
-
-- Javascript의 객체는 1급 객체다.
-  - 변수에 저장할 수 있다.
-  - 함수의 리턴값이 될 수 있다.
-  - 함수의 인자가 될 수 있다.
-
-```javascript
-// 함수의 선언식
-// 인자 없이
-function f(){
-    return 10
-}
-console.log(f())
-
-out
-10
-
-//인자가 있을 때
-function f(a){
-    return 10+a
-}
-console.log(f(3))
-
-out
-13
-
-//디폴트값 설정
-function f(a=3){
-    return 10+a
-}
-console.log(f())
-
-out
-13
-
-
-
-//함수의 표현식
-//익명함수(파이썬의 lamda와 유사), 주로 한 번 쓰고 쓰지 않을 함수를 지정할때 사용
-const bar = function(a,b){ //함수의 이름이 존재X
-    return a+b
-}
-console.log(bar(10,20))  //변수로 함수를 실행시킨다.
-
-out
-30
-
-
-//함수명을 지정
-const bar1 = function bar2(a,b){  
-    //꼭 함수명을 변수명과 동일하게 할 필요는 없으나 일반적으로 동일하게 한다.		
-    return a+b
-}
-console.log(bar1(10,20))  //bar2로는 실행시킬 수 없다.
-
-out
-30
-
-
-//화살표 함수
-//화살표 함수는 함수의 선언식 & 표현식과 문법적으로 차이가 있고, 내부 동작도 다르다.
-//this를 사용할 경우에 차이가 존재한다.
-const ssum = (a,b) => {
-    return a+b
-}
-console.log(ssum(10,20))
-
-out
-30
-
-//매개변수가 1개일 경우 괄호를 안쓰는 것도 가능하다(그러나 괄호를 쓰는 것이 권장된다).
-const pprint = a => {
-    return a
-}
-
-// 중괄호 안에 들어가는 내용이 한 줄이면 중괄호 없이 가능하다
-const pprint = a => return a
-
-
-
-// 함수의 인자의 개수가 부족하거나 넘치거나 없어도 에러가 발생하지 않는다.
-function wrong(a,b){
-    console.log(a,b)
-}
-
-wrong()
-wrong(1)
-wrong(1,2,3)
-
-out
-undefined undefined  //입력을 안하면 에러가 아닌 undefined를 출력
-1 undefined //모자라면 받은 것만 출력
-1 2         //넘치면 필요한 만큼만 받는다.
-
-
-
-
-// rest parameter라는 python의 *args와 유사한 기능이 존재
-// *의 역할을 ...이 한다.
-function restOperator1(...numbers){
-    console.log(numbers)
-}
-
-restOperator1(1,2,3,4,5)
-
-out
-[1,2,3,4,5]
-
-function restOperator2(a,b,...numbers){
-    console.log(a,b,numbers)
-}
-
-restOperator2(1,2,3,4,5)
-
-out
-1 2 [3,4,5]
-
-
-
-//spead operator
-function spreadOperator(a,b,c){
-    console.log(a,b,c)
-}
-
-let numbers = [1,2,3]
-
-spreadOperator(numbers[0],numbers[1],numbers[2])
-spreadOperator(...numbers) //spreadOperator 위와 정확히 동일한 코드이다.
-//귀찮게 인덱스로 접근해서 넣어주지 않아도 ...을 쓰면 알아서 배열의 요소를 흩뿌려준다.
-
-out
-1 2 3
-1 2 3
 ```
-
 
 
 
@@ -715,8 +588,11 @@ out
 
 # 자료구조
 
-- Array(파이썬의 리스트): 파이썬과 마찬가지로 동적(배열 크기가 정해져 있지 않음)으로 배열의 추가와 삭제가 가능
+## Array
 
+- Array(파이썬의 리스트)
+
+  - 파이썬과 마찬가지로 동적(배열 크기가 정해져 있지 않음)으로 배열의 추가와 삭제가 가능
   - 참조형 데이터로 데이터 자체가 변수에 저장되는 것이 아니라 변수에는 해당 데이터를 찾기 위한 참조(주소)만 저장된다.
   - 자바스크립트에서 배열은 객체이다.
 
@@ -851,76 +727,270 @@ out
 
 
 
-- 오브젝트(파이썬의 딕셔너리)
-  - 객체의 값은 이름과 값의 쌍(`{이름:값}`)으로 이루어져 있으며 이 쌍을 property라고 부른다.
-  - property는 어떠한 데이터 타입이라도 가능하다.
-  - property 값이 함수일 경우, 일반 함수와 구분하기 위해 method라 부른다.
+## Object
 
-```js
-  const me = {
-     name : '홍길동',  //오브젝트 안에서는 따옴표를 쓰지 않아도 된다.
-     'phone number':'01012345678',  //그러나 이처럼 띄어쓰기 등을 쓰고자 하면 따옴표 써야 한다.
-     electronics:{
-          phone:'galaxy s8',
-        	laptop:'samsung notebook 11',
-        	keyboards:['happyhacking','logitech']
-    	}
-    }
-  console.log(me.name)
-  console.log(me.electronics.keyboards[0])
-  console.log(me.height) //설정하지 않은 키를 입력하면
-    
-  out
-  홍길동
-  happyhacking
-  undefined  //undefined가 출력
-    
-  console.log(Object.keys(me))    //키만 배열로 반환
-  console.log(Object.values(me))  //value만 배열로 반환
-  console.log(Object.entries(me)) //key,value를 array에 넣어서 반환
-    
-  out
-  ["name", "phone number", "electronics"]
-  ["홍길동", "01012345678", {phone: "galaxy s8", laptop: "samsung notebook 11", keyboar...}]
-  [["name", "홍길동"], ["phone number", "01012345678"], ["electronics", {…}]]
-    
-    
-    
-  //오브젝트 리터럴
-  //키와 밸류가 같을 경우 하나만 적으면 된다.
-  const a = 1
-  const b = 2
-  const c = 3
-    
-  const abc = {
-      'a':a,
-      'b':b,
-      'c':c,
-  }
-  //위와 같이 쓰지 않고 아래와 같이 쓰는 것이 가능
-  const abc = {
-      a,
-      b,
-      c,
-  }
-  console.log(abc.a)
-    
-  out
-  1
+- 자바스크립트는 객체 기반의 스크립트 언어이며 자바스크립트를 이루고 있는 거의 모든 것이 객체이다.
+
+  - 원시 타입을 제외한 나머지 값들은 모두 객체이다.
+  - object type을 객체 타입 또는 참조 타입이라 한다.
+    - 참조 타입은 객체의 모든 연산이 실제값이 아닌 참조값으로 처리됨을 의미한다.
+  - 객체는 프로퍼티를 변경, 추가, 삭제가 가능하므로 변경 가능(mutable)한 값이라 할 수 있다.
+    - 따라서 객체 타입은 동적으로 변화할 수 있으므로 어느 정도의 메모리 공간을 확보해야 하는지 예측할 수 없기 때문에 런타임에 메모리 공간을 확보하고 메모리의 힙 영역(Heap Segment)에 저장된다.
+    - 이에 반해 원시 타입은 값(value)으로 전달된다. 즉, 복사되어 전달된다. 이를 **pass-by-value**라 한다.
+
+  - **Pass-by-reference**
+    - 변수에 값 자체를 저장하고 있는 것이 아니라, 생성된 데이터의 참조값(address)를 저장하고 참조 방식으로 전달하는 것
+
   
+
   
-//메소드
-  var Person = {
-    // Person이라는 객체 내부에 위치한 sayHello라는 method
-      sayHello: function(){
-          console.log('Hello!')
+
+
+
+- JavaScript의 객체
+  - 키(key)와 값(value)로 구성된 프로퍼티들의 집합이다.
+  - 프로퍼티의 값으로 JS에서 사용할 수 있는 모든 값을 사용할 수 있다.
+  - JavaScript의 함수는 일급 객체이므로 값으로 취급할 수 있다. 따라서 프로퍼티 값으로 함수를 사용할 수도 있으며, 프로퍼티 값이 함수일 경우, 일반 함수와 구분하기 위해 **메서드**라 부른다.
+  - JS의 객체는 객체지향의 상속을 구현하기 위해 **프로토타입**이라고 불리는 객체의 프로퍼티와 메서드를 상속받을 수 있다.
+
+
+
+- 프로퍼티
+  - 프로퍼티는 프로퍼티 키(이름)와 프로퍼티 값으로 구성된다.
+  - 프로퍼티는 프로퍼티 키로 유일하게 식별할 수 있다. 즉, 프로퍼티 키는 프로퍼티를 식별하기 위한 식별자(identifier)다.
+  - 프로퍼티 키와 값의 명명 규칙
+    - 키: 빈 문자열을 포함하는 모든 문자열 또는  symbol 값
+    - 값: 모든 값
+    - 프로퍼티 키에 문자열이나 symbol값 이외의 값을 지정하면 암묵적으로 타입이 변환되어 문자열이 된다.
+    - 이미 존재하는 프로퍼티 키를 중복 선언하면 나중에 선언한 프로퍼티가 먼저 선언한 프로퍼티를 덮어쓴다.
+    - 표현식을 프로퍼티 키로 사용할수도 있다. 이 경우 표현식을 반드시 `[]`로 묶어야 한다.
+    - 예약어를 프로퍼티키로 사용하여도 에러가 발생하지는 않지만, 하지 않는 것이 좋다.
+  - 프로퍼티 키는 문자열이므로 본래 따옴표를 사용하여야 한다.
+    - 그러나 자바스크립트에서 사용 가능한 유효한 이름인 경우, 따옴표를 생략할 수 있다.
+    - 반대로 말하면 자바스크립트에서 사용 가능한 유효한 이름이 아닌 경우, 반드시 따옴표를 사용하여야 한다.
+    - `first_name`은 따옴표가 생략 가능하지만 `"first-name"`은 생략 불가능하다.
+
+
+
+- 객체 생성 방법
+
+  - Java와의 차이점
+    - Java와 같은 클래스 기반 객체 지향 언어는 클래스를 사전에 정의하고 필요한 시점에 new 연산자를 사용하여 인스턴스를 생성하는 방식으로 객체를 생성한다.
+    - JS는 프로토타입 기반 객체 지향 언어로서 클래스라는 개념이 없어, 별도의 객체 생성 방법이 존재한다.
+    - ECMAScript 6에서 새롭게 클래스가 도입되었다. 그러나  ES6의 클래스가 새로운 객체지향 모델을 제공하는 것이 아니며 클래스도 사실 함수이고 기존 프로토타입 기반 패턴의 문법적 설탕(Syntactic sugar)이다.
+  - 객체 리터럴
+    - 가장 일반적인 객체 생성 방식
+    - `{}`를 사용하여 객체를 생성하며 중괄호 내에 1개 이상의 프로퍼티를 기술하면 해당 프로퍼티가 추가된 객체를 생성할 수 있고 아무것도 기술하지 않으면 빈 객체가 생성된다.
+
+  ```javascript
+  var emptyObj = {}
+  console.log(typeof emptyObj)     //object
+  
+  var student = {
+      name: 'Cha',
+      gender: 'male',
+      sayHello: function () {
+          console.log('Hello! ' + this.name)
       }
   }
-```
+  console.log(typeof student)     //object
+  student.sayHello()              //Hello! Cha
+  ```
+
+  - Object 생성자 함수
+    - `new` 연산자와 Object 생성자 함수를 호출하여 빈 객체를 생성하고, 이후에 프로퍼티 또는 메서드를 추가하여 객체를 완성하는 방법
+    - 생성자(constructor) 함수: new 키워드와 함께 객체를 생성하고 초기화하는 함수를 말한다.
+    - 생성자 함수를 통해 생성된 객체를 인스턴스(instance)라 한다. 
+    - 자바스크립트는 Object 생성자 함수 이외에도 String, Number, Boolean, Array, Date, RegExp 등의 빌트인 생성자 함수를 제공한다.
+    - 일반 함수와 생성자 함수를 구분하기 위해 생성자 함수의 이름은 파스칼 케이스(PascalCase)를 사용하는 것이 일반적이다.
+    - 객체 리터럴 방식으로 생성된 객체는 결국 Object 생성자 함수로 객체를 생성하는 것을 단순화시킨 축약 표현이다.
+    - 개발자가 일부러 Object 생성자 함수를 사용해 객체를 생성해야 할 일은 거의 없다.
+
+  ```javascript
+  // 빈 객체 생성
+  var someone = new Object();
+  
+  // 프로퍼티 추가
+  someone.name = 'Cha';
+  someone.gender = 'male';
+  someone.sayHello = function () {
+    console.log('Hello! ' + this.name);
+  };
+  
+  console.log(typeof someone); // object
+  
+  someone.sayHello();          //Hello! Cha
+  ```
+
+  - 생성자 함수
+    - 위 두 방식으로 객체를 생성하는 것은 프로퍼티 값만 다른 여러 개의 객체를 생성할 때 불편하다.
+    - 생성자 함수를 사용하면 마치 객체를 생성하기 위한 템플릿(클래스)처럼 사용하여 프로퍼티가 동일한 객체 여러 개를 간편하게 생성할 수 있다.
+    - 일반 함수와 생성자 함수를 구분하기 위해 생성자 함수의 이름은 파스칼 케이스(PascalCase)를 사용하는 것이 일반적이다.
+    - 프로퍼티 또는 메서드명 앞에 기술한 `this`는 생성자 함수가 생성할 인스턴스를 가리킨다.
+    - this에 연결되어 있는 프로퍼티와 메서드는 `public`(외부에서 참조 가능)하다.
+    - 생성자 함수 내에서 선언된 일반 변수는 `private`(외부에서 참조 불가능)하다.
+
+  ```javascript
+  // 객체 리터럴 방식으로 생성
+  var student1 = {
+    name: 'Kim',
+    gender: 'male',
+    sayHello: function () {
+      console.log('Hello! ' + this.name)
+    }
+  }
+  
+  var student1 = {
+    name: 'Lee',
+    gender: 'female',
+    sayHello: function () {
+      console.log('Hello! ' + this.name)
+    }
+  }
+  
+  
+  //생성자 함수 방식으로 생성
+  function Student(name,gender) {
+      this.name = name
+      this.gender = gender
+      this.sayHello = function(){
+          console.log('Hello! ' + this.name)
+      }
+  }
+  // 인스턴스 생성
+  var student1 = new Student('Kim','male')
+  var student2 = new Student('Lee','female')
+  
+  
+  //public, private
+  function Person(name,gender) {
+      var address = 'Daejeon'
+      this.name = name
+      this.gender = gender
+      this.sayHello = function(){
+          console.log('Hello! ' + this.name)
+      }
+  }
+  
+  var person = new Person('Cha', 'male')
+  
+  console.log(person.name);     // Cha
+  console.log(person.address)   // undefined
+  ```
+
+  - 프로퍼티의 값으로 변수를 넣을 경우 키를 입력하지 않으면 `변수명 : 할당된 값`의 형태로 프로퍼티가 생성된다.
+
+  ```javascript
+  var first = 1
+  var second = 2
+  var third = 3
+  
+  const ordinal = {
+      first,
+      second,
+      third,
+  }
+  console.log(ordinal)  //{ first: 1, second: 2, third: 3 }
+  ```
 
   
 
-- JSON과 object의 치환
+- 객체 프로퍼티 접근
+
+  - 마침표 표기법
+    - 프로퍼티 키가 유효한 자바스크립트 이름인 경우에만 사용 가능
+  - 대괄호 표기법
+    - 프로퍼티 키가 유효한 자바스크립트 이름이 아닌 경우에도 사용 가능
+    - 대괄호 내에 들어가는 프로퍼티 이름은 반드시 문자열이어야 한다.
+
+  ```javascript
+  //프로퍼티 값 일기
+  var student = {
+      'last-name': 'Cha',
+      gender: 'male',
+      10:1000    //프로퍼티의 키로 온 숫자 10은 문자열 '10'으로 자동 변환 된다.
+  }
+  
+  console.log(student.last-name)      //error
+  console.log(student[last-name])     //error
+  console.log(student['last-name'])   //Cha
+  
+  console.log(student.gender)         //male
+  console.log(student[gender])        //error
+  console.log(student['gender'])      //male
+  
+  console.log(student.10)         //error
+  console.log(student[10])        //1000
+  console.log(student['10'])      //1000
+  ```
+
+  
+
+- 프로퍼티 값 갱신
+
+  - 객체가 소유하고 있는 프로퍼티에 새로운 값을 할당하면 프로퍼티 값은 갱신된다.
+
+  ```javascript
+  var student = {
+      name: 'Cha',
+      gender: 'male',
+  }
+  
+  student.name = 'Kim'
+  console.log(student.name) //Kim
+  ```
+
+
+
+- 프로퍼티 동적 생성
+
+  - 객체가 소유하고 있지 않은 프로퍼티 키에 값을 할당하면 하면 주어진 키와 값으로 프로퍼티를 생성하여 객체에 추가한다.
+
+  ```javascript
+  var student = {
+      name: 'Cha',
+      gender: 'male',
+  }
+  
+  student.age = 28
+  console.log(student.age)  //28
+  ```
+
+
+
+- 프로퍼티 삭제
+
+  - `delete` 연산자를 사용, 피연산자는 프로퍼티 키이다.
+
+  ```javascript
+  var student = {
+      name: 'Cha',
+      gender: 'male',
+  }
+  
+  delete student.name
+  console.log(student.name)  //undifined
+  ```
+
+  
+
+- 프로퍼티의 키, 값 조회
+
+  - 프로퍼티의 키, 값, 키와 값 쌍을 배열로 반환
+
+  ```javascript
+  var student = {
+      name: 'Cha',
+      gender: 'male',
+  }
+  console.log(Object.keys(student))      //[ 'name', 'gender' ]
+  console.log(Object.values(student))    //[ 'Cha', 'male' ]
+  console.log(Object.entries(student))   //[ [ 'name', 'Cha' ], [ 'gender', 'male' ] ]
+  ```
+
+
+
+- JSON과 객체의 치환
 
   ```javascript
   const color = {     //꼭 오브젝트가 아니라도 상관 없다.
@@ -951,42 +1021,3 @@ out
 
 
 
-
-
-# 예외처리
-
-- try, catch, finally를 사용하여 예외처리
-
-  ```js
-  try {
-  //정상이라면 이 코드는 아무런 문제없이 블록의 시작부터 끝까지 실행됨.
-  
-  } catch(error) {
-  //이 블록 내부의 문장들은 오직 try 블록에서 예외가 발생할 경우에만 실행된다.
-  
-  } finally(){
-  //try 블록에서 일어난 일에 관계없이 무조건 실행될 코드가 위치한다.
-  }
-  ```
-
-- throw는사용자 지정 에러를 지정하여 예외를 발생시킬 수 있게 해준다.
-
-
-
-
-
-# 정규표현식
-
-> https://poiemaweb.com/js-regexp
-
-- 닉네임, 비밀번호 검증을 위한 정규표현식이 존재
-
-
-
-
-
-# 기타
-
-- 현재 페이지의 url을 가져오는 방법
-  - 현재 페이지의 url 전체 가져오기: `document.location.href` 또는 `document.URL`
-  - 현재 페이지 url의 쿼리문만 가져오기: `document.location.href.split("?")`
