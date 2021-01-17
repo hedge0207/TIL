@@ -196,8 +196,18 @@
 ## 변수
 
 - 변수
+
   - 값을 저장할 때 사용하는 식별자를 의미한다.
   - 상자에 물건을 넣는 것으로 이해하면 쉽다.
+  - 실제 값이 저장되어 있는 것은 아니고 값이 저장된 메모리의 주소를 가리키고 있는 것이다.
+    - 메모리의 주소는 `id()`함수로 확인이 가능하다.
+
+  ```python
+  var = "Hello"
+  print(id(var))  # 2107048935088
+  ```
+
+  
 
 
 
@@ -537,7 +547,7 @@
 
 ### Boolean
 
-- True, False의 두 가지 종류가 있다.
+- True(참), False(거짓)의 두 가지 종류가 있다.
 
 
 
@@ -737,6 +747,7 @@
 
   - `.copy()`
     - 복사에는 얕은 복사와 깊은 복사가 있는데 `.copy()`를 사용하면 깊은 복사가 가능하다.
+    - `[:]`를 활용해도 깊은 복사가 가능하다.
 
   ```python
   # 얕은 복사
@@ -752,6 +763,226 @@
   lst2[0] = 9
   # 깊은 복사이기에 서로 다른 객체를 가리키고 있어 하나를 변경해도 다른 하나는 변경되지 않는다.
   print(lst1,lst2)  # [1, 2, 3] [9, 2, 3]
+  
+  # [:]를 활용한 깊은 복사
+  lst1 = [1,2,3]
+  lst2 = lst1[:]
+  lst2[0] = 9
+  print(lst1,lst2)  # [1, 2, 3] [9, 2, 3]
+  ```
+
+
+
+### Dictionary
+
+- 생성
+
+  - `dict()`생성자를 사용해 생성 가능하다.
+  - `{}`를 사용해 생성 가능하다.
+
+  ```python
+  dict1 = dict()
+  dict2 = {}
+  print(type(dict1))  # <class 'dict'>
+  print(type(dict2))  # <class 'dict'>
+  ```
+
+  
+
+- 딕셔너리의 특징
+
+  - 키(key)-값(value) 쌍을 요소로 갖는 자료형이다.
+  - 키는 중복이 불가능하다.
+    - 키를 중복으로 사용할 경우 하나의 키를 제외한 모든 중복된 키는 무시된다.
+  - 키는 변경 immutable 타입이어야 하며 값은 immutable과 mutable 모두 가능하다.
+    - 변경 불가능한 문자열이나 튜플 등은 키가 될 수 있다.
+    - 변경 가능한 리스트는 키가 될 수 없다.
+    - 값에는 딕셔너리를 포함한 모든 자료형이 올 수 있다.
+  - 순서가 없는 자료형으로 key를 통해 값에 접근해야 한다.
+  - 이미 입력된 값의 변경이 가능하다.
+  - 요소의 추가와 삭제가 가능하다.
+
+  ```python
+  # key에는 변경 불가능한 자료형이, 값에는 모든 자료형이 올 수 있다.
+  my_dict = {"취미":['축구','야구'],"이름":'홍길동',"나이":28,"가족":{"엄마":"김엄마","아빠":"홍아빠"}}
+  
+  # key를 통해 값에 접근할 수 있다.
+  print(my_dict['이름'])  	  # 홍길동
+  
+  # 변경이 가능하다.
+  my_dict['나이']=14
+  print(my_dict['나이']) 	  # 14 
+  
+  # 요소(키-값) 추가
+  my_dict["email"] = "email@email.com"
+  print(my_dict["email"])    # email@email.com
+  
+  
+  # 요소(키-값) 삭제
+  del my_dict['email']
+  print(my_dict)  # {'취미': ['축구', '야구'], '이름': '홍길동', '나이': 14, '가족': {'엄마': '김엄마', '아빠': '홍아빠'}}
+  ```
+
+
+
+- 딕셔너리 관련 함수
+
+  - `.keys()`: key를 리스트로 반환한다.
+
+  ```python
+  my_dict = {"취미":['축구','야구'],"이름":'홍길동',"나이":28}
+  print(my_dict.keys())  # dict_keys(['취미', '이름', '나이'])
+  ```
+
+  - `.values()`: 값을 리스트로 반환한다.
+
+  ```python
+  my_dict = {"취미":['축구','야구'],"이름":'홍길동',"나이":28}
+  print(my_dict.values())  # dict_values([['축구', '야구'], '홍길동', 28])
+  ```
+
+  - `.items()`: 키-값 쌍을 리스트로 반환한다.
+
+  ```python
+  my_dict = {"취미":['축구','야구'],"이름":'홍길동',"나이":28}
+  print(my_dict.items()) # dict_items([('취미', ['축구', '야구']), ('이름', '홍길동'), ('나이', 28)])
+  ```
+
+  - `.clear()`: 모든 요소 삭제
+
+  ```python
+  my_dict = {"취미":['축구','야구'],"이름":'홍길동',"나이":28}
+  my_dict.clear()
+  print(my_dict)  # {}
+  ```
+
+  - `.get()`: 키로 값 얻기
+    - 그냥 키로만 접근하는 것과의 차이는 존재하지 않는 키로 접근할 경우, 키로만 접근하면 error가 발생하지만,  `.get()`은 None을 반환한다는 것이다.
+
+  ```python
+  my_dict = {"취미":['축구','야구'],"이름":'홍길동',"나이":28}
+  print(my_dict['email'])		 # KeyError: 'email'
+  print(my_dict.get('email'))  # None
+  ```
+
+  
+
+### Set
+
+- 생성
+
+  - 다른 자료형들과 달리 set은 `set()` 생성자로만 생성할 수 있다.
+  - 반드시 문자열 또는 괄호로 묶어줘야 한다(괄호의 종류는 상관 없다).
+  - 비어있는 자료형도 생성 가능하다.
+
+  ```python
+  my_set1 = set({1,2,3})
+  my_set2 = set("Hello!")
+  my_set3 = set()
+  
+  print(type(my_set1))  # <class 'set'>
+  print(type(my_set2))  # <class 'set'>
+  print(my_set1)		  # {1, 2, 3}
+  print(my_set2)		  # {'l', '!', 'o', 'e', 'H'}
+  print(my_set3)        # set()
+  ```
+
+  
+
+- Set(집합) 자료형의 특징
+
+  - 중복을 허용하지 않는다.
+  - 순서가 없다.
+
+  ```python
+  my_set = set("Hello!")
+  
+  print(my_set2)		  # {'l', '!', 'o', 'e', 'H'}
+  # 중복을 허용하지 않기에 두 번 들어간 l은 하나만 들어가게 된다.
+  # 순서가 없기에 순서대로 들어가지 않는다.
+  ```
+
+  
+
+- 교집합, 합집합, 차집합 구하기
+
+  ```python
+  my_set1 = set([1,2,3])
+  my_set2 = set([3,4,5])
+  
+  # 교집합
+  print(my_set1 & my_set2)				# {3}
+  print(my_set1.intersection(my_set2))	# {3}
+  
+  # 합집합
+  print(my_set1 | my_set2)				# {1, 2, 3, 4, 5}
+  print(my_set1.union(my_set2))			# {1, 2, 3, 4, 5}
+  
+  # 차집합
+  print(my_set1-my_set2)					# {1, 2}
+  print(my_set1.difference(my_set2))		# {1, 2}
+  print(my_set2-my_set1)					# {4, 5}
+  print(my_set2.difference(my_set1))		# {4, 5}
+  ```
+
+  
+
+- 집합 관련 함수들
+
+  - `.add()`: 요소를 1개 추가한다.
+
+  ```python
+  my_set = set([1,2,3])
+  my_set.add(4)
+  print(my_set)   # {1, 2, 3, 4}
+  ```
+
+  - `.update()`: 요소 여러 개 추가하기
+
+  ```python
+  my_set = set([1,2,3])
+  my_set.update([4,5,6])
+  print(my_set)   # {1, 2, 3, 4, 5, 6}
+  ```
+
+  - `.remove()`: 특정 요소 제거하기
+
+  ```python
+  my_set = set([1,2,3])
+  my_set.remove(2)
+  print(my_set)   # {1, 3}
+  ```
+
+  
+
+## 자료형의 변경
+
+- `str()`, `int()`, `float()`, `bool()` 등의 함수를 사용해서 변경하면 된다.
+
+
+
+- 주의점
+
+  - `int()`의 경우 숫자가 아닌 것을 숫자로 변환할 수 없으며, 소수점이 있는 숫자 형식의 문자열을 정수형으로 변환할 수 없다.
+  - 소수점이 없는 숫자 형식의 문자열은 정수형으로 변환이 가능하다.
+  - 소수점이 있든 없든 숫자 형식이기만 하면 실수형으로 변환이 가능하다.
+  - 변환 함수는 변환된 값을 반환할 뿐 실제로 자료형을 변경시키는 것은 아니다.
+
+  ```python
+  # 숫자 형식인 문자열의 정수와 실수 변환
+  chr = "1"
+  print(type(int(chr)))		# <class 'int'>
+  print(type(float(chr)))		# <class 'float'>
+  
+  # 변환 함수는 변환된 값을 반환만 할 뿐이다.
+  var = True
+  print(type(str(var)))	# <class 'str'>
+  print(type(var))		# <class 'bool'>
+  
+  # 아래와 같이 재할당 해주거나 다른 변수에 담아서 사용해야 한다.
+  var = True
+  var = str(var)
+  print(type(var))		# <class 'str'>
   ```
 
   

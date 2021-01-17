@@ -34,9 +34,9 @@
 - 단항 산술 연산자
 
 
-    - "+","-":양수, 음수 변경 및 표현, 단, "+"는 음수를 양수로 변경하지 않는다.
-    - 숫자 형 문자열의 경우 숫자로 자동 형변환된다.
-    - "++","--": 증가 연산자와 감소 연산자. 피연산자 앞에 오는지 뒤에 오는지에 따라 효과가 달라진다.
+  - `+`,`-`: 양수, 음수 변경 및 표현, 단, "+"는 음수를 양수로 변경하지 않는다.
+  - 숫자 형 문자열의 경우 숫자로 자동 형변환된다.
+  - `++`,`--`: 증가 연산자와 감소 연산자. 피연산자 앞에 오는지 뒤에 오는지에 따라 효과가 달라진다.
 
   ```javascript
   var x = 5, result;
@@ -73,6 +73,8 @@
   8
   7
   ```
+
+  
 
   
 
@@ -201,42 +203,6 @@
   //삼단 논법에 따르면 마지막도 true여야 하지만 false가 출력된다.
   //즉, 논리적으로 모순이 생길 수 있으므로 엄격하게 비교하는 ===를 쓰는 것이 좋다.
   ```
-
-  
-
-- 논리 연산자(단축평가가 적용 된다)
-
-  ```javascript
-  //and 는 &&로 표현
-  console.log(true && false)
-  //or 는 ||로 표현
-  console.log(true || false)
-  //not 은 !로 표현
-  console.log(!true)
-  //true, false값이 아닌 값 앞에 !를 붙이면 해당 값은 true, false값 중 하나가 된다.
-  console.log("A") //A
-  console.log(!"A") //false, 본래 비어있지 않은 문자열은 true값이므로 부정은 false가 된다
-  console.log(!!"A") //true, false의 부정이므로 true가 된다.
-  //즉 !!는 boolean 타입이 아닌 값을 boolean 타입으로 바꿔주는 역할을 한다고 보면 된다.
-  
-  //단축평가
-  console.log(1 && false)
-  console.log(0 && false)
-  console.log(0 || false)
-  console.log(1 || false)
-  
-  
-  out
-  false
-  true
-  false
-  
-  false
-  0
-  false
-  1
-  ```
-
 
 
 
