@@ -13,17 +13,59 @@
 - Linux
 - 캐싱
 - 소프트웨어 테스팅
+- 쿠키, 세션, 웹 스토리지, IndexedDB
+
+<br/>
+
+## [컴퓨터 공학 전공 정리_part1](https://github.com/hedge0207/TIL/blob/master/CS/%EC%BB%B4%ED%93%A8%ED%84%B0%20%EA%B3%B5%ED%95%99%20%EC%A0%84%EA%B3%B5%20%EC%A0%95%EB%A6%AC_part1.md)
+
+- 컴퓨터 프로그래밍 기초
 
 
+<br/>
 
-## [소프트웨어 공학 전공 정리](https://github.com/hedge0207/TIL/blob/master/CS/%EC%BB%B4%ED%93%A8%ED%84%B0%20%EA%B3%B5%ED%95%99%20%EC%A0%84%EA%B3%B5%20%EC%A0%95%EB%A6%AC.md)
+## [컴퓨터 공학 전공 정리_part2](https://github.com/hedge0207/TIL/blob/master/CS/%EC%BB%B4%ED%93%A8%ED%84%B0%20%EA%B3%B5%ED%95%99%20%EC%A0%84%EA%B3%B5%20%EC%A0%95%EB%A6%AC_part2.md)
 
 - 소프트웨어의 이해
-
 - 소프트웨어 개발 생명 주기(SDLC, System Development Life Cycle)
 - 소프트웨어 개발 단계
+  - 프로세스
+  - 소프트웨어 개발 계획(무엇을 만들 것인가)
+  - 소프트웨어 설계(어떻게 만들 것인가)/구현/테스트
+    - 설계
+    - 구현
+    - 테스트
+- 소프트웨어 품질
+- 프로젝트 관리
 
+<br/>
 
+## [Database_part1](https://github.com/hedge0207/TIL/blob/master/CS/Database_part1.md)
+
+- 데이터 베이스의 기본 개념
+  - DBMS
+  - 데이터베이스 설계
+- 데이터 모델링
+  - 데이터 모델
+    - 개념적 데이터 모델
+    - 논리적 데이터 모델
+- 데이터베이스의 언어, SQL
+- 정규화
+  - 정규형
+
+<br/>
+
+## [Database_part2](https://github.com/hedge0207/TIL/blob/master/CS/Database_part2.md)
+
+- 트랜잭션
+- 보안과 권한 관리
+- 데이터 베이스 응용 기술
+  - 객체 지향 데이터 베이스
+  - 분산 데이터베이스 시스템
+  - 웹 데이터베이스
+  - 데이터 웨어하우스
+
+<br/>
 
 ## [최신 IT 기술](https://github.com/hedge0207/TIL/blob/master/CS/%EC%B5%9C%EC%8B%A0%20IT%20%EA%B8%B0%EC%88%A0%20%EC%A0%95%EB%A6%AC.md)
 
@@ -31,15 +73,27 @@
 - 블록체인
 - 인공지능
 
-
+<br/>
 
 ## [IT 기술 용어](https://github.com/hedge0207/TIL/blob/master/CS/IT%20%EA%B8%B0%EC%88%A0%20%EC%9A%A9%EC%96%B4.md)
 
+<br/>
 
+## [브라우저는 어떻게 동작하는가](https://github.com/hedge0207/TIL/blob/master/CS/%EB%B8%8C%EB%9D%BC%EC%9A%B0%EC%A0%80%EB%8A%94%20%EC%96%B4%EB%96%BB%EA%B2%8C%20%EB%8F%99%EC%9E%91%ED%95%98%EB%8A%94%EA%B0%80.md) 
+
+- 브라우저
+- 렌더링 엔진
+- 파싱과 DOM 트리 구축
+- 배치
+- 그리기
+
+<br/>
+
+<br/>
 
 # React
 
-[React Tutorial](https://github.com/hedge0207/TIL/blob/master/React/React_tutorial.md) 
+## [React Tutorial](https://github.com/hedge0207/TIL/blob/master/React/React_tutorial.md) 
 
 - React란
 - JSX 소개
@@ -47,9 +101,9 @@
 - Component와 Props
 - State와 Lifecycle
 
+<br/>
 
-
-
+<br/>
 
 # Vue
 
@@ -59,7 +113,7 @@
 - Vue 라이프 사이클
 - Vue 프로젝트
 
-
+<br/>
 
 ## [Vue.js 심화](https://github.com/hedge0207/TIL/blob/master/Vue/Vue_js%EC%8B%AC%ED%99%94.md)
 
@@ -71,13 +125,13 @@
 - 이벤트 버스
 - 기타 팁
 
-
+<br/>
 
 ## [Vue 배포](https://github.com/hedge0207/TIL/blob/master/Vue/Vue_%EB%B0%B0%ED%8F%AC.md)
 
 - 배포
 
-
+<br/>
 
 ## [Vuex](https://github.com/hedge0207/TIL/blob/master/Vue/Vuex.md)
 
@@ -85,9 +139,9 @@
 - Vuex로 사용자 인증 구현
 - Vuex로 게시글 생성 및 조회 구현
 
+<br/>
 
-
-
+<br/>
 
 # Django
 
@@ -103,7 +157,7 @@
 - 정적 파일 관리
 - form
 
-
+<br/>
 
 ## [django part2](https://github.com/hedge0207/TIL/blob/master/django/django_part2.md)
 
@@ -114,7 +168,7 @@
 - 일대다 관계
 - 다대다 관계
 
-
+<br/>
 
 ## [django part3](https://github.com/hedge0207/TIL/blob/master/django/django_part3.md)
 
@@ -132,9 +186,9 @@
   - Gravartar
   - faker
 
+<br/>
 
-
-
+<br/>
 
 # Java
 
@@ -150,7 +204,7 @@
   - 조건문
   - 반복문
 
-
+<br/>
 
 ## [java part2](https://github.com/hedge0207/TIL/blob/master/java/java_part2.md)
 
@@ -164,7 +218,7 @@
 - 패키지
 - 인터페이스
 
-
+<br/>
 
 ## [java part3](https://github.com/hedge0207/TIL/blob/master/java/java_part3.md)
 
@@ -175,9 +229,9 @@
   - 파일 읽기
 - 패키지
 
+<br/>
 
-
-
+<br/>
 
 # Python
 
@@ -191,9 +245,13 @@
 - 운영체제 조작
 - 모듈
 
+<br/>
 
+<br/>
 
+<br/>
 
+<br/>
 
 # Spring
 
@@ -269,9 +327,9 @@
     - request 스코프 개발
     - 스코프와 프록시
 
+<br/>
 
-
-
+<br/>
 
 # 알고리즘
 
@@ -314,27 +372,87 @@
 - 문제 풀면서 알게 된 것들
 - 팁
 
+<br/>
 
-
-
+<br/>
 
 # 웹
 
 ## [HTML](https://github.com/hedge0207/TIL/blob/master/%EC%9B%B9/HTML.md)
 
+- HTML이란
+- HTML 구조
+  - 요소
+  - head
+  - 표
+  - 서식
+
+<br/>
+
 ## [CSS](https://github.com/hedge0207/TIL/blob/master/%EC%9B%B9/CSS.md)
 
-## [JS 기초](https://github.com/hedge0207/TIL/blob/master/%EC%9B%B9/JS%EA%B8%B0%EC%B4%88.md)
+- 기초
+- 선택자
+- 세부속성
+- Box Model
+- 정렬
+- 고급기능
 
-## [JS 심화](https://github.com/hedge0207/TIL/blob/master/%EC%9B%B9/JS%EC%8B%AC%ED%99%94.md)
+<br/>
+
+## [JavaScript_part1](https://github.com/hedge0207/TIL/blob/master/%EC%9B%B9/JavaScript_part1.md)
+
+- 브라우저 & JS의 역사
+- 소개
+- 기초
+- 변수의 선언
+- 타입
+  - 기본 데이터 타입
+  - 타입 변환
+
+<br/>
+
+## [JavaScript_part2](https://github.com/hedge0207/TIL/blob/master/%EC%9B%B9/JavaScript_part2.md)
+
+- 연산자
+  - 할당 연산자
+  - 산술 연산자
+  - 비교 연산자
+  - 그 외 연산자
+- 제어문
+- 자료구조
+  - Array
+  - Object
+
+<br/>
+
+## [JavaScript_part3](https://github.com/hedge0207/TIL/blob/master/%EC%9B%B9/JavaScript_part3.md)
+
+- 함수
+- 예외처리
+- 정규표현식
+- 기타
+
+<br/>
 
 ## [IndexedDB](https://github.com/hedge0207/TIL/blob/master/%EC%9B%B9/IndexedDB.md)
 
+- 개요
+- 사용
+  - IndexedDB를 사용 가능한지 체크하기
+  - 데이터베이스 생성하기
+  - 데이터 추가, 조회, 수정, 삭제하기
+
+<br/>
+
 ## [EmailJs](https://github.com/hedge0207/TIL/blob/master/%EC%9B%B9/Emailjs.md)
 
+- 코딩 전 설정 사항
+- 코딩하기
 
+<br/>
 
-
+<br/>
 
 # etc
 
