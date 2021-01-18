@@ -218,3 +218,538 @@
 
 # 모듈
 
+- 모듈
+  - 함수나 변수 또는 클래스를 모아 놓은 파일
+  - 다른 파이썬 프로그램에서 불러와 사용할 수 있게끔 만든 파이썬 파일이라고도 할 수 있다.
+
+
+
+- 모듈 사용하기
+
+  - 모듈 생성하기
+
+  ```python
+  # module1.py
+  def hello():
+      return "Hello!"
+  
+  def plus(a,b):
+      return a+b
+  ```
+
+  - 모듈 불러오기
+    - `import`를 통해 불러온 후 사용한다.
+    - 특정한 함수, 클래스, 변수만 불러오고 싶으면 `from`을 사용한다.
+    - 모든 것을 불러오고 싶다면 `from 모듈명 import *`와 같이 적으면 된다.
+    - `as`를 사용하여 이름을 직접 정하는 것도 가능하다.
+
+  ```python
+  # pract.py
+  import module1
+  
+  print(module1.hello())		# Hello!
+  print(module1.plus(4,5))	# 9
+  ```
+
+  ```python
+  from module1 import hello, plus
+  # from module1 import * 와 위 문장은 같다.
+  
+  print(hello())	# Hello!
+  ```
+
+  
+
+- `if__name__=="__main__"`
+
+  - `module1.py`를 아래와 같이 수정하면
+
+  ```python
+  # module1.py
+  def hello():
+      return "Hello!"
+  
+  def plus(a,b):
+      return a+b
+  
+  print(hello())
+  print(plus(4,2))
+  ```
+
+  -  `import`할 때 print문이 실행되는 문제가 생긴다.
+
+  ```python
+  from module1 import hello
+  
+  # Hello!
+  # 6
+  ```
+
+  - `if__name__=="__main__"`을 사용하면 위와 같은 문제를 해결할 수 있다.
+    - 이제 `module1.py`에서 실행하면 `if__name__=="__main__"` 아래의 문장이 실행되고
+    - import 만으로는 실행되지 않는다.
+
+  ```python
+  # module1.py
+  def hello():
+      return "Hello!"
+  
+  def plus(a,b):
+      return a+b
+  
+  if __name__=="__main__":
+      print(hello())
+      print(plus(4,2))
+  ```
+
+  - `__name__`
+    - Python 내부적으로 사용하는 특별한 변수 이름이다.
+    - 만일 직접 `module1.py` 파일을 실행할 경우, `module1.py`의 `__name__`에는 `__main__` 값이 저장된다.
+    - 하지만 다른 파이썬 셸이나 다른 Python 모듈에서 `module1.py`을 `import` 할 때에는 `__name__` 변수에는 `module1.py`의 모듈 이름 값 `module1`가 저장된다.
+
+
+
+- 모듈을 불러오는 또 다른 방법
+
+  - 모듈이 있는 폴더로 실행 파일을 옮기지 않고 `sys`를 사용해 모듈을 불러올 수 있다.
+  - `sys.path`는 python 라이브러리가 설치되어 있는 라이브러리를 보여 준다. 만약 파이썬 모듈이 위 디렉토리에 들어 있다면 모듈이 저장된 디럭토리로 이동할 필요 없이 바로 불러서 사용할 수 있다.
+
+  ```python
+  import sys
+  
+  print(sys.path)
+  """
+  ['', 'C:\\Windows\\SYSTEM32\\python37.zip', 'c:\\Python37\\DLLs', 
+  'c:\\Python37\\lib', 'c:\\Python37', 'c:\\Python37\\lib\\site-packages', 
+  'C:/doit/mymod']
+  """
+  ```
+
+  - 모듈이 위치한 경로가 `D:\`일 경우
+    - 명령 프롬프트에서는 `/`, `\` 둘 다 사용가능하다.
+    - 소스코드에서는 반드시 `/` 또는 `\\`를 사용해야 한다.
+
+  ```python
+  import sys
+  sys.path.append("D:/")
+  
+  import module1
+  print(module1.hello())  # Hello!
+  ```
+
+  - 혹은 `	PYTHONPATH`환경 변수를 사용하는 방법도 있다.
+
+  ```bash
+  $ set PYTHON=D:/
+  ```
+
+  
+
+
+
+
+
+# 패키지
+
+- 패키지
+
+  - python 모듈을 계층적(디렉토리 구조)으로 관리할 수 있게 해주는 것
+  - 아래 구조에서 
+    - person은 패키지 이름
+    - person, family, school, company는 디렉터리 이름
+    - 확장자가 .py 인 파일은 파이썬 모듈이다.
+
+  ```python
+  person/
+  	__init__.py
+      family/
+      	__init__.py
+          father.py
+          husband.py
+      school/
+      	__init__.py
+      	student.py
+      company/
+      	__init__.py
+          employee.py
+  ```
+
+
+
+- 생성하기
+
+  - 위 구조를 바탕으로 아래 파일들을 생성한다.
+
+  ```python
+  D:/test/person/__init__.py
+  D:/test/person/company/__init__.py
+  D:/test/person/company/employee.py
+  D:/test/person/family/__init__.py
+  D:/test/person/family/husband.py
+  ```
+
+  - employee.py 
+
+  ```python
+  def work():
+      print("working")
+  ```
+
+  - husband.py
+
+  ```python
+  def clean():
+      print("cleaning")
+  ```
+
+  - 환경 변수에 경로 추가하기
+
+  ```bash
+  set PYTHONPATH=D:/test
+  ```
+
+  
+
+- 사용하기
+
+  - 반드시 명령 프롬프트에서  파이썬 인터프리터를 실행하여 진행해야 한다. IDLE 셸이나 VSCode의 파이썬 셸에서는 에러가 발생한다.
+
+  ```bash
+  # 환경 변수를 추가 하고
+  set PYTHONPATH=D:/test
+  # python 인터프리터를 실행한다.
+  python
+  ```
+
+  - 패키지 안의 함수 실행하기
+
+  ```python
+  # 첫 번째 방법
+  >>> import person.company.employee
+  >>> person.company.employee.work()
+  working
+  
+  # 두 번째 방법
+  >>> from person.company import employee
+  >>> employee.work()
+  working
+  
+  # 세 번째 방법
+  >>> from person.company.employee import work
+  >>> work()
+  working
+  
+  # 아래 방법은 불가능하다.
+  # 아래 방법은 game 디렉토리의 모듈 또는 game 디렉토리의 __init__.py에 정의한 것만 참조할 수 있다.
+  >>> import person
+  >>> person.company.employee.work()
+  
+  # 아래 방법도 불가능하다.
+  # 도트 연산자(.)를 사용해서 import a.b.c처럼 import할 때 가장 마지막 항목인 c는 반드시 모듈 또는 패키지여야만 한다.
+  >>> import person.company.employee.work  # import 자체가 안된다.
+  ```
+
+  
+
+- `__init__.py`
+
+  - 해당 디렉터리가 패키지의 일부임을 알려주는 역할.
+  - 패키지에 포함된 디렉터리에 `__init__.py` 파일이 없다면 패키지로 인식되지 않는다.
+    - python3.3 버전부터는 `__init__.py` 파일이 없어도 패키지로 인식한다.
+  - 아래 예시에서 `*`를 사용하여 모든 것을 import했음에도 `work`가 정의되지 않았다는 에러가 뜬다.
+
+  ```python
+  >>> from person.company import *
+  >>> employee.work()  # NameError: name 'employee' is not defined
+  ```
+
+  - 특정 디렉터리의 모듈을 `*`를 사용하여 import할 때에는 다음과 같이 해당 디렉터리의 `__init__.py` 파일에 `__all__` 변수를 설정하고 import할 수 있는 모듈을 정의해 주어야 한다.
+    - `from person.company.employee import *`는 `__all__`과 상관 없이 모두 import 된다.
+    - `from a.b.c import *`에서 c가 모듈인 경우에는 `__all__`과 무관하게 모두 import 된다.
+
+  ```python
+  # D:/test/person/company/__init__.py
+  __all__ = ['employee']
+  ```
+
+  - 이제 다시 실행하면 이상 없이 실행되는 것을 확인할 수 있다.
+
+  ```python
+  >>> from person.company import *
+  >>> employee.work()
+  working
+  ```
+
+  
+
+- relative 패키지
+
+  - 만약 한 디렉토리의 모듈이 다른 디렉토리의 모듈을 사용하고 싶다면 다음과 같이 수정하면 된다.
+  - `D:/test/person/company/employee.py` 모듈이 `D:/test/person/family/husband.py`의 모듈을 사용하고 싶다면
+
+  ```python
+  # employee.py
+  from person.family.husband import clean
+  
+  def work():
+      print("working")
+      clean()
+  ```
+
+  - 이제 실행해보면 잘 실행되는 것을 확인 가능하다.
+
+  ```python
+  >>> from person.company.employee import work
+  >>> work()
+  working
+  cleaning
+  ```
+
+  - 위 예시처럼 전체 경로를 사용하여 import 할 수도 있지만 다음과 같이 relative하게 import 하는 것도 가능하다.
+    - relative 접근자는 모듈 안에서만 사용해야 한다. 인터프리터에서는 사용이 불가능하다.
+    - `..`: 부모 디렉토리
+    - `.`: 현재 디럭토리
+
+  ```python
+  from ..family.husband import clean
+  
+  def work():
+      print("working")
+      clean()
+  ```
+
+  
+
+# 예외처리
+
+- 예외처리
+  - 프로그래밍을 하다 보면 수 없이 많은 오류와 마주하게 된다.
+  - 오류가 발생하면 오류가 발생한 줄 아래로는 실행이 되지 않는데 때로는 오류가 발생하더라도 실행해야 할 때가 있다.
+  - 그럴 때 사용하기 위한 것이 예외처리 기법이다.
+
+
+
+- `try`, `except` 문
+
+  - 기본 구조
+    - try 블록 실행 중 오류가 발생하면 except 블록이 실행된다.
+    - except문에 발생 오류를 적어놓으면 해당 오류가 발생했을 때에만 except 블록이 실행된다.
+
+  ```python
+  # 괄호 안의 내용은 모두 생략이 가능하다.
+  try:
+      실행할 문장
+  except [발생 오류 as 오류 메세지 담을 변수]:
+      실행할 문장
+  ```
+
+  - 예시
+
+  ```python
+  # arr을 설정해 준 적 없기에 아래 문장은 error을 발생시킨다.
+  print(arr)
+  print("에러가 발생했으므로 출력이 안됩니다.")
+  """
+  Traceback (most recent call last):
+    File "c:\Users\pract.py", line 6, in <module>
+      print(arr)
+  NameError: name 'arr' is not defined
+  """
+  
+  # 아래와 같이 예외 처리가 가능하다.
+  try:
+      print(arr)
+  except:
+      print("에러 발생")
+  print("에러가 발생했지만 실행이 됩니다.")
+  """
+  에러 발생
+  에러가 발생했지만 실행이 됩니다.
+  """
+  
+  # error를 특정하는 것도 가능하다.
+  try:
+      print(arr)
+  except NameError as e:
+      print("e에는 error message가 담겼습니다.")
+      print(e)
+  print("에러가 발생했지만 실행이 됩니다.")
+  """
+  e에는 error message가 담겼습니다.
+  name 'arr' is not defined
+  에러가 발생했지만 실행이 됩니다.
+  """
+  
+  # error를 특정할 경우 특정하지 않은 에러가 발생하면 except로 빠지지 않는다.
+  try:
+      3//0
+  except NameError as e:
+      print("에러 종류가 다르므로 빠지지 않습니다.")
+      print(e)
+  """
+  Traceback (most recent call last):
+    File "c:\Users\pract.py", line 2, in <module>
+      3//0
+  ZeroDivisionError: integer division or modulo by zero
+  """
+  ```
+
+  
+
+- `finally`
+
+  - try문 수행 도중 예외 발생 여부와 무관하게 수행된다.
+  - 보통 사용한 리소스를 close해야 할 때 사용한다.
+
+  ```python
+  try:
+      3//0
+  finally:
+      print("ZeroDivisionError가 발생했지만 finally 블록은 실행됩니다.")
+  """
+  ZeroDivisionError가 발생했지만 finally 블록은 실행됩니다.
+  Traceback (most recent call last):
+    File "c:\Users\pract.py", line 2, in <module>
+      3//0
+  ZeroDivisionError: integer division or modulo by zero
+  """    
+  ```
+
+  
+
+- 복수의 오류 처리하기
+
+  - except를 여러 개 사용하면 된다.
+  - 가장 먼저 빠진 except문만 실행 되고 다음 try 블록의 다음 줄은 실행 되지 않는다.
+
+  ```python
+  try:
+      3//0
+      print(arr)
+  except ZeroDivisionError as e:
+      print(e)
+  except NameError as e:
+      print(e)
+  
+  # integer division or modulo by zero 
+  
+  
+  
+  # 아래와 같이 하는 것도 가능하다.
+  try:
+      3//0
+      print(arr)
+  except (ZeroDivisionError,NameError) as e:
+      print(e)
+  
+  # integer division or modulo by zero
+  ```
+
+
+
+- 오류 회피하기
+
+  - except 블록에 pass를 쓰면 에러를 그냥 지나칠 수 있다.
+
+  ```python
+  try:
+      3//0
+      print(arr)
+  except ZeroDivisionError as e:
+      pass
+  print("pass 됐습니다.")
+  
+  # pass 됐습니다.
+  ```
+
+  
+
+- 오류 강제로 발생시키기
+
+  - `raise`를 사용한다.
+  - 프로그래밍을 하다 보면 예외를 강제로 발생시켜야 할 때가 있다.
+  - Dog이라는 class를 생속 받는 자식 클래스는 반드시 bark라는 메서드를 구현하도록 하고 싶은 경우 아래와 같이 할 수 있다.
+    - NotImplementedError는 python 내장 에러로 꼭 구현해야 할 부분이 구현되지 않았을 경우 발생한다.
+
+  ```python
+  class Dog:
+      def bark(self):
+          raise NotImplementedError
+          
+  class Bichon(Dog):
+      pass
+  
+  bcn = Bichon()
+  bcn.bark()			# NotImplementedError
+  ```
+
+  - 다음과 같이 bark 메서드를 오버라이딩하여 생성하면 에러가 발생하지 않는다.
+
+  ```python
+  class Dog:
+      def bark(self):
+          raise NotImplementedError
+          
+  class Bichon(Dog):
+      def bark(self):
+          print("멍멍")
+  
+  bcn = Bichon()
+  bcn.bark()		# 멍멍
+  ```
+
+  
+
+- 예외 만들기
+
+  - Python 내장 클래스인 Exception 클래스를 상속하여 만들 수 있다.
+
+  ```python
+  class MyError(Exception):
+      pass
+  
+  def is_num(a):
+      if type(a)!=int:
+          raise MyError
+      print(a)
+  
+  is_num(1)		# 1
+  is_num("1")		# __main__.MyError
+  ```
+
+  - 에러 메세지 만들기
+
+  ```python
+  class MyError(Exception):
+      def __str__(self):
+          return "입력하신 값은 숫자 타입이 아닙니다!"
+  
+  def is_num(a):
+      if type(a)!=int:
+          raise MyError
+      print(a)
+  
+  is_num(1)		# 1
+  is_num("1")		#__main__.MyError: 입력하신 값은 숫자 타입이 아닙니다!
+  ```
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
