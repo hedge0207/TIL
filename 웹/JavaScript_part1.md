@@ -221,44 +221,7 @@
 
 
 
-- 타입 확인
-  
-  - `typeof 변수명`
-    - 피연산자의 변수 타입을 문자열로 반환한다. 
-    - 그러나, null과 배열, 그리고 거의 모든 객체를 object를 반환하므로 객체의 종류까지는 체크하지 못한다.
-  
-  ```javascript
-  typeof [];   //object
-  typeof null; //object
-  typeof {};   //object
-  ```
-  
-  - `Object.prototype.toString.call`
-    - 피연산자 변수 타입을 문자열로 반환한다.
-    - `Object.prototype.toString.call`를 활용하여 객체의 종류를 알아낼 수 있다.
-    - 그러나 이 경우에도 객체의 상속 관계까지는 알 수 없다.
-  
-  ```javascript
-  Object.prototype.toString.call([]);    // [object Array]
-  Object.prototype.toString.call(null);  // [object Null]
-  Object.prototype.toString.call({});    // [object Object]
-  ```
-  
-  - `X instanceof Y`
-    - X가 Y 타입의 인스턴스인지 알려준다.
-  
-  ```javascript
-  function A(){}
-  function B(){}
-  
-  const a = new A();
-  
-  a instanceof A       //true
-  a instanceof B       //false
-  a instanceof Object  //true
-  ```
-
-# 변수의 선언 
+# 변수의 선언
 
 - 변수를 선언하고 해당 변수에 리터럴을 값으로 할당한다.
 
@@ -774,6 +737,8 @@ var x = 1  //var는 요즘은 쓰지 않지만 명시적 표기를 위해 적는
   console.log(obj[k])     //value
   ```
 
+
+
 ## 타입 변환
 
 - 명시적 타입 변환
@@ -876,4 +841,84 @@ var x = 1  //var는 요즘은 쓰지 않지만 명시적 표기를 위해 적는
   - Boolean 타입으로 변환
     - 빈 문자열, 0, -0, NaN, null, undefined는 Falsy값(거짓으로 인식할 값)으로 false로 변환된다.
     - 비어 있지 않은 문자열, 0이 아닌 숫자 등은 Truthy값(참으로 인식할 값)으로 true로 변환된다. 
+
+
+
+## 타입 확인
+
+- `typeof 변수명`
+
+  - 피연산자의 변수 타입을 문자열로 반환한다. 
+  - 그러나, null과 배열, 그리고 거의 모든 객체를 object를 반환하므로 객체의 종류까지는 체크하지 못한다.
+
+  ```javascript
+  typeof [];   //object
+  typeof null; //object
+  typeof {};   //object
+  ```
+
+
+
+
+- `Object.prototype.toString.call`
+
+  - 피연산자 변수 타입을 문자열로 반환한다.
+  - `Object.prototype.toString.call`를 활용하여 객체의 종류를 알아낼 수 있다.
+  - 그러나 이 경우에도 객체의 상속 관계까지는 알 수 없다.
+
+  ```javascript
+  Object.prototype.toString.call([]);    // [object Array]
+  Object.prototype.toString.call(null);  // [object Null]
+  Object.prototype.toString.call({});    // [object Object]
+  ```
+
+
+
+
+- `X instanceof Y`
+
+  - X가 Y 타입의 인스턴스인지 알려준다.
+
+  ```javascript
+  function A(){}
+  function B(){}
+  
+  const a = new A();
+  
+  a instanceof A       //true
+  a instanceof B       //false
+  a instanceof Object  //true
+  ```
+
+
+
+- 유사배열객체
+
+  - 유사배열객체(array-like object): length 프로퍼티를 갖는 객체
+  - 문자열, arguments, HTMLCollection, NodeList 등은 유사 배열이다.
+  - length 프로퍼티가 있으므로 순회할 수 있으며 call, apply 함수를 사용하여 배열의 메소드를 사용할 수도 있다.
+  - 어떤 객체가 유사 배열인지 체크하는 방법
+    - 우선 length 프로퍼티를 갖는지를 확인한다.
+    - length 프로퍼티의 값이 정상적인지 확인한다.
+    - 배열의 인덱스는 32bit 정수로 `2**32-1`이다.
+    - 유사 배열의 인덱스는 자바스크립트로 표현할 수 있는 양의 정수로 `2**53-1`이다.
+    - 아래 함수로는 배열의 인덱스 값이  `2**32-1` 보다 작거나 같을 경우 배열과 유사배열을 구분하지는 못한다.
+
+  ```javascript
+  function isArrayLike(para){
+      const MAX_ARRAY_INDEX = Math.pow(2,53)-1
+      
+      // ara가 null이 아니면 para.length를 반환하고 null이면 undefined를 반환
+      // 빈 문자열은 유사배열이다.
+      const length = para == null ? undefiend : para.lenght
+      
+      //배열의 길이의 타입이 숫자형이고 그 길이가 0보다 크거나 같고, 유사 배열 인덱스의 최대치보다 작거나 같으면 유사배열이다.
+      return typeof length === 'number' && length >= 0 && length <= MAX_ARRAY_INDEX;
+  }
+  
+  console.log(isArrayLike('abc'));
+  console.log(isArrayLike(''));
+  ```
+
+  
 

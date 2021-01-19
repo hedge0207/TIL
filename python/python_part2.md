@@ -409,8 +409,8 @@
 
 - 함수의 구조
 
-  - 입력값은 매개 변수(parameter) 혹은 인자(인수, arguments)라고 부른다.
-    - 넘길 때는 인자(인수,arguments), 받을 때는 매개 변수라고 부른다.
+  - 입력값은 매개 변수(인자, parameter) 혹은 인수(arguments)라고 부른다.
+    - 넘길 때는 인수(arguments), 받을 때는 매개 변수(인자,parameter )라고 부른다.
   - 입력값은 있어도 되고 없어도 된다.
   - 결과값도 있어도 되고 없어도 된다.
   - 결과값을 return하면 return이하의 코드는 실행되지 않는다.
@@ -439,7 +439,7 @@
   def cal(a,b,c,d):    # a,b,c,d 를 파라미터로 받는다.
       return a+b-c*d   # 계산 결과를 반환한다.
   
-  num1 = cal(3,4,2,8)  # 3,4,2,8을 인자로 넘긴다.
+  num1 = cal(3,4,2,8)  # 3,4,2,8을 인수로 넘긴다.
   num2 = cal(1,2,7,84)
   num3 = cal(3,5,4,12)
   ```
@@ -548,10 +548,10 @@
   def user_info(name,age,gender="male",grade=1):
       return {"name":name, "age":age, "gender":gender, "grade":grade}
   
-  # 인자를 넘기지 않으면 초기값이 매개변수로 들어가게 된다.
+  # 인수를 넘기지 않으면 초기값이 매개변수로 들어가게 된다.
   print(user_info("Cha",27))  # {'name': 'Cha', 'age': 27, 'gender': 'male', 'grade': 1}
   
-  # 인자를 넘기면 넘긴 인자가 우선적으로 매개변수로 들어가게 된다.
+  # 인수를 넘기면 넘긴 인수가 우선적으로 매개변수로 들어가게 된다.
   print(user_info("Lee",27,"female",3)) # {'name': 'Lee', 'age': 27, 'gender': 'female', 'grade': 3}
   ```
 
