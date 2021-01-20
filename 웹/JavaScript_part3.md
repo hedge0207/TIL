@@ -59,7 +59,7 @@
 
   - `Function` 생성자 함수를 사용하여 정의
     - 이 방식은 일반적으로 사용하지 않는다.
-    - 함수 선언문과 함수 표현식은 모두 내장 함수 `Function` 생성자 함수로 함수로 생성하는 것을 단순화 시킨 축약법이다.
+    - **함수 선언문과 함수 표현식은 모두 내장 함수 `Function` 생성자 함수로 함수로 생성하는 것을 단순화 시킨 축약법이다.**
 
   ```javascript
   var hello = new Function('name','return "Hello! "+name')
@@ -648,10 +648,26 @@ out
 
 # 프로토타입
 
+> https://poiemaweb.com/js-prototype 
+
+> https://medium.com/@bluesh55/javascript-prototype-%EC%9D%B4%ED%95%B4%ED%95%98%EA%B8%B0-f8e67c286b67 
+
 - 자바스크립트는 Java, C++ 같은 클래스 기반 객체 지향 언어와 달리 프로토타입 기반 객체 지행 언어다.
   - 따라서 자바스크립트의 동작 원리를 이해하기 위해서는 프로토 타입의 개념을 잘 이해하고 있어야 한다.
   - 클래스 기반 객체 지향 언어는 객체 생성 이전에 클래스를 정의하고 이를 통해 객체를 생성한다.
   - 프로토타입 기반 객체 지향 언어는 클래스 없이도 객체를 생성할 수 있다.
+
+
+
+- 사전지식
+  - JavaScript의 모든 객체는 결국 함수를 통해 생성된다.
+    - 객체 리터럴 방식은 결국 `Object()` 생성자 함수를 축약한 방식이다.
+    - 객체인 함수와 배열을 생성하는 `Function()`,`Array()`도 함수이다. 
+    - 따라서 결국 모든 객체는 함수를 통해 생성된다.
+  - 생성자 함수가 정의될 때 2가지 일이 발생한다.
+    - 해당 함수에 Constructor(생성자) 자격 부여(`new` 를 통해 객체를 만들어 낼 수있게 된다).
+    - 해당 함수의 프로토타입 객체가 생성되고 함수와 연결된다. 이 객체의 constructor 프로퍼티는 생성자 함수를 가리키게 된다.
+  - 모든 함수는 결국 함수 생성자를 통해 생성된다.
 
 
 
@@ -720,10 +736,14 @@ out
   var cha = new Person('Cha');
   
   // [[Prototype]]: __proto__ 접근자 프로퍼티에 접근하며, 함수 객체의 경우 Function.prototype을 가리킨다.
-  console.log(Person.__proto__ === Function.prototype);
+  console.log(Person.__proto__ === Function.prototype)	// true
   
   // prototype 프로퍼티: prototype 프로퍼티로 접근하며, Person 함수로 생성된 객체의 부모 객체를 가리킨다.
-  console.log(Person.prototype === cha.__proto__);
+  console.log(Person.prototype === cha.__proto__)			// true
+  
+  // 둘은 다르다!!
+  console.log(Person.prototype === Person.prototype)     // true
+  console.log(Person.__proto__ === Function.prototype)   // true
   
   
   /*
@@ -744,7 +764,7 @@ out
   - `cha` 입장에서 자신을 생성한 객체는 `Person()` 생성자 함수이다.
     - prototype 프로퍼티는 함수 객체(이 경우 `Person()`)가 생성자로 사용될 때, 이 함수를 통해 생성될 객체(이 경우 `cha`)의 부모 역할을 하는 객체(프로토타입)를 가리킨다.
     - 따라서 `cha` 객체의 프로토타입 객체는 `Person.prototype`이 가리키는 객체이다.
-    - 따지고보면 `Person.prototype` 는 `Person()`이 `cha`를 생성함으로써 생성되었다.
+    -  `Person.prototype` 는 `Person()`이라는 생성자 함수가 생성될 때 함께 생성된다. 
     - 결국 `Person.prototype`이 가리키는 객체의 constructor 프로퍼티는 `Person()` 생성자 함수를 가리킨다.
 
   ```javascript
@@ -754,7 +774,7 @@ out
   
   var cha = new Person('Cha')
   
-  // Person() 생성자 함수에 의해 생성된 객체를 생성한 객체는 Person() 생성자 함수이다.
+  // Person() 생성자 함수에 의해 생성된 프로토타입 객체를 생성한 객체는 Person() 생성자 함수이다.
   console.log(Person.prototype.constructor === Person)
   // Person() 생성자 함수를 생성한 객체는 Function() 생성자 함수이다.
   console.log(Person.constructor === Function)
@@ -764,9 +784,11 @@ out
 
 
 
-## 프로토타입 체인
 
-> https://poiemaweb.com/js-prototype 참고
+
+
+
+## 프로토타입 체인
 
 - Prototype chain
 
@@ -796,12 +818,18 @@ out
       age:28
   }
   
-  console.log(cha.__proto__ === Object.prototype)					// true
-  console.log(Object.prototype.constructor === Object)			// true
-  console.log(Object.__proto__ === Function.prototype)			// true
   console.log(Function.prototype.__proto__ === Object.prototype)	// true
+  console.log(Object.__proto__ === Function.prototype)			// true
+  console.log(Object.prototype.constructor === Object)			// true
+  console.log(cha.__proto__ === Object.prototype)					// true
   ```
-
+  
+  - 상세설명(`.__proto__`와 `.protytype`은 다르다는 것을 염두에 둬야 한다.)
+    - 함수를 생성하는 생성자 함수 `Funcion()`은 생성 되는 순간, 앞으로 `Function()` 생성자 함수로 생성될 모든 함수들의 프로토타입이 될 `Function.prototype`이 함께 생성된다.
+    - `Function.prototype`은 프로토타입 객체이므로 모든 객체의 부모 객체인 `Object.prototype`을 프로토타입으로 갖는다.
+    - `Object()` 생성자 함수는 `Function()` 생성자 함수로 생성된 것이므로 `Function()` 생성자 함수가 생성될 때 함께 생성된 `Function.prototype`을 프로퍼티로 갖는다.
+    - `Object.prototype`은 `Object()` 생성자 함수가 생성됨으로 인해 생성된 것이므로 `Object()`를 constructor로 갖는다.
+    - `cha` 객체는  `Object()` 생성자 함수로 생성된 것이므로 프로토타입으로 `Object.prototype`을 갖는다.
 
 
 
@@ -819,19 +847,27 @@ out
   
   var cha = new Person('Cha')
   
-  
-  console.log(cha.__proto__ === Person.prototype)                // true
-  console.log(Person.prototype.__proto__ === Object.prototype)   // true
+  console.log(Function.prototype.__proto__ === Object.prototype) // true
   console.log(Person.prototype.constructor === Person)           // true
   console.log(Person.__proto__ === Function.prototype)           // true
-  console.log(Function.prototype.__proto__ === Object.prototype) // true
+  console.log(cha.__proto__ === Person.prototype)                // true
+  console.log(Person.prototype.__proto__ === Object.prototype)   // true
   ```
+
+  - 상세 설명(`.__proto__`와 `.protytype`은 다르다는 것을 염두에 둬야 한다.)
+    - 함수를 생성하는 생성자 함수 `Funcion()`은 생성 되는 순간, 앞으로 `Function()` 생성자 함수로 생성될 모든 함수들의 프로토타입이 될 `Function.prototype`이 함께 생성된다.
+    - `Function.prototype`은 프로토타입 객체이므로 모든 객체의 부모 객체인 `Object.prototype`을 프로토타입으로 갖는다.
+    - `Person()` 생성자 함수는 `Function()` 생성자 함수를 통해 생성되는 순간 `Person`생성자 함수로 생성될 모든 객체들의 프로토타입이 될 `Person.prototype`이 함께 생성되고 `Person.prototype`는 `Person()`이 생성되면서 생성되었으므로 consturctor는 Person을 가리킨다.
+    - `Person()` 생성자 함수는 `Function()` 생성자 함수를 통해 생성되었으므로 `Person()` 생성자함수의 프로토타입은 `Function.prototype`이 된다.
+    - `cha` 객체는 `Person()` 생성자 함수를 통해 생성되었으므로 `cha` 객체의 프로토타입은 `Person.prototype`이 된다.
+    - `Person()`생성자 함수는 프로토타입 프로퍼티로 `Person.prototype`을 가지고,  `Person.prototype`은 프로퍼티로 `Object.prototype`을 가진다.
+
 
 
 
 - 프로토타입 체인의 종점(End of prototype chain)
   - 객체 리터럴 방식이나 생성자 함수 방식 모두 결국은 모든 객체의 부모 객체인 Object.prototype 객체에서 프로토타입 체인이 끝나게 된다.
-  - 이 때문에 Object.prototype 객체를 프로토타입 체인의 종점이라 한다.
+  - 이 때문에 **Object.prototype**객체를 **프로토타입 체인의 종점(End of prototype chain)**이라 한다.
 
 
 
@@ -955,6 +991,11 @@ out
   - 객체의 프로퍼티에 값을 할당하는 경우에는 프로토타입 체인이 동작하지 않는다.
     - 객체에 해당 프로퍼티가 있는 경우에는 값을 재할당하고
     - 해당 프로퍼티가 없는 경우에는 해당 객체에 프로퍼티를 동적으로 추가하기 때문이다.
+  - 예시 설명
+    - 아래에서 `cha`, `kim` 객체에는 `age`라는 참조하려는 프로퍼티가 존재하지 않는다.
+    - `age`는 `Person.prototype` 객체에만 존재한다.
+    - 따라서  `cha`, `kim`객체는 프로토타입 체인에 따라 `age`프로퍼티에 접근할 수 있다.
+    - 그런데 `cha` 객체에 `age` 프로퍼티를 할당하면 더 이상 `cha` 객체는 프로토타입 체인을 따라기지 않는다.
 
   ```javascript
   function Person(name) {
@@ -974,8 +1015,7 @@ out
   // cha 객체에 age 프로퍼티가 있으면 해당 프로퍼티에 값 할당
   cha.age = 20
   
+  // 이제 cha 객체에 age라는 프로퍼티가 생겼으므로, 즉 참조하려는 프로퍼티가 있으므로, 프로토타입 체인이 동작하지 않는다.
   console.log(cha.age)	// 20
   console.log(kim.age)	// 28
   ```
-
-  
