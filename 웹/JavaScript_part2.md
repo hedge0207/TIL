@@ -744,10 +744,12 @@
     - Java와 같은 클래스 기반 객체 지향 언어는 클래스를 사전에 정의하고 필요한 시점에 new 연산자를 사용하여 인스턴스를 생성하는 방식으로 객체를 생성한다.
     - JS는 프로토타입 기반 객체 지향 언어로서 클래스라는 개념이 없어, 별도의 객체 생성 방법이 존재한다.
     - ECMAScript 6에서 새롭게 클래스가 도입되었다. 그러나  ES6의 클래스가 새로운 객체지향 모델을 제공하는 것이 아니며 클래스도 사실 함수이고 기존 프로토타입 기반 패턴의 문법적 설탕(Syntactic sugar)이다.
+  
   - 객체 리터럴
     - 가장 일반적인 객체 생성 방식
-    - `{}`를 사용하여 객체를 생성하며 중괄호 내에 1개 이상의 프로퍼티를 기술하면 해당 프로퍼티가 추가된 객체를 생성할 수 있고 아무것도 기술하지 않으면 빈 객체가 생성된다.
-
+  - `{}`를 사용하여 객체를 생성하며 중괄호 내에 1개 이상의 프로퍼티를 기술하면 해당 프로퍼티가 추가된 객체를 생성할 수 있고 아무것도 기술하지 않으면 빈 객체가 생성된다.
+    - 프로퍼티의 값으로 변수를 넣을 경우 키를 입력하지 않으면 `변수명 : 할당된 값`의 형태로 프로퍼티가 생성된다.
+  
   ```javascript
   var emptyObj = {}
   console.log(typeof emptyObj)     //object
@@ -760,9 +762,22 @@
       }
   }
   console.log(typeof student)     //object
-  student.sayHello()              //Hello! Cha
+student.sayHello()              //Hello! Cha
+  
+  
+  // 프로퍼티의 값으로 변수를 넣을 경우
+  var first = 1
+  var second = 2
+  var third = 3
+  
+  const ordinal = {
+      first,
+      second,
+      third,
+  }
+  console.log(ordinal)  //{ first: 1, second: 2, third: 3 }
   ```
-
+  
   - Object 생성자 함수
     - `new` 연산자와 Object 생성자 함수를 호출하여 빈 객체를 생성하고, 이후에 프로퍼티 또는 메서드를 추가하여 객체를 완성하는 방법
     - 생성자(constructor) 함수: new 키워드와 함께 객체를 생성하고 초기화하는 함수를 말한다.
@@ -771,7 +786,7 @@
     - **객체 리터럴 방식으로 생성된 객체는 결국 Object 생성자 함수로 객체를 생성하는 것을 단순화시킨 축약 표현이다.**
     - 개발자가 일부러 Object 생성자 함수를 사용해 객체를 생성해야 할 일은 거의 없다.
   
-```javascript
+  ```javascript
   // 빈 객체 생성
   var someone = new Object();
   
@@ -779,7 +794,7 @@
   someone.name = 'Cha';
   someone.gender = 'male';
   someone.sayHello = function () {
-    console.log('Hello! ' + this.name);
+      console.log('Hello! ' + this.name);
   };
   
   console.log(typeof someone); // object
@@ -787,30 +802,30 @@
   someone.sayHello();          //Hello! Cha
   ```
   
-- 생성자 함수
-    - 위 두 방식으로 객체를 생성하는 것은 프로퍼티 값만 다른 여러 개의 객체를 생성할 때 불편하다.
-    - 생성자 함수를 사용하면 마치 객체를 생성하기 위한 템플릿(클래스)처럼 사용하여 프로퍼티가 동일한 객체 여러 개를 간편하게 생성할 수 있다.
-    - 일반 함수와 생성자 함수를 구분하기 위해 생성자 함수의 이름은 파스칼 케이스(PascalCase)를 사용하는 것이 일반적이다.
-    - 프로퍼티 또는 메서드명 앞에 기술한 `this`는 생성자 함수가 생성할 인스턴스를 가리킨다.
-    - this에 연결되어 있는 프로퍼티와 메서드는 `public`(외부에서 참조 가능)하다.
-    - 생성자 함수 내에서 선언된 일반 변수는 `private`(외부에서 참조 불가능)하다.
+  - 생성자 함수
+      - 위 두 방식으로 객체를 생성하는 것은 프로퍼티 값만 다른 여러 개의 객체를 생성할 때 불편하다.
+      - 생성자 함수를 사용하면 마치 객체를 생성하기 위한 템플릿(클래스)처럼 사용하여 프로퍼티가 동일한 객체 여러 개를 간편하게 생성할 수 있다.
+      - 일반 함수와 생성자 함수를 구분하기 위해 생성자 함수의 이름은 파스칼 케이스(PascalCase)를 사용하는 것이 일반적이다.
+      - 프로퍼티 또는 메서드명 앞에 기술한 `this`는 생성자 함수가 생성할 인스턴스를 가리킨다.
+      - this에 연결되어 있는 프로퍼티와 메서드는 `public`(외부에서 참조 가능)하다.
+      - 생성자 함수 내에서 선언된 일반 변수는 `private`(외부에서 참조 불가능)하다.
   
-```javascript
+  ```javascript
   // 객체 리터럴 방식으로 생성
   var student1 = {
-    name: 'Kim',
-    gender: 'male',
-    sayHello: function () {
-      console.log('Hello! ' + this.name)
-    }
+      name: 'Kim',
+      gender: 'male',
+      sayHello: function () {
+          console.log('Hello! ' + this.name)
+      }
   }
   
   var student1 = {
-    name: 'Lee',
-    gender: 'female',
-    sayHello: function () {
-      console.log('Hello! ' + this.name)
-    }
+      name: 'Lee',
+      gender: 'female',
+      sayHello: function () {
+          console.log('Hello! ' + this.name)
+      }
   }
   
   
@@ -842,24 +857,9 @@
   console.log(person.name);     // Cha
   console.log(person.address)   // undefined
   ```
-  
-- 프로퍼티의 값으로 변수를 넣을 경우 키를 입력하지 않으면 `변수명 : 할당된 값`의 형태로 프로퍼티가 생성된다.
-  
-```javascript
-  var first = 1
-  var second = 2
-  var third = 3
-  
-  const ordinal = {
-      first,
-      second,
-      third,
-  }
-  console.log(ordinal)  //{ first: 1, second: 2, third: 3 }
-  ```
-  
 
-  
+
+
 - 객체 프로퍼티 접근
 
   - 마침표 표기법
