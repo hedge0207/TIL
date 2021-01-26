@@ -519,46 +519,378 @@
   console.log(me.getName())	// Kim
   ```
 
+
+
+
+
+
+
+
+#  빌트인 객체
+
+- 자바스크립트의 객체는 크게 아래의 3가지로 분류할 수 있다.
+  - 네이티브 객체(Native objects 또는 Built-in objects 또는 Global Objects)
+  - 호스트 객체(Host object)
+  - 사용자 정의 객체(User-defined object)
+
+
+
+- 네이티브 객체
+
+  - ECMAScript 명세에 정의된 객체를 말하며, 애플리케이션 전역의 공통 기능을 제공한다. 
+  - 애플리케이션의 환경과 관계없이 언제나 사용할 수 있다.
+  - Object, String, Number, Function, Array, RegExp, Date, Math와 같은 객체 생성에 관계가 있는 함수 객체와 메소드로 구성된다.
+  - 네이티브 객체를 Global Objects라고 부르기도 하는데 이것은 전역 객체(Global Object)와 다른 의미로 사용되므로 혼동에 주의하여야 한다.
+  - Object
+    - `Object()` 생성자 함수는 객체를 생성한다.
+    - 만일 생성자 인수값이 null 이거나 undefiend이면 빈 객체를 반환한다.
+    - 그 외의 경우 함수의 인수값에 따라 강제 형변환된 객체가 반환된다. 이때 반환된 객체의 [[Prototype]] 프로퍼티에 바인딩된 객체는 Object.prototype이 아니다.
+
+  ```javascript
+  var a = new Object()
+  console.log(typeof a + ': ', a)				// object:  {}
   
-
-
-
-
-
-# 예외처리
-
-- try, catch, finally를 사용하여 예외처리
-
-  ```js
-  try {
-  //정상이라면 이 코드는 아무런 문제없이 블록의 시작부터 끝까지 실행됨.
+  var b = new Object(undefined)
+  console.log(typeof b + ': ', b)				// object:  {}
   
-  } catch(error) {
-  //이 블록 내부의 문장들은 오직 try 블록에서 예외가 발생할 경우에만 실행된다.
+  var c = new Object(null)
+  console.log(typeof c + ': ', c)				// object:  {}
   
-  } finally(){
-  //try 블록에서 일어난 일에 관계없이 무조건 실행될 코드가 위치한다.
-  }
+  
+  var obj = new Object('String')
+  console.log(typeof obj + ': ', obj)			// object:  [String: 'String']
+  
+  var strObj = new String('String')
+  console.log(typeof strObj + ': ', strObj)	// object:  [String: 'String']
+  
+  // Number 객체를 반환한다
+  // var obj = new Number(123);과 동치이다
+  var obj = new Object(123)
+  console.log(typeof obj + ': ', obj)			// object:  [Number: 123]
+  
+  var numObj = new Number(123)
+  console.log(typeof numObj + ': ', numObj)	// object:  [Number: 123]
+  
+  // Boolean 객체를 반환한다.
+  // var obj = new Boolean(true);과 동치이다
+  var obj = new Object(true)
+  console.log(typeof obj + ': ', obj)			// object:  [Boolean: true]
+  
+  var boolObj = new Boolean(123)
+  console.log(typeof boolObj + ': ', boolObj)	// object:  [Boolean: true]
   ```
 
-- throw는사용자 지정 에러를 지정하여 예외를 발생시킬 수 있게 해준다.
+  - Function
+    - JS의 모든 함수는 Function 객체이다. 
+    - 다른 모든 객체들처럼 Function 객체는 `new` 연산자을 사용해 생성할 수 있다.
+
+  - Boolean
+    - Boolean 객체는 원시 타입 boolean을 위한 래퍼(wrapper) 객체이다. 
+    - Boolean 생성자 함수로 Boolean 객체를 생성할 수 있다.
+    - Boolean 객체와 원시 타입 boolean을 혼동하기 쉽다. Boolean 객체는 true/false를 포함하고 있는 객체이다.
+
+  ```javascript
+   Numberconsole.log(typeof true)			// boolean
+  console.log(typeof Boolean(1))		// boolean
+  console.log(typeof new Boolean(1))	// object
+  ```
+
+  - Error
+    - Error 생성자는 error 객체를 생성한다. error 객체의 인스턴스는 런타임 에러가 발생하였을 때 throw된다.
+  - 이 밖에도 Number, Math, Date, String, RegExp, Array, Symbol 등의 네이티브 객체가 존재한다.
+  - 원시타입과 래퍼 객체(Wrapper Object)
+    - 앞서 살펴본 바와 같이 각 네이티브 객체는 각자의 프로퍼티와 메소드를 가진다. 
+    - 정적(static) 프로퍼티, 메소드는 해당 인스턴스를 생성하지 않아도 사용할 수 있고 prototype에 속해있는 메소드는 해당 prototype을 상속받은 인스턴스가 있어야만 사용할 수 있다.
+    - 그런데 원시 타입 값에 대해 표준 빌트인 객체의 메소드를 호출하면 정상적으로 작동한다.
+    - 이는 원시 타입 값에 대해 표준 빌트인 객체의 메소드를 호출할 때, 원시 타입 값은 연관된 객체(Wrapper 객체)로 일시 변환 되기 때문이다.
+    - 메소드 호출이 종료되면 객체로 변환된 원시 타입 값은 다시 원시 타입 값으로 복귀한다.
+    - 프로토타입에서 원시 타입의 확장 참고
+
+  ```javascript
+  // 본래 toUpperCase()는 String 객체의 메서드이다.
+  var str = new String("hello! world!")
+  console.log(str.toUpperCase())		// HELLO WORLD!
+  
+  // 그러나 String 객체가 아닌 원시타입 string에도 사용이 가능하다.
+  var str = 'Hello world!'
+  var res = str.toUpperCase()
+  console.log(res) 					// HELLO WORLD!
+  
+  var num = 1.5
+  console.log(num.toFixed()) 			// 2
+  ```
+
+
+
+- 호스트 객체
+
+  - 정의: 브라우저 환경에서 제공하는 window, XmlHttpRequest, HTMLElement 등의 DOM 노드 객체와 같이 호스트 환경에 정의된 객체 
+    - 예를 들어 브라우저에서 동작하는 환경과 브라우저 외부에서 동작하는 환경의 자바스크립트(Node.js)는 다른 호스트 객체를 사용할 수 있다.
+    - 브라우저에서 동작하는 환경의 호스트 객체는 전역 객체인 window, BOM(Browser Object Model)과 DOM(Document Object Model) 및 XMLHttpRequest 객체 등을 제공한다.
+
+  - 전역 객체(Global Object)
+    - 모든 객체의 최상위 객체.
+    - 일반적으로 브라우저에서는 window, 서버에서는 global을 의미한다.
+  - BOM(Browser Object Model)
+    - 브라우저 탭 또는 브라우저 창의 모델을 생성.
+    - 최상위 객체는 window 객체로 현재 브라우저 창 또는 탭을 표현하는 객체이다.
+    - 이 객체의 자식 객체들은 브라우저의 다른 기능들을 표현한다.
+    - 이 객체들은 Standard Built-in Objects가 구성된 후에 구성된다.
+  - DOM(Document Object Model)
+    - 문서 객체 모델은 현재 웹페이지의 모델을 생성한다. 
+    - 최상위 객체는 document 객체로 전체 문서를 표현한다. 
+    - 또한 이 객체의 자식 객체들은 문서의 다른 요소들을 표현한다. 
+    - 이 객체들 역시 Standard Built-in Objects가 구성된 후에 구성된다.
 
 
 
 
 
-# 정규표현식
+# 전역 객체
 
-> https://poiemaweb.com/js-regexp
-
-- 닉네임, 비밀번호 검증을 위한 정규표현식이 존재
-
-
+- 전역 객체(Global Onject)
+  - 모든 객체의 유일한 최상위 객체
+  - 일반적으로 브라우저에서는 window, 서버에서는 global을 의미한다.
 
 
 
-# 기타
+- 특징
 
-- 현재 페이지의 url을 가져오는 방법
-  - 현재 페이지의 url 전체 가져오기: `document.location.href` 또는 `document.URL`
-  - 현재 페이지 url의 쿼리문만 가져오기: `document.location.href.split("?")`
+  - 전역 객체는 실행 컨텍스트에 컨트롤이 들어가기 이전에 생성되며 contstructor가 업시 때문에 `new` 연산자를 사용하여 새롭게 생성할 수 없다.
+    - 즉 개발자가 전역 객체를 생성하는 것은 불가능하다.
+  - 전역 객체는 전역 스코프를 갖게 된다.
+  - 전역 객체의 자식 객체를 사용할 때 전역 객체의 기술은 생략할 수 있다.
+    - 예를 들어 document 객체는 window의 자식 객체이기에 `window.document`와 같이 기술할 수 있으나 일반적으로 생략한다.
+    - 그러나 사용자가 정의한 변수와 전역 객체의 자식 객체 이름이 충돌하는 경우, 명확히 전역 객체를 기술하여 혼동을 방지할 수 있다.
+
+  ```javascript
+  // 둘은 같은 문장이다.
+  window.document.getElementById('foo').style.display = 'none'
+  document.getElementById('foo').style.display = 'none'
+  ```
+
+  - 전역 객체는 전역 변수를 프로퍼티로 갖게 된다. 
+    - 다시 말해 전역 변수는 전역 객체의 프로퍼티이다.
+
+  ```javascript
+  var gv = 'global variable'
+  console.log(gv)			// global variable
+  console.log(window.gv)	// global variable
+  ```
+
+  - 글로벌 영역에서 선언한 함수도 전역 객체의 프로퍼티로 접근할 수 있다.
+    - 다시 말해 전역 함수는 전역 객체의 메소드다.
+
+  ```javascript
+  function gf(){
+      console.log('global function')
+  }
+  
+  gf()		// global function
+  window.gf()	// global function
+  ```
+
+  - Standard Built-in Objects(표준 빌트인 객체)도 역시 전역 객체의 자식 객체이다. 
+    - 전역 객체의 자식 객체를 사용할 때 전역 객체의 기술은 생략할 수 있으므로 표준 빌트인 객체도 전역 객체의 기술을 생략할 수 있다.
+
+  ```javascript
+  window.console.log('hello!')	// hello!
+  console.log('hello!')			// hello!
+  ```
+
+
+
+## 전역 프로퍼티
+
+- 애플리케이션 전역에서 사용하는 값들을 나타내기 위해 사용하는 것으로서 전역 객체의 프로퍼티이다.
+  - 전역 프로퍼티는 간단한 값이 대부분이며 다른 프로퍼티나 메서드를 가지고 있지 않다.
+  - 예를 들어 전역 프로퍼티인 undefined는 따로 메서드를 가지고 있지 않다.
+
+
+
+- `Infinity`
+
+  - 양/음의 무한대를 나타내는 숫자값 Infinity를 값으로 갖는다.
+
+  ```javascript
+  console.log(window.Infinity) // Infinity
+  console.log(typeof Infinity) // number
+  ```
+
+
+
+- `NaN`
+
+  - 숫자가 아님(Not a Number)을 나타내는 숫자값 NaN을 값으로 갖는다.
+  - NaN 프로퍼티는 Number.NaN 프로퍼티와 같다.
+
+  ```javascript
+  console.log(window.NaN) 	// NaN
+  
+  console.log(Number('abc')) 	// NaN
+  console.log(1 * 'str')  	// NaN
+  console.log(typeof NaN)    	// number
+  ```
+
+
+
+- `undefined`
+
+  - 원시타입 undefined를 값으로 갖는다.
+
+  ```javascript
+  console.log(window.undefined) // undefined
+  
+  var foo
+  console.log(foo) // undefined
+  console.log(typeof undefined) // undefined
+  ```
+
+  
+
+## 전역 함수
+
+- 애플리케이션 전역에서 호출할 수 있는 함수로서 전역 객체의 메서드이다.
+
+
+
+- `eval()`
+
+  - 매개변수에 전달된 문자열 구문 또는 표현식을 평가 또는 실행한다. 
+  - 사용자로 부터 입력받은 콘텐츠(untrusted data)를 `eval()`로 실행하는 것은 보안에 매우 취약하므로 사용을 지양해야 한다.
+
+  ```javascript
+  var foo = eval('1 + 2')
+  console.log(foo)		 // 3
+  
+  var x = 3
+  var y = 3
+  console.log(eval('x * y')) // 9
+  ```
+
+
+
+- `isFinite()`
+
+  - 매개 변수에 전달된 값이 정상적인 유한수인지 검사하여 그 결과를 Boolean으로 반환한다. 
+  - 매개변수에 전달된 값이 숫자가 아닌 경우, 숫자로 변환한 후 검사를 수행한다.
+  - `null`은 0으로 변환된다.
+
+  ```javascript
+  console.log(isFinite(Infinity));  // false
+  console.log(isFinite(NaN));       // false
+  console.log(isFinite('Hello'));   // false
+  console.log(isFinite(0));         // true
+  console.log(isFinite('10'));      // true
+  console.log(isFinite(null));      // true
+  ```
+
+
+
+- `isNaN()`
+
+  - 매개 변수에 전달된 값이 `NaN`인지 검사하여 그 결과를 Boolean으로 반환한다. 
+  - 매개변수에 전달된 값이 숫자가 아닌 경우, 숫자로 변환한 후 검사를 수행한다.
+  - `undefined`, 빈 객체, 비어있지 않은 숫자가 아닌 문자열은 `NaN`으로 변환된다.
+
+  ```javascript
+  isNaN(NaN)       // true
+  isNaN(undefined) // true
+  isNaN({})        // true
+  isNaN('blabla')  // true
+  
+  isNaN(true)      // false
+  isNaN(null)      // false
+  isNaN(37)        // false
+  
+  // strings
+  isNaN('37')      // false: '37' → 37
+  isNaN('37.37')   // false: '37.37' → 37.37
+  isNaN('')        // false: '' → 0
+  isNaN(' ')       // false: ' ' → 0
+  
+  // dates
+  isNaN(new Date())             // false: new Date() → Number
+  isNaN(new Date().toString())  // true:  String → NaN
+  ```
+
+
+
+- `parseFloat()`
+
+  - 매개변수에 전달된 문자열을 부동소수점 숫자로 변환하여 반환한다.
+  - 문자열의 첫 숫자만 반환되며 전후 공백은 무시된다.
+  - 첫 문자를 숫자로 반환할 수 없다면 `NaN`을 반환한다.
+
+  ```javascript
+  parseFloat('3.14');     // 3.14
+  parseFloat('10.00');    // 10
+  parseFloat('34 45 66'); // 34
+  parseFloat(' 60 ');     // 60
+  parseFloat('28 years'); // 28
+  parseFloat('He was 28') // NaN
+  ```
+
+
+
+- `parseInt()`
+
+  - 매개변수에 전달된 문자열을 정수형 숫자로 해석하여 반환한다.
+  - 진법을 나타내는 기수를 두 번째 매개변수로 받으며, 10진수가 기본값이다(첫 번째 인자를 해당 진수로 변환하여 해석한다). 
+  - 반환값은 언제나 10진수이다(결과값을 10진수로 변환하여 반환한다.).
+  - 두 번째 매개변수에 진법을 나타내는 기수를 지정하지 않아도 첫 번째 매개변수에 전달된 문자열이 "0x" 또는 "0X"로 시작하면 16진수로 해석하여 반환한다.
+  - 첫 번째 매개변수에 전달된 문자열이 "0"으로 시작해도 8진수가 아닌 10진수로 해석한다.
+  - 첫번째 매개변수에 전달된 문자열의 첫번째 문자가 해당 지수의 숫자로 변환될 수 없다면 `NaN`을 반환한다.
+  - 하지만 첫번째 매개변수에 전달된 문자열의 두번째 문자부터 해당 진수를 나타내는 숫자가 아닌 문자(예를 들어 2진수의 경우, 2)와 마주치면 이 문자와 계속되는 문자들은 전부 무시되며 해석된 정수값만을 반환한다.
+  - 첫번째 매개변수에 전달된 문자열에 공백이 있다면 첫번째 문자열만 해석하여 반환하며 전후 공백은 무시된다. 만일 첫번째 문자열을 숫자로 파싱할 수 없는 경우, NaN을 반환한다.
+
+  ```javascript
+  parseInt(12)			// 12
+  parseInt(12.3)			// 12
+  parseInt('12.345')		// 12
+  parseInt('10',2)		// 2
+  parseInt('0x10') 		// 16
+  parseInt('Q123')		// NaN
+  parseInt('20', 2)		// NaN
+  parseInt('1Q23')		// 1
+  parseInt('11 22 33'); 	// 11
+  parseInt(' 28 ');     	// 28
+  parseInt('28 years'); 	// 28
+  ```
+
+
+
+- `encodeURI()`, `decodeURI()`
+
+  - `encodeURI()`는 매개변수로 전달된 URI(Uniform Resource Identifier)를 인코딩한다.
+    - **인코딩**: URI의 문자들을 이스케이프 처리하는 것을 의미한다.
+    - **이스케이프 처리**: 네트워크를 통해 정보를 공유할 때 어떤 시스템에서도 읽을 수 있는 **ASCII Character-set**로 변환하는 것이다. UTF-8 특수문자의 경우, 1문자당 1~3byte, UTF-8 한글 표현의 경우, 1문자당 3btye이다. 예를 들어 특수문자 공백(space)은 %20, 한글 ‘가’는 %EC%9E%90으로 인코딩된다.
+    - 이스케이프 처리 이유: URI 문법 형식 표준 RFC3986에 따르면 URL은 ASCII Character-set으로만 구성되어야 하며 한글을 포함한 대부분의 외국어나 ASCII에 정의되지 않은 특수문자의 경우 URL에 포함될 수 없다. 따라서 URL 내에서 의미를 갖고 있는 문자(%, ?, #)나 URL에 올 수 없는 문자(한글, 공백 등) 또는 시스템에 의해 해석될 수 있는 문자(<, >)를 이스케이프 처리하여 야기될 수 있는 문제를 예방하기 위함이다.
+    - 단, `알파벳, 0-9의 숫자,-_.!~*'()`등은 이스케이프 처리에서 제외된다.
+  - `decodeURI()`는 매개변수로 전달된 URI를 디코딩한다.
+
+  ```javascript
+  var uri = 'http://example.com?address=대전&hobby=programmin&watching'
+  var enc = encodeURI(uri)
+  var dec = decodeURI(enc)
+  console.log(enc)	// http://example.com?address=%EB%8C%80%EC%A0%84&hobby=programmin&watching
+  console.log(dec)	// http://example.com?address=대전&hobby=programmin&watching
+  ```
+
+
+
+- `encodeURICompoent()`/`decodeURIComponent()`
+
+  - `encodeURIComponent()`는 매개변수로 전달된 URI(Uniform Resource Identifier) component(구성 요소)를 인코딩한다.
+    - `encodeURIComponent()`는 인수를 쿼리스트링의 일부라고 간주한다.
+    - 따라서 `=,?,&`를 인코딩한다.
+    - 반면 `encodeURI()`는 인수를 URI 전체라고 간주하며 파라미터 구분자인 `=,?,&`를 인코딩하지 않는다.
+  - `decodeURIComponent()`는 매개변수로 전달된 URI component를 디코딩한다.
+
+  ```javascript
+  var uri = 'http://example.com?address=대전&hobby=programmin&watching'
+  var encc = encodeURIComponent(uri)// http%3A%2F%2Fexample.com%3Faddress%3D%EB%8C%80%EC%A0%84%26hobby%3Dprogrammin%26watching
+  
+  var encc = decodeURIComponent(dec)// http://example.com?address=대전&hobby=programmin&watching
+  ```
+
