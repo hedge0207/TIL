@@ -196,52 +196,55 @@
 
   - 자식 생성자 함수의 prototype 프로퍼티를 부모 생성자 함수의 인스턴스로 교체하여 상속을 구현한다. 
   - 부모와 자식 모두 생성자 함수를 정의하여야 한다.
-
+- `new` 연산자를 사용한다는 것이 핵심이다.
+    - 생성자 함수는 정의되는 순간 해당 함수에 constructor 자격이 부여되고, `new` 키워드를 통해 새로운 객체를 만들어 낼 수 있게 된다.
+    - 또한 해당 함수의 프로토타입 객체가 생성되고 함수와 연결된다. 이 객체의 constructor 프로퍼티는 생성자 함수를 가리키게 된다.
+  
   ```javascript
-  // 부모 생성자 함수
   var Parent = (function () {
-    // constructor
-    function Parent(name) {
-      this.name = name
-    }
+      // 생성자 함수 정의
+      function ParentConstructor(name) {
+          this.name = name
+      }
   
-    // 메소드
-    Parent.prototype.sayHi = function () {
-      console.log('Hi! ' + this.name)
-    }
+      // 메소드
+      ParentConstructor.prototype.sayHi = function () {
+          console.log('Hi! ' + this.name)
+      }
   
-    // 생성자를 반환한다.
-    return Parent;
+      // 생성자를 반환한다.
+      return ParentConstructor;
   }())
   
   // 자식 생성자 함수
   var Child = (function () {
-    // constructor
-    function Child(name) {
-      this.name = name
-    }
+      // 생성자 함수 정의
+      function ChildConstructor(name) {
+          this.name = name
+      }
   
-    // 자식 생성자 함수의 프로토타입 객체를 부모 생성자 함수의 인스턴스로 교체.
-    Child.prototype = new Parent()
+      // 자식 생성자 함수의 프로토타입 객체를 부모 생성자 함수의 인스턴스로 교체.
+      ChildConstructor.prototype = new Parent()
   
-    // 메소드 오버라이드
-    Child.prototype.sayHi = function () {
-      console.log('안녕하세요! ' + this.name)
-    }
+      // 메소드 오버라이드
+      ChildConstructor.prototype.sayHi = function () {
+          console.log('안녕하세요! ' + this.name)
+      }
   
-    // sayBye 메소드는 Parent 생성자함수의 인스턴스에 위치된다
-    Child.prototype.sayBye = function () {
-      console.log('안녕히가세요! ' + this.name)
-    }
+      // sayBye 메소드는 Parent 생성자함수의 인스턴스에 위치된다
+      ChildConstructor.prototype.sayBye = function () {
+          console.log('안녕히가세요! ' + this.name)
+      }
   
-    // 생성자를 반환한다.
-    return Child
+      // 생성자를 반환한다.
+      return ChildConstructor
   }())
   
   var child = new Child('Cha')
-  console.log(child)  // Parent { name: 'Cha' }
+  console.log(child)  // ParentConstructor { name: 'Cha' }
   
-  console.log(Child.prototype) // Parent { name: undefined, sayHi: [Function], sayBye: [Function] }
+  console.log(Child.prototype) 
+  // ParentConstructor { name: undefined, sayHi: [Function (anonymous)], sayBye: [Function (anonymous)] }
   
   child.sayHi()  // 안녕하세요! Cha
   child.sayBye() // 안녕히가세요! Cha
@@ -263,11 +266,12 @@
     - 이런 문제점을 경감시키기 위해 파스칼 표시법(첫글자를 대문자 표기)으로 생성자 함수 이름을 표기하는 방법을 사용하지만, 더 나은 대안은 new 연산자의 사용을 피하는 것이다.
   - 생성자 링크의 파괴
     - 위 예에서 `child` 객체의 프로토타입 객체는 `Parent` 생성자 함수가 생성한 `new Parent()` 객체이다. 
-    - 프로토타입 객체(`new Parent()`객체)는 내부 프로퍼티로 constructor를 가지며 이는 생성자 함수를 가리킨다. 
-    - 하지만 의사 클래스 패턴 상속은 프로토타입 객체를 인스턴스로 교체하는 과정에서 constructor의 연결이 깨지게 된다. 
-    - 즉, `child` 객체를 생성한 것은 `Child` 생성자 함수이지만 `child.constructor`의 출력 결과는 `Child` 생성자 함수가 아닌 `Parent` 생성자 함수를 나타낸다. 
-    - 이는 `child` 객체의 프로토타입 객체인 `new Parent()` 객체는 `constructor`가 없기 때문에 프로토타입 체인에 의해 `Parent.prototype`의 constructor를 참조했기 때문이다.
-
+    - 프로토타입 객체는 내부 프로퍼티로 constructor를 가지며 이는 생성자 함수를 가리킨다. 
+    - 그러나 `child` 객체의 프로토타입 객체인 `new Parent()`객체는 본래 프로토타입 객체가 아니었으므로 constructor가 없다.
+    -  `child` 객체의 프로토타입 객체인 `new Parent()` 객체는 constructor가 없기 때문에 프로토타입 체인에 의해  `new Parent()` 객체의 프로토타입 객체인  `Parent.prototype`의 constructor를 참조하게 된다.
+    - 즉, `child` 객체를 생성한 것은 `Child` 생성자 함수이지만 `child.constructor`의 출력 결과는 `Child` 생성자 함수가 아닌 `Parent` 생성자 함수를 나타낸다.
+- 따라서 의사 클래스 패턴 상속은 프로토타입 객체를 인스턴스로 교체하는 과정에서 constructor의 연결이 깨지게 된다. 
+    
   - 객체 리터럴
     - 생성자 함수를 사용하기 때문에 객체 리터럴 패턴으로 생성한 객체의 상속에는 적합하지 않다.
     - 객체 리터럴 패턴으로 생성한 객체의 생성자 함수는 `Object()`이고 이를 변경할 방법이 없기 때문이다.
@@ -288,7 +292,7 @@
   ```javascript
   // 부모 생성자 함수
   var Parent = (function () {
-    // Constructor
+    // 생성자 정의
     function Parent(name) {
       this.name = name
     }
@@ -298,7 +302,7 @@
       console.log('Hi! ' + this.name)
     };
   
-    // return constructor
+    // 생성자를 반환
     return Parent
   }())
   
@@ -516,6 +520,8 @@
   ```
 
   
+
+
 
 
 

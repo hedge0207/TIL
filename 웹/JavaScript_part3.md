@@ -782,14 +782,20 @@ out
 
 - constructor 프로퍼티
 
-  - 프로토타입 객체는 constructor 프로퍼티를 갖는다. 이 construtor 프로퍼티는 객체의 입장에서 자신을 생성한 객체를 가리킨다.
+  - **프로토타입 객체**는 constructor 프로퍼티를 갖는다. 이 construtor 프로퍼티는 객체의 입장에서 자신을 생성한 객체를 가리킨다.
+    - 오직 프로토타입 객체만이 constructor 프로퍼티를 갖는다.
   - 아래 예시에서 `Person()`은 생성자 함수(객체)이고, `cha`는 생성자 함수에 의해 생성된 객체이다.
-  - `cha` 입장에서 자신을 생성한 객체는 `Person()` 생성자 함수이다.
-    - prototype 프로퍼티는 함수 객체(이 경우 `Person()`)가 생성자로 사용될 때, 이 함수를 통해 생성될 객체(이 경우 `cha`)의 부모 역할을 하는 객체(프로토타입)를 가리킨다.
-    - 따라서 `cha` 객체의 프로토타입 객체는 `Person.prototype`이 가리키는 객체이다.
-    -  `Person.prototype` 는 `Person()`이라는 생성자 함수가 생성될 때 함께 생성된다. 
-    - 결국 `Person.prototype`이 가리키는 객체의 constructor 프로퍼티는 `Person()` 생성자 함수를 가리킨다.
-
+    - `cha` 입장에서 자신을 생성한 객체는 `Person()` 생성자 함수이다.
+    - `cha`객체는 프로토타입 객체는 아니므로 constructor 프로퍼티를 갖지 않는다.
+  - 본래 프로토타입 객체가 아닌 객체는 constructor 프로퍼티를 갖지 않는다. 그러나 아래 예제에서는 `cha.constructor===Person`이 `true`를 반환하는데 이는 어떻게 된 것일까?
+    - `Person()` 생성자 함수가 생성될 때, constructor를 `Person()` 생성자 함수로 갖는 `Person.prototype` 객체도 함께 생성된다.
+  - `Person.prototype` 객체는 앞으로 `Person()` 생성자 함수로 생성되는 모든 객체의 프로토타입이 될 객체이다.
+    - `cha` 객체는 `Person()` 생성자 함수로 생성된 객체이다.
+    - 따라서 `cha` 객체의 프로토타입 객체는 `Person.prototype`객체이다.
+    - `cha` 객체는 프로토타입 객체가 아니므로 constructor 프로퍼티가 존재하지 않는다.
+    - `Person.prototype` 객체는 constructor로 `Person()` 생성자 함수를 가리킨다.
+    - `cha.constructor`는 프로토타입 체인에 따라 부모 객체인 `Person.prototype`의 constructor인 `Person()` 생성자 함수를 가리키게 된다.
+  
   ```javascript
   function Person(name){
       this.name = name
