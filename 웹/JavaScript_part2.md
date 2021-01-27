@@ -480,7 +480,7 @@
   ```
 
   - for of
-  - 배열의 요소를 순회하기 위해 사용.
+    - 배열의 요소를 순회하기 위해 사용.
   
   ```js
   const arr = ['a','b','c']
@@ -493,14 +493,13 @@
   b
   c
   ```
-```
   
-- for in
+  - for in 
     - 객체의 문자열 키(key)를 순회하기 위한 문법.
     - 배열에는 사용하지 않는 것이 좋다.
     - 배열은 순서를 보장하는 데이터 구조이지만 for in은 객체에 사용할 것을 염두했기에 순서를 보장하지 않기 때문이다.
   
-  ```js
+  ```javascript
   //객체
   const fruits = {
       apple:2,
@@ -513,30 +512,30 @@
       console.log(fruit,fruits[fruit])
   }
   /*
-  apple 2
-  banana 10
-  tomato 10
-  watermelon 2
-  */
+    apple 2
+    banana 10
+    tomato 10
+    watermelon 2
+    */
   
   
   //배열
   var lst = ['one', 'two', 'three']
-
+  
   for (var ldx in lst) {
-    console.log(idx+': '+lst[idx])
+      console.log(idx+': '+lst[idx])
   }
   
   /*
-  0: one
-  1: two
-  2: three
-  */
-```
-
+    0: one
+    1: two
+    2: three
+    */
+  ```
+  
   - continue
-
-```js
+  
+  ```javascript
   for (let i=0;i<4;i++){
       if (i===3) continue
       console.log(i)
@@ -546,7 +545,9 @@
   1
   2
   4
-```
+  ```
+  
+  
 
 
 
