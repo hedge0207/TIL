@@ -739,150 +739,264 @@
   console.log(window.b)	// undefined
   ```
 
-  
 
 
 
-# strict mode
+## let, const와 블록 레벨 스코프
 
-- strict mode
+- `var`
+  - ES5까지 변수를 선언할 수 있는 유일한 방법은 `var` 키워드를 사용하는 것이었다. 
+  - `var` 키워드로 선언된 변수는 아래와 같은 특징이 있다. 이는 다른 언어와는 다른 특징으로 주의를 기울이지 않으면 심각한 문제를 일으킨다.
+  - 함수 레벨 스코프
+    - 함수의 코드 블록만을 스코프로 인정한다. 따라서 전역 함수 외부에서 생성한 변수는 모두 전역 변수이다. 이는 전역 변수를 남발할 가능성을 높인다.
+    - for 문의 변수 선언문에서 선언한 변수를 for 문의 코드 블록 외부에서 참조할 수 있다.
+  - `var` 키워드 생략 허용
+    - 전역에서 `var` 키워드를 생략했을 때는 별 문제가 되지 않지만 지역에서 생략하면 문제가 된다.
+    - 암묵적 전역 변수를 양산할 가능성이 크다.
+  - 변수 중복 선언 허용
+    - 의도하지 않은 변수값의 변경이 일어날 가능성이 크다.
+  - 변수 호이스팅
+    - 변수를 선언하기 이전에 참조할 수 있다.
+  - ES6는 이러한 `var` 키워드의 단점을 보완하기 위해 `let`과 `const` 키워드를 도입하였다.
 
-  - 암묵적 전역과 같이 프로그래밍을 하면서 실수는 언제나 발생할 수 있으므로 실수를 줄이기 위해서는 근본적인 접근이 필요하다.
-  - 잠재적 오류를 발생시키기 어려운 개발 환경을 만들고, 그 환경에서 개발하는 것이 근본적인 해결책이다.
-  - 이를 지원하는 것이 ES5에서 추가된 strict mode다.
-  - strict mode는 JavaScript의 문법을 보다 엄격히 적용하여 기존에 무시되던 다음과 같은 코드들에 대해 명시적 에러를 발생시킨다.
-    - 오류를 발생시킬 가능성이 높다.
-    - JS 엔진의 최적화 작업에 문제를 일으킬 수 있다.
-
-  - `ESLint`와 같은 린트 도구도 strict mode와 유사한 효과를 얻을 수 있다.
-    - 린트 도구: 정적 분석 기능을 통해 소스 코드를 실행하기 전에 소스코드를 스캔하여 문법적 오류 뿐만 아니라 잠재적 오류까지 찾아내고 오류의 이유를 리포팅해주는 도구.
-    - 위와 같은 오류 뿐만 아니라 코딩 컨벤션을 설정 파일 형태로 정의하고 강제하는 기능도 존재한다.
-  - IE 9 이하는 지원하지 않는다.
 
 
+### let
 
-- 적용 방법
+- 블록 레벨 스코프
 
-  - 전역의 선두 또는 함수 몸체의 선두에 `'use strict';`를 추가한다.
-    - 전역의 선두에 추가하면 스크립트 전체에 적용된다.
-    - 전역에 적용하는 방법은 바람직하지 않다.
-    - 함수의 선두에 추가하면 함수와 해당 함수의 중첩된 내부 함수에도 적용된다.
-    - 선두에 위치시키지 않으면 제대로 동작하지 않는다.
+  - 블록 레벨 스코프를 따르지 않는 var 키워드의 특성 상, 코드 블록 내의 변수는 전역 변수이다. 
+  - 그런데 이미 전역 변수 foo가 선언되어 있다. `var` 키워드를 사용하여 선언한 변수는 중복 선언이 허용되므로 아래 코드는 문법적으로 아무런 문제가 없다. 
+  - 단, 코드 블록 내의 변수 foo는 전역 변수이기 때문에 전역에서 선언된 전역 변수 foo의 값 123을 새로운 값 456으로 재할당하여 덮어쓴다.
 
   ```javascript
-  function foo(){
-      x = 10
+  var foo = 123 // 전역 변수
+  
+  console.log(foo) // 123
+  
+  {
+    var foo = 456 // 전역 변수
   }
-  foo()
-  console.log(x)      // 10
   
-  function bar(){
-      'use strict'
-      y = 20
+  console.log(foo) // 456
+  ```
+
+  - ES6는 **블록 레벨 스코프**를 따르는 변수를 선언하기 위해 `let` 키워드를 제공한다.
+
+  ```javascript
+  let foo = 123 // 전역 변수
+  
+  {
+    let foo = 456 // 지역 변수
+    let bar = 456 // 지역 변수
   }
-  bar()               // ReferenceError: y is not defined
-  ```
-
-
-
-- 전역에 적용하는 것은 피해야 한다.
-
-  - 아래의 경우 다른 스크립트에는 영향을 주지 않고 입력된 스크립트에 한정되어 적용된다.
-  - 그러나 이와 같이 strict mode와 non-strict mode 스크립트를 혼용하는 것은 오류를 발생시킬 수 있다.
-    - 외부 서드 파티 라이브러리의 경우, 라이브러리가 non-strict mode일 경우도 있기 때문에 전역에 적용하는 것은 특히 바람직하지 않다.
-    - 이러한 경우, 즉시 실행 함수로 스크립트 전체를 감싸서 스코프를 구분하고 즉시 실행 함수의 선두에 strict mode를 적용한다.
-
-  ```javascript
-  // 즉시실행 함수에 strict mode 적용
-  (function () {
-    'use strict';
-  	
-  }());
-  ```
-
-
-
-- 함수 단위로 적용하는 것도 피해야 한다.
-
-  - 어떤 함수는 strict mode를 적용하고 어떤 함수는 strict mode를 적용하지 않는 것은 바람직하지 않으며 모든 함수에 일일이 strict mode를 적용하는 것은 번거로운 일이다. 
-  - strict mode가 적용된 함수가 참조할 함수 외부의 컨텍스트에 strict mode를 적용하지 않는다면 이 또한 문제가 발생할 수 있다.
-  - 따라서 strict mode는 즉시실행함수로 감싼 스크립트 단위로 적용하는 것이 바람직하다.
-
-  ```javascript
-  function foo() {
-      // non-strict mode
-      var lеt = 10
   
-      function bar() {
-          'use strict'
-          // 아래와 같이 본래 error가 발생하지 않을 상황에서도 error가 발생한다.
-          let = 20;	// SyntaxError: Unexpected strict mode reserved word
-      }
-      bar();
+  console.log(foo) // 123
+  console.log(bar) // ReferenceError: bar is not defined
+  ```
+
+  
+
+- 변수 중복 선언 금지
+
+  - var 키워드로는 동일한 이름을 갖는 변수를 중복해서 선언할 수 있다. 
+  - 하지만, let 키워드로는 동일한 이름을 갖는 변수를 중복해서 선언할 수 없다. 
+  - 변수를 중복 선언하면 문법 에러(SyntaxError)가 발생한다.
+
+  ```javascript
+  var foo = 123
+  var foo = 456  // 중복 선언 허용
+  
+  let bar = 123
+  let bar = 456  // Uncaught SyntaxError: Identifier 'bar' has already been declared
+  ```
+
+
+
+- 호이스팅
+
+  - 자바스크립트는 ES6에서 도입된 `let`, `const`를 포함하여 모든 선언(`var`, `let`, `const`, `function`, `function*`)을 호이스팅한다. 
+  - 호이스팅(Hoisting)이란, `var` 선언문이나 `function` 선언문 등을 해당 스코프의 선두로 옮긴 것처럼 동작하는 특성을 말한다.
+  - 하지만 var 키워드로 선언된 변수와는 달리 let 키워드로 선언된 변수를 선언문 이전에 참조하면 참조 에러(ReferenceError)가 발생한다. 
+
+  ```javascript
+  console.log(foo) // undefined
+  var foo
+  
+  console.log(bar) // Error: Uncaught ReferenceError: bar is not defined
+  let bar
+  ```
+
+  - 이는 let 키워드로 선언된 변수는 스코프의 시작에서 변수의 선언까지 **일시적 사각지대(Temporal Dead Zone; TDZ)**에 빠지기 때문이다.
+    - let 키워드로 선언된 변수는 선언 단계와 초기화 단계가 분리되어 진행된다.
+    - 즉, 스코프에 변수를 등록(선언단계)하지만 초기화 단계는 변수 선언문에 도달했을 때 이루어진다. 
+    - 초기화 이전에 변수에 접근하려고 하면 참조 에러(ReferenceError)가 발생한다. 
+    - 이는 변수가 아직 초기화되지 않았기 때문이다. 
+    - 다시 말하면 변수를 위한 메모리 공간이 아직 확보되지 않았기 때문이다. 
+    - 따라서 스코프의 시작 지점부터 초기화 시작 지점까지는 변수를 참조할 수 없다. 
+    - 스코프의 시작 지점부터 초기화 시작 지점까지의 구간을 일시적 사각지대(Temporal Dead Zone; TDZ)라고 부른다.
+
+  ```javascript
+  // 스코프의 선두에서 선언 단계가 실행된다.
+  // 아직 변수가 초기화(메모리 공간 확보와 undefined로 초기화)되지 않았다.
+  // 따라서 변수 선언문 이전에 변수를 참조할 수 없다.
+  console.log(foo) // ReferenceError: foo is not defined
+  
+  let foo // 변수 선언문에서 초기화 단계가 실행된다.
+  console.log(foo) // undefined
+  
+  foo = 1 // 할당문에서 할당 단계가 실행된다.
+  console.log(foo) // 1
+  ```
+
+  - 지역변수의 경우
+    - let으로 선언된 변수는 블록 레벨 스코프를 가지므로 코드 블록 내에서 선언된 변수 foo는 지역 변수이다. 
+    - 따라서 지역 변수 foo도 해당 스코프에서 호이스팅되고 코드 블록의 선두부터 초기화가 이루어지는 지점까지 일시적 사각지대(TDZ)에 빠진다. 
+    - 따라서 전역 변수 foo의 값이 출력되지 않고 참조 에러(ReferenceError)가 발생한다.
+
+  ```javascript
+  let foo = 1 // 전역 변수
+  
+  {
+    console.log(foo) // ReferenceError: foo is not defined
+    let foo = 2 // 지역 변수
   }
-  foo()
   ```
 
 
 
-- strict mode가 발생시키는 에러
+- 클로저
 
-  - 암묵적 전역 변수
-    - 선언하지 않은 변수를 참조하면 `ReferenceError`가 발생한다.
+  - `var` 키워드를 사용할 경우 아래의 코드는 예상과 다르게 동작할 것이다.
+    - 위 코드의 실행 결과로 0, 1, 2를 기대할 수도 있지만 결과는 3이 세 번 출력된다. 
+    - 그 이유는 for 루프의 var i가 전역 변수이기 때문이다.
 
   ```javascript
-  (function () {
-    'use strict'
+  var funcs = []
   
-    x = 1
-    console.log(x) // ReferenceError: x is not defined
-  }())
+  // 함수의 배열을 생성하는 for 루프의 i는 전역 변수다.
+  for (var i = 0; i < 3; i++) {
+    funcs.push(function () { console.log(i) })
+  }
+  
+  // 배열에서 함수를 꺼내어 호출한다.
+  for (var j = 0; j < 3; j++) {
+    funcs[j]()
+  }
   ```
 
-  - 매개변수 이름의 중복
-    - 중복된 함수 파라미터 이름을 사용하면 `SyntaxError`가 발생한다.
+  - `let`을 사용하여 아래와 같이 수정 가능하다.
 
   ```javascript
-  (function () {
-    'use strict';
-    
-    function foo(x, x) {		//SyntaxError: Duplicate parameter name not allowed in this context
-      return x + x;
-    }
-    console.log(foo(3, 2));
-  }());
+  var arr = []
+  
+  // 함수의 배열을 생성하는 for 루프의 i는 for 루프의 코드 블록에서만 유효한 지역 변수이면서 자유 변수이다.
+  for (let i = 0; i < 3; i++) {
+    arr.push(function () { console.log(i) })
+  }
+  
+  // 배열에서 함수를 꺼내어 호출한다
+  for (var j = 0; j < 3; j++) {
+    console.dir(arr[j])
+    arr[j]()
+  }
   ```
 
-  - `with`문의 사용
-    - with 문을 사용하면 `SyntaxError`가 발생한다.
+  
+
+- 전역 객체와 let
+
+  - var 키워드로 선언된 변수를 전역 변수로 사용하면 전역 객체의 프로퍼티가 된다.
 
   ```javascript
-  (function () {
-    'use strict';
+  var foo = 123 // 전역변수
   
-    with({ x: 1 }) {		// SyntaxError: Strict mode code may not include a with statement
-      console.log(x);
-    }
-  }());
+  console.log(window.foo) // 123
   ```
 
-  - 생성자 함수가 아닌 일반 함수에서의 `this` 사용
-    - 에러가 발생하지는 않지만 this에 undefined가 바인딩된다.
+  - let 키워드로 선언된 변수를 전역 변수로 사용하는 경우, let 전역 변수는 전역 객체의 프로퍼티가 아니다. 
+    - 즉, `window.foo`와 같이 접근할 수 없다. 
+    - let 전역 변수는 보이지 않는 개념적인 블록 내에 존재하게 된다.
 
   ```javascript
-  (function () {
-    'use strict';
+  let foo = 123 // 전역변수
   
-    function foo() {
-      console.log(this); // undefined
-    }
-    foo();
-  
-    function Foo() {
-      console.log(this); // Foo
-    }
-    new Foo();
-  }());
+  console.log(window.foo) // undefined
+  ```
+
+
+
+
+
+### const
+
+- `const`
+  - `const`는 상수(변하지 않는 값)를 위해 사용한다. 
+  - 하지만 반드시 상수만을 위해 사용하지는 않는다.
+
+
+
+- 선언과 초기화
+
+  - `let`은 재할당이 자유로우나 `const`는 재할당이 금지된다.
+
+  ```javascript
+  const FOO = 123
+  FOO = 456 // TypeError: Assignment to constant variable.
+  ```
+
+  - `const`는 반드시 선언과 동시에 할당이 이루어져야 한다.
+    - 그렇지 않으면 다음처럼 문법 에러(SyntaxError)가 발생한다.
+
+  ```javascript
+  const FOO // SyntaxError: Missing initializer in const declaration
+  ```
+
+  - `const`는 `let`과 마찬가지로 블록 레벨 스코프를 갖는다.
+
+  ```javascript
+  {
+    const FOO = 10
+    console.log(FOO) //10
+  }
+  console.log(FOO) // ReferenceError: FOO is not defined
   ```
 
   
+
+- 상수
+  - 상수는 가독성과 유지보수의 편의를 위해 적극적으로 사용해야 한다.
+  - 네이밍이 적절한 상수로 선언하면 가독성과 유지보수성이 대폭 향상된다.
+
+
+
+- `const`와 객체
+
+  - const는 재할당이 금지된다. 
+  - 이는 const 변수의 타입이 객체인 경우, 객체에 대한 참조를 변경하지 못한다는 것을 의미한다. 
+  - 하지만 이때 객체의 프로퍼티는 보호되지 않는다. 
+  - 다시 말하자면 재할당은 불가능하지만 할당된 객체의 내용(프로퍼티의 추가, 삭제, 프로퍼티 값의 변경)은 변경할 수 있다.
+  - 객체의 내용이 변경되더라도 객체 타입 변수에 할당된 주소값은 변경되지 않는다. 
+    - 따라서 객체 타입 변수 선언에는 const를 사용하는 것이 좋다.
+    - 만약에 명시적으로 객체 타입 변수의 주소값을 변경(재할당)하여야 한다면 let을 사용한다.
+
+  ```javascript
+  const user = { name: 'Cha' }
+  
+  // 객체의 내용은 변경할 수 있다.
+  user.name = 'Kim'
+  
+  console.log(user) // { name: 'Kim' }
+  ```
+
+  
+
+- `var`, `let`, `const`
+  - 변수 선언에는 기본적으로 `const`를 사용하고 `let`은 재할당이 필요한 경우에 한정해 사용하는 것이 좋다. 
+  - 원시 값의 경우, 가급적 상수를 사용하는 편이 좋다. 
+  - 그리고 객체를 재할당하는 경우는 생각보다 흔하지 않다.
+  -  `const` 키워드를 사용하면 의도치 않은 재할당을 방지해 주기 때문에 보다 안전하다.
+  - `var`, `let`, 그리고 `const`는 다음처럼 사용하는 것을 추천한다.
+    - ES6를 사용한다면 `var` 키워드는 사용하지 않는다.
+    - 재할당이 필요한 경우에 한정해 `let` 키워드를 사용한다. 이때 변수의 스코프는 최대한 좁게 만든다.
+    - 변경이 발생하지 않는(재할당이 필요 없는 상수) 원시 값과 객체에는 `const` 키워드를 사용한다. `const` 키워드는 재할당을 금지하므로 `var`, `let` 보다 안전하다.

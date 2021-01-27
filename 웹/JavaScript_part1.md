@@ -659,7 +659,10 @@ var x = 1  //var는 요즘은 쓰지 않지만 명시적 표기를 위해 적는
   - Template Literal
   
   ```javascript
-  //줄 바꿈: 따옴표가 아닌 ``를 사용
+  // 큰 따옴표와 작은 따옴표를 혼용 가능
+  const tl = `'작은따옴표'와 "큰따옴표" 혼용 가능`
+  
+  // 줄 바꿈: 따옴표가 아닌 ``를 사용
   const x = `자바스크
    립트`
   console.log(x)
@@ -668,7 +671,7 @@ var x = 1  //var는 요즘은 쓰지 않지만 명시적 표기를 위해 적는
   자바스크
      립트
      
-  //문자열 내에 변수 사용: `${변수}`
+  // 문자열 내에 변수 사용: `${변수}`
   const message1 = 'hi'
   const message2 = `I said, ${message1}`
   ```
