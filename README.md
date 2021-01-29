@@ -91,6 +91,39 @@
 
 <br/>
 
+# Git
+
+## [git_part1]()
+
+- 시작하기
+  - 버전 관리 시스템
+  - git
+  - git 최초 설정
+- Git 기초
+  - 저장소 만들기
+  - 저장하기
+  - 커밋 히스토리 조회하기
+  - 되돌리기
+  - 리모트 저장소
+  - 태그
+  - Alias
+
+<br/>
+
+## [git_part2]()
+
+- Git 브랜치
+  - 브랜치란
+  - 브랜치와 Merge의 기초
+  - 브랜치 관리
+  - 브랜치 워크플로우
+  - 리모트 브랜치
+  - Rebase
+
+<br/>
+
+<br/>
+
 # React
 
 ## [React Tutorial](https://github.com/hedge0207/TIL/blob/master/React/React_tutorial.md) 
@@ -384,7 +417,6 @@
 
 ## [JavaScript_part11](https://github.com/hedge0207/TIL/blob/master/javascript/JavaScript_part11.md)
 
-- Device Orientation
 - 비동기식 처리 모델과 ajax
   - 동기식 처리 모델과 비동기식 처리 모델
   - Ajax
@@ -393,14 +425,13 @@
   - axios
 - 프로미스
   - 콜백 패턴의 단점
-- 예외처리
 
 <br/>
 
 ## [JavaScript_part12](https://github.com/hedge0207/TIL/blob/master/javascript/JavaScript_part12.md)
 
-- REST API
-- SPA
+- async&await
+- 예외처리
 - 클래스
 - 모듈
 
@@ -423,6 +454,9 @@
   - 객체리터럴 프로퍼티 기능 확장
   - 디스트럭처링
   - etc
+- Device Orientation
+- REST API
+- SPA
 
 <br/>
 
@@ -604,10 +638,14 @@
 
 <br/>
 
-## [babel_and_webpack](https://github.com/hedge0207/TIL/blob/master/%EC%9B%B9/Emailjs.md)
+## [babel_and_webpack](https://github.com/hedge0207/TIL/blob/master/%EC%9B%B9/babel_and_webpack.md)
 
-- 코딩 전 설정 사항
-- 코딩하기
+- Babel
+  - Babel이란
+  - Babel 사용하기
+- Webpack
+  - Webpack이란
+  - Webpack 사용하기
 
 <br/>
 
@@ -644,3 +682,14 @@
 - Docker 실행하기
   - mariaDB 연동하기
   - Docker 명령어
+
+
+
+# [git](https://github.com/hedge0207/TIL/blob/master/git/git.md)
+
+- 초기 설정
+- git push
+- git pull
+- git branch
+- git 저장소 옮기기
+- 올바른 commit message 작성하기

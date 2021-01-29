@@ -1,285 +1,349 @@
-# REST API
+# async&await
 
-- REST(Representational State Transfer)
-  - HTTP/1.0과 1.1의 스펙 작성에 참여하였고, 아파치 HTTP 서버 프로젝트의 공동설립자인 로이 필딩 (Roy Fielding)의 2000년 논문에서 처음 소개되었다.
-  - 발표 당시의 웹이 HTTP의 설계 상 우수성을 제대로 사용하지 못하고 있는 상황을 보고 웹의 장점을 최대한 활용할 수 있는 아키텍쳐로서 REST를 소개하였고 이는 HTTP 프로토콜을 의도에 맞게 디자인하도록 유도하고 있다.
-  - REST의 기본 원칙을 성실히 지킨 서비스 디자인을 “RESTful”이라고 표현한다.
+- async와 await
+  - 프로미스를 보다 간편하게 사용할 수 있게 해 간결하고 간편해준다.
+  - 프로미스가 동기적으로 수행되는 것 처럼 보이게 해준다.
+  - 기존 프로미스 사용 방식의 syntactic sugar다.
+  - 모든 프로미스에 적용해야 하는 것은 아니고 적용하기 적합한 프로미스가 존재한다.
 
 
 
-- REST API 중심 규칙
+- async
 
-  - 가장 중요한 기본적인 규칙 두 가지는 **URI는 자원을 표현하는 데에 집중**하고 **행위에 대한 정의는 HTTP Method를 통해 해야 한다**는 것이다.
+  - 프로미스는 강력한 기능이지만 코드상으로 복잡해 보일 수 있다는 단점이 있다.
+  - async를 사용하면 보다 간편하게 프로미스를 작성 가능하다.
+  - 아래와 같이 `async` 키워드를 함수 앞에 붙여주면 된다.
+    - 코드 블록이 자동으로 프로미스로 변경된다.
 
-  - URI는 정보의 자원을 표현해야 한다.
-
-    - 리소스명은 동사보다는 명사를 사용한다. 
-    - URI는 자원을 표현하는데 중점을 두어야 한다. 
-    - get 같은 행위에 대한 표현이 들어가서는 안된다.
-
-    ```
-    # bad
-    GET /getTodos/1		// 행위 표현이 들어갔다.
-    GET /todos/show/1   // 행위 표현이 들어갔다.
-    
-    
-    # good
-    GET /todos/1
-    ```
-
-  - 자원에 대한 행위는 HTTP Method로 표현한다.
-
-    ```
-    # bad
-    GET /todos/delete/1
-    
-    # good
-    DELETE /todos/1
-    ```
-
-    
-
-- HTTP Method
-
-  - 주로 5가지의 Method를 사용하여 CRUD를 구현한다.
-
-  | Method | Action         | 역할                    | 페이로드(데이터) |
-  | ------ | -------------- | ----------------------- | ---------------- |
-  | GET    | index/retrieve | 모든/특정 리소스를 조회 | X                |
-  | POST   | create         | 리소스를 생성           | O                |
-  | PUT    | replace        | 리소스의 전체를 교체    | O                |
-  | PATCH  | modify         | 리소스의 일부를 수정    | O                |
-  | DELETE | delete         | 모든/특정 리소스를 삭제 | X                |
-
+  ```javascript
+  // 기존의 프로미스 사용
+  function fetchUser(){
+      return new Promise((resolve,reject)=>{
+          resolve('Cha')
+      })
+  }
   
-
-- REST API의 구성
-
-  - 자원(Resource), 행위(Verb), 표현(Representations)의 3가지 요소로 구성된다.
-  - REST는 자체 표현 구조(Self-descriptiveness)로 구성되어 REST API만으로 요청을 이해할 수 있다.
-
-  | 구성 요소       | 내용                    | 표현 방법             |
-  | --------------- | ----------------------- | --------------------- |
-  | Resource        | 자원                    | HTTP URI              |
-  | Verb            | 자원에 대한 행위        | HTTP Method           |
-  | Representations | 자원에 대한 행위의 내용 | HTTP Message Pay Load |
-
+  const user = fetchUser()
+  user.then(console.log)
   
-
-
-
-# SPA
-
-- SPA(Single Page Application)
-  - 단일 페이지 애플리케이션(Single Page Application, SPA)는 모던 웹의 패러다임이다. 
-  - SPA는 기본적으로 단일 페이지로 구성되며 기존의 서버 사이드 렌더링과 비교할 때, 배포가 간단하며 네이티브 앱과 유사한 사용자 경험을 제공할 수 있다는 장점이 있다.
-  - link tag를 사용하는 전통적인 웹 방식은 새로운 페이지 요청 시마다 정적 리소스가 다운로드되고 전체 페이지를 다시 렌더링하는 방식을 사용하므로 새로고침이 발생되어 사용성이 좋지 않다. 그리고 변경이 필요없는 부분를 포함하여 전체 페이지를 갱신하므로 비효율적이다.
-  - SPA는 기본적으로 웹 애플리케이션에 필요한 모든 정적 리소스를 최초에 한번 다운로드한다. 이후 새로운 페이지 요청 시, 페이지 갱신에 필요한 데이터만을 전달받아 페이지를 갱신하므로 전체적인 트래픽을 감소할 수 있고, 전체 페이지를 다시 렌더링하지 않고 변경되는 부분만을 갱신하므로 새로고침이 발생하지 않아 네이티브 앱과 유사한 사용자 경험을 제공할 수 있다.
-  - 모바일의 사용이 증가하고 있는 현 시점에 트래픽의 감소와 속도, 사용성, 반응성의 향상은 매우 중요한 이슈이다. SPA의 핵심 가치는 **사용자 경험(UX) 향상**에 있으며 부가적으로 애플리케이션 속도의 향상도 기대할 수 있어서 모바일 퍼스트(Mobile First) 전략에 부합한다.
-  - 모든 소프트웨어 아키텍처에는 trade-off가 존재하며 모든 애플리케이션에 적합한 은탄환(Silver bullet)은 없듯이 SPA 또한 구조적인 단점을 가지고 있다. 대표적인 단점은 아래와 같다.
-    - SPA는 웹 애플리케이션에 필요한 모든 정적 리소스를 최초에 한번 다운로드하기 때문에 초기 구동 속도가 상대적으로 느리다. 하지만 SPA는 웹페이지보다는 애플리케이션에 적합한 기술이므로 트래픽의 감소와 속도, 사용성, 반응성의 향상 등의 장점을 생각한다면 결정적인 단점이라고 할 수는 없다.
-    - SPA는 서버 렌더링 방식이 아닌 자바스크립트 기반 비동기 모델(클라이언트 렌더링 방식)이다. 따라서 SEO(검색엔진 최적화)는 언제나 단점으로 부각되어 왔던 이슈이다. 하지만 SPA는 정보의 제공을 위한 웹페이지보다는 애플리케이션에 적합한 기술이므로 SEO 이슈는 심각한 문제로 볼 수 없다. Angular 또는 React 등의 SPA 프레임워크는 서버 렌더링을 지원하는 SEO 대응 기술이 이미 존재하고 있어 SEO 대응이 필요한 페이지에 대해서는 선별적 SEO 대응이 가능하다.
-
-
-
-- Routing
-  - 라우팅이란 출발지에서 목적지까지의 경로를 결정하는 기능이다. 
-    - 애플리케이션의 라우팅은 사용자가 태스크를 수행하기 위해 어떤 화면(view)에서 다른 화면으로 화면을 전환하는 내비게이션을 관리하기 위한 기능을 의미한다.
-    - 일반적으로 사용자자 요청한 URL 또는 이벤트를 해석하고 새로운 페이지로 전환하기 위한 데이터를 취득하기 위해 서버에 필요 데이터를 요청하고 화면을 전환하는 위한 일련의 행위를 말한다.
-  - 브라우저가 화면을 전환하는 경우는 아래와 같다.
-    - 브라우저의 주소창에 URL을 입력하면 해당 페이지로 이동한다.
-    - 웹페이지의 링크를 클릭하면 해당 페이지로 이동한다.
-    - 브라우저의 뒤로가기 또는 앞으로가기 버튼을 클릭하면 사용자가 방문한 웹페이지의 기록(history)의 뒤 또는 앞으로 이동한다.
-  - AJAX 요청에 의해 서버로부터 데이터를 응답받아 화면을 생성하는 경우, 브라우저의 주소창의 URL은 변경되지 않는다. 
-    - 이는 사용자의 방문 history를 관리할 수 없음을 의미하며, SEO(검색엔진 최적화) 이슈의 발생 원인이기도 하다. 
-    - history 관리를 위해서는 각 페이지는 브라우저의 주소창에서 구별할 수 있는 유일한 URL을 소유하여야 한다.
-
-
-
-- 전통적 링크 방식
-
-  -  link tag로 동작하는 기본적인 웹페이지의 동작 방식이다.
-  -  link tag(`<a href="service.html">Service</a>` 등)을 클릭하면 href 어트리뷰트의 값인 리소스의 경로가 URL의 path에 추가되어 주소창에 나타나고 해당 리소스를 서버에 요청된다.
-  -  이때 서버는 html로 화면을 표시하는데 부족함이 없는 완전한 리소스를 클라이언트에 응답한다. 
-  -  이를 **서버 렌더링**이라 한다. 브라우저는 서버가 응답한 html을 수신하고 렌더링한다. 
-  -  이때 이전 페이지에서 수신된 html로 전환하는 과정에서 전체 페이지를 다시 렌더링하게 되므로 새로고침이 발생한다.
-  -  이 방식은 JavaScript가 필요없이 응답된 html만으로 렌더링이 가능하며 각 페이지마다 고유의 URL이 존재하므로 history 관리 및 SEO 대응에 아무런 문제가 없다. 
-  -  하지만 중복된 리소스를 요청마다 수신해야 하며, 전체 페이지를 다시 렌더링하는 과정에서 새로고침이 발생하여 사용성이 좋지 않은 단점이 있다.
-
-  ```html
-  <!DOCTYPE html>
-  <html>
-      <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <meta http-equiv="X-UA-Compatible" content="ie=edge">
-          <title>Link</title>
-          <link rel="stylesheet" href="css/style.css">
-      </head>
-      <body>
-          <nav>
-              <ul>
-                  <li><a href="/">Home</a></li>
-                  <li><a href="service.html">Service</a></li>
-                  <li><a href="about.html">About</a></li>
-              </ul>
-          </nav>
-          <section>
-              <h1>Home</h1>
-              <p>This is main page</p>
-          </section>
-      </body>
-  </html>
-  ```
-
   
-
-- AJAX
-
-  > JS 코드는 https://poiemaweb.com/js-spa 참고
-
-  - 전통적 링크 방식의 단점을 보완하기 위해 등장한 것이 AJAX(Asynchronous JavaScript and XML)이다. 
-  - AJAX는 자바스크립트를 이용해서 비동기적(Asynchronous)으로 서버와 브라우저가 데이터를 교환할 수 있는 통신 방식을 의미한다.
-  - 서버로부터 웹페이지가 반환되면 화면 전체를 새로 렌더링해야 하는데 페이지 일부만을 갱신하고도 동일한 효과를 볼 수 있도록 하는 것이 AJAX이다.
-  - 예제를 살펴보면 link tag(`<a id="home">Home</a>` 등)에 href 어트리뷰트를 사용하지 않는다. 그리고 웹페이지의 내용이 일부 비어있는 것을 알 수 있다.
-  - 내비게이션이 클릭되면 link tag의 기본 동작을 prevent하고 AJAX을 사용하여 서버에 필요한 리소스를 요청한다. 요청된 리소스가 응답되면 클라이언트에서 웹페이지에 그 내용을 갈아끼워 html을 완성한다.
-  - 이를 통해 불필요한 리소스 중복 요청을 방지할 수 있다. 또한 페이지 전체를 새로 렌더링할 필요가 없고 갱신이 필요한 일부만 로드하여 갱신하면 되므로 빠른 퍼포먼스와 부드러운 화면 표시 효과를 기대할 수 있으므로 새로고침이 없는 보다 향상된 사용자 경험을 구현할 수 있다는 장점이 있다.
-  - AJAX는 URL을 변경시키지 않으므로 주소창의 주소가 변경되지 않는다. 
-    - 이는 브라우저의 뒤로가기, 앞으로가기 등의 **history 관리가 동작하지 않음을 의미한다.** 
-    - 물론 코드 상의 history.back(), history.go(n) 등도 동작하지 않는다. 
-  - 새로고침을 클릭하면 주소창의 주소가 변경되지 않기 때문에 언제나 첫페이지가 다시 로딩된다. 
-  - 하나의 주소로 동작하는 AJAX 방식은 **SEO 이슈**에서도 자유로울 수 없다.
-
-  ```html
-  <!DOCTYPE html>
-  <html>
-      <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <meta http-equiv="X-UA-Compatible" content="ie=edge">
-          <title>AJAX</title>
-          <link rel="stylesheet" href="css/style.css">
-          <script src="js/index.js" defer></script>
-      </head>
-      <body>
-          <nav>
-              <ul id="navigation">
-                  <li><a id="home">Home</a></li>
-                  <li><a id="service">Service</a></li>
-                  <li><a id="about">About</a></li>
-              </ul>
-          </nav>
-          <div class="app-root">Loading..</div>
-      </body>
-  </html>
+  // 함수 앞에 async 키워드를 붙여준다.
+  async function fetchUser(){
+      return "Cha"
+  }
+  
+  const user = fetchUser()
+  user.then(console.log)
   ```
 
 
 
-- Hash 방식
+- 프로미스를 사용해도 콜백 헬이 발생할 수 있다.
 
-  > JS 코드는 https://poiemaweb.com/js-spa 참고
+  - async를 사용하면 보다 간편하게 코드를 작성 가능하다.
 
-  - AJAX 방식은 불필요한 리소스 중복 요청을 방지할 수 있고, 새로고침이 없는 사용자 경험을 구현할 수 있다는 장점이 있지만 history 관리가 되지 않는 단점이 있다. 이를 보완한 방법이 Hash 방식이다.
-  - Hash 방식은 URI의 fragment identifier(#service)의 고유 기능인 앵커(anchor)를 사용한다. 
-    - fragment identifier는 hash mark 또는 hash라고 부르기도 한다.
-  - 위 예제를 살펴보면 link tag(`<a href="#service">Service</a>` 등)의 href 어트리뷰트에 hash를 사용하고 있다.
-    - 즉, 내비게이션이 클릭되면 hash가 추가된 URI가 주소창에 표시된다. 
-    - 단, URL이 동일한 상태에서 hash가 변경되면 브라우저는 서버에 어떠한 요청도 하지 않는다. 
-    - 즉, hash는 변경되어도 서버에 새로운 요청을 보내지 않으며 따라서 페이지가 갱신되지 않는다.
-    - hash는 요청을 위한 것이 아니라 fragment identifier(#service)의 고유 기능인 앵커(anchor)로 웹페이지 내부에서 이동을 위한 것이기 때문이다.
-  - 또한 hash 방식은 서버에 새로운 요청을 보내지 않으며 따라서 페이지가 갱신되지 않지만 페이지마다 고유의 논리적 URL이 존재하므로 history 관리에 아무런 문제가 없다.
-  - hash 방식은 uri의 hash가 변경하면 발생하는 이벤트인 hashchange 이벤트를 사용하여 hash의 변경을 감지하여 필요한 AJAX 요청을 수행한다.
-  - hash 방식의 단점 
-    - uri에 불필요한 `#`이 들어간다는 것이다. 일반적으로 hash 방식을 사용할 때 `#!`을 사용하기도 하는데 이를 해시뱅(Hash-bang)이라고 부른다.
-    - hash 방식은 과도기적 기술이다.
-    - SEO 이슈
-
-  ```html
-  <!DOCTYPE html>
-  <html>
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>SPA</title>
-    <link rel="stylesheet" href="css/style.css">
-    <script src="js/index.js" defer></script>
-  </head>
-  <body>
-    <nav>
-      <ul>
-        <li><a href="/">Home</a></li>
-        <li><a href="#service">Service</a></li>
-        <li><a href="#about">About</a></li>
-      </ul>
-    </nav>
-    <div class="app-root">Loading...</div>
-  </body>
-  </html>
-  ```
-
-
-
-- PJAX 방식
-
-  > JS 코드는 https://poiemaweb.com/js-spa 참고
-
-  - hash 방식의 가장 큰 단점은 SEO 이슈이다. 이를 보완한 방법이 HTML5의 Histroy API인 `pushState`와 `popstate` 이벤트를 사용한 PJAX 방식이다. 
-  - pushState와 popstate은 IE 10 이상에서 동작한다.
-  - 예시를 살펴보면 link tag(`<a href="/service">Service</a>` 등)의 href 어트리뷰트에 path를 사용하고 있다. 
-  - 내비게이션이 클릭되면 path가 추가된 URI가 서버로 요청된다. 
-  - PJAX 방식은 내비게이션 클릭 이벤트를 캐치하고 `preventDefault`를 사용하여 서버로의 요청을 방지한다. 
-  - 이후, href 어트리뷰트에 path을 사용하여 AJAX 요청을 하는 방식이다.
-    - 이때 AJAX 요청은 주소창의 URL을 변경시키지 않아 history 관리가 불가능하다. 
-    - 이때 사용하는 것이 `pushState` 메서드이다. 
-    - `pushState` 메서드는 주소창의 URL을 변경하고 URL을 history entry로 추가하지만 요청하지는 않는다.
-
-  - PJAX 방식은 서버에 새로운 요청을 보내지 않으며 따라서 페이지가 갱신되지 않는다. 
-  - 하지만 페이지마다 고유의 URL이 존재하므로 history 관리에 아무런 문제가 없다. 또한 hash를 사용하지 않으므로 SEO에도 문제가 없다.
-
-  ```html
-  <!DOCTYPE html>
-  <html>
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>PJAX</title>
-    <link rel="stylesheet" href="css/style.css">
-    <script src="js/index.js" defer></script>
-  </head>
-  <body>
-    <nav>
-      <ul id="navigation">
-        <li><a href="/">Home</a></li>
-        <li><a href="/service">Service</a></li>
-        <li><a href="/about">About</a></li>
-      </ul>
-    </nav>
-    <div class="app-root">Loading...</div>
-  </body>
-  </html>
+  ```javascript
+  function getFruits(){
+      return getApple()
+      .then(apple => {
+          return getBanana()
+          .then(banana => `${apple} + ${banana}`)
+      })
+  }
+  getFruits().then(console.log)
+  
+  
+  // async를 활용하면 아래와 같이 작성 가능하다.
+  async function getFruits(){
+      const apple = await getApple()
+      const banana = await getBanana()
+      return `${apple} + ${banana}`
+  }
+  getFruits().then(console.log)
   ```
 
   
 
-- 결론
+- await 사용하기
 
-  - 모든 소프트웨어 아키텍처에는 trade-off가 존재한다. 
-  - SPA 또한 모든 애플리케이션에 적합한 은탄환(Silver bullet)은 아니다. 
-  - 애플리케이션의 상황을 고려하여 적절한 방법을 선택할 필요가 있다.
+  - `await` 키워드는 `async` 키워드가 붙은 함수 내부에서만 사용이 가능하다.
+  -  `await` 키워드를 만나면 해당 작업이 완료될 때 까지 아래 작업이 진행되지 않는다. 즉, 동기적으로 동작하게 된다.
 
-  | 구분             | History 관리 | SEO 대응 | 사용자 경험 | 서버 렌더링 | 구현 난이도 | IE 대응 |
-  | ---------------- | ------------ | -------- | ----------- | ----------- | ----------- | ------- |
-  | 전통적 링크 방식 | O            | O        | X           | O           | 간단        |         |
-  | AJAX 방식        | X            | X        | O           | X           | 보통        | 7 이상  |
-  | Hash 방식        | O            | X        | O           | X           | 보통        | 8 이상  |
-  | PJAX 방식        | O            | O        | O           | △           | 복잡        | 10 이상 |
+  ```javascript
+  function delay(ms){
+      // 정해진 시간이 지나면 resolve를 호출
+      return new Promise(resolve => setTimeout(resolve,ms))
+  }
+  
+  async function getApple(){
+      // await 키워드가 붙은 작업이 끝날 때 까지 아래의 작업을 수행하지 않는다.
+      await delay(3000)
+      return 'Apple'
+  }
+  
+  async function getBanana(){
+      await delay(3000)
+      return 'Banana'
+  }
+  
+  // 만일 위 코드를 async와 await 없이 작성하면 아래와 같다.
+  function getBanana(){
+      return delay(3000)
+      .then(()=>'Banana')
+  } 
+  ```
+
+  
+
+- 예외처리는 `try`, `catch`를 활용한다.
+
+  ```javascript
+  async function getApple(){
+      await delay(3000)
+      throw 'error'	// 에러를 발생시킨다.
+      return 'Apple'
+  }
+  
+  async function getBanana(){
+      await delay(3000)
+      return 'Banana'
+  }
+  
+  async function getFruits(){
+      let apple
+      let banana
+      try{
+          apple = await getApple()
+          banana = await getBanana()
+      } catch{
+          apple = 'error apple'
+          banana = 'error banana'
+      }
+      return `${apple} + ${banana}`
+  }
+  
+  getFruits().then(console.log)	// error apple + error banana
+  ```
 
 
 
+- 병렬 처리하기
 
+  - `await`을 사용하면 병렬 처리가 불가능해진다.
+  - 아래 코드에서 `getApple`이 실행되고 3초 후에 `getBanana`가 실행되는데 꼭 apple을 받아야 banana를 받을 수 있는 것은 아니므로 이는 비효율적이다.
+  - 프로미스가 생성되는 순간 프로미스 내부의 코드 블록이 실행된다는 점을 이용하면 된다.
+
+  ```javascript
+  function delay(ms){
+      return new Promise(resolve => setTimeout(resolve,ms))
+  }
+  
+  async function getApple(){
+      await delay(3000)
+      return 'Apple'
+  }
+  
+  async function getBanana(){
+      await delay(3000)
+      return 'Banana'
+  }
+  
+  async function getFruits(){
+      // applePromise, bananaPromise를 생성
+      // 생성과 동시에 내부의 코드 블록이 실행된다.
+      // 따라서 병렬적 처리가 가능해진다.
+      const applePromise = getApple()
+      const bananaPromise = getBanana()
+      const apple = await applePromise
+      const banana = await bananaPromise
+      return `${apple} + ${banana}`
+  }
+  
+  getFruits().then(console.log)
+  ```
+
+  - `Promise.all()`을 활용
+    - 위에서 살펴본 방법 보다 훨씬 깔끔하기에 이 방법을 많이 쓴다.
+    - `Promise.all()`에 프로미스 배열을 전달하면, 모든 프로미스들이 병렬적으로 수행되고, 모든 프로미스들이 완료될 때까지 기다린다.
+
+  ```javascript
+  function delay(ms){
+      return new Promise(resolve => setTimeout(resolve,ms))
+  }
+  
+  async function getApple(){
+      await delay(3000)
+      return 'Apple'
+  }
+  
+  async function getBanana(){
+      await delay(3000)
+      return 'Banana'
+  }
+  
+  function getFruits(){
+  	return Promise.all([getApple(),getBanana()])
+      .then(fruits => fruits.join(' + '))
+  }
+  
+  getFruits().then(console.log)
+  ```
+
+  - `Promise.race()`
+    - 병렬 처리를 할 때 가장 먼저 완료된 프로미스만을 받아 오기 위해 사용한다.
+
+  ```javascript
+  function delay(ms){
+      return new Promise(resolve => setTimeout(resolve,ms))
+  }
+  
+  async function getApple(){
+      await delay(3000)		// 3초
+      return 'Apple'
+  }
+  
+  async function getBanana(){
+      await delay(1000)		// 1초
+      return 'Banana'
+  }
+  
+  function getFastestFruit(){
+  	return Promise.race([getApple(),getBanana()])
+  }
+  
+  getFastestFruit().then(console.log)	// banana
+  ```
+
+  
+
+# 예외처리
+
+- 예외
+  - 프로그램 실행 중 발생하는 런타임 오류
+  - 예외가 발생하지 않도록 하는 것도 중요하지만, 발생한 예외를 처리하는 것도 중요하다.
+
+
+
+- 예외 발생시키기
+
+  - `throw` 키워드를 사용하면 예외를 발생시킬 수 있다.
+  - 표현식에는 예외 코드를 나타내는 숫자나 오류 메시지를 담고 있는 문자열, Error 객체 등이 올 수있다.
+
+  ```javascript
+  throw 표현식
+  ```
+
+  
+
+- 예외 처리하기
+
+  - `try`: 기본적으로 맨 먼저 실행되는 블록이며, 여기서 발생한 예외는 `catch` 블록에서 처리될 수 있다.
+  - `catch`: `try` 블록에서 발생한 예외 코드나 Error 객체를 인수로 전달받아 그 처리가 이루어지는 블록이다.
+    - 옵션으로, 반드시 사용하지 않아도 된다.
+  - `finally`: `try` 블록에서 예외가 발생하건 안 하건 맨 마지막에 무조건 실행되는 블록이다.
+    - 옵션으로, 반드시 사용하지 않아도 된다.
+    - `break`, `return `등이 `try` 혹은 `catch` 문에 있어도 실행 된다.
+
+  ```javascript
+  try {
+      // 여기서 에러가 나면 에러가 난 시점에 코드의 흐름이 catch로 넘어간다.
+      throw new Error("억지로 발생시킨 에러!!")
+      console.log('에러 발생 이후의 코드는 실행되지 않는다.')
+  } catch (e) {
+      console.log(`에러가 발생했습니다: ${e.name}: ${e.message}`) // 에러가 발생했습니다: Error: 억지로 발생시킨 에러!!
+  } finally {
+      console.log("그래도 finally는 실행이 된다.")    // 그래도 finally는 실행이 된다.
+  }
+  ```
+
+
+
+- 예외의 전파
+
+  - 예외는 호출 스택(call stack)을 따라 전파된다.
+    - 아래 예시에서 예외가 발생한 것은 `c` 함수지만 `a` 함수까지 전파되어 `catch`문에 걸리게 된다.
+
+  ```javascript
+  try {
+      a()
+     	console.log("이 줄은 실행이 안됩니다!")
+  } catch(e) {
+      console.log(e)              // 에러 발생!!
+      console.log('에러 복구!!')  // 에러 복구!!
+  }
+    
+  function a() {
+      b()
+  }
+    
+  function b() {
+      c()
+  }
+    
+  function c() {
+      throw '에러 발생!!';
+  }
+  ```
+
+  - 예외를 `try`, `catch`로 감싸면 전파되지 않는다.
+
+  ```javascript
+  try {
+      a()
+     	console.log("이 줄은 실행 됩니다!") // 이 줄은 실행 됩니다!
+  } catch(e) {
+      console.log('에러 발생 X!!!')
+      console.log(e)
+  }
+    
+  function a() {
+      b()
+  }
+    
+  function b() {
+      c()
+  }
+    
+  function c() {
+      try{
+          throw '에러 발생!!'
+      } catch(e) {
+          console.log(e)	// 에러 발생!!
+      }
+  }
+  ```
+
+
+
+- 비동기식 코드에서의 예외 처리
+
+  - 비동기식으로 작동하는 콜백의 내부에서 발생한 에러는 콜백 바깥에 있는 `try` 블록으로 잡아낼 수 없다.
+    - 상기했듯 JS에서는 예외를 전파한다.
+    - `throw new Error('Error!')`를 실행시킨 것은 `setTimeout()` 함수가 아니라 "1초가 지났다."는 `time event`다.
+    - `setTimeout()`으로 예외가 전파되지 않고 `time event`로 예외가 전파된다.
+    - 결국 `setTimeout()`에서는 예외가 발생하지 않으므로 `catch`문에 걸리지도 않는다.
+
+  ```javascript
+  try {
+      setTimeout(() => { throw new Error('Error!') }, 1000)	// 에러 자체는 발생하지만
+  } catch (e) {
+      console.log('에러를 캐치하지 못한다.')		// catch문에 잡히지는 않는다.
+      console.log(e)
+  }
+  ```
+
+  - 따라서 아래와 같이 비동기식 코드 내부에 작성해야 한다.
+
+  ```javascript
+  setTimeout(() => {
+      try {
+          throw new Error('Error 발생!')
+      } catch (e) {
+          console.log("이제 걸린다!")	// 이제 걸린다!
+          console.log(e)
+      }
+  },1000)
+  ```
 
 
 

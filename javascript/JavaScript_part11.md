@@ -1,49 +1,3 @@
-# Device Orientation
-
-- Device Orientation
-
-  - HTML5가 제공하는 기능으로 중력과의 관계에서 디바이스의 물리적 방향의 변화를 감지할 수 있다. 
-  - 이것을 이용하면 모바일 디바이스를 회전시켰을 때 이벤트를 감지하여 적절히 화면을 변화 시킬 수 있다.
-  - 디바이스의 방향 정보를 다루는 자바스크립트 이벤트는 두가지가 있다.
-    - `DeviceOrientationEvent` 가속도계(accelerometer)가 기기의 방향의 변화를 감지했을 때 발생한다.
-    - `DeviceMotionEvent` 가속도에 변화가 일어났을 때 발생한다.
-  - 현재 사파리를 제외한 대부분의 브라우저에서 사용할 수 있다.
-  - 하지만 오래된 브라우저를 사용하는 사용자를 위해 브라우저의 이벤트 지원 여부를 먼저 확인할 필요가 있다.
-
-  ```javascript
-  if (window.DeviceOrientationEvent) {
-    console.log(Our browser supports DeviceOrientation)
-  } else {
-    console.log("Sorry, your browser doesn't support Device Orientation")
-  }
-  ```
-
-  
-
-- `DeviceOrientationEvent`
-
-  - 디바이스의 방향 변화는 3개의 각도( alpha, beta, gamma )를 사용하여 측정된다. 
-  - `deviceorientation` 이벤트에 리스너를 등록하면 리스너 함수가 주기적으로 호출되어 업데이트된 방향 데이터를 제공한다. 
-  - `deviceorientation` 이벤트는 다음 4가지의 값을 가진다.
-    - DeviceOrientationEvent.absolute: 지구좌표계(Earth coordinate system)을 사용하는 지에 대한 boolean 값이다. 일반적인 경우 사용하지 않는다.
-    - DeviceOrientationEvent.alpha: 0도부터 360도까지 범위의 z축을 중심으로 디바이스의 움직임을 나타낸다.
-    - DeviceOrientationEvent.beta: -180도부터 180도(모바일 사파리: -90도~90도)까지 범위의 x축을 중심으로 디바이스의 움직임을 나타낸다. 이는 디바이스의 앞뒤 움직임을 나타낸다.
-    - DeviceOrientationEvent.gamma: -90도부터 90도(모바일 사파리: -180도~180도)까지 범위의 y축을 중심으로 디바이스의 움직임을 나타낸다. 이는 디바이스의 좌우 움직임을 나타낸다.
-
-  ```javascript
-  window.addEventListener('deviceorientation', handleOrientation, false)
-  
-  function handleOrientation(event) {
-      var absolute = event.absolute;
-      var alpha    = event.alpha;
-      var beta     = event.beta;
-      var gamma    = event.gamma;
-      // Do stuff with the new orientation data
-  }
-  ```
-
-  
-
 # 비동기식 처리 모델과 ajax
 
 ## 동기식 처리 모델과 비동기식 처리 모델
@@ -96,7 +50,7 @@
   function func2() {
     setTimeout(function() {
       console.log('func2')
-    }, 0)
+    }, 1000)
     func3()
   }
   
@@ -600,6 +554,7 @@
   - 자바스크립트는 비동기 처리를 위한 하나의 패턴으로 콜백 함수를 사용한다. 
     - 하지만 전통적인 콜백 패턴은 콜백 헬로 인해 가독성이 나쁘고 비동기 처리 중 발생한 에러의 처리가 곤란하며 여러 개의 비동기 처리를 한번에 처리하는 데도 한계가 있다.
   - ES6에서는 비동기 처리를 위한 또 다른 패턴으로 프로미스(Promise)를 도입했다. 
+    - 프로미스는 비동기 작업을 위한 JS 객체이다.
     - 프로미스는 전통적인 콜백 패턴이 가진 단점을 보완하며 비동기 처리 시점을 명확하게 표현할 수 있다는 장점이 있다.
 
 
@@ -725,8 +680,8 @@
   try {
       throw new Error('Error!')
   } catch (e) {
-      console.log('에러를 캐치하지 못한다.')	// 에러를 캐치하지 못한다.
-      console.log(e)					      // Error: Error!
+      console.log('에러를 캐치한다.')	// 에러를 캐치한다.
+      console.log(e)					// Error: Error!
   }
   
   // 콜백 함수 사용
@@ -750,13 +705,15 @@
 
 
 
-
-
 ## 프로미스 생성
 
 - 프로미스는 `Promise` 생성자 함수를 통해 인스턴스화한다. 
 
-  - `Promise` 생성자 함수는 비동기 작업을 수행할 콜백 함수를 인자로 전달받는데 이 콜백 함수는 `resolve`와 `reject` 함수를 인자로 전달받는다.
+  - `Promise` 생성자 함수는 비동기 작업을 수행할 콜백 함수를 인자로 전달받는다.
+    - 이 콜백 함수는 executor라 불리는 `resolve`와 `reject` 콜백 함수 쌍을 인자로 전달받는다.
+    - `resolve`: 기능을 정상적으로 수행하면 호출되어 최종 데이터를 전달하는 콜백함수.
+    - `reject`: 기능을 수행하다 문제가 생기면 호출되는 콜백함수.
+  - 새로운 프로미스 객체가 생성되면 프로미스 코드 블록이 자동으로 실행된다.
 
   ```javascript
   // Promise 객체의 생성
@@ -821,7 +778,7 @@
 ## 프로미스의 후속 메소드
 
 - Promise로 구현된 비동기 함수는 Promise 객체를 반환하여야 한다. 
-  - Promise로 구현된 비동기 함수를 호출하는 측(promise consumer)에서는 Promise 객체의 후속 처리 메소드(then, catch)를 통해 비동기 처리 결과 또는 에러 메시지를 전달받아 처리한다. 
+  - Promise로 구현된 비동기 함수를 호출하는 측(promise consumer)에서는 Promise 객체의 후속 처리 메소드(`then`, `catch`, `finally`)를 통해 비동기 처리 결과 또는 에러 메시지를 전달받아 처리한다. 
   - Promise 객체는 상태를 갖는다고 하였다. 이 상태에 따라 후속 처리 메소드를 체이닝 방식으로 호출한다.
 
 
@@ -830,59 +787,119 @@
 
   - `then`
     - then 메소드는 두 개의 콜백 함수를 인자로 전달 받는다. 
-    - 첫 번째 콜백 함수는 성공(fulfilled, resolve 함수가 호출된 상태) 시 호출되고 두 번째 함수는 실패(rejected, reject 함수가 호출된 상태) 시 호출된다.
-    - then 메소드는 Promise를 반환한다.
+    - 첫 번째 콜백 함수는 성공(프로미스에서 `fulfilled`,`resolve` 함수가 호출된 상태) 시 호출되고 두 번째 함수는 실패(프로미스에서 `rejected`, `reject` 함수가 호출된 상태) 시 호출된다.
+    - `then` 메소드는 Promise 또는 값을 반환한다. 반환 값을 따로 설정하지 않을 경우에는 프로미스 객체를, 설정하면 설정한 값을 반환한다.
   - `catch`
-    - 예외(비동기 처리에서 발생한 에러와 then 메소드에서 발생한 에러)가 발생하면 호출된다. 
-    - catch 메소드는 Promise를 반환한다.
+    - 프로미스에서 `rejected`, `reject` 함수가 호출되었거나 `then` 메소드에서 에러가 발생하면 호출된다. 
+    - `catch` 메소드는 Promise를 반환한다.
+  - 예시1, 2번 처럼 따로 따로 써야 하는 것은 아니다. 
+    - 예시 3번 처럼 쓰는 것이 가능하다.
+    - `then`, `catch`는 자신이 반환 받은 프로미스 객체(예시의 경우 `promise3`)를 다시 반환한다(프로미스 체이닝).
+    - 결국 아래 코드에서 `promise3.then(value=>{console.log("then",value)}).catch(error=>{console.log("catch",error)})`의 `catch`는 `promise3.catch(error=>{console.log("catch",error)})`와 같다.
+  - `finally`
+    - 성공, 실패 여부와 무관하게 무조건 실행
 
-  ```html
-  <!DOCTYPE html>
-  <html>
-      <body>
-          <!DOCTYPE html>
-          <pre class="result"></pre>
-          <script>
-              const $result = document.querySelector('.result');
-              const render = content => { $result.textContent = JSON.stringify(content, null, 2) }
+  ```javascript
+  // 예시1
+  const promise1 = new Promise((resolve,reject)=>{
+      setTimeout(()=>{
+          resolve('Hi!!')
+      },1000)
+  })
   
-              const promiseAjax = (method, url, payload) => {
-                  return new Promise((resolve, reject) => {
-                      const xhr = new XMLHttpRequest()
-                      xhr.open(method, url);
-                      xhr.setRequestHeader('Content-type', 'application/json');
-                      xhr.send(JSON.stringify(payload))
+  // value에는 resolve에서 넘긴 값이 담긴다.
+  promise1.then(value=>{
+      console.log(value) // Hi!!
+  })
   
-                      xhr.onreadystatechange = function () {
-                          if (xhr.readyState !== XMLHttpRequest.DONE) return
   
-                          if (xhr.status >= 200 && xhr.status < 400) {
-                              resolve(xhr.response) // Success!
-                          } else {
-                              reject(new Error(xhr.status)) // Failed...
-                          }
-                      }
-                  })
-              }
+  // 예시2
+  const promise2 = new Promise((resolve,reject)=>{
+      setTimeout(()=>{
+          reject('Hi!!')
+      },1000)
+  })
   
-              /*
-              비동기 함수 promiseAjax은 Promise 객체를 반환한다.
-              Promise 객체의 후속 메소드를 사용하여 비동기 처리 결과에 대한 후속 처리를 수행한다.
-              */
-              promiseAjax('GET', 'http://jsonplaceholder.typicode.com/posts/1')
-                  .then(JSON.parse)
-                  .then(
-                  // 첫 번째 콜백 함수는 성공(fulfilled, resolve 함수가 호출된 상태) 시 호출된다.
-                  render,
-                  // 두 번째 함수는 실패(rejected, reject 함수가 호출된 상태) 시 호출된다.
-                  console.error
-              )
-          </script>
-      </body>
-  </html>
+  promise2
+    // then은 reject를 받지 못한다.
+    .then(value=>{
+        console.log("then",value)	// (node:20360) UnhandledPromiseRejectionWarning: Hi!!
+    })
+  
+  
+  // 예시3
+  const promise3 = new Promise((resolve,reject)=>{
+      setTimeout(()=>{
+          reject('Hi!!')
+      },1000)
+  })
+  
+  promise3
+    .then(value=>{
+        console.log("then",value)
+    })
+    .catch(error=>{
+        console.log("catch",error)  // Hi!!
+    })
   ```
 
 
+
+## 프로미스 체이닝
+
+- 콜백 헬 해결
+  - 비동기 함수의 처리 결과를 가지고 다른 비동기 함수를 호출해야 하는 경우, 함수의 호출이 중첩(nesting)이 되어 복잡도가 높아지는 콜백 헬이 발생한다. 
+  - 프로미스는 후속 처리 메소드를 체이닝(chainning)하여 여러 개의 프로미스를 연결하여 사용할 수 있다. 
+  - 이로써 콜백 헬을 해결한다.
+
+
+
+- Promise 객체를 반환한 비동기 함수는 프로미스 후속 처리 메소드인 `then`이나 `catch` 메소드를 사용할 수 있다. 
+
+  - 따라서 `then` 메소드가 Promise 객체를 반환하도록 하면(`then` 메소드는 기본적으로 Promise를 반환) 여러 개의 프로미스를 연결하여 사용할 수 있다.
+
+  ```javascript
+  const getHen = () => new Promise((resolve,rejecjt)=>{
+      setTimeout(()=>resolve('Chicken'),1000)
+  })
+  
+  const getEgg = hen => new Promise((resolve,rejecjt)=>{
+      setTimeout(()=>resolve(`${hen} => Egg`),1000)
+  })
+  
+  const cook = egg => new Promise((resolve,rejecjt)=>{
+      setTimeout(()=>resolve(`${egg} => Meal`),1000)
+  })
+  
+  // 아래와 같이 받아온 값을 다른 함수로 바로 넘길 때에는 축약이 가능하다.
+  getHen()
+    .then(hen => getEgg(hen))	// getEgg 프로미스 객체를 반환
+    // .then(getEgg) 으로 축약 가능
+    .then(egg => cook(egg))	// cook 프로미스 객체를 반환
+    // .then(cook) 으로 축약 가능
+    .then(meal => console.log(meal))
+    // .then(console.log) 로 축약 가능
+  ```
+
+  - `then` 메소드는 프로미스 객체 외에도 값을 반환할 수 있다.
+
+  ```javascript
+  const fetchNumber = new Promise((resolve,reject)=>{
+      setTimeout(() => resolve(1),1000)
+  })
+  
+  fetchNumber
+    .then(num => num*2)	// 값을 반환
+    .then(num => num*3)	// 값을 반환
+    .then(num => {		// 프로미스 객체를 반환
+      return new Promise((resolve,reject)=>{
+          setTimeout(()=>resolve(num+1),1000)
+      })
+  })
+  .then(num => console.log(num))
+  ```
+
+  
 
 ## 프로미스의 에러 처리
 
@@ -944,59 +961,50 @@
 
   
 
-## 프로미스 체이닝
+- 특정 시점에 예외 처리
 
-- 콜백 헬 해결
-  - 비동기 함수의 처리 결과를 가지고 다른 비동기 함수를 호출해야 하는 경우, 함수의 호출이 중첩(nesting)이 되어 복잡도가 높아지는 콜백 헬이 발생한다. 
-  - 프로미스는 후속 처리 메소드를 체이닝(chainning)하여 여러 개의 프로미스를 연결하여 사용할 수 있다. 
-  - 이로써 콜백 헬을 해결한다.
+  - `catch`를 사용하여 에러가 발생했을 때 다른 값을 넘겨주는 것도 가능하다.
 
-
-
-- Promise 객체를 반환한 비동기 함수는 프로미스 후속 처리 메소드인 `then`이나 `catch` 메소드를 사용할 수 있다. 
-
-  - 따라서 `then` 메소드가 Promise 객체를 반환하도록 하면(`then` 메소드는 기본적으로 Promise를 반환) 여러 개의 프로미스를 연결하여 사용할 수 있다.
-
-  ```html
-  <!DOCTYPE html>
-  <html>
-  <body>
-    <pre class="result"></pre>
-    <script>
-      const $result = document.querySelector('.result')
-      const render = content => { $result.textContent = JSON.stringify(content, null, 2) }
+  ```javascript
+  const getHen = () => new Promise((resolve,rejecjt)=>{
+      setTimeout(()=>resolve('Chicken'),1000)
+  })
   
-      const promiseAjax = (method, url, payload) => {
-        return new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest()
-          xhr.open(method, url)
-          xhr.setRequestHeader('Content-type', 'application/json')
-          xhr.send(JSON.stringify(payload))
+  const getEgg = hen => new Promise((resolve,rejecjt)=>{
+      setTimeout(()=>reject(new Error('error가 발생')),1000)
+  })
   
-          xhr.onreadystatechange = function () {
-            if (xhr.readyState !== XMLHttpRequest.DONE) return
+  const cook = egg => new Promise((resolve,rejecjt)=>{
+      setTimeout(()=>resolve(`${egg} => Meal`),1000)
+  })
   
-            if (xhr.status >= 200 && xhr.status < 400) {
-              resolve(xhr.response) // Success!
-            } else {
-              reject(new Error(xhr.status)) // Failed...
-            }
-          }
-        })
-      }
+  getHen()
+    .then(getEgg)
+    .then(cook)
+    .then(console.log)
+    .catch(console.log)	// Error: error가 발생
   
-      const url = 'http://jsonplaceholder.typicode.com/posts';
   
-      // 포스트 id가 1인 포스트를 검색하고 프로미스를 반환한다.
-      promiseAjax('GET', `${url}/1`)
-        // 포스트 id가 1인 포스트를 작성한 사용자의 아이디로 작성된 모든 포스트를 검색하고 프로미스를 반환한다.
-        .then(res => promiseAjax('GET', `${url}?userId=${JSON.parse(res).userId}`))
-        .then(JSON.parse)
-        .then(render)
-        .catch(console.error)
-    </script>
-  </body>
-  </html>
+  // 만일 에러가 발생했을 때 다른 값을 넘겨주고 싶다면 다음과 같이 하면 된다.
+  const getHen = () => new Promise((resolve,rejecjt)=>{
+      setTimeout(()=>resolve('Chicken'),1000)
+  })
+  
+  const getEgg = hen => new Promise((resolve,rejecjt)=>{
+      setTimeout(()=>reject(new Error('error가 발생')),1000)
+  })
+  
+  const cook = egg => new Promise((resolve,rejecjt)=>{
+      setTimeout(()=>resolve(`${egg} => Meal`),1000)
+  })
+  
+  getHen()
+    .then(getEgg)
+    .catch(error => {
+      return 'Bread'
+    })
+    .then(cook)
+    .then(console.log)	// Bread => Meal
   ```
 
   
@@ -1102,24 +1110,3 @@
   ]).then(console.log)
     .catch(console.log) // Error: Error 3!
   ```
-
-  
-
-
-
-# 예외처리
-
-- try, catch, finally를 사용하여 예외처리
-
-  ```js
-  try {
-  //정상이라면 이 코드는 아무런 문제없이 블록의 시작부터 끝까지 실행됨.
-  
-  } catch(error) {
-  //이 블록 내부의 문장들은 오직 try 블록에서 예외가 발생할 경우에만 실행된다.
-  
-  } finally(){
-  //try 블록에서 일어난 일에 관계없이 무조건 실행될 코드가 위치한다.
-  }
-  ```
-

@@ -24,7 +24,9 @@
 
 
 
-# git push
+# 기본 사용법
+
+## git push
 
 - 시작하기
 
@@ -103,13 +105,7 @@
   - 식별자는 remote add에 쓴 것과 동일해야 한다.
   - add, commit, push가 한 세트
 
-
-
-
-
-
-
-# git pull
+## git pull
 
 - clone(파일 내려 받기)
 

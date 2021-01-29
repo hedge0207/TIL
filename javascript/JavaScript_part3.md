@@ -584,6 +584,38 @@
     - 비동기식 처리 모델: 처리가 종료하면 호출될 함수(콜백 함수)를 미리 매개변수에 전달하고 처리가 종료되면 콜백함수를 호출하는 것
     - 콜백 함수는 콜백 큐에 들어 있다가 해당 이벤트가 발생하면 호출된다.
     - 콜백 함수는 클로저이므로 콜백 큐에 단독으로 존재하다가 호출되어도 콜백함수를 전달받은 함수의 변수에 접근할 수 있다.
+  
+  - 동기식 처리 모델에 사용되지 못한다는 말은 아니다.
+    - 아래의 코드도 명시적으로 호출하지 않고 `foo` 함수가 실행되면서 시스템에 의해 호출되었으므로 콜백 함수를 사용한 것이다.
+    - 또한 비동기적이 아닌 동기적으로 사용되었다.
+  
+  ```javascript
+  function foo(f){
+     	f()
+  }
+  console.log("Cha!")				
+  foo(()=>console.log("Hello!"))	
+  console.log("Have a nice day!")
+  // Cha!
+  // Hello!
+  // Have a nice day!
+  ```
+  
+  - 아래는 비동기적으로 동작하는 함수의 예시이다.
+  
+  ```javascript
+  function foo(f){
+      setTimeout(f,1000)
+  }
+  console.log("Cha!")
+  foo(()=>console.log("Hello!"))
+  console.log("Have a nice day!")
+  // Cha!
+  // Have a nice day!
+  // Hello!
+  ```
+  
+  
 
 
 
