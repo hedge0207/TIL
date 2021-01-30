@@ -116,16 +116,16 @@
   
             MT   B1
   C0 ← C1 ← C2 ← C4
-  		     ↖
-  		       C3
-  		       B2
+               ↖
+                 C3
+                 B2
   		       
-  		       MT
-  		       B1
+                 MT
+                 B1
   C0 ← C1 ← C2 ← C4
-  		     ↖
-  		       C3
-  		       B2
+               ↖
+                 C3
+                 B2
   ```
   
   - merge commit
@@ -137,16 +137,16 @@
   # merge commit 방식
   # C3, C4로 브랜치가 갈라진다.
                  MT
-  			   C3
-  			↙
+                 C3
+               ↙
   C0 ← C1 ← C2 ← C4
                  B1
   
   # C3, C4와 그 둘의 공통 조상인 C2를 3-way Merge하여 그 결과로 C5가 생성된다.
-  			   C3
-  			↙     ↖
+                 C3
+               ↙   ↖
   C0 ← C1 ← C2 ← C4 ← C5
-  			   B1   MT
+                 B1   MT
   ```
   
   
@@ -414,27 +414,27 @@
   
 ```
   # C3, C4로 브랜치가 갈라진다.
-  			   B1
-  			   C3
-			↙
+                 B1
+                 C3
+             ↙
   C0 ← C1 ← C2 ← C4
-  			   MT
+                 MT
   			   
   # 두 브랜치가 나뉘기 전인 공통 커밋 C2로 이동한다.
 # 그 후 C2에서부터 C3까지의 diff를 차례로 만들어 임시로 저장한다.
   # Rebase 할 브랜치(B1)가 합칠 브랜치(MT)가 가리키는 커밋을 가리키게 한다.
   # 저장해 놓았던 변경 사항들을 차례로 (합칠 브랜치가 가리키는 커밋에)적용한다.
-  			  (C3)
-  			↙   
+                (C3)
+               ↙   
   C0 ← C1 ← C2 ← C4 ← C3'
-  			   MT   B1
+                 MT   B1
   
   # 이렇게 하면 C4에 기반한 C3'라는 커밋이 생기게 된 셈이다.
   # 따라서 Fast-forward가 가능해지므로 MT 브랜치를 Fast-forward한다.
   # `$ git checkout master` 이후 `$ git merge B1`
-  					B1
+                      B1
   C0 ← C1 ← C2 ← C4 ← C3'
-  					MT
+                      MT
   ```
   
   - 아래 명령어로 실행 가능하다.
@@ -466,12 +466,12 @@
 
   ```
   # 아래와 같은 상황이다.
-  			   MT
+                 MT
   C1 ← C2 ← C5 ← C6
-  		↖		   SV
-  		  C3 ← C4 ← C10
-  		     ↖	   CL
-  		       C8 ← C9
+          ↖          SV
+            C3 ← C4 ← C10
+              ↖      CL
+                 C8 ← C9
   ```
 
   - `server` 와는 아무 관련이 없는 `client` 커밋을 `master` 브랜치에 적용하기 위해서 `--onto` 옵션을 사용하여 아래와 같은 명령을 실행한다.
@@ -484,12 +484,12 @@
 
   ```
   # `--onto` 옵션을 사용
-  			   MT	      CL
+                 MT         CL
   C1 ← C2 ← C5 ← C6 ← C8' ← C9'
-  		↖		   SV
+          ↖           SV
   		  C3 ← C4 ← C10
-  		     ↖
-  		       (C8) ← (C9)
+              ↖
+               (C8) ← (C9)
   ```
 
   - 이제 `master` 브랜치로 돌아가서 Fast-forward 시킬 수 있다
@@ -501,11 +501,11 @@
 
   ```
   # Fast-forward	   
-  						  MT
-  			   		      CL
+                            MT
+                            CL
   C1 ← C2 ← C5 ← C6 ← C8' ← C9'
-  		↖		   SV
-  		  C3 ← C4 ← C10
+          ↖           SV
+            C3 ← C4 ← C10
   ```
 
   - `server` 브랜치의 작업이 다 끝나면 `git rebase <basebranch> <topicbranch>` 라는 명령으로 Checkout 하지 않고 바로 `server` 브랜치를 `master` 브랜치로 Rebase 할 수 있다. 
@@ -517,11 +517,11 @@
 
   ```
   # 위 명령어의 결과	   
-  						  MT
-  			   		      CL				SV
+                            MT
+                            CL                SV
   C1 ← C2 ← C5 ← C6 ← C8' ← C9' ← C3' ← C4` ← C10`
-  		↖
-  		  (C3) ← (C4) ← (C10)
+          ↖
+            (C3) ← (C4) ← (C10)
   ```
 
   - 그리고 나서 `master` 브랜치를 Fast-forward 시킨다.
@@ -533,8 +533,8 @@
 
   ```
   # Fast-forward	   
-  						  					MT
-  			   		      CL				SV
+                                              MT
+                            CL                SV
   C1 ← C2 ← C5 ← C6 ← C8' ← C9' ← C3' ← C4` ← C10`
   ```
 
@@ -543,7 +543,7 @@
 
   ```
   # 토픽 브랜치 삭제   
-  						  					MT
+                                              MT
   C1 ← C2 ← C5 ← C6 ← C8' ← C9' ← C3' ← C4` ← C10`
   ```
 
