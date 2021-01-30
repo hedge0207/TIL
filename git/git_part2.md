@@ -285,7 +285,7 @@
     - 그 후 `origin/master` 포인터의 위치를 최신 커밋으로 이동시킨다.
 
   ```bash
-  git fetch <remote>
+  $ git fetch <remote>
   ```
 
   - Fetch 명령으로 리모트 트래킹 브랜치를 내려받는다고 해서 로컬 저장소에 수정할 수 있는 브랜치가 새로 생기는 것이 아니다. 
@@ -301,8 +301,6 @@
   ```bash
   git checkout -b <브랜치명> <remote>/<브랜치명>
   ```
-
-  
 
 
 
@@ -327,7 +325,7 @@
   $ git push origin <로컬 브랜치>:<리모트 서버 브랜치>
   ```
 
-  
+
 
 - 브랜치 추적
 
@@ -376,7 +374,7 @@
   $ git fetch --all; git branch -vv
   ```
 
-  
+
 
 - pull 하기
   - `git fetch` 명령을 실행하면 서버에는 존재하지만, 로컬에는 아직 없는 데이터를 받아와서 저장한다. 
@@ -394,7 +392,7 @@
   $ git push origin --delete <브랜치>
   ```
 
-  
+
 
 
 
@@ -412,16 +410,16 @@
     - Rebase 할 브랜치가 합칠 브랜치가 가리키는 커밋을 가리키게 하고 아까 저장해 놓았던 변경사항을 차례대로 적용한다.
     - 그리고 나서 합칠 브랜치를 Fast-forward 시킨다
   
-```
+  ```
   # C3, C4로 브랜치가 갈라진다.
                  B1
                  C3
              ↙
   C0 ← C1 ← C2 ← C4
                  MT
-  			   
+    			   
   # 두 브랜치가 나뉘기 전인 공통 커밋 C2로 이동한다.
-# 그 후 C2에서부터 C3까지의 diff를 차례로 만들어 임시로 저장한다.
+  # 그 후 C2에서부터 C3까지의 diff를 차례로 만들어 임시로 저장한다.
   # Rebase 할 브랜치(B1)가 합칠 브랜치(MT)가 가리키는 커밋을 가리키게 한다.
   # 저장해 놓았던 변경 사항들을 차례로 (합칠 브랜치가 가리키는 커밋에)적용한다.
                 (C3)
@@ -437,22 +435,21 @@
                       MT
   ```
   
-  - 아래 명령어로 실행 가능하다.
+    - 아래 명령어로 실행 가능하다.
   
   ```bash
   # 합쳐질 브랜치에서 합칠 브랜치(일반적으로 master)에 수행해야 한다.
   $ git rebase <합칠 브랜치>
   ```
   
-  - Merge 이든 Rebase 든 둘 다 합치는 관점에서는 서로 다를 게 없다. 
-    - 하지만, Rebase가 좀 더 깨끗한 히스토리를 만든다. 
-    - Rebase 한 브랜치의 Log를 살펴보면 히스토리가 선형이다. 
-    - 일을 병렬로 동시에 진행해도 Rebase 하고 나면 모든 작업이 차례대로 수행된 것처럼 보인다.
-  
-  - Rebase는 보통 리모트 브랜치에 커밋을 깔끔하게 적용하고 싶을 때 사용한다.
-    - 아마 이렇게 Rebase 하는 리모트 브랜치는 직접 관리하는 것이 아니라 그냥 참여하는 브랜치일 것이다. 
-    - 메인 프로젝트에 Patch를 보낼 준비가 되면 하는 것이 Rebase이므로, 브랜치에서 하던 일을 완전히 마치고 `origin/master` 로 Rebase 한다. 
-    - 이렇게 Rebase 하고 나면 프로젝트 관리자는 어떠한 통합작업도 필요 없다. 그냥 master 브랜치를 Fast-forward 시키면 된다.
+    - Merge 이든 Rebase 든 둘 다 합치는 관점에서는 서로 다를 게 없다. 
+      - 하지만, Rebase가 좀 더 깨끗한 히스토리를 만든다. 
+      - Rebase 한 브랜치의 Log를 살펴보면 히스토리가 선형이다. 
+      - 일을 병렬로 동시에 진행해도 Rebase 하고 나면 모든 작업이 차례대로 수행된 것처럼 보인다.
+    - Rebase는 보통 리모트 브랜치에 커밋을 깔끔하게 적용하고 싶을 때 사용한다.
+      - 아마 이렇게 Rebase 하는 리모트 브랜치는 직접 관리하는 것이 아니라 그냥 참여하는 브랜치일 것이다. 
+      - 메인 프로젝트에 Patch를 보낼 준비가 되면 하는 것이 Rebase이므로, 브랜치에서 하던 일을 완전히 마치고 `origin/master` 로 Rebase 한다. 
+      - 이렇게 Rebase 하고 나면 프로젝트 관리자는 어떠한 통합작업도 필요 없다. 그냥 master 브랜치를 Fast-forward 시키면 된다.
 
 
 
@@ -462,8 +459,7 @@
     - `server` 브랜치를 만들어서 서버 기능을 추가하고 그 브랜치에서 다시 `client` 브랜치를 만들어 클라이언트 기능을 추가한다. 
     - 마지막으로 `server` 브랜치로 돌아가서 몇 가지 기능을 더 추가한다.
     - 이때 테스트가 덜 된 `server` 브랜치는 그대로 두고 `client` 브랜치만 `master` 로 합치려는 상황을 생각해보자.
-
-
+  
   ```
   # 아래와 같은 상황이다.
                  MT
@@ -473,32 +469,33 @@
               ↖      CL
                  C8 ← C9
   ```
-
-  - `server` 와는 아무 관련이 없는 `client` 커밋을 `master` 브랜치에 적용하기 위해서 `--onto` 옵션을 사용하여 아래와 같은 명령을 실행한다.
-    - 이 명령은 `master` 브랜치부터 `server` 브랜치와 `client` 브랜치의 공통 조상까지의 커밋을 `client` 브랜치에서 없애고 싶을 때 사용한다. 
-    - `client` 브랜치에서만 변경된 Patch를 만들어 `master` 브랜치에서 `client` 브랜치를 기반으로 새로 만들어 적용한다. 
-
+  
+    - `server` 와는 아무 관련이 없는 `client` 커밋을 `master` 브랜치에 적용하기 위해서 `--onto` 옵션을 사용하여 아래와 같은 명령을 실행한다.
+      - 이 명령은 `master` 브랜치부터 `server` 브랜치와 `client` 브랜치의 공통 조상까지의 커밋을 `client` 브랜치에서 없애고 싶을 때 사용한다. 
+      - `client` 브랜치에서만 변경된 Patch를 만들어 `master` 브랜치에서 `client` 브랜치를 기반으로 새로 만들어 적용한다. 
+  
   ```bash
   $ git rebase --onto master server client
   ```
-
+  
+  - 위 명령어의 결과
+  
   ```
-  # `--onto` 옵션을 사용
                  MT         CL
   C1 ← C2 ← C5 ← C6 ← C8' ← C9'
           ↖           SV
-  		  C3 ← C4 ← C10
+    		C3 ← C4 ← C10
               ↖
                (C8) ← (C9)
   ```
-
-  - 이제 `master` 브랜치로 돌아가서 Fast-forward 시킬 수 있다
-
+  
+    - 이제 `master` 브랜치로 돌아가서 Fast-forward 시킬 수 있다
+  
   ```bash
   $ git checkout master
   $ git merge client
   ```
-
+  
   ```
   # Fast-forward	   
                             MT
@@ -507,15 +504,17 @@
           ↖           SV
             C3 ← C4 ← C10
   ```
-
-  - `server` 브랜치의 작업이 다 끝나면 `git rebase <basebranch> <topicbranch>` 라는 명령으로 Checkout 하지 않고 바로 `server` 브랜치를 `master` 브랜치로 Rebase 할 수 있다. 
-    - 이 명령은 토픽(`server`) 브랜치를 Checkout 하고 베이스(`master`) 브랜치에 Rebase 한다.
-
+  
+    - `server` 브랜치의 작업이 다 끝나면 `git rebase <basebranch> <topicbranch>` 라는 명령으로 Checkout 하지 않고 바로 `server` 브랜치를 `master` 브랜치로 Rebase 할 수 있다. 
+      - 이 명령은 토픽(`server`) 브랜치를 Checkout 하고 베이스(`master`) 브랜치에 Rebase 한다.
+  
   ```bash
   $ git rebase master server
   ```
-
-  ```
+  
+  - 위 명령어의 결과
+  
+  ```bash
   # 위 명령어의 결과	   
                             MT
                             CL                SV
@@ -523,14 +522,16 @@
           ↖
             (C3) ← (C4) ← (C10)
   ```
-
-  - 그리고 나서 `master` 브랜치를 Fast-forward 시킨다.
-
+  
+    - 그리고 나서 `master` 브랜치를 Fast-forward 시킨다.
+  
   ```bash
   $ git checkout master
   $ git merge server
   ```
-
+  
+  - 위 명령어의 결과
+  
   ```
   # Fast-forward	   
                                               MT
@@ -538,16 +539,17 @@
   C1 ← C2 ← C5 ← C6 ← C8' ← C9' ← C3' ← C4` ← C10`
   ```
 
+
+
   - 모든 것이 `master` 브랜치에 통합됐기 때문에 더 필요하지 않다면 `client` 나 `server` 브랜치는 삭제해도 된다. 
+    
     - 브랜치를 삭제해도 커밋 히스토리는 여전히 남아 있다.
-
-  ```
-  # 토픽 브랜치 삭제   
-                                              MT
-  C1 ← C2 ← C5 ← C6 ← C8' ← C9' ← C3' ← C4` ← C10`
-  ```
-
-
+    
+    ```
+    # 토픽 브랜치 삭제   
+                                                MT
+    C1 ← C2 ← C5 ← C6 ← C8' ← C9' ← C3' ← C4` ← C10`
+    ```
 
 
 
