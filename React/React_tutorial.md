@@ -70,12 +70,10 @@
 
   - JSX은 문자열도, HTML 태그도 아니다.
   - JSX는 HTML 보다는 JS에 가깝기 때문에 camelCase로 작성한다.
-  - JSX에서는 `{}`안에 유효한 JavaScript 표현식을 넣을 수 있다.
-
   - JSX 태그는 자식을 포함할 수 있다.
 
   ```react
-  function formatName(user){
+function formatName(user){
     return user.firstName + ' ' + user.lastName;
   }
   
@@ -98,18 +96,18 @@
     document.getElementById('root')
   );
   ```
-
+  
   - JSX는 주입 공격을 방지한다.
-    - React DOM은 JSX에 삽입된 모든 값을 렌더링하기 전에 **이스케이프**하므로, 애플리케이션에서 명시적으로 작성되지 않은 내용은 주입되지 않는다.
+  - React DOM은 JSX에 삽입된 모든 값을 렌더링하기 전에 **이스케이프**하므로, 애플리케이션에서 명시적으로 작성되지 않은 내용은 주입되지 않는다.
     - **이스케이프**: 값을 에러 없이 제대로 전달하기 위해 제어 문자로 인식될 수 있는 특정 문자 왼쪽에 슬래시를 붙이거나 URI(URL) 혹은 HTML 엔티티 등으로 인코딩하여 제어 문자(스크립트)가 아닌 일반 문자로 인식시켜 에러 또는 에러를 이용한 부정행위를 방지하는 것.
     - 즉, 모든 항목은 렌더링 되기 전에 문자열로 변환되므로 **XSS** 공격을 방지할 수 있다.
     - **XSS(cross-site scripting)**: 웹 사이트 관리자가 아닌 자가 웹 페이지에 악성 스크립트를 삽입할 수 있는 취약점
   - JSX는 객체를 표현한다.
     - babel은 JSX를 `React.createElement()` 호출로 컴파일한다.
     - 아래 두 코드는 동일한 코드다.
-
+  
   ```react
-  const element = (
+const element = (
     <h1 className="greeting">
       Hello, world!
     </h1>
