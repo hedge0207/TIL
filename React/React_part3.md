@@ -373,6 +373,52 @@
   export default EventPractice;
   ```
 
+
+
+
+- `<form>`의 `onSubmit` 이벤트는 새로고침을 발생시킨다.
+
+  - `preventDefault()`로 새로 고침이 일어나는 것을 막아줘야 한다.
+  - 새로고침이 발생하는 것을 막아야 하는 데도 굳이 `<form>`을 쓰는 이유
+    - `<form>` 태그는 태그 내부에 `submit` 속성을 가진 `<button>`이 있을 경우(`<button type="submit">`) 버튼을 눌러도 onSubmit 이벤트가 발생하고, `<form>` 내부의 `<input>`에서 enter를 눌러도 `onSubmit` 이벤트가 발생한다.
+    - 만일 input 태그와 button 태그로 구현한다면 `onKeypress`(input 태그), `onClick`(button 태그) 이라는 2개의 이벤트를 헨들링 해야 하지만 form 태그를 사용하면 `onSubmit` 이벤트만 핸들링 하면 되기에 더 편하다.
+
+  ```react
+  import React, { useCallback, useState } from "react";
+  import { MdAdd } from "react-icons/md";
+  import "./TodoInsert.scss";
+  
+  const TodoInsert = () => {
+    const [value, setValue] = useState("");
+    const onChange = useCallback((e) => {
+      setValue(e.target.value);
+    }, []);
+  
+    const onSubmit = useCallback(
+      (e) => {
+        setValue("");
+        // onSubmit 이벤트는 새로고침을 발생시키기에 이를 방지하기 위해 아래와 같이 해준다.
+        e.preventDefault();
+      },
+      [value],
+    );
+  
+    return (
+      <form className="TodoInsert" onSubmit={onSubmit}>
+        <inpu
+          value={value}
+          onChange={onChange}
+        />
+        <button type="submit">
+          <MdAdd />
+        </button>
+      </form>
+    );
+  };
+  
+  export default TodoInsert;
+  ```
+
   
 
 # ref

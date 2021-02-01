@@ -107,6 +107,15 @@
 
 
 
+- 리액트 개발자 도구
+
+  > https://chrome.google.com/webstore/detail/react-developer-tools/fmkadmapgofadopljbjfkapdkoienihi?hl=ko
+
+  - 크롬 확장 프로그램
+  - 브라우저에 나타난 리액트 컴포넌트를 심층 분석할 수 있도록 리액트 개발 팀이 제작
+
+
+
 # 프로젝트 생성하기
 
 - 아래 명령어를 입력하여 프로젝트를 생성한다.

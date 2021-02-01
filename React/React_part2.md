@@ -93,7 +93,21 @@
   export default App;
   ```
 
+  - VS Code 기준으로 다른 탭에 `import` 하려는 파일이 열려있다면 `<Component />`와 같이 바로 컴포넌트 태그를 작성하고 ctrl+space를 누르면  `import`문이 자동완성 된다.
+    - 닫혀 있을 때도 자동 완성 되게 하려면 프로젝트 최상위 디렉토리에 `jsconfig.json` 파일을 생성한다.
+    - 이후 ctrl+space를 누른 후 enter를 누르면 아래와 같은 코드가 자동완성 되고, 이제 불러오려는 컴포넌트가 닫혀 있을 때도 자동완성 된다.
   
+  ```json
+  {
+      "compilerOptions": {
+          "target": "es6"
+      }
+  }
+  ```
+  
+  
+
+
 
 ## props
 
