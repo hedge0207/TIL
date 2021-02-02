@@ -9,7 +9,63 @@
 - React에서 이벤트 사용시 주의사항
   - 이벤트 이름은 카멜 표기법으로 작성한다.
   - 이벤트에서 실행할 JS코드를 전달하는 것이 아니라, 함수 형태의 값을 전달한다.
+
   - DOM 요소에만 이벤트를 설정할 수 있다.
+
+
+
+- 이벤트에서 실행 할 JS를 전달하는 것이 아니라, 함수 형태의 값을 전달한다.
+
+  - 함수를 전달해야지 함수를 호출하는 JS코드를 전달해선 안된다.
+    -  JS코드를 전달할 경우 해당 이벤트가 발생할 때 함수가 실행되는 것이 아니라 렌더링 될 때 함수가 실행된다.
+    - 즉, 최초 렌더링 될 때 `<button onClick={handleClick()}>버튼!!</button>`이 렌더링 되면서 `handleClick()` 함수가 실행된다.
+
+  ```react
+  import React from "react";
+  
+  const EventPracticeSelf = () => {
+    const handleClick = () => {
+      console.log("함수가 실행되었습니다.");
+    };
+    return (
+      <div>
+        {/* 함수를 전달 */}
+        <button onClick={handleClick}>버튼!!</button>
+        {/* 함수를 호출하는 JS 코드를 전달 */}
+        <button onClick={handleClick()}>버튼!!</button>
+      </div>
+    );
+  };
+  
+  export default EventPracticeSelf;
+  ```
+
+  - 만일 인자를 넘겨야 한다면 화살표 함수를 사용하여 콜백 함수로 호출한다.
+
+  ```react
+  import React from "react";
+  
+  const EventPracticeSelf = () => {
+    const handleClick = (message) => {
+      console.log(message);
+    };
+    return (
+      <div>
+        <button
+          onClick={() => {
+            handleClick("함수가 실행되었습니다!");
+          }}
+        >
+          버튼!!
+        </button>
+      </div>
+    );
+  };
+  
+  export default EventPracticeSelf;
+  ```
+
+  
 
 
 
@@ -376,13 +432,17 @@
 
 
 
-- `<form>`의 `onSubmit` 이벤트는 새로고침을 발생시킨다.
+- `preventDefault()`
 
+  
+  - 태그 혹은 이벤트의 기본적인 동작 방식(a 태그의 경우 설정된 url로 이동 등)을 막는 함수이다.
+  - `<form>`의 `onSubmit` 이벤트는 새로고침을 발생시킨다.
+  
   - `preventDefault()`로 새로 고침이 일어나는 것을 막아줘야 한다.
   - 새로고침이 발생하는 것을 막아야 하는 데도 굳이 `<form>`을 쓰는 이유
     - `<form>` 태그는 태그 내부에 `submit` 속성을 가진 `<button>`이 있을 경우(`<button type="submit">`) 버튼을 눌러도 onSubmit 이벤트가 발생하고, `<form>` 내부의 `<input>`에서 enter를 눌러도 `onSubmit` 이벤트가 발생한다.
     - 만일 input 태그와 button 태그로 구현한다면 `onKeypress`(input 태그), `onClick`(button 태그) 이라는 2개의 이벤트를 헨들링 해야 하지만 form 태그를 사용하면 `onSubmit` 이벤트만 핸들링 하면 되기에 더 편하다.
-
+  
   ```react
   import React, { useCallback, useState } from "react";
   import { MdAdd } from "react-icons/md";
@@ -414,11 +474,11 @@
         </button>
       </form>
     );
-  };
+};
   
   export default TodoInsert;
   ```
-
+  
   
 
 # ref
