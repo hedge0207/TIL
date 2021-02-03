@@ -43,7 +43,7 @@
 
   - 클래스형 컴포넌트
     - state 기능 및 라이프사이클 기능 사용 가능
-    - 임의 메서드 정의 가능
+    - 클래스 내부에 커스텀 메서드 정의 가능
     - `render()` 함수가 반드시 있어야 하며 그 안에 보여 줘야 할 JSX를 반환해야 한다.
   - 함수형 컴포넌트
     - 클래스형 컴포넌트보다 선언하기 편하다.
@@ -112,8 +112,9 @@
 ## props
 
 - properties를 줄인 표현으로 컴포넌트 속성을 설정할 때 사용하는 요소이다.
-  - 컴포넌트가 사용되는 과정에서 부모 컴포넌트가 설정하는 값이며, 컴포넌트 자닛은 해당 props를 읽기 전용으로만 사용할 수 있다.
+  - 컴포넌트가 사용되는 과정에서 부모 컴포넌트가 설정하는 값이며, 자식 컴포넌트는 해당 props를 읽기 전용으로만 사용할 수 있다.
   - props 값은 해당 컴포넌트를 불러와 사용하는 부모 컴포넌트에서 설정할 수 있다.
+  - 컴포넌트 태그안에 들어가는 값들이 모두 props이다.
 
 
 
@@ -143,11 +144,41 @@
   import MyComponent from "./MyComponent";
   
   const App = () => {
+    // name이라는 props를 내린다.
     return <MyComponent name="Cha" />;
   };
   
   export default App;
   ```
+  
+  - props를 설정할 때 값을 지정하지 않으면 true가 기본 값으로 들어가게 된다.
+  
+  ```react
+  import React, { Component } from "react";
+  import MyComponent from "./EventPracticeSelf";
+  
+  
+  class App extends Component {
+    render() {
+      return <MyComponent bool />
+    }
+  }
+  
+  export default App;
+  ```
+  
+  ```react
+  import React from "react";
+  
+  const MyComponent = (props) => {
+    console.log(props.bool);	// true
+    return (...);
+  };
+  
+  export default MyComponent;
+  ```
+  
+  
 
 
 
@@ -372,7 +403,7 @@
 - 클래스형 컴포넌트에서 props 사용하기
 
   - 클래스형 컴포넌트에서는 `render()` 함수에서 `this.props`를 조회하면 된다.
-  - `defaultProps`와 `propTypes`는 똑같은 방식으로 설정 가능하다.
+  - `defaultProps`와 `propTypes`는 유사한 방식으로 설정 가능하다.
 
   ```react
   import React, { Component } from "react";
@@ -408,7 +439,7 @@
 
 - state
   - 부모 컴포넌트에서만 변경 가능한 props와는 다르게 컴포넌트 내부에서 바뀔 수 있는 값.
-  - 리액트엔느 두 가지 종류의 state가 있다.
+  - 리액트에는 두 가지 종류의 state가 있다.
     - 클래스형 컴포넌트가 지니고 있는 state.
     - 함수형 컴포넌트에서 `useState`라는 함수를 통해 사용하는 state.
 
@@ -824,20 +855,3 @@
   
   export default Pract;
   ```
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

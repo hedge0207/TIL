@@ -96,7 +96,7 @@
 
 
 
-- VScode 확정 프로그램
+- VScode 확장 프로그램
   - ESLint: JS 문법 및 코드 스타일 검사
   - Reactjs Code Snippets: 리액트 컴포넌트 및 라이프사이클 함수를 작성할 때 단축 단어를 사용하여 간편하게 코드를 자동으로 생성해 낼 수 있는 코드 스니펫 모음(charalampos karypidis가 업로드)
   - Prettier-Code formatter: 코드 스타일을 자동으로 정리
@@ -247,7 +247,7 @@
   ```
 
   - 하나의 요소로 감싸야 하는 이유
-    - Virtual DOM는 하나의 DOM 트리 구조로 이루어져야 한다는 규칙 때문이다.
+    - Virtual DOM은 하나의 DOM 트리 구조로 이루어져야 한다는 규칙 때문이다.
     - 이는 컴포넌트 변화를 감지해 낼 때 효율적으로 비교할 수 있도록 하기 위함이다.
   - `<div>`로 감싸고 싶지 않다면 `<Fragment>`로 감쌀 수 있다.
     - `<>`로 축약이 가능하다.
@@ -393,7 +393,7 @@
   import './App.css';
   
   function App() {
-    const name = 'Cha'
+    const name = undefined
     return (
       <div>{name}</div>
     );
