@@ -708,10 +708,6 @@
   - **Pass-by-reference**
     - 변수에 값 자체를 저장하고 있는 것이 아니라, 생성된 데이터의 참조값(address)를 저장하고 참조 방식으로 전달하는 것
 
-  
-
-  
-
 
 
 - JavaScript의 객체
@@ -890,7 +886,7 @@ student.sayHello()              //Hello! Cha
   console.log(student['10'])      //1000
   ```
 
-  
+
 
 - 프로퍼티 값 갱신
 
@@ -938,7 +934,7 @@ student.sayHello()              //Hello! Cha
   console.log(student.name)  //undifined
   ```
 
-  
+
 
 - 프로퍼티의 키, 값 조회
 
@@ -965,8 +961,6 @@ student.sayHello()              //Hello! Cha
   }
   console.log(obj)	// { Cha: 'Developer' }
   ```
-
-  
 
 
 

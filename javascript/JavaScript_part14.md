@@ -406,23 +406,16 @@
   - 매개변수로도 사용 가능하다.
 
   ```javascript
-  const todos = [
-      { id: 1, content: 'HTML', completed: true },
-      { id: 2, content: 'CSS', completed: false },
-      { id: 3, content: 'JS', completed: false }
-  ]
+  const obj = {
+    name: "Cha",
+    age: 28,
+  };
   
-  // filter 메소드의 콜백 함수는 대상 배열(todos)을 순회하며 첫 번째 인자로 대상 배열의 요소를 받는다.  
-  // todos 배열의 요소인 객체로부터 completed 프로퍼티만을 추출한다.
-  // var { completed } = { id: 1, content: 'HTML', completed: true }
-  // var { completed } = { id: 2, content: 'CSS', completed: false }
-  // var { completed } = { id: 3, content: 'JS', completed: false }
-  const completedTodos = todos.filter(function({ completed }) {
-      console.log(completed)
-      console.log({completed})
-      return completed
-  })
-  console.log(completedTodos) // [ { id: 1, content: 'HTML', completed: true } ]
+  function foo({ age }) {
+    console.log(age);
+  }
+  
+  foo(obj);	// 28
   ```
 
 
