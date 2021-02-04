@@ -5,7 +5,7 @@
 - SPA란(Single Page Application)
   - 전통적인 웹 페이지
     - 여러 페이지로 구성되어 있다.
-    - 사용자가 다른 페이지로 이동할 때마다 새로운 html을 받아오고, 페이지를 로딩할 때마다 서버에서 리소스를 전달받아 해석한 뒤 화면에 보여주었습니다.
+    - 사용자가 다른 페이지로 이동할 때마다 새로운 html을 받아오고, 페이지를 로딩할 때마다 서버에서 리소스를 전달받아 해석한 뒤 화면에 보여줬다.
     - 이렇게 사용자에게 보이는 화면은 서버측에서 준비했다.
     - 사전에 html 파일을 만들어서 제공하거나, 데이터에 따라 유동적인 html을 생성해 주는 템플릿 엔진을 사용하기도 했다.
     - 그러나 웹에서 제공되는 정보가 많아지면서, 새로운 화면을 보여 주어야 할 때마다 서버 측에서 모든 뷰를 준비하면 성능상의 문제가 발생할 수 있다.
@@ -38,7 +38,7 @@
 
 
 
-## 라우터 사용하기
+## 리액트 라우터 사용하기
 
 - 기본적인 라우터 사용법
 
@@ -107,7 +107,8 @@
   - `Route` 컴포넌트로 특정 주소에 컴포넌트 연결
     - Route 컴포넌트를 사용하여 사용자의 현재 경로에 따라 다른 컴포넌트를 보여준다.
     - 이후 실행해보면 `Home` 컴포넌트가 보이는 것을 확인 가능하다.
-
+  - 라우트로 사용된 객체는 따로 props를 내려주지 않아도 `history` , `match`, `location` 등의 객체가 props로 내려가게 된다.
+  
   ```react
   import React from "react";
   import { Route } from "react-router-dom";
@@ -124,14 +125,14 @@
   };
   
   export default App;
-  ```
-
+```
+  
   - `exact`
     - 위 예시에서 `localhost:3000/about`으로 들어가면 `Home` 컴포넌트와 `About` 컴포넌트가 함께 뜬다.
     - 이는 두 컴포넌트의 라우트 경로가 겹치기 때문으로, `exact`라는 속성을 주면 해결 된다.
     - 이제 주소가 정확히 일치해야만 해당 컴포넌트로 이동하게 된다.
-    - props를 설정할 때 값을 지정해주지 않으면 자동으로 true가 되므로 `exact={true}` 대신 `exact`라고만 써도 된다.
-
+  - props를 설정할 때 값을 지정해주지 않으면 자동으로 true가 되므로 `exact={true}` 대신 `exact`라고만 써도 된다.
+  
   ```react
   import React from "react";
   import { Route } from "react-router-dom";
@@ -148,10 +149,10 @@
   };
   
   export default App;
-  ```
-
-  - 컴포넌트가 아닌 특정 JSX를 띄우는 페이지로 이동하게 할 수도 있다.
-
+```
+  
+- 컴포넌트가 아닌 특정 JSX를 띄우는 페이지로 이동하게 할 수도 있다.
+  
   ```react
   import React from "react";
   import { Route } from "react-router-dom";
@@ -168,17 +169,17 @@
   };
   
   export default App;
-  ```
-
+```
   
 
+  
   - `Link` 컴포넌트를 사용하여 주소 이동하기
     - `Link` 컴포넌트는 클릭하면 다른 주소로 이동시켜주는 컴포넌트이다.
     - `<a>`는 페이지를 전환하는 과정에서 페이지를 새로 불러오기 때문에 애플리케이션이 들고 있던 상태들을 모두 날려버리게 된다.
     - 따라서 리액트 라우터를 사용할 때는 `<a>`를 직접 사용하면 안된다.
     - `Link` 컴포넌트를 사용하여 페이지를 전환하면, 새로운 페이지를 불러오는 것이 아니라 애플리케이션을 유지한 상태에서 HTML5 History API를 사용하여 사용자의 페이지 주소만 변경해준다.
-    - `Link`는 기본적으로 `<a>`로 이루어져 있지만, 페이지 전환을 방지하는 기능이 내장되어 있다.
-
+  - `Link`는 기본적으로 `<a>`로 이루어져 있지만, 페이지 전환을 방지하는 기능이 내장되어 있다.
+  
   ```react
   import React from "react";
   import { Link, Route } from "react-router-dom";
@@ -239,10 +240,10 @@
     - 파라미터와 쿼리 중 어떤 상황에 무엇을 사용해야 할지에 대한 규칙은 없다.
     - 일반적으로 파라미터는 특정 아이디 혹은 이름을 사용하여 조회할 때 사용한다(e.g. `/about/cha`)
     - 일반적으로 쿼리는 어떤 키워드를 검색하거나 페이지에 필요한 옵션을 전달할 때 사용한다(e.g. `/about?details=true`)
-- URL 파라미터
-    - URL 파라미터를 넘길 때 뒤에 `?`를 붙여주면 해당 파라미터가 있을 수도 있고 없을 수도 있다는 뜻이다(e.g. `<Route path="/profile/:city?" component={Profile} />`) 
-    - `props`로 받은 `match` 객체 안에는 현재 컴포넌트가 어떤 경로 규칙에 의해 보이는지에 대한 정보가 들어있다.
-
+  - URL 파라미터
+      - URL 파라미터를 넘길 때 뒤에 `?`를 붙여주면 해당 파라미터가 있을 수도 있고 없을 수도 있다는 뜻이다(e.g. `<Route path="/profile/:city?" component={Profile} />`) 
+      - `props`로 받은 `match` 객체 안에는 현재 컴포넌트가 어떤 경로 규칙에 의해 보이는지에 대한 정보가 들어있다.
+  
   ```react
   import React from "react";
   import { Link, Route } from "react-router-dom";
@@ -269,7 +270,7 @@
   
   export default App;
   ```
-
+  
   ```react
   import React from "react";
   
@@ -281,7 +282,7 @@
       description: "대프리카",
     },
   };
-  
+  // 디스트럭처링을 통해 props에서 match를 뽑는다.
   const Profile = ({ match }) => {
     console.log(match); // {path: "/profile/:city", url: "/profile/daegu", isExact: true, params: {…}}
     console.log(match.prams)	// {city: "daegu"}
@@ -302,21 +303,22 @@
   
   export default Profile;
   ```
-
+  
   - URL 쿼리
     - 쿼리를 사용하기 위해선 쿼리 문자열을 객체로 변환해주는 `qs` 라이브러리를 설치해야 한다(`$ yarn add qs`).
     - 라우트로 사용된 컴포넌트에는 props로 웹 애플리케이션의 현재 주소에 대한 정보를 지닌 객체가 전달된다(예시의 `location`). 
     - 쿼리 문자열을 객체로 파싱하는 과정에서 나온 결과 같은 언제나 문자열이므로 숫자를 받아와야 하면 `parseInt` 함수로 숫자로 변환해야 한다.
-
+  
   ```react
   import React from "react";
   import qs from "qs";
   
+  // // 디스트럭처링을 통해 props에서 location을 뽑는다.
   const About = ({ location }) => {
     console.log(location); // {pathname: "/about", search: "?detail=true", hash: "", state: undefined}
     // location.search에 담긴 쿼리 스트링을 객체로 변환한다.
     const query = qs.parse(location.search, { ignoreQueryPrefix: true });
-    // 쿼리 문자열을 객체로 파싱하는 과정에서 나온 결과 같은 언제나 문자열이므로 아래와 같이 문자열 "true"로 비교해야 한다.
+    // 쿼리 문자열을 객체로 파싱하는 과정에서 나온 결과 같은 언제나 문자열이므로 아래와 같이 문자열 "true"와 비교해야 한다.
     const showDetail = query.detail === "true";
     return (
       <div>
@@ -329,7 +331,7 @@
   
   export default About;
   ```
-
+  
   ```react
   import React from "react";
   import { Link, Route } from "react-router-dom";
@@ -412,7 +414,7 @@
 
 - `history`
 
-  - history 객체는 라우트로 사용된 컴포넌트에 `match`, `location`과 함께 전달되는 props 중 하나.
+  - `history` 객체는 라우트로 사용된 컴포넌트에 `match`, `location`과 함께 전달되는 props 중 하나.
   - 이 객체를 통해 컴포넌트 내에 구현하는 메서드에서 라우터 API를 호출할 수 있다.
   - 특정 버튼을 눌렀을 때 뒤로 가거나, 로그인 후 화면을 전환하거나, 다른 페이지로 이탈하는 것을 방지해야 할 때 사용한다.
   - 메서드(자주 사용하는 것들)
@@ -651,7 +653,7 @@
 # React에서 axios 사용
 
 - axios
-  - 현재 가장 많이 사용되고 잇는 JS HTTP 클라이언트.
+  - 현재 가장 많이 사용되고 있는 JS HTTP 클라이언트.
   - HTTP 요청을 Promise 기반으로 처리한다는 특징이 있다.
 
 

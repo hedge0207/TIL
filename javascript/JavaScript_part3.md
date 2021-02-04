@@ -230,6 +230,26 @@
 
 
 
+- 함수가 반환한 함수는 바로 인자를 받는 것이 가능하다.
+
+  - 아래 예시에서 `foo` 함수는 `bar` 함수를 반환한다.
+  - 그 반환값에 바로 `foo()("hello!");`와 같이 인자를 넘기면 실행이 된다.
+
+  ```javascript
+  function foo() {
+    const bar = function (m) {
+      console.log(m);
+    };
+    return bar;
+  }
+  
+  foo()("hello!");	// hello!
+  ```
+
+  
+
+
+
 ## 함수의 객체 프로퍼티
 
 - 함수는 객체이므로 프로퍼티를 가질 수 있다.
