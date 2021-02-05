@@ -932,7 +932,65 @@
 
   
 
+## 간단한 설명
 
+- 제네레이터 문법의 핵심 기능은 함수를 작성할 때 함수를 특정 구간에 멈춰 놓을 수도 있고, 원할 때 다시 돌아가게 할 수도 있다는 것이다.
+  - 일반적인 함수는 리턴문을 만나면 함수가 종료된다.
+  - 그러나 제네레이터 함수를 사용하면 함수에서 값을 순차적으로 반환할 수 있다.
+
+
+
+- 동작 방식
+
+  - 제네레이터가 처음 만들어지면 함수의 흐름은 멈춰 있는 상태이다.
+  - `next()`가 호출되면 다음 `yield`가 있는 곳까지 호출하고 다시 함수가 멈춘다.
+
+  ```javascript
+  function* generatorFucntion(){
+      console.log('안녕하세요.');
+      yield 1;
+      console.log('반갑습니다.');
+      yield 2;
+      console.log('함수 실행중입니다.')
+      yield 3;
+      return 4
+  }
+  
+  const generator = generatorFucntion()
+  
+  console.log(generator.next())
+  // 안녕하세요
+  // {value:1,done:false}
+  console.log(generator.next())
+  // 반값습니다.
+  // {value:2,done:false}
+  console.log(generator.next())
+  // 함수 실행중입니다.
+  // {value:3,done:false}
+  console.log(generator.next())
+  // {value:4,done:true}
+  console.log(generator.next())
+  // {value:undefined,done:true}
+  ```
+
+  - `next()`에 파라미터를 넣으면 제네레이터 함수에서 `yield`를 사용하여 해당 값을 조회할 수도 있다.
+
+  ```javascript
+  function* sumGenerator(){
+      let a = yield;
+      let b = yield;
+      yield a+b;
+  }
+  const sum = sumGenerator()
+  sum.next(1) // {value:undefiend, done:false}
+  sum.next(2) // {value:undefiend, done:false}
+  sum.next()  // {value:3, done:false}
+  sum.next()  // {value:undefiend, done:true}
+  ```
+
+  
+
+  
 
 
 
