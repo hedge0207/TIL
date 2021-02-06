@@ -827,8 +827,8 @@
     ({ sample, loading }) => ({
       post: sample.post,
       users: sample.users,
-      loadingPost: loading.GET_POST,
-      loadingUsers: loading.GET_USERS,
+      loadingPost: loading['sample/GET_POST'],
+      loadingUsers: loading['sample/GET_USERS'],
     }),
     { getPost, getUsers }
   )(SampleContainer);
