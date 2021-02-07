@@ -498,6 +498,7 @@
     ctx.body = '소개';
   });
   
+  // 미들웨어를 사용하기 위해 .use() 사용
   app.use(router.routes()).use(router.allowedMethods());
   
   app.listen(4000, () => {
@@ -704,7 +705,7 @@
   ```javascript
   let postId = 1; // id의 초깃값
   
-  // posts 배열 초기 데이터
+  // posts 배열 초기 데이터, 아직 DB가 없으므로 이 배열을 DB 처럼 사용.
   const posts = [
     {
       id: 1,
@@ -834,8 +835,8 @@
   const posts = new Router();
   
   posts.get('/', postsCtrl.list);
-  posts.get('/:id', postsCtrl.write);
-  posts.post('/', postsCtrl.read);
+  posts.get('/:id', postsCtrl.read);
+  posts.post('/', postsCtrl.write);
   posts.delete('/:id', postsCtrl.remove);
   posts.put('/:id', postsCtrl.replace);
   posts.patch('/:id', postsCtrl.update);
@@ -853,9 +854,133 @@
 
 
 
+# Node.js에서 ES 모듈 import/export 문법 사용하기
+
+- ES 모듈 import/export 문법은 Node.js에서 아직 정식으로 지원되지 않는다.
+  - Node.js에 해당 기능이 구현되어 있기는 하지만 아직 실험 단계이기에 기본 옵션으로는 사용할 수 없다.
+  - 확장자를 .mjs로 사용하고 node를 실행할 때 `--experimental-modules`라는 옵션을 넣어 주어야 한다.
+  - Node.js에서 꼭 import/export 문법을 사용해야 할 필요는 없지만, 이 문법을 사용하면 코드가 더욱 깔끔해진다.
+  - esm이라는 라이브러리를 사용하면 사용이 가능하다.
 
 
 
+- esm 사용하기
+
+  - 설치
+
+  ```bash
+  $ yarn add esm
+  ```
+
+  - 기존 src/index.js 파일을 main.js로 변경하고, index.js 파일을 새로 생성해서 아래 코드를 작성한다.
+
+  ```javascript
+  // 이 파일에서만 no-global-assign Eslint 옵션을 비활성화 한다.
+  /* eslint-disable no-global-assign */
+  
+  require = require('esm')(module /*, options*/);
+  module.exports = require('./main.js');
+  ```
+
+  - package.json의 scripts 부분을 수정한다.
+
+  ```json
+  "scripts": {
+    "start": "node -r esm src",
+    "start:dev": "nodemon --watch src/ -r esm src/index.js"
+  }
+  ```
+
+  - ESLint에서 import/export 구문을 사용해도 오류로 간주하지 않도록 다음과 같이 수정한다.
+    - sourceType 값을 module로 설정한다.
+
+  ```json
+  {
+      (...)
+      "parserOptions": {
+          "ecmaVersion": 12,
+          "sourceType": "module",
+      },
+      (...)
+  }
+  ```
+
+
+
+- 기존 코드 ES Module 형태로 변경하기
+
+  - src/posts/posts.ctrl.js 파일에서 `exports` 코드를 `export const`로 모두 변환한다.
+
+  ```javascript
+  (...)
+  export const write = (ctx) => {(...)}
+  export const list = (ctx) => {(...)}
+  export const read = (ctx) => {(...)}
+  export const remove = (ctx) => {(...)}
+  export const replace = (ctx) => {(...)}
+  export const update = (ctx) => {(...)};
+  ```
+
+  - src/api/posts/index.js 파일을 수정한다.
+    - 여기까지 작성하고 저장하면 서버에서 오류가 발생할 것인데, 정상이다.
+
+  ```javascript
+  import Router from 'koa-router';
+  import * as postsCtrl from './posts.ctrl';
+  
+  const posts = new Router();
+  
+  posts.get('/', postsCtrl.list);
+  posts.get('/:id', postsCtrl.write);
+  posts.post('/', postsCtrl.read);
+  posts.delete('/:id', postsCtrl.remove);
+  posts.put('/:id', postsCtrl.replace);
+  posts.patch('/:id', postsCtrl.update);
+  
+  export default posts;
+  ```
+
+  - src/api/index.js 파일을 수정한다.
+
+  ```javascript
+  import Router from 'koa-router';
+  import posts from './posts';
+  
+  const api = new Router();
+  
+  api.use('/posts', posts.routes());
+  
+  export default api;
+  ```
+
+  - src/main.js 파일을 수정한다.
+
+  ```javascript
+  require('dotenv').config();
+  import Koa from 'koa';
+  import Router from 'koa-router';
+  import bodyParser from 'koa-bodyparser';
+  import mongoose from 'mongoose';
+  import api from './api';
+  
+  (...)
+  ```
+
+  - 여기까지 하고 서버를 구동시킨 후 `http://localhost:4000/api/posts`에 요청을 보내 잘 동작하는지 확인한다.
+  - 마지막으로 루트 디렉토리에 jsconfig.json을 작성한다.
+    - 아래와 같이 작성해 주면 나중에 자동 완성을 통해 모듈을 불러올 수 있다.
+
+  ```json
+  {
+      "compilerOptions": {
+          "target": "es2015",
+          "module": "es2015",
+      },
+      "include": ["src/**/*"]
+  }
+  ```
+
+  
 
 
 
