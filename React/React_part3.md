@@ -9,8 +9,8 @@
 - React에서 이벤트 사용시 주의사항
   - 이벤트 이름은 카멜 표기법으로 작성한다.
   - 이벤트에서 실행할 JS코드를 전달하는 것이 아니라, 함수 형태의 값을 전달한다.
-
-  - DOM 요소에만 이벤트를 설정할 수 있다.
+- DOM 요소에만 이벤트를 설정할 수 있다.
+    - 직접 만든 컴포넌트에는 이벤트를 설정할 수 없다.
 
 
 
@@ -146,9 +146,15 @@
       this.handleChange = this.handleChange.bind(this);
       this.handleClick = this.handleClick.bind(this);
     }
-  
+    
+    /*메서드 단축 구문으로 아래와 같은 함수를
+    handleChange: function(e){
+    	...
+    }
+    아래와 같이 선언한 메서드다.
+    */
     handleChange(e) {
-      // 위에서 바인딩을 해줬기에 this는 컴포넌트 자신을 가리키게 된다.
+      // 위에서 바인딩을 해줬기에, 이 메서드 내부에서 this는 컴포넌트 자신을 가리키게 된다.
       console.log(this)	// EventPractice {...}
       this.setState({
         message: e.target.value,
@@ -182,7 +188,7 @@
 
   - Property Initializer Syntax를 사용한 메서드 작성
     - 메서드 바인딩은 생성자 메서드(`constructor`)에서 하는 것이 정석이다(위의 방식).
-    - 하지만 위와 같은 방식이 불편할 경우 bable의 transform-class-properties 문법을 사용하여 화살표 함수 형태로 메서드를 정의할 수 있다.
+    - 하지만 위와 같은 방식이 불편할 경우 babel의 transform-class-properties 문법을 사용하여 화살표 함수 형태로 메서드를 정의할 수 있다.
     - 화살표 함수의 this는 항상 상위 스코프의 this를 가리킨다.
 
   ```react
@@ -213,7 +219,7 @@
   export default EventPractice;
   ```
 
-  
+
 
 - 복수의 input을 처리하기
 
@@ -616,7 +622,7 @@
     input = React.createRef();
   
     handleFocus = () => {
-      //this.input으 input DOM요소를 가리키고 있다.
+      //this.input은 input DOM요소를 가리키고 있다.
       this.input.current.focus();
     };
     render() {
@@ -690,7 +696,7 @@
   export default ValidationSample;
   ```
 
-  
+
 
 - 컴포넌트에 ref 달기
 
@@ -712,7 +718,7 @@
     // 컴포넌트 메서드 생성
     scrollToBottom = () => {
       // 디스트럭처링을 사용
-      // scrollHeight,clientHeight 등은DOM 노드가 가진 값들이다.
+      // scrollHeight,clientHeight 등은 DOM 노드가 가진 값들이다.
       const { scrollHeight, clientHeight } = this.box;
       this.box.scrollTop = scrollHeight - clientHeight;
     };

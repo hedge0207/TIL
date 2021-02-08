@@ -82,9 +82,28 @@
       return "Hello! "+name
   }
   ```
-
-
-
+  
+  - 메서드 단축 구문
+    - 메서드의 경우 아래와 같이 단축해서 선언하는 것이 가능하다.
+  
+  ```javascript
+  // 이런 메서드 선언을
+  const obj = {
+      foo: function() {
+          console.log("Hello!")
+      }
+  }
+  
+  //아래와 같이 단축 가능하다.
+  const obj2 = {
+      foo(){
+          console.log("Hello!")
+      }
+  }
+  ```
+  
+  
+  
 - 함수 호이스팅
 
   - 호이스팅

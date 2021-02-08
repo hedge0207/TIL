@@ -148,7 +148,7 @@
     render() {
       return (
         <div>
-          <LifecycleSample />
+          <LifecycleSample color={this.state.color} />
           <button onClick={this.handleClick}>랜덤 색상</button>
         </div>
       );
@@ -156,12 +156,11 @@
   }
   
   export default App;
-  
   ```
-
-  - LifecycleSample.js
-
-  ```react
+  
+- LifecycleSample.js
+  
+```react
   import React, { Component } from "react";
   
   class LifecycleSample extends Component {
@@ -252,6 +251,7 @@
       };
       return (
           <div>
+              {/* 존재하지 않는 값을 조회 */}
               {this.props.nothing.value}
               <h1 style={style} ref={(ref) => (this.myRef = ref)}>
                   {this.state.number}
@@ -261,15 +261,15 @@
           </div>
       );
   }
-  ```
-
+```
+  
   - 에러 페이지 우측 상단의 X 버튼을 누르면 에러 페이지가 사라진다.
     - 흰 화면이 나오게 된다(배포 환경에서 에러가 발생하면 보이는 화면이다).
     - 사용자 입장에서 에러가 발생했을 때 흰색 화면이 나오게 된다면 당황할 것이다.
-    - 따라서 사용자에게 에러가 발생했다는 것을 인지시켜 줘야 한다.
-
+  - 따라서 사용자에게 에러가 발생했다는 것을 인지시켜 줘야 한다.
   - `componentDidCatch`메서드 활용
-
+  - 이 메서드는 에러가 발생하면 호출된다.
+  
   ```react
   import React, { Component } from "react";
   
@@ -292,11 +292,11 @@
   }
   
   export default ErrorBoundary;
-  ```
-
+```
+  
   - App.js 를 아래와 같이 수정
-    - `children`은 태그 사이의 내용을 보여주므로 아래와 같이 `<ErrorBoundary>` 태그 사이에 원래 보여주려는 내용을 넣는다.
-
+  - `children`은 태그 사이의 내용을 보여주므로 아래와 같이 `<ErrorBoundary>` 태그 사이에 원래 보여주려는 내용을 넣는다.
+  
   ```react
   import React, { Component } from "react";
   import ScrollBox from "./ScrollBox";
@@ -335,8 +335,8 @@
   
   export default App;
   
-  ```
-
+```
+  
   - 이제 에러 페이지에서 X 버튼을 누르면 에러가 발생한 부분만 `ErrorBoundary.js`에서 설정한 내용이 출력된다.
 
 
@@ -476,7 +476,7 @@
 
 - 뒷정리 하기
 
-  - 컴포넌트가 언마운트 되기 전이나 업데이트 되기 직전에 어떤 작업을 수행하고 싶다면, 뒷정리(cleanup) 함수를 반환해 줘야 한다.
+  - 컴포넌트가 언마운트 되기 전이나 업데이트 되기 직전에 어떤 작업을 수행하고 싶다면, 뒷정리(cleanup) 함수를 반환하면 된다.
     - 언마운트 될 때만 뒷정리 함수를 호출하고 싶다면 `useEffect` 함수의 두 번째 인자로 빈 배열을 넣으면 된다.
   - `Info.js`
     - 아래 코드를 작성 후 브라우저에서 보이기를 누르면 effect가 출력되고 숨기기(언마운트)를 누르면 cleanup이 출력되는 것을 확인 가능하다.
@@ -538,6 +538,7 @@
 - `useState`보다 더 다양한 컴포넌트 상황에 따라 다양한 상태를 다른 값으로 업데이트 하고자 할 때 사용하는 Hook
   - 리듀서라는 개념은 리덕스와 관련되어 있으므로 리덕스를 공부할 때 더 자세히 알아본다.
   - 현재 상태(state)와 업데이트를 위해 필요한 정보를 담은 액션 값(action)을 전달받아 새로운 상태를 반환하는 함수이다.
+    - 리덕스에서 사용하는 액션 객체는 어떤 액션인지 알려주는 type 필드가 꼭 있어야 하지만, `useReducer`에서 사용하는 액션 객체는 type을 지니지 않아도 된다.
   - 새로운 상태를 만들 때는 반드시 불변성을 지켜줘야 한다.
 
 
@@ -562,6 +563,7 @@
   function reducer(state, action) {
     switch (action.type) {
       case "INCREMENT":
+        // state를 반환한다.
         return { value: state.value + 1 };
       case "DECREMENT":
         return { value: state.value - 1 };
@@ -587,10 +589,10 @@
   };
   
   export default Counter;
-  ```
-
-  - 위 코드를 `useState`를 사용하면 아래와 같이 구현 할 수 있다.
-
+```
+  
+- 위 코드를 `useState`를 사용하면 아래와 같이 구현 할 수 있다.
+  
   ```react
   import React, { useState } from "react";
   
@@ -619,12 +621,13 @@
   - `useReducer`를 사용하면 보다 깔끔하게 처리가 가능하다.
     - `useEffect`의 예시로 사용한 `Info.js`에서는 `useState`를 사용하여 복수의 상태를 관리하였다.
     - `useReducer`를 사용하면 아래와 같이 보다 깔끔해진다.
-
+  - redux와는 달리 `useReducer`는 꼭 type을 갖지 않아도 된다.
+  
   ```react
   import React, { useReducer } from "react";
   
   function reducer(state, action) {
-      // spread 문법을 사용하여 복사한 객체
+    // spread 문법을 사용하여 복사한 객체
     return {
       ...state,
       [action.name]: action.value,
@@ -659,8 +662,8 @@
   };
   
   export default Info;
-  ```
-
+```
+  
   - `useReducer`의 액션은 어떤 값이든 사용이 가능하다.
     - 위 예시에서는 이벤트 객체가 지니고  있는 `e.target` 값 자체를 액션 값으로 사용했다.
 
@@ -750,6 +753,7 @@
       setNumber("");
     };
   
+    // useMemo를 사용한다.
     const avg = useMemo(() => getAverage(list), [list]);
   
     return (
@@ -806,9 +810,11 @@
     const [list, setList] = useState([]);
     const [number, setNumber] = useState("");
   
+    // 첫 번째 인자로 함수를 받고, 두 번째 인자로 변화를 감지할 상태를 배열로 받는다.
     const onChange = useCallback((e) => {
       setNumber(e.target.value);
     }, []); // 컴포넌트가 처음 렌더링 될 때만 함수 생성
+    
     const onInsert = useCallback(() => {
       const nextList = list.concat(parseInt(number));
       setList(nextList);
@@ -845,6 +851,7 @@
   const Average = () => {
     const [list, setList] = useState([]);
     const [number, setNumber] = useState("");
+    // useRef를 사용한다.
     const inputEl = useRef(null);
       
     const onChange = useCallback((e) => {
@@ -878,8 +885,9 @@
 
   - 컴포넌트 로컬 변수를 사용해야 할 때도 `useRef`를 사용 가능하다.
     - 로컬 변수란 렌더링과 상관없이 바뀔 수 있는 값을 의미한다.
-  - 클래스 형태로 작성된 컴포넌트의 경우 로컬 변수를 사용해야 할 때 아래와 같이 작성한다.
-
+    - 즉, 굳이 setter, setState 등으로 변경하지 않아도 되는 값을 의미한다.
+- 클래스 형태로 작성된 컴포넌트의 경우 로컬 변수를 사용해야 할 때 아래와 같이 작성한다.
+  
   ```react
   import React, { Component } from "react";
   
@@ -897,10 +905,10 @@
   }
   
   export default LocalValueClass;
-  ```
-
-  - 함수형 컴포넌트에서는 아래와 같이 작성한다.
-
+```
+  
+- 함수형 컴포넌트에서는 아래와 같이 작성한다.
+  
   ```react
   import React, { useRef } from "react";
   
@@ -942,12 +950,13 @@
     const onChange = (e) => {
       dispatch(e.target);
     };
+    // 상태와 onChange 함수를 반환
     return [state, onChange];
   }
-  ```
-
-  - 위에서 분리한 Hook을 사용
-
+```
+  
+- 위에서 분리한 Hook을 사용
+  
   ```react
   import React from "react";
   import useInputs from "./useInput";

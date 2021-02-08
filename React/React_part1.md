@@ -120,7 +120,7 @@
 
 - 아래 명령어를 입력하여 프로젝트를 생성한다.
 
-  - babel, webpack 설치 및 설정 과정을 생략하고 간편하게 프로젝트 작업 환경을 구축해주는 도구.
+  - create-react-app: babel, webpack 설치 및 설정 과정을 생략하고 간편하게 프로젝트 작업 환경을 구축해주는 도구.
 
   ```bash
   # yarn
@@ -200,9 +200,39 @@
 
 
 
+- index.js
+
+  - `ReactDOM.render()`
+    - 컴포넌트를 페이지에 렌더링하는 역할을 한다.
+    - 첫 번째 파라미터로 렌더링할 내용을 JSX 형태로 받고, 두 번째 파라미터로 JSX를 렌더링할 document 내부 요소를 설정한다.
+  - `React.StrictMode`
+    - 리액트의 레거시 기능들을 사용하지 못하게 하는 기능이다.
+    - 나중에는 사라지게 될 기능들을 사용했을 때 경고를 출력한다.
+
+  ```react
+  import React from 'react';
+  import ReactDOM from 'react-dom';
+  import './index.css';
+  import App from './App';
+  import reportWebVitals from './reportWebVitals';
+  
+  ReactDOM.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+    document.getElementById('root')
+  );
+  
+  reportWebVitals();
+  ```
+
+  
+
+
+
 ## JSX 문법
 
-- JSX은 문자열도, HTML 태그도 아니다.
+- JSX는 문자열도, HTML 태그도 아니다.
   - JSX는 HTML 보다는 JS에 가깝기 때문에 camelCase로 작성한다.
   - JSX 태그는 자식을 포함할 수 있다.
 

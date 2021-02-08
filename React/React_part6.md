@@ -314,7 +314,7 @@
     - `List` 컴포넌트를 사용하기 위해 `rowRenderer`라는 함수를 새로 작성해 준다.
     - 이 함수는 `react-virtualized`의 `List` 컴포넌트에서 각 TodoItem을 렌더링 할 때 사용하며, 이 함수를 List 컴포넌트의 props로 설정해 줘야 한다.
     - 이 함수는 파라미터에 `index`,`key`,`style` 값을 객체 타입으로 받아 와서 사용한다.
-    - `List` 컴포넌트를 사용할 때는 해당 리스트의 전체 크기와 각 항목의 높이, 각 항목을 렌더링할 때 사용해야 하는 함수, 그리고 배열을 props로 넣어 주어야 합니다. 이 컴포넌트가 전달 받은 props를 사용하여 자동으로 최적화해준다.
+    - `List` 컴포넌트를 사용할 때는 해당 리스트의 전체 크기와 각 항목의 높이, 각 항목을 렌더링할 때 사용해야 하는 함수, 그리고 배열을 props로 넣어 주어야 한다. 이 컴포넌트가 전달 받은 props를 사용하여 자동으로 최적화해준다.
 
   ```react
   import React from "react";
@@ -426,11 +426,12 @@
   - 사용 방법
     - `produce` 함수는 첫 번째 파라미터로 수정하고 싶은 상태를 받고, 두 번째 파라미터로 상태를 어떻게 변경할지를 정의하는 함수를 받는다.
     - 두 번째 파라미터로 전달되는 함수 내부에서 원하는 값을 변경하면, `produce` 함수가 불변성 유지를 대신해 주면서 새로운 상태를 생성해 준다.
-
+  - 두 번째 파라미터로 전달되는 함수는 인자로 `produce()`함수의 첫 번째 인자를 받는다.
+  
   ```react
   import produce from 'immer'
   
-  const changedState = produce(originalState, draft)=>{
+  const changedState = produce(originalState, draft=>{
       // 바꾸려는 값 바꾸기
       draft.somewhere.deep.inside=5
   }
@@ -595,7 +596,7 @@
 
 - `useState`의 함수형 업데이트와 `immer`함께 쓰기
 
-  - `immer`에서 제공하는 `produce` 함수를 호출할 때, 첫 번째 파라미터가 함수 형태라면 업데이트 함수를 반환한다.
+  - `immer`에서 제공하는 `produce` 함수를 호출할 때, 첫 번째 파라미터가 함수 형태라면 변환 된 상태가 아닌, 업데이트 함수를 반환한다.
   - 이러한 `immer`의 속성과 `useState`의 함수형 업데이트를 함께 활용하면 코드를 더욱 깔끔하게 만들 수 있다.
 
   ```react

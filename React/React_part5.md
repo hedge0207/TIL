@@ -4,7 +4,7 @@
 
   - 반복이 늘어날 수록 코드 양은 증가하고 파일 용량도 증가할 것이다.
   - 또한 보여 주어야 할 데이터가 유동적이라면 관리하기도 힘들다.
-  - 아래의 경우 `<li>코코아</li>`의 내용을 변경해야 한다면 반복되는 `<li>`태그 중에서 해당 내용을 찾아야 한다.
+    - 아래의 경우 `<li>코코아</li>`의 내용을 변경해야 한다면 반복되는 `<li>`태그 중에서 해당 내용을 찾아야 한다.
 
   ```react
   import React from "react";
@@ -29,7 +29,7 @@
 
 - JS의 `map()`함수를 사용하여 위와 같은 문제를 해결 가능하다.
   - `arr.map(callback, [thisArg])`
-    - `callback`은 원본 배열을 가지고 새로운 배열을 생성하는 함수로, `currentValue`(현재 처리하고 있는 요소), `index`(현재 처리하고 있는 요소의 index 값), `array`(현재 처리하고 있는 원본 배열)을 인자로 받는다.
+    - `callback`은 원본 배열을 가지고 새로운 배열을 생성하는 함수로, `currentValue`(현재 처리하고 있는 요소), `index`(현재 처리하고 있는 요소의 index 값), `array`(현재 처리하고 있는 원본 배열)를 인자로 받는다.
     - `thisArg`는 옵션으로 callback함수 내에서 사용할 this 레퍼런스를 받는다.
   - 이를 활용하여 컴포넌트 내부의 반복된 코드를 축약해 작성할 수 있다.
 
@@ -114,6 +114,7 @@
     const onChange = (e) => setInputText(e.target.value);
   
     const onClick = () => {
+      // concat을 사용한다.
       const nextKeywords = keywords.concat({
         id: nextId,
         keyword: inputText,
@@ -134,11 +135,11 @@
   };
   
   export default IterationSample;
-  ```
-
+```
+  
   - 데이터 제거하기
-    - 불변성을 유지하면서 배열의 특정 항목을 지우기 위해 `filter()` 함수를 사용한다.
-
+  - 불변성을 유지하면서 배열의 특정 항목을 지우기 위해 `filter()` 함수를 사용한다.
+  
   ```react
   import React, { useState } from "react";
   
@@ -797,7 +798,7 @@
     - 여기서 사용한 문법을 Tagged 템플릿 리터럴이라 부른다.
 
   - 일반 템플릿 리털과 다른 점은 템플릿 안에 JS 객체나 함수를 전달할 때 온전히 추출할 수 있다는 것이다.
-    - `styled-components`는 이러한 특성을 사용하여 `styled-components`로 만든 컴포넌트의 props를 스타일 족에서 쉽게 조화할 수 있도록 해준다.
+    - `styled-components`는 이러한 특성을 사용하여 `styled-components`로 만든 컴포넌트의 props를 스타일 쪽에서 쉽게 조화할 수 있도록 해준다.
 
   ```javascript
   // 일반 템플릿 리터럴

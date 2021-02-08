@@ -632,7 +632,6 @@
     - 일반 메소드에서 this는 클래스의 인스턴스를 가리키며, 메소드 내부에서 this를 사용한다는 것은 클래스의 인스턴스의 생성을 전제로 하는 것이다.
     - 메소드 내부에서 this를 사용할 필요가 없는 메소드는 정적 메소드로 만들 수 있다.
     - 애플리케이션 전역에서 사용할 유틸리티(utility) 함수를 생성할 때 주로 사용한다.
-
   - 정적 메소드를 인스턴스로 호출할 수 없는 이유
 
     - 사실 클래스도 함수이고 기존 prototype 기반 패턴의 Syntactic sugar일 뿐이다.
@@ -643,33 +642,35 @@
     - 인스턴스는 프로토타입 객체와 프로토타입 체인이 연결되어 있지만, 생성자 함수와는 연결되어 있지 않다.
     - 따라서 정적 메소드는 인스턴스에서 호출할 수 없다.
 
-    ```javascript
-    var Foo = (function () {
-        // 생성자 함수
-        function Foo(prop) {
-            this.prop = prop
-        }
-    	
-        // 정적 메소드
-        Foo.staticMethod = function () {
-            return 'staticMethod'
-        }
-    	
-        // 일반 메소드
-        Foo.prototype.prototypeMethod = function () {
-            return this.prop
-        }
-    
-        return Foo
-    }())
-    
-    var foo = new Foo(1)
-    console.log(foo.prototypeMethod()) 	// 123
-    console.log(Foo.staticMethod()) 	// staticMethod
-    console.log(foo.staticMethod()) 	// Uncaught TypeError: foo.staticMethod is not a function
-    ```
+  ```javascript
+  var Foo = (function () {
+      // 생성자 함수
+      function Foo(prop) {
+          this.prop = prop
+      }
+  	
+      // 정적 메소드
+      Foo.staticMethod = function () {
+          return 'staticMethod'
+      }
+  	
+      // 일반 메소드
+      Foo.prototype.prototypeMethod = function () {
+          return this.prop
+      }
+  
+      return Foo
+  }())
+  
+  var foo = new Foo(1)
+  console.log(foo.prototypeMethod()) 	// 123
+  console.log(Foo.staticMethod()) 	// staticMethod
+  console.log(foo.staticMethod()) 	// Uncaught TypeError: foo.staticMethod is not a function
+  ```
 
-    
+  
+
+  
 
 - 클래스 상속
 
