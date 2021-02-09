@@ -19,7 +19,7 @@
 - 리덕스를 활용 할 컴포넌트 만들기
 
   - 프레젠테이셔널 컴포넌트는 components 폴더에, 컨테이너 컴포넌트는 containers 폴더에 저장한다.
-  - 숫자를 더하고 뺄 수 있는 카운터 컴포넌트 만들기
+  - 숫자를 더하고 뺄 수 있는 Counter컴포넌트 만들기
 
   ```react
   import React from "react";
@@ -197,7 +197,7 @@
   ```
 
   - 초기 상태 및 리듀서 함수 만들기
-    - 불변성을 유지해 줘야 한다.
+    - 리듀서 함수를 만들 때는 상태의 불변성을 유지해 줘야 한다.
 
   ```javascript
   // 초기 상태 생성
@@ -258,7 +258,7 @@
 
   - 스토어를 만들 때는 리듀서를 하나만 사용해야 한다.
     - 따라서 기존에 만들었던 리듀서들을 하나로 합쳐 주어야 한다.
-    - 리덕스에서 제공하는 `combineReducers`로 쉽게 처리 가능하다.
+    - 리덕스에서 제공하는 `combineReducers` 함수로 쉽게 처리 가능하다.
   - modules 디렉터리에 index.js 파일을 생성
 
   ```javascript
@@ -330,7 +330,7 @@
 
 - 스토어 만들기
 
-  - src 디렉토리의 indes.js에 스토어를 생성한다.
+  - src 디렉토리의 index.js에 스토어를 생성한다.
 
   ```react
   import React from "react";
@@ -439,10 +439,9 @@
     };
     return bar;
   }
-  
-foo()("hello!");
+  foo()("hello!");
   */
-```
+  ```
   
   - 아래와 같이 `connect()`함수에 익명함수로 넘겨도 된다.
   
@@ -452,22 +451,22 @@ foo()("hello!");
   import Counter from "../components/Counter";
   
   const CounterContainer = ({ number, increase, decrease }) => {
-    return (
-      <Counter number={number} onIncrease={increase} onDecrease={decrease} />
-    );
+      return (
+          <Counter number={number} onIncrease={increase} onDecrease={decrease} />
+      );
   };
   
   export default connect(
-    (state) => ({ number: state.counter.number }),
-    (dispatch) => ({
-      increase: () => console.log("increase"),
-      decrease: () => console.log("decrease"),
-  })
+      (state) => ({ number: state.counter.number }),
+      (dispatch) => ({
+          increase: () => console.log("increase"),
+          decrease: () => console.log("decrease"),
+      })
   )(CounterContainer);
-```
+  ```
   
-  - App 컴포넌트에서 Counter를 CounterContainer로 교체한다.
-    - CounterContainer 컴포넌트는 결국 Counter 컴포넌트를 반환한다.
+    - App 컴포넌트에서 Counter를 CounterContainer로 교체한다.
+      - CounterContainer 컴포넌트는 결국 Counter 컴포넌트를 반환한다.
   
   ```react
   import React from "react";
@@ -475,19 +474,19 @@ foo()("hello!");
   import Todos from "./components/Todo";
   
   const App = () => {
-    return (
-      <div>
-        <CounterContainer number={0} />
-        <hr />
-        <Todos />
-      </div>
-    );
+      return (
+          <div>
+              <CounterContainer number={0} />
+              <hr />
+              <Todos />
+          </div>
+      );
   };
   
   export default App;
   ```
   
-  - 액션 생성 함수를 불러와서 액션 객체를 만들고 디스패치 하기
+    - 액션 생성 함수를 불러와서 액션 객체를 만들고 디스패치 하기
   
   ```react
   import React from "react";
@@ -512,10 +511,10 @@ foo()("hello!");
   )(CounterContainer);
   ```
   
-    - `bindActionCreators`
-        - 컴포넌트에서 액션을 디스패치하기 위해 각 액션 함수를 호출하고, `dispatch`로 감싸는 작업은 액션 생성 함수의 개수가 많아질수록 번거롭다.
-      - `bindActionCreators`는 이러한 번거로움을 덜어준다.
-      - 첫 번째 인자로 액션 생성 함수로 이루어진 객체를 넣고, 두 번째 인자로 dispatch를 넣는다.
+  - `bindActionCreators`
+      - 컴포넌트에서 액션을 디스패치하기 위해 각 액션 함수를 호출하고, `dispatch`로 감싸는 작업은 액션 생성 함수의 개수가 많아질수록 번거롭다.
+    - `bindActionCreators`는 이러한 번거로움을 덜어준다.
+    - 첫 번째 인자로 액션 생성 함수로 이루어진 객체를 넣고, 두 번째 인자로 dispatch를 넣는다.
   
   ```react
   import React from "react";
@@ -538,8 +537,8 @@ foo()("hello!");
   )(CounterContainer);
   ```
   
-    - 더 편하게 하는 방법
-      - `connect`의 두 번째 파라미터를 액션 생성 함수로 이루어진 객체만 넣으면 connect 함수가 내부적으로 `bindActionCreators` 작업을 대신해준다.
+  - 더 편하게 하는 방법
+    - `connect`의 두 번째 파라미터를 액션 생성 함수로 이루어진 객체만 넣으면 connect 함수가 내부적으로 `bindActionCreators` 작업을 대신해준다.
   
   ```react
   import React from "react";
@@ -1068,14 +1067,14 @@ foo()("hello!");
       deps ? [dispatch, ...deps] : deps
     );
   }
-```
+  ```
   
   - 위에서 작성한 `useActions` Hook은 액션 생성 함수를 액션을 디스패치 하는 함수로 변환해 준다.
     
-    - 액션 생성 함수를 사용하여 액션 객체를 만들고, 이를  스토어에 디스패치하는 작업을 해 주는 함수를 자동으로 만들어주는 것이다.
-    
-    - 첫 번째 파라미터는 액션 생성 함수로 이루어진 배열이다.
-  - 두 번째 파리미터는 `deps`배열로 이 배열 안에 들어 있는 원소가 바뀌면 액션을 디스패치하는 함수를 새로 만들게 된다.
+      - 액션 생성 함수를 사용하여 액션 객체를 만들고, 이를  스토어에 디스패치하는 작업을 해 주는 함수를 자동으로 만들어주는 것이다.
+      
+      - 첫 번째 파라미터는 액션 생성 함수로 이루어진 배열이다.
+    - 두 번째 파리미터는 `deps`배열로 이 배열 안에 들어 있는 원소가 바뀌면 액션을 디스패치하는 함수를 새로 만들게 된다.
   - 적용
   
   ```react
@@ -1085,25 +1084,25 @@ foo()("hello!");
   import { changeInput, insert, toggle, remove } from "../modules/todos";
   
   const TodosContainer = () => {
-    const { input, todos } = useSelector(({ todos }) => ({
-      input: todos.input,
-      todos: todos.todos,
-    }));
-    const [onChangeInput, onInsert, onToggle, onRemove] = useActions(
-      [changeInput, insert, toggle, remove],
-      []
-    );
+      const { input, todos } = useSelector(({ todos }) => ({
+          input: todos.input,
+          todos: todos.todos,
+      }));
+      const [onChangeInput, onInsert, onToggle, onRemove] = useActions(
+          [changeInput, insert, toggle, remove],
+          []
+      );
   
-    return (
-      <Todos
-        input={input}
-        todos={todos}
-        onChangeInput={onChangeInput}
-        onInsert={onInsert}
-        onToggle={onToggle}
-        onRemove={onRemove}
-      />
-    );
+      return (
+          <Todos
+              input={input}
+              todos={todos}
+              onChangeInput={onChangeInput}
+              onInsert={onInsert}
+              onToggle={onToggle}
+              onRemove={onRemove}
+              />
+      );
   };
   
   export default TodosContainer;
