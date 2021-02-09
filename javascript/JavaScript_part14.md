@@ -399,12 +399,14 @@
     }
   }
   
-  const { address: { city } } = person
-  console.log(city) // 'Seoul'
+  const { address: { city } } = person;
+  console.log(city); // 'Seoul'
+  const { address: qwe } = person;
+console.log(qwe)	// { zipCode: '03068', city: 'Seoul' }
   ```
 
   - 매개변수로도 사용 가능하다.
-
+  
   ```javascript
   const obj = {
     name: "Cha",

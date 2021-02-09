@@ -125,13 +125,13 @@
   };
   
   export default App;
-```
+  ```
   
   - `exact`
     - 위 예시에서 `localhost:3000/about`으로 들어가면 `Home` 컴포넌트와 `About` 컴포넌트가 함께 뜬다.
     - 이는 두 컴포넌트의 라우트 경로가 겹치기 때문으로, `exact`라는 속성을 주면 해결 된다.
     - 이제 주소가 정확히 일치해야만 해당 컴포넌트로 이동하게 된다.
-  - props를 설정할 때 값을 지정해주지 않으면 자동으로 true가 되므로 `exact={true}` 대신 `exact`라고만 써도 된다.
+    - props를 설정할 때 값을 지정해주지 않으면 자동으로 true가 되므로 `exact={true}` 대신 `exact`라고만 써도 된다.
   
   ```react
   import React from "react";
@@ -140,18 +140,17 @@
   import Home from "./Home";
   
   const App = () => {
-    return (
-      <div>
-        <Route path="/" component={Home} exact={true} />
-        <Route path="/about" component={About} />
-      </div>
-    );
+      return (
+        <div>
+          <Route path="/" component={Home} exact={true} />
+          <Route path="/about" component={About} />
+        </div>
+  );
   };
   
   export default App;
-```
-  
-- 컴포넌트가 아닌 특정 JSX를 띄우는 페이지로 이동하게 할 수도 있다.
+  ```
+  - 컴포넌트가 아닌 특정 JSX를 띄우는 페이지로 이동하게 할 수도 있다.
   
   ```react
   import React from "react";
@@ -169,17 +168,18 @@
   };
   
   export default App;
-```
-  
+  ```
 
-  
-  - `Link` 컴포넌트를 사용하여 주소 이동하기
-    - `Link` 컴포넌트는 클릭하면 다른 주소로 이동시켜주는 컴포넌트이다.
-    - `<a>`는 페이지를 전환하는 과정에서 페이지를 새로 불러오기 때문에 애플리케이션이 들고 있던 상태들을 모두 날려버리게 된다.
-    - 따라서 리액트 라우터를 사용할 때는 `<a>`를 직접 사용하면 안된다.
-    - `Link` 컴포넌트를 사용하여 페이지를 전환하면, 새로운 페이지를 불러오는 것이 아니라 애플리케이션을 유지한 상태에서 HTML5 History API를 사용하여 사용자의 페이지 주소만 변경해준다.
+
+
+- `Link` 컴포넌트를 사용하여 주소 이동하기
+
+  - `Link` 컴포넌트는 클릭하면 다른 주소로 이동시켜주는 컴포넌트이다.
+  - `<a>`는 페이지를 전환하는 과정에서 페이지를 새로 불러오기 때문에 애플리케이션이 들고 있던 상태들을 모두 날려버리게 된다.
+  - 따라서 리액트 라우터를 사용할 때는 `<a>`를 직접 사용하면 안된다.
+  - `Link` 컴포넌트를 사용하여 페이지를 전환하면, 새로운 페이지를 불러오는 것이 아니라 애플리케이션을 유지한 상태에서 HTML5 History API를 사용하여 사용자의 페이지 주소만 변경해준다.
   - `Link`는 기본적으로 `<a>`로 이루어져 있지만, 페이지 전환을 방지하는 기능이 내장되어 있다.
-  
+
   ```react
   import React from "react";
   import { Link, Route } from "react-router-dom";
@@ -187,20 +187,20 @@
   import Home from "./Home";
   
   const App = () => {
-    return (
-      <div>
-        <ul>
-          <li>
-            <Link to="/">Home</Link>
-          </li>
-          <li>
-            <Link to="/about">About</Link>
-          </li>
-        </ul>
-        <hr />
-        <Route path="/" component={Home} exact={true} />
-        <Route path="/about" component={About} />
-      </div>
+      return (
+        <div>
+            <ul>
+                <li>
+                    <Link to="/">Home</Link>
+                </li>
+                <li>
+                    <Link to="/about">About</Link>
+                </li>
+            </ul>
+            <hr />
+            <Route path="/" component={Home} exact={true} />
+            <Route path="/about" component={About} />
+        </div>
     );
   };
   
@@ -306,8 +306,8 @@
   
   - URL 쿼리
     - 쿼리를 사용하기 위해선 쿼리 문자열을 객체로 변환해주는 `qs` 라이브러리를 설치해야 한다(`$ yarn add qs`).
-    - 라우트로 사용된 컴포넌트에는 props로 웹 애플리케이션의 현재 주소에 대한 정보를 지닌 객체가 전달된다(예시의 `location`). 
-    - 쿼리 문자열을 객체로 파싱하는 과정에서 나온 결과 같은 언제나 문자열이므로 숫자를 받아와야 하면 `parseInt` 함수로 숫자로 변환해야 한다.
+    - 라우트로 사용된 컴포넌트에는 props로 웹 애플리케이션의 현재 주소에 대한 정보를 지닌 객체(`location`)가 전달된다. 
+    - 쿼리 문자열을 객체로 파싱하는 과정에서 나온 결과 값은 언제나 문자열이므로 숫자를 받아와야 하면 `parseInt` 함수로 숫자로 변환해야 한다.
   
   ```react
   import React from "react";
@@ -438,13 +438,15 @@
     };
   
     componentDidMount() {
+      // this는 컴포넌트를 가리킨다.
+      // 컴포넌트에 unblock이라는 key와 this.props.history.block("정말 떠나실 건가요?")라는 value로 프로퍼티를 생성
       this.unblock = this.props.history.block("정말 떠나실 건가요?");
     }
   
     // 페이지에 변화가 생기려고 할 때마다 정말 나갈 것인지 묻는다.
     // 컴포넌트가 언마운트 되면 질문을 멈춘다.
     componentWillUnmount() {
-      // componentDidMount에서 성공적으로 객체의 프로퍼티가 할당되었다면 실행
+      // componentDidMount에서 성공적으로 객체의 프로퍼티가 생성되었다면 실행
       if (this.unblock) {
         this.unblock();
       }
@@ -460,9 +462,9 @@
     }
   }
   
-  export default HistorySample;
+export default HistorySample;
   ```
-
+  
   - 이탈 방지 코드 상세 설명
     - 클래스형 컴포넌트에서 라이프사이클 메서드 내부의 `this`는 컴포넌트 객체 자신을 가리킨다.
     - `componentDidMount()` 메서드를 통해 마운트가 완료된 시점에 컴포넌트 객체에 `unlock`이라는 key와 그 value로 `this.props.history.block("정말 떠나실 건가요?")`를 추가한다(`HistorySample:{unlock:this.props.history.block("정말 떠나실 건가요?")}`).
@@ -472,8 +474,8 @@
 
 - `withRouter`
 
-  - **HoC(Higher-order Component)**로 라우트로 사용된 컴포넌트가 아니어도 `match`, `location`, `history` 객체에 접근하게 해준다.
-  - 아래와 같이 `withRouter`를 사용할 때는 컴포넌트를 내보낼 때 `withRouter` 함수로 감싸준다.
+  - **HoC(Higher-order Component)**로, 라우트로 사용된 컴포넌트가 아니어도 `match`, `location`, `history` 객체에 접근하게 해준다.
+  - 아래와 같이 `withRouter`를 사용할 때는 컴포넌트를 내보낼 때 `withRouter` 함수의 인자로 넣는다.
 
   ```react
   import React from "react";
@@ -522,7 +524,9 @@
   export default Profiles;
   ```
 
-  - `withRouter`를 사용했을 때 `match`는 햔재 자신을 보여주고 있는 컴포넌트를 기준으로 전달된다.
+  - `withRouter`를 사용했을 때 `match`는 현재 자신을 보여주고 있는 컴포넌트를 기준으로 전달된다.
+    - 위 예시에서 `<WithRouterSample />`을 보여주고 있는 컴포넌트는 `Profiles`다.
+    - `profiles`에는 params로 받는 값이 없다.
     - 따라서 위 결과에서 `match`에는 params가 비어있다고 나온다.
     - 아래와 같이 prams를 받는 다른 컴포넌트에 띄우면 값이 제대로 들어가 있는 것을 확인 가능하다.
     - `Profile` 컴포넌트는 `city`를 params로 받는다.
@@ -581,6 +585,7 @@
           </li>
         </ul>
         <hr />
+        {/* Switch 컴포넌트로 감싼다. */}
         <Switch>
           <Route path="/" component={Home} exact={true} />
           <Route path={["/about", "/info"]} component={About} />
@@ -744,7 +749,8 @@
   
 
 - 함수형 컴포넌트에서 `useEffect`에는 async를 사용해선 안된다.
-  - `useEffect`는 뒷정리 함수를 반환해야 하기 때문이다.
+  
+  - async 키워드를 붙인 함수는 프로미스를 반환하는데, `useEffect`는 뒷정리 함수를 반환해야 하기 때문이다.
   - 따라서 `useEffect`에서  async를 사용해야 한다면, `useEffect` 함수 내부에 async 키워드가 붙은 또 다른 함수를 만들어서 사용해야 한다.
 
 
@@ -760,6 +766,7 @@
 
   ```react
   import { useState, useEffect } from 'react';
+  
   export default function usePromise(promiseCreator, deps) {
     const [loading, setLoading] = useState(false);
     const [resolved, setResolved] = useState(null);
@@ -781,10 +788,10 @@
   
     return [loading, resolved, error];
   }
-  ```
-
-  - 적용하기
-
+```
+  
+- 적용하기
+  
   ```react
   import React from 'react';
   import styled from 'styled-components';
@@ -863,8 +870,8 @@
   };
   
   export default NewsList;
-  ```
-
+```
+  
   
 
 
