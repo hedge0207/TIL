@@ -1,12 +1,12 @@
 # 리덕스 미들웨어를 통한 비동기 작업 관리
 
 - 미들웨어란
+  - 미들웨어는 액션과 리듀서의 중간자 역할을 한다.
+    - 미들웨어는 액션을 디스패치했을 때 리듀서에서 이를 처리하기에 앞서 사전에 지정된 작업들을 처리한다.
   - 리듀서가 액션을 처리하기 전에 미들웨어가 할 수 있는 작업은 여러 가지가 있다.
     - 전달 받은 액션을 단순히 콘솔에 기록하거나
     - 전달 받은 액션 정보를 기반으로 액션을 아예 취소하거나
     - 다른 종류의 액션을 추가로 디스패치 할 수도 있다.
-  - 미들웨어는 액션과 리듀서의 중간자 역할을 한다.
-    - 미들웨어는 액션을 디스패치했을 때 리듀서에서 이를 처리하기에 앞서 사전에 지정된 작업들을 처리한다.
   - 미들웨어(middleware)를 쓰는 이유
     - 리액트 웹 애플리케이션에서 API 서버를 연동할 때는 API 요청에 대한 상태도 잘 관리해야 한다.
     - 예를 들어 요청이 시작되었을 때는 로딩 중임을, 요청이 성공하거나 실패했을 때는 로딩이 끝났음을 명시해야 한다.
@@ -178,8 +178,8 @@
 
   - 미들웨어는 결국 함수를 반환하는 함수를 반환하는 함수이다.
     - 파라미터로 받아 오는 `store`는 리덕스 스토어 인스턴스를, `action`은 디스패치된 액션을 가리킨다.
-    - `next` 파라미터는 함수이며, `store.dispatch`와 비슷한 역할을 한다.
-    - 그러나 `store.dispatch`와 큰 차이가 있는데, `next(action)`을 호출하면 그 다음 처리해야 할 미들웨어에게 액션을 넘겨주고, 만약 그 다음에 미들웨어가 없다면 리듀서에게 액션을 넘겨준다는 것이다.
+    - `next` 파라미터는 함수 형태이며, `store.dispatch`와 비슷한 역할을 한다.
+    - 그러나 `store.dispatch`와 큰 차이가 있는데, `next(action)`를 호출하면 그 다음 처리해야 할 미들웨어에게 액션을 넘겨주고, 만약 그 다음에 미들웨어가 없다면 리듀서에게 액션을 넘겨준다는 것이다.
     - 반면에 `store.dispatch`의 경우, 미들웨어 내부에서 사용하면 첫 번째 미들웨어부터 다시 처리한다. 
     - 따라서 만약 미들웨어 내부에서 `next`를 사용하지 않으면 액션이 리듀서에 전달되지 않는다. 즉, 액션이 무시된다.
   - 이전 상태, 액션 정보, 업데이트된 상태를 보여주는 미들웨어 구현
@@ -224,7 +224,7 @@
 - redux-logger 사용하기
 
   - 오픈 소스 커뮤니티에 이미 올라와 있는 redux-logger 미들웨어를 설치하고 사용해본다.
-
+- 위에서 직접 작성한 `loggerMiddleware`보다 다양한 정보를 보기 쉽게 보여 준다.
   - 설치
 
   ```bash
@@ -232,7 +232,8 @@
   ```
 
   - 적용
-
+  - 이제 +1,-1 버튼을 누를 때 마다 콘솔 창에 로그가 뜬다.
+  
   ```react
   (...)
   import { applyMiddleware, createStore } from "redux";
@@ -279,24 +280,43 @@
 - Thunk란
 
   - Thunk는 특정 작업을 나중에 할 수 있도록 미루기 위해 함수 형태로 감싼 것을 의미한다.
-
-  ```javascript
-  const addOne = x => x+1;
+- 액션 객체 대신 액션 생성 함수를 반환하는 함수를 작성할 수 있게 해준다.
+    - 일반 액션 생성함수는 액션 객체를 생성하는 작업만 한다.
+    - 액션 객체는 함수가 아니므로 특정 액션이 몇 초 뒤에 실행되게 하거나, 현재 상태에 따라 아예 액션이 무시되게 하는 등의 작업이 불가능하다.
+    - redux-thunk는 액션 객체를 생성하는 것이 아닌 함수를 생성하는 액션 생성 함수를 작성할 수 있게 해준다.
   
-  function addOneThunk(x){
-      const thunk = () => addOne(x);
-      return thunk
+  ```javascript
+  const INCREMENT_COUNTER = 'INCREMENT_COUNTER';
+  
+  // increment는 단순히 액션 객체를 반환한다.
+  function increment() {
+    return {
+      type: INCREMENT_COUNTER
+    };
   }
   
-  const fn = addOneThunk(1);
-  setTimeout(()=>{
-      const value=fn();	// fn()이 실행되는 시점에 연산
-      console.log(value);
-  },1000);
+// 액션 객체가 단순히 액션 생성 객체가 아닌 몇 초 뒤 액션 객체르 반환하는 액션 생성 함수를 반환
+  function incrementAsync() {
+    return dispatch => {
+      setTimeout(() => {
+        // 1 초뒤 dispatch 한다.
+        dispatch(increment());
+      }, 1000);
+    };
+  }
   ```
-
-  - redux-thunk 라이브러리를 사용하면 thunk  함수를 만들어서 디스패치할 수 있다.
-    - 그럼 리덕스 미들웨어가 그 함수를 전달받아 store의 `dispatch`와 `getState`를 파라미터로 넣어서 호출해 준다.
+  
+  - redux-thunk 라이브러리를 사용하면 thunk 함수를 만들어서 디스패치할 수 있다.
+    - 그럼 redux-thunk 미들웨어가 그 함수를 전달받아 store의 `dispatch`와 `getState`를 파라미터로 넣어서 호출해 준다.
+  
+  ```react
+  const sampleThunk = () => (dispatch,getState) => {
+      // getState로 현재 상태를 참조할 수도 있고,
+      // dispatch로 새 액션을 디스패치 할 수도 있다.
+  } 
+  ```
+  
+  
 
 
 
@@ -340,7 +360,7 @@
 
 - Thunk 생성 함수 만들기
 
-  - redux-thunk는 액션 생성 함수에서 일반 액션 객체를 반환하는 대신에 함수를 반환한다.
+  - redux-thunk는 액션 생성 함수에서 일반 액션 객체를 반환하는 대신에 액션 객체를 생성하는 함수를 반환한다.
   - 함수를 반환하고 그 함수에 `dispatch`를 인자로 받는다.
 
   ```react
@@ -646,14 +666,12 @@
   )(SampleContainer);
   ```
 
-  
-
 
 
 - 리팩토링
 
   - 반복되는 로직을 따로 작성하기
-    - API를 요청해야 할 때마다 긴 thunk 함수를 작성하고, 로딩 상태를 리듀서에서 관리하는 작업은 귀찬을 분 아니라 코드도 길어지게 만든다.
+    - API를 요청해야 할 때마다 긴 thunk 함수를 작성하고, 로딩 상태를 리듀서에서 관리하는 작업은 귀찮을 뿐 아니라 코드도 길어지게 만든다.
   - thunk 함수 따로 작성하기
 
   ```react
@@ -729,7 +747,7 @@
   // 요청을 위한 액션 타입을 payload로 설정한다.
   // e.g.sample/GET_POST
   export const startLoading = createAction(
-    FINISH_LOADING,
+    START_LOADING,
     (requestType) => requestType
   );
   
@@ -930,7 +948,9 @@
   ```
 
   - `counter` 리덕스 모듈에서 기존 thunk 함수를 제거하고 새로운 액션 타입을 선언
-
+  - 제네레이터 함수도 만든다.
+    - 이 제네레이터 함수를 사가라 부른다.
+  
   ```react
   import { createAction, handleActions } from "redux-actions";
   import { delay, put, takeEvery, takeLatest } from "redux-saga/effects";
@@ -949,6 +969,7 @@
   export const increaseAsync = createAction(INCREASE_ASYNC, () => undefined);
   export const decreaseAsync = createAction(DECREASE_ASYNC, () => undefined);
   
+  // 사가
   function* increaseSaga() {
     yield delay(1000); // 일 초를 기다리고,
     yield put(increase()); // 특정 액션을 디스패치한다.
@@ -961,10 +982,11 @@
   
   export function* counterSaga() {
     // takeEvery는 들어오는 모든 액션에 대해 특정 작업을 처리해 준다.
+    // INCREASE_ASYNC 액션이 생성되면 increaseSaga 작업을 처리한다.
     yield takeEvery(INCREASE_ASYNC, increaseSaga);
     // takeLatest는 기존에 진행 중이던 작업이 있다면 취소 처리하고, 가장 마지막으로 싱행된 작업만 수행한다.
     yield takeLatest(DECREASE_ASYNC, decreaseSaga);
-  }
+}
   
   (...)
   ```
@@ -972,7 +994,7 @@
   - 루트 리듀서를 만드는 것처럼 루트 사가를 만들어야 한다.
     - 추후 다른 리듀서에서도 사가를 만들어 등록할 것이기에 루트 사가를 만들어야 한다.
     - `all` 함수는 여러 사가를 합쳐주는 역할을 한다.
-
+  
   ```react
   import { combineReducers } from "redux";
   import counter, { counterSaga } from "./counter";
@@ -983,13 +1005,13 @@
   const rootReducer = combineReducers({ counter, sample, loading });
   export function* rootSaga() {
     yield all([counterSaga()]);
-  }
+}
   
-  export default rootReducer;
+export default rootReducer;
   ```
-
+  
   - 스토어에 redux-saga 미들웨어를 적용한다.
-
+  
   ```react
   (...)
   import rootReducer, { rootSaga } from "./modules";
@@ -1000,11 +1022,11 @@
   const store = createStore(
     rootReducer,
     composeWithDevTools(applyMiddleware(logger, ReduxThunk, sagaMiddleware))
-  );
+);
   sagaMiddleware.run(rootSaga);
   (...)
   ```
-
+  
   - 잘 적용 되었는지 확인하기
     - App 컴포넌트에 Counter 컴포넌트를 랜더링 한 후 아래와 같이 실행한다.
     - `+1` 버튼을 빠르게 두 번 클릭하고 +2가 되는지 확인한다.

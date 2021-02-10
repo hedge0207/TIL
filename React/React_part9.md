@@ -409,11 +409,9 @@
   import { connect } from "react-redux";
   import Counter from "../components/Counter";
   
-  // 코드 맨 아래에서 connect 함수를 사용하였기에
-  // mapStateToProps의 number와 mapDispatchToProps의 increase, decrease를 props로 사용 가능해졌다.
-  const CounterContainer = ({ number, increase, decrease }) => {
+  const CounterContainer = () => {
     return (
-      <Counter number={number} onIncrease={increase} onDecrease={decrease} />
+      <Counter/>
     );
   };
   
@@ -450,9 +448,9 @@
   import { connect } from "react-redux";
   import Counter from "../components/Counter";
   
-  const CounterContainer = ({ number, increase, decrease }) => {
+  const CounterContainer = () => {
       return (
-          <Counter number={number} onIncrease={increase} onDecrease={decrease} />
+          <Counter />
       );
   };
   
@@ -495,6 +493,8 @@
   // 액션 생성 함수를 불러온다.
   import { increase, decrease } from "../modules/counter";
   
+  // 코드 맨 아래에서 connect 함수를 사용하였기에
+  // mapStateToProps의 number와 mapDispatchToProps의 increase, decrease를 props로 사용 가능해졌다.
   // 아래 props로 받은 increase, decrease는 위에서 import한 액션 생성자 함수가 아닌, 아래 connect 함수의 두 번째 인자로 들어간 함수의 반환 결과인 객체의 increase, decrease이다.
   const CounterContainer = ({ number, increase, decrease }) => {
       return (
@@ -726,7 +726,7 @@
   const action = myAction("Hello!");
   console.log(action); // Object {payload: "Hello!", type: "sample/MY_ACTION"}
   
-  // 함수를 추가하기
+  // 함수 처리 후 추가하기
   const MY_ACTION = "sample/MY_ACTION";
   const myAction = createAction(MY_ACTION, (num) => num * 3);
   const action = myAction(3);
@@ -783,15 +783,17 @@
   export const toggle = createAction(TOGGLE, (id) => id);
   export const remove = createAction(REMOVE, (id) => id);
   
-  // 위의 경우 결국 파라미터로 받은 값을 다시 반환하는데, 아래와 같이 써도 똑같이 동작한다.그러나 이 액션 생성 함수가 어떤 파라미터를 받는지 쉽게 파악할 수 있기에 적어준다.
+  // 위의 경우 결국 파라미터로 받은 값을 다시 반환하는데, 아래와 같이 써도 똑같이 동작한다.
+  // import한 곳에서 toggle(1)와 같이 함수를 호출하면 payload에 1이 들어가기 때문이다.
+  // 그러나 파라미터로 받은 값을 다시 반환하는 코드를 넣는 것이 이 액션 생성 함수가 어떤 파라미터를 받는지 쉽게 파악할 수 있기에 적어준다.
   // export const toggle = createAction(TOGGLE);
   // export const remove = createAction(REMOVE);
   
-  (...)
+(...)
   ```
 
   - todos 모듈에 적용하기(`handleActions`로 리듀서 작성하기)
-
+  
   ```react
   (...)
   
@@ -816,14 +818,14 @@
     initialState
   );
   
-  export default todos;
+export default todos;
   ```
-
+  
   - 객체 비구조화 할당 문법 적용
     - 모든 추가 데이터가 값을 `action.payload`로 사용하기 때문에 나중에 리듀서 코드를 다시 볼 때 헷갈릴 수 있다.
-    - 객체 비구조화 할당 문법으로 `action` 값의 `payload` 이름을 새로 설정해 주면 `action.payload`가 정확히 어떤 값을 의미하는지 더 쉽게 파악 가능해진다.
+  - 객체 비구조화 할당 문법으로 `action` 값의 `payload` 이름을 새로 설정해 주면 `action.payload`가 정확히 어떤 값을 의미하는지 더 쉽게 파악 가능해진다.
     - JavaScript_part14.디스트럭처링-키와 값을 함께 디스트럭처링 하는 것도 가능하다.
-
+  
   ```react
   const todos = handleActions(
     {
@@ -868,8 +870,13 @@
   ```
 
   - todos 모듈에 적용하기
-
+  - immer의 `produce` 함수는 첫 번째 인자로 변경 대상 상태, 두 번째 인자로 상태를 어떻게 업데이트 할지 정의한 함수를 받는다.
+    - 두 번째 인자인 상태를 어떻게 업데이트 할지 정의한 함수는, `produce` 함수의 첫 번째 인자를 인자로 받는다.
+  
   ```react
+  import produce from 'immer';
+  
+  (...)
   const todos = handleActions(
     {
       [CHANGE_INPUT]: (state, { payload: input }) =>
@@ -968,7 +975,7 @@
   - `useCallback` 적용하기
     - 숫자가 바뀌어서 컴포넌트가 리렌더링될 때마다 `onIncrease`, `onDecrease` 함수가 새롭게 만들어진다.
     - 만약 컴포넌트 성능을 최적화해야 한다면 `useCallBack`으로 액션을 디스패치하는 함수를 감싸주는 것이 좋다.
-    - `useCallback` 의 두 번째 인자로 `[dispatch]`를 넘겨줬는데 이는 컴포넌트가 완전히 리렌더링 되어 `const dispatch = useDispatch();`줄이 실행되었을 때만 `onIncrease`, `onDecrease` 함수를 새로 만들겠다는 뜻이다.
+    - `useCallback` 의 두 번째 인자로 `[dispatch]`를 넘겨줬는데 이는 `useCallBack` 내부에서 `dispatch`를 사용하고 있기 때문이다.
 
   ```react
   import React, { useCallback } from "react";
@@ -1046,9 +1053,10 @@
 - `useActions` 유틸 Hook을 만들어서 사용하기
 
   - `useActions`는 원래 react-redux에 내장된 상태로 릴리즈될 계획이었으나 리덕스 개발 팀에서 꼭 필요하지 않다고 판단하여 제외된 Hook이다.
-  - 그 대신 공식문서에서 그대로 복사하여 사용할 수 있도록 제공하고 있다.
+    - 그 대신 공식문서에서 그대로 복사하여 사용할 수 있도록 제공하고 있다.
+  - 본래 connect 함수가 해주던 역할을 대신한다.
   - src/lib 디렉토리를 만들고 그 안에 useActions.js파일을 작성한다.
-
+  
   ```react
   import { useMemo } from "react";
   import { useDispatch } from "react-redux";
@@ -1056,6 +1064,7 @@
   
   export default function useActions(actions, deps) {
     const dispatch = useDispatch();
+    // 액션을 디스패치 하는(액션을 발생시키는) 함수(들)을 반환한다.
     return useMemo(
       () => {
         if (Array.isArray(actions)) {
@@ -1071,7 +1080,7 @@
   
   - 위에서 작성한 `useActions` Hook은 액션 생성 함수를 액션을 디스패치 하는 함수로 변환해 준다.
     
-      - 액션 생성 함수를 사용하여 액션 객체를 만들고, 이를  스토어에 디스패치하는 작업을 해 주는 함수를 자동으로 만들어주는 것이다.
+      - 액션 생성 함수를 사용하여 액션 객체를 만들고, 이를 스토어에 디스패치하는 작업을 해 주는 함수를 자동으로 만들어주는 것이다.
       
       - 첫 번째 파라미터는 액션 생성 함수로 이루어진 배열이다.
     - 두 번째 파리미터는 `deps`배열로 이 배열 안에 들어 있는 원소가 바뀌면 액션을 디스패치하는 함수를 새로 만들게 된다.
@@ -1083,11 +1092,13 @@
   import useActions from "../lib/useActions";
   import { changeInput, insert, toggle, remove } from "../modules/todos";
   
+  // useActions에서 useDispatch를 사용했으므로, props로 받지 않는다.
   const TodosContainer = () => {
       const { input, todos } = useSelector(({ todos }) => ({
           input: todos.input,
           todos: todos.todos,
       }));
+      // 반환 값을 디스트럭처링으로 할당한다.
       const [onChangeInput, onInsert, onToggle, onRemove] = useActions(
           [changeInput, insert, toggle, remove],
           []
@@ -1113,4 +1124,18 @@
 - `connect` 함수를 사용하는 것과 주요 차이점
   - `connect` 함수를 사용하여 컨테이너 컴포넌트를 만들었을 경우, 해당 컨테이너 컴포넌트의 부모 컴포넌트가 리렌더링될 때 해당 컨테이너 컴포넌트의 props가 바뀌지 않았다면 리렌더링이 자동으로 방지되어 성능이 최적화 된다.
   - 반면 `useSelector`를 사용하여 리덕스 상태를 조회하면, 이 최적화 작업이 자동으로 이루어지지 않으므로 성능 최적화를 위해서는 `React.memo`를 컨테이너 컴포넌트에 사용해 줘야 한다.
+  
+  ```react
+  import { useSelector } from "react-redux";
+  import Todos from "../components/Todo";
+  import useActions from "../lib/useActions";
+  import { changeInput, insert, toggle, remove } from "../modules/todos";
+  
+  const TodosContainer = () => {
+      (...)};
+  
+  export default React.memo(TodosContainer);
+  ```
+  
+  
 

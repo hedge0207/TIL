@@ -466,8 +466,7 @@
   $ yarn build
   $ yarn build:server
   $ yarn start:server
-```
-  
+  ```
 
 
 
@@ -479,7 +478,7 @@
   $ yarn add redux-saga
   ```
 
-  
+
 
 - redux-saga 코드 준비하기
 
