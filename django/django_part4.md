@@ -59,7 +59,49 @@
   }
   ```
 
+
+
+
+- DB 설정은 비공개적이어야 하므로 이를 저장하기 위한 secrets.json 파일을 생성한다.
+
+  - DB 설정 외에도 비공개적으로 관리할 데이터는 이곳에 저장한다.
+
+  ```json
+  {
+      "DB_SETTINGS":{
+          "default": {
+              "ENGINE": "django.db.backends.mysql",
+              "NAME": "inna",
+              "USER": "root",
+              "PASSWORD": "qwer",
+              "HOST": "127.0.0.1",
+              "PORT": 3306
+          }
+      }
+  }
+  ```
+
+  - settings.py에 아래 코드를 추가
+
+  ```python
+  import os
+  import json
   
+  
+  # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+  BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+  
+  with open(os.path.join(BASE_DIR, 'secrets.json'), 'rb') as secret_file:
+      secrets = json.load(secret_file)
+  
+  (...)
+  
+  DATABASES = secrets['DB_SETTINGS']
+  ```
+
+  - `.gitignore` 파일에 `/설정폴더/secrets.json` 추가
+
+
 
 - migrate하기
 

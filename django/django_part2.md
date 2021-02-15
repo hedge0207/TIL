@@ -88,7 +88,7 @@
   - 위에서 보듯이 username, password 등의 정보들은 전부 User가 상속 받는 것들에 정의가 되어 있다. 결국 User는 이들을 활용하기 위한 껍데기라고도 볼 수 있다.
 
     ```python
-    #예를 들어 만일 first_name, last_name,email은 필요가 없고 last_login을 담고 싶다면 아래와 같이 last_login속성을 지는 AbstractBaseUser 클래스를 상속 받으면 된다.
+    #예를 들어 만일 first_name, last_name, email은 필요가 없고 last_login을 담고 싶다면 아래와 같이 last_login속성을 지는 AbstractBaseUser 클래스를 상속 받으면 된다.
     class MyUser(AbstractBaseUser):
     	pass
     ```

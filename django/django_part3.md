@@ -989,6 +989,9 @@
 ## Django rest-auth
 
 - templates이 django에서 분리되면 session 인증 방식의 유저 확인을 할 수 없다. 따라서 token을 활용하여 유저 확인을 해야 한다.
+
+
+
 - 과정
   - 회원가입 시 Vue가 user 정보를 넘기면 django는 유효성 검사 후 User테이블에 유저 정보를 추가한다. 
   - 로그인 역시 마찬가지로 Vue가 user 정보를 넘기면 django는 유효성 검사 후 토큰을 발급하고 토큰값과 유저_id(pk값)를 key와 value 형태로 저장한다. 
@@ -1022,54 +1025,50 @@
   #회원가입에 필요(혼자 회원가입을 하게 해주는 것이 아니라 위의 rest-auth를 함께 깔아야 회원가입이 가능하다.)
   $ pip install django-allauth
   ```
+  
+    - `settings.py`에 아래 코드를 추가(1번 문서의 내용과 2번 문서의 내용을 수정)
+  
+  ```python
+  #1번 문서(Installaion 파트)에 있는 내용
+  INSTALLED_APPS = (
+      ...,
+      #drf 관련 app
+      'rest_framework',
+      'rest_framework.authtoken', #토큰 기반의 인증에 필요한 app
+      ...,
+      #rest-auth 관련 app
+      'rest_auth',
+  )
+  
+  #2번 문서에 있는 내용 수정
+  #토큰 기반으로 인증을 하기 위한 코드
+  REST_FRAMEWORK = {
+      'DEFAULT_AUTHENTICATION_CLASSES': [
+          'rest_framework.authentication.TokenAuthentication',
+          #원래 'rest_framework.authentication.SessionAuthentication',지만 세션 기반이 아닌 토큰 기반이므로 위와 같이 수정해준다.
+      ]
+  }
+  ```
+  
+    - `프로젝트폴더/urls.py`에 아래 코드를 추가
+  
+  ```python
+  #1번 문서에 있는 내용
+  urlpatterns = [
+      ...,
+      path('rest-auth/', include('rest_auth.urls')),
+      #위 경로로 들어갈 경우 404에러 페이지가 뜨는데 해당 페이지의 내용을 보면 rest-auth에서 할 수 있는 것들의 목록이 나온다.
+  ]
+  ```
 
 
-
-  - `settings.py`에 아래 코드를 추가(1번 문서의 내용과 2번 문서의 내용을 수정)
-
-    ```python
-      #1번 문서(Installaion 파트)에 있는 내용
-      INSTALLED_APPS = (
-          ...,
-          #drf 관련 app
-          'rest_framework',
-          'rest_framework.authtoken', #토큰 기반의 인증에 필요한 app
-          ...,
-          #rest-auth 관련 app
-          'rest_auth',
-      )
-      
-      #2번 문서에 있는 내용 수정
-      #토큰 기반으로 인증을 하기 위한 코드
-      REST_FRAMEWORK = {
-          'DEFAULT_AUTHENTICATION_CLASSES': [
-              'rest_framework.authentication.TokenAuthentication',
-            #원래 'rest_framework.authentication.SessionAuthentication',지만 세션 기반이 아닌 토큰 기반이므로 위와 같이 수정해준다.
-          ]
-    }
-    ```
-
-    
-
-  - `프로젝트폴터/urls.py`에 아래 코드를 추가
-
-    ```python
-    #1번 문서에 있는 내용
-    urlpatterns = [
-        ...,
-        path('rest-auth/', include('rest_auth.urls')),
-        #위 경로로 들어갈 경우 404에러 페이지가 뜨는데 해당 페이지의 내용을 보면 rest-auth에서 할 수 있는 것들의 목록이 나온다.
-    ]
-    ```
-
-    
 
 - rest-auth는 app의 일종이므로 `models`를 가지고 있다. 따라서 migrate를 해줘야 한다.
 
-- 여기까지 완료하면 로그인이 가능해지고 login을 하면 token을 받을 수 있다.
+  - 여기까지 완료하면 로그인이 가능해지고 login을 하면 token을 받을 수 있다.
   - token은 db.sqlite3의 `authtoken_token`테이블의 key 값에서 확인하거나 Postman으로 요청을 보내거나 rest-auth/login 경로에서 요청을 보냄으로써 확인 할 수 있다.
-    
-  - 회원 가입을 위해서는 아래 settings.py, urls.py에 아래 코드를 추가
+
+  - 회원 가입을 위해서는 아래 settings.py, urls.py에 아래 코드를 추가.
 
   ```python
   #settings.py
@@ -1097,6 +1096,7 @@
   ```
 
 - allauth 역시 마찬가지로 app의 일종이므로 `models`를 가지고 있다. 따라서 migrate를 해줘야 한다.
+
   - 회원가입할 때 보내야 하는 데이터는 내부적으로 username, password1, password2로 지정되어 있다.
 
 
@@ -1115,8 +1115,6 @@
 
 
 - JWT: 단순한 무작위 문자열이 아닌 데이터가 담긴 토큰으로, 위조가 불가능한 사인도 포함된 토큰이기에  보안상으로도 안전하고 서버에 session, token 아무것도 남기지 않는다. 회원가입을 해도 id와 사인이 서버의 db에 저장되는 것이 아니라 토큰에 저장이되고  토큰에 저장된 user id와 사인을 토대로 검증을 거쳐 로그인이 이루어진다. 최근에 유행하는 인증 방식이다.
-
-
 
 
 
@@ -1156,12 +1154,6 @@
       "https://example.com",  #허용할 주소를 입력
   ]
   ```
-  
-  
-
-  
-
-
 
 
 
@@ -1211,29 +1203,25 @@
     AUTHENTICATION_BACKENDS = (
           'django.contrib.auth.backends.ModelBackend',
           'allauth.account.auth_backends.AuthenticationBackend',
-      )
+    )
     
     SITE_ID = 1
     ```
   
-  
-  
   - 이후 migrate를 실행한 후 admin 사이트로 들어가보면 우리가 추가한 적 없는 여러 테이블이 추가된 것을 볼 수 있다(admin.py를 수정하지 않아도 됨).
-  
-  
   
   - 전체 url을 관리하는 urls.py에 아래 코드를 작성
   
     ```python
-      urlpatterns = [
-          #직접 정의한 accounts url, 반드시 이 url을 먼저 적어야 한다.
-          path('accounts/', include('accounts.urls')),
-          #allauth에서 정의한 accounts url
-          path('accounts/', include('allauth.urls'))
-      ]
-      #둘이 겹쳐도 상관 없는 이유는 accounts이후의 경로가 다르기 때문이다.
-      #직접 작성한 url login,logout,signup등의 경로를 일반적으로 가지지만
-      #allauth의 url은 google이라는 경로를 가지기에 알아서 분기가 된다.
+    urlpatterns = [
+        #직접 정의한 accounts url, 반드시 이 url을 먼저 적어야 한다.
+        path('accounts/', include('accounts.urls')),
+        #allauth에서 정의한 accounts url
+        path('accounts/', include('allauth.urls'))
+    ]
+    #둘이 겹쳐도 상관 없는 이유는 accounts이후의 경로가 다르기 때문이다.
+    #직접 작성한 url login,logout,signup등의 경로를 일반적으로 가지지만
+    #allauth의 url은 google이라는 경로를 가지기에 알아서 분기가 된다.
     ```
   
   - login 양식을 제공하는 html에 아래의 코드를 입력

@@ -218,7 +218,7 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     from pages import views   #pages에서 views를 가져오고 
       #기본 구조
       #from app이름 import 함수정의된 파일 이름
-      # 서버를 실행시켰을 때 urlpatterns가 비어 있다고 오류가 발생하지는 않으나(물론 관련 경로로 보내고자 한다면 오류가 발생하겠으나, 서버'만' 실행시켰을 때는)urlpatterns라는 리스트 자체를 정의하지 않으면 오류가 발생한다. 따라서 빈 리스트라도 만들어 두어야 한다.
+      # 서버를 실행시켰을 때 urlpatterns가 비어 있다고 오류가 발생하지는 않으나(물론 관련 경로로 보내고자 한다면 오류가 발생하겠으나, 서버'만' 실행시켰을 때는 오류가 발생하지 않는다.)urlpatterns라는 리스트 자체를 정의하지 않으면 오류가 발생한다. 따라서 빈 리스트라도 만들어 두어야 한다.
       urlpatterns = [
           path('admin/', admin.site.urls),
           path('index/', views.index),
@@ -471,23 +471,25 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
 
     - `empty`: 반복할 것이 없을 경우 설정한 내용을 출력
 
-      ```html
-      <!--no_replies가 빈 배열이라고 가정하면-->
-      {% for reply in no_replies%}
-      	<p>{{ reply }}</p>
-      	{% empty %}
-      	<p>댓글이 없어요</p>
-      {% endfor %}
-      
-      out
-      댓글이 없어요
-      ```
+    ```django
+    <!--no_replies가 빈 배열이라고 가정하면-->
+    {% for reply in no_replies%}
+    	<p>{{ reply }}</p>
+    	{% empty %}
+    	<p>댓글이 없어요</p>
+    {% endfor %}
+    
+    out
+    댓글이 없어요
+    ```
+    
+    
 
   
 
   - 조건문
 
-    ```html
+    ```django
     <!--기본형-->
     {% if user == 'admin' %}   <!--if문이 True면-->
     	<p>수정, 삭제</p>        <!--이 줄이 실행-->
@@ -500,57 +502,55 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
 
 - 기타
 
+    - 일반적으로 DTL에서 `|`는 필터(filter)를 나타낸다.
 
-  - 일반적으로 DTL에서 `|`는 필터(filter)를 나타낸다.
+    - `|length`: 앞에 온 문자열 혹은 리스트의 길이를 출력
 
-  - `|length`: 앞에 온 문자열 혹은 리스트의 길이를 출력
+  ```html
+  <!--예를 들어 content에 "안녕"을 넘겼다고 가정하면-->
+  <p>{{content|length}}</p>
+  
+  out
+  2
+  ```
 
-    ```html
-    <!--예를 들어 content에 "안녕"을 넘겼다고 가정하면-->
-    <p>{{content|length}}</p>
-    
-    out
-    2
-    ```
+    - `|truncatechars:양의 정수`: 앞의 내용을 양의 정수까지만 출력하고 나머지는 말줄임표로 처리
 
-  - `|truncatechars:양의 정수`: 앞의 내용을 양의 정수까지만 출력하고 나머지는 말줄임표로 처리
+  ```html
+  <!--content에 Life is short, you need python이 담겨 있다면-->
+  
+  {{ content|truncatechars:10 }}
+  
+  out
+  Life i ...
+  
+  <!--공백 역시 하나의 문자로 취급되며 마지막에 오는 ...도 개수에 포함된다.-->
+  ```
 
-    ```html
-    <!--content에 Life is short, you need python이 담겨 있다면-->
-    
-    {{ content|truncatechars:10 }}
-    
-    out
-    Life i ...
-    
-    <!--공백 역시 하나의 문자로 취급되며 마지막에 오는 ...도 개수에 포함된다.-->
-    ```
+    - `|title`:  첫 글자를 대문자로 출력
 
-  - `|title`:  첫 글자를 대문자로 출력
+  ```html
+  {{ 'my name is smith'|title }}
+  
+  out
+  My Name Is Smith
+  ```
 
-    ```html
-    {{ 'my name is smith'|title }}
-    
-    out
-    My Name Is Smith
-    ```
+    - `|date`: 표현식에 따라 출력
+  - 자세한 표현식은 https://docs.djangoproject.com/en/dev/ref/templates/builtins/?from=olddocs의 date참고
 
-  - `|date`: 표현식에 따라 출력
+  ```html
+  <!--{ date자료형|date:"표현식" } 형태-->
+  today에 datetime객체가 들어있다고 가정
+  {{today|date:'Y년 m월 d일 (D) A h:i'}}
+  
+  out
+  2020년 03월 06일 (Sun) PM 04:01
+  
+  <!--Y는 4자리로 표기한 년도, m은 숫자만 표기된 월, d는 숫자만 표기된 일, D는 요일, A는 오전, 오후, h는 시간, i는 분-->
+  ```
 
-    - 자세한 표현식은 https://docs.djangoproject.com/en/dev/ref/templates/builtins/?from=olddocs의 date참고
-
-    ```html
-    <!--{ date자료형|date:"표현식" } 형태-->
-    today에 datetime객체가 들어있다고 가정
-    {{today|date:'Y년 m월 d일 (D) A h:i'}}
-    
-    out
-    2020년 03월 06일 (Sun) PM 04:01
-    
-    <!--Y는 4자리로 표기한 년도, m은 숫자만 표기된 월, d는 숫자만 표기된 일, D는 요일, A는 오전, 오후, h는 시간, i는 분-->
-    ```
-
-    
+  
 
 
 
@@ -769,32 +769,30 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
       ]
       ```
 
-    
-
-    
-
     - 이를 막기 위한 방법은 우선 각 APP에 있는  `templates`폴더에 하위 폴더를 하나씩 생성하고(앱의 이름과 동일하게 한다), 그 폴더 내에 html파일들을 넣는 것이다. 그 후`views.py`를 아래와  같이수정한다.
 
       ```python
-      #B어플의 views.py파일
+  #B어플의 views.py파일
       
       #원래 아래와 같았던 것을
-      def hello(request):
-          return render(request, 'hello.html')
+          def hello(request):
+              return render(request, 'hello.html')
       
       #아래와 같이 경로를 명시해준다(templates폴더의 하위에 B라는 폴더를 생성하여 그곳에 html을 넣었다고 가정).
       def hello(request):
           return render(request, 'B/hello.html')
+      ```
       
-      
+      ```python
       #A어플의 views.py파일
       #A어플도 마찬가지로 바꿔준다(templates폴더의 하위에 A라는 폴더를 생성하고 그곳에 html을 넣었다고 가정).
       
       def hello(request):
           return render(request, 'A/hello.html')
       ```
-
-      
+  
+  
+  ​    
 
   - 또한 템플릿 확장을 사용한 경우 base.html 파일이 모든 프로젝트에서 사용 가능하게 바꿀 수 있다.
 
@@ -803,11 +801,11 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     - 또한 settings.py에서 `TEMPLATES`설정을 바꿔줘야 한다.
 
     - `DIRS`에는 어떤 순서로 파일을 찾을 것인지를 입력하는 것이다. 아래에서는 root폴더(프로젝트 폴더)만 입력했으므로 당연히 root폴더 내부에 정의한 base.html파일을 가장 먼저 찾게 된다.
-
+  
       ```python
-      TEMPLATES = [
+    TEMPLATES = [
           {
-              'BACKEND': 'django.template.backends.django.DjangoTemplates',
+            'BACKEND': 'django.template.backends.django.DjangoTemplates',
               #본래 비어 있던 아래 []사이에 다음과 같이 입력해준다.
               #BASE_DIR은 manage.py가 존재하는 프로젝트 최상위 폴더를 의미하는데 (BASE_DIR, 		 '프로젝트명','templates')는 최상위 폴더부터 temlpates폴더까지의 경로를 ,로 구분		해서 입력한 것이다.
               #app내에 있는 폴더가 아닌, 추가적으로 templates로 활용하고 싶은 경로를 입력한다.
