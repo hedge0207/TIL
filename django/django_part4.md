@@ -313,11 +313,11 @@
     - 도메인명은 `localhost:8000`으로 해도 무관하다.
     - 표시명은 아무렇게나 지정해주면 된다.
 
-  ![](django_part4.assets/화면 캡처 2021-02-16 225121.png)
+  ![](django_part4.assets/sites.png)
 
   - 추가를 완료하면 DB의 `django_site` 테이블에 추가가 된 것을 확인 가능하다.
 
-  ![](django_part4.assets/화면 캡처 2021-02-16 225311.png)
+  ![](django_part4.assets/db1.png)
 
   - settings.py에 아래 코드를 추가한다.
 
@@ -330,11 +330,11 @@
     - 제공자는 settings.py에  `'allauth.socialaccount.providers.google'`를 추가했기에 Google로 설정이 가능한 것이다.
     - 이름은 원하는 이름을 사용하면 된다.
 
-  ![](django_part4.assets/화면 캡처 2021-02-16 225715.png)
+  ![](django_part4.assets/socialapplication.png)
 
   - 완료하면 DB의 `socialaccount_socialapp` 테이블에 데이터가 추가된 것을 확인 가능하다.
 
-  ![](django_part4.assets/화면 캡처 2021-02-16 230047.png)
+  ![](django_part4.assets/db2.png)
 
 
 
