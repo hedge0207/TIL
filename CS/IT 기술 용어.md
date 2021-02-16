@@ -105,7 +105,7 @@
 
     > 사진 출처: https://www.redhat.com/ko/topics/cloud-computing/what-is-paas
 
-    ![iaas-paas-saas-diagram](IT 기술 용어.assets/108083318-4641ac80-70b6-11eb-9b4a-3cb3401ab225.png)
+    ![iaas-paas-saas-diagram](https://user-images.githubusercontent.com/60123095/108083318-4641ac80-70b6-11eb-9b4a-3cb3401ab225.png)
 
     - SaaS(Software as a Service)
     - PaaS(Platform as a Service)
