@@ -302,7 +302,7 @@
     - 승인된 리디렉션 URL에 Callback URI를 지정해 준다.
     - Django에서 redirect API를 만들어서 urls.py에 매핑 시켜줄 것과 같게 입력해야 한다.
 
-  ![](django_part4.assets/화면 캡처 2021-02-16 224844.png)
+  ![](django_part4.assets/google.png)
 
 
 
