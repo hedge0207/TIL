@@ -384,10 +384,6 @@
   import os
   import json
   from django.shortcuts import redirect
-  from requests.sessions import Request
-  from accounts.models import CustomUser
-  from django.contrib.auth import login
-  from django.conf import settings
   from rest_auth.registration.views import SocialLoginView
   from allauth.socialaccount.providers.google import views as google_view
   from allauth.socialaccount.providers.oauth2.client import OAuth2Client
