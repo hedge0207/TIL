@@ -232,7 +232,7 @@
   export default App;
   ```
 
-  
+
 
 - URL 파라미터와 쿼리
 
@@ -241,7 +241,7 @@
     - 일반적으로 파라미터는 특정 아이디 혹은 이름을 사용하여 조회할 때 사용한다(e.g. `/about/cha`)
     - 일반적으로 쿼리는 어떤 키워드를 검색하거나 페이지에 필요한 옵션을 전달할 때 사용한다(e.g. `/about?details=true`)
   - URL 파라미터
-      - URL 파라미터를 넘길 때 뒤에 `?`를 붙여주면 해당 파라미터가 있을 수도 있고 없을 수도 있다는 뜻이다(e.g. `<Route path="/profile/:city?" component={Profile} />`) 
+      - URL 파라미터를 넘길 때 뒤에 `?`를 붙여주면 해당 파라미터가 있을 수도 있고 없을 수도 있다는 뜻이다(e.g. `<Route path="/profile/:city?" component={Profile} />`)
       - `props`로 받은 `match` 객체 안에는 현재 컴포넌트가 어떤 경로 규칙에 의해 보이는지에 대한 정보가 들어있다.
   
   ```react
@@ -462,13 +462,13 @@
     }
   }
   
-export default HistorySample;
+  export default HistorySample;
   ```
   
   - 이탈 방지 코드 상세 설명
-    - 클래스형 컴포넌트에서 라이프사이클 메서드 내부의 `this`는 컴포넌트 객체 자신을 가리킨다.
-    - `componentDidMount()` 메서드를 통해 마운트가 완료된 시점에 컴포넌트 객체에 `unlock`이라는 key와 그 value로 `this.props.history.block("정말 떠나실 건가요?")`를 추가한다(`HistorySample:{unlock:this.props.history.block("정말 떠나실 건가요?")}`).
-    - 변화가 생기려고 할 때 `componentWillUnmount()`가 호출되고 컴포넌트의 `unlock`이라는 key에 할당한 `this.props.history.block("정말 떠나실 건가요?")`를 실행한다.
+      - 클래스형 컴포넌트에서 라이프사이클 메서드 내부의 `this`는 컴포넌트 객체 자신을 가리킨다.
+      - `componentDidMount()` 메서드를 통해 마운트가 완료된 시점에 컴포넌트 객체에 `unlock`이라는 key와 그 value로 `this.props.history.block("정말 떠나실 건가요?")`를 추가한다(`HistorySample:{unlock:this.props.history.block("정말 떠나실 건가요?")}`).
+      - 변화가 생기려고 할 때 `componentWillUnmount()`가 호출되고 컴포넌트의 `unlock`이라는 key에 할당한 `this.props.history.block("정말 떠나실 건가요?")`를 실행한다.
 
 
 
@@ -482,29 +482,29 @@ export default HistorySample;
   import { withRouter } from "react-router-dom";
   
   const WithRouterSample = ({ location, match, history }) => {
-    return (
-      <div>
-        <h4>location</h4>
-        <textarea
-          value={JSON.stringify(location, null, 2)}
-          row={7}
-          readOnly={true}
-        />
-        <h4>match</h4>
-        <textarea
-          value={JSON.stringify(match, null, 2)}
-          row={7}
-          readOnly={true}
-        />
-        <button onClick={() => history.push("/")}>홈으로</button>
-      </div>
-    );
+      return (
+          <div>
+              <h4>location</h4>
+              <textarea
+                  value={JSON.stringify(location, null, 2)}
+                  row={7}
+                  readOnly={true}
+                  />
+              <h4>match</h4>
+              <textarea
+                  value={JSON.stringify(match, null, 2)}
+                  row={7}
+                  readOnly={true}
+                  />
+              <button onClick={() => history.push("/")}>홈으로</button>
+          </div>
+      );
   };
   
   export default withRouter(WithRouterSample);
   ```
 
-  - 렌더링 할 때는 특별히 해줘야 할 것이 없다.
+    - 렌더링 할 때는 특별히 해줘야 할 것이 없다.
 
   ```react
   import React from "react";
@@ -513,23 +513,23 @@ export default HistorySample;
   import WithRouterSample from "./WithRouterSample";
   
   const Profiles = () => {
-    return (
-      <div>
-  	  (...)
-        <WithRouterSample />
-      </div>
-    );
+      return (
+          <div>
+              (...)
+              <WithRouterSample />
+          </div>
+      );
   };
   
   export default Profiles;
   ```
 
-  - `withRouter`를 사용했을 때 `match`는 현재 자신을 보여주고 있는 컴포넌트를 기준으로 전달된다.
-    - 위 예시에서 `<WithRouterSample />`을 보여주고 있는 컴포넌트는 `Profiles`다.
-    - `profiles`에는 params로 받는 값이 없다.
-    - 따라서 위 결과에서 `match`에는 params가 비어있다고 나온다.
-    - 아래와 같이 prams를 받는 다른 컴포넌트에 띄우면 값이 제대로 들어가 있는 것을 확인 가능하다.
-    - `Profile` 컴포넌트는 `city`를 params로 받는다.
+    - `withRouter`를 사용했을 때 `match`는 현재 자신을 보여주고 있는 컴포넌트를 기준으로 전달된다.
+      - 위 예시에서 `<WithRouterSample />`을 보여주고 있는 컴포넌트는 `Profiles`다.
+      - `profiles`에는 params로 받는 값이 없다.
+      - 따라서 위 결과에서 `match`에는 params가 비어있다고 나온다.
+      - 아래와 같이 prams를 받는 다른 컴포넌트에 띄우면 값이 제대로 들어가 있는 것을 확인 가능하다.
+      - `Profile` 컴포넌트는 `city`를 params로 받는다.
 
   ```react
   import React from "react";
@@ -537,20 +537,22 @@ export default HistorySample;
   
   (...)
   
-  const Profile = ({ match }) => {
-    (...)
-    return (
-      <div>
-        <h3>
-          {city}({profile.description})
-        </h3>
-        <WithRouterSample />
-      </div>
-    );
+   const Profile = ({ match }) => {
+      (...)
+       return (
+       <div>
+           <h3>
+               {city}({profile.description})
+           </h3>
+           <WithRouterSample />
+       </div>
+      );
   };
   
   export default Profile;
   ```
+
+
 
   
 
@@ -608,7 +610,7 @@ export default HistorySample;
   export default App;
   ```
 
-  
+
 
 - `NavLink`
 
@@ -788,9 +790,9 @@ export default HistorySample;
   
     return [loading, resolved, error];
   }
-```
+  ```
   
-- 적용하기
+  - 적용하기
   
   ```react
   import React from 'react';
@@ -813,65 +815,67 @@ export default HistorySample;
   `;
   
   const NewsList = ({ category }) => {
-    // 기존 코드
-    /*
-    const [articles, setArticles] = useState(null);
-    const [loading, setLoading] = useState(false);
+      // 기존 코드
+      /*
+      const [articles, setArticles] = useState(null);
+      const [loading, setLoading] = useState(false);
   
-    // useEffect 내부에서 async를 사용하려면 함수 내부에 async 키워드가 붙은 또 다른 함수를 만들어서 사용해야 한다.
-    useEffect(() => {
-      const fetchData = async () => {
-        setLoading(true);
-        try {
+      // useEffect 내부에서 async를 사용하려면 함수 내부에 async 키워드가 붙은 또 다른 함수를 만들어서 사용해야 한다.
+      useEffect(() => {
+        const fetchData = async () => {
+          setLoading(true);
+          try {
+            const query = category === 'all' ? '' : `&category=${category}`;
+            const response = await axios.get(
+              `http://newsapi.org/v2/top-headlines?country=kr${query}&apiKey=b3b1cffe26e14aa88dff0880a41bdfbc`,
+            );
+            setArticles(response.data.articles);
+          } catch (e) {
+            console.log(e);
+          }
+          setLoading(false);
+        };
+        fetchData();
+      }, [category]);
+      */
+  
+      // usePromise를 사용한 코드
+      const [loading, response, error] = usePromise(() => {
           const query = category === 'all' ? '' : `&category=${category}`;
-          const response = await axios.get(
-            `http://newsapi.org/v2/top-headlines?country=kr${query}&apiKey=b3b1cffe26e14aa88dff0880a41bdfbc`,
+          return axios.get(
+              `http://newsapi.org/v2/top-headlines?country=kr${query}&apiKey=b3b1cffe26e14aa88dff0880a41bdfbc`,
           );
-          setArticles(response.data.articles);
-        } catch (e) {
-          console.log(e);
-        }
-        setLoading(false);
-      };
-      fetchData();
-    }, [category]);
-    */
-    
-    // usePromise를 사용한 코드
-    const [loading, response, error] = usePromise(() => {
-      const query = category === 'all' ? '' : `&category=${category}`;
-      return axios.get(
-        `http://newsapi.org/v2/top-headlines?country=kr${query}&apiKey=b3b1cffe26e14aa88dff0880a41bdfbc`,
+      }, [category]);
+  
+      // 대기중일 때
+      if (loading) {
+          return <NewsListBlock>대기 중...</NewsListBlock>;
+      }
+  
+      if (!response) {
+          return null;
+      }
+  
+      if (error) {
+          return <NewsListBlock>에러 발생!</NewsListBlock>;
+      }
+  
+      const { articles } = response.data;
+  
+      return (
+          <NewsListBlock>
+              {articles.map((article) => (
+                  <NewsItem key={article.url} article={article} />
+              ))}
+          </NewsListBlock>
       );
-    }, [category]);
-  
-    // 대기중일 때
-    if (loading) {
-      return <NewsListBlock>대기 중...</NewsListBlock>;
-    }
-  
-    if (!response) {
-      return null;
-    }
-  
-    if (error) {
-      return <NewsListBlock>에러 발생!</NewsListBlock>;
-    }
-  
-    const { articles } = response.data;
-  
-    return (
-      <NewsListBlock>
-        {articles.map((article) => (
-          <NewsItem key={article.url} article={article} />
-        ))}
-      </NewsListBlock>
-    );
   };
   
   export default NewsList;
-```
+  ```
   
+  
+
   
 
 

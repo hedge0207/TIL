@@ -477,7 +477,7 @@ a = [8,3,9,1]
 
 2)Divide and Conquer(분할정복)
 
-- 문제를 부분 문제로 나눠(divide)서 부분문제의 해를 구한 후(conquer,) 부분문제의 해를 통해 전체 문제를 해결(combine)하는 방식
+- 문제를 부분 문제로 나눠(divide)서 부분문제의 해를 구한 후(conquer), 부분문제의 해를 통해 전체 문제를 해결(combine)하는 방식
 - Top-down Approach
  - divide ,conquer, combine의 세 단계를 거쳐 문제를 해결한다.
    	- 이 때 부분문제가 더 작은 부분문제로 나뉠 수 있다면 문제가 충분히 작아질 때 까지 conquer 또한 다시 divde,conquer,combine으로 나뉘게 된다.

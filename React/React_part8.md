@@ -80,7 +80,7 @@
   }
   export default RenderPropsSample
   
-  // 위와 같은 컴포넌트가 있다면 나중에 사용할 때 아래와 같이 할 수 있다.
+  // 위와 같은 컴포넌트가 있다면 나중에 렌더링할 때 아래와 같이 할 수 있다.
   <RenderPropsSample>{value => 2*value}</RenderPropsSample>  //<div>10</div>을 렌더링한다.
   ```
 
@@ -286,7 +286,7 @@
   export default SelectColor;
   ```
 
-  
+
 
 - Consumer 대신 Hook 또는 static contextType 사용하기
 
@@ -378,7 +378,7 @@
   export default SelectColors;
   ```
 
-  
+
 
 
 
@@ -437,10 +437,10 @@
   
   // 화살표 함수
   const addTodo = data => {
-      type:'ADD_TODO',
+    type:'ADD_TODO',
     data: {
-          id:1,
-          text:'리덕스 학습'
+      id:1,
+      text:'리덕스 학습'
       }
   }
   ```
@@ -473,7 +473,7 @@
       - 스토어 안에는 현재 애플리케이션 상태와 리듀서가 들어가 있으며, 그 외에도 몇 가지 중요한 내장 함수를 지닌다.
     - 디스패치(dispatch)
       - 스토어의 내장 함수 중 하나.
-        - 액션을 발생시키는 것.
+      - 액션을 발생시키는 것.
       - 액션 객체를 인자로 받는다.
       - 이 함수가 호출되면 스토어는 리듀서 함수를 실행시켜 새로운 상태를 만들어 준다.
     - 구독(subscribe)
@@ -618,12 +618,13 @@
 
   ```javascript
   const toggleSwitch = () => ({ type: TOGGLE_SWITCH });
-  const increase = (difference) => ({ type: INCREASE, difference });
+  // 어차피 +1만 가능하므로 굳이 difference를 안 받아도 된다. 그러나 인자를 받는 것이 가능하다는 것을 보여주는 것이다.
+  const increase = (difference) => ({ type: INCREASE, difference }); 
   const decrease = () => ({ type: DECREASE });
-  ```
-
-  - 이 프로젝트에서 사용할 초깃값을 정의한다.
-
+```
+  
+- 이 프로젝트에서 사용할 초깃값을 정의한다.
+  
   ```javascript
   const initialState = {
     toggle: false,

@@ -158,80 +158,80 @@
   export default App;
   ```
   
-- LifecycleSample.js
+  - LifecycleSample.js
   
-```react
+  ```react
   import React, { Component } from "react";
   
   class LifecycleSample extends Component {
-    state = {
-      number: 0,
-      color: null,
-    };
-    myRef = null;
+      state = {
+          number: 0,
+          color: null,
+      };
+  myRef = null;
   
-    constructor(props) {
+  constructor(props) {
       super(props);
       console.log("constructor");
-    }
+  }
   
-    static getDerivedStateFromProps(nextProps, prevState) {
+  static getDerivedStateFromProps(nextProps, prevState) {
       console.log("getDerivedStateFromProps");
       if (nextProps.color !== prevState.color) {
-        return { color: nextProps.color };
+          return { color: nextProps.color };
       }
       return null;
-    }
+  }
   
-    componentDidMount() {
+  componentDidMount() {
       console.log("componentDidMount");
-    }
+  }
   
-    shouldComponentUpdate(nextProps, nextState) {
+  shouldComponentUpdate(nextProps, nextState) {
       console.log("shouldComponentUpdate");
       return nextState.number % 10 !== 4;
-    }
+  }
   
-    componentWillUnmount() {
+  componentWillUnmount() {
       console.log("componentWillUnmount");
-    }
+  }
   
-    handleClick = () => {
+  handleClick = () => {
       this.setState({
-        number: this.state.number + 1,
+          number: this.state.number + 1,
       });
-    };
+  };
   
-    getSnapshotBeforeUpdate(prevProps, prevStte) {
+  getSnapshotBeforeUpdate(prevProps, prevStte) {
       console.log("getSnapshotBeforeUpdate");
       if (prevProps.color !== this.prevState.color) {
-        return this.myRef.style.color;
+          return this.myRef.style.color;
       }
       return null;
-    }
+  }
   
-    componentDidUpdate(prevProps, prevState, snapshot) {
+  componentDidUpdate(prevProps, prevState, snapshot) {
       console.log("componentDidUpdate", prevProps, prevState);
       if (snapshot) {
-        console.log("업데이트 되기 직전 생상:", snapshot);
+          console.log("업데이트 되기 직전 생상:", snapshot);
       }
-    }
+  }
   
-    render() {
+  render() {
       console.log("render");
       const style = {
-        color: this.props.color,
+          color: this.props.color,
       };
       return (
-        <div>
-          <h1 style={style} ref={(ref) => (this.myRef = ref)}>
-            {this.state.number}
-          </h1>
-          <p>color: {this.state.color}</p>
-          <button onClick={this.handleClick}>더하기</button>
-        </div>
+          <div>
+              <h1 style={style} ref={(ref) => (this.myRef = ref)}>
+                  {this.state.number}
+              </h1>
+              <p>color: {this.state.color}</p>
+              <button onClick={this.handleClick}>더하기</button>
+          </div>
       );
-    }
+  }
   }
   
   export default LifecycleSample;
@@ -261,42 +261,43 @@
           </div>
       );
   }
-```
-  
+  ```
+
   - 에러 페이지 우측 상단의 X 버튼을 누르면 에러 페이지가 사라진다.
-    - 흰 화면이 나오게 된다(배포 환경에서 에러가 발생하면 보이는 화면이다).
-    - 사용자 입장에서 에러가 발생했을 때 흰색 화면이 나오게 된다면 당황할 것이다.
-  - 따라서 사용자에게 에러가 발생했다는 것을 인지시켜 줘야 한다.
+      - 흰 화면이 나오게 된다(배포 환경에서 에러가 발생하면 보이는 화면이다).
+      - 사용자 입장에서 에러가 발생했을 때 흰색 화면이 나오게 된다면 당황할 것이다.
+    - 따라서 사용자에게 에러가 발생했다는 것을 인지시켜 줘야 한다.
   - `componentDidCatch`메서드 활용
-  - 이 메서드는 에러가 발생하면 호출된다.
-  
+      - 이 메서드는 에러가 발생하면 호출된다.
+
   ```react
   import React, { Component } from "react";
-  
-  class ErrorBoundary extends Component {
-    state = {
-      error: false,
-    };
-    componentDidCatch(error, info) {
-      this.setState({
-        error: true,
-      });
-      console.log({ error, info });
+    
+    class ErrorBoundary extends Component {
+      state = {
+        error: false,
+      };
+      componentDidCatch(error, info) {
+        this.setState({
+          error: true,
+        });
+        console.log({ error, info });
+      }
+      render() {
+        // 에러가 발생하면 <div>에러가 발생했습니다.</div>를 반환.
+        if (this.state.error) return <div>에러가 발생했습니다.</div>;
+        // 에러가 발생하지 않으면 본래 보여주려던 것을 반환.
+        return this.props.children;
+      }
     }
-    render() {
-      // 에러가 발생하면 <div>에러가 발생했습니다.</div>를 반환.
-      if (this.state.error) return <div>에러가 발생했습니다.</div>;
-      // 에러가 발생하지 않으면 본래 보여주려던 것을 반환.
-      return this.props.children;
-    }
-  }
-  
-  export default ErrorBoundary;
-```
-  
-  - App.js 를 아래와 같이 수정
-  - `children`은 태그 사이의 내용을 보여주므로 아래와 같이 `<ErrorBoundary>` 태그 사이에 원래 보여주려는 내용을 넣는다.
-  
+    
+    export default ErrorBoundary;
+  ```
+
+    - App.js 를 아래와 같이 수정
+        - `children`은 태그 사이의 내용을 보여주므로 아래와 같이 `<ErrorBoundary>` 태그 사이에 원래 보여주려는 내용을 넣는다.
+        - 이제 에러 페이지에서 X 버튼을 누르면 에러가 발생한 부분만 `ErrorBoundary.js`에서 설정한 내용이 출력된다.
+
   ```react
   import React, { Component } from "react";
   import ScrollBox from "./ScrollBox";
@@ -306,38 +307,35 @@
   //state의 color 값을 랜덤 색상으로 설정.
   //1677215는 hex로 표현하면 ffffff가 되므로 아래 코드는 000000부터 ffffff 까지의 값을 반환한다.
   function getRendomColor() {
-    return "#" + Math.floor(Math.random() * 1677215).toString(16);
+      return "#" + Math.floor(Math.random() * 1677215).toString(16);
   }
   
   class App extends Component {
-    state = {
-      color: "#000000",
-    };
+      state = {
+          color: "#000000",
+      };
   
-    handleClick = () => {
+  handleClick = () => {
       this.setState({
-        color: getRendomColor(),
+          color: getRendomColor(),
       });
-    };
+  };
   
-    render() {
+  render() {
       return (
-        <div>
-          {/* 불러온 뒤 태그로 에러가 발생할 부분을 깜싸준다. */}
-          <ErrorBoundary>
-            <LifecycleSample color={this.state.color} />
-          </ErrorBoundary>
-          <button onClick={this.handleClick}>랜덤 색상</button>
-        </div>
+          <div>
+              {/* 불러온 뒤 태그로 에러가 발생할 부분을 깜싸준다. */}
+              <ErrorBoundary>
+                  <LifecycleSample color={this.state.color} />
+              </ErrorBoundary>
+              <button onClick={this.handleClick}>랜덤 색상</button>
+          </div>
       );
-    }
+  }
   }
   
   export default App;
-  
-```
-  
-  - 이제 에러 페이지에서 X 버튼을 누르면 에러가 발생한 부분만 `ErrorBoundary.js`에서 설정한 내용이 출력된다.
+  ```
 
 
 
@@ -589,29 +587,31 @@
   };
   
   export default Counter;
-```
+  ```
   
-- 위 코드를 `useState`를 사용하면 아래와 같이 구현 할 수 있다.
+  - 위 코드를 `useState`를 사용하면 아래와 같이 구현 할 수 있다.
   
   ```react
   import React, { useState } from "react";
   
   const CounterUseState = () => {
-    const [value, setValue] = useState(0);
-    return (
-      <div>
-        <p>
-          현재 카운터 값은 <b>{value}</b>입니다.
-        </p>
-        <button onClick={() => setValue(value + 1)}>+1</button>
-        <button onClick={() => setValue(value - 1)}>-1</button>
-        <button onClick={() => setValue(0)}>초기화</button>
-      </div>
-    );
+      const [value, setValue] = useState(0);
+      return (
+          <div>
+              <p>
+                  현재 카운터 값은 <b>{value}</b>입니다.
+              </p>
+              <button onClick={() => setValue(value + 1)}>+1</button>
+              <button onClick={() => setValue(value - 1)}>-1</button>
+              <button onClick={() => setValue(0)}>초기화</button>
+          </div>
+      );
   };
   
   export default CounterUseState;
   ```
+
+
 
 
 
@@ -662,10 +662,11 @@
   };
   
   export default Info;
-```
-  
+  ```
   - `useReducer`의 액션은 어떤 값이든 사용이 가능하다.
     - 위 예시에서는 이벤트 객체가 지니고  있는 `e.target` 값 자체를 액션 값으로 사용했다.
+
+
 
 
 
@@ -688,92 +689,94 @@
   import React, { useState } from "react";
   
   const getAverage = (numArr) => {
-    console.log("평균값 계산");
-    if (numArr.length === 0) return 0;
-    const sum = numArr.reduce((a, b) => a + b);
-    return sum / numArr.length;
+      console.log("평균값 계산");
+      if (numArr.length === 0) return 0;
+      const sum = numArr.reduce((a, b) => a + b);
+      return sum / numArr.length;
   };
   
   const Average = () => {
-    const [list, setList] = useState([]);
-    const [number, setNumber] = useState("");
+      const [list, setList] = useState([]);
+      const [number, setNumber] = useState("");
   
-    const onChange = (e) => {
-      setNumber(e.target.value);
-    };
+      const onChange = (e) => {
+          setNumber(e.target.value);
+      };
   
-    const onInsert = (e) => {
-      const nextList = list.concat(parseInt(number));
-      setList(nextList);
-      setNumber("");
-    };
-    return (
-      <div>
-        <input value={number} onChange={onChange} />
-        <button onClick={onInsert}>등록</button>
-        <ul>
-          {list.map((v, i) => {
-            <li key={i}>{v}</li>;
-          })}
-        </ul>
-        <div>
-          <b>평균값</b> {getAverage(list)}
-        </div>
-      </div>
-    );
+      const onInsert = (e) => {
+          const nextList = list.concat(parseInt(number));
+          setList(nextList);
+          setNumber("");
+      };
+      return (
+          <div>
+              <input value={number} onChange={onChange} />
+              <button onClick={onInsert}>등록</button>
+              <ul>
+                  {list.map((v, i) => {
+                      <li key={i}>{v}</li>;
+                  })}
+              </ul>
+              <div>
+                  <b>평균값</b> {getAverage(list)}
+              </div>
+          </div>
+      );
   };
   
   export default Average;
   ```
 
-  - `useMemo`를 사용했을 때
-    - `list`가 변화하면 `getAverage`함수를 실행한다.
+    - `useMemo`를 사용했을 때
+      - `list`가 변화하면 `getAverage`함수를 실행한다.
 
   ```react
   import React, { useState, useMemo } from "react";
   
   const getAverage = (numArr) => {
-    console.log("평균값 계산");
-    if (numArr.length === 0) return 0;
-    const sum = numArr.reduce((a, b) => a + b);
-    return sum / numArr.length;
+      console.log("평균값 계산");
+      if (numArr.length === 0) return 0;
+      const sum = numArr.reduce((a, b) => a + b);
+      return sum / numArr.length;
   };
   
   const Average = () => {
-    const [list, setList] = useState([]);
-    const [number, setNumber] = useState("");
+      const [list, setList] = useState([]);
+      const [number, setNumber] = useState("");
   
-    const onChange = (e) => {
-      setNumber(e.target.value);
-    };
+      const onChange = (e) => {
+          setNumber(e.target.value);
+      };
   
-    const onInsert = (e) => {
-      const nextList = list.concat(parseInt(number));
-      setList(nextList);
-      setNumber("");
-    };
+      const onInsert = (e) => {
+          const nextList = list.concat(parseInt(number));
+          setList(nextList);
+          setNumber("");
+      };
   
-    // useMemo를 사용한다.
-    const avg = useMemo(() => getAverage(list), [list]);
+      // useMemo를 사용한다.
+      const avg = useMemo(() => getAverage(list), [list]);
   
-    return (
-      <div>
-        <input value={number} onChange={onChange} />
-        <button onClick={onInsert}>등록</button>
-        <ul>
-          {list.map((v, i) => {
-            <li key={i}>{v}</li>;
-          })}
-        </ul>
-        <div>
-          <b>평균값</b> {avg}
-        </div>
-      </div>
-    );
+      return (
+          <div>
+              <input value={number} onChange={onChange} />
+              <button onClick={onInsert}>등록</button>
+              <ul>
+                  {list.map((v, i) => {
+                      <li key={i}>{v}</li>;
+                  })}
+              </ul>
+              <div>
+                  <b>평균값</b> {avg}
+              </div>
+          </div>
+      );
   };
   
   export default Average;
   ```
+
+
 
 
 
@@ -886,7 +889,7 @@
   - 컴포넌트 로컬 변수를 사용해야 할 때도 `useRef`를 사용 가능하다.
     - 로컬 변수란 렌더링과 상관없이 바뀔 수 있는 값을 의미한다.
     - 즉, 굳이 setter, setState 등으로 변경하지 않아도 되는 값을 의미한다.
-- 클래스 형태로 작성된 컴포넌트의 경우 로컬 변수를 사용해야 할 때 아래와 같이 작성한다.
+  - 클래스 형태로 작성된 컴포넌트의 경우 로컬 변수를 사용해야 할 때 아래와 같이 작성한다.
   
   ```react
   import React, { Component } from "react";
@@ -905,26 +908,28 @@
   }
   
   export default LocalValueClass;
-```
+  ```
   
-- 함수형 컴포넌트에서는 아래와 같이 작성한다.
+  - 함수형 컴포넌트에서는 아래와 같이 작성한다.
   
   ```react
   import React, { useRef } from "react";
   
   const RefSample = () => {
-    const id = useRef(1);
-    const setId = (n) => {
-      id.current = n;
-    };
-    const printId = () => {
-      console.log(id.current);
-    };
-    return <div></div>;
+      const id = useRef(1);
+      const setId = (n) => {
+          id.current = n;
+      };
+      const printId = () => {
+          console.log(id.current);
+      };
+      return <div></div>;
   };
   
   export default RefSample;
   ```
+
+
 
 
 
@@ -953,41 +958,43 @@
     // 상태와 onChange 함수를 반환
     return [state, onChange];
   }
-```
+  ```
   
-- 위에서 분리한 Hook을 사용
+  - 위에서 분리한 Hook을 사용
   
   ```react
   import React from "react";
   import useInputs from "./useInput";
   
   const Info = () => {
-    const [state, onChange] = useInputs({
-      name: "",
-      nickname: "",
-    });
-    const { name, nickname } = state;
+      const [state, onChange] = useInputs({
+          name: "",
+          nickname: "",
+      });
+      const { name, nickname } = state;
   
-    return (
-      <div>
-        <div>
-          <input name="name" value={name} onChange={onChange} />
-          <input name="nickname" value={nickname} onChange={onChange} />
-        </div>
-        <div>
+      return (
           <div>
-            <b>이름: </b> {name}
+              <div>
+                  <input name="name" value={name} onChange={onChange} />
+                  <input name="nickname" value={nickname} onChange={onChange} />
+              </div>
+              <div>
+                  <div>
+                      <b>이름: </b> {name}
+                  </div>
+                  <div>
+                      <b>닉네임: </b> {nickname}
+                  </div>
+              </div>
           </div>
-          <div>
-            <b>닉네임: </b> {nickname}
-          </div>
-        </div>
-      </div>
-    );
+      );
   };
   
   export default Info;
   ```
+
+
 
 
 

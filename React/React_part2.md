@@ -73,7 +73,7 @@
   export default myComponent;
   ```
 
-  
+
 
 - 모듈 내보내기 및 불러오기
 
@@ -104,8 +104,8 @@
       }
   }
   ```
-  
-  
+
+
 
 
 
@@ -494,7 +494,7 @@
 - state 객체 안에 여러 값이 있을 때
 
   - state 객체 안에는 여러 값이 있을 수 있다.
-- `this.setState()`함수는 인자로 전달된 객체 안에 들어 있는 값만 바꾼다.
+  - `this.setState()`함수는 인자로 전달된 객체 안에 들어 있는 값만 바꾼다.
   
   ```react
   import React, { Component } from "react";
@@ -687,7 +687,7 @@
   export default Counter;
   ```
 
-  
+
 
 ### 함수형 컴포넌트의 state
 

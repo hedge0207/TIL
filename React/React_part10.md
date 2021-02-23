@@ -149,12 +149,11 @@
   export default App;
   ```
 
-  
+
 
 - 미들웨어 만들기
 
   - 액션이 디스패치될 때마다 액션의 정보와 디스패치되기 전후의 상태를 콘솔에 보여주는 로깅 미들웨어를 만들어 볼 것이다.
-    - 미들웨어가 어떻게 작동하는지 이해하려면 직접 만들어 보는 것이 가장 효과적이다.
     - 실제 프로젝트를 작업할 때 미들웨어를 직접 만들어서 사용할 일은 그리 많지 않다.
     - 다른 개발자가 만들어 놓은 미들웨어를 사용하면 되기 때문이다.
   - src/lib 디렉터리를 생성하고, 그 안에 loggerMiddleware.js를 생성
@@ -280,10 +279,10 @@
 - Thunk란
 
   - Thunk는 특정 작업을 나중에 할 수 있도록 미루기 위해 함수 형태로 감싼 것을 의미한다.
-- 액션 객체 대신 액션 생성 함수를 반환하는 함수를 작성할 수 있게 해준다.
-    - 일반 액션 생성함수는 액션 객체를 생성하는 작업만 한다.
-    - 액션 객체는 함수가 아니므로 특정 액션이 몇 초 뒤에 실행되게 하거나, 현재 상태에 따라 아예 액션이 무시되게 하는 등의 작업이 불가능하다.
-    - redux-thunk는 액션 객체를 생성하는 것이 아닌 함수를 생성하는 액션 생성 함수를 작성할 수 있게 해준다.
+  - 액션 객체 대신 액션 생성 함수를 반환하는 함수를 작성할 수 있게 해준다.
+      - 일반 액션 생성함수는 액션 객체를 생성하는 작업만 한다.
+      - 액션 객체는 함수가 아니므로 특정 액션이 몇 초 뒤에 실행되게 하거나, 현재 상태에 따라 아예 액션이 무시되게 하는 등의 작업이 불가능하다.
+  - redux-thunk는 액션 객체를 생성하는 것이 아닌 함수를 생성하는 액션 생성 함수를 작성할 수 있게 해준다.
   
   ```javascript
   const INCREMENT_COUNTER = 'INCREMENT_COUNTER';
@@ -295,7 +294,7 @@
     };
   }
   
-// 액션 객체가 단순히 액션 생성 객체가 아닌 몇 초 뒤 액션 객체르 반환하는 액션 생성 함수를 반환
+  // 액션 객체가 단순히 액션 생성 객체가 아닌 몇 초 뒤 액션 객체를 반환하는 액션 생성 함수를 반환
   function incrementAsync() {
     return dispatch => {
       setTimeout(() => {
@@ -307,7 +306,7 @@
   ```
   
   - redux-thunk 라이브러리를 사용하면 thunk 함수를 만들어서 디스패치할 수 있다.
-    - 그럼 redux-thunk 미들웨어가 그 함수를 전달받아 store의 `dispatch`와 `getState`를 파라미터로 넣어서 호출해 준다.
+      - 그럼 redux-thunk 미들웨어가 그 함수를 전달받아 store의 `dispatch`와 `getState`를 파라미터로 넣어서 호출해 준다.
   
   ```react
   const sampleThunk = () => (dispatch,getState) => {
@@ -315,8 +314,6 @@
       // dispatch로 새 액션을 디스패치 할 수도 있다.
   } 
   ```
-  
-  
 
 
 
@@ -423,7 +420,7 @@
   ```
 
   - 이후 실행해보면 1초 뒤에 실행되는 것을 확인 가능하다.
-    - 또한 콘솔 창을 확인해 보면 처음 디스패치 되는 액션은 함수 형태고, 두 번째 액션은 객체 형태인 것을 확인 가능하다.
+    - 또한 콘솔 창을 확인해 보면 처음 디스패치 되는 액션은 함수 형태(`(dispatch) => {setTimeout(() => {dispatch(increase())}, 1000)}`)고, 두 번째 액션은 객체 형태(`{type:"counter/INCREASE"}`)인 것을 확인 가능하다.
 
 
 
@@ -1007,7 +1004,7 @@
     yield all([counterSaga()]);
 }
   
-export default rootReducer;
+  export default rootReducer;
   ```
   
   - 스토어에 redux-saga 미들웨어를 적용한다.
@@ -1022,17 +1019,16 @@ export default rootReducer;
   const store = createStore(
     rootReducer,
     composeWithDevTools(applyMiddleware(logger, ReduxThunk, sagaMiddleware))
-);
+  );
   sagaMiddleware.run(rootSaga);
   (...)
   ```
-  
-  - 잘 적용 되었는지 확인하기
-    - App 컴포넌트에 Counter 컴포넌트를 랜더링 한 후 아래와 같이 실행한다.
-    - `+1` 버튼을 빠르게 두 번 클릭하고 +2가 되는지 확인한다.
-    - `-1`버튼을 빠르게 두 번 클릭하고 -1이 한 번만 동작하는지 확인한다.
-    - `increaseSaga`는 `takeEvery`를 사용하여 등록했으므로 디스패치 되는 모든 `INCREASE_ASYNC` 액션에 대해 `INCREASE` 액션을 발생시킨다.
-    - `decreaseSaga`는 `takeLatest`를 사용하여 등록했으므로 여러 액션이 중첩되어 디스패치되었을 때는 기존의 것들은 무시하고 가장 마지막 액션만 처리한다.
+    - 잘 적용 되었는지 확인하기
+      - App 컴포넌트에 Counter 컴포넌트를 랜더링 한 후 아래와 같이 실행한다.
+      - `+1` 버튼을 빠르게 두 번 클릭하고 +2가 되는지 확인한다.
+      - `-1`버튼을 빠르게 두 번 클릭하고 -1이 한 번만 동작하는지 확인한다.
+      - `increaseSaga`는 `takeEvery`를 사용하여 등록했으므로 디스패치 되는 모든 `INCREASE_ASYNC` 액션에 대해 `INCREASE` 액션을 발생시킨다.
+      - `decreaseSaga`는 `takeLatest`를 사용하여 등록했으므로 여러 액션이 중첩되어 디스패치되었을 때는 기존의 것들은 무시하고 가장 마지막 액션만 처리한다.
 
 
 

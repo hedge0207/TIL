@@ -788,15 +788,14 @@
   // 그러나 파라미터로 받은 값을 다시 반환하는 코드를 넣는 것이 이 액션 생성 함수가 어떤 파라미터를 받는지 쉽게 파악할 수 있기에 적어준다.
   // export const toggle = createAction(TOGGLE);
   // export const remove = createAction(REMOVE);
-  
-(...)
+  (...)
   ```
-
+  
   - todos 모듈에 적용하기(`handleActions`로 리듀서 작성하기)
   
   ```react
   (...)
-  
+    
   const todos = handleActions(
     {
       [CHANGE_INPUT]: (state, action) => ({ ...state, input: action.payload }),
@@ -817,14 +816,13 @@
     },
     initialState
   );
-  
-export default todos;
+    
+  export default todos;
   ```
-  
-  - 객체 비구조화 할당 문법 적용
-    - 모든 추가 데이터가 값을 `action.payload`로 사용하기 때문에 나중에 리듀서 코드를 다시 볼 때 헷갈릴 수 있다.
-  - 객체 비구조화 할당 문법으로 `action` 값의 `payload` 이름을 새로 설정해 주면 `action.payload`가 정확히 어떤 값을 의미하는지 더 쉽게 파악 가능해진다.
-    - JavaScript_part14.디스트럭처링-키와 값을 함께 디스트럭처링 하는 것도 가능하다.
+    - 객체 비구조화 할당 문법 적용
+      - 모든 추가 데이터가 값을 `action.payload`로 사용하기 때문에 나중에 리듀서 코드를 다시 볼 때 헷갈릴 수 있다.
+        - 객체 비구조화 할당 문법으로 `action` 값의 `payload` 이름을 새로 설정해 주면 `action.payload`가 정확히 어떤 값을 의미하는지 더 쉽게 파악 가능해진다.
+      - JavaScript_part14.디스트럭처링-키와 값을 함께 디스트럭처링 하는 것도 가능하다.
   
   ```react
   const todos = handleActions(
@@ -1072,7 +1070,7 @@ export default todos;
         }
         return bindActionCreators(actions, dispatch);
       },
-      // deps가 true면(빈 배열이 아니면) 해당 배열의 원소가 바뀌면 액션을 디스패치 한다.
+      // deps가 true면(빈 배열이 아니면) 해당 배열의 원소가 바뀌면 액션을 디스패치하는 함수를 새로 생성한다.
       deps ? [dispatch, ...deps] : deps
     );
   }

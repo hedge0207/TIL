@@ -135,46 +135,48 @@
   };
   
   export default IterationSample;
-```
+  ```
   
   - 데이터 제거하기
-  - 불변성을 유지하면서 배열의 특정 항목을 지우기 위해 `filter()` 함수를 사용한다.
+    - 불변성을 유지하면서 배열의 특정 항목을 지우기 위해 `filter()` 함수를 사용한다.
   
   ```react
   import React, { useState } from "react";
   
   const IterationSample = () => {
-    const [keywords, setKeywords] = useState([
-      { id: 1, keyword: "겨울" },
-      { id: 2, keyword: "눈" },
-      { id: 3, keyword: "코코아" },
-      { id: 4, keyword: "눈사람" },
-    ]);
+      const [keywords, setKeywords] = useState([
+          { id: 1, keyword: "겨울" },
+          { id: 2, keyword: "눈" },
+          { id: 3, keyword: "코코아" },
+          { id: 4, keyword: "눈사람" },
+      ]);
   
-    const onRemove = (id) => {
-      const nextKeywords = keywords.filter((k) => k.id !== id);
-      setKeywords(nextKeywords);
-    };
+      const onRemove = (id) => {
+          const nextKeywords = keywords.filter((k) => k.id !== id);
+          setKeywords(nextKeywords);
+      };
   
-    const keywordList = keywords.map((k) => (
-      <li
-        key={k.id}
-        onDoubleClick={() => {
-          onRemove(k.id);
-        }}
-      >
-        {k.keyword}
-      </li>
-    ));
-    return (
-      <div>
-        <ul>{keywordList}</ul>
-      </div>
-    );
+      const keywordList = keywords.map((k) => (
+          <li
+              key={k.id}
+              onDoubleClick={() => {
+                  onRemove(k.id);
+              }}
+              >
+              {k.keyword}
+          </li>
+      ));
+      return (
+          <div>
+              <ul>{keywordList}</ul>
+          </div>
+      );
   };
   
   export default IterationSample;
   ```
+
+
 
 
 
@@ -232,27 +234,29 @@
     - `.sass`는 중괄호와 세미콜론을 사용하지 않는다.
     - 주로 CSS와 크게 다르지 않은 `.scss`가 많이 사용된다.
 
-    ```scss
-    // .sass
-    $font-stack:Helvetica, sans-serif
-    $primary-color:#333
-    
-    body
-        font: 100% $font-stack
-        color: $primary-color
-    
-        
-    // .scss
-    $font-stack:Helvetica, sans-serif;
-    $primary-color:#333;
-    
-    body{
-        font: 100% $font-stack;
-        color: $primary-color;
-    }
-    ```
+  ```scss
+  // .sass
+  $font-stack:Helvetica, sans-serif
+  $primary-color:#333
+  
+  body
+      font: 100% $font-stack
+      color: $primary-color
+  
+      
+  // .scss
+  $font-stack:Helvetica, sans-serif;
+  $primary-color:#333;
+  
+  body{
+      font: 100% $font-stack;
+      color: $primary-color;
+  }
+  ```
 
-    
+
+
+
 
 - Sass 사용하기
 

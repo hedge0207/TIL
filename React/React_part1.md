@@ -144,7 +144,7 @@
   $ npm start
   ```
 
-  
+
 
 - `node_modules`
   - 리액트 프로젝트를 생성하면 `node_modules` 폴더가 함께 생성된다.
@@ -226,7 +226,7 @@
   reportWebVitals();
   ```
 
-  
+
 
 
 
@@ -432,7 +432,7 @@
   export default App;
   ```
 
-  
+
 
 - 인라인 스타일링
 
