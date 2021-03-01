@@ -148,7 +148,7 @@
   - Fault-tolerant(내고장성)
     - 노드 실패시 replicate된 다른 노드에서 데이터를 가져오며, 네트워크 실패 시 다른 마스터 복제본으로 선택한다.
 
-
+scissors@42maru.ai
 
 - DB의 SQL과 엘라스틱 서치
   - DB의 SQL로도 데이터 검색이 가능하다.

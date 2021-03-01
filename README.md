@@ -91,6 +91,24 @@
 
 <br/>
 
+## [HTTP_part1](https://github.com/hedge0207/TIL/blob/master/CS/HTTP_part1.md)
+
+- HTTP를 왜 학습해야 하는가
+- 인터넷 네트워크
+  - IP(Internet Protocol)
+  - TCP,UDP
+- URI와 웹 브라우저 요청 흐름
+- HTTP 기본
+  - HTTP의 특징
+
+<br/>
+
+<br/>
+
+<br/>
+
+<br/>
+
 # Git
 
 ## [git_part1]()
@@ -345,6 +363,20 @@
   - 투표 구현
   - Gravartar
   - faker
+
+<br/>
+
+<br/>
+
+## [django_part4](https://github.com/hedge0207/TIL/blob/master/django/django_part4.md)
+
+- DB와 Django 연동하기
+  - DB 설치하기
+  - DB 연동하기
+- Django allauth
+  - 초기 세팅
+  - Secret Key와 Client Id 발급받기
+  - 기능 구현
 
 <br/>
 
