@@ -91,6 +91,15 @@
 
 <br/>
 
+## [Elasticsearch](https://github.com/hedge0207/TIL/blob/master/CS/Elasticsearch.md)
+
+- 검색 엔진 개요
+- 엘라스틱 서치
+
+<br/>
+
+<br/>
+
 ## [HTTP_part1](https://github.com/hedge0207/TIL/blob/master/CS/HTTP_part1.md)
 
 - HTTP를 왜 학습해야 하는가
@@ -111,7 +120,7 @@
 
 # Git
 
-## [git_part1]()
+## [git_part1](https://github.com/hedge0207/TIL/blob/master/git/git_part1.md)
 
 - 시작하기
   - 버전 관리 시스템
@@ -128,7 +137,7 @@
 
 <br/>
 
-## [git_part2]()
+## [git_part2](https://github.com/hedge0207/TIL/blob/master/git/git_part2.md)
 
 - Git 브랜치
   - 브랜치란
@@ -842,13 +851,18 @@
   - mariaDB 연동하기
   - Docker 명령어
 
+<br>
 
+<br>
 
-# [git](https://github.com/hedge0207/TIL/blob/master/git/git.md)
+<br>
 
-- 초기 설정
-- git push
-- git pull
-- git branch
-- git 저장소 옮기기
-- 올바른 commit message 작성하기
+<br>
+
+# Machine learning
+
+## [machine_learning_part1](https://github.com/hedge0207/TIL/blob/master/machine_learning/machine_learning_part1.md)
+
+- 인공지능과 머신러닝, 딥러닝
+- k-최근접 이웃
+  - 생선 분류 문제
