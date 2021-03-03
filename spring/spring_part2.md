@@ -74,34 +74,35 @@
           this.grade = grade;
       }
   }
-  
   ```
-
-  -  `Grade.java`를 enum으로 생성
-
-  ```java
+  
+-  `Grade.java`를 enum으로 생성
+  
+```java
   package start.first.member;
   
   public enum Grade {
       BASIC,
       VIP
-}
-  ```
-
-  - `MemberRepository.java` 를 인터페이스로 생성
+  }
+```
+  
+- `MemberRepository.java` 를 인터페이스로 생성
   
   ```java
   package start.first.member;
   
   public interface MemberRepository {
-  
+  	
+      // 추상 메서드
       void save(Member member);
   
+      // Member 클래스의 인스턴스를 반환하는 추상 메서드
       Member findById(Long memberId);
   }
   ```
   
-  - db없이 데이터를 메모리상에 저장하기 위한 `MemoryMemberRepository.java` 생성
+  - db없이 데이터를 메모리상에 저장하기 위한 `MemoryMemberRepository.java` 생성(`MemberRepository`의 구현체)
   
   ```java
   package start.first.member;
@@ -126,43 +127,39 @@
   }
   ```
   
-  
-  
   - `MemberService.java`를 interface로 생성
+  
+```java
+  package start.first.member;
+  
+  public interface MemberService {
+      void join(Member member);
+      Member findMember(Long memberId);
+  }
+  ```
+  
+- `MemberService.java`의 구현체인 `MemberServiceImpl.java`를 생성
+  
+```javascript
+  package start.first.member;
 
-    ```java
-    package start.first.member;
-    
-    public interface MemberService {
-        void join(Member member);
-        Member findMember(Long memberId);
-    }
-    ```
+  public class MemberServiceImpl implements MemberService{
+  
+      private final MemberRepository memberRepository = new MemoryMemberRepository();
+  
+      @Override
+      public void join(Member member) {
+          memberRepository.save(member);
+      }
+  
+      @Override
+      public Member findMember(Long memberId) {
+          return memberRepository.findById(memberId);
+      }
+  }
+  ```
 
-    
 
-  - `MemberService.java`의 구현체인 `MemberServiceImpl.java`를 생성
-
-    ```java
-    package start.first.member;
-    
-    public class MemberServiceImpl implements MemberService{
-    
-        private final MemberRepository memberRepository = new MemoryMemberRepository();
-    
-        @Override
-        public void join(Member member) {
-            memberRepository.save(member);
-        }
-    
-        @Override
-        public Member findMember(Long memberId) {
-            return memberRepository.findById(memberId);
-        }
-    }
-    ```
-
-    
 
 
 
@@ -224,7 +221,8 @@
   }
   ```
 
-  
+
+
 
 - 위 코드의 문제점
 
@@ -283,7 +281,7 @@
   }
   ```
 
-  - `FixDiscountPolicy.java` 생성
+  - `FixDiscountPolicy.java` 생성(`DiscountPolicy`의 구현체)
 
   ```java
   package start.first.discount;
@@ -443,7 +441,7 @@
   }
   ```
 
-  
+
 
 - 여기까지 완료 되었을 때 고정적으로 1000원을 깎아주는 것이 아닌 일정 비율을 할인해 주도록 코드를 변경해야 한다면 위 코드를 아래와 같이 수정해야 한다.
 
@@ -556,14 +554,13 @@
           return new Order(memberId,itemName,itemPrice,discountPrice);
       }
   }
-  
   ```
 
 
 
 - 문제점
   - OCP, DIP와 같은 객체 지향 설계 원칙을 준수하지 못했다.
-  - 클라이언트인 `OrderServiceImpl.java`는 추상(인터페이스)인 `DiscountPolicy`에 의존함과 동시에 구현인 `FixDiscountPolicy`, `RateDiscountPolicy`에도 의존한다. 따라서 DCP 위반이다.
+  - 클라이언트인 `OrderServiceImpl.java`는 추상(인터페이스)인 `DiscountPolicy`에 의존함과 동시에 구현인 `FixDiscountPolicy`, `RateDiscountPolicy`에도 의존한다. 따라서 DIP 위반이다.
   - 위에서 변경된 할인 정책을 적용하기 위해서는 추상인 `DiscountPolicy`를 확장하여 `RateDiscountPolicy`를 생성하는 것에서 그치는 것이 아니라 클라이언트에 해당하는 `OrderServiceImpl.java` 도 함께 수정해야 했다. 따라서 OCP위반이다.
 
 
@@ -645,13 +642,13 @@
   
       public MemberService memberService(){
           //MemoryMemberRepository를 MemberServiceImpl이 넣어주는 것이 아니라 여기서 넣어준다.
-          //생성자 주입(MemberServiceImpl에 MemoryMemberRepository 객체의 참조값을 주입, 연결)
+          //생성자를 통한 의존관계 주입(MemberServiceImpl에 MemoryMemberRepository 객체의 참조값을 주입, 연결)
           //구현 객체를 생성
           return new MemberServiceImpl(new MemoryMemberRepository());
       }
   
       public OrderService orderService(){
-          //생성자 주입(OrderServiceImpl MemoryMemberRepository와 FixDiscountPolicy의 객체의 참조값을 주입, 연결)
+          //생성자를 통한 의존관계 주입(OrderServiceImpl MemoryMemberRepository와 FixDiscountPolicy의 객체의 참조값을 주입, 연결)
           //구현 객체를 생성
           return new OrderServiceImpl(new MemoryMemberRepository(),new FixDiscountPolicy());
       }
@@ -664,12 +661,12 @@
   package start.first.member;
   
   public class MemberServiceImpl implements MemberService{
-  //기존에는 아래와 같이 MemberServiceImpl에서 MemberRepository도 의존하고 MemoryMemberRepository에도 의존했다.
-    //이는 배우가 기획과 캐스팅을 하는 것과 마찬가지인 것이다.
-    //private final MemberRepository memberRepository = new MemoryMemberRepository();
+    // 기존에는 아래와 같이 MemberServiceImpl에서 MemberRepository도 의존하고 MemoryMemberRepository에도 의존했다.
+    // 이는 배우가 기획과 캐스팅을 하는 것과 마찬가지인 것이다.
+    // private final MemberRepository memberRepository = new MemoryMemberRepository();
     private final MemberRepository memberRepository;
   
-    //생성자를 만든다.
+    // 생성자를 만든다.
     public MemberServiceImpl(MemberRepository memberRepository) {
         this.memberRepository = memberRepository;
     }
@@ -854,7 +851,7 @@
   - 정적인 클래스 의존관계 만으로는 실제 어떤 객체가 `OrderServiceImpl`에 주입될 지 알 수 없다.
   - 동적인 객체 인스턴스  의존 관계
     - 애플리케이션 실행 시점에 실제 생성된 객체 인스턴스의 참조가 연결된 의존 관계
-  - 애플리 케이션 실행 시점(런타임)에 외부(`AppConfig`)에서 실제 구현 객체를 생성하고 클라이언트에 전달해서 클라이언트와 서버의 실제 의존 관계가 연결되는 것을 **의존관계 주입**이라 한다.
+  - 애플리케이션 실행 시점(런타임)에 외부(`AppConfig`)에서 실제 구현 객체를 생성하고 클라이언트에 전달해서 클라이언트와 서버의 실제 의존 관계가 연결되는 것을 **의존관계 주입**이라 한다.
   - 외부(`AppConfig`)에서 객체 인스턴스를 생성하고, 그 참조값을 클라이언트에 전달해서 연결한다.
   - 의존관계 주입을 사용하면 클라이언트 코드를 변경하지 않고, 클라이언트가 호출하는 대상의 타입 인스턴스를 변경할 수 있다.
   - 의존관계 주입을 사용하면 정적인 클래스 의존관계를 변경하지 않고, 동적인 객체 인스턴스 의존관계를 쉽게 변경할 수 있다.
@@ -868,15 +865,11 @@
 
 
 
-
-
-
-
 # 스프링으로 개발하기
 
 ## 회원 관리 예제(Spring)
 
-- 순수한 자바 코드로 DI를 적용한 코드르 스프링으로 변경해서 작성한다.
+- 순수한 자바 코드로 DI를 적용한 코드를 스프링으로 변경해서 작성한다.
 
 
 
@@ -999,7 +992,7 @@
   public class OrderAppSpring {
   
       public static void main(String[] args) {
-  
+          
           ApplicationContext applicationContext = new AnnotationConfigApplicationContext(AppConfigSpring.class);
           MemberService memberService = applicationContext.getBean("memberService",MemberService.class);
           OrderService orderService = applicationContext.getBean("orderService",OrderService.class);
@@ -1054,7 +1047,7 @@
     - 중복될 경우 다른 빈이 무시되거나, 기존 빈을 덮어버리거나, 설정에 따라 에러가 발생한다.
   - 의존관계 설정
     - 인자로 받은 구성 정보를 참고해서 의존관계를 주입한다.
-    - `AppConfigSpirng.java` 코드에서 `memberService`는 `memberRepository`에 의존하고, `orderService`는 `memberRepository`와 `discountPolicy`에 의존하는데 이러한 의존관계를 설정한다.
+    - `AppConfigSpring.java` 코드에서 `memberService`는 `memberRepository`에 의존하고, `orderService`는 `memberRepository`와 `discountPolicy`에 의존하는데 이러한 의존관계를 설정한다.
 
   - 개념적으로는 스프링 빈을 생성하는 단계와 의존관계를 설정하는 단계로 나뉘어져 있다. 
   - 그런데 이렇게 자바 코드로 스프링 빈을 등록하면 생성자를 호출하면서 의존관계 주입도 한번에 처리된다.
@@ -1092,7 +1085,7 @@
           }
       }
       
-      //spirng 내부에서 등록하는 Bean은 제외하고 내가 등록했거나 외부 라이브러리에서 등록한 Bean만 검색
+      //spring 내부에서 등록하는 Bean은 제외하고 내가 등록했거나 외부 라이브러리에서 등록한 Bean만 검색
       @Test
       @DisplayName("애플리케이션 빈 출력하기")
       void findApplicationBean() {
@@ -1114,7 +1107,7 @@
   }
   ```
 
-  
+
 
 - 빈 타입 혹은 이름으로 조회
 
@@ -1248,7 +1241,7 @@
   }
   ```
 
-  
+
 
 - 상속관계 일 때 빈 조회
 
@@ -1339,7 +1332,7 @@
   }
   ```
 
-  
+
 
 
 
@@ -1438,7 +1431,7 @@
   }
   ```
 
-  
+
 
 
 
