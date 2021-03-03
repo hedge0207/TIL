@@ -188,8 +188,8 @@
   *주석
   */
   ```
-  
-  
+
+
 
 
 
@@ -235,7 +235,7 @@
   int b = 1;
   ```
 
-  
+
 
 - 상수: 데이터를 담을 수 있는 공간이라는 것은 변수와 유사하지만 변수와 달리 대입한 값을 변화시킬 수 없다.
 
@@ -296,7 +296,7 @@
     - 8진수, 16진수는 int 자료형으로 표현한다.
     - long은 -9223372036854775808 ~ 9223372036854775807를 표현 할 수 있다.
     - long 변수에 값을 대입할 때는 대입하는 숫자 값이 int 자료형의 최대값인 2147483647 보다 큰 경우 `L` 또는 `l(소문자 L)`을 붙여주어야 한다.  단, 소문자 l의 경우 1과 혼동될 수  있으므로 가급적 대문자로 적는다.
-  - 실수형(크기순)
+  - 실수형
     - double(8byte)과 float(4byte)으로 나뉜다. 
     - 디폴트는 double이므로 float 변수에 값을 대입할 때에는 접미사 `F`, 또는 `f`를 붙여 줘야 한다.
     - 파이썬과 마찬가지로 **과학적 지수 표현식**으로도 표현이 가능하다(ex.1.234e2).
@@ -348,12 +348,12 @@
     public class HelloWorld {
     
     	public static void main(String[] args) {
-            //String은 원시 자료형은 아니지만 리터럴 표현식을 사용할 수 있도록 자바에서 특별 대우해주기에 아래와 같이 리터럴 표현식으로 쓸 수 있			다. 이 경우 변수는 문자열 자체가 저장되어 있다.
+            //String은 원시 자료형은 아니지만 리터럴 표현식을 사용할 수 있도록 자바에서 특별 대우해주기에 아래와 같이 리터럴 표현식으로 쓸 수 있다. 이 경우 변수는 문자열 자체가 저장되어 있다.
     		String a = "Hi";
     		String b = "My name is";
     		String c = "Java";
             
-            //방법2. new 사용 방법, String은 기본적으로 클래스이므로 아래와 같이 객체를 생성하는 키워드인 new를 사용 가능하다. 이 경우 변수에는 		문자열 자체가 아닌 문자열 객체를 가리키는 주소가 저장되어 있다.
+            //방법2. new 사용 방법, String은 기본적으로 클래스이므로 아래와 같이 객체를 생성하는 키워드인 new를 사용 가능하다. 이 경우 변수에는 문자열 자체가 아닌 문자열 객체를 가리키는 주소가 저장되어 있다.
     		String a2 = new String("Hi");
     		String b2 = new String("My name is");
     		String c2 = new String("Java");
@@ -377,13 +377,15 @@
     public class HelloWorld {
     
     	public static void main(String[] args) {
-            //리터럴 표기법
+            // 리터럴 표기법
     		String a = "My name is";
     		String b = "My name is";
     		String c = "My name Is";
             
-            //생성자 방식
-            //part2에 적혀 있듯 new가 생성자가 아니라 클래스명과 메소드명이 동일하고 리턴 자료형이 없는 메소드를 생성자라고 말하는데 생성자는 객체가 생성될 때 호출되고 객체가 생성될 때는 new라는 키워드로 객체가 만들어질 때이다.
+            // 생성자 방식
+            // part2에 적혀 있듯 new 키워드 자체가 생성자가 아니다. 
+            // 클래스명과 메소드명이 동일하고 리턴 자료형이 없는 메소드를 생성자라고 한다.
+            // 생성자는 객체가 생성될 때 호출되고 객체가 생성될 때는 new라는 키워드로 객체가 만들어질 때이다.
     		String d = new String("My name is");
             String e = new String("My name is");
     		System.out.println(a.equals(b));   //true
@@ -482,8 +484,8 @@
   
   - StringBuffer: 문자열을 추가하거나 변경할 때 주로 사용하는 자료형
   
-    - 아래 과정에서 String과 StringBuffer는 완전히 동일해 보이지만 그렇지 않다. 두 변수의 값은 동일하지만 StringBuffer 타입은 객체를 단 한번반 생성시키는 반면에 String은 +연산을 할 때마다 새로운 객체가 생성된다(따라서 아래 예시에서는 총 4개의 객체가 생성된다). 
-    - 이는 String 객체가 값을 변경할 수 없기(immutable)때문으로 위에서 살펴본 toUpperCase등도 마찬가지로 기존의 String 객체를 모두 대문자로 변화시키는 것이 아니라  모두 대문자로 변환 된 새로운 객체를 생성하는 것이다. StringBuffer 는 이와 반대로 값을 변경할 수 있다(mutable)
+    - 아래 과정에서 String과 StringBuffer는 완전히 동일해 보이지만 그렇지 않다. 두 변수의 값은 동일하지만 StringBuffer 타입은 객체를 단 한 번만 생성시키는 반면에 String은 +연산을 할 때마다 새로운 객체가 생성된다(따라서 아래 예시에서는 총 4개의 객체가 생성된다). 
+    - 이는 String 객체가 값을 변경할 수 없기(immutable)때문으로 위에서 살펴본 `toUpperCase`등도 마찬가지로 기존의 String 객체를 모두 대문자로 변화시키는 것이 아니라  모두 대문자로 변환 된 새로운 객체를 생성하는 것이다. StringBuffer 는 이와 반대로 값을 변경할 수 있다(mutable)
     - StringBuffer 자료형은 String 자료형보다 무거운 편에 속한다. `new StringBuffer()` 로 객체를 생성하는 것은 일반 String을 사용하는 것보다 메모리 사용량도 많고 속도도 느리다. 따라서 문자열 추가나 변경등의 작업이 많을 경우에는 StringBuffer를, 문자열 변경 작업이 거의 없는 경우에는 그냥 String을 사용하는 것이 유리하다.
   
     ```java
@@ -535,7 +537,7 @@
     }
     ```
   
-    
+  
 
 
 
@@ -614,7 +616,7 @@
   System.out.println(Arrays.toString(arr[2]));  //[0,0,0]
   ```
 
-  
+
 
 
 
@@ -647,8 +649,9 @@
   		lotto.add(0,9);
   		System.out.println(lotto);  //[9, 3, 6, 7]
           
-          //2.remove: 객체를 제거, 제거할 객체를 입력하는 방법과 인덱스를 입력하는 방법이 있다.
-          //1)객체를 지정하여 제거, 이 경우 성공적으로 제거될 경우 true, 아닐 경우 false를 리턴한다. 없애고자 하는 객체가 정수 타입일 경우 인덱스로 			접근하여 제거하는 방식과 겹치므로 아래와 같이 (Integer)를 붙여줘야 한다.
+          // 2.remove: 객체를 제거, 제거할 객체를 입력하는 방법과 인덱스를 입력하는 방법이 있다.
+          // 1)객체를 지정하여 제거, 이 경우 성공적으로 제거될 경우 true, 아닐 경우 false를 리턴한다. 
+          // 없애고자 하는 객체가 정수 타입일 경우 인덱스로 접근하여 제거하는 방식과 겹치므로 아래와 같이 (Integer)를 붙여줘야 한다.
           System.out.println(lotto.remove((Integer)9));  //true
   		System.out.println(lotto); 					   //[3,6,7]
           //2)인덱스로 접근하여 제거, 이 경우 성공적으로 제거될 경우 제거한 값을, 아닐 경우 error가 출력된다.
@@ -936,10 +939,6 @@
 
 
 
-
-
-
-
 # 제어문
 
 ## 조건문
@@ -967,7 +966,7 @@
 - switch문
 
   - case마다 break를 입력하는 이유는 break를 입력하지 않을 경우 한 케이스에 걸려서 해당 케이스가 실행되더라도 다음 케이스로 넘어가기 때문이다.
-  - switch/case문은 if else 구조로 변경이 가능하지만 if else 구조로 작성된 모든 코드를 switch 문으로 변경할 수는 없다.
+  - switch/case문은 if else 구조로 변경이 가능하지만 if else 구조로 작성된 모든 코드를 switch 문으로 변경할 수 있는 것은 아니다.
 
   ```java
   switch(입력변수) {
@@ -991,7 +990,7 @@
   	public static void main(String[] args) {
   		int m = 9;
           String month = "";
-          switch (month) {
+          switch (m) {
               case 1:  month = "January";
                        break;
               case 2:  month = "February";
@@ -1084,7 +1083,7 @@
   		int a = 2;
   		do {
   			a++;
-  		}while(a<2);
+  		}while(a<2){};
   		System.out.println(a);  //3, 조건에 맞지 않음에도 do 속의 a++가 한 번 실행됨
   	}
   }
@@ -1149,10 +1148,11 @@
     
       public static void main(String[] args) {
           int[][] arr = new int[3][];
-          arr[0]=new int[1];
-          arr[1]=new int[2];
-          arr[2]=new int[3];
-          for(int[] a:arr) {   //a의 type은 (위에서 인트가 담기는 배열로 선언했으므로)int가 담긴 배열이 될 것이므로 int[]가 된다.
+          arr[0] = new int[1];
+          arr[1] = new int[2];
+          arr[2] = new int[3];
+          //a의 type은 (위에서 int가 담기는 배열로 선언했으므로)int가 담긴 배열이 될 것이므로 int[]가 된다.
+          for(int[] a:arr) {   
           	System.out.println(Arrays.toString(a));
           }
       }
@@ -1162,6 +1162,6 @@
   [0]
   [0, 0]
   [0, 0, 0]
-  ```
-
+```
+  
   

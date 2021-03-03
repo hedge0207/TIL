@@ -50,7 +50,7 @@
 
   - 클래스에 선언된 변수를 객체 변수라고 부른다.
   - 혹은 인스턴스 변수, 멤버 변수, 속성이라고도 부른다.
-  - 객체 변수는 도트 연산자 `.`를 통해 접근 가능하다.
+  - 객체 변수는 도트 연산자 `.`을 통해 접근 가능하다.
   - 객체 변수는 공유되지 않는다. 즉 개별 객체 마다 객체 변수의 값이 독립적으로 유지된다. 예를 들어 cat, dog이라는 두 인스턴스가 있을 경우 name이라는 객체 변수를 각기 Summer, Spring이라는 다른 이름으로 가지고 있다.
 
   ```java
@@ -68,8 +68,8 @@
   dog.name="Spring";
   System.out.println(dog.name); //Spring
   ```
-  
-  
+
+
 
 - 접근제한자
 
@@ -160,17 +160,19 @@
   
   public abstract class Bird {
       
-      //sing이라는 메소드는 새 마다 울음 소리가 다르므로 추상 메소드로 선언해야 한다. 따라서 이 클래스는 추상 클래스가 되어야 한다.
-      //구체적으로 어떻게 울지 정할 수 없으므로 선언만 한다. ()가 붙으면 선언이 된 것으로 간주한다.
+      // sing이라는 메소드는 새 마다 울음 소리가 다르므로 추상 메소드로 선언해야 한다. 
+      // 클래스 내부의 메소드 중 하나라도 추상 메소드가 있으면 해당 클래스는 추상 클래스가 되어야 한다.
+      // 따라서 이 클래스는 추상 클래스여야 한다.
+      // 구체적으로 어떻게 울지 정할 수 없으므로 선언만 한다. ()가 붙으면 선언이 된 것으로 간주한다.
   	public abstract void sing();
       
       //추상 클래스라고 하더라도 추상 메소드가 아닌 메소드도 사용할 수 있다.
   	public void fly() {
   		System.out.println("날다");
   	}
-  }
+}
   ```
-
+  
   ```java
   //Sparrow.java
   package first;
@@ -400,82 +402,81 @@
   }
   ```
   
-- 클래스 내에 구현된 함수를 메소드라고 한다. 
-  - Java는 클래스를 떠나 존재하는 것이 있을 수 없기에 자바에는 함수가 따로 존재하지 않고 메소드만 존재한다고 볼 수 있다.
-  - 사용하는 이유는 다른 언어와 마찬가지로 반복 작업을 보다 편하게 하기 위해서이다.
+  - 클래스 내에 구현된 함수를 메소드라고 한다. 
+    - Java는 클래스를 떠나 존재하는 것이 있을 수 없기에 자바에는 함수가 따로 존재하지 않고 메소드만 존재한다고 볼 수 있다.
+    - 사용하는 이유는 다른 언어와 마찬가지로 반복 작업을 보다 편하게 하기 위해서이다.
   - 객체 변수와 마찬가지로 도트 연산자를 통해 접근이 가능하다.
+  - 입력변수: 매개변수 혹은 인자라고 불린다.
+    - 매개변수(Parameter, 인자): 전달된 인자를 받아들이는 변수
+    - 인수(Argument): 어떤 함수를 호출시에 전달되는 값
   
+
+
+
+- `this`: 메소드 내부에 사용된 `this`는 클래스에 의해서 생성된 객체를 지칭한다.
+
+  - 아래 예시의 경우 메소드가 아닌 생성자이지만 `this`를 설명하는데는 지장이 없다.
+
+  ```java
+  //아래와 같은 코드의 경우 별 문제가 없지만
+  package pract;
   
-  
-  - `this`: 메소드 내부에 사용된 `this`는 클래스에 의해서 생성된 객체를 지칭한다.
-  
-    - 아래 예시의 경우 메소드가 아닌 생성자이지만 `this`를 설명하는데는 지장이 없다.
-  
-    ```java
-    //아래와 같은 코드의 경우 별 문제가 없지만
-    package pract;
+  public class method {
+  	String name1= "이름";
+  	
+  	public method(String name2) {
+  		name1=name2;
+  	}
+  	
+  	public static void main(String[] args) {
+  		method m1 = new method("이름2");
+  		System.out.println(m1.name1); //이름2
+  	}
+  }
     
-    public class method {
-    	String name1= "이름";
-    	
-    	public method(String name2) {
-    		name1=name2;
-    	}
-    	
-    	public static void main(String[] args) {
-    		method m1 = new method("이름2");
-    		System.out.println(m1.name1); //이름2
-    	}
-    }
-      
-    //아래 코드의 경우 객체변수와 매개변수의 변수명이 같으므로 문제가 생긴다.
-    package pract;
+  //아래 코드의 경우 객체변수와 매개변수의 변수명이 같으므로 문제가 생긴다.
+  package pract;
+  
+  public class method {
+  	String name= "이름";
+  	
+  	public method(String name) {
+  		name=name;  //이 줄에 사용 된 2개의 name은 모두 매개변수 name을 가리키게 된다.
+          //즉 예시에 따르면 아래에서 이 메소드의 인자로 "이름2"를 받으므로
+          //"이름2"="이름2"와 마찬가지인 코드다.
+  		System.out.println(name); //이름2
+  	}
+  	
+  	public static void main(String[] args) {
+  		method m1 = new method("이름2");
+          //따라서 객체변수 name은 바뀐 적이 없으므로 "이름"이 출력된다.
+  		System.out.println(m1.name); //이름
+  	}
+  }
+  
+  //this를 사용하면 위와 같은 문제를 해결할 수 있다.
+  package pract;
     
-    public class method {
-    	String name= "이름";
-    	
+  public class method {
+    	String name="이름1";
     	public method(String name) {
-    		name=name;  //이 줄에 사용 된 2개의 name은 모두 매개변수 name을 가리키게 된다.
-            //즉 예시에 따르면 아래에서 이 메소드의 인자로 "이름2"를 받으므로
-            //"이름2"="이름2"와 마찬가지인 코드다.
+  		//this는 객체 자신을 가리키므로 아래 코드는 다음과 같다.
+          //e1.name=name;
+    		this.name=name;
     		System.out.println(name); //이름2
     	}
-    	
     	public static void main(String[] args) {
     		method m1 = new method("이름2");
-            //따라서 객체변수 name은 바뀐 적이 없으므로 "이름"이 출력된다.
-    		System.out.println(m1.name); //이름
+        System.out.println(m1.name);  //이름2
     	}
-    }
-    
-    //this를 사용하면 위와 같은 문제를 해결할 수 있다.
-    package pract;
-      
-    public class method {
-      	String name="이름1";
-      	public method(String name) {
-    		//this는 객체 자신을 가리키므로 아래 코드는 다음과 같다.
-            //e1.name=name;
-      		this.name=name;
-      		System.out.println(name); //이름2
-      	}
-      	public static void main(String[] args) {
-      		method m1 = new method("이름2");
-          System.out.println(m1.name);  //이름2
-      	}
-    }
-    ```
-  
-    
-  
-    
-  
-  - 입력변수: 매개변수 혹은 인자라고 불린다.
-    - 매개변수(Parameter): 전달된 인자를 받아들이는 변수
-    - 인자(Argument): 어떤 함수를 호출시에 전달되는 값
-    
-  - 클래스에 정의된 메소드를 사용하기 위해서는 객체를 만들어야 한다.
-  
+  }
+  ```
+
+
+
+
+- 클래스에 정의된 메소드를 사용하기 위해서는 객체를 만들어야 한다.
+
   ```java
   package pract;
   
@@ -498,9 +499,9 @@
   	}
   }
   ```
-  
+
   - 리턴값이 있을 경우의 메소드
-  
+
   ```java
   public class Example {
       //sum이라는 메소드는 두 개의 int형 데이터를 입력값으로 받아 그 둘의 합을 int형으로 리턴한다.
@@ -634,14 +635,24 @@
   }
   ```
 
-  - `static`
-    - 기본적으로 클래스는 인스턴스가 생성되지 않은 상태(인스턴스화 되지 않은 상태)에서 사용할 수 없다. 붕어빵 틀이 있다고 붕어빵을 먹을 수 없는 것과 마찬가지다.
-    - main 메소드에는 `static` 키워드가 작성되어 있는데 클래스를 정의하고 인스턴스를 생성하지 않았음에도 main 메소드가 실행되었던 이유가 바로 이 때문이다. 예를 들어 아래에서 `method1` 이라는 메소드는 인스턴스를 생성해야 실행시킬 수 있지만 main메소드는 인스턴스가 없어도 실행이 된다.
-    - `static` 키워드는 인스턴스가 생성되지 않았어도 static한 메소드나 필드를 사용할 수 있게 해준다. 
-    - static한 메소드 내에서 static하지 않은 필드(변수)는 사용할 수 없다. static한 메소드가 실행되는 시점에 해당 클래스가 인스턴스화되지 않았을 수 있기 때문이다.
-    - static한 메소드에서 static하지 않은 변수를 사용하기 위해서는 객체를 생성 해야 한다. 이때 모든 객체가 static하지 않은 변수 를 공유하는 것이 아니라 각 객체별로 static하지 않은 변수를 저장하는 공간이 따로 생기게 된다. 이는 인스턴스가 생성될 때 각 인스턴스의 저장 공간에 생성되는 변수이므로 `인스턴스 변수`라고 부른다.
-    - 반면에 static한 변수는 모든 객체에 별도의 저장공간에 저장되지 않고, 따라서 모든 객체가 공유한다. 이렇게 모든 객체가 값을 공유하는 static한 변수를 `클래스 변수`라고 부른다.
 
+
+
+- `static`
+  
+  - 기본적으로 클래스는 인스턴스가 생성되지 않은 상태(인스턴스화 되지 않은 상태)에서 사용할 수 없다. 붕어빵 틀만 있다고 붕어빵을 먹을 수 없는 것과 마찬가지다.
+  - `static` 키워드는 인스턴스가 생성되지 않았어도 static한 메소드나 필드를 사용할 수 있게 해준다. 
+    - main 메소드에는 `static` 키워드가 작성되어 있는데 클래스를 정의하고 인스턴스를 생성하지 않았음에도 main 메소드가 실행되었던 이유가 바로 이 때문이다. 예를 들어 아래에서 `method1` 이라는 메소드는 인스턴스를 생성해야 실행시킬 수 있지만 main메소드는 인스턴스가 없어도 실행이 된다.
+  - static한 메소드 내에서 static하지 않은 필드(변수)는 사용할 수 없다. 
+    - static한 메소드가 실행되는 시점에 해당 클래스가 인스턴스화되지 않았을 수 있기 때문이다.
+    - static한 메소드에서 static하지 않은 변수를 사용하기 위해서는 객체를 생성 해야 한다. 
+    - 이때 모든 객체가 static하지 않은 변수 를 공유하는 것이 아니라 각 객체별로 static하지 않은 변수를 저장하는 공간이 따로 생기게 된다. 
+    - 이는 인스턴스가 생성될 때 각 인스턴스의 저장 공간에 생성되는 변수이므로 `인스턴스 변수`라고 부른다.
+  - **garbage collection**의 관리 영역 밖에 존재하기에 Static영역에 있는 멤버들은 프로그램의 종료시까지 메모리가 할당된 채로 존재하게 된다. 
+    - garbage collection: 프로그램이 동적으로 할당했던 메모리 영역 중에서 필요없게 된 영역을 해제하는 기능.
+    - 그렇기에 Static을 너무 남발하게 되면 만들고자 하는 시스템 성능에 악영향을 줄 수 있다.
+  - 반면에 static한 변수는 모든 객체에 별도의 저장공간에 저장되지 않고, 따라서 모든 객체가 공유한다. 이렇게 모든 객체가 값을 공유하는 static한 변수를 `클래스 변수`라고 부른다.
+  
   ```java
   package first;
   
@@ -660,9 +671,9 @@
   	
       //메인 메소드
       public static void main(String[] args) {
-          System.out.println(globalVariable);   //에러가 발생
+          System.out.println(globalVariable);   //에러가 발생(static한 메소드 내에서 static하지 않은 필드(변수)는 사용할 수 없다)
           System.out.println(localVariable);	  //에러가 발생
-          System.out.println(staticVariable);   //에러 발생X
+          System.out.println(staticVariable);   //에러 발생X(인스턴스를 생성하지 않아도 접근 가능)
           
           //static한 메소드에서 static하지 않은 변수를 사용하는 방법
           Example variable1 = new Example();
@@ -692,12 +703,11 @@
           
           //또한 클래스 변수는 클래스명로 접근해서 사용할 수 있다.
           System.out.println(Example.staticVariable); //101112
-              
       }
   }
   
   //Example이라는 같은 클래스 안에 있음에도 main 메소드에서 globalValue를 사용할 수 없는 이유는 main 메소드에 static 키워드가 정의되어 있기 때문이다.
-  //반면에 method1에서 에러가 발생하지 않는 이유는 method1은 static 메소드가 아니기 때문이다.
+  //반면에 method1에서 globalValue를 사용할 수 있는 이유는 method1은 static 메소드가 아니기 때문이다.
   ```
 
 
@@ -788,13 +798,18 @@
   Object dog = new Dog();
   ```
 
-  
+
 
 - 메소드 오버라이딩
 
   - 부모클래스의 메소드를 자식클래스가 동일한 형태로 또다시 구현하는 행위
   - 상속 받은 클래스에 상속한 클래스와 동일한 형태(입출력이 동일)의 메소드를 구현하면 상속 받은 클래스의 메소드가 상속한 클래스의 메소드보다 더 높은 우선 순위를 갖게 된다.
-
+- `@Overrride` 어노테이션을 붙이는 것과 안 붙이는 것의 차이
+    - 어노테이션을 붙인 메서드가 부모 메서드를 오버라이드 하지 않으면 컴파일시 오류가 발생한다.
+    - 이런 기능이 생긴 이유는 오버라이딩하던 부모 클래스가 변경되었을 경우 자식 클래스는 이를 알 수 있는 방법이 없다.
+    - 따라서 오버라이딩이 아닌 새로운 메서드의 선언이 되어버린다.
+    - 이런 현상을 방지하기 위해 어노테이션을 추가한 것이다.
+    
   ```java
   //housedog.java
   //위에서 정의한 Dog 클래스를 상속
@@ -881,8 +896,8 @@
       }
   }
   ```
-  
-  
+
+
 
 - super
 
@@ -910,9 +925,9 @@
   		System.out.println("Taxi의 기본생성자");
   	}
   	public static void main(String[] args) {
-          //Taxi의 객체가 생성되면 아래 out과 같은 메세지가 출력된다.
-          //즉 Taxi의 기본생성자 뿐 아니라 Car의 기본생성자도 함께 실행된다.
-          //또한 Car의 기본생성자가 먼저 실행된다.
+          // Taxi의 객체가 생성되면 아래 out과 같은 메세지가 출력된다.
+          // 즉 Taxi의 기본생성자 뿐 아니라 Car의 기본생성자도 함께 실행된다.
+          // 또한 Car의 기본생성자가 먼저 실행된다.
   		Taxi taxi1 = new Taxi();
   	}
   }
@@ -968,7 +983,6 @@
   
   //따라서 아래와 같이 수정해줘야 한다.
   //Taxi.java
-  //아래 코드는 실행되지 않는다.
   package first;
   
   public class Taxi extends Car{
@@ -981,10 +995,6 @@
   	}
   }
   ```
-
-  
-
-
 
 
 
@@ -1006,7 +1016,8 @@
     - 생성자는 객체가 생성될 때 호출된다.
     - 객체가 생성될 때는 `new`라는 키워드로 객체가 만들어질 때이다.
     - 즉, 생성자는 `new`라는 키워드가 사용될 때 호출된다.
-- 생성자를 만드는 이유는 객체를 생성할 때 필드를 초기화 하기 위함이다. 예를 들어 만일 동물 객체를 생성할 때 이름이라는 필드를 사용자가 지정한 이름으로 초기화 하여 생성하고자 할 때 사용한다. 
+  - 생성자를 만드는 이유는 객체를 생성할 때 필드를 초기화 하기 위함이다. 
+    - 예를 들어 만일 동물 객체를 생성할 때 이름이라는 필드를 사용자가 지정한 이름으로 초기화 하여 생성하고자 할 때 사용한다. 
   
   ```java
   //Animal, Dog, 클래스는 위에서 작성한 것과 동일, HouseDog클래스는 아래와 같이 main 메소드 수정
@@ -1134,7 +1145,7 @@
   ```
 
   - `this` 와 생성자 오버로딩
-    - `this` 바로 뒤에 `()`를 붙이면 자신의 생성자를 호출하는 것이 된다.
+    - `this` 바로 뒤에 `()`를 붙이면 자신의 생성자를 호출한다.
   
   ```java
   package first;
@@ -1183,8 +1194,8 @@
   	}
   }  
   ```
-  
-  
+
+
 
 
 
@@ -1279,7 +1290,7 @@
     
     //입력값의 자료형 타입이 다를 경우 메소드 명을 동일하게 사용할 수 있다(메소드 오버로딩)
     //class는 하나의 자료형이 될 수 있다.
-    //아래 예시에서 첫 번재 feed 메소드는 Dog이라는 자료형(클래스인 자료형)을 입력값으로 받고, 두 번째 feed 메소드는 Cat이라는 자료형(클래스인 자료	형)을 입력값으로 받으므로 서로 다른 타입의 자료형을 받으므로 메소드 오버로딩이 가능하다.
+    //아래 예시에서 첫 번재 feed 메소드는 Dog이라는 자료형(클래스인 자료형)을 입력값으로 받고, 두 번째 feed 메소드는 Cat이라는 자료형(클래스인 자료형)을 입력값으로 받으므로 서로 다른 타입의 자료형을 받으므로 메소드 오버로딩이 가능하다.
     public void feed(Dog dog){
         System.out.println("사과를 먹였습니다.");
     }
@@ -1327,7 +1338,7 @@
   //Dog, Cat 클래스도 아래와 같이 변경
   //Dog.java
   public class Dog extends Animal implements ZooAnimal{
-      //인터페이스에서 다 정의하지 않은 메소드의 내용을 정의(추상 메소드와 유사하게 implements 해놓고 작성하지 않으면 에러가 발생한다.)
+      //인터페이스에서 정의하지 않은 메소드의 내용을 정의(추상 메소드와 유사하게 implements 해놓고 작성하지 않으면 에러가 발생한다.)
       public String getFood(){
           return "사과";
       }
@@ -1346,6 +1357,8 @@
   
   public class Zookeeper{
   	public void feed(ZooAnimal zooanimal) {
+          // feed() 메소드는 ZooAnimal 자료형 타입을 매개변수로 받는다.
+          // 그러나 Dog, Cat 클래스의 인스턴스를 인자로 넘겼음에도 에러가 발생하지 않는다.
   	    System.out.println(zooanimal.getFood()+"를 먹였습니다.");
   	}
     public static void main(String[] args) {
@@ -1355,13 +1368,14 @@
   	  zk1.feed(d1);  //사과를 먹였습니다.
   	  zk1.feed(c1);  //바나나를 먹였습니다.
     }
-  }
+}
   ```
-
-  - 이제 변경된 class에서 선언된 객체들(d1,c1)은 각기 Dog, Cat라는 class의 객체이게도 하지만 ZooAnimal라는 interface의 객체이기도 하다. 따라서 위 처럼 ZooAnimal을 자료형 타입으로 사용가능하다.
+  
+  - 이제 변경된 class에서 선언된 객체들(d1,c1)은 각기 Dog, Cat라는 class의 객체이게도 하지만 ZooAnimal라는 interface의 객체이기도 하다. 
+  - 따라서 위 처럼 ZooAnimal을 자료형 타입으로 사용가능하다.
     - 이와 같이 객체가 한 개 이상의 자료형 타입을 갖게 되는 특성을 다형성(폴리모피즘)이라 한다.
   - 만일 새로운 동물을 추가하고 싶을 경우 새로운 동물 클래스를 작성할 때 아래와 같이 하기만 하면 된다.
-
+  
   ```java
   //Snake.java
   package first;
@@ -1378,10 +1392,10 @@
   public class Parrot extends Animal {
   	public String getFood(){
           return "키위";
-      }
+    }
   }
   ```
-
+  
   - 위의 예시를 통해 알 수 있는 인터페이스의 핵심은 필요한 메소드의 갯수가 줄었다는 점이 **아니라** `ZooKeeper` class가 동물들의 종류에 의존적인 클래스에서 동물들의 종류와 무관한 **독립적인 클래스**가 되었다는 점이다. 바로 이 점이 인터페이스를 사용하는 이유이다.
 
 
@@ -1555,13 +1569,13 @@
     - 예를 들어 위에서 Bouncer 클래스의 barkAnimal 메소드의 입력 자료형이 Barkable이더라도 BarkablePredator를 구현한 Dog 클래스의 객체를 인자로 전달 할 수 있다. 
     - 자식 클래스의 객체 자료형을 부모 클래스의 자료형으로 사용가능하다는 점과 동일하다.
 
-  
+
 
 - default 메소드와 static 메소드
 
   - JAVA 8부터 적용되는 개념
   - 본래 인터페이스 파일에 작성하는 메소드는 추상 클래스에 작성하는 메소드와 마찬가지로 간략하게 적고 실제 메소드의 내용은 해당 인터페이스를 사용하는 클래스에 작성했다. 
-  - 그러나, 인터페이스에서 `default`, `static` 키워드를 사용하면 메소드의 내용까지 인터페이스에 작성이가능하다. 
+  - 그러나, 인터페이스에서 `default` 또는`static` 키워드를 사용하면 메소드의 내용까지 인터페이스에 작성이가능하다. 
   - 이 경우 굳이 클래스에 해당 메소드를 다시 구현할 필요가 없다. 
 
   ```java
@@ -1578,7 +1592,7 @@
   		return a+b;
   	}
       
-      //static 키워드를 사용
+      //static 키워드를 사용하여 인터페이스 내부에 메소드의 내용까지 구현
       public static int exec2(int a, int b) {
   		return a+b;
   	}
