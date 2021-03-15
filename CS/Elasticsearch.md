@@ -87,7 +87,7 @@
 
 
 
-# 엘라스틱 서치
+# 엘라스틱 서치 개요
 
 - 엘라스틱 서치란
   - 오픈 소스 검색 엔진
@@ -148,7 +148,7 @@
   - Fault-tolerant(내고장성)
     - 노드 실패시 replicate된 다른 노드에서 데이터를 가져오며, 네트워크 실패 시 다른 마스터 복제본으로 선택한다.
 
-scissors@42maru.ai
+
 
 - DB의 SQL과 엘라스틱 서치
   - DB의 SQL로도 데이터 검색이 가능하다.
@@ -180,6 +180,34 @@ scissors@42maru.ai
 
 
 
+- 엘라스틱서치 기본 개념
+  - 클러스터
+    - 엘라스틱서치에서 가장 큰 시스템 단위
+    - 최소 하나 이상의 노드로 이루어진 노드들의 집합
+    - 서로 다른 클러스터는 데이터의 접근, 교환을 할 수 없는 독립적인 시스템으로 유지된다.
+    - 여러 대의 서버가 하나의 클러스터를 구성할 수 있고, 한 서버에 여러 개의 클러스터가 존재할 수도 있다.
+  - 노드
+    - 엘라스틱서치를 구성하는 하나의 단위 프로세스
+    - 역할에 따라 Master-eilgible, Data, Ingest, Tribe 노드로 구분할 수 있다.
+    - Master-eilgible node: 클러스터를 제어하는 마스터 노드로 선택할 수 있는 노드
+    - Master node: 인덱스 생성과 삭제, 클러스터 노드들의 추적과 관리, 데이터 입력 시 어느 샤드에 할당할 것인지를 결정하는 등의 역할을 수행한다.
+    - Data node: 데이터와 관련된 CRUD 작업과 관련 있는 노드로, CPU, 메모리 등 자원을 많이 소모하므로 모니터링이 필요하며, master 노드와 분리되는 것이 좋다.
+    - Ingest node: 데이터를 변환하는 등 사전 처리 파이프라인을 실행하는 역할을 한다.
+    - Coordination only node: Master-eilgible node, Data node의 역할을 대신하는 노드로 대규모 클러스터에서 큰 이점이 있다.
+  - 인덱스
+    - RDBMS의 database에 대응하는 개념.
+    - 엘라스틱서치에만 존재하는 개념은 아니며, 분산 데이터베이스 시스템에도 존재하는 개념이다.
+  - 샤딩(sharding)
+    - 데이터를 분산해서 저장하는 방법
+    - 엘라스틱서치에서 스케일 아웃을 위해 index를 여러 shard로 쪼갠 것.
+    - 기본적으로 1개가 존재하며, 검색 성능 향상을 위해 클러스터의 샤드 개수를 조장하는 튜닝을 하기도 한다.
+  - 복제본(replica)
+    - 또 다른 형태의 shard.
+    - 노드를 손실했을 경우 데이터의 신뢰성을 위해 샤드들을 복제하는 것.
+    - 따라서 shard와 replica는 서로 다른 노드에 저장해야 한다.
+
+
+
 - DB와 엘라스틱 서치의 용어 비교
 
   | DB           | 엘라스틱서치 |
@@ -192,7 +220,456 @@ scissors@42maru.ai
   | 스키마       | 매핑         |
   | SQL          | Query DSL    |
 
+
+
+
+# 데이터 처리
+
+## CRUD
+
+- 도큐먼트에 접근
+  - 엘라스틱서치는 단일 도큐먼트별로 고유한 URL을 갖는다.
+  - `http://<호스트>:<포트>/<인덱스>/_doc/<도큐먼트id>`
+
+
+
+- 삽입(POST)
+
+  - PUT 메서드로도 추가가 가능하다.
+    - 둘의 차이는 POST의 경우 도큐먼트id를 입력하지 않아도 자동으로 생성하지만 PUT은 자동으로 생성하지 않는다는 것이다.
+  - office라는 인덱스에 도큐먼트id가 1인 데이터를 입력하는 예시
+
+  ```json
+  POST office/_doc/1
+  {
+      "nickname":"Theo",
+      "message":"안녕하세요!"
+  }
+  ```
+
+  - 응답
+
+  ```json
+  {
+      "_index": "office",
+      "_type": "_doc",
+      "_id": "1",
+      "_version": 1,
+      "result": "created", // 새로 생성한 것이므로 created로 뜨지만, 수정할 경우 updated라고 뜬다.
+      "_shards": {
+          "total": 2,
+          "successful": 1,
+          "failed": 0
+      },
+      "_seq_no": 0,
+      "_primary_term": 1
+  }
+  ```
+
+  - 실수로 기존 도큐먼트가 덮어씌워지는 것을 방지하기 위해 입력 명령어에 `_doc` 대신 `_create`를 사용해서 새로운 도큐먼트의 입력만 허용하는 것이 가능하다.
+    - 이 경우 이미 있는 도큐먼트id를 추가하려 할 경우 오류가 발생한다.
+    - 이미 위에서 도큐먼트id가 1인 도큐먼트를 추가했으므로 아래 예시는 오류가 발생한다. 
+
+  ```json
+  POST office/_create/1
   
+  {
+      "nickname":"Theo",
+      "message":"안녕하세요!"
+  }
+  ```
+
+
+
+- 조회
+
+  - 도큐먼트id가 1인 도큐먼트를 조회하는 예시
+
+  ```json
+  GET office/_doc/1
+  ```
+
+  - 응답
+    - 문서의 내용은 `_source` 항목에 나타난다.
+
+  ```json
+  {
+      "_index": "office",
+      "_type": "_doc",
+      "_id": "1",
+      "_version": 1,
+      "_seq_no": 0,
+      "_primary_term": 1,
+      "found": true,
+      "_source": {
+          "nickname": "Theo",
+          "message": "안녕하세요!"
+      }
+  }
+  ```
+
+
+
+- 삭제
+
+  - 도큐먼트 또는 인덱스 단위의 삭제가 가능하다.
+    - 도큐먼트를 삭제하면 `"result":"deleted"`가 반환된다.
+    - 도큐먼트는 삭제되었지만 인덱스는 남아있는 경우, 삭제된 도큐먼트를 조회하려하면 `"found":false`가 반환된다.
+    - 삭제된 인덱스의 도큐먼트를 조회하려고 할 경우(혹은 애초에 생성된 적 없는 도큐먼트를 조회할 경우) 에러가 반환된다.
+
+  - 도큐먼트를 삭제하는 경우
+
+  ```json
+  DELETE office/_doc/1
+  ```
+
+  - 도큐먼트 삭제의 응답
+
+  ```json
+  {
+      "_index": "office",
+      "_type": "_doc",
+      "_id": "1",
+      "_version": 2,
+      "result": "deleted",
+      "_shards": {
+          "total": 2,
+          "successful": 1,
+          "failed": 0
+      },
+      "_seq_no": 1,
+      "_primary_term": 1
+  }
+  ```
+
+  - 삭제된 도큐먼트를 조회
+
+  ```json
+  GET office/_doc/1
+  ```
+
+  - 삭제된 도큐먼트를 조회했을 경우의 응답
+
+  ```json
+  {
+      "_index": "office",
+      "_type": "_doc",
+      "_id": "1",
+      "found": false
+  }
+  ```
+
+  - 인덱스를 삭제
+
+  ```json
+  DELETE office
+  ```
+
+  - 인덱스 삭제의 응답
+
+  ```json
+  {
+      "acknowledged": true
+  }
+  ```
+
+  - 삭제된 인덱스의 도큐먼트를 조회
+
+  ```json
+  GET office/_doc/1
+  ```
+
+  - 응답
+
+  ```json
+  {
+      "error": {
+          "root_cause": [
+              {
+                  "type": "index_not_found_exception",
+                  "reason": "no such index [office]",
+                  "resource.type": "index_expression",
+                  "resource.id": "office",
+                  "index_uuid": "_na_",
+                  "index": "office"
+              }
+          ],
+          "type": "index_not_found_exception",
+          "reason": "no such index [office]",
+          "resource.type": "index_expression",
+          "resource.id": "office",
+          "index_uuid": "_na_",
+          "index": "office"
+      },
+      "status": 404
+  }
+  ```
+
+
+
+- 수정
+
+  - 위에서 삭제한 데이터를 다시 생성했다고 가정
+  - 수정 요청
+
+  ```json
+  PUT office/_doc/1
+  
+  {
+      "nickname":"Oeht",
+      "message":"!요세하녕안"
+  }
+  ```
+
+  - 응답
+
+  ```json
+  {
+      "_index": "office",
+      "_type": "_doc",
+      "_id": "1",
+      "_version": 2,
+      "result": "updated",
+      "_shards": {
+          "total": 2,
+          "successful": 1,
+          "failed": 0
+      },
+      "_seq_no": 1,
+      "_primary_term": 1
+  }
+  ```
+
+  - 수정할 때 특정 필드를 뺄 경우 해당 필드가 빠진 채로 수정된다.
+    - POST 메서드로도 수정이 가능한데 POST 메서드를 사용해도 마찬가지다.
+
+  ```json
+  // 요청
+  PUT office/_doc/1
+  
+  {
+      "nickname":"Theo"
+  }
+  
+  // 응답
+  {
+      "_index": "office",
+      "_type": "_doc",
+      "_id": "1",
+      "_version": 2,
+      "_seq_no": 9,
+      "_primary_term": 1,
+      "found": true,
+      "_source": {
+          // message 필드가 사라졌다.
+          "nickname": "Theo"
+      }
+  }
+  ```
+
+  - `_update`
+    - `_update`를 활용하면 일부 필드만 수정하는 것이 가능하다.
+    - 업데이트 할 내용에 `"doc"`이라는 지정자를 사용한다.
+
+  ```json
+  // 도큐먼트id가 2인 새로운 도큐먼트를 생성했다고 가정
+  PUT office/_update/2
+  
+  {
+      "doc":{
+          "message":"반갑습니다.!"
+      }
+  }
+  ```
+
+  - 응답
+
+  ```json
+  {
+      "_index": "office",
+      "_type": "_doc",
+      "_id": "2",
+      "_version": 2,
+      "_seq_no": 0,
+      "_primary_term": 1,
+      "found": true,
+      "_source": {
+          "nickname": "Oeht",
+          "message": "반갑습니다!"
+      }
+  }
+  ```
+
+
+
+## 벌크 API
+
+- `_bulk`
+
+  - 복수의 요청을 한 번에 전송할 때 사용한다.
+    - 동작을 따로따로 수행하는 것 보다 속도가 훨씬 빠르다.
+    - 대량의 데이터를 입력할 때는 반드시 `_bulk` API를 사용해야 불필요한 오버헤드가 없다.
+  - 형식
+    - index, create, update, delete의 동작이 가능하다.
+    - delete를 제외하고는 명령문과 데이터문을 한 줄씩 순서대로 입력한다.
+    - delete는 내용 입력이 필요 없기 때문에 명령문만 있다.
+    - `_bulk`의 명령문과 데이터문은 반드시 한 줄 안에 입력이 되어야 하며 줄바꿈을 허용하지 않는다.
+
+  - 예시
+
+  ```json
+  POST _bulk
+  {"index":{"_index":"learning", "_id":"1"}} // 생성
+  {"field":"elasticsearch"}
+  {"index":{"_index":"learning", "_id":"2"}} // 생성
+  {"field":"Fastapi"}
+  {"delete":{"_index":"learning", "_id":"2"}} // 삭제
+  {"create":{"_index":"learning", "_id":"3"}} // 생성
+  {"field":"docker"}
+  {"update":{"_index":"learning", "_id":"1"}} // 수정
+  {"doc":{"field":"deep learning"}}
+  ```
+
+  - 응답
+
+  ```json
+  {
+    "took" : 1152,
+    "errors" : false,
+    "items" : [
+      {
+        "index" : {
+          "_index" : "learning",
+          "_type" : "_doc",
+          "_id" : "1",
+          "_version" : 1,
+          "result" : "created",
+          "_shards" : {
+            "total" : 2,
+            "successful" : 1,
+            "failed" : 0
+          },
+          "_seq_no" : 0,
+          "_primary_term" : 1,
+          "status" : 201
+        }
+      },
+      {
+        "index" : {
+          "_index" : "learning",
+          "_type" : "_doc",
+          "_id" : "2",
+          "_version" : 1,
+          "result" : "created",
+          "_shards" : {
+            "total" : 2,
+            "successful" : 1,
+            "failed" : 0
+          },
+          "_seq_no" : 1,
+          "_primary_term" : 1,
+          "status" : 201
+        }
+      },
+      {
+        "delete" : {
+          "_index" : "learning",
+          "_type" : "_doc",
+          "_id" : "2",
+          "_version" : 2,
+          "result" : "deleted",
+          "_shards" : {
+            "total" : 2,
+            "successful" : 1,
+            "failed" : 0
+          },
+          "_seq_no" : 2,
+          "_primary_term" : 1,
+          "status" : 200
+        }
+      },
+      {
+        "create" : {
+          "_index" : "learning",
+          "_type" : "_doc",
+          "_id" : "3",
+          "_version" : 1,
+          "result" : "created",
+          "_shards" : {
+            "total" : 2,
+            "successful" : 1,
+            "failed" : 0
+          },
+          "_seq_no" : 3,
+          "_primary_term" : 1,
+          "status" : 201
+        }
+      },
+      {
+        "update" : {
+          "_index" : "learning",
+          "_type" : "_doc",
+          "_id" : "1",
+          "_version" : 2,
+          "result" : "updated",
+          "_shards" : {
+            "total" : 2,
+            "successful" : 1,
+            "failed" : 0
+          },
+          "_seq_no" : 4,
+          "_primary_term" : 1,
+          "status" : 200
+        }
+      }
+    ]
+  }
+  ```
+
+  - 인덱스명이 모두 동일할 경우에는 아래와 같이 하는 것도 가능하다.
+
+  ```json
+  POST learning/_bulk
+  
+  {"index":{"_id":"1"}}
+  {"field":"elasticsearch"}
+  {"index":{"_id":"2"}}
+  {"field":"Fastapi"}
+  {"delete":{"_id":"2"}}
+  {"create":{"_id":"3"}}
+  {"field":"docker"}
+  {"update":{"_id":"1"}}
+  {"doc":{"field":"deep learning"}}
+  ```
+
+
+
+- json 파일에 실행할 명령을 저장하고 curl 며영으로 실행시킬 수 있다.
+
+  - bulk.json 파일
+
+  ```json
+  {"index":{"_index":"learning", "_id":"1"}}
+  {"field":"elasticsearch"}
+  {"index":{"_index":"learning", "_id":"2"}}
+  {"field":"Fastapi"}
+  {"delete":{"_index":"learning", "_id":"2"}}
+  {"create":{"_index":"learning", "_id":"3"}}
+  {"field":"docker"}
+  {"update":{"_index":"learning", "_id":"1"}}
+  {"doc":{"field":"deep learning"}}
+  ```
+
+  - 명령어
+    - 파일 이름 앞에는 @를 입력한다.
+
+  ```bash
+  $ curl -XPOST "http://localhost:9200/_bulk" -H 'Content-Type: application/json' --data-binary @bulk.json
+  ```
+
+
+
+
 
 # 참고
 
