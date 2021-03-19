@@ -293,104 +293,6 @@
 
 
 
-### 논리 배치
-
-- 문서
-
-  - 엘라스틱서치는 문서 기반이다.
-    - 색인과 검색하는 데이터의 가장 작은 단위가 문서라는 것을 의미한다.
-  - 문서는 독립적이다.
-    - 필드(name)와 값(Elasticsearch Denver)을 가지고 있다.
-    - 필드는 문서를 구성하기 위한 속성이라고 할 수 있다. 
-    - 일반적으로 데이터베이스의 컬럼과 비교할 수 있으나 컬럼이 정적(static)인 데이터 타입인 반면, 필드는 좀 더 동적(dynamic)인 데이터 타입이다.
-    - 문서는 보통 JSON 형식으로 표현한다.
-
-  ```json
-  {
-      "name":"Theo",
-      "department":"TA",
-      "information":"developer"
-  }
-  ```
-
-  - 문서는 계층을 가질 수 있다.
-    - 즉 문서 안에 또 다른 문서가 존재할 수 있다.
-    - 관계형 데이터베이스의 행과의 차이점이다.
-
-  ```json
-  {
-      "name":"Theo",
-      "department":"TA",
-      // infromation이라는 문서 안에 또 다른 문서가 들어간다.
-      "information":{
-      	"email":"theo09@gmail.com",
-          "phone": "010-1234-5678"
-      }
-  }
-  ```
-
-  - 유연한 구조를 가진다.
-    - 문서는 미리 정의한 스키마에 의존하지 않는다.
-    - 예를 들어 기존의 데이터에 필요 없는 값을 생략하거나, 새로운 값을 추가할 수 있다.
-
-  ```json
-  {
-      "name":"Theo",
-      "gender":"male"
-  }
-  ```
-
-  - 하나의 문서가 값의 배열을 포함할 수 있다..
-
-  ```json
-  {
-      "name":"Theo",
-      "department":"TA",
-      "colleague":["kim","lee"]
-  }
-  ```
-
-  - 매핑 타입
-    - 필드의 추가와 생략은 자유롭지만, 각 필드의 타입은 중요하다.
-    - 일래스틱서치는 모든 필드와 타입, 그리고 다른 설정에 대한 매핑을 보관하고 있다.
-    - 매핑(Mapping)은 문서의 필드와 필드의 속성을 정의하고 그에 따른 색인 방법을 정의하는 프로세스이다. 
-    - 따라서 때로는 일래스틱서치에서 타입은 매핑 타입으로 불린다.
-
-
-
-- 타입(7.0 버전부터 사라졌다)
-  - 테이블이 행에 대한 컨테이너인 것과 같이 타입은 문서에 대한 논리적인 컨테이너다.
-  - 각 타입에서 필드의 정의는 매핑이라고 부른다.
-    - 예를 들어 위 예시에서 name은 stirng이지만 colleague는 list이다.
-  - 일레스틱서치는 스키마가 존재하지 않는다.
-    - 그럼에도 문서가 타입에 속하고 각 타입은 스키마와 같은 매핑을 포함하는가
-    - 매핑은 타입에서 지금까지 색인한 모든 문서의 모든 필드를 포함한다.
-    - 하지만 모든 문서가 모든 필드를 가질 필요는 없다.
-    - 또한 새로운 문서가 매핑에 존재하지 않는 필드와 함께 색인하면, 일래스틱서치는 자동으로 새로운 필드를 매핑에 추가한다.예를 들어 값이 7이면,  long 타입을 가정한다.
-    - 일래스틱서치가 새로운 필드의 타입을 잘못 추측할 수도 있다. 예를 들어, 7을 색인한 후에. "Hi"를 색인하면 "Hi"는 string이지 long이 아니므로 실패할 것이다.
-    - 데이터의 색인을 만들기 전에 매핑을 정의하면 위와 같은 실패를 방지할 수 있다.
-  - 매핑 타입은 문서를 논리적으로만 나눈다.
-    - 물리적으로 같은 색인의 문서는 해당 문서가 속해 있는 매핑 타입에 관련 없이 디스크에 쓰인다.
-
-
-
-- 색인
-  - 매핑 타입의 컨테이너
-    - 관계형 데이터베이스의 데이터베이스와 같이 독립적인 문서 덩어리아다.
-  - 각각의 색인은 디스크에 같은 파일 집합으로 저장한다.
-    - 모든 매핑 타입의 모든 필드를 저장하고, 고유의 설정을 한다.
-
-
-
-### 물리 배치
-
-- 노드와 샤드
-  - 어떻게 데이터가 물리적으로 배치되는지 이해하는 것은 결국 어떻게 일래스틱서치가 확장하는지 이해하는 것이다.
-  - 클러스터 내부에 노드들이 존재하며 각 노드 내부에 샤드들이 존재한다.
-  - 샤드는 인덱스에 속한 문서들이 분산되어 저장된다.
-
-
-
 - 색인의 생성과 검색
   - 색인의 생성
     - 문서 ID의 해시값을 기반으로 주 샤드 중 하나를 선택하고, 해당 주 샤드에 문서를 색인한다.
@@ -398,30 +300,6 @@
   - 색인 검색
     - 색인을 검색할 때 일래스틱서치는 해당 색인의 전체 샤드를 찾는다.
     - 일래스틱서치는 검색하려는 색인의 주 샤드와 레플리카 샤드로 검색 경로를 분리한다.
-    - 즉, 레플리카를 검색 성능과 고장 감내(fault tolerance)에 유용하게 사용한다.
-
-
-
-- 주 샤드(Primary shard)와 레플리카 샤드(replica shard)
-  - 하나의 샤드는 하나의 루씬 색인이다.
-    - 루씬 색인은 역 색인을 포함하는 파일들의 모음이다.
-    - 역 색인은 일래스틱서치가 전체 문서를 찾아보지 않고도 하나의 단어를 포함하는 문서를 찾도록 해주는 구조다.
-  - 일래스틱서치 색인과 루씬 색인
-    - 일래스틱서치 색인은 샤드라는 청크로 나뉜다.
-    - 하나의 색인은 하나의 루씬 색인이기에 일래스틱서치 색인은 여러 개의 루씬 색인으로 구성된다.
-    - 일래스틱서치가 데이터를 색인하기 위한 핵심 라이브러리로 아파치 루씬을 사용하기에 루씬 색인이라 부른다.
-    - 색인은 일레스틱서치 색인을 의미하며, 샤드 내부의 세부를 살펴볼 때는 루씬 색인이라 부른다.
-  - 레플리카 샤드는 주 샤드의 정확한 복사본이다.
-    - 레플리카는 검색을 위해 사용하거나 본래의 주 샤드를 잃어버렸을 때 새로운 주 샤드가 될 수 있다.
-    - 일래스틱서치 색인은 하나 이상의 주 샤드와 0개 이상의 레플리카 샤드로 구성된다.
-
-
-
-- 클러스터에 샤드 분산하기
-  - 가장 단순한 일레스틱서치 클러스터는 하나의 노드를 가진다.
-  - 같은 클러스터에서 더 많은 노드를 추가할수록 기존 샤드는 모든 노드에 균등하게 저장된다.
-  - 클러스터에 노드를 추가하는 방법으로 확장하는 것을 수평적 확장이라 부른다.
-    - 노드를 추가하면 요청이 분산되어 모든 노드가 일을 공유한다.
 
 
 
@@ -441,7 +319,194 @@
 
 
 
-## settings와 mappings
+# 엘라스틱서치 기본 개념
+
+## 클러스터와 노드
+
+- 클러스터
+
+  - 여러 대의 컴퓨터에 혹은 구성 요소들을 논리적으로 결합하여 전체를 하나의 컴퓨터 혹은 구성 요소처럼 사용할 수 있게 해주는 기술
+    - Elasticsearch 클러스터 역시 여러 개의 Elasticsearch 프로세스들을 논리적으로 결합하여 하나의 Elasticsearch 프로세스처럼 사용할 수 있게 해준다.
+    - 이 때 클러스터를 구성하는 각각의 Elasticsearch 프로세스를 노드라 부른다.
+  - 즉 여러 개의 Elasticsearch 노드를 마치 하나의 Elasticsearch처럼 동작하게 하는 것이 Elasticsearch 클러스터라고 할 수 있다.
+    - 각각의 노드가 마치 하나의 Elasticsearch처럼 동작하기 때문에 클러스터를 구성하고 있는 노드 중 어느 노드에 API를 요청해도 동일한 응답고 동작을 보장받을 수 있다.
+    - 또한 ES 클러스터는 노드가 하나 밖에 없어도 단일 노드로 구성된 클러스터로 동작한다.
+    - 그러나 일반적으로 둘 이상의 노드를 이용해서 클러스터를 구성하며, 사용자의 요청을 클러스터 단위로 처리한다.
+  - 클러스터를 단일 노드로 구성하지 않는 이유
+    - 단일 노드로 클러스터를 구성했을 때 해당 노드에 장애가 발생하면 ES 클러스터에 접근할 수 없는 요청 불가 상태가 된다.
+    - 반면 다수의 노드로 클러스터를 구성하면 하나의 노드에 장애가 발생해도 다른 노드에 요청할 수 있기 때문에 안정적으로 클러스터를 유지할 수 있고 이를 통해 높은 수준의 안정성을 보장할 수 있다.
+  - 다수의 노드로 구성된 ES 클러스터는 고유의 클러스터 이름과 UUID(Universally Unique Idnetifier)를 가진다.
+    - 이 두 가지 고유한 속성을 통해 클러스터 내에 속한 노드들이 서로 동일한 클러스터 내에 있음을 인식하고 클러스터링된다.
+    - 새로운 노드를 클러스터에 추가하기 위해서는 같은 이름을 사용해야 한다.
+    - 만약 이름이 다른 노드가 클러스터에 합류하려고 하면 에러가 발생한다.
+  - curl 명령을 이용해서 각 노드에서 해당 노드가 속한 클러스터의 정보를 확인할 수 있다.
+
+  ```bash
+  $ curl 'localhost:9200'
+  ```
+
+  - 응답
+
+  ```json
+  {
+    // 현재 요청에 응답한 노드의 이름
+    "name" : "DESKTOP-1QEH5L8",
+    // 클러스터의 이름
+    "cluster_name" : "elasticsearch",
+    // 클러스터의 UUID
+    "cluster_uuid" : "l4A2AiJsQsmGL4vDe4X6HA",
+    "version" : {
+      "number" : "7.11.2",
+      "build_flavor" : "default",
+      "build_type" : "zip",
+      "build_hash" : "3e5a16cfec50876d20ea77b075070932c6464c7d",
+      "build_date" : "2021-03-06T05:54:38.141101Z",
+      "build_snapshot" : false,
+      "lucene_version" : "8.7.0",
+      "minimum_wire_compatibility_version" : "6.8.0",
+      "minimum_index_compatibility_version" : "6.0.0-beta1"
+    },
+    "tagline" : "You Know, for Search"
+  }
+  ```
+
+
+
+- 노드
+
+  - 클러스터를 구성하는 논리적인 ES 프로세스 하나를 의미한다.
+  - 노드도 클러스터와 마찬가지로 각각의 고유한 노드 이름과 UUID가 있다.
+  - 역할에 따라 여러 노드로 구분할 수 있다.
+    - 각각 하나의 역할만 하는 것이 아니라 한 번에 여러 개의 역할을 할 수 있다.
+
+  | 노드 역할               | 설명                                                         |
+  | ----------------------- | ------------------------------------------------------------ |
+  | 마스터(Master-eligible) | 클러스터 구성에 중심이 되는 노드. 클러스터의 상태 등 메타데터를 관리한다. |
+  | 데이터(Data)            | 사용자의 문서를 실제로 저장하는 노드                         |
+  | 인제스트(Ingest)        | 사용자의 문서가 저장되기 전 문서 내용을 사전에 처리하는 노드 |
+  | 코디네이트(Coordinate)  | 사용자의 요청을 데이터 노드로 전달하고, 다시 데이터 노드로부터 결과를 취합하는 노드 |
+
+  - 마스터 노드
+    - 클러스터의 메타데이터를 관리하는 역할.
+    - 반드시 한 대 이상으로 구성되어야 한다.
+    - 그러나 실제 마스터 역할을 하는 노드는 하나뿐이다. 나머지는 마스터 노드에 장애가 발생했을 때 새로운 마스터가 될 수 있는 마스터 후보 노드가 된다.
+    - 마스터 후보 노드들은 마스터 노드로부터 지속적으로 클러스터 운영에 필요한 데이터를 전달받기 때문에 항상 같은 메타데이터를 유지하고 있기에 새로운 마스터 노드가 선출되어도 중단 없이 서비스를 이어갈 수 있다.
+    - 클러스터 내의 모든 노드는 현재 노드의 상태, 성능 정보, 자신이 가지고 있는 샤드의 정보를 마스터 노드에 알린다.
+    - 마스터 노드는 이런 정보들을 수집하고 관리하면서 클러스터의 안정성을 확보하기 위해 필요한 작업들을 진행한다.
+    - 마스터노드는 클러스터 내의 모든 노드들로부터 받은 정보를 취합하여 각 노드들에 전파한다.
+  - 데이터 노드
+    - 사용자가 색인한 문서를 저장하고, 검색 요청을 처리해서 결과를 돌려주는 역할을 한다.
+    - 자신이 받은 요청 중 자신이 처리할 수 있는 요청은 직접 처리하고, 다른 데이터 노드들이 처리해야 할 요청은 해당 데이터 노드에 전달한다.
+    - 어떤 데이터 노드로 요청을 전달할 것인지는 마스터 노드를 통해 받은 클러스터의 전체 상태 정보를 바탕으로 한다.
+  - 인제스트 노드
+    - 사용자가 색인하길 원하는 문서의 내용 중 변환이 필요한 부분을 사전에 처리한다.
+    - 데이터 노드에 저장하기 전에 특정 필드의 값을 가공해야 할 경우 유용하다.
+  - 코디네이트 노드
+    - 실제 데이터를 저장하고 처리하지는 않지만, 사용자의 색인이나 검색 등 모든 요청을 데이터 노드에 전달하는 역할을 한다.
+    - 문서를 저장하지 않는 데이터 노드라고도 생각할 수 있다.
+
+
+
+## 인덱스와 타입
+
+- 인덱스
+  - 사용자의 데이터가 저장되는 논리적인 공간을 의미한다.
+  - 인덱스의 이름은 클러스터 내에서 유일해야 한다.
+  - 인덱스에 저장된 문서들은 앞 절에서 배운 데이터 노드들에 분산 저장된다.
+
+
+
+- 타입
+  - 인덱스 안의 데이터를 유형별로 논리적으로 나눠 놓은 공간을 의미한다.
+  - ES 6.x 이후로는 단일 타입만을 허용하기에 큰 이슈가 없다면 _doc이라는 타입명을 사용한다.
+  - 현재 _doc은 권고 사항이며, 추후에 _doc으로 고정될 예정이다.
+
+
+
+- 멀티 타입
+  - ES 5.x 이전
+    - ES 6.x 이후의 버전은 하나의 인덱스에 하나의 타입만을 사용하도록 하고 있지만, 버전 5.x까지는 하나의 인덱스에 여러 개의 타입을 사용할 수 있었기에 인덱스 내에서 타입이 논리적으로 분리될 수 있었다.
+  - 멀티 타입을 허용하지 않는 이유
+    - 인덱스에 존재하는 서로 다른 타입에서 동일한 이름의 JSON 문서 필드를 만들 수 있어서 의도치 않은 검색 결과가 나타나는 문제가 발생했기 때문이다.
+    - 예를들어 test라는 인덱스에 type1, type2라는 타입을 만들고 각 타입에 문서를 각각 하나씩 색인했다고 가정한다.
+    - 만일 두 문서에 모두 name이라는 필드가 들어있었다고 하면, 두 문서는 서로 다른 타입이지만 색인된 JSON 문서에는 name이라는 같은 이름의 필드가 존재하게 된다.
+    - 하필 두 필드의 이름도 같고 동일한 텀을 포함하고 있을 경우 의도와는 다른 타입의 문서도 저장되는 문제가 발생하게 된다. 
+
+
+
+## 샤드와 세그먼트
+
+- 샤드
+  - 인덱스에 색인 되는 문서들이 저장되는 논리적인 공간을 의미한다.
+    - ES는 인덱스를 샤드로 나누고 데이터 노드에 샤드를 할당한다. 그리고 각각의 샤드에 문서를 저장하는 방식으로 사용자의 데이터를 저장한다.
+    - 하나의 인덱스는 1개 이상의 샤드로 구성된다. 
+    - 만약 5개의 샤드로 구성된 인덱스라면 실제 문서들은 각각의 샤드에 나뉘어 저장된다.
+  - 하나의 샤드는 샤드는 1개 이상의 세그먼트로 구성된다.
+    - 샤드마다 세그먼트의 개수는 서로 다를 수 있다.
+
+
+
+- 프라이머리 샤드와 레플리카 샤드
+
+  - 프라이머리 샤드는 원본, 레플리카 샤드는 프라이머리 샤드의 복제본이다.
+    - 레플리카 샤드는 프라이머리 샤드와 동일한 문서를 가지고 있기 때문에 사용자의 검색 요청에도 응답할 수 있다.
+    - 따라서 레플리카 샤드를 늘리면 검색 요청에 대한 응답 속도를 높일 수 있다.
+    - 만약 특정 샤드에 장애가 발생하여 해당 샤드에 접근할 수 없게 되거나, 문서가 유실되는 경우, 혹은 샤드에 문서가 정상적으로 저장되지 않는 경우에 발생할 수 있는 문제를 방지하기 위해 데이터를 한 벌 더 복제해서 레플리카 샤드를 만들어 데이터의 안정성을 보장한다.
+  - 프라이머리 샤드와 레플리카 샤드는 각기 다른 곳에 저장된다.
+    - 이를 통해 한 노드에 이상이 생겨도 다른 노드에 있는 레플리카 샤드를 통해 문서에 접근이 가능해진다.
+    - 만일 기존의 프라이머리 샤드에 문제가 생길 경우 기존의 레플리카 샤드가 프라이머리 샤드로 승격되고, 새로운 레플리카 샤드가 다른 노드에 새롭게 생성된다.
+    - 레플리카 샤드에 문제가 생깅 경우 다른 노드에 새로 생성되면서 복구가 진행된다.
+  - 프라이머리 샤드는 최초 인덱스를 생성할 때 개수를 결정하는데, 이는 이후에 변경이 불가능하다.
+    - 별도로 설정하지 않으면 ES 7.0부터는 1개, 이전에는 5개의 프라이머리 샤드가 생성되었다.
+  - 레플리카 샤드는 따로 설정하지 않으면 각 프라이머리 샤드 당 하나의 레플리카 샤드를 만드는 것이 기본 설정이다.
+    - 프라이머리 샤드와 달리 레플리카 샤드는 인덱스를 생성한 이후에도 개수를 조정할 수 있다.
+    - 기존 개수보다 줄이면 줄어든 만큼 기존의 레플리카 샤드를 삭제하며, 늘리면 늘어난 만큼 레플리카 샤드를 생성한다.
+
+  ```bash
+  # 인덱스를 생성하면서 프라이머리 샤드는 2개로, 레플리카 샤드는 5개로 설정하는 명령어
+  $ curl -XPUT 'localhost:9200/shard_index/_settings?pretty' -H 'Content-Type:application/json' -d '{
+  "index.number_of_shards":2,
+  "index.number_of_replicas":5
+  }'
+  ```
+
+  - 문서를 색인할 때 문서를 저장할 프라이머리 샤드는 어떻게 결정되는가?
+    - 문서에 할당된 id를 기준으로 ES에서 샤드 할당 해시 함수를 이용해 몇 번째 프라이머리 샤드에 저장할지 결정한다.
+    - 이러한 알고리즘을 사용하기 때문에 프라이머리 샤드 번호는 0번부터 사용자가 지정한 샤드 개수-1까지의 번호를 부여받는다.
+    - 예를 들어 프라이머리 샤드를 5개로 설정하였다면 샤드의 번호는 0, 1, 2, 3, 4로 5개가 생성된다.
+    - 그리고 바로 이런 로직 때문에 인덱스 생성 후에는 프라이머리 샤드의 개수를 변경할 수 없는 것이다.
+    - 만약 프라이머리 샤드의 개수를 변경한다면 지금까지 저장된 문서들의 프라이머리 샤드번호가 모두 변경되어야 하기 때문이다.
+  - 샤드의 개수는 데이터의 안정성 측면 외에도 색인과 검색 기능의 성능 확보면에서도 중요하다.
+    - 하나의 노드로 구성된 클러스터에서는 색인 또는 검색을 모두 한 노드가 수행해야 한다.
+    - 반면 복수의 노드로 구성된 클러스터에서는 각각의 노드가 색인 또는 검색 요청을 분배하여 처리한다. 
+
+
+
+- 세그먼트
+
+  - 샤드의 데이터들을 가지고 있는 물리적인 파일을 의미한다.
+    - 인덱스에 저장되는 문서는 해시 알고리즘에 의해 샤드들에 분산 저장되고 이 문서들은 실제로는 세그먼트라는 물리적 파일에 저장된다.
+    - 그러나 문서가 처음부터 세그먼트에 저장되는 것은 아니다.
+    - 색인 문서는 먼저 시스템 메모리 버퍼 캐시에 저장되는데 이 단계에서는 해당 문서가 검색되지 않는다.
+    - 이후 ES의 refresh라는 과정을 거쳐야 디스크에 세그먼트 단위로 문서가 저장되고 해당 문서의 검색이 가능해진다.
+  - 세그먼트는 불변(immutable)의 특성을 갖는다.
+    - 기존에 기록한 데이터를 업데이트하지 않는다는 뜻이다.
+    - 예를 들어 색인한 문서를 수정하거나 삭제 할 경우, 기존의 문서를 직접 수정하거나 삭제하지 않고 기존 문서는 불용 처리한다. 수정의 경우 그 후에 세그먼트에 업데이트 할 문서의 내용을 새롭게 쓴다.
+    - 이 특성으로 인해 데이터의 일관성을 유지할 수 있다.
+
+  - 세그먼트 병합
+    - 세그먼트의 불변성으로 인해 시간이 지남에 따라 불용 처리한 데이터들로 인해 세그먼트의 크기가 커지게 되는 단점이 존재한다.
+    - 이러한 단점을 보완하기 위해 ES는 백그라운드에서 세그먼트 병합을 진행한다.
+    - 예를 들어 ID가 1, 2, 3인 문서가 각각 1, 2, 3번 세그먼트에 저장되었다고 가정했을 때
+    - ID가 3인 문서를 삭제하면 3번 세그먼트에 해당 문서가 삭제되어다는 플래그를 기록하고 불용처리한다.
+    - ID가 4인 문서가 4번 세그먼트에 저장된다.
+    - 백그라운드에서 세그먼트 병합 작업이 발생하고 1~3번 세그먼트가 병합된다.
+    - ID가 3인 문서는 삭제 플래그가 켜졌기 때문에, 병합하면서 해당 문서는 빼고 ID 1과 2인 문서만 하나의 세그먼트로 합친다.
+    - 병합할 때 불용 처리한 데이터들은 실제로 디스크에서 삭제된다.
+
+
+
+## 매핑
 
 - settings와 mappings
 
@@ -533,35 +598,32 @@
 
 
 
-- mappings
+- 매핑
 
-  - ES는 동적 매핑을 지원하기에 미리 정의하지 않아도 인덱스에 도큐먼트를 새로 추가하면 자동으로 매핑이 생성된다.
-
-  ```bash
-  $ curl -XPUT 'localhost:9200/recipes/_doc/1' -H 'Content-Type: application/json' -d '{
-  "name":"pasta",
-  "author":"Theo",
-  "created_date":"2018-10-24T00:00:00",
-  "pages":3
-  }'
-  ```
-
-  - recipes 엔덱스의 매핑 확인
+  - ES에 저장될 JSON 문서들이 어떤 키와 어떤 형태의 값을 가지고 있는지 정의한 것이다.
+    - 사용자가 색인한 문서의 다양한 필드들을 적절한 타입으로 스키마를 정의하는 것이 매핑이다.
+  - 정적 매핑과 동적 매핑
+    - 정적 매핑: 매핑 정보를 미리 정의해 놓고 사용.
+    - 동적 매핑: 매핑 정보를 정의하지 않고 사용. 색인된 문서를 바탕으로 ES가 자동으로 매핑을 생성해주는 방식.
+  - 매핑 확인
+    - mapping API를 활용하여 인덱스의 매핑 정보를 확인할 수 있다.
 
   ```bash
-  $ curl 'localhost:9200/recipes/_mappings?pretty'
+  $ curl 'localhost:9200/인덱스명/_mapping?pretty'
   ```
 
   - 응답
-    - 인덱스의 매핑에서 필드들은 `properties` 항목 아래 지정된다.
-    - 매핑을 따로 설정해 준 적이 없음에도 각 필드의 매핑이 자동으로 생성된 것을 확인 가능하다.
+    - properties 필드 아래에 매핑 정보가 나온다.
 
   ```json
   {
-    "recipes" : {
+    "colleague" : {
       "mappings" : {
         "properties" : {
-          "author" : {
+          "age" : {
+            "type" : "long"
+          },
+          "email" : {
             "type" : "text",
             "fields" : {
               "keyword" : {
@@ -569,9 +631,6 @@
                 "ignore_above" : 256
               }
             }
-          },
-          "created_date" : {
-            "type" : "date"
           },
           "name" : {
             "type" : "text",
@@ -581,9 +640,6 @@
                 "ignore_above" : 256
               }
             }
-          },
-          "pages" : {
-            "type" : "long"
           }
         }
       }
@@ -591,96 +647,103 @@
   }
   ```
 
+  - 매핑이 생성되면 이후부터 생성되는 문서는 기존 매핑 정보에 따라 색인되어야 한다.
+    - 예를 들어 long 타입으로 매핑이 생성된 필드에 문자열 데이터가 들어오면 색인되지 않는다.
+    - 그러나 아예 매핑이 생성된 필드를 입력하지 않거나 추가적인 필드를 입력하는 것은 가능하다.
+
+
+
+- 정적 매핑
+
   - 매핑 미리 정의하기
+
     - 미리 먼저 인덱스의 매핑을 정의해 놓으면 정의해 놓은 매핑에 맞추어 데이터가 입력된다.
     - 매핑을 미리 만들 경우 미리 만들어진 매핑에 필드를 추가하는 것은 가능하지만 이미 만들어진 필드를 삭제하거나 필드의 타입 및 설정  값을 변경하는 것은 불가능하다.
 
-  ```bash
-  $ curl -XPUT 'localhost:9200/인덱스명' -H 'Content-Type: application/json' -d '{
-  "mappings":{
-  "properties":{
-  "필드명":{
-  "type":"필드 타입"
-  ...필드 설정
-  }
-  }
-  }
-  }'
-  ```
-
-  - 미리 정의 된 매핑에 필드 추가하기
-    - 당연히 기존 필드명과 추가할 필드명이 같으면 오류가 발생한다.
-
-  ```bash
-  $ curl -XPUT 'localhost:9200/인덱스명/_mapping' -H 'Content-Type: application/json' -d '{
+    ```bash
+    $ curl -XPUT 'localhost:9200/인덱스명' -H 'Content-Type: application/json' -d '{
+    "mappings":{
     "properties":{
-      "필드명":{
-        "type":"필드 타입"
-        ...필드 설정
-      }
+    "필드명":{
+    "type":"필드 타입"
+    ...필드 설정
     }
-  }'
-  ```
+    }
+    }
+    }'
+    ```
 
-  - 인덱스에 기존 매핑에 정의되지 않은 필드를 지닌 도큐먼트가 입력되면 필드가 자동으로 추가 된다.
-    - 기존에 없던 rating 필드를 추가
+    - 미리 정의 된 매핑에 필드 추가하기
+      - 당연히 기존 필드명과 추가할 필드명이 같으면 오류가 발생한다.
 
-  ```bash
-  $ curl -XPUT 'localhost:9200/recipes/_doc/2' -H 'Content-Type: application/json' -d '{
-  "rating":4
-  }'
-  ```
+    ```bash
+    $ curl -XPUT 'localhost:9200/인덱스명/_mapping' -H 'Content-Type: application/json' -d '{
+      "properties":{
+        "필드명":{
+          "type":"필드 타입"
+          ...필드 설정
+        }
+      }
+    }'
+    ```
 
-  - 확인
+    - 인덱스에 기존 매핑에 정의되지 않은 필드를 지닌 도큐먼트가 입력되면 필드가 자동으로 추가 된다.
+      - 기존에 없던 rating 필드를 추가
 
-  ```json
-  $ curl 'localhost:9200/recipes/_mappings?pretty'
-  ```
+    ```bash
+    $ curl -XPUT 'localhost:9200/recipes/_doc/2' -H 'Content-Type: application/json' -d '{
+    "rating":4
+    }'
+    ```
 
-  - 응답
-    - rating 필드가 새로 추가 된 것을 확인 가능하다.
+    - 확인
 
-  ```json
-  {
-    "recipes" : {
-      "mappings" : {
-        "properties" : {
-          "author" : {
-            "type" : "text",
-            "fields" : {
-              "keyword" : {
-                "type" : "keyword",
-                "ignore_above" : 256
+    ```json
+    $ curl 'localhost:9200/recipes/_mappings?pretty'
+    ```
+
+    - 응답
+      - rating 필드가 새로 추가 된 것을 확인 가능하다.
+
+    ```json
+    {
+      "recipes" : {
+        "mappings" : {
+          "properties" : {
+            "author" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
               }
-            }
-          },
-          "created_date" : {
-            "type" : "date"
-          },
-          "name" : {
-            "type" : "text",
-            "fields" : {
-              "keyword" : {
-                "type" : "keyword",
-                "ignore_above" : 256
+            },
+            "created_date" : {
+              "type" : "date"
+            },
+            "name" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
               }
+            },
+            "pages" : {
+              "type" : "long"
+            },
+            "rating" : {
+              "type" : "long"
             }
-          },
-          "pages" : {
-            "type" : "long"
-          },
-          "rating" : {
-            "type" : "long"
           }
         }
       }
     }
-  }
-  ```
+    ```
 
 
-
-### mappings의 type
 
 - ES에서 선언 가능한 문자열 타입에는 text, keyword 두 가지가 있다.
   - 2.X 버전 이전에는 string이라는 하나의 타입만 있었고 텍스트 분석 여부, 즉 애널라이저 적용을 할 것인지 아닌지를 구분하는 설정이 있었다.
@@ -755,7 +818,7 @@
   - 그 외에 사용 가능한 포맷들
     - 매핑의 format 형식만 지정 해 놓으면 지정된 어떤 형식으로도 색인 및 쿼리가 가능하다.
     - basic_date, strict_date_time과 같이 미리 정의 된 포맷들
-    -  [joda.time.format](https://www.joda.org/joda-time/apidocs/org/joda/time/format/DateTimeFormat.html) 심볼을 사용하여 지정 가능하다.
+    - [joda.time.format](https://www.joda.org/joda-time/apidocs/org/joda/time/format/DateTimeFormat.html) 심볼을 사용하여 지정 가능하다.
     - 정의된 포맷들은  [Elastic 홈페이지의 공식 도큐먼트](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-date-format.html#built-in-date-formats)에서 볼 수 있으며 joda 심볼 기호들은 다음과 같다.
 
   | 심볼 | 의미                 | 예시) 2019-09-12T17:13:07.428+09.00 |
@@ -871,10 +934,6 @@
 
 
 
-
-
-
-
 # Elaistcsearch 설치하고 실행하기
 
 > https://www.elastic.co/kr/downloads/elasticsearch
@@ -910,832 +969,12 @@
   ```
 
   - `-d` 옵션을 붙여서 데몬 형태로 실행하는 방법
-
-    - 위 명령어는 포어그라운드 형태로 실행시킨 것으로, 터미널에서 다른 입력을 하지 못하는 상태이다.
-
-    - `-d` 옵션은 백그라운드에서 동작하게 해준다.
-
-  ```bash
+- 위 명령어는 포어그라운드 형태로 실행시킨 것으로, 터미널에서 다른 입력을 하지 못하는 상태이다.
+    
+- `-d` 옵션은 백그라운드에서 동작하게 해준다.
+  
+```bash
   $ ./elasticsearch.bat -d
-  ```
-
-  
-
-
-
-
-
-# 데이터 처리
-
-## 새로운 데이터 색인
-
-- 문서 색인
-
-  - 일레스틱서치에서 문서의 URI
-
-  ```
-  http://연결할 일레스틱 서치 노드의 호스트명:연결할 포트/색인명/타입명/문서id
-  ```
-
-  - 문서 색인 요청
-    - `-X` 옵션은 request시 사용할 메소드의 종류를 기술한다. 메소드와 띄어 써도 되지만 붙여 써도 된다.
-    - `-XGET`의 경우 생략이 가능하다.
-    - 파라미터로 들어간 `pretty` 또는 `pretty-true`는 JSON  응답을 더 보기 좋게 해준다.
-    - `-H` 옵션은 header를 지정한다.
-    - `-d` 옵션은 body를 지정한다.
-
-  ```bash
-  $ curl -XPUT 'localhost:9200/company/colleague/1?pretty' -H 'Content-Type: application/json' -d '{
-  "name":"Theo",
-  "age":"28"
-  }'
-  ```
-
-  - 응답
-    - 응답은 색인, 타입, 색인한 문서의 ID를 포함한다.
-
-  ```json
-  {
-    "_index" : "company",
-    "_type" : "colleague",
-    "_id" : "1",
-    "_version" : 1,
-    "result" : "created",
-    "_shards" : {
-      "total" : 2,
-      "successful" : 1,
-      "failed" : 0
-    },
-    "_seq_no" : 0,
-    "_primary_term" : 1
-  }
-  ```
-
-
-
-- 색인 생성과 매핑 이해하기
-
-  - curl 명령은 색인과 매핑타입을 자동으로 생성한다.
-    - 위 예시에서 company라는 색인과 colleague라는 매핑 타입을 생성한 적이 없음에도 자동으로 생성되었다.
-    - 수동으로 생성하는 것도 가능하다.
-  - 색인을 수동으로 생성하기
-
-  ```bash
-  $ curl -XPUT 'localhost:9200/new-index'
-  ```
-
-  - 수동 생성의 응답
-
-  ```json
-  {
-    "acknowledged" : true,
-    "shards_acknowledged" : true,
-    "index" : "test-index"
-  }
-  ```
-
-  - 매핑 확인
-    - 매핑을 보기 위해 url에 `_mapping`을 추가한다.
-    - ES 6.x 이상의 경우 아래와 같이 `include_type_name=true` 또는 `include_type_name`을 파라미터로 넣어야 한다.
-
-  ```bash
-  $ curl 'localhost:9200/company/_mapping/colleague?include_type_name&pretty'
-  ```
-
-  - 응답
-    - 색인 명, 타입, 프로퍼티 목록, 프로퍼티 옵션 등의 데이터가 응답으로 넘어 온다.
-
-  ```json
-  {
-    "company" : {
-      "mappings" : {
-        "colleague" : {
-          "properties" : {
-            "age" : {
-              "type" : "text",
-              "fields" : {
-                "keyword" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
-            },
-            "name" : {
-              "type" : "text",
-              "fields" : {
-                "keyword" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  ```
-
-
-
-## 데이터 검색
-
-- 검색하기
-
-  - 검색을 위해 데이터를 더 추가
-
-  ```bash
-  $ curl -XPUT 'localhost:9200/company/colleague/2?pretty' -H 'Content-Type: application/json' -d '{
-  "name":"Kim",
-  "age":"26"
-  }'
-  $ curl -XPUT 'localhost:9200/company/colleague/3?pretty' -H 'Content-Type: application/json' -d '{
-  "name":"Lee",
-  "age":"27"
-  }'
-  $ curl -XPUT 'localhost:9200/company/colleague/4?pretty' -H 'Content-Type: application/json' -d '{
-  "name":"An",
-  "age":"27"
-  }'
-  ```
-
-  - 데이터 검색하기
-    - `q`파라미터는 검색할 내용이 들어간다.
-    - 특정 필드에서만 찾고자 할 때는 `q=name:Kim`과 같이 작성하면 된다.
-    - 아래와 같이 필드를 지정해주지 않을 경우 `_all`이라는 모든 필드의 내용을 색인하는 필드가 자동으로 들어가게 된다.
-    - `_source` 파라미터는 특정 필드만 반환되도록 한다(유사한 파라미터로 `stored_fileds`가 있다).
-    - `size` 파라미터는 일치하는 데이터들 중 반환할 데이터의 수를 지정한다(기본값은 10이다).
-
-  ```json
-  $ curl "localhost:9200/company/colleague/_search?q=Kim&_source=name&size=1&pretty"
-  ```
-
-
-
-- 어디를 검색할지 설정하기
-
-  - 다수의 타입에서 검색하기
-    - url에서 타입을 콤마로 구분하여 검색하면 된다.
-    - ES 6.X 부터 매핑 타입이 사라짐에 따라 쓸 일이 없는 기능이 되었다.
-
-  ```bash
-  $ curl "localhost:9200/company/colleague, department/_search?q=Kim&_source=name&size=1&pretty"
-  ```
-
-  - 모든 타입에서 검색하기
-    - 타입을 지정하지 않고 검색하면 된다.
-    - 역시 ES 6.X 부터 매핑 타입이 사라짐에 따라 쓸 일이 없는 기능이 되었다.
-
-  ```bash
-  $ curl "localhost:9200/company/_search?q=Kim&_source=name&size=1&pretty"
-  ```
-
-  - 다수의 색인을 검색하기
-    - url에서 인덱스를 콤마로 구분하여 검색하면 된다.
-    - 만일 검색하려는 색인이 없는 경우 에러가 발생하는데 에러를 무시하려면 `ignore_unavailable` 플래그를 주면 된다.
-
-  ```bash
-  $ curl "localhost:9200/company,fruits/_search?q=Kim&_source=name&size=1&pretty"
-  
-  # 없는 인덱스도 포함해서 검색하기
-  $ curl "localhost:9200/company,fruits/_search?q=Kim&_source=name&size=1&pretty&ignore_unavailable"
-  ```
-
-  - 모든 색인을 검색하기
-    - url의 색인이 올 자리에 `_all`을 입력하거나 아예 색인을 빼면 모든 색인에서 검색한다.
-
-  ```bash
-  $ curl "localhost:9200/_all/_search?q=Kim&_source=name&size=1&pretty"
-  
-  $ curl "localhost:9200/_search?q=Kim&_source=name&size=1&pretty"
-  ```
-
-
-
-- 응답 내용
-
-  - 요청
-
-  ```bash
-  $ curl "localhost:9200/company/colleague/_search?q=Kim&_source=name&size=1&pretty"
-  ```
-
-  - 응답
-
-  ```json
-  {
-    // 요청이 얼마나 걸렸으며, 타임아웃이 발생했는가
-    "took" : 1,
-    "timed_out" : false,
-    // 몇 개의 샤드에 질의 했는가
-    "_shards" : {
-    "total" : 1,
-      "successful" : 1,
-      "skipped" : 0,
-      "failed" : 0
-    },
-    "hits" : {
-      // 일치하는 모든 문서에 대한 통계
-      "total" : {
-        "value" : 1,
-        "relation" : "eq"
-      },
-      "max_score" : 0.6931471,
-      // 결과 배열
-      "hits" : [
-        {
-          "_index" : "company",
-          "_type" : "colleague",
-          "_id" : "2",
-          "_score" : 0.6931471,
-          "_source" : {
-            "name" : "Kim"
-          }
-        }
-      ]
-    }
-  }
-  ```
-
-  - 시간
-    - `took` 필드는 ES가 요청을 처리하는 데 얼마나 걸렸는지 말해준다(단위는 밀리 초).
-    - `timed_out` 필드는 검색이 타임아웃 되었는지 보여준다.
-    - 기본적으로 검색은 절대로 타임아웃이 되지 않지만, 요청을 보낼 때`timeout` 파라미터를 함께 보내면 한계를 명시할 수 있다.
-    - `$ curl "localhost:9200/_search?q=Kim&timeout=3s"`와 같이 작성할 경우 3초가 지나면 타임아웃이 발생하고 `timed_out`필드의 값은 true가 된다.
-    - 타임아웃이 발생할 경우 타임아웃될 때까지의 결과만 반환된다.
-  - 샤드
-    - 총 몇 개의 샤드에 질의 했고 성공한 것과 스킵한 것, 실패한 것에 대한 정보를 반환한다.
-    - 만일 특정 노드가 이용 불가 상태라 해당 노드의 샤드를 검색하지 못했다면 질의에 실패한 것이 된다.
-  - 히트 통계
-    - `total`은 전체 문서 중 일치하는 문서 수를 나타낸다.
-    - `total`은 `size`를 몇으로 줬는지와 무관하게 일치하는 모든 문서의 수를 표시해주므로 total과 실제 반환 받은 문서의 수가 다를 수 있다.
-    - `max_score`는 일치하는 문서들 중 최고 점수를 볼 수 있다.
-  - 결과 문서
-    - 히트 배열에 담겨 있다.
-    - 일치하는 각 문서의 색인, 타입, ID, 점수 등의 정보를 보여준다.
-
-
-
-- 쿼리로 검색하기
-
-  - 지금까지는 URI 요청으로 검색했다.
-    - 간단한 검색에는 좋지만 복잡한 검색에는 적절치 못한 방법이다.
-  - `query_string` 쿼리 타입으로 검색하기
-    - 쿼리스트링 타입의 쿼리를 실행하는 명령문이다.
-    - `default_field`는 검색을 실행할 필드를 특정하기 위해 사용한다.
-    - `default_operator`는 검색할 단어들이 모두 일치하는 문서를 찾을 지, 하나라도 일치하는 문서를 찾을지를 설정한다(기본값은 OR로 하나라도 일치하는 문서는 모두 찾는다).
-    - 위 두 옵션(`default_field`, `default_operator`)을 다음과 같이 쿼리 스트링 자체에 설정하는 것도 가능하다.
-    - `"query":"name:Kim AND name:Lee"`
-
-  ```bash
-  $ curl 'localhost:9200/company/colleague/_search?pretty' -H 'Content-Type: application/json' -d '{
-    "query":{
-      "query_string":{
-        "query":"Kim",
-        "default_field":"name",
-        "default_operator":"AND"
-      }
-    }
-  }'
-  ```
-
-  - 응답
-
-  ```json
-  {
-    "took" : 1,
-    "timed_out" : false,
-    "_shards" : {
-      "total" : 1,
-      "successful" : 1,
-      "skipped" : 0,
-      "failed" : 0
-    },
-    "hits" : {
-      "total" : {
-        "value" : 1,
-        "relation" : "eq"
-      },
-      "max_score" : 0.6931471,
-      "hits" : [
-        {
-          "_index" : "company",
-          "_type" : "colleague",
-          "_id" : "2",
-          "_score" : 0.6931471,
-          "_source" : {
-            "name" : "Kim",
-            "age" : "26"
-          }
-        }
-      ]
-    }
-  }
-  ```
-
-
-
-- 필터 사용(ES 6.X 부터 사용 불가)
-
-  - 필터는 결과에 점수를 반환하지 않는다.
-    - 쿼리는 결과와 함께 각 결과의 점수를 반환한다.
-    - 필터는 오직 키워드가 일치하는지만 판단하여 일치하는 값들을 반환한다.
-  - 필터 검색
-
-  ```bash
-  $ curl 'localhost:9200/_search?pretty' -H 'Content-Type: application/json' -d '{
-    "query":{
-    	"filtered":{
-    	  "filter":{
-      	"term" :{
-            "name":"Kim"
-          }
-    	  }
-    	}    
-    }
-  }'
-  ```
-
-
-
-- ID로 문서 가져오기
-
-  - 검색은 준실시간인데 반해 문서 ID로 문서를 찾는 것은 실시간이다.
-  - 특정 문서를 가져오려면 문서가 속한 색인과 타입, 그리고 ID를 알아야 한다.
-    - 그러나 타입은 현재 사라졌기 때문에 type 자리에 `_doc`을 입력하여 검색한다.
-    - 타입을 입력해도 검색은 되지만 경고문이 뜬다.
-
-  ```json
-  // _doc 사용
-  $ curl 'localhost:9200/company/_doc/1?pretty'
-  
-  // 타입 사용
-  $ curl 'localhost:9200/company/colleague/1?pretty'
-  ```
-
-  - 응답
-    - 만일 찾는 문서가 존재하지 않으면 아래 `found`는 false가 된다.
-
-  ```json
-  {
-    "_index" : "company",
-    "_type" : "_doc",
-    "_id" : "1",
-    "_version" : 5,
-    "_seq_no" : 5,
-    "_primary_term" : 1,
-    "found" : true,
-    "_source" : {
-      "name" : "Theo",
-      "age" : "28"
-    }
-  }
-  ```
-
-
-
-
-
-## CRUD
-
-- 도큐먼트에 접근
-  - 엘라스틱서치는 단일 도큐먼트별로 고유한 URL을 갖는다.
-  - `http://<호스트>:<포트>/<인덱스명>/_doc/<도큐먼트id>`
-
-
-
-- 삽입(PUT)
-
-  - POST 메서드로도 추가가 가능하다.
-    - 둘의 차이는 POST의 경우 도큐먼트id를 입력하지 않아도 자동으로 생성하지만 PUT은 자동으로 생성하지 않는다는 것이다.
-  - office라는 인덱스에 도큐먼트id가 1인 데이터를 입력하는 예시
-
-  ```json
-  PUT office/_doc/1
-  {
-      "nickname":"Theo",
-      "message":"안녕하세요!"
-  }
-  ```
-
-  - 응답
-
-  ```json
-  {
-      "_index": "office",
-      "_type": "_doc",
-      "_id": "1",
-      "_version": 1,
-      "result": "created", // 새로 생성한 것이므로 created로 뜨지만, 수정할 경우 updated라고 뜬다.
-      "_shards": {
-          "total": 2,
-          "successful": 1,
-          "failed": 0
-      },
-      "_seq_no": 0,
-      "_primary_term": 1
-  }
-  ```
-
-  - 실수로 기존 도큐먼트가 덮어씌워지는 것을 방지하기 위해 입력 명령어에 `_doc` 대신 `_create`를 사용해서 새로운 도큐먼트의 입력만 허용하는 것이 가능하다.
-    - 이 경우 이미 있는 도큐먼트id를 추가하려 할 경우 오류가 발생한다.
-    - 이미 위에서 도큐먼트id가 1인 도큐먼트를 추가했으므로 아래 예시는 오류가 발생한다. 
-
-  ```json
-  PUT office/_create/1
-  
-  {
-      "nickname":"Theo",
-      "message":"안녕하세요!"
-  }
-  ```
-
-
-
-- 조회
-
-  - 도큐먼트id가 1인 도큐먼트를 조회하는 예시
-
-  ```json
-  GET office/_doc/1
-  ```
-
-  - 응답
-    - 문서의 내용은 `_source` 항목에 나타난다.
-
-  ```json
-  {
-      "_index": "office",
-      "_type": "_doc",
-      "_id": "1",
-      "_version": 1,
-      "_seq_no": 0,
-      "_primary_term": 1,
-      "found": true,
-      "_source": {
-          "nickname": "Theo",
-          "message": "안녕하세요!"
-      }
-  }
-  ```
-
-
-
-- 삭제
-
-  - 도큐먼트 또는 인덱스 단위의 삭제가 가능하다.
-    - 도큐먼트를 삭제하면 `"result":"deleted"`가 반환된다.
-    - 도큐먼트는 삭제되었지만 인덱스는 남아있는 경우, 삭제된 도큐먼트를 조회하려하면 `"found":false`가 반환된다.
-    - 삭제된 인덱스의 도큐먼트를 조회하려고 할 경우(혹은 애초에 생성된 적 없는 도큐먼트를 조회할 경우) 에러가 반환된다.
-
-  - 도큐먼트를 삭제하는 경우
-
-  ```json
-  DELETE office/_doc/1
-  ```
-
-  - 도큐먼트 삭제의 응답
-
-  ```json
-  {
-      "_index": "office",
-      "_type": "_doc",
-      "_id": "1",
-      "_version": 2,
-      "result": "deleted",
-      "_shards": {
-          "total": 2,
-          "successful": 1,
-          "failed": 0
-      },
-      "_seq_no": 1,
-      "_primary_term": 1
-  }
-  ```
-
-  - 삭제된 도큐먼트를 조회
-
-  ```json
-  GET office/_doc/1
-  ```
-
-  - 삭제된 도큐먼트를 조회했을 경우의 응답
-
-  ```json
-  {
-      "_index": "office",
-      "_type": "_doc",
-      "_id": "1",
-      "found": false
-  }
-  ```
-
-  - 인덱스를 삭제
-
-  ```json
-  DELETE office
-  ```
-
-  - 인덱스 삭제의 응답
-
-  ```json
-  {
-      "acknowledged": true
-  }
-  ```
-
-  - 삭제된 인덱스의 도큐먼트를 조회
-
-  ```json
-  GET office/_doc/1
-  ```
-
-  - 응답
-
-  ```json
-  {
-      "error": {
-          "root_cause": [
-              {
-                  "type": "index_not_found_exception",
-                  "reason": "no such index [office]",
-                  "resource.type": "index_expression",
-                  "resource.id": "office",
-                  "index_uuid": "_na_",
-                  "index": "office"
-              }
-          ],
-          "type": "index_not_found_exception",
-          "reason": "no such index [office]",
-          "resource.type": "index_expression",
-          "resource.id": "office",
-          "index_uuid": "_na_",
-          "index": "office"
-      },
-      "status": 404
-  }
-  ```
-
-
-
-- 수정
-
-  - 위에서 삭제한 데이터를 다시 생성했다고 가정
-  - 수정 요청
-
-  ```json
-  POST office/_doc/1
-  
-  {
-      "nickname":"Oeht",
-      "message":"!요세하녕안"
-  }
-  ```
-
-  - 응답
-
-  ```json
-  {
-      "_index": "office",
-      "_type": "_doc",
-      "_id": "1",
-      "_version": 2,
-      "result": "updated",
-      "_shards": {
-          "total": 2,
-          "successful": 1,
-          "failed": 0
-      },
-      "_seq_no": 1,
-      "_primary_term": 1
-  }
-  ```
-
-  - 수정할 때 특정 필드를 뺄 경우 해당 필드가 빠진 채로 수정된다.
-    - POST 메서드로도 수정이 가능한데 POST 메서드를 사용해도 마찬가지다.
-
-  ```json
-  // 요청
-  POST office/_doc/1
-  
-  {
-      "nickname":"Theo"
-  }
-  
-  // 응답
-  {
-      "_index": "office",
-      "_type": "_doc",
-      "_id": "1",
-      "_version": 2,
-      "_seq_no": 9,
-      "_primary_term": 1,
-      "found": true,
-      "_source": {
-          // message 필드가 사라졌다.
-          "nickname": "Theo"
-      }
-  }
-  ```
-
-  - `_update`
-    - `_update`를 활용하면 일부 필드만 수정하는 것이 가능하다.
-    - 업데이트 할 내용에 `"doc"`이라는 지정자를 사용한다.
-
-  ```json
-  // 도큐먼트id가 2인 새로운 도큐먼트를 생성했다고 가정
-  POST office/_update/2
-  
-  {
-      "doc":{
-          "message":"반갑습니다.!"
-      }
-  }
-  ```
-
-  - 응답
-
-  ```json
-  {
-      "_index": "office",
-      "_type": "_doc",
-      "_id": "2",
-      "_version": 2,
-      "_seq_no": 0,
-      "_primary_term": 1,
-      "found": true,
-      "_source": {
-          "nickname": "Oeht",
-          "message": "반갑습니다!"
-      }
-  }
-  ```
-
-
-
-## 벌크 API
-
-- `_bulk`
-
-  - 복수의 요청을 한 번에 전송할 때 사용한다.
-    - 동작을 따로따로 수행하는 것 보다 속도가 훨씬 빠르다.
-    - 대량의 데이터를 입력할 때는 반드시 `_bulk` API를 사용해야 불필요한 오버헤드가 없다.
-  - 형식
-    - index, create, update, delete의 동작이 가능하다.
-    - delete를 제외하고는 명령문과 데이터문을 한 줄씩 순서대로 입력한다.
-    - delete는 내용 입력이 필요 없기 때문에 명령문만 있다.
-    - `_bulk`의 명령문과 데이터문은 반드시 한 줄 안에 입력이 되어야 하며 줄바꿈을 허용하지 않는다.
-
-  - 예시
-
-  ```json
-  POST _bulk
-  {"index":{"_index":"learning", "_id":"1"}} // 생성
-  {"field":"elasticsearch"}
-  {"index":{"_index":"learning", "_id":"2"}} // 생성
-  {"field":"Fastapi"}
-  {"delete":{"_index":"learning", "_id":"2"}} // 삭제
-  {"create":{"_index":"learning", "_id":"3"}} // 생성
-  {"field":"docker"}
-  {"update":{"_index":"learning", "_id":"1"}} // 수정
-  {"doc":{"field":"deep learning"}}
-  ```
-
-  - 응답
-
-  ```json
-  {
-    "took" : 1152,
-    "errors" : false,
-    "items" : [
-      {
-        "index" : {
-          "_index" : "learning",
-          "_type" : "_doc",
-          "_id" : "1",
-          "_version" : 1,
-          "result" : "created",
-          "_shards" : {
-            "total" : 2,
-            "successful" : 1,
-            "failed" : 0
-          },
-          "_seq_no" : 0,
-          "_primary_term" : 1,
-          "status" : 201
-        }
-      },
-      {
-        "index" : {
-          "_index" : "learning",
-          "_type" : "_doc",
-          "_id" : "2",
-          "_version" : 1,
-          "result" : "created",
-          "_shards" : {
-            "total" : 2,
-            "successful" : 1,
-            "failed" : 0
-          },
-          "_seq_no" : 1,
-          "_primary_term" : 1,
-          "status" : 201
-        }
-      },
-      {
-        "delete" : {
-          "_index" : "learning",
-          "_type" : "_doc",
-          "_id" : "2",
-          "_version" : 2,
-          "result" : "deleted",
-          "_shards" : {
-            "total" : 2,
-            "successful" : 1,
-            "failed" : 0
-          },
-          "_seq_no" : 2,
-          "_primary_term" : 1,
-          "status" : 200
-        }
-      },
-      {
-        "create" : {
-          "_index" : "learning",
-          "_type" : "_doc",
-          "_id" : "3",
-          "_version" : 1,
-          "result" : "created",
-          "_shards" : {
-            "total" : 2,
-            "successful" : 1,
-            "failed" : 0
-          },
-          "_seq_no" : 3,
-          "_primary_term" : 1,
-          "status" : 201
-        }
-      },
-      {
-        "update" : {
-          "_index" : "learning",
-          "_type" : "_doc",
-          "_id" : "1",
-          "_version" : 2,
-          "result" : "updated",
-          "_shards" : {
-            "total" : 2,
-            "successful" : 1,
-            "failed" : 0
-          },
-          "_seq_no" : 4,
-          "_primary_term" : 1,
-          "status" : 200
-        }
-      }
-    ]
-  }
-  ```
-
-  - 인덱스명이 모두 동일할 경우에는 아래와 같이 하는 것도 가능하다.
-
-  ```json
-  POST learning/_bulk
-  
-  {"index":{"_id":"1"}}
-  {"field":"elasticsearch"}
-  {"index":{"_id":"2"}}
-  {"field":"Fastapi"}
-  {"delete":{"_id":"2"}}
-  {"create":{"_id":"3"}}
-  {"field":"docker"}
-  {"update":{"_id":"1"}}
-  {"doc":{"field":"deep learning"}}
-  ```
-
-
-
-- json 파일에 실행할 명령을 저장하고 curl 며영으로 실행시킬 수 있다.
-
-  - bulk.json 파일
-
-  ```json
-  {"index":{"_index":"learning", "_id":"1"}}
-  {"field":"elasticsearch"}
-  {"index":{"_index":"learning", "_id":"2"}}
-  {"field":"Fastapi"}
-  {"delete":{"_index":"learning", "_id":"2"}}
-  {"create":{"_index":"learning", "_id":"3"}}
-  {"field":"docker"}
-  {"update":{"_index":"learning", "_id":"1"}}
-  {"doc":{"field":"deep learning"}}
-  ```
-
-  - 명령어
-    - 파일 이름 앞에는 @를 입력한다.
-
-  ```bash
-  $ curl -XPOST "http://localhost:9200/_bulk" -H 'Content-Type: application/json' --data-binary @bulk.json
   ```
 
 
