@@ -856,6 +856,314 @@
 
 
 
+# 클러스터 구축하기
+
+## elasticsearch.yml
+
+- elaisticsearch.yml
+  - ES를 구성하기 위해 기본이 되는 환경 설정 파일.
+    - 대부분의 설정이 주석으로 처리되어 있다.
+    - 해당 설정에 대한 간략한 설명이 주석으로 제공된다.
+
+
+
+- Cluster 영역
+
+  ```txt
+  # ---------------------------------- Cluster -----------------------------------
+  #
+  # Use a descriptive name for your cluster:
+  #
+  #cluster.name: my-application
+  ```
+
+  - 클러스터 전체에 적용 되는 설정
+  - 클러스터의 이름을 설정할 수 있다.
+  - 클러스터를 구성할 때는 클러스터를 구성할 노드들이 모두 동일한 클러스터 이름을 사용해야 한다.
+  - 클러스터 이름을 변경하려면 클러스터 내의 모든 노드를 재시작해야 하기 때문에 처음부터 신중하게 설정해야 한다.
+  - 기본값은 주석 처리 상태로 프로세스를 시작하면 elasticsearch라는 이름으로 자동 설정된다.
+
+
+
+- Node 영역
+
+  ```txt
+  # ------------------------------------ Node ------------------------------------
+  #
+  # Use a descriptive name for the node:
+  #
+  #node.name: node-1
+  #
+  # Add custom attributes to the node:
+  #
+  #node.attr.rack: r1
+  ```
+
+  - 해당 노드에만 적용되는 설정.
+  - 노드의 이름을 설정할 수 있으며 노드의 이름은 클러스터 내에서 유일해야 한다.
+  - ES에는 `${HOSTNAME}`이라는 노드의 호스트명을 인식할 수 있는 변숫값을 미리 정의해 놓았기에 `node.name: ${HOSTNAME}`과 같이 설정하면 자동으로 노드의 이름이 호스트명과 같아져 다른 노드들과 겹치지 않게 설정할 수 있다.
+  - 노드 이름은 운영 중에는 변경이 불가능하며, 변경하려면 노드를 재시작해야 한다.
+  - 주석 처리된 상태로 시작하면 ES가 랜덤한 문자열을 만들어 자동으로 설정한다.
+  - `node.attr.rack`은 각 노드에 설정할 수 있는 커스텀 항목으로, 사용자가 정의된 rack 값을 통해 HA 구성과 같이 샤드를 분배할 수 있는 기능이다.
+
+
+
+- Paths 영역
+
+  ```ㅅㅌㅅ
+  # ----------------------------------- Paths ------------------------------------
+  #
+  # Path to directory where to store the data (separate multiple locations by comma):
+  #
+  #path.data: /path/to/data
+  #
+  # Path to log files:
+  #
+  #path.logs: /path/to/logs
+  ```
+
+  - 데이터와 로그의 저장 위치와 관련된 설정이다.
+  - Paths 영역은 반드시 설정되어야 하는 값들이기 때문에 elasticsearch.yml의 기본값들 중에서 유일하게 주석 처리가 없는 영역이다. 이 항목들의 설정값이 없으면 애플리케이션이 실행되지 않는다.
+  - `path.data`는 노드가 가지고 있을 문서들을 저장할 경로를 설정하는 항목이다. 
+    - 색인이 완료된 문서들은 세그먼트 파일로 저장되는데 이 파일들이 위치하게 될 경로이다. 
+    - 콤마로 구분하여 여러 개의 경로를 지정할 수 있는데, 이 경우 세그먼트가 두 개의 경로에 나뉘어 저장된다. 
+    - 즉, 어떤 문서는 경로1에 저장되고, 어떤 문서는 경로2가 저장된다.
+  - `path.logs`는 ES에서 발생하는 로그를 저장할 경로를 설정하는 항목이다.
+
+
+
+- Memory 영역
+
+  ```txt
+  # ----------------------------------- Memory -----------------------------------
+  #
+  # Lock the memory on startup:
+  #
+  #bootstrap.memory_lock: true
+  #
+  # Make sure that the heap size is set to about half the memory available
+  # on the system and that the owner of the process is allowed to use this
+  # limit.
+  #
+  # Elasticsearch performs poorly when the system is swapping the memory.
+  ```
+
+  - ES 프로세스에 할당되는 메모리 영역을 어떻게 관리할 것인지 간략하게 설정할 수 있다.
+  - `bootstrap.memory_lock: true`는 시스템의 스왑 메모리 영역을 사용하지 않도록 하는 설정이다(ES 권고 사항).
+  - 이 설정을 통해 스압 영역을 사용하지 않으면 성능을 보장할 수 있지만 시스템의 메모리가 부족한 경우에는 Out Of Memory 에러를 일으켜 노드의 장애로 이어질 수 있다. 
+    - 대부분의 경우에는 큰 문제가 없지만, JVM 힙 메모리의 용량이 시스템 메모리 용량의 절반 이상이 된다면 Out Of Memory 에러를 일으킬 수 있기에 주의해야 한다.
+  - 또한 이 설정을 사용하기 위해서는 elasticsearch.yml 뿐만 아니라 OS의 /etc/security/limits.conf 파일도 수정해야 한다.
+
+
+
+- Network 영역
+
+  ```txt
+  # ---------------------------------- Network -----------------------------------
+  #
+  # Set the bind address to a specific IP (IPv4 or IPv6):
+  #
+  #network.host: 192.168.0.1
+  #
+  # Set a custom port for HTTP:
+  #
+  #http.port: 9200
+  #
+  # For more information, consult the network module documentation.
+  ```
+
+  - ES 애플리케이션이 외부와 통신할 때 사용하게 될 IP 주소를 설정하는 항목.
+    - 외부와의 통신뿐 아니라 노드간의 통신에도 Network 영역에서 설정한 값들을 바탕으로 동작한다.
+  - `http.port`는 애플리케이션이 사용하게 될 포트 번호를 설정한다.
+  - `network.host` 설정은 애플리케이션이 사용하게 될 IP 주소를 설정한다.
+    - 다양한 IP를 애플리케이션에 사용할 수 있다.
+    - 외부에 노출하지 않고 서버 내부에서만 사용할 수 있는 127.0.0.1과 같은 로컬 IP를 사용할 수도 있고, 외부와의 통신을 가능하게 하기 위해 서버에서 사용하고 있는 IP를 사용할 수도 있다.
+    - 만약 두 가지를 모두 사용하고자 한다면 0.0.0.0의 IP 주소를 사용할 수도 있다.
+    - 내부적으로 `network.host` 설정은 `network.bind_host`와 `network.publish_host` 두 개로 나눌 수 있다.
+    - ``network.host` 를 설정하면 내부적으로는 두 설정 값이 같은 값으로 설정되지만 두 설정을 따로 쓸 수도 있다.
+    - `network.bind_host`는 클라이언트의 요청을 처리하기 위한 IP, `network.publish_host`는 클러스터 내부의 노드 간의 통신에 사용하기 위한 IP이다.
+
+
+
+- Discovery 영역
+
+  ```txt
+  # --------------------------------- Discovery ----------------------------------
+  #
+  # Pass an initial list of hosts to perform discovery when this node is started:
+  # The default list of hosts is ["127.0.0.1", "[::1]"]
+  #
+  #discovery.seed_hosts: ["host1", "host2"]
+  #
+  # Bootstrap the cluster using an initial set of master-eligible nodes:
+  #
+  #cluster.initial_master_nodes: ["node-1", "node-2"]
+  #
+  # For more information, consult the discovery and cluster formation module documentation.
+  ```
+
+  - 노드 간의 클러스터링을 위해 필요한 설정.
+  - `discovery.seed_hosts`는 클러스터링을 위한 다른 노드들의 정보를 나열한다.
+    - 배열 형식으로 설정할 수 있기 때문에 한 대만 해도 되고, 두 대 이상을 나열해도 된다.
+  - `cluster.initial_master_nodes`는 마스터 노드들을 설정한다.
+
+
+
+- Gateway 영역
+
+  ```txt
+  # ---------------------------------- Gateway -----------------------------------
+  #
+  # Block initial recovery after a full cluster restart until N nodes are started:
+  #
+  #gateway.recover_after_nodes: 3
+  #
+  # For more information, consult the gateway module documentation.
+  ```
+
+  - 클러스터 복구와 관련된 내용들을 포함한다.
+  - `gateway.recover_after_nodes` 설정은 클러스터 내의 노드를 전부 재시작할 때 최소 몇 개의 노드가 정상적인 상태일 때 복구를 시작할 것인지 설정한다.
+    - ES의 버전 업그레이드를 진행하거나 전체 노드 장애로 인해 클러스터 내의 모든 노드를 다시 시작해야 할 때가 있는데 이런 작업을 Full Cluster Restart라고 부러며, 이렇게 재시작한 노드들은 순차적으로 다시 클러스터링을 진행한다.
+    - 클러스터링을 시작하면 클러스터 내의 인덱스 데이터들을 복구하기 시작하는데, 이 때 사용자가 지정한 노드의 수만큼 클러스터에 노드들이 복귀하였을 때부터 인덱스 데이터에 대한 복구를 시작할 수 있게 할 수 있는 설정이다.
+    - 이 설정은 다시 `gateway.recover_after_master_nodes`와 `gateway.recover_after_data_nodes` 노드로 나뉘어, master와 data role을 부여한 노드의 복귀 수를 별도로 지정할 수 있다.
+
+
+
+- Various 영역
+
+  ```txt
+  # ---------------------------------- Various -----------------------------------
+  #
+  # Require explicit names when deleting indices:
+  #
+  #action.destructive_requires_name: true
+  ```
+
+  - `action.destructive_requires_name`는 클러스터에 저장되어 있는 인덱스를 _all이나 wildcard 표현식으로 삭제할 수 없도록 막는 설정이다.
+  - 인덱스를 삭제할 때 사용자의 실수에 의해 전체 인덱스나 많은 인덱스가 한 번에 삭제되지 못하게 하는 대표적인 방법이다.
+
+
+
+- 노드의 역할 정의
+
+  - 하나의 노드는 복수의 역할을 수행할 수 있다.
+    - 어떤 역할을 수행하게 할지 설정이 가능하다.
+    - 기본 값은 전부 TRUE로 되어 있어 기본적으로 하나의 노드는 모든 역할을 수행할 수 있도록 설정 되어있다.
+
+  | 노드 역할       | 항목        | 기본 설정값 |
+  | --------------- | ----------- | ----------- |
+  | 마스터 노드     | node.master | TRUE        |
+  | 데이터 노드     | node.data   | TRUE        |
+  | 인제스트 노드   | node.ingest | TRUE        |
+  | 코디네이트 노드 | 설정 없음   | TRUE        |
+
+  - 마스터 노드로만 사용하도록 설정하기
+    - 아래와 같이 설정 된 노드는 마스터 노드가 될 수 있는 자격을 부여받은 노드로 클러스터에 합류한다.
+    - 마스터 노드에 장애가 발생해서 클러스터로부터 분리될 경우, 마스터가 될 수 있는 자격을 부여받은 노드들 중 하나가 새로운 마스터가 된다.
+
+  ```txt
+  node.master: true
+  node.data: false
+  node.ingest: false
+  ```
+
+  - 세 값을 모두 false로 줄 경우
+    - 코디네이트 노드가 된다.
+    - 코디네이트 노드를 별도로 분리하는 이유는 사용자의 데이터 노드 중 한 대가 코디네이트 노드의 역할과 데이터 노드의 역할을 동시에 할 경우 해당 노드의 사용량이 높아질 수 있기 때문이다.
+  - 향후 확장성을 위해 마스터 노드와 데이터 노드는 가급적 분리해서 구축하는 것이 좋다.
+
+
+
+
+
+## jvm.options
+
+- jvm.options
+  - ES는 자바로 만들어진 애플리케이션이기에 힙 메모리, GC 방식과 같은 JVM 관련 설정이 필요하다.
+  - 이 설정은 ES 애플리케이션의 성능에 결정적 역할을 하기 때문에 어떤 항목들을 설정할 수 있는지 알고 이해해 두어야 한다.
+
+
+
+- JVM에서 사용할 힙 메모리 크기 설정
+
+  ```txt
+  ################################################################
+  ## IMPORTANT: JVM heap size
+  ################################################################
+  ##
+  (...중략...)
+  ##
+  ## -Xms4g
+  ## -Xmx4g
+  ```
+
+  - JVM은 데이터를 저장하기 위해 힙 메모리라는 공간을 필요로 한다.
+  - `Xms`로 최솟값을, `Xmx`로 최댓값을 설정한다.
+    - 둘을 같은 값으로 설정하지 않으면 실행 시에는 Xms에 설정된 최솟값 정도의 크기만 확보했다가 요청이 늘어나서 더 많은 힙 메모리가 필요해지는 경우 Xmx에 설정된 최댓값 크기까지 메모리를 요청하게 된다.
+    - 중간에 메모리의 요청이 추가로 일어나면 성능이 낮아질 수밖에 없기 때문에 두 값을 같은 값으로 설정하도록 권고한다.
+
+
+
+- GC(Garage Collection) 관련 설정
+
+  ```txt
+  ## GC configuration
+  8-13:-XX:+UseConcMarkSweepGC
+  8-13:-XX:CMSInitiatingOccupancyFraction=75
+  8-13:-XX:+UseCMSInitiatingOccupancyOnly
+  
+  ## G1GC Configuration
+  # NOTE: G1 GC is only supported on JDK version 10 or later
+  # to use G1GC, uncomment the next two lines and update the version on the
+  # following three lines to your version of the JDK
+  # 10-13:-XX:-UseConcMarkSweepGC
+  # 10-13:-XX:-UseCMSInitiatingOccupancyOnly
+  14-:-XX:+UseG1GC
+  ```
+
+  - `8-13:-XX:+UseConcMarkSweepGC`
+    - CMS라는 GC 방식을 사용한다는 설정이다.
+    - CMS는 ES가 기본으로 사용하는 GC 방식이며 특별한 경우가 아니라면 다른 방식으로 바꾸지 않아도 된다.
+  - `8-13:-XX:CMSInitiatingOccupancyFraction=75`
+    - CMS GC를 사용할 경우 힙 메모리 사용량이 어느 정도가 되면 old GC를 수행할 것인지 설정한다.
+    - 75%가 기본값으로, 확보된 힙 메모리의 사용량이 75%가 되면 old GC를 진행한다는 의미이다.
+    - old GC가 발생하면 **Stop-the-world** 현상에 의해 ES 프로세스가 잠시 응답 불가 상태가 되기 때문에 주의해서 설정해야 한다.
+    - 이 값을 낮게 설정하면 old GC가 자주 발생하고, 높게 설정하면 한 번의 old GC 수행 시간이 길어진다.
+  - `8-13:-XX:+UseCMSInitiatingOccupancyOnly`
+    - old GC를 수행할 때, GC 통계 데이터를 근거로 하지 않고 ,`8-13:-XX:CMSInitiatingOccupancyFraction=75`의 설정만을 기준으로 old GC를 수행한다는 의미이다.
+  - `G1GC Configuration`
+    - CMS GC가 아닌 G1 GC에 대한 설정이다.
+    - G1 GC를 적용하면 다양한 이슈가 발생할 수 있기 때문에 반드시 테스트해보고 진행해야 한다.
+
+
+
+- 힙 메모리와 GC 방식 설정
+  - 힙 메모리와 GC 방식에 대한 설정은 성능에 많은 영향을 주기 때문에 정확하게 이해하고 수정해야 한다.
+    - 특히 힙 메모리 설정과 관련해서 ES 공식 문서에서는 가능한 한 32GB를 넘지 않게 설정할 것, 전체 메모리의 절반 정도를 힙 메모리로 설정할 것 등을 권고하고 있다.
+  - 힙 메모리가 가능한 32GB를 넘지 않도록 권고하는 이유
+    - JVM은 연산을 위한 데이터들을 저장하기 위한 공간으로 힙 메모리를 사용한다.
+    - 이 때 힙 메모리에 저장되는 데이터들을 오브젝트라 부르고, 이 오브젝트에 접근하기 위한 메모리상의 주소를 OOP(Ordinaty Object Pointer)라는 구조체에 저장한다.
+    - 각각의 OOP는 시스템 아키텍처에 따라 32 비트 혹은 64 비트의 주소 공간을 가리킬 수 있는데, 32비트라면 최대 4GB까지의 주소 공간을 가리킬 수 있는 반면 64 비트는 이론상 16EB까지의 주소 공간을 가리킬 수 있다.
+    - 하지만 64 비트의 경우 32비트보다 더 넓은 주소 공간을 가리키기 위해 더 많은 연산과 더 많은 메모리 공간을 필요로 하기 때문에 성능 측면에서는 32 비트보다 떨어질 수밖에 없다.
+    - 그래서 JVM은 시스템 아키텍처가 64 비트라고 하더라도 확보해야 할 힙 메모리 영역이 4GB보다 작다면 32 비트 기반의 OOP를 사용해서 성능을 확보한다.
+    - 문제는 힙 메모리 영역이 4GB보다 클 경우에 발생한다. 32비트의 주소 공간을 사용하는 OOP로는 4GB 이상의 메모리 영역을 가리킬 수 없기 때문이다.
+    - 그렇다고 64비트 기반의 OOP를 사용하게 되면 급작스럽게 성능 저하가 발생할 수 있기 때문에 JVM은 Compressed OOP를 통해 32비트 기반의 OOP를 사용하되 4GB 이상의 영역을 가리킬 수 있도록 구현했다.
+    - Compressed OOP는 Native OOP에 비해 8배 더 많은 주소 공간을 표시할 수 있게 되고, 이에 따라 기존 4GB에서 32GB까지 힙 메모리 영역이 증가한다.
+    - 그렇기에 힙 메모리 할당을 32GB 미만으로 하게 되면 32비트 기반의 OOP를 계속 사용할 수 있게 되고 성능 저하를 피할 수 있게 된다.
+  - 전체 메모리의 절반 정로를 힙 메모리로 할당하도록 권고하는 이유
+    - ES는 색인된 데이터를 세그먼트라는 물리적인 파일로 저장한다.
+    - 파일로 저장하기 때문에 I/O가 발생할 수밖에 없는 구조이다.
+    - I/O 작업은 시스템 전체로 봤을 때 가장 느린 작업이기 때문에 빈번한 I/O 작업이 발생한다면 시스템 성능이 떨어진다.
+    - OS에서는 이런 성능 저하를 막기 위해 파일의 모든 내용을 메모리에 저장해 놓는 페이지 캐시 기법을 사용한다.
+    - 하지만 페이지 캐시는 애플리케이션들이 사용하지 않는 미사용 메모리를 활용해서 동작하기 때문에 페이지 캐시를 최대한 활용하기 위해서는 애플리케이션이 사용하는 메모리를 줄이는 것이 좋다.
+    - 특히 ES와 같이 빈번한 I/O 작업이 발생해야 하는 경우 가급적 많은 메모리를 페이지 캐시로 활용해서 I/O 작업이 모두 메모리에서 끝날 수 있도록 하는 것이 성능 확보에 도움이 된다.
+    - 이런 이유로 인해 공식 문서에서는 물리 메모리의 절반 정도를 힙 메모리로 할당할 것을 권고한다.
+    - 굳이 많은 양의 힙 메모리가 필요하지 않다면 절반 이하로 설정해도 된다.
+
+
+
+
+
 # 엘라스틱서치 설정하기
 
 - 클러스터 이름 명시하기
