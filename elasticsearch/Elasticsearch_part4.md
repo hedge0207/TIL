@@ -381,29 +381,27 @@
     - from으로 결과의 시작 위치를 지정하고, size로 각 결과 페이지의 크기를 지정한다.
     - from이 7이고, size가 3인 경우, ES는 8, 9, 10 번째 결과를 반환한다.
   - 이들 두 개의 파라미터가 전달되지 않았다면 ES는 첫 결과의 시작(0번째)을 기본 값으로 사용하고 응답 결과와 함께 10건의 결과를 전송한다.
-  
+
   ```bash
   $ curl 'localhost:9200/인덱스명/_search?from=7&size=3'
   ```
-```
-  
-  - sort를 활용
-  - 일치하는 모든 도큐먼트를 날짜 오름차순으로 정렬한 결과 중 최초 10개를 반환한다.
-  
-  ```bash
-  $ curl 'localhost:9200/인덱스명/_search?sort=date:asc'
-```
 
-  - _source를 활용
-    - 검색 결과의 일부 필드만 요청하도록 설정
-  - title과 date _source 필드에 포함되어 반환된다.
+  - sort를 활용
+    - 일치하는 모든 도큐먼트를 날짜 오름차순으로 정렬한 결과 중 최초 10개를 반환한다.
+
+  ``` bash
+  $ curl 'localhost:9200/인덱스명/_search?sort=date:asc'
+  ```
+    - _source를 활용
+      - 검색 결과의 일부 필드만 요청하도록 설정
+        - title과 date _source 필드에 포함되어 반환된다.
 
   ```bash
   $ curl 'localhost:9200/인덱스명/_search?_source=title,date'
   ```
 
-  - q를 활용
-  - title 필드에 elasticsearch라는 단어를 포함하는 도큐먼트만 검색
+    - q를 활용
+        - title 필드에 elasticsearch라는 단어를 포함하는 도큐먼트만 검색
 
   ```bash
   $ curl 'localhost:9200/인덱스명/_search?q=title:elasticsearch'
