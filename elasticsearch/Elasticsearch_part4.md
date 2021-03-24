@@ -321,13 +321,13 @@
 
   - 모든 search API 검색 요청은 _search REST end point를 사용하고 GET이나 POST 요청 중 하나가 된다.
     - end point는 path라고도 불리며 URL에서 호스트와 포트 이후의 주소를 말한다.
-- 간단한 형태의 URI Search 형태를 제공한다.
+  - 간단한 형태의 URI Search 형태를 제공한다.
   
   ```bash
   /인덱스명/_search?q=쿼리
-```
+  ```
   
-- RequestBody Search 형태도 제공한다.
+  - RequestBody Search 형태도 제공한다.
   
   ```bash
   /인덱스명/_search
@@ -338,10 +338,10 @@
       }
     }
   }
-```
+  ```
   
-  - 인덱스명에 한 개 이상의 인덱스를 지정해서 다수의 인덱스에 동시에 쿼리를 날릴 수 있다.
-  - 아래와 같이 인덱스명이 올 자리에 `_all`을 입력하면 모든 인덱스에 쿼리를 날린다.
+    - 인덱스명에 한 개 이상의 인덱스를 지정해서 다수의 인덱스에 동시에 쿼리를 날릴 수 있다.
+    - 아래와 같이 인덱스명이 올 자리에 `_all`을 입력하면 모든 인덱스에 쿼리를 날린다.
   
   ```bash
   curl "localhost:9200/_all/_search?q=쿼리"
@@ -647,30 +647,34 @@
 
 - query_string 쿼리
 
+  - 모든 필드를 검색하는 것이 가능하다.
+    - 기존에는 `"fields":"_all"` 속성을 줘서 모든 필드에서 검색이 가능했지만 6.X 버전부터 막혔다.
+    - 이제는 필드에 `copy_to` 속성을 줘서 모든 필드를 검색하는 기능을 구현할 수 있다.
+    - 그러나 query_string은 굳이 모든 필드에 `copy_to` 속성을 주지 않아도 모든 필드를 검색하는 것이 가능하다.
   - and나 or 같은 검색어 간 연산이 필요한 경우에 사용한다.
-    - 경우에 따라서 match 쿼리나 multi_match와 동일하게 동작할 수도 있고 정규표현식 기반의 쿼리가 될 수도 있다.
+  - 경우에 따라서 match 쿼리나 multi_match와 동일하게 동작할 수도 있고 정규표현식 기반의 쿼리가 될 수도 있다.
     - 와일드카드 검색도 가능하다.
     - 그러나 query_string을 통한 와일드 카드 검색은 스코어링을 하지 않을 뿐더러(모든 score가 1로 계산), 성능도 좋지 않기에 사용을 자제해야 한다. 
   - 요청 URL을 사용하여 검색
 
   ```bash
-  $ curl 'localhost:9200/인덱스명/_search?q=텀'
+$ curl 'localhost:9200/인덱스명/_search?q=텀'
   ```
-
+  
   - 본문 기반 검색
-
+  
   ```bash
   $ curl 'localhost:9200/인덱스명/_search' -H 'Content-Type: application/json' -d '{
   "query":{
     "query_string":{
-      "query":"텀"
+    "query":"텀"
     }
   }'
-  ```
-
+```
+  
   - 기본적으로 query_string 필드는 _all 필드를 검색한다.
     - 특정 필드를 지정하는 것이 가능하다.
-
+  
   ```bash
   $ curl 'localhost:9200/인덱스명/_search?q=필드명:텀'
   
@@ -678,13 +682,13 @@
   "query":{
     "query_string":{
       "fields":"필드",
-      "query":"텀"
+    "query":"텀"
     }
-  }'
+}'
   ```
-
+  
   - 이 밖에 다양한 쿼리 스트링 문법이 존재하는데 자세한 내용은 아래 링크 참조
-
+  
   > https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html
 
 
