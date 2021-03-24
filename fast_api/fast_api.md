@@ -1,4 +1,4 @@
-# FastAPI
+# FastAPI 튜토리얼
 
 - 특징
   - 빠름:  Starlette과 Pydantic 덕분에 NodeJS 및 Go와 대등할 정도로 매우 높은 성능을 지녔다.

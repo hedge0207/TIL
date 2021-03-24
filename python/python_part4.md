@@ -424,3 +424,127 @@
   print("End")
   ```
 
+
+
+
+
+# Python type hint
+
+- 타입 힌트
+  - 타입 표시에 관한 표준 구문을 제공하고, 더 쉬운 정적 분석과 리팩토링 및 타입 정보를 추론하는 것에 대한 도움을 주기 위해 만들어졌다.
+    - 정적 언어가 가지는 장점인 타입 시스템의 견고함을 동적 언어로써 조금이라도 따라잡을 수 있도록 도와준다.
+  - 그렇다고 파이썬이 정적 타입을 지향하는 것은 아니다.
+    - 타입 힌트는 말 그대로 힌트 기능일뿐으로, 정적 감사기와 IDE를 사용하며 코드의 질을 높이기 위해 사용 될 수 있으나 결코 런타임에 영향을 끼치지 않는다.
+    - 예를 들어 정수형을 가질 변수에 문자열 타입을 힌트로 작성해 놓아도 파이썬은 에러를 발생시키지는 않는다.
+
+
+
+- 타입 힌트를 표시하는 방법
+
+  - 함수 선언부에서의 타입 힌트
+    - 인수 뒤에 콜론을 붙여서 인수의 타입 힌트를 붙인다.
+    - 괄호 뒤 콜론 전에 `->` 를 붙여 반환값에 대한 타입 힌트를 지정할 수 있다.
+
+  ```python
+  def f(name: str, age: int) -> str:
+      ...
+  ```
+
+  - 변수의 타입은 함수 인수와 비슷한 형식으로 힌트를 붙일 수 있다.
+
+  ``` python
+  age: int = 28
+  name: string = "Theo"
+  # 새로 생성한 클래스 타입으로 선언
+  test: Test = Test()
+  ```
+
+  - 클래스 멤버 변수
+
+  ```python
+  class Person:
+      name: str
+      age: int
+      weight: float
+      
+      def __init__(self,name: str, age: int, weight: float):
+          self.name = name
+          self.age = age
+          self.weight = weight
+  ```
+
+
+
+- 특별한 타입
+
+  - Any
+    - 말 그대로 모든 타입을 허용한다.
+
+  ```python
+  x: Any = 1
+  y: Any = "Any"
+  ```
+
+  - NoReturn
+    - 리턴값이 없을 경우 사용한다.
+    - 예외를 발생시킬 때도 사용한다.
+
+  ```python
+  from typing import NoReturn
+  
+  def f() -> NoReturn:
+      raise RuntimeError('Error')
+  ```
+
+
+
+- typing 모듈
+
+  - 내장 타입을 이용해서 좀 더 복잡한 타입 어노테이션을 추가할 때 사용.
+
+  ```python
+  from typing import List, Set, Dict, Tuple
+  
+  num_lst: List[int] = [1,2,3]
+  
+  num_set: Set[int] = {4,5}
+  
+  coordinate: Dict[str, float] = {'x': 1.0, 'y': 0.9}
+  
+  theo: Tuple[int, str, List[float]] = (28, "Theo", [170, 62.4])
+  ```
+
+  - Union
+    - 여러 개의 타입이 허용될 수 있는 상황에서 사용
+
+  ```python
+  from typing import Union
+  
+  
+  def toString(num: Union[int, float]) -> str:
+      return str(num)
+  ```
+
+  - Optional
+    - None이 허용되는 함수의 매개 변수의 타입을 명시할 때 사용한다.
+
+  ```python
+  def repeat(name: str,message: Optional[str] = None) -> str:
+      if message:
+          return name+message
+      else:
+          return name
+  ```
+
+  
+
+
+
+
+
+
+
+
+
+
+
