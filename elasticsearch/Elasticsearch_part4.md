@@ -319,15 +319,16 @@
 
 - search API
 
-  - 모든 search API 검색 요청은 _search REST 종단점을 사용하고 GET이나 POST 요청 중 하나가 된다.
-  - 간단한 형태의 URI Search 형태를 제공한다.
-
+  - 모든 search API 검색 요청은 _search REST end point를 사용하고 GET이나 POST 요청 중 하나가 된다.
+    - end point는 path라고도 불리며 URL에서 호스트와 포트 이후의 주소를 말한다.
+- 간단한 형태의 URI Search 형태를 제공한다.
+  
   ```bash
   /인덱스명/_search?q=쿼리
-  ```
-
-  - RequestBody Search 형태도 제공한다.
-
+```
+  
+- RequestBody Search 형태도 제공한다.
+  
   ```bash
   /인덱스명/_search
   {
@@ -337,11 +338,11 @@
       }
     }
   }
-  ```
-
+```
+  
   - 인덱스명에 한 개 이상의 인덱스를 지정해서 다수의 인덱스에 동시에 쿼리를 날릴 수 있다.
-    - 아래와 같이 인덱스명이 올 자리에 `_all`을 입력하면 모든 인덱스에 쿼리를 날린다.
-
+  - 아래와 같이 인덱스명이 올 자리에 `_all`을 입력하면 모든 인덱스에 쿼리를 날린다.
+  
   ```bash
   curl "localhost:9200/_all/_search?q=쿼리"
   ```
