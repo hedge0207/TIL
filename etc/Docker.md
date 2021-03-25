@@ -156,6 +156,12 @@
   docker ps
   ```
 
+  - 모든 컨테이너 보기
+
+  ```bash
+  docker ps -a
+  ```
+
   - 컨테이너 삭제
 
   ```
@@ -165,7 +171,13 @@
   - 모든 컨테이너 삭제
 
   ```
-  docker rm `docker ps -a -q`
+  docker rm `docker ps -a -q
+  ```
+
+  - 이미지 보기
+
+  ```bash
+  docker images
   ```
 
   - 이미지 삭제
@@ -185,15 +197,15 @@
   ```
   docker system prune -a
   ```
-
+  
   -  도커 파일로 이미지 생성
-
+  
   ```
   docker build -t ㅏ이미지명ㅓ
   ```
-
+  
   - 도커 컴포즈 실행
-
+  
   ```
   docker-compose up  //백그라운드에서 돌도록 하려면 -d 옵션을 붙인다.
   ```
