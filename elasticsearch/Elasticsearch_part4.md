@@ -206,6 +206,14 @@
 
 
 
+- custom analyzer
+
+  > https://esbook.kimjmin.net/06-text-analysis/6.3-analyzer-1/6.4-custom-analyzer 참고
+
+  - 추후 추가
+
+
+
 - analyzer와 검색의 관계
 
   - analyze의 중요성
@@ -670,6 +678,7 @@ $ curl 'localhost:9200/인덱스명/_search?q=텀'
     "query":"텀"
     }
   }'
+  ```
 ```
   
   - 기본적으로 query_string 필드는 _all 필드를 검색한다.
@@ -685,10 +694,10 @@ $ curl 'localhost:9200/인덱스명/_search?q=텀'
     "query":"텀"
     }
 }'
-  ```
-  
+```
+
   - 이 밖에 다양한 쿼리 스트링 문법이 존재하는데 자세한 내용은 아래 링크 참조
-  
+
   > https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html
 
 

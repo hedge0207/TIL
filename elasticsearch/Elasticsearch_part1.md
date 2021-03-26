@@ -507,7 +507,7 @@
 
 
 
-## 매핑
+## settings와 mappings
 
 - settings와 mappings
 
@@ -580,18 +580,20 @@
 
 - settings
 
-  - 샤드의 수, 레플리카 샤드의 수, `refresh_interval`, 애널라이저, 토크나이저, 토큰 필터 등의 설정이 존재한다.
-
+  - 아래와 같은 것들을 설정 가능하다.
+  - 샤드의 수, 레플리카 샤드의 수
+    - `refresh_interval`
+  - 애널라이저, 토크나이저, 토큰 필터
   - 샤드의 수는 인덱스를 처음 생성할 때 한 번 지정하면 바꿀 수 없지만 레플리카 샤드의 수는 동적으로 변경이 가능하다.
-
+  
   ```bash
   # 레플리카 샤드의 수를 2개로 변경하는 명령어
   # 인덱스명 뒤에 _settings API로 접근해서 변경할 설정을 입력하면 변경이 가능하다.
-  $ curl -XPUT 'localhost:9200/인덱스명/_settings?pretty' -H 'Content-Type: application/json' -d '{"number_of_replicas":2}'
+$ curl -XPUT 'localhost:9200/인덱스명/_settings?pretty' -H 'Content-Type: application/json' -d '{"number_of_replicas":2}'
   ```
 
   - `refresh_interval`: ES에서 세그먼트가 만들어지는 리프레시 타임을 설정하는 값으로 기본 값은 1초(1s)이다. 동적으로 변경이 가능하다.
-
+  
   ```bash
   # refresh_interval을 30초로 변경하는 명령어
   $ curl -XPUT 'localhost:9200/company/_settings?pretty' -H 'Content-Type: application/json' -d '{"number_of_replicas":3}'
@@ -674,9 +676,10 @@
     }'
     ```
 
-    - 미리 정의 된 매핑에 필드 추가하기
-      - 당연히 기존 필드명과 추가할 필드명이 같으면 오류가 발생한다.
-
+  - 미리 정의 된 매핑에 필드 추가하기
+    
+  - 당연히 기존 필드명과 추가할 필드명이 같으면 오류가 발생한다.
+    
     ```bash
     $ curl -XPUT 'localhost:9200/인덱스명/_mapping' -H 'Content-Type: application/json' -d '{
       "properties":{
@@ -686,26 +689,28 @@
         }
       }
     }'
-    ```
-
-    - 인덱스에 기존 매핑에 정의되지 않은 필드를 지닌 도큐먼트가 입력되면 필드가 자동으로 추가 된다.
-      - 기존에 없던 rating 필드를 추가
-
+  ```
+    
+  - 인덱스에 기존 매핑에 정의되지 않은 필드를 지닌 도큐먼트가 입력되면 필드가 자동으로 추가 된다.
+  
+    - 기존에 없던 rating 필드를 추가
+    
     ```bash
     $ curl -XPUT 'localhost:9200/recipes/_doc/2' -H 'Content-Type: application/json' -d '{
     "rating":4
-    }'
+  }'
     ```
-
-    - 확인
-
+  
+  - 확인
+  
     ```json
-    $ curl 'localhost:9200/recipes/_mappings?pretty'
+  $ curl 'localhost:9200/recipes/_mappings?pretty'
     ```
-
-    - 응답
-      - rating 필드가 새로 추가 된 것을 확인 가능하다.
-
+  
+- 응답
+    
+    - rating 필드가 새로 추가 된 것을 확인 가능하다.
+    
     ```json
     {
       "recipes" : {
@@ -747,17 +752,17 @@
 
 
 - ES에서 선언 가능한 문자열 타입에는 text, keyword 두 가지가 있다.
-  - 2.X 버전 이전에는 string이라는 하나의 타입만 있었고 텍스트 분석 여부, 즉 애널라이저 적용을 할 것인지 아닌지를 구분하는 설정이 있었다.
   - 5.0 버전부터는 텍스트 분석의 적용 여부를 text 타입과 keyword 타입으로 구분한다.
+    - 2.X 버전 이전에는 string이라는 하나의 타입만 있었고 텍스트 분석 여부, 즉 애널라이저 적용을 할 것인지 아닌지를 구분하는 설정이 있었다.
   - 인덱스를 생성할 때 매핑에 필드를 미리 정의하지 않으면 동적 문자열 필드가 생성될 때 text 필드와 keyword 필드가 다중 필드로 함께 생성된다.
 
 
 
 - text
   - 입력된 문자열을 텀 단위로 쪼개어 역 색인 구조를 만든다.
-  - 보통은 풀택스트 검색에 사용할 문자열 필드들을 text 타입으로 지정한다.
+  - 보통은 풀텍스트 검색에 사용할 문자열 필드들을 text 타입으로 지정한다.
   - text 필드에는 아래와 같은 옵션들을 설정 가능하다.
-    - `"analyzer" : "애널라이저명"`:  색인에 사용할 애널라이저를 입력하며 디폴트로는 standard 애널라이저를 사용한다. 토크나이저, 토큰필터들을 따로 지정할 수가 없으며 필요하다면 사용자 정의 애널라이저를 settings에 정의 해 두고 사용한다.
+    - `"analyzer" : "애널라이저명"`:  색인에 사용할 애널라이저를 입력하며 디폴트로는 standard 애널라이저를 사용한다. 토크나이저, 토큰필터들을 따로 지정할 수가 없으며, 필요하다면 사용자 정의 애널라이저를 settings에 정의 해 두고 사용한다.
     - `"search_analyzer" : "애널라이저명"`: 기본적으로 text필드는 match 쿼리로 검색을 할 때 색인에 사용한 동일한 애널라이저로 검색 쿼리를 분석하는데, `search_analyzer`를 지정하면 검색시에는 색인에 사용한 애널라이저가 아닌 다른 애널라이저를 사용한다. 보통 NGram 방식으로 색인을 했을 때는 지정 해 주는 것이 바람직하다.
     - `"index" : <true | false>`: 디폴트는 true이고, false로 설정하면 해당 필드는 역 색인을 만들지 않아 검색이 불가능해진다.
     - `"boost" : 숫자 값`: 디폴트는 1이다. 값이 1 보다 높으면 풀텍스트 검색 시 해당 필드 스코어 점수에 가중치를 부여하고, 1 보다 낮은 값을 입력하면 가중치가 내려간다.
@@ -780,7 +785,7 @@
 - 숫자
 
   - ES는 JAVA에서 기본으로 사용되는 숫자 타입들을 지원한다.
-  - 또한 half_float, scaled_float과 같이 ES에서만 사요외는 타입들도 존재한다.
+  - 또한 half_float, scaled_float과 같이 ES에서만 사용되는 타입들도 존재한다.
   - 종류
     - JAVA에서 사용되는 숫자 타입들: long, integer, short, byte, double, float
     - ES에서만 지원하는 숫자 타입들: half_float, scaled_float
