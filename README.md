@@ -837,27 +837,16 @@
     - User based Collaborative filtering
     - Item based Collaborative filtering
   - Content based filtering
-
 - 통계
 
 
 
-## [Docker](https://github.com/hedge0207/TIL/blob/master/etc/Docker.md)
+# Elasticsearch
 
-- Docker
-  - Docker란 무엇인가
-  - Docker를 왜 사용해야 하는가
-- Docker 실행하기
-  - mariaDB 연동하기
-  - Docker 명령어
 
-<br>
 
-<br>
+# Docker
 
-<br>
-
-<br>
 
 # Machine learning
 
