@@ -510,9 +510,205 @@
   $ docker unpause <컨테이너명 또는 ID>
   ```
 
+
+
+
+## 가동 중인 Docker Container 연결
+
+- 컨테이너에 연결하기
+
+  ```bash
+  $ docker attach 컨테이너명
+  ```
+
+
+
+- 가동 컨테이너에서 프로세스 실행
+
+  - 가동 중인 컨테이너에서 새로운 프로세스를 실행
+    - 백그라운드에서 실행되고 있는 컨테이너에 액세스하소자 할 때는  attach  명령으로 연결해도 쉘이 작동하지 않는 경우 명령을 접수할 수 없다.
+    - 따라서 아래 명령어를 입력하여 임의의 명령을 실행한다.
+
+  - `-d(--detach)`: 명령을 백그라운드에서 실행한다.
+  - `-i(--interactive)`: 컨테이너의 표준 입력을 연다.
+  - `-t(--tty)`: tty 디바이스를 사용한다.
+  - `-u(--user)`: 사용자명을 지정한다.
+
+  ```bash
+  $ docker exec [옵션] <컨테이너 식별자> <실행할 명령> [인수]
+  ```
+
+
+
+- 가동 컨테이너의 프로세스 확인
+
+  ```bash
+  $ docker top 컨테이너
+  ```
+
+
+
+-  가동 컨테이너의 포트 전송 확인
+
+  ```bash
+  $ docker port 컨테이너
+  ```
+
+
+
+- 컨테이너 이름 변경
+
+  ```bash
+  $ docker rename <기존 이름> <변경할 이름>
+  ```
+
+
+
+- 컨테이너 안의 파일을 복사
+
+  ```bash
+  # 컨테이너에서 호스트로 복사
+  $ docker cp <컨테이너 식별자>:<컨테이너 안의 파일 경로> <호스트 디렉토리 경로>
+  
+  # 호스트에서 컨테이너로 복사
+  $ docker cp <호스트 파일> <컨테이너 식별자>:<컨테이너 안의 파일 경로>
+  ```
+
+
+
+- 컨테이너의 변경 사항 확인
+
+  - 컨테이너가 최초로 생성되었을 때와 달라진 점을 확인.
+  - A는 파일의 추가, D는 파일의 삭제, C는 파일의 수정을 나타낸다.
+
+  ```bash
+  $ docker diff <컨테이너 식별자>
+  ```
+
+
+
+
+
+##  Docker Container Network
+
+- Docker Container Network
+  - Docker container 간의 통신을 수행한다.
+  -  Docker는 기본값으로 bridge, host. none 세 개의 네트워크를 만든다.
+    - 네트워크를 명시적으로 지정하지 않고 Docker 컨테이너를 시작하면 기본값인 bridge 네트워크로 Docker 컨테이너를 시작한다. 
+
+
+
+- Docker 네트워크 목록 확인
+
+  - `-f(--filter) key=value`: 출력을 필터링한다.
+  - `--no-trunc`: 상세 정보를 출력한다.
+  - `-q(--quiet)`: 네트워크  ID만 출력한다.
+
+  ```bash
+  $ docker network ls [옵션]
+  ```
+
+
+
+- 네트워크 상세 정보 확인
+
+  ```bash
+  $ docker network inspect [옵션] 네트워크
+  ```
+
+
+
+- 네트워크 작성
+
+  - `-d(--driver)`: 네트워크 브리지 또는 오버레이(기본값은 bridge)
+  - `--ip-range`: 컨테이너에 할당하는 IP 주소의 범위를 지정
+  - `--subnet`: 서브넷을 CIDR 형식으로 지정
+  - `--ipv6`: IPv6 네트워크를 유효화할지 말지(bool)
+  - `-label`: 네트워크에 설정하는 라벨 
+
+  ```bash
+  $ docker network create [옵션] 네트워크
+  ```
+
+
+
+- 네트워크 연결
+
+  - `--ip`: IPv4 주소
+  - `--ip6`: IPv6 주소
+  - `--alias`: 앨리어스명
+  - `--link`: 다른 컨테이너에 대한 링크
+
+  ```bash
+  $ docker network connect [옵션] 네트워크 컨테이너
+  ```
+
   
 
+- 네트워크 삭제
 
+  ```bash
+  $ docker network rm [옵션] 네트워크
+  ```
+
+  
+
+## Docker 이미지 생성
+
+- 컨테이너를 바탕으로 이미지 작성
+
+  - `-a(--author)`: 작성자를 지정한다.
+  - `-m(--message)`: 메시지를 지정한다.
+  - `-c(--change)`:  커밋 할 때 Dockerfile 명령을 지정한다.
+  - `-p(--pause)`: 컨테이너를 일시 정지하고 커밋한다.
+
+  ```bash
+  $ docker commit [옵션] <컨테이너 식별자> [이미지명[:태그명]]
+  ```
+
+
+
+- 컨테이너를 tar 파일로 출력
+
+  ```bash
+  $ docker exporr <컨테이너 식별자>
+  ```
+
+
+
+- tar 파일로 이미지 작성
+
+  ```bash
+  $ docker import <파일 또는 URL> [이미지명[:태그명]]
+  ```
+
+
+
+- 이미지 저장
+
+  - Docker 이미지를 tar 파일로 저장
+
+  ```bash
+  $ docker save [옵션] <저장 파일명> [이미지명]
+  ```
+
+
+
+- 이미지 읽어 들이기
+
+  ```bash
+  $ docker load [옵션]
+  ```
+
+
+
+- export와 save의 차이
+  -  export
+    - 컨테이너를 작동시키는 데 필요한 파일을 모두 압축 아카이브로 모을 수 있다.
+    - 따라서 export를 통해 나온  tar 파일을 실행하면 컨테이너의 루트 파일 시스템을 그대로 추출할 수 있다.
+  -  save
+    - 이미지의 레이어 구조도 포함된 형태로 압축 아카이브로 모을 수 있다.
+  - export 명령으로 작성한 것은 import로,   save 명령으로 작성한 것은 load로 읽어 들여야 한다.
 
 
 
