@@ -190,6 +190,247 @@
 
 - Docker Compose
   - 여러 개의 Docker 컨테이너를 모아서 관리하기 위한 툴
+  - docker-compose.yml 파일에 컨테이너의 구성 정보를 정의하여 동일 호스트상의 여러 컨테이너를 일괄적으로 관리한다.
+    - 애플리케이션의 의존관계를 모아서 설정하는 것이 가낭흐다.
+    - 이 정의를 바탕으로  docker-compose 명령을 실행하면 여러 개의 컨테이너를 모아서 시작하거나 정지할 수 있다.
+    - 또한 컨테이너의 구성정보를 YAML 형식의 파일로 관리할 수 있으므로 지속적 배포도 용이하다.
+    - YAML은 구조화된 데이터를 표현하기 위한 데이터 포맷이다.
+
+
+
+## docker-compose.yml 파일의 구성
+
+- 맨 앞에는 docker-compose의 버전을 지정한다.
+  - 버전에 따라 기술할 수 있는 항목이 다르므로 주의해야 한다.
+
+
+
+- image
+
+  - Docker 컨테이너의 바탕이 되는 베이스 이미지를 지정한다.
+  - 이미지명 또는 이미지 ID 중 하나를 지정한다.
+  - 베이스 이미지가 로컬 환경에 있으면 그것을 사용하고, 없으면 Docker Hub에서 자동으로 다운로드한다.
+    - 태그를 지정하지 않을 경우 자동으로 latest태그가 붙은 이미지를 다운로드한다.
+
+  ```yaml
+  elasticsearch:
+    image: elasticsearch
+  ```
+
+
+
+- build
+
+  - 이미지의 작성을 Dockerfile에 기술하고 그것을 자동으로 빌드하여 베이스 이미지로 지정할 때는 build를 지정한다.
+  - build에는 docker-compose.yml이 있는 디렉토리를 기준으로 Dockerfile의 경로를 지정한다.
+    - Dockerfile은 작성하지 않아도 자동으로 해당 경로의  Dockerfile이라는 이름의 파일을 찾아서 빌드한다.
+
+  ```yaml
+  elasticsearch:
+    # dockerfile이 현재 디렉토리에 있을 경우
+    build: .
+  ```
+
+  - Dockerfile의 파일명이 Dockerfile이 아닐 경우에는 context에 경로를. dockerfile에 Dockerfile이름을 넣는다.
+
+  ```yaml
+  elasticsearch:
+    build: 
+      # /data 경로에 있는 my-dockerfile이라는 이름의 Dockerfile로 빌드를 하려는 경우
+      context: /data
+      dockerfile: my-dockerfile
+  ```
+
+  - args로 인수를 지정하는 것도 가능하다.
+    - bool 타입을 사용할 경우에는 따옴표로 둘러싸야 한다.
+    - Docker Compose를 실행하는 머신 위에서만 유효하다.
+
+  ```yaml
+  elasticsearch:
+    # dockerfile이 현재 디렉토리에 있을 경우
+    build:
+      args:
+        va1:1
+        va2:"true"
+        va3:foo
+  ```
+
+
+
+- command/entrypoint
+
+  - 컨테이너 안에서 작동하는 명령 지정
+    - 베이스 이미지에 이미 명령이 지정되어 있을 경우 이미지의 명령을 덮어쓴다.
+  - entrypoint는 명령을 나열하는 것도 가능하다.
+
+  ```yaml
+  command: 명령어
+  
+  entrypoint:
+    - 명령어1
+    - 명령어2
+  ```
+
+
+
+- links
+
+  - 다른 컨테이너에 대한 링크 기능을 사용하여 연결할 때 사용한다.
+
+  ```yaml
+  links:
+    - 컨테이너1
+    - 컨테이너2
+  ```
+
+
+
+- ports/expose
+
+  - 컨테이너 간 통신에 사용한다.
+  - 컨테이너가 공개하는 포트는 ports로 지정한다.
+    - `호스트 머신의 포트 번호 : 컨테이너의 포트 번호` 형식으로 지정하거나 컨테이너의 포트 번호만 지정한다.
+    - 컨테이너의 포트 번호만 지정할 경우 호스트 머신의 포트는 랜덤한 값으로 설정된다.
+
+  ``` yaml
+  ports:
+    - 호스트 머신의 포트 번호 : 컨테이너의 포트 번호
+    - 컨테이너의 포트 번호
+  ```
+
+  - expose는 호스트 머신에 대한 포트를 공개하지 않고 링크 기능을 사용하여 연결하는 컨테이너에게만 포트를 공개할 때 사용한다.
+
+  ``` yaml
+  expose:
+    - 컨테이너의 포트 번호1
+    - 컨테이너의 포트 번호2
+  ```
+
+
+
+- depends_on
+
+  - 여러 서비스의 의존관계를 정의할 때 사용한다.
+    - 예를 들어 Kibana를 실행하기전에 ES를 먼저 실행시키고자 한다면 Kibana가 ES를 의존하도록 설정할 수 있다.
+  - 주의할 점은 컨테이너의 시작 순서만 제어할 뿐 컨테이너상의 애플리케이션이 이용 가능해질 때까지 기다리는 것은 아니라는 것이다.
+
+  ```yaml
+  depends_on:
+    - 컨테이너1
+    - 컨테이너2
+  ```
+
+
+
+- environment/emv_file
+
+  - 컨테이너 안의 환경변수를 지정할 때 사용한다.
+  - YAML 배열 형식 또는 해시 형식 중 하나로 변수를 지정한다.
+
+  ```yaml
+  # 배열 형식
+  environmnet:
+    - FOO = bar
+    - VAL
+  
+  # 해시 형식
+  environmnet:
+    FOO: bar
+    VAL:
+  ```
+
+  - 설정하고자 하는 환경변수가 많을 때는 env_file을 지정한다.
+
+  ```yaml
+  env_file: <env 파일 경로>
+  ```
+
+
+
+- container_name/label
+
+  - 컨테이너의 이름 또는 라벨을 붙일 때 사용한다.
+
+  ```yaml
+  container_name: 컨테이너이름
+  ```
+
+  - 컨테이너 라벨은 YAML 배열 형식 또는 해시 형식 중 하나로 지정 가능하다.
+
+
+
+- volumes/volumes_from
+
+  - 컨테이너에 볼륨을 마운트할 때 사용한다.
+    - 호스트 측에서 마운트할 경로를 지정하려면 `호스트의 디렉토리 경로:컨테이너의 디렉토리 경로`
+
+  ```yaml
+  volumes:
+    - <마운트할 경로>
+    - <호스트의 디렉토리 경로>:<컨테이너의 디렉토리 경로>
+  ```
+
+  - 볼륨 지정 뒤에 ro를 지정하면 볼륨을 읽기 전용으로 마운트할 수 있다.
+
+  ```yaml
+  volumes:
+    - <호스트의 디렉토리 경로>:<컨테이너의 디렉토리 경로>/:ro
+  ```
+
+  - 다른 컨테이너로부터 모든 볼륨을 마운트할 때는 volumes_from에 컨테이너명을 지정한다.
+
+  ```yaml
+  volumes_from:
+    - 컨테이너명
+  ```
+
+
+
+
+
+## 명령어
+
+- `docker-compose` 명령
+  - `docker-compose` 명령은  docker-compose.yml을 저장한 디렉토리에서 실행된다.
+  - 만일 현재 디렉토리 이외의 장소에 docker-compose.yml을 놓아 둔 경우 `-f` 옵션으로 파일 경로를 지정해야 한다.
+    - 그 외에도 Docker Compose 파일을 docker-compose.yml 이외의 이름으로 설정한 경우에도 `-f` 옵션으로 Docker Compose  파일을 지정해 줘야 한다.
+  - 서브 명령 다음에 컨테이너명을 지정하면 해당 컨테이너만 조작이 가능하다.
+
+
+
+- Docker Compose의 버전 확인
+
+  - Docker for Mac, Docker for Windows에 미리 설치되어 있다.
+
+  ```bash
+  $ docker-compose -v(--version)
+  ```
+
+
+
+- docker-compose에 정의된 컨테이너 생성 후 시작하기
+
+  - `-d`: 백그라운드에서 실행한다.
+  - `--no-deps`: 링크 서비스를 시작하지 않는다.
+  - `--build`: 이미지를 빌드한다.
+  - `--no-build`: 이미지를 빌드하지 않는다.
+  - `-t(--timeout)`: 컨테이너의 타임아웃을 초로 지정(기본 10초)한다.
+
+  ```bash
+  $ docker-compose up [옵션] [서비스명 .] 
+  ```
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

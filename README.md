@@ -843,6 +843,20 @@
 
 # Elasticsearch
 
+## [Elasticsearch_part1](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part1.md)
+
+- 검색 엔진 개요
+- 엘라스틱 서치 개요
+  - 주요 기능
+  - 엘라스틱서치의 데이터 구조
+- 엘라스틱서치 기본 개념
+  - 클러스터와 노드
+  - 인덱스와 타입
+  - 샤드와 세그먼트
+  - settings와 mappings
+- Elasticsearch 설치하고 실행하기
+- 참고
+
 
 
 # Docker
