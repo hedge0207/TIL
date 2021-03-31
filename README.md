@@ -839,7 +839,13 @@
   - Content based filtering
 - 통계
 
+<br/>
 
+<br/>
+
+<br/>
+
+<br/>
 
 # Elasticsearch
 
@@ -857,7 +863,31 @@
 - Elasticsearch 설치하고 실행하기
 - 참고
 
+<br/>
 
+<br/>
+
+## [Elasticsearch_part2](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part2.md)
+
+- 엘라스틱서치 모니터링
+  - Head
+  - X-Pack
+- 클러스터 구축하기
+  - elasticsearch.yml
+  - jvm.options
+- 클러스터 운영하기
+  - 버전 업그레이드
+  - 샤드 배치 방식 변경
+- 엘라스틱서치 설정하기
+- 클러스터에 노드 추가하기
+
+<br/>
+
+<br/>
+
+<br/>
+
+<br/>
 
 # Docker
 
