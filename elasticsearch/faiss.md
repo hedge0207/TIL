@@ -70,7 +70,7 @@
 
 
 
-# faiss 개요
+# faiss Tutorial
 
 - faiss
   - 효율적인 유사도 검색과 밀집 벡터(dense vectors)의 클러스터링(clustering)을 위한 라이브러리
@@ -80,6 +80,12 @@
     - d 차원에 x_i라는 벡터들의 집합이 주어지면, faiss는 이들을 가지고 RAM에 index라는 이름의 데이터 구조를 구축한다.
     - 인덱스 구축이 완료된 후 d 차원의 새로운 벡터값 x가 주어지면, 인덱스에서 x와 가장 유사한 벡터값을 찾는다.
   - C++로 작성되었다.
+
+
+
+- faiss는 일반적으로 수십개에서 수백개의 고정된 차원(d)의 벡터 집합을 다룬다.
+  - 이 벡터 집합은 메트릭스 형태(행과 열이 있는 형태)로 저장된다.
+  - 이 메트릭스에는 오직 32-bit 부동소수점 형태만을 입력이 가능하다.
 
 
 
@@ -100,23 +106,23 @@
 
 
 
-- 시작하기
+## 시작하기
 
-  - faiss는 일반적으로 수십개에서 수백개의 고정된 차원(d)의 벡터 집합을 다룬다.
-    - 이 벡터 집합은 메트릭스 형태(행과 열이 있는 형태)로 저장된다.
-    - 이 메트릭스에는 오직 32-bit 부동소수점 형태만을 입력이 가능하다.
-  - 인덱스에 저장할 벡터 생성하기
-    - numpy의 random 함수를 이용하여 실제 벡터 값과 유사한 5개의 벡터 샘플을 32차원으로 생성한다.
-    - numpy의 random 함수는 첫 번째 인자로 행의 개수, 두 번째 인자로 열의 개수를 받는다.
+- 벡터 샘플 생성해보기
+
+  - numpy의 `random()`  메서드를 이용하여 실제 벡터 값과 유사한 5개의 벡터 샘플을 32차원으로 생성한다.
+  - numpy의 `random()` 메서드는 첫 번째 인자로 행의 개수, 두 번째 인자로 열의 개수를 받는다.
+  - `seed()` 메서드는 난수를 일정한 규칙에 따라 만들어준다. 인자로 0이상의 정수를 넣은 후 `random()` 메서드를 실행하면 `seed()`에 인자로 넘긴 숫자에 따라 매번 같은 난수를 생성한다.
 
   ```python
   import numpy as np
   
   d = 32  # dimension
-  nb = 5  # 벡터 샘플의 개수
+  nv = 5  # 벡터 샘플의 개수
   
+  np.random.seed(0)
   # faiss 인덱스에서 허용하는 유일한 타입인 float32 타입을 갖는 5개의 난수를 생성한다.
-  vd = np.random.random((nb, d)).astype('float32')
+  vd = np.random.random((nv, d)).astype('float32')
   
   print(vd)
   
@@ -154,26 +160,259 @@
   '''
   ```
 
-  - 벡터 값들을 넣을 인덱스 생성하기
+
+
+
+- 예시로 사용할 벡터 샘플 생성하기
+  
+  - 위에서 생성한 샘플은 5개로 검색 결과를 보기 적절치 않으므로 10000개로 늘려서 다시 생성한다.
+  
+  ```python
+  import numpy as np
+  
+  d = 32  # dimension
+  nv = 10000  # 벡터 샘플의 개수
+  
+  np.random.seed(0)
+  vd = np.random.random((nv, d)).astype('float32')
+  ```
+  
+
+
+
+- 벡터 값들을 넣을 인덱스 생성하기
+
+  - 아래에서 사용한 `IndexFlatL2` 외에도 다양한 인덱스가 존재한다.
+
+  ```python
+  import numpy as np
+  d = 32  # dimension
+  nv = 10000
+  
+  np.random.seed(0)
+  vd = np.random.random((nv, d)).astype('float32')
+  
+  # 인덱스와 벡터의 차원이 일치해야 한다.
+  
+  index = faiss.IndexFlatL2(d)
+  
+  # train된 인덱스인지 확인
+  
+  print(index.is_trained)	# True
+  
+  # 인덱스에 벡터값 추가
+  
+  index.add(vd)
+  
+  # 인덱스에 저장된 모든 벡터값들의 개수 확인
+  
+  print(index.ntotal)		# 5
+  ```
+
+
+
+- 검색하기
 
   ```python
   import numpy as np
   import faiss
   
   d = 32  # dimension
-  nb = 5
+  nv = 10000
   
-  vd = np.random.random((nb, d)).astype('float32')
+  np.random.seed(0)
+  vector = np.random.random((nv, d)).astype('float32')
   
-  # 인덱스와 벡터의 차원이 일치해야 한다.
   index = faiss.IndexFlatL2(d)
-  # train된 인덱스인지 확인
-  print(index.is_trained)	# True
-  # 인덱스에 벡터값 추가
-  index.add(vd)
-  # 인덱스에 저장된 모든 벡터값들의 개수 확인
-  print(index.ntotal)		# 5
+  index.add(vector)
+  
+  # 검색할 벡터 데이터 생성(5개의 검색 샘플 생성)
+  query = np.random.random((5,d)).astype('float32')
+  
+  # 검색
+  k = 4  # 4개의 근접한 이웃만 검색
+  # 온전성 검사(sanity check)
+  D, I = index.search(vector[1:2], k) # 두 번째 인덱스(0부터 시작하므로)에 해당하는 벡터 값으로 검색
+  print(I)  # I에는 근접한 벡터값의 인덱스 값이 담기게 된다.
+  print(D)  # D에는 근접한 벡터값과의 거리가 담기게 된다.
+  
+  # 실제 검색
+  D,I = index.search(query,k)
+  print(I)
+  print(D)
+  
+  '''
+  # 온전성 검색 결과
+  [[   1 3716 5800  718]] # 두 번째 인덱스에 해당하는 벡터 값으로 검색했으므로 당연히 자기 자신인 두 번째 인덱스에 해당하는 벡터 값이 가장 가깝다.
+  [[0.        1.8438569 1.8462296 1.8955519]] # 거리 역시 자기 자신과의 거리는 0이고, 뒤로 갈수록 점점 길이가 길어지게 된다.
+  
+  # 실제 검색 결과
+  [[  48 6093 6629 9866]  # 첫 번째 검색 샘플과 가장 가까운 벡터 값은 48번 인덱스에 해당하는 벡터 값이다.
+   [1869 5291 7938 3031]  # 두 번째 검색 샘플과 가장 가까운 벡터 값은 1869번 인덱스에 해당하는 벡터 값이다.
+   [5994 2819 2860 6005]
+   [7720  685 1802 1294]
+   [3569 6522 5737 9841]]
+  [[1.9313903 2.2363105 2.28775   2.3178759]  # 첫 번째 검색 샘플과 가장 가까운 벡터 값까지의 거리는 1.9313903
+   [1.906551  2.0746326 2.179418  2.2937887]  # 첫 번째 검색 샘플과 가장 가까운 벡터 값까지의 거리는 1.906551
+   [1.9943608 2.0128624 2.0983322 2.1263402]
+   [2.068733  2.102962  2.2178755 2.2301154]
+   [2.1868854 2.3413236 2.3448737 2.3718524]]
+  '''
   ```
+
+
+
+## 검색 속도 향상
+
+
+
+- 보로노이 다이어그램
+  - 평면을 특정 점까지의 거리가 가장 가까운 점의 집합으로 분할한 그림.
+  - 평면상의 점들 을 가장 가까운 점 2개를 모두 연결한다.
+  - 그 후 선들의 수직이등분선을 그어서 분할한다.
+
+
+
+- Voronoi cells
+
+  - d 차원 공간을 셀들로 나눈다.
+  - 각 벡터 데이터는 나뉜 셀들 중 한 곳에 속하게 된다.
+
+  - Quantization
+    - 적은 양의 정보를 가지고 데이터를 표현하는 방법.
+    - Vector Quantization: KMeans 클러스터링을 사용하여 벡터 데이터를 압축하여 표현하는 방법
+
+
+
+- `IndexIVFFlat` 인덱스를 통해 구현 할 수 있다.
+  - `IndexIVFFlat` 인덱스는 학습 단계가 필요하다.
+  - 데이터 베이스 벡터와 같은 분포를 가진 모든 벡터 집합이 학습 단계를 거쳐야 한다.
+  - `IndexIVFFlat` 는 quantizer, 차원, 셀의 개수를 인자로 받는다.
+  - `nprobe`를 통해 총 셀의 개수(nlist) 중에서 방문할 셀의 개수를 지정할 수 있다(기본값은 1).
+
+
+
+- 벡터들을 Voronoi cell에 할당하기 위해서 quantizer라 불리는 또 다른 인덱스가 필요하다.
+  - 각 셀들은 Voronoi cell의 중심에 의해 나뉘게 되고, 특정 벡터가 속하는 Voronoi cell을 찾으려면 각 셀들의 중심 중 해당 벡터와 가장 가까운 중심이 어디인지를 확인하면 된다.
+  - 이 과정을 또 다른 인덱스가 수행하며, 일반적으로 `IndexFlatL2` 인덱스를 사용한다.
+
+
+
+- 예시
+
+  ```python
+  import numpy as np
+  import faiss
+  
+  d = 32  # dimension
+  nv = 10000
+  
+  np.random.seed(0)
+  vector = np.random.random((nv, d)).astype('float32')
+  
+  index = faiss.IndexFlatL2(d)
+  index.add(vector)
+  
+  query = np.random.random((5,d)).astype('float32')
+  
+  # cell의 개수
+  nlist = 100
+  k = 4
+  quantizer = faiss.IndexFlatL2(d)  # 벡터들을 Voronoi cell에 할당하기 위한 또 다른 인덱스
+  index = faiss.IndexIVFFlat(quantizer, d, nlist)
+  # IndexIVFFlat는 학습이 되어야 한다.
+  assert not index.is_trained
+  index.train(vector)
+  assert index.is_trained
+  
+  index.add(vector)              # add가 약간 느려질 수 있다.
+  D, I = index.search(query, k)
+  print(I[0])
+  index.nprobe = 10              # 10개의 셀을 방문하도록 설정
+  D, I = index.search(query, k)
+  print(I[0]) 
+  
+  '''
+  # nprobe가 1일 때(한 개의 셀만 방문했을 때)
+  [6629 5565 3599  885]
+  [2.28775   2.4957926 2.7931914 2.851501 ]
+  
+  # nprobe가 10일 때(10개의 셀을 방문했을 때)
+  [  48 6629 9866 8148]
+  [1.9313903 2.28775   2.3178759 2.3552032] # 더 거리가 짧은 벡터를 찾아낸다.
+  '''
+  ```
+
+  
+
+
+
+## 메모리 사용 줄이기
+
+- faiss는 product quantizers를 기반으로 저장된 벡터들을 손실압축 시킬 수 있는 방법을 제공한다.
+  - Product Quantizers
+    - Vector Quantization의 한 방식.
+  - 지금까지 살펴본 `IndexFlatL2`, `IndexIVFFlat` 모두 전체 벡터를 저장한다.
+  - 저장된 벡터들의 사이즈를 바이트 수 m으로 줄일 수 있다(m 값은 설정 가능(configurable)).
+    - 차원 값(d)는 반드시 m의 배수여야 한다.
+
+
+
+- 예시
+
+  ```python
+  import numpy as np
+  import faiss
+  
+  d = 32  # dimension
+  nv = 10000
+  
+  np.random.seed(0)
+  vector = np.random.random((nv, d)).astype('float32')
+  
+  index = faiss.IndexFlatL2(d)
+  index.add(vector)
+  
+  query = np.random.random((5,d)).astype('float32')
+  
+  nlist = 100
+  # subquantizers의 수
+  m = 8                             
+  k = 4
+  quantizer = faiss.IndexFlatL2(d)
+  index = faiss.IndexIVFPQ(quantizer, d, nlist, m, 8) # 마지막 인자 8은 각 하위 벡터가 8 비트로 인코딩되도록 하겠다는 의미다.
+                                      
+  index.train(vector)
+  index.add(vector)
+  D, I = index.search(vector[:1], k)	# sanity check
+  print(I)
+  print(D)
+  index.nprobe = 10
+  D, I = index.search(query, k)
+  print(I[-5:])
+  
+  '''
+  # sanity check 결과
+  [[   0 9095 7042 9822]]
+  [[0.1173882 2.05417   2.4009778 2.5053062]]
+  
+  # 검색 결과
+  [6629 7851 4916 1302]
+  '''
+  ```
+
+  - sanity check 결과를 보면 가장 가까운 이웃은 잘 찾았지만, 추정된 거리를 제대로 계산하지는 못했다.
+    - 0번째 인덱스를 검색했으므로 가장 가까운 인덱스로 자기 자신인 0번이 제대로 나왔다.
+    - 그러나 자기 자신과의 거리는 0이 아닌 0.1173882가 나온 것을 확인 가능하다.
+    - 이는 손실 압축 때문이다.
+    - 64차원의 32 비트 부동 소수점을 8 바이트로 압축하였으므로 압축 계수는 32이다.
+  - [시작하기]에서 실행했던 검색 결과와 비교하면 큰 차이가 존재하는 것을 확인 가능하다.
+    - 시작하기에서 진행했던 query의 첫 번째 벡터 값과 유사한 벡터값들의 인덱스들은 `[ 48 6093 6629 9866 ]`였다.
+    - 그러나 위에서 진행한 검색 결과는 `[6629 7851 4916 1302]`로 큰 차이가 존재한다.
+    - 그러나 동일한 인덱스 값인 6629가 존재하므로 올바른 구역을 검색했다는 것은 확인 가능하다.
+  - 실제 데이터를 가지고 하면 이보다는 나을 것이다.
+    - 실제 데이터의 경우, 위의 난수와 같이 아무 관련 없는 데이터들에 비해 훨씬 근접해있다.
+    - 또한 균일한 데이터는 클러스터링 또는 차원 감소시에 데이터를 크게 손실시킬만한 규칙성이 존재하지 않기에 손실이 크지 않다.
 
   
 
