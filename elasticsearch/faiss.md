@@ -412,13 +412,325 @@
     - 그러나 동일한 인덱스 값인 6629가 존재하므로 올바른 구역을 검색했다는 것은 확인 가능하다.
   - 실제 데이터를 가지고 하면 이보다는 나을 것이다.
     - 실제 데이터의 경우, 위의 난수와 같이 아무 관련 없는 데이터들에 비해 훨씬 근접해있다.
-    - 또한 균일한 데이터는 클러스터링 또는 차원 감소시에 데이터를 크게 손실시킬만한 규칙성이 존재하지 않기에 손실이 크지 않다.
+    - 또한 균일한 데이터는 클러스터링 또는 손실 압축시에 데이터를 크게 손실시킬만한 규칙성이 존재하지 않기에 손실이 크지 않다.
+
+
+
+## GPU에서 실행하기
+
+- Faiss는 nvidia GPU를 거의 완벽하게 사용할 수 있다.
+  - `faiss-cpu`가 아닌 `faiss-gpu`가 설치되어 있어야 한다.
+  - 작은 데이터에서는 차이가 눈에 띄지 않지만 큰 데이터에서 차이가 드러난다.
+
+
+
+- GPU에서 실행하기(faiss-gpu 설치 실패로 실행은 못해봤다)
+
+  - GPU 메모리 덩어리를 캡슐화한 GPU 리소스를 선언한다.
+
+  ```python
+  res = faiss.StandardGpuResources()
+  ```
+
+  - GPU 리소스를 사용한 GPU 인덱스를 생성한다.
+    - 단일 GPU 리소스 객체는 동시 쿼리를 실행하지 않는 한 여러 인덱스에서 사용할 수 있다.
+    - GPU 인덱스는 CPU 인덱스와 동일하게 사용하면 된다.
+
+  ```python
+  # flat (CPU) index 생성
+  index_flat = faiss.IndexFlatL2(d)
+  # gpu 인덱스에 넣는다.
+  gpu_index_flat = faiss.index_cpu_to_gpu(res, 0, index_flat)
+  ```
+
+  - GPU 인덱스에 벡터 데이터를 넣는다.
+
+  ```python
+  gpu_index_flat.add(vector)
+  print(gpu_index_flat.ntotal)
+  ```
+
+  - 검색한다.
+
+  ```python
+  # 4개의 가장 가까운 이웃을 탐색한다.
+  k = 4                          
+  D, I = gpu_index_flat.search(query, k)
+  print(I[:5])
+  ```
+
+
+
+- 다중 GPU 사용하기
+
+  - 다중 GPU를 사용하기 위해서는 복수의 gpu 자원을 선언해야 한다.
+  - `index_cpu_to_all_gpus`를 사용하면 복수의 gpu 자원을 선언할 수 있다.
+
+  ```python
+  ngpus = faiss.get_num_gpus()
+  
+  print("number of GPUs:", ngpus)
+  
+  cpu_index = faiss.IndexFlatL2(d)
+  
+  # 인덱스를 생헝한다.
+  gpu_index = faiss.index_cpu_to_all_gpus(
+      cpu_index
+  )
+  
+  gpu_index.add(vector)
+  print(gpu_index.ntotal)
+  
+  k = 4
+  D, I = gpu_index.search(query, k)
+  print(I[:5])
+  print(I[-5:])
+  ```
+
+
+
+# 기초
+
+## MetricType and distance
+
+- 사전 지식
+  - L2
+    - 노름(norm): 벡터 공간에서 벡터의 크기 또는 길이를 측정할 때 사용되는 개념.
+    - L2는 norm의 한 종류로 유클리디언 디스턴스가 L2 norm이다.
+  - inner product
+    - "내적"이라 번역하며, 벡터와 관련된 연산 중 하나다.
+    - 한 벡터의 norm을 구하거나, 두 벡터 사이의 거리를 측정하는데 이용할 수 있다.
+  - 정답 후보군을 모두 검색하는 방식이 아닌 정답일 가능성이 높은 후보군만 탐색하는 방식에는 다양한 방법이 있다.
+    - 쿼리 벡터인 q와 답변 후보군 V에 속한 각 답변 벡터들 v_i 사이에 상성이 가장 좋은 것을 찾아야 한다(즉 q와 v_i 사이에 상성이 가장 좋은 것을 찾아야 한다).
+    - 이 때 어떤 것을 "상성이 가장 좋은 것"으로 볼 것이냐에 따라 아래와 같이 방식이 나뉘게 된다.
+    - **Nearest Neighbor Search(NNS)**: q와 v_i의 유클리디안 거리(Euclidean Distance)가 작은 것을 상성이 가장 좋은 것으로 본다.
+    - **Maximum Cosine Similarity Search(MCSS)**: q와 v_i의 코사인유사도(Cosine Similarity)가 큰 것을 상성이 가장 좋은 것으로 본다.
+    - **Maximum Inner Product Search(MIPS)**: q와 v_i와의 내적이 큰 것을 상성이 가장 좋은 것으로 본다.
+
+
+
+- Faiss 인덱스는 크게 L2와 inner product(내적)라는 두 개의 메서드를 지원한다.
+  - 그 밖의 메서드들은 `IndexFlat`에서 지원한다.
+
+
+
+- METRIC_L2
+  - Faiss는 제곱근을 피하기 위해서 유클라디안(L2) 거리의 제곱을 알려준다.
+  - 따라서 정확한 거리를 알고자 한다면 Faiss가 반환한 결과 값에 루트를 씌워야 한다.
+
+
+
+- METRIC_INNER_PRODUCT
+  - 일반적으로 MIPS(Maximum Inner Product Search)에 사용된다.
+  - 벡터가 정규화되지 않는 한 이 값은 코사인 유사도라고 할 수는 없다.
+  - METRIC_L2에서도 MIPS를 수행하는 방법이 있다.
+
+
+
+- 코사인 유사도를 계산하기 위해 벡터를 인덱스에 저장하는 방법
+  - `METRIC_INNER_PRODUCT`로 인덱스를 생성한다.
+    - 거리가  `d_L2^2 = 2 - 2 * d_IP`와 관련이 있다는 것만 제외하면`METRIC_L2`를 사용하는 것과 동일하다.
+  - 인덱스에 벡터값들을 저장하기 전에 벡터값들을 정규화한다.
+    - Python에서는 `faiss.normalize_L2` 메서드를 사용하여 정규화가 가능하다.
+  - 검색 전에 벡터값들을 정규화한다.
+
+
+
+- Mahalanobis distance를 계산하기 위해 벡터를 인덱스에 저장하는 방법
+  - 마할라노비스 거리
+    - 평균과의 거리가 표준편차의 몇 배인지를 나타내는 값
+    - 변형된 공간에서는 L2 거리와 동일하다.
+  - 공간을 변형시키는 방법
+    - 데이터의 공분산 메트릭스를 계산한다.
+    - 모든 벡터(쿼리와 정답 후보군 벡터 모두)에 공분산 행렬의 숄레스키 분해 역을 곱한다.
+    - `METRIC_L2` 인덱스에 색인한다.
+
+
+
+## Clustering, PCA, Quantization
+
+- Faiss는 효율적인 몇 개의 알고리즘으로 구현되었다.
+
+  - k-means clustering
+
+    - 클러스터링 알고리즘의 하나
+    - 각 클러스터의 중심을 Centroid라 부른다.
+    - K-means Clustering은 K개의 Centroid를 기반으로 K개의 클러스터를 만들어주는 것
+
+    - 랜덤하게 clustering하여 k개 그룹으로 나눈다.
+    - 각 그룹의 평균점(mean)을 계산 한다. 
+    - 모든 그룹의 개별 포인터 들이 어떤 그룹의 평균점에 가까운지를 계산한다.
+    - 더 평균점이 가까운 그룹으로 재할당한다. 
+    - 재할당 후 다시 위의 과정을 반복한다.
+    - 재할당될 포인터가 없으면 종료된다.
+
+  - PCA(Principal Component Analysis, 주성분분석)
+
+    - 차원 축소와 변수 추출(기존 변수를 조합해 새로운 변수를 만드는 기법) 기법의 하나.
+    - 데이터의 분산을 최대한 보존하면서 고차원 데이터를 저차원 데이터로 환원시키는 기법.
+    - 서로 연관성이 있는 고차원 공간의 표본들을 선형 연관성이 없는 저차원 공간의 표본으로 변환하기 위해 직교 변환을 사용한다.
+
+  - PQ(Perceptual Quantizer) encoding/decoding
+
+
+
+- Clustering
+
+  - faiss는 k-means를 효율적으로 구현할 수 있게 해준다.
+  - 2-D 텐서(batch size * dimension) x에 저장된 벡터 세트를 클러스터링 하는 방법
+
+  ```python
+  # 클러스터 중심의 개수(1024개의 클러스터가 생성되게 된다.)
+  ncentroids = 1024
+  # 클러스터링을 반복할 횟수
+  niter = 20
+  # verbose를 True로 설정하면 initialize 와 iteration 단계가 출력된다.
+  verbose = True
+  d = x.shape[1]
+  kmeans = faiss.Kmeans(d, ncentroids, niter=niter, verbose=verbose)
+  kmeans.train(x)
+  ```
+
+  - 결과 확인
+    - 중심값은 `kmeans.centroids`에 저장된다.
+    - 반복에 따른 목적 함수(objective function)값 (k-means의 경우 총 제곱 오차값)은`kmeans.obj`에 저장된다. 
+    - 더 구체적인 통계는 `kmeans.iteration_stats`에 저장된다.
+  - 추가 옵션
+    - `nredo`: 클러스터링을 반복할 횟수를 지정하며, 최적의 중심값은 다음번 반복에도 유지된다.
+    - `spherical`: spherical k-means를 수행한다.
+    - `int_centroids`: 중심값을 정수형으로 조정한다.
+    - `update_index`: 각 반복이 끝날 때 마다 인덱스를 재훈련시킨다.
+    - `min_points_per_centroid`/`max_points_per_centroid`: 각 중심값 당(클러스터 당) 최소, 최대 포인트 수를 지정한다. 
+    - `seed`: 무작위로 숫자를 생성할 때 seed를 설정한다.
+    - `gpu`: boolean 값이나 int 값을 받으며 True로 설정하면 가용한 모든 gpu를 사용하고, 1이상의 정수를 입력하면 해당 정수만큼의 gpu를 사용한다.
+  - kmeans가 훈련을 마친 후, 각 벡터 값들과 가장 가까운 중심값을 찾아내기
+
+  ```python
+  # I에는 각 벡터와 가장 가까운 중심값이 담기게 되고, D에는 그 L2 거리의 제곱이 담기게 된다.
+  D, I = kmeans.index.search(x, 1)
+  ```
+
+  - 역으로 중심값으로 벡터 값을 찾아내기
+    - 새로운 인덱스를 사용해야 한다.
+
+  ```python
+  index = faiss.IndexFlatL2 (d)
+  index.add (x)
+  D, I = index.search (kmeans.centroids, 15) # 중심값들에서 가장 가까운 15개의 벡터값들을 찾기
+  ```
 
   
 
+- PCA
+
+  - 40 차원의 벡터를 10 차원으로 줄이기
+
+  ```python
+  # 벡터값 생성
+  mt = np.random.rand(1000, 40).astype('float32')
+  mat = faiss.PCAMatrix (40, 10)
+  mat.train(mt)
+  assert mat.is_trained
+  tr = mat.apply_py(mt)
+  # tr의 열의 크기가 감소했는지 확인
+  print (tr ** 2).sum(0)
+  ```
+
+
+
+## 인덱스를 선택할 때 고려할 사항
+
+- 적은 수의 데이터를 검색할 경우
+  - 1000~10000 개의 데이터를 검색하려 할 경우 `Flat` 인덱스를 사용하는 것이 좋다.
+  - 만일 전체 데이터셋이 RAM과 맞지 않는다면, 작은 인덱스로 분할하여 만들 수 있다.
+    - 그리고 검색 결과를 합치면 된다.
+    - [참고](https://github.com/facebookresearch/faiss/wiki/Brute-force-search-without-an-index#combining-the-results-from-several-searches)
+
+
+
+- 정확한 검색 결과를 원할 경우
+  - 정확한 검색 결과를 보장하는 인덱스는 `IndexFlatL2`와 `IndexFlatIP`뿐이다.
+    - 두 인덱스는 다른 인덱스의 베이스가 되는 인덱스이다.
+    - 이들은 벡터를 압축하지 않는다.
+  - 그러나 `add_with_ids`메서드로 id값을 추가할 수 없다.
+    - 추가하려면 `IDMap, Flat`을 사용해야 한다.
+  - Flat 인덱스는 훈련이 필요하지 않으며, 필수적으로 받아야 하는 파라미터도 존재하지 않는다.
+  - GPU 사용이 가능하다.
+
+
+
+- 메모리가 걱정될 경우
+  - 모든 faiss 인덱스는 RAM에 저장된다.
+    - 결과가 매우 정확할 필요가 없고, RAM이 제한된 상황이며, 메모리가 제약된 상황에서 정확도와 속도를 맞 바꿔도 될 경우.
+    - 위와 같은 상황에서는 아래에서 소개할 인덱스를 사용하는 것을 고려해볼만 하다.
+
+
+
+- 메모리를 고려하지 않아도 될 경우
+  - RAM이 넉넉하거나 dataset이 작을 경우 `HNSW `를 사용하는 것이 좋다.
+    - 매우 빠르고 정확하다.
+    - 속도와 정확성의 교환은 `efSearch` 파라미터를 통해 이루어진다.
+    - 메모리 사용은 각 벡터 당 `d*4+M*2*4`이다. 
+      - 4 <= M <= 64인 M은 각 벡터의 링크들의 수를 나타낸다. 높을수록 정확도가 높아지지만 RAN을 많이 사용한다.
+    - `add_with_ids`메서드로 id값을 추가할 수 없으나, `IDMap`를 활용하면 가능해진다.
+    - 훈련을 필요로하지 않는다.
+    - 인덱스에서 벡터값을 삭제할 수없다.
+  - `IVF`, `PQ`
+    - `HNSW`보다 빠르지만 다시 순위를 매기(re-ranking)는 단계가 있어 추가적인 파라미터가 필요하다.
+    - 둘 다 순위를 재 지정하기 위해 `k_factor` 파라미터가 필요하다.
+    - `IVF`의 경우 `nprobe` 파라미터가 추가적으로 필요하다.
+  - 모두 GPU 사용이 불가능하다.
+
+
+
+- 메모리가 신경 쓰일 경우
+  - `Flat`을 사용한다.
+  - dataset에 대한 클러스터링이 수행되어 있어야 한다.
+  - `Flat`은 데이터를 압축하지 않기 때문에, 클러스터링 후에도 index에 저장된 벡터값들의 크기와 원본 데이터의 크기가 동일하다.
+  - 속도와 정확성 사이의 교환은 `nprobe` 파라미터를 통해 이루어진다.
+  - GPU 사용이 가능하다.
+
+
+
+- 상당히 중요할 경우
+  - 전체 벡터를 저장하는 것이 부담스러울 경우 아래와 같은 방법을 사용할 수 있다.
+    - `OPQ`로 차원을 감소시킨다.
+    - `PQ`로 벡터의 quantization을 *M* 4-bit codes로 변경한다.
+  - 이를 통해 전체 저장 공간은 벡터당 M/2로 줄어들게 된다.
+  - GPU 사용이 가능하다.
+
+
+
+- 매우 중요할 경우
+  - `PQ`는 M-byte 코드를 산출하는 product quantizer를 사용하여 벡터들을 압축한다.
+  - M은 일반적으로 64 이하이며, 보다 큰 코드의 경우 일반적으로 SQ가 더 빠르고, 정확하다.
+  - OPQ는 벡터들을 보다 쉽게 압축할 수 있게 해주는 선형 변환이다.
+  - D는 다음과 같은 차원이다.
+    - d는 M의 배수이다.
+    - D <= d, d는 입력 벡터의 차원(권장 사항)
+    - M = 4*d(권장사항)
+  - GPU 사용이 가능하다.
+
+
+
+- 데이터 용량에 따른 가이드
+  - [참고](https://github.com/facebookresearch/faiss/wiki/Guidelines-to-choose-an-index#how-big-is-the-dataset)
+
+
+
+
+
+# Faiss indexes
 
 
 
 
 
 
+
+# 참고
+
+- https://github.com/facebookresearch/faiss/wiki
+
+- https://medium.com/platfarm/mips-c1db30a3e73e
+- https://nittaku.tistory.com/290
