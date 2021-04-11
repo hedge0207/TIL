@@ -722,6 +722,122 @@
 
 # Faiss indexes
 
+## basic index 목록
+
+> 클래스 생성자를 사용하거나 `index_fatory`를 사용하여 생성할 수 있다.
+
+| Method                                                   | Class name                | `index_factory`          | Main parameters                                              | Bytes/vector                                        | Exhaustive | Comments                                                     |
+| -------------------------------------------------------- | ------------------------- | ------------------------ | ------------------------------------------------------------ | --------------------------------------------------- | ---------- | ------------------------------------------------------------ |
+| L2를 정확히 검색                                         | `IndexFlatL2`             | `"Flat"`                 | `d`                                                          | `4*d`                                               | yes        | brute-force                                                  |
+| Inner Product를 정확히 검색                              | `IndexFlatIP`             | `"Flat"`                 | `d`                                                          | `4*d`                                               | yes        | cosine 유사도 검색도 가능 (사전에 vectros를 정규화 시켜야 한다.) |
+| Hierarchical Navigable Small World graph exploration     | `IndexHNSWFlat`           | 'HNSWx,Flat`             | `d`, `M`                                                     | `4*d + x * M * 2 * 4`                               | no         |                                                              |
+| Inverted file with exact post-verification               | `IndexIVFFlat`            | `"IVFx,Flat"`            | `quantizer`, `d`, `nlists`, `metric`                         | `4*d + 8`                                           | no         | inverted lists에 벡터를 할당하기 위해 추가적인 인덱스를 사용해야 한다. 8 개의 추가 바이트를 벡터 ID로 저장한다. |
+| Locality-Sensitive Hashing (binary flat index)           | `IndexLSH`                | -                        | `d`, `nbits`                                                 | `ceil(nbits/8)`                                     | yes        | 무작위 투영 대신 무작위 로테이션을 사용하여 최적화한다.      |
+| Scalar quantizer (SQ) in flat mode                       | `IndexScalarQuantizer`    | `"SQ8"`                  | `d`                                                          | `d`                                                 | yes        | 컴포넌트 당 4 비트 및 6비트도 구현 된다.                     |
+| Product quantizer (PQ) in flat mode                      | `IndexPQ`                 | `"PQx"`, `"PQ"x"x"nbits` | `d`, `M`, `nbits`                                            | `ceil(M * nbit / 8)`                                | yes        |                                                              |
+| IVF and scalar quantizer                                 | `IndexIVFScalarQuantizer` | "IVFx,SQ4" "IVFx,SQ8"    | `quantizer`, `d`, `nlists`, `qtype`                          | SQfp16: 2 * `d` + 8, SQ8: `d` + 8 or SQ4: `d/2` + 8 | no         | `IndexScalarQuantizer`와 동일하다.                           |
+| IVFADC (coarse quantizer+PQ on residuals)                | `IndexIVFPQ`              | `"IVFx,PQ"y"x"nbits`     | `quantizer`, `d`, `nlists`, `M`, `nbits`                     | `ceil(M * nbits/8)+8`                               | no         |                                                              |
+| IVFADC+R (same as IVFADC with re-ranking based on codes) | `IndexIVFPQR`             | `"IVFx,PQy+z"`           | `quantizer`, `d`, `nlists`, `M`, `nbits`, `M_refine`, `nbits_refine` | `M+M_refine+8`                                      | no         |                                                              |
+
+## Flat indexes
+
+- Flat index는 벡터들을 고정된 크기의 코드로 인코딩하고 이를 `ntotal * code_size` 바이트 배열에 저장한다.
+  - 검색은 인덱스의 모든 벡터들이 순차적으로 디코딩되고 query(검색어) 벡터와 비교하는 방식으로 수행된다.
+  - `IndexPQ`의 경우 비교 과정이 더 빠른 압축된 domain에서 수행된다.
+
+
+
+- 지원하는 기능
+  - 순차적으로 넘버링이 되기에 `add_with_id`를 지원하지 않는다.
+    - 단 `IndexIDMap`를 사용하면 가능하다.
+  - 효율적이고 직접적으로 벡터에 접근할 수 있는 방법이 없다.
+  - `remove`를 사용한 삭제가 가능하다.
+    - 단, remove를 하면 넘버링이 변경된다.
+
+
+
+- 사용 가능한 인코딩 방식
+  - 인코딩 하지 않는 방식(`IndexFlat`)
+    - 벡터들을 압축 없이 저장한다.
+  - 16-bit float 인코딩(`QT_fp16`를 사용하는 `IndexScalarQuantizer`)
+    - 벡터들이 16-bit floats로 압축된다.
+    - 어느 정도 손실이 발생할 수 있다.
+  - 8/6/4-bit interger 인코딩(`QT_8bit`/`QT_6bit`/`QT_4bit` 를 사용하는 `IndexScalarQuantizer`)
+    - 벡터가 256/64/16 levels로 quantize 된다.
+  - PQ encoding(`IndexPQ`)
+    - 벡터들이 각각 일정 비트(일반적으로 8비트)로 quantize된 서브 벡터로 분리된다.
+
+
+
+## Cell-probe methods(`IndexIVF*` indexes)
+
+- Cell-probe methods
+  - 검색의 정확성을 희생하여 속도를 올리는 일반적인 방법은 k-means와 같은 분할(partitioning) 기법을 사용하는 것이다. 
+    - 이와 같은 방식을 Cell-probe methods라 부른다.
+  - faiss는 Multi-probing 기반의 partition-based method를 사용한다.
+    - 특징 공간(feature space, 관측하려는 값들이 있는 공간)을 `nlist` 셀로 분할한다.
+    - 저장된 벡터값들은 quantization 함수(k-means 등)를 사용하여 이 셀들 중 하나에 할당되고(k-means의 경우 query와 가장 가까운 중심값을 갖는 셀에 할당), `nlist` inverted lists로 구성된 inverted file structure에 저장된다.
+    - query가 들어오면, `nprobe` inverted lists의 집합이 선택된다.
+    - 그 후 query를 이 lists에 할당된 벡터값들을 비교한다.
+    - 이를 통해 전체 벡터값들 중 일부만 쿼리와 비교하게 된다.
+    - 근사값은 `nprobe/nlist`이지만, inverted lists의 길이가 동일한 것이 아니기에, 근사값은 일반적으로 이는 실제보다 과소평가된다. 
+    - 주어진 쿼리와 가장 가까운 이웃 셀이 선택되지 않으면 실패하게 된다.
+
+
+
+- Flat index를 coarse quantizer로 사용하는 Cell probe method
+  - 일반적으로 Flat index를 quantizer처럼 사용한다(실제 quantizer보다는 성능이 떨어진다).
+    - `IndexIVF `의 훈련메소드는 flat index에 중심값들을 추가한다.
+    - `nprobe` 는 query가 들어올 때 정확한 값을 가지게 된다(속도와 정확도 사이의 교환을 측정하는데 유용하다).
+  - 인덱싱 할 포인트 수를 n으로 표시하는 일반적인 방법은 inverted lists를 파싱 할 때 수행 되는 거리 계산 횟수로 중심에 대한 할당 비용의 균형을 맞추는 것이다(k-means의 경우 nlist * d).
+    - nprobe / nlist * n * C에서 상수(C)는 list의 고르지 않은 분포를 설명하고, 단일 벡터 비교가 중심값으로 일괄적으로 수행 될 때 보다 더 효율적으로 수행된다는 사실을 설명한다
+    - 이로 인해 nlist = C * sqrt (n) 형식의 여러 중심값이 생성된다.
+  - Flat index가 아닌 다른 타입의 coarse quantizer를 사용할 수 있다.
+    - 상황에 따라 GPU based quantizer, `MultiIndexQuantizer`, 또는 HNSW based quantizer를 사용하는 것이 더 나을 수도 있다.
+
+
+
+- `IndexIVF`의 벡터 인코딩
+  - inverted lists는 인코딩된 벡터값들(과 그에 대응하는 벡터 id들)로 이루어져 있다.
+  - 인코딩은 주로 벡터를 더 조밀하게(compact)만든다.
+  - inverted lists 내부의 벡터값들은 순차적으로 스캔되며, 검색 함수는 실행 당시까지 본 가장 짧은 거리의 top-k를 반환한다.
+
+
+
+- 지원하는 기능은 Flat 인덱스와 동일하다.
+
+
+
+## IndexHNSW
+
+- HNSW(Hierarchical Navigable Small World graphs) 인덱싱 메서드는 인덱싱된 벡터값들로 구성된 그래프에 기초한다.
+  - 검색이 실행될 때, 가장 가까운 이웃에 가능한 빠르게 수렴되는 방식으로 그래프를 탐색한다.
+  - Flat 인덱스를 기본 저장소로 사용하여 저장된 벡터에 빠르게 접근하고, 벡터의 압축과 압축 해제를 추출한다.
+  - Navigable Small world graph는 노드 간의 거리가 가장 가까워지는 노드로 greedy하게 이동했을 때 평균적으로 log(N)(N은 전체 노드의 수)에 가까운 그래프를 말한다.
+
+
+
+- HNSW는 아래와 같은 파라미터를 받는다.
+  - M: 그래프에 사용할 이웃의 수를 나타내며, 클 수록 결과는 정확해지지만 많은 메모리를 사용한다.
+  -  efConstruction: 추가할 때 탐색의 깊이.
+  - efSearch: 검색할 때 탐색의 깊이
+
+
+
+- 인코딩
+  - `IndexHNSWFlat`: 인코딩 하지 않는다.
+  - `IndexHNSWSQ`: scalar quantizer
+  - `IndexHNSWPQ`: product quantizer
+  - `IndexHNSW2Level`: two-level encoding
+
+
+
+- 지원하는 기능
+  - Flat index에서 지원하지 않는 것은 모두 지원하지 않는다.
+  - 추가적으로 인덱스에서 벡터를 삭제하는 것도 불가능하다(삭제시 그래프 구조가 파괴된다). 
+
+
+
 
 
 
@@ -731,6 +847,6 @@
 # 참고
 
 - https://github.com/facebookresearch/faiss/wiki
-
 - https://medium.com/platfarm/mips-c1db30a3e73e
 - https://nittaku.tistory.com/290
+- https://ita9naiwa.github.io/recommender%20systems/2019/10/04/hnsw.html
