@@ -70,6 +70,56 @@
 
 
 
+- 벡터 사이의 유사도 측정 방식
+
+  ![](faiss.assets/sim.png)
+
+  - 거리 기반 유사도
+
+    - 두 벡터 사이의 거리를 기준으로 유사도를 측정하는 방식
+    - 유클리디안 유사도가 대표적이다.
+    - 마할라노비스 거리, 맨해튼 거리, 민코스키 거리 등을 활용한 측정 방법도 존재한다.
+
+  - 거리 기반 유사도의 한계
+
+    - 위 그림에서 X축이 키, Y축을 몸무게로 하여 포유류의 키와 몸무게를 나타낸 그래프이고, 키와 몸무게를 기준으로 표유류를 구분하려 한다고 가정한다.
+    - 일반적으로 키와 몸무게는 정적 상관 관계에 있으므로, 인간은 위의 3 벡터와 아래의 3 벡터 사이를 지나는 형태로 표현이 될 것이다.
+    - 그러나, 위 벡터값들 중에서 위 벡터값들 중 키와 몸무게가 가장 작은 벡터값과, 키와 몸무게가 가장 큰 벡터값 사이의 거리가 길어, 거리 기반 유사도로 판단할 경우 두 벡터값 모두 같은 인간임에도, 같은 종이라고 판별하지 못 할 가능성이 있다.
+
+  - 각도 기반 유사도
+
+    - 특정 벡터의 각도에 따라 유사도를 측정하는 방식
+    - 코사인 유사도가 대표적이다.
+    - 거리 기반 유사도에 비해 데이터의 크기에 영향을 비교적 덜 받는다.
+
+  - 유클리디안 유사도
+
+    - 피타고라스의 정리를 활용하여 직각삼각형의 두 변의 길이가 주어졌을 때 다른 한 변의 길이를 구할 수 있다는 것을 이용한 방법이다.
+    - 유클리디안 거리를 계산하는 방법을 L2 Distance라고 한다.
+    - 두 좌표 (x1, y1)과 (x2, y2)가 주어졌을 때 두 좌표 사이의 거리를 구하는 공식은 다음과 같다.
+
+    $$
+    d = \sqrt{(x_1-x_2)+(y_1-y_2)}
+    $$
+
+    - n차원으로 늘어난다면 단순히 값만 추가해주면 된다.
+
+    $$
+    d = \sqrt{(x_1-x_2)+(y_1-y_2)+...+(x_n-y_n)}
+    $$
+
+  - 코사인 유사도
+    - 두 벡터가 이루는 각도를 통해 유사도를 측정하는 방식.
+    - 두 벡터가 이루는 각이 작을수록 유사도가 높은 것이다.
+    - 두 벡터의 방향이 완전히 동일한 경우에는 1의 값을 가지며, 두 벡터가 직각을 이루면 0, 180도로 반대의 방향을 가지면 -1의 값을 가지게 된다.
+    - 즉 코사인 유사도는 -1 이상 1 이하의 값을 가지게 된다.
+
+  ![](faiss.assets/cosine_sim.png)
+
+
+
+
+
 # faiss Tutorial
 
 - faiss
@@ -263,8 +313,6 @@
 
 
 ## 검색 속도 향상
-
-
 
 - 보로노이 다이어그램
   - 평면을 특정 점까지의 거리가 가장 가까운 점의 집합으로 분할한 그림.
@@ -528,7 +576,7 @@
 
 
 - 코사인 유사도를 계산하기 위해 벡터를 인덱스에 저장하는 방법
-  - `METRIC_INNER_PRODUCT`로 인덱스를 생성한다.
+  - `METRIC_INNER_PRODUCT`로 인덱스(IndexFaltIP)를 생성한다.
     - 거리가  `d_L2^2 = 2 - 2 * d_IP`와 관련이 있다는 것만 제외하면`METRIC_L2`를 사용하는 것과 동일하다.
   - 인덱스에 벡터값들을 저장하기 전에 벡터값들을 정규화한다.
     - Python에서는 `faiss.normalize_L2` 메서드를 사용하여 정규화가 가능하다.
@@ -563,14 +611,13 @@
     - 더 평균점이 가까운 그룹으로 재할당한다. 
     - 재할당 후 다시 위의 과정을 반복한다.
     - 재할당될 포인터가 없으면 종료된다.
-
-  - PCA(Principal Component Analysis, 주성분분석)
-
-    - 차원 축소와 변수 추출(기존 변수를 조합해 새로운 변수를 만드는 기법) 기법의 하나.
+- PCA(Principal Component Analysis, 주성분분석)
+  
+  - 차원 축소와 변수 추출(기존 변수를 조합해 새로운 변수를 만드는 기법) 기법의 하나.
     - 데이터의 분산을 최대한 보존하면서 고차원 데이터를 저차원 데이터로 환원시키는 기법.
     - 서로 연관성이 있는 고차원 공간의 표본들을 선형 연관성이 없는 저차원 공간의 표본으로 변환하기 위해 직교 변환을 사용한다.
-
   - PQ(Perceptual Quantizer) encoding/decoding
+  - 이미지, 영상 분석 관련
 
 
 
@@ -662,7 +709,7 @@
 - 메모리가 걱정될 경우
   - 모든 faiss 인덱스는 RAM에 저장된다.
     - 결과가 매우 정확할 필요가 없고, RAM이 제한된 상황이며, 메모리가 제약된 상황에서 정확도와 속도를 맞 바꿔도 될 경우.
-    - 위와 같은 상황에서는 아래에서 소개할 인덱스를 사용하는 것을 고려해볼만 하다.
+  - 위와 같은 상황에서는 아래에서 소개할 인덱스를 사용하는 것을 고려해볼만 하다.
 
 
 
@@ -730,7 +777,7 @@
 | -------------------------------------------------------- | ------------------------- | ------------------------ | ------------------------------------------------------------ | --------------------------------------------------- | ---------- | ------------------------------------------------------------ |
 | L2를 정확히 검색                                         | `IndexFlatL2`             | `"Flat"`                 | `d`                                                          | `4*d`                                               | yes        | brute-force                                                  |
 | Inner Product를 정확히 검색                              | `IndexFlatIP`             | `"Flat"`                 | `d`                                                          | `4*d`                                               | yes        | cosine 유사도 검색도 가능 (사전에 vectros를 정규화 시켜야 한다.) |
-| Hierarchical Navigable Small World graph exploration     | `IndexHNSWFlat`           | 'HNSWx,Flat`             | `d`, `M`                                                     | `4*d + x * M * 2 * 4`                               | no         |                                                              |
+| Hierarchical Navigable Small World graph exploration     | `IndexHNSWFlat`           | `HNSWx,Flat`                              | `d`, `M` | `4*d + x * M * 2 * 4` |no||
 | Inverted file with exact post-verification               | `IndexIVFFlat`            | `"IVFx,Flat"`            | `quantizer`, `d`, `nlists`, `metric`                         | `4*d + 8`                                           | no         | inverted lists에 벡터를 할당하기 위해 추가적인 인덱스를 사용해야 한다. 8 개의 추가 바이트를 벡터 ID로 저장한다. |
 | Locality-Sensitive Hashing (binary flat index)           | `IndexLSH`                | -                        | `d`, `nbits`                                                 | `ceil(nbits/8)`                                     | yes        | 무작위 투영 대신 무작위 로테이션을 사용하여 최적화한다.      |
 | Scalar quantizer (SQ) in flat mode                       | `IndexScalarQuantizer`    | `"SQ8"`                  | `d`                                                          | `d`                                                 | yes        | 컴포넌트 당 4 비트 및 6비트도 구현 된다.                     |
@@ -811,7 +858,7 @@
 ## IndexHNSW
 
 - HNSW(Hierarchical Navigable Small World graphs) 인덱싱 메서드는 인덱싱된 벡터값들로 구성된 그래프에 기초한다.
-  - 검색이 실행될 때, 가장 가까운 이웃에 가능한 빠르게 수렴되는 방식으로 그래프를 탐색한다.
+  - 검색이 실행될 때, 가장 가까운 이웃에 가능한 빠르게 이동하는 방식으로 그래프를 탐색한다.
   - Flat 인덱스를 기본 저장소로 사용하여 저장된 벡터에 빠르게 접근하고, 벡터의 압축과 압축 해제를 추출한다.
 
 
@@ -845,7 +892,13 @@
 
 # 참고
 
-- https://github.com/facebookresearch/faiss/wiki
-- https://medium.com/platfarm/mips-c1db30a3e73e
-- https://nittaku.tistory.com/290
-- https://ita9naiwa.github.io/recommender%20systems/2019/10/04/hnsw.html
+- 내용 출처
+  - https://github.com/facebookresearch/faiss/wiki
+  - https://medium.com/platfarm/mips-c1db30a3e73e
+  - https://nittaku.tistory.com/290
+  - https://ita9naiwa.github.io/recommender%20systems/2019/10/04/hnsw.html
+  - https://specialscene.tistory.com/48
+  - https://needjarvis.tistory.com/516?category=619253
+- 이미지 출처
+  - http://school.fastcampus.co.kr/blog/data_dss/60/
+  - https://wikidocs.net/24603
