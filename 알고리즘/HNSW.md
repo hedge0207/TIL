@@ -66,7 +66,7 @@
     - 실제 세계는 Random Graph보다 훨씬 군집화 되어 있고(C가 높고), L이 크다(훨씬 ).
     - 실제 세계는 밀그램의 실험에서 알 수 있듯이, Regular Graph보다 Diameter가 작다.
   
-  ![](HNSW.assets/small world graph.png)
+  ![](HNSW.assets/small_world_graph.png)
   
   - C가 높을 때, 약간의 링크만 생겨도 금방 L이 작아지게 된다.
     - 예를 들어 A에서 F마을까지는 바로 가는 길이 없고, A, B, C, D, E를 거쳐야 F로 갈수 있다고 가정한다.
