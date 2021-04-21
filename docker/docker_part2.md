@@ -412,13 +412,125 @@
 
   - `-d`: 백그라운드에서 실행한다.
   - `--no-deps`: 링크 서비스를 시작하지 않는다.
-  - `--build`: 이미지를 빌드한다.
+  - `--build`: 도커 컨테이너 시작시에 Dockerfile을 빌드한다.
   - `--no-build`: 이미지를 빌드하지 않는다.
   - `-t(--timeout)`: 컨테이너의 타임아웃을 초로 지정(기본 10초)한다.
 
   ```bash
   $ docker-compose up [옵션] [서비스명 .] 
   ```
+
+
+
+- 여러 컨테이너 확인
+
+  - 컨테이너 상태 확인
+    - `-q`: 컨테이너 ID 확인
+
+  ```bash
+  $ docker-compose ps 
+  ```
+
+  - 컨테이너 로그 확인
+
+  ```bash
+  $ docker-compose logs
+  ```
+
+
+
+- 특정 컨테이너에서 명령 실행
+
+  - 실행 중인 컨테이너에서 임의의 명령 실행
+
+  ```bash
+  $ docker-compose run <컨테이너 명> <명령>
+  # docker-compose run es1 /bin/bash
+  ```
+
+
+
+- 여러 컨테이너 시작/정지/재시작
+
+  - 특정 컨테이너만 조작하고 싶을 경우 뒤에 컨테이너명을 지정하면 된다.
+
+  ```bash
+  # 시작
+  $ docker-compose start
+  # 정지
+  $ docker-compose stop
+  # 재시작
+  $ dockcer-compose restart
+  ```
+
+
+
+- 여러 컨테이너 일시 정지/재개
+
+  ```bash
+  # 일시 정지
+  $ docker-compose pause
+  # 재개
+  $ docker-compose unpause
+  ```
+
+
+
+- 구성 확인
+
+  - 공개용 포트 확인
+    - `--protocol=proto`: 프로토콜, tcp 또는 udp
+    - `--index=index`: 컨테이너의 인덱스 수
+
+  ```bash
+  $ docker-compose port [옵션] <서비스명> <프라이빗 포트 번호>
+  ```
+
+  - compose의 구성 확인
+
+  ```bash
+  $ docker-compose config
+  ```
+
+
+
+- 여러 컨테이너 강제 정지/삭제
+
+  - `kill` 명령을 사용하면 컨테이너에 시그널을 송신할 수 있다.
+    - 시그널이란 프로세스 간의 연락을 주고 받기 위한 장치로 리눅스 커널에 내장되어 있다.
+    - 실행 중인 프로새스의 처리를 멈추고 다른 프로세스를 처리하고 싶은 경우나 프로세스를 강제 종료시키고자 할 때 사용한다.
+  - 시그널 목록
+    - `SIGHUP`: 프로그램 재시작
+    - `SIGINT`: 키보드로 인터럽트, `ctrl+c`로 송신할 수 있다.
+    - `SIGQUIT`: 키보드에 의한 중지, `ctrl+\`로 송신할 수 있다.
+    - `SIGTERM`: 프로세스 정상 종료
+    - `SIGKILL`: 프로세스 강제 종료
+    - `SIGSTOP`: 프로세스 일시 정지
+    - 지원하는 시그널의 종류는 `kill -l`명령으로 확인 가능하다.
+
+  ```bash
+  # 정지
+  $ docker-compose kill
+  # 예시, 컨테이너에게 SIGINT를 송신
+  $ docker-compose kill -s SIGINT 
+  # 삭제
+  $ docker-compose rm
+  ```
+
+
+
+- 여러 리소스의 일괄 삭제
+
+  - 실행중인 컨테이너를 중지시키고, Docker 이미지, 네트워크, 데이터 볼륨을 일괄적으로 삭제한다.
+  - `--rmi all`: 모든 이미지 삭제(compose에 정의된 이미지가 아니어도 삭제된다)
+  - `--rmi local`: 커스텀 태그가 없는 이미지만 삭제
+  - `-v, --volumes`: Compose 정의 파일의 데이터 볼륨을 삭제
+
+  ```bash
+  $ docker-compose down
+  ```
+
+  
 
 
 
