@@ -325,8 +325,9 @@
 - environment/emv_file
 
   - 컨테이너 안의 환경변수를 지정할 때 사용한다.
-  - YAML 배열 형식 또는 해시 형식 중 하나로 변수를 지정한다.
-
+    - `.env` 파일이라고 생각하면 된다.
+- YAML 배열 형식 또는 해시 형식 중 하나로 변수를 지정한다.
+  
   ```yaml
   # 배열 형식
   environmnet:
@@ -337,10 +338,10 @@
   environmnet:
     FOO: bar
     VAL:
-  ```
-
-  - 설정하고자 하는 환경변수가 많을 때는 env_file을 지정한다.
-
+```
+  
+- 설정하고자 하는 환경변수가 많을 때는 env_file을 지정한다.
+  
   ```yaml
   env_file: <env 파일 경로>
   ```
