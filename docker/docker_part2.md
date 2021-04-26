@@ -338,13 +338,14 @@
   environmnet:
     FOO: bar
     VAL:
+  ```
 ```
   
 - 설정하고자 하는 환경변수가 많을 때는 env_file을 지정한다.
   
   ```yaml
   env_file: <env 파일 경로>
-  ```
+```
 
 
 
@@ -419,6 +420,9 @@
 
   ```bash
   $ docker-compose up [옵션] [서비스명 .] 
+  
+  # 이름이 docker-compose.yml(yaml)이 아닌 파일로 실행
+  $ docker-compose -f <파일명> up
   ```
 
 
