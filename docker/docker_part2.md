@@ -535,9 +535,15 @@
   $ docker-compose down
   ```
 
+
+
+- volume 삭제
+
+  ```bash
+  $ docker volume rm <볼륨명>
+  ```
+
   
-
-
 
 
 
