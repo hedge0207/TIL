@@ -413,6 +413,7 @@
 
 - ES는 새로운 버전이 빠르게 공개된다.
   - 새로운 버전이 나올 때마다 새로운 기능들이 추가되고, 이전 버전의 버그도 수정되기 때문에 운영중인 ES의 버전에 치명적인 버그가 포함되어 있다거나, 꼭 필요한 새로운 기능이 추가되엇다면 운영 중인 클러스터의 버전을 업그레이드해야 한다.
+  - 또한 꼭 업그레이드 할 때 뿐만 아니라, elasticsearch.yml 파일이나 jvm.options 파일을 수정할 때에도 재시작을 해줘야 한다.
 
 
 
@@ -423,21 +424,222 @@
 
 
 - Rolling Restart의 순서
-  - 작업 순서
-    - 클러스터 내 샤드 할당 기능 비활성화
-    - 프라이머리 샤드와 레플리카 샤드 데이터 동기화
-    - 노드 한 대 버전 업그레이드 이후 클러스터 합류 확인
-    - 클러스터 내 샤드 할당 기능 활성화
-    - 클러스터 그린 상태 확인
-    - 위 과정 반복
+
+  - 클러스터 내 샤드 할당 기능 비활성화
+    - ES 클러스터는 특정 노드가 정상적으로 동작하지 않을 경우 문제 노드의 샤드들을 다른 노드로 재할당한다.
+    - 업데이트를 위해서는 노드가 잠시 동작을 멈추면서 클러스터에서 제외되는데, 그러면 클러스터가 업데이트 하려는 노드의 샤드들을 다른 노드로 재할당하게 된다.
+    - 업데이트를 위해 노드 내부의 샤드들을 다른 노드로 이동시키는 것은 네트워크 비용이나 디스크 I/O 비용 측면에서 큰 낭비다.
+    - 따라서 노드가 멈추더라도 재할당을 하지 않도록 설정을 변경해줘야 한다.
+    - 아래와 같이 설정을 완료하고 노드를 정지하면, 정지된 노드의 샤드들은 다른 샤드로 재할당되지 않고 unassigned 상태가 된다.
+
+  ```bash
+  $ curl -XPUT "localhost:9200/_cluster/settings?pretty" -H 'Content-type:application/json' -d '
+  {
+  	"persistent":{
+  		"cluster.routing.allocation.enable":"none"
+  	}
+  }'
+  ```
+
+  - 프라이머리 샤드와 레플리카 샤드 데이터 동기화
+    - 프라이머리 샤드와 레플리카 샤드 간의 데이터를 동일하게 맞춰줘야 한다.
+    - 두 샤드가 가지고 있는 문서가 완벽히 동일해야 클러스터에서 노드가 제외되더라도 데이터의 정합성을 보장할 수 있기 때문이다.
+
+  ```bash
+  $ curl -XPUT "localhost:9200/_flush/synced?pretty" -H 'Content-type:application/json'
+  ```
+
+  - 노드 한 대 버전 업그레이드 이후 클러스터 합류 확인
+    - 업그레이드를 위해 노드가 정지되면, 클러스터에서 제외된다.
+    - 업그레이드가 완료된 후 노드가 다시 클러스터에 합류하는지 확인한다.
+  - 클러스터 내 샤드 할당 기능 활성화
+    - 샤드 할당 기능을 활성화하여 unassigned 상태인 샤드들이 업그레이드한 노드에 할당될 수 있도록 한다.
+    - null은 기본 설정으로 되돌리겠다는 의미이다.
+
+  ```bash
+  $ curl -XPUT "localhost:9200/_cluster/settings?pretty" -H 'Content-type:application/json' -d '
+  {
+  	"persistent":{
+  		"cluster.routing.allocation.enable":null
+  	}
+  }'
+  ```
+
+  - 클러스터 그린 상태 확인
+  - 위 과정 반복
 
 
 
 ## 샤드 배치 방식 변경
 
-- 추후 추가
+- 샤드의 배치 방식을 변경해야 하는 경우
+  - ES는 기본적으로 자동으로 샤드를 배치한다.
+  - 그러나 아래 예시와 같은 경우 배치 방식을 변경해야 한다.
+    - 특정 노드에 장애가 발생하여 파생된 unassigned 샤드들에 대한 재할당 작업이 5회 이상 실패
+    - 일정 기간이 지난 오래된 인덱스의 샤드를 특정 노드에 강제로 배치해야 할 경우
 
 
+
+- reroute
+
+  - 샤드 하나하나를 특정 노드에 배치할 때 사용하는 방법
+  - 샤드 이동, 샤드 이동 취소, 레플리카 샤드의 특정 노드 할당이 가능하다.
+  - 샤드 이동은 인덱스 내에 정상적으로 운영 중인 샤드를 다른 노드로 이동할 때 사용한다.
+  - ES는 노드마다 균등하게 샤드를 배치하기에 수작업으로 샤드를 하나 이동하면 균형을 맞추기 위해 자동으로 다른 샤드 하나를 이동시킨다.
+  - 샤드 이동(move) 명령
+
+  ```bash
+  $ curl -XPUT "localhost:9200/_cluster/reroute?pretty" -H 'Content-type:application/json' -d '
+  {
+  	# list 형태로, 여러 명령을 동시에 실행하는 것이 가능하다.
+  	"command":[
+  		{
+              "move":{
+                  "index":"인덱스명",
+                  "shard":샤드 번호,
+                  "from_node":"이동할 샤드가 현재 배치되어 있는 노드명",
+                  "to_node":"이동할 샤드가 배치될 노드명"
+  		    }
+  	    }
+  	]
+  }'
+  ```
+
+  - 이동 취소(cancel) 명령
+
+  ```bash
+  $ curl -XPUT "localhost:9200/_cluster/reroute?pretty" -H 'Content-type:application/json' -d '
+  {
+  	"command":[
+  		{
+              "cancel":{
+                  "index":"인덱스명",  # 이동 작업을 취소할 대상 샤드의 인덱스명
+                  "shard":샤드 번호,	 # 이동 작업을 취소할 대상 샤드의 번호
+                  "node":"이동 작읍을 취소할 대상 샤드가 포함된 노드의 이름",
+  		    }
+  	    }
+  	]
+  }'
+  ```
+
+  - 레플리카 샤드 배치(allocate_replica) 명령
+    - 이미 배치된 레플리카 샤드에는 사용할 수 없다(unassigned 상태인 레플리카 샤드에만 사용이 가능하다).
+
+  ```bash
+  $ curl -XPUT "localhost:9200/_cluster/reroute?pretty" -H 'Content-type:application/json' -d '
+  {
+  	"command":[
+  		{
+              "allocate_replica":{
+                  "index":"인덱스명",  # 레플리카 샤드를 배치할 대상 샤드가 속한 인덱스 이름
+                  "shard":샤드 번호,	 # 레플리카 샤드를 배치할 대상 샤드의 번호
+                  "node":"레플리카 샤드를 배치할 노드의 이름",
+  		    }
+  	    }
+  	]
+  }'
+  ```
+
+  - 미할당 상태인 모든 샤드 할당하기
+    - 샤드 배치가 모두 자동으로 이루어진다.
+    - 특정 노드에 배치하고자 한다면 `allocate_replica` 명령을 사용하여 하나씩 배치해야 한다.
+
+  ```bash
+  $ curl -XPUT "localhost:9200/_cluster/reroute/retry_failed?pretty" -H 'Content-type:application/json'
+  ```
+
+
+
+- allocation
+
+  - 클러스터 전체에 적용되는 재배치 방식을 설정.
+    - reroute는 인덱스의 특정 샤드를 대상으로 하는 재배치
+    - 위에서 살펴본 Rolling Restart 방식에서 일시적으로 모든 샤드의 재할당을 중지하는 것이 allocation을 활용한 것이다.
+
+  ```bash
+  $ curl -XPUT "localhost:9200/_cluster/settings?pretty" -H 'Content-type:application/json' -d '
+  {
+  	"persistent":{
+  		# 옵션에 아래 5개 중 하나를 넣으면 된다.
+  		# all, primaries, new_primaries, none, null
+  		"cluster.routing.allocation.enable":"옵션" # null은 예외적으로 따옴표로 감싸지 않는다.
+  	}
+  }'
+  ```
+
+  - all(기본값)
+    - 모든 샤드의 배치를 허용하며 노드 간 샤드 배치가 진행된다.
+    - 클러스터에 새로운 노드가 증설되면 기존 노드들이 가지고 있던 샤드들을 프라이머리와 레플리카 구분 없이 나눠준다.
+    - 노드 한 대가 클러스터에서 제외됐을 경우, 프라이머리와 레플리카 샤드를 남은 노드에 배치한다.
+  - primaries
+    - all과 유사하지만 배치의 대상이 되는 샤드가 프라이머리 샤드로 한정된다.
+    - 레플리카 샤드는 한번 배차된 이후에는 노드가 증설되더라도 재배치되지 않는다.
+  - new_primaries
+    - 새롭게 추가 되는 인덱스의 프라이머리 샤드만 재배치한다.
+    - 새롭게 투입된 노드들에 기존 인덱스들의 샤드가 재배치되지 않으며, 투입 이후 새롭게 추가되는 인덱스의 프라이머리 샤드만 배치된다.
+  - none
+    - 모든 샤드의 배치 작업을 비활성화 시킨다.
+  - null
+    - 옵션을 초깃값으로 재설정할 때 사용한다.
+    - 주로 none 옵션으로 배치 작업을 비활성화했을 때 이를 다시 활성화시키는 용도로 사용한다.
+  - 장애 상황에서 샤드를 복구할 때 노드당 몇 개의 샤드를 동시에 복구할 것인지 설정할 수도 있다.
+    - 기본값은 2이다.
+    - 너무 많은 샤드를 동시에 복구하면 노드에 부하를 줄 수 있기 떄문에 클러스터의 성능을 고려해서 설정하는 것이 좋다.
+
+  ```bash
+  $ curl -XPUT "localhost:9200/_cluster/settings?pretty" -H 'Content-type:application/json' -d '
+  {
+  	"persistent":{
+  		"cluster.routing.allocation.node_concurrent_recoveries":샤드의 수
+  	}
+  }'
+  ```
+
+
+
+- rebalance
+
+  - 클러스터 내의 샤드가 배치된 후에 특정 노드에 샤드가 많다거나 배치가 고르지 않을 때의 동작과 관련된 설정이다.
+    - allocation은 노드가 증설되거나 클러스터에서 노드가 이탈했을 때의 동작과 관련된 설정이다.
+
+  ```bash
+  $ curl -XPUT "localhost:9200/_cluster/settings?pretty" -H 'Content-type:application/json' -d '
+  {
+  	"persistent":{
+  		"cluster.routing.rebalance.enable":"옵션"
+  	}
+  }'
+  ```
+
+  - 옵션
+
+  | 옵션      | 설명                                             |
+  | --------- | ------------------------------------------------ |
+  | all       | 프라이머리 샤드와 레플리카 샤드 전부 재배치 허용 |
+  | primaries | 프라이머리 샤드만 재배치 허용                    |
+  | replicas  | 레플리카 샤드만 재배치 허용                      |
+  | none      | 모든 샤드의 재배치 비활성화                      |
+  | null      | 설정을 초기화하여 Default인 all로 설정           |
+
+  - 아무때나 샤드 재배치가 일어나는 것이 아니라 cluseter.routing.allocation.disk.threshold_enabled 설정(기본값은 true)에 의해 클러스터 내의 노드 중 한 대 이상의 디스크 사용량이 아래와 같이 설정한 임계치에 도달했을 때 동작하게 된다.
+    - cluster.routing.allocation.disk.watermark.low: 특정 노드에서 임계치가 넘어가면 해당 노드에 더 이상 할당하지 않음. 새롭게 생성된 인덱스에 대해서는 적용되지 않음(기본값은 85%)
+    - cluster.routing.allocation.disk.watermark.high: 임계치를 넘어선 노드를 대상으로 즉시 샤드 재할당 진행. 새로 생성된 인덱스에도 적용됨(기본값은 90%)
+    - cluster.routing.allocation.disk.watermark.flood_stage: 전체 노드가 임계치를 넘어서면 인덱스를 read only 모드로 변경(기본값은 95%)
+    - cluster.info.update.interval: 임계치 설정을 체크할 주기(기본값은 30s)
+
+  ```bash
+  $ curl -XPUT "localhost:9200/_cluster/settings?pretty" -H 'Content-type:application/json' -d '
+  {
+  	"persistent":{
+  		"cluster.routing.allocation.disk.watermark.low":"n%",
+  		"cluster.routing.allocation.disk.watermark.high":"n%",
+  		"cluster.routing.allocation.disk.watermark.flood_stage":"n%",
+  		"cluster.info.update.interval":"ns" # ns 또는 nm
+  	}
+  }'
+  ```
+
+  
 
 
 

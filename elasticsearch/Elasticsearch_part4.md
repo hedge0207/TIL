@@ -67,7 +67,7 @@
   | you    | 2         |
   | are    | 2         |
 
-  - 위와 같은 역색인이 생성된 상태에서 사용자가 "a boy"라는 문자열을 찾고 싶다고 가정한다.
+  - 위와 같은 역색인이 생성된 상태에서 사용자가 "a boy"라는 문자열이 포함된 문서를 찾고 싶다고 가정한다.
     - 검색어로 a boy라는 문자열을 입력하면 이 문자열은 공백을 기준으로 a, boy라는 두 개의 토큰으로 나뉜다.
     - 이렇게 나뉜 토큰을 바탕으로 역색인을 검색한다.
     - 두 단어가 모두 포함되어 있는 문서 1번이 검색 결과로 반환된다.
@@ -80,9 +80,9 @@
 
 - ES는 어떻게 토크나이징을 하는가
 
-  - ES는 analyze라는 API를 제공한다
+  - ES는 `_analyze`라는 API를 제공한다.
     - analyzer에는 토크나이징에 사용할 analyzer를 입력한다.
-    - text에는 토크나이징 할 문자열을 입력산다.
+    - text에는 토크나이징 할 문자열을 입력한다.
 
   ```bash
   $ curl -XPOST "localhost:9200/_analyze?pretty" -H 'Content-type:application/json' -d '{
@@ -666,7 +666,7 @@
   - 요청 URL을 사용하여 검색
 
   ```bash
-$ curl 'localhost:9200/인덱스명/_search?q=텀'
+  $ curl 'localhost:9200/인덱스명/_search?q=텀'
   ```
   
   - 본문 기반 검색
