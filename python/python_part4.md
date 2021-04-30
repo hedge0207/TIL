@@ -424,7 +424,38 @@
   print("End")
   ```
 
+## Json 라이브러리
 
+- Json 라이브러리
+  - Python 표준 라이브러리
+  - 별도의 설치 없이 사용이 가능하다.
+  - Python 오브젝트(딕셔너리, 리스트, 튜플 등)를 JSON 문자열로 변경(encodindg)이 가능하다.
+  - JSON 문자열을 Python 오브젝트로 변경(decoding)이 가능하다.
+
+
+
+- encoding
+
+  ```python
+  import json
+  
+  person = {
+      "name": "John",
+      "age": 26,
+      "family": {
+          "mother": "Aira", "father": "Stark"
+      },
+      "hobbies": ["watching movies", "lego building"]
+  }
+  
+  json_string = json.dumps(person)
+  print(json_string)
+  # {"name": "John", "age": 26, "family": {"mother": "Aira", "father": "Stark"}, "hobbies": ["watching movies", "lego building"]}
+  print(type(json_string))
+  # <class 'str'>
+  ```
+
+  
 
 
 
@@ -539,6 +570,95 @@
   
 
 
+
+# with
+
+> https://velog.io/@zkffhtm6523/Python-With%EB%AC%B8-%EC%9D%B4%ED%95%B4%ED%95%98%EA%B8%B0 참고
+
+- 자원을 획득하고, 사용한 후 반납해야 하는 경우에 주로 사용한다.
+
+  - 특히 파일 작업을 할 때 많이 사용한다.
+  - 파일 작업을 할 때, `with`를 사용하지 않고 `open()` 내장함수를 사용할 경우에는 `close()`를 반드시 함께 사용해야 한다.
+    - `close()`를 함께 사용하지 않을 경우 데이터가 소실될 수 있다.
+    - 또한 `open()`과 `close()` 사이의 로직에서 에러가 발생할 경우 `close()`가 실행되지 않고 종료되기에, 에러가 발생해도 `close()`가 실행되도록 하기 위해서 일반적으로 `try`, `finally`를 함께 사용한다.
+
+  ```python
+  try:
+      f = open("person.txt", "r")
+      print(f.read())
+  finally:
+      f.close()
+  ```
+
+  - `with`를 사용하면 훨씬 간략하게 작성이 가능하다.
+    - `with`는 호출 될 때 자원의`__enter__`메서드를 호출하고, 종료될 때 자원의 `__exit__` 메서드를 호출하게 되어 있다.
+    - 파일 객체는 내부적으로 `__enter__` 메서드와 `__exit__` 메서드가 구현되어 있기에 `with`와 함께 사용하면 따로 `close()`를 사용하지 않아도 `with` 블록이 종료될 때 `close()`가 호출된다.
+
+  ```python
+  f = open("person.txt", "r")
+  print(dir(f)) # 파일객체의 메서드 확인
+  
+  '''
+  __init__과 __exit__구현되어 있다.
+  ['_CHUNK_SIZE', '__class__', '__del__', '__delattr__', '__dict__', '__dir__', '__doc__', '__enter__', '__eq__', '__exit__', '__format__', '__ge__', '__getattribute__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__iter__', '__le__', '__lt__', '__ne__', '__new__', '__next__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__', '_checkClosed', '_checkReadable', '_checkSeekable', '_checkWritable', '_finalizing', 'buffer', 'close', 'closed', 'detach', 'encoding', 'errors', 'fileno', 'flush', 'isatty', 'line_buffering', 'mode', 'name', 'newlines', 'read', 'readable', 'readline', 'readlines', 'reconfigure', 'seek', 'seekable', 'tell', 'truncate', 'writable', 'write', 'write_through', 'writelines']
+  '''
+  ```
+
+
+
+- 문법
+
+  - 기본형
+
+  ```python
+  with 자원 [as 변수]:
+      BLOCK
+  ```
+
+  - 예시
+    - 아래 예시에서 `__enter__`와 `__exit__`은 호출하지 않았는데도 `with`가 사용될 때와, `with` 블록이 종료될 때 자동으로 호출된다.
+
+  ```python
+  class Hello:
+  
+      def __enter__(self):
+          # 사용할 자원을 가져오거나 만든다
+          print('Enter')
+          return self  # 반환값이 있어야 VARIABLE를 블록내에서 사용할 수 있다
+  
+      def sayHello(self, name):
+          # 자원을 사용한다. ex) 인사한다
+          print('Hello ' + name)
+  
+      def __exit__(self, exc_type, exc_val, exc_tb):
+          # 마지막 처리를 한다
+          print('Exit')
+  
+  
+  with Hello() as h:
+      h.sayHello('Kim')
+      h.sayHello('Park')	
+  
+  # Enter
+  # Hello Kim
+  # Hello Park
+  # Exit
+  ```
+
+  - 파일 처리에 사용
+    - 위에서 본 `open()`과 `close()`를 사용한 예시와 동일하게 동작하지만, 훨씬 간결하게 작성이 가능하다.
+
+  ```python
+  with open("person.txt", "r") as f:
+      print(f.read())
+  
+  # name: Park
+  # age: 26
+  ```
+
+  
+
+  
 
 
 
