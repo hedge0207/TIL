@@ -167,7 +167,7 @@
 
 
 
-- `zip()`: 동일한 개수로 이루어진 반복 가능한 자료형을 묶어 준다.
+- `zip()`: 동일한 개수로 이루어진 반복 가능한 자료형을 tuple로 묶어 준다.
 
   ```python
   print(list(zip([1,2,3],[4,5,6],[7,8,9])))	# [(1, 4, 7), (2, 5, 8), (3, 6, 9)]
@@ -430,11 +430,15 @@
   - Python 표준 라이브러리
   - 별도의 설치 없이 사용이 가능하다.
   - Python 오브젝트(딕셔너리, 리스트, 튜플 등)를 JSON 문자열로 변경(encodindg)이 가능하다.
+    - 꼭 오브젝트가 아니더라도 변경은 된다.
   - JSON 문자열을 Python 오브젝트로 변경(decoding)이 가능하다.
 
 
 
 - encoding
+
+  - `dumps()` 메서드 사용
+    - python object를 직렬화된 json 문자열로 변환
 
   ```python
   import json
@@ -455,7 +459,135 @@
   # <class 'str'>
   ```
 
+  - `dump()`메서드 사용
+    - python object를 파일로 변환
+    - 따라서 저장할 파일명도 지정해줘야 한다.
+
+  ```python
+  import json
   
+  person = {
+      "name": "John",
+      "age": 26,
+      "family": {
+          "mother": "Aira", "father": "Stark"
+      },
+      "hobbies": ["watching movies", "lego building"]
+  }
+  
+  with open("person.json", "w") as f:
+      json.dump(person, f)
+  ```
+
+  - `dump()`의 결과 파일
+
+  ```json
+  // person.json
+  {"name": "John", "age": 26, "family": {"mother": "Aira", "father": "Stark"}, "hobbies": ["watching movies", "lego building"]}
+  ```
+
+  - 옵션
+    - `indent`: json 형식에 indent를 적용한다. 문자열 혹은 이스케이프 시퀀스를 넣는 것이 가능하다.
+    - `ensure_ascii`: ascii가 아닌 문자들은 모두 이스케이프 문자로 표현한다(기본값은 True).
+    - 그 밖의 옵션은 https://docs.python.org/ko/3/library/json.html 참조
+
+  ```python
+  import json
+  
+  person = {
+      "name": "John",
+      "age": 26,
+      "family": {
+          "mother": "Aira", "father": "Stark"
+      },
+      "hobbies": ["watching movies", "lego building"],
+      "Korean_name": "유동혁"
+  }
+  # indent와 ensure_ascii 옵션을 주지 않았을 경우
+  with open("person.json", "w", encoding='utf-8') as f:
+      print(json.dumps(person))
+  '''
+  들여쓰기도 되지 않고 한글의 경우 이스케이프 시퀀스로 변경되어 출력된다.
+  {"name": "John", "age": 26, "family": {"mother": "Aira", "father": "Stark"}, "hobbies": ["watching movies", "lego building"], "Korean_name": "\uc720\ub3d9\ud601"}
+  '''
+  # indet를 줬을 경우
+  	print(json.dumps(person,indent="\t"))
+  '''
+  {
+          "name": "John",
+          "age": 26,
+          "family": {
+                  "mother": "Aira",
+                  "father": "Stark"
+          },
+          "hobbies": [
+                  "watching movies",
+                  "lego building"
+          ],
+          "Korean_name": "\uc720\ub3d9\ud601"
+  }
+  '''
+  # ensure_ascii 옵션을 False로 줬을 경우
+  	print(json.dumps(person, indent="\t", ensure_ascii=False))
+  '''
+  한글이 제대로 출력된다.
+  {
+          "name": "John",
+          "age": 26,
+          "family": {
+                  "mother": "Aira",
+                  "father": "Stark"
+          },
+          "hobbies": [
+                  "watching movies",
+                  "lego building"
+          ],
+          "Korean_name": "유동혁"
+  }
+  '''
+  ```
+
+
+
+- decoding
+
+  - `loads()` 메서드 사용
+    - Json 문자열을 파싱해서 python object로 변환
+    - 문자열 내에 dictionary 형태로 작성할 때 key값은 반드시 `"`로 묶어야 한다.
+
+  ```python
+  import json
+  
+  # dictionary가 아닌 문자열이이다.
+  # 아래와 같이 문자열 내부에 딕셔너리 형태로 작성할 때 key에 문자열이 오면 반드시 ""로 묶어야 한다.
+  my_json_str = '{"name":"John","age":26,"hobbies":["watching movies", "lego building"], "family":{"mother":"Aira","father":"Stark"},"korean_name":"유동혁"}'
+  
+  print(json.loads(my_json_str))
+  print(type(json.loads(my_json_str)))
+  '''
+  {'name': 'John', 'age': 26, 'hobbies': ['watching movies', 'lego building'], 'family': {'mother': 'Aira', 'father': 'Stark'}, 'korean_name': '유동혁'}
+  <class 'dict'>
+  '''
+  ```
+
+  - `load()`메서드 사용
+    - json 파일을 읽어 파이썬 객체로 변환
+
+  ```python
+  import json
+  
+  
+  with open("person.json", "r", encoding="utf-8") as f:
+      print(json.load(f))
+      # loads()를 사용할 경우, read()함수는 파일 객체를 읽어 문자열로 변환해준다.
+      print(json.loads(f.read()))
+  '''
+  두 출력의 결과는 동일하다.
+  둘을 위와 같이 동시에 쓸 경우 에러가 발생하는데 하나씩 주석처리 한 후 출력하면 정상적으로 출력된다.
+  '''
+  ```
+
+
 
 
 
