@@ -424,6 +424,10 @@
   print("End")
   ```
 
+
+
+
+
 ## Json 라이브러리
 
 - Json 라이브러리
@@ -587,9 +591,137 @@
   '''
   ```
 
+  - 번외- 위 코드에서 에러가 발생하는 이유
+    - `read()` 메서드는 파일 내용 전체를 반환한다.
+    - 이미 한 번 전체를 반환했으므로 더 이상 반환할 값이 없어 연속 두 번 실행하면 아래와 같이 빈 문자열을 반환한다.
+    - `json.load()` 메서드 내부에 `read()`를 실행시키는 로직이 있을 것이다(가정).
+    - 따라서 두 번째 실행되는 `json.loads(f.read())`에서 `f.read()` 값은 빈 문자열이 되고 `loads()` 메서드의 인자로 빈 문자열이 넘어가게 되어 에러가 발생한다.
 
+  ```python
+  with open('person.json', "r", encoding="utf-8") as f:
+      print(f.read())
+      print("빈 문자열 반환")
+      print(f.read())
+      print("빈 문자열 반환")
+  '''
+  $ python test.py
+  {
+          "name": "John",
+          "age": 26,
+          "family": {
+                  "mother": "Aira",
+                  "father": "Stark"
+          },
+          "hobbies": [
+                  "watching movies",
+                  "lego building"
+          ],
+          "Korean_name": "유동혁"
+  }
+  빈 문자열 반환
+  
+  빈 문자열 반환
+  '''
+  ```
 
+  
 
+- csv를 json으로 변환하기
+
+  - csv 파일
+
+  | id   | nickname | age  | interest     |
+  | ---- | -------- | ---- | ------------ |
+  | 1    | John     | 22   | ["swimming"] |
+  | 2    | Doe      | 23   | ["movie"]    |
+
+  - 변환하기
+    - `reader()` 메서드나 `Dictreader()`메서드를 사용한다.
+
+  ```python
+  import csv
+  import json
+  
+  with open("User.csv", "r") as f:
+      # reader() 메서드를 사용하여 csv 파일을 읽는다.
+      csv_file = csv.reader(f)
+      # 첫 줄은 컬럼 명으로 따로 저장한다.
+      col_list = next(csv_file)
+  	# {컬럼명:값} 쌍으로 딕셔너리를 만든다.
+      for cols in csv_file:
+          doc = {col_name: col for col_name, col in zip(col_list, cols)}
+          # Json 형태로 변환한다.
+          print(json.dumps(doc, ensure_ascii=False, indent="\t"))
+  
+  '''
+  {
+          "id": "1",
+          "nickname": "John",
+          "age": "22",
+          "interest": "[\"swimming\"]"
+  }
+  {
+          "id": "2",
+          "nickname": "Doe",
+          "age": "23",
+          "interest": "[\"movie\"]"
+  }
+  '''
+  
+  # Dictreader 메서드의 경우 zip() 함수를 사용하지 않아도 된다.
+  import csv
+  import json
+  
+  with open("User.csv", "r") as user_csv:
+      csv_file = csv.DictReader(user_csv, ['id', 'nickname', 'age', 'interest'])
+      next(csv_file)
+      for row in csv_file:
+          print(json.dumps(row, ensure_ascii=False, indent="\t")) # 출력값은 위와 같다.
+  ```
+
+  - 변환 후 파일로 저장하기
+
+  ```python
+  import csv
+  import json
+  
+  with open("User.csv", "r") as user_csv, open("User.json", "w") as user_json:
+      # reader() 메서드를 사용하여 csv 파일을 읽는다.
+      csv_file = csv.reader(user_csv)
+      # 첫 줄은 컬럼 명으로 따로 저장한다.
+      col_list = next(csv_file)
+  	
+      # 출력 결과를 깔끔하게 하기 위해 각 행을 리스트에 넣고 한 번에 json 파일로 변환한다.
+      result = []
+      for cols in csv_file:
+          doc = {col_name: col for col_name, col in zip(col_list, cols)}
+          result.append(doc)
+      # 파일로 저장한다.
+      json.dump(result, user_json, ensure_ascii=False, indent="\t")
+  ```
+
+  - 결과 파일
+
+  ```json
+  [
+  	{
+  		"id": "1",
+  		"nickname": "John",
+  		"age": "22",
+  		"interest": "[\"swimming\"]"
+  	},
+  	{
+  		"id": "2",
+  		"nickname": "Doe",
+  		"age": "23",
+  		"interest": "[\"movie\"]"
+  	}
+  ]
+  ```
+
+  
+
+  
 
 # Python type hint
 
