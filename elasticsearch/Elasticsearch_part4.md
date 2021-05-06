@@ -573,7 +573,7 @@
     - Term Level Query라고도 부른다.
     - 검색어가 문서에 존재하는지 여부를 Yes나 No 형태의 검색 결과로 보여준다. 
     - score 값을 가지지 않는다.
-  - 둘 사이의 가장 큰 차이점은 analyze를 하는가의 여부이다.
+  - 둘 사이의 가장 큰 차이점은 analyze의 여부이다.
 
 
 
@@ -668,9 +668,9 @@
   ```bash
   $ curl 'localhost:9200/인덱스명/_search?q=텀'
   ```
-  
+
   - 본문 기반 검색
-  
+
   ```bash
   $ curl 'localhost:9200/인덱스명/_search' -H 'Content-Type: application/json' -d '{
   "query":{
@@ -679,22 +679,23 @@
     }
   }'
   ```
-```
-  
+
   - 기본적으로 query_string 필드는 _all 필드를 검색한다.
     - 특정 필드를 지정하는 것이 가능하다.
-  
+
   ```bash
   $ curl 'localhost:9200/인덱스명/_search?q=필드명:텀'
   
   $ curl 'localhost:9200/인덱스명/_search' -H 'Content-Type: application/json' -d '{
-  "query":{
-    "query_string":{
-      "fields":"필드",
-    "query":"텀"
-    }
-}'
-```
+  	"query":{
+  		"query_string":{
+  			"fields":"필드",
+  			"query":"텀"
+  	}
+  }'
+  ```
+
+
 
   - 이 밖에 다양한 쿼리 스트링 문법이 존재하는데 자세한 내용은 아래 링크 참조
 
@@ -725,7 +726,7 @@
   }'
   ```
 
-  
+
 
 - terms 쿼리
 
@@ -954,7 +955,7 @@
       "should":[
         {
           "match": {
-            "descrption": "performance"
+            "description": "performance"
           }
         },
         {
