@@ -91,15 +91,6 @@
 
 <br/>
 
-## [Elasticsearch](https://github.com/hedge0207/TIL/blob/master/CS/Elasticsearch.md)
-
-- 검색 엔진 개요
-- 엘라스틱 서치
-
-<br/>
-
-<br/>
-
 ## [HTTP_part1](https://github.com/hedge0207/TIL/blob/master/CS/HTTP_part1.md)
 
 - HTTP를 왜 학습해야 하는가
