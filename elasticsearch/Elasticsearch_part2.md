@@ -69,7 +69,7 @@
 
 
 - 설치하기
-
+  - ES 6.3 버전 이후부터는 ES 를 설치하면 자동으로 설치된다.
   - Kibana를 설치해야 한다.
 
     - Kibana는 ES에 저장된 로그를 검색하거나 그래프 등으로 시각화할 때 사용하는 도구다.
@@ -94,6 +94,40 @@
 
 
 # 클러스터 구축하기
+
+- 클러스터 이름 명시하기
+  - 엘라스틱서치의 주 설정 파일은 config 디렉터리의 `elasticsearch.yml`이다.
+  - `elasticsearch.yml`의 `cluster.name`을 주석 해제 후 변경한다.
+    - 이후 엘라스틱서치를 정지하고 재실행한다.
+    - 만일 데이터를 색인 한 후 클러스터명을 변경했다면 엘라스틱서치를 재시작했을 때 기존에 색인한 데이터가 사라져 있을 수도 있다.
+    - 클러스터명을 다시 되돌리면 색인한 데이터도 다시 돌아온다.
+
+
+
+- 자세한 로깅 명시하기
+  - 엘라스틱서치의 로그를 봐야 한다면 logs 디렉터리를 확인하면 된다.
+    - 엘라스틱서치 로그 엔트리는 세 가지 파일 형태로 구성된다
+    - 메인 로그(클러스터명.log 파일): 엘라스틱서치가 동작 중일 때 무슨 일이 일어났는지에 대한 일반적인 정보를 담고 있다.
+    - 느린 검색 로그(클러스터명_index_search_slowlog.log 파일): 쿼리가 너무 느리게 실행될 때(쿼리가 0.5초 넘게 걸릴 경우) 엘라스틱서치가 로그를 남기는 곳이다.
+    - 느린 색인 로그(클러스터명_index_indexing_slowlog.log 파일): 느린 검색 로그와 유사하지만 기본으로 색인 작업이 0.5초 이상 걸리면 로그를 남긴다.
+  - 로깅 옵션을 변경하려면 elasticsearch.yml과 같은 위치에 있는 logginh.yml 파일을 수정하면 된다.
+
+
+
+- JVM 설정 조정하기
+
+  - 엘라스틱서치는 JAVA 애플리케이션이므로 JVM에서 실행한다.
+  - 엘라스틱서치에 의해 사용하는 대부분 메모리는 힙이라고 부른다.
+    - 기본 설정은 ES가 힙으로 초기에 256MB를 할당해서 1GB까지 확장한다.
+    - 검색이나 색인 작업이 1GB 이상의 RAM이 필요하면, 작업이 실패하고 로그에서 OOM(Out of Memory) 에러를 보게 될 것이다.
+    - 엘라스틱서치에 얼마만큼의 메모리를 사용할지 변경하기 위해 `ES_HEAP_SIZE` 환경변수를 사용할 수 있다.
+
+  ```bash
+  # heap을 늘린 후 elasticsearch를 실행한다.
+  SET ES_HEAP_SIZE=500m & bin\elasticearch.bat
+  ```
+
+
 
 ## elasticsearch.yml
 
@@ -399,15 +433,42 @@
 
 
 
+
+
 # 클러스터 운영하기
 
-- 클러스터의 할당 정보를 확인하는 API
+- 클러스터 상태 확인하기
+
+  - 아래 명령어를 통해 현재 클러스터 정보를 확인할 수 있다.
+    - cat API는 JSON을 반환하지 않는다.
 
   ```bash
-  $ curl -XGET _cluster/allocation/explain
+  $ curl 'localhost:9200/_cat/shards?v'
   ```
 
-  
+  - 새로운 노드를 추가한 적이 없으므로 오직 하나의 노드만 존재한다.
+    - 샤드는 primary 샤드와 replica 샤드가 존재하는데 노드는 한 개만 존재하므로 replica 샤드는 할당되지 못한 상태이다(UNASSIGNED).
+    - 미할당 레플리카는 클러스터의 상태를 yellow로 만든다.
+    - yellow는 primary 샤드들은 할당되었으나 모든 레플리카가 할당된 것은 아니라는 것을 의미한다.
+    - primary 샤드가 할당되지 않았다면, 클러스터는 red 상태가 된다.
+    - 모든 샤드가 할당되었다면 클러스터는 green이 된다.
+
+
+
+- 두 번째 노드 생성하기
+  - 방법
+    - `elasticsearch.yml` 파일에 `node.max_local_storage_nodes: 생성할 노드 수` 코드를 추가한다(`:`와 생성할 노드 수 사이에 공백이 있어야 한다).
+    - 엘라스틱서치가 실행 중인 상태에서 다른 터미널에서 엘라스틱서치를 실행한다.
+    - 이렇게 하면 같은 머신에 다른 ES 인스턴스를 시작하게 된다.
+    - 현업에서는 추가적인 프로세싱 파워의 이득을 얻기 위해 다른 머신에 새로운 노드를 시작한다.
+    - 혹은 그냥 엘라스틱서치 폴더를 복사해서 각자 실행시키면 된다.
+  - 두 번째 노드는 멀티캐스트로 첫 번째 노드를 찾아서 클러스터에 합류하게 된다.
+    - 첫 번째 노드는 클러스터의 마스터 노드다.
+    - 즉 어떤 노드가 클러스터에 있고 샤드가 어디에 있는지 같은 정보를 유지하는 역할을 하는데, 이 정보를 클러스터 상태라고 부르고 다른 노드에도 복제 된다.
+    - 마스터 노드가 내려가면 다른 노드가 마스터 노드가 된다.
+  - 이제 추가한 노드에 레플리카가 할당되어 클러스터가 green으로 변경된 것을 확인 가능하다.
+
+
 
 ## 버전 업그레이드
 
@@ -446,7 +507,7 @@
     - 두 샤드가 가지고 있는 문서가 완벽히 동일해야 클러스터에서 노드가 제외되더라도 데이터의 정합성을 보장할 수 있기 때문이다.
 
   ```bash
-  $ curl -XPUT "localhost:9200/_flush/synced?pretty" -H 'Content-type:application/json'
+  $ curl -XPUT "localhost:9200/_flush/synced?pretty"
   ```
 
   - 노드 한 대 버전 업그레이드 이후 클러스터 합류 확인
@@ -465,7 +526,7 @@
   }'
   ```
 
-  - 클러스터 그린 상태 확인
+  - 클러스터 그린 상태(모든 샤드가 할당 된 상태) 확인
   - 위 과정 반복
 
 
@@ -621,11 +682,11 @@
   | none      | 모든 샤드의 재배치 비활성화                      |
   | null      | 설정을 초기화하여 Default인 all로 설정           |
 
-  - 아무때나 샤드 재배치가 일어나는 것이 아니라 cluseter.routing.allocation.disk.threshold_enabled 설정(기본값은 true)에 의해 클러스터 내의 노드 중 한 대 이상의 디스크 사용량이 아래와 같이 설정한 임계치에 도달했을 때 동작하게 된다.
-    - cluster.routing.allocation.disk.watermark.low: 특정 노드에서 임계치가 넘어가면 해당 노드에 더 이상 할당하지 않음. 새롭게 생성된 인덱스에 대해서는 적용되지 않음(기본값은 85%)
-    - cluster.routing.allocation.disk.watermark.high: 임계치를 넘어선 노드를 대상으로 즉시 샤드 재할당 진행. 새로 생성된 인덱스에도 적용됨(기본값은 90%)
-    - cluster.routing.allocation.disk.watermark.flood_stage: 전체 노드가 임계치를 넘어서면 인덱스를 read only 모드로 변경(기본값은 95%)
-    - cluster.info.update.interval: 임계치 설정을 체크할 주기(기본값은 30s)
+  - 아무때나 샤드 재배치가 일어나는 것이 아니라 `cluseter.routing.allocation.disk.threshold_enabled` 설정(기본값은 true)에 의해 클러스터 내의 노드 중 한 대 이상의 디스크 사용량이 아래와 같이 설정한 임계치에 도달했을 때 동작하게 된다.
+    - `cluster.routing.allocation.disk.watermark.low`: 특정 노드에서 임계치가 넘어가면 해당 노드에 더 이상 할당하지 않음. 새롭게 생성된 인덱스에 대해서는 적용되지 않음(기본값은 85%)
+    - `cluster.routing.allocation.disk.watermark.high`: 임계치를 넘어선 노드를 대상으로 즉시 샤드 재할당 진행. 새로 생성된 인덱스에도 적용됨(기본값은 90%)
+    - `cluster.routing.allocation.disk.watermark.flood_stage`: 전체 노드가 임계치를 넘어서면 인덱스를 read only 모드로 변경(기본값은 95%)
+    - `cluster.info.update.interval`: 임계치 설정을 체크할 주기(기본값은 30s)
 
   ```bash
   $ curl -XPUT "localhost:9200/_cluster/settings?pretty" -H 'Content-type:application/json' -d '
@@ -639,78 +700,345 @@
   }'
   ```
 
+  - read only 모드가 되었을 때, 쓰기 작업이 가능하도록 변경해주는 curl
+    - 인덱스 단위로도 읽기 전용 모드를 해제 가능하다.
+    - 그러나 읽기 전용 모드는 flood_stage에 의해 다수의 인덱스에 설정되므로 가능한 아래 코드와 같이 `_all`을 통해 모든 인덱스에 동시 적용하는 것이 좋다.
+  
+  ```bash
+  $ curl -XPUT "localhost:9200/_all/_settings?pretty" -H 'Content-type:application/json' -d'{
+  "index.block.read_only_allow_delete":null
+  }'
+  ```
+
+
+
+- filtering
+
+  - 특정 조건에 맞는 샤드를 특정 노드에 배치하는 작업.
+  - 조건
+    - `"cluster.routing.allocation.include.[속성]":"[값]"`: 설정이 정의된 하나 이상의 노드에 샤드를 할당.
+    - `"cluster.routing.allocation.require.[속성]":"[값]"`: 설정이 정의된 노드에만 샤드를 할당.
+    - `"cluster.routing.allocation.exclude.[속성]":"[값]"`: 설정이 정의된 노드로부터 샤드를 제외. Rolling Restart시 안정성을 위해 작업 대상 노드의 샤드를 강제로 다른 노드로 옮기는 용도로 주로 사용한다. 만일 제외하려는 설정이 클러스터의 안정성을 유지하기 위한 최소한의 룰에 위배된다면 제외되지 않는다(예를 들어 3개의 노드 중 2개의 노드를 제외하여 모든 샤드가 남은 하나의 노드에만 할당되는 경우 제외되지 않는다).
+  - 속성
+
+  | 속성  | 설명                                            |
+  | ----- | ----------------------------------------------- |
+  | _name | 노드의 이름(`,`로 구분하여 여러 노드 설정 가능) |
+  | _ip   | 노드의 IP                                       |
+  | _host | 노드의 호스트명                                 |
+
+  - 예시
+    - node02 라는 이름의 노드를 샤드 배치에서 제외하는 curl
+
+  ```bash
+  $ curl -XPUT "localhost:9200/_cluster/settings?pretty" -H 'Content-type:application/json' -d '
+  {
+  	"persistent":{
+  		"cluster.routing.allocation.exclude._name":"node02"
+  	}
+  }'
+  ```
+
+
+
+## 클러스터와 인덱스의 설정 변경
+
+### 클러스터 설정 변경
+
+- 클러스터 API를 통해 클러스터 설정을 변경할 수 있다.
+
+  - `_cluster/settings`와 같이 `_cluster`가 붙은 API를 클러스터 API라 부른다.
+  - 현재 클러스터에 적용된 설정 확인
+
+  ```bash
+  $ curl -XGET "localhost:9200/_cluster/settings?pretty"
+  ```
+
+  - 응답
+
+  ```json
+  {
+    "persistent" : { },
+    "transient" : { }
+  }
+  ```
+
+
+
+- cluster 설정
+  - persistent
+    - 영구히 적용되는 설정.
+    - 아무 값이 없을 경우 항목의 기본값이 자동으로 적용된다.
+    - 클러스터를 재시작해도 유지된다.
+  - transient
+    - 클러스터가 운영 중인 동안에만 적용되는 설정.
+    - 아무 값이 없을 경우 항목의 기본값이 자동으로 적용된다.
+    - 클러스터를 재시작하면 초기화된다.
+
+  - elasticsearch.yml
+    - 기본적인 설정은 elasticsearch.yml에도 설정할 수 있다. 
+    - 각기 다른 설정을 적용할 경우 우선순위는 `transient > persistent > elasticsearch.yml` 순이다.
+    - 또한 persistent, transient와 달리 elasticsearch.yml에서는 클러스터 전체가 아닌 노드별로 다르게 설정할 수 있는 항목들을 설정 가능하다.
+    - 따라서 노드별로 다르게 설정해야 하거나 변경되지 않고 클러스터에 공통으로 필요한 사항은 elasticsearch.yml에 설정하는 것이 좋다.
+
+
+
+- 클러스터 설정 예시
+
+  - persistent는 elasticsearch.yml 보다 우선순위가 높기 때문에 elasticsearch.yml 파일에서 `discovery.zen.minimum_master_nodes` 설정을 2로 줬다고 하더라도 아래 요청을 보내면 동적으로 변경이 가능하다.
+
+  ```bash
+  $ curl -X PUT "localhost:9200/_cluster/settings?pretty" -H 'Content-type:application/json' -d'
+  {
+  	"persistent":{
+  		"cluster.routing.allocation.disk.watermark.low":"90%",
+  		"discovery.zen.minimum_master_nodes":1
+  	},
+  	"transient":{
+  		"cluster.routing.allocation.enable":"primaries"
+  	}
+  }
+  ```
+
+
+
+- 클러스터의 미할당 샤드를 확인하는 클러스터 API
+
+  - `explain`을 사용한다.
+    - 더 자세한 내용은 master node의 로그를 확인해보면 된다.
+
+  ```bash
+  $ curl -XGET _cluster/allocation/explain?pretty
+  ```
+
+  - 위에서 살펴본 샤드 reroute의 `retry_failed` 옵션과 함께 유용하게 사요된다.
+
   
 
+### 인덱스 설정 변경
 
+- 인덱스 API를 사용한다.
 
-# 엘라스틱서치 설정하기
-
-- 클러스터 이름 명시하기
-  - 엘라스틱서치의 주 설정 파일은 config 디렉터리의 `elasticsearch.yml`이다.
-  - `elasticsearch.yml`의 `cluster.name`을 주석 해제 후 변경한다.
-    - 이후 엘라스틱서치를 정지하고 재실행한다.
-    - 만일 데이터를 색인 한 후 클러스터명을 변경했다면 엘라스틱서치를 재시작했을 때 기존에 색인한 데이터가 사라져 있을 수도 있다.
-    - 클러스터명을 다시 되돌리면 색인한 데이터도 다시 돌아온다.
-
-
-
-- 자세한 로깅 명시하기
-  - 엘라스틱서치의 로그를 봐야 한다면 logs 디렉터리를 확인하면 된다.
-    - 엘라스틱서치 로그 엔트리는 세 가지 파일 형태로 구성된다
-    - 메인 로그(클러스터명.log 파일): 엘라스틱서치가 동작 중일 때 무슨 일이 일어났는지에 대한 일반적인 정보를 담고 있다.
-    - 느린 검색 로그(클러스터명_index_search_slowlog.log 파일): 쿼리가 너무 느리게 실행될 때(쿼리가 0.5초 넘게 걸릴 경우) 엘라스틱서치가 로그를 남기는 곳이다.
-    - 느린 색인 로그(클러스터명_index_indexing_slowlog.log 파일): 느린 검색 로그와 유사하지만 기본으로 색인 작업이 0.5초 이상 걸리면 로그를 남긴다.
-  - 로깅 옵션을 변경하려면 elasticsearch.yml과 같은 위치에 있는 logginh.yml 파일을 수정하면 된다.
-
-
-
-- JVM 설정 조정하기
-
-  - 엘라스틱서치는 JAVA 애플리케이션이므로 JVM에서 실행한다.
-  - 엘라스틱서치에 의해 사용하는 대부분 메모리는 힙이라고 부른다.
-    - 기본 설정은 ES가 힙으로 초기에 256MB를 할당해서 1GB까지 확장한다.
-    - 검색이나 색인 작업이 1GB 이상의 RAM이 필요하면, 작업이 실패하고 로그에서 OOM(Out of Memory) 에러를 보게 될 것이다.
-    - 엘라스틱서치에 얼마만큼의 메모리를 사용할지 변경하기 위해 `ES_HEAP_SIZE` 환경변수를 사용할 수 있다.
+  - 아래와 같이 `인덱스명/_settings` endpoint를 사용하여 조회 및 수정이 가능하다.
+    - `인덱스명`에 `_all` 지시자를 넣으면 모든 인덱스를 대상으로 수정이 가능하다.
+    - 와일드카드와 같은 정규식을 사용하는 것도 가능하다(`user*`를 넣으면 user로 시작하는 모든 인덱스가 대상이 된다.)
+  - 조회
 
   ```bash
-  # heap을 늘린 후 elasticsearch를 실행한다.
-  SET ES_HEAP_SIZE=500m & bin\elasticearch.bat
+  $ -XGET "localhost:9200/인덱스명/_settings"
+  ```
+
+  - 수정
+    - 아래 curl은 레플리카 샤드의 수를 0개로 줄이는 요청이다.
+
+  ```bash
+  $ -XPUT "localhost:9200/인덱스명/_settings" -H 'Content-type:application/json' -d'
+  {
+  	"index.number_of_replicas":0
+  }
   ```
 
 
 
-# 클러스터에 노드 추가하기
+- 자주 사용되는 인덱스 API
 
-- 클러스터 상태 확인하기
-
-  - 아래 명령어를 통해 현재 클러스터 정보를 확인할 수 있다.
-    - cat API는 JSON을 반환하지 않는다.
+  - open/close
+    - 인덱스를 사용 가능/불가능한 상태로 만드는 API
+    - close 상태일 경우 색인과 검색이 모두 불가능해진다.
 
   ```bash
-  $ curl 'localhost:9200/_cat/shards?v'
+  # close
+  $ curl -XPOST "localhost:9200/인덱스명/_close" -H 'Content-type:application/json' -d'
+  
+  # open
+  $ curl -XPOST "localhost:9200/인덱스명/_open" -H 'Content-type:application/json' -d'
   ```
 
-  - 새로운 노드를 추가한 적이 없으므로 오직 하나의 노드만 존재한다.
-    - 샤드는 primary 샤드와 replica 샤드가 존재하는데 노드는 한 개만 존재하므로 replica 샤드는 할당되지 못한 상태이다(UNASSIGNED).
-    - 미할당 레플리카는 클러스터의 상태를 yellow로 만든다.
-    - yellow는 primary 샤드들은 할당되었으나 모든 레플리카가 할당된 것은 아니라는 것을 의미한다.
-    - primary 샤드가 할당되지 않았다면, 클러스터는 red 상태가 된다.
-    - 모든 샤드가 할당되었다면 클러스터는 green이 된다.
+  - aliases
+    - 인덱스에 별칭을 부여하는 API
+    - 인덱스의 이름뿐만 아니라 별칭으로도 인덱스에 접근할 수 있게 된다.
+    - 배열에 넣거나 패턴 매칭을 통해 여러 인덱스에 하나의 alias를 설정할 수 있다.
+    - 주의할 점은 단일 인덱스에 설정된 alias는 별칭을 통해 색인과 검색이 모두 가능하지만, 여러 인덱스에 설정된 하나의 alias의 경우 별칭을 통해서는 검색만 가능하다는 점이다.
+    - 또한 여러 개의 인덱스에 하나의 alias를 설정한 경우 인덱스가 하나라도 close 상태라면 alias를 통핸 검색 요청이 불가능해진다.
+
+  ```bash
+  # 하나의 인덱스에만 alias를 설정
+  $ curl -XPOST "localhost:9200/_aliases" -H 'Content-type:application/json' -d'
+  {
+  	"actions":[
+  		# alias를 설정할 인덱스와 alias의 이름을 입력한다.
+  		# remove를 통해 제거가 가능하다.
+  		{"add":{"index":"test1","alias":"alias1"}}
+  	]
+  }
+  
+  # 여러 개의 인덱스에 alias를 설정
+  $ curl -XPOST "localhost:9200/_aliases" -H 'Content-type:application/json' -d'
+  {
+  	"actions":[
+  		{"add":{"index":["test2","test3"],"alias":"alias2"}}
+  		# 패턴 매칭 사용(test로 시작하는 모든 인덱스에 적용)
+  		# {"add":{"index":["test*"],"alias":"alias2"}}
+  	]
+  }
+  ```
+
+  - rollover
+    - 인덱스에 특정 조건을 설정하여 해당 조건을 만족하면 인덱스를 새로 만들고, 새롭게 생성된 인덱스로 요청을 받는 API
+    - aliases API를 통해 별칭 설정이 반드시 필요한  API이다.
+    - 예를 들어 index01이라는 인덱스에 aliases API로 user라는 별칭을 붙이고 user를 통해 인덱스에 접근하고 있었다고 가정했을 때, index01 인덱스에 많은 문서가 색인되는 등의 이유로 인덱스를 하나 더 생성해야 한다면 rollover API를 통해서 index02라는 인덱스를 생성하고 user라는 별칭이 가리키는 인덱스를 index02로 변경한다. 이렇게 함으로써 사용자는 user라는 별칭을 계속 사용하여 색인과 검색이 가능해진다.
+    - `dry_run` 옵션을 통해 모의 실행이 가능하다. 이 경우 실제 변경이 적용되지는 않고, 변경이 적용되면 어떻게 되는지를 보여준다.
+
+  ```bash
+  # index01이라는 인덱스에 user라는 별칭 설정
+  $ curl -XPOST "localhost:9200/index01/_aliases" -H 'Content-type:application/json' -d'
+  {
+  	"aliases":{"user":{}}
+  }
+  
+  # rollover API를 호출하고 조건을 설정한다.
+  $ curl -XPOST "localhost:9200/user/_rollover?pretty" -H 'Content-type:application/json' -d'
+  {
+  	# 생성된 지 7일이 지나거나, 문서의 수가 2개 이상이거나, 인덱스의 크기(프라이머리 샤드 기준)가 5GB가 넘으면 롤오버한다.
+  	"contitions":{
+  		"max_age":"7d",
+  		"max_docs":2,
+  		"max_size":"5gb"
+  	}
+  }
+  
+  # 새로 생성될 index의 이름(new_index)을 아래와 같이 직접 지정해주는 것이 가능하다.
+  $ curl -XPOST "localhost:9200/user/_rollover/new_index?pretty" -H 'Content-type:application/json' -d'
+  {
+  	...
+  }
+  
+  # dry_run 적용
+  $ curl -XPOST "localhost:9200/user/_rollover?dry_run&pretty" -H 'Content-type:application/json' -d'
+  {
+  	...
+  }
+  ```
+
+  - refresh API
+    - `refresh_interval` 설정은 메모리 버퍼 캐시에 있는 문서들을 세그먼트로 저장해주는 주기를 의미한다.
+    - refresh API는 `refresh_interval`에서 설정한 주기를 기다리지 않고 바로 메모리 버퍼 캐시에 있는 문서들을 세그먼트로 저장해준다.
+
+  ```bash
+  $ curl -XPOST "localhost:9200/인덱스명/_refresh?pretty" -H 'Content-type:application/json'
+  ```
+
+  - forcemerge API
+    - 샤드를 구성하는 세그먼트를 강제로 병합하는 API.
+    - `max_num_segments` 옵션으로 샤드 내 세그먼트들을 몇 개의 세그먼트로 병합할 것인지 설정한다.
+    - 병합의 대상이 되는 세그먼트들은 샤드의 개수에 비례해서 증가하고 떄어 따라서 많은 양의 디스크 I/O 작업을 일으킨다.
+    - 따라서 너무 많은 세그먼트를 대상으로 forcemerge API 작업을 진행하면 성능 저하를 일으킬 수 있다.
+    - 또한 계속 문서의 색인이 일어나고 있는 인덱스라면 세그먼트에 대한 변경 작업이 계속되기 때문에 forcemerge 작업을 하지 않는 것이 좋다.
+
+  ```bash
+  $ curl -XPOST "localhost:9200/인덱스명/_forcemerge?max_num_segments=10&pretty" -H 'Content-type:application/json'
+  ```
+
+  - reindex API
+    - 인덱스를 복제하는 API
+    - 인덱스의 analyzer 변경이나 클러스터의 마이그레이션 등 인덱스를 마이그레이션해야 할 경우 사용한다.
+    - 클러스터 내부가 아닌 클러스터 사이에 데이터 마이그레이션에도 사용할 수 있다.
+    - 목적지 클러스터의 elasticsearch.yml 파일에서 `reindex.remote.whitelist:"호스트:9200,127.0.0.*:9200`과 같이 원본 클러스터의 주소를 whitelist에 설정해주면 되는데, 도메인이나 IP를 기준으로 예시처럼 와일드카드 패턴 매칭도 지원한다.
+
+  ```bash
+  # 클러스태 내 reindex
+  $ curl -XPOST "localhost:9200/인덱스명/_reindex?pretty" -H 'Content-type:application/json' -d'
+  {
+  	"source":{
+  		"index":"test"	# 원본 인덱스
+  	},
+  	"dest":{
+  		"index":"new_index"	# 목적지 인덱스
+  	}
+  }
+  
+  # 클러스터 간 reindex(목적지 클러스터에서 수행)
+  $ curl -XPOST "localhost:9200/인덱스명/_reindex?pretty" -H 'Content-type:application/json' -d'
+  {
+  	"source":{
+  		"remote":{
+  			"host":"http://example/com:9200"
+  		},
+  		"index":"test"
+  	},
+  	"dest":{
+  		"index":"dest_test"	# 목적지 인덱스
+  	}
+  }
+  ```
+
+  
+
+## 템플릿 활용하기
+
+- 템플릿 API
+
+  - 엘라스틱서치는 템플릿 API를 통해 특정 패턴의 이름을 가진 인덱스에 설정이 자동 반영되도록 하는 인터페이스를 제공한다.
+  - 템플릿 API를 통해 정의할 수 있는 항목들
+
+  | 항목     | 설명                |
+  | -------- | ------------------- |
+  | settings | 인덱스의 설정값     |
+  | mappings | 인덱스의 매핑 정보  |
+  | aliases  | 인덱스의 alias 정보 |
 
 
 
-- 두 번째 노드 생성하기
-  - 방법
-    - `elasticsearch.yml` 파일에 `node.max_local_storage_nodes: 생성할 노드 수` 코드를 추가한다(`:`와 생성할 노드 수 사이에 공백이 있어야 한다).
-    - 엘라스틱서치가 실행 중인 상태에서 다른 터미널에서 엘라스틱서치를 실행한다.
-    - 이렇게 하면 같은 머신에 다른 ES 인스턴스를 시작하게 된다.
-    - 현업에서는 추가적인 프로세싱 파워의 이득을 얻기 위해 다른 머신에 새로운 노드를 시작한다.
-    - 혹은 그냥 엘라스틱서치 폴더를 복사해서 각자 실행시키면 된다.
-  - 두 번째 노드는 멀티캐스트로 첫 번째 노드를 찾아서 클러스터에 합류하게 된다.
-    - 첫 번째 노드는 클러스터의 마스터 노드다.
-    - 즉 어떤 노드가 클러스터에 있고 샤드가 어디에 있는지 같은 정보를 유지하는 역할을 하는데, 이 정보를 클러스터 상태라고 부르고 다른 노드에도 복제 된다.
-    - 마스터 노드가 내려가면 다른 노드가 마스터 노드가 된다.
-  - 이제 추가한 노드에 레플리카가 할당되어 클러스터가 green으로 변경된 것을 확인 가능하다.
+- 템플릿 생성하기
+
+  - 아래와 같이 템플릿을 생성한 후 test1이라는 인덱스를 생성하면, 아래 템플릿이 적용되어 생성된다.
+
+  ```bash
+  $ curl -XPUT "localhost:9200/_template/my_template?pretty" -H 'Content-type:application/json' -d'
+  {
+  	"index_patterns":["test*"],
+  	"order":1,
+  	"settings":{
+  		"number_of_shards":3,
+  		"number_of_replicas":1
+  	},
+  	"mappings":{
+  		"_doc":{
+  			"properties":{
+  				"test":{
+  					"type":"text"
+  				}
+  			}
+  		}
+  	},
+  	"aliases":{
+  		"alias_test":{} # alias_test라는 별칭을 붙인다.
+  	}
+  }'
+  ```
+
+  - my_template이라는 이름으로 템플릿을 생성한다.
+  - `index_patterns`에는 정규식이 사용 가능하다.
+  - `order`
+    - `index_patterns`에서 설정한 패턴이 겹치는 다른 템플릿이 존재한다면 어떤 템플릿을 적용할지 결정하는 역할을 한다.
+    - 숫자가 높을 수록 우선순위가 높다.
+    - 만일 A 템플릿에는 존재하는데 B 템플릿에는 존재하지 않는 설정이 있다면, A 템플릿이 우선 순위가 높다 하더라도, 해당 설정에 한해서는 B 템플릿이 적용된다.
+
+
+
+- template 정보 확인하기
+
+  - 모든 템플릿 확인하기
+
+  ```bash
+  $ curl -XPUT "localhost:9200/_cat/template?pretty"
+  ```
+
+  - 특정 템플릿 확인하기
+
+  ```bash
+  $ curl -XPUT "localhost:9200/_template/my_template?pretty"
+  ```
 
 
 

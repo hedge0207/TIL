@@ -543,11 +543,21 @@
   $ docker volume rm <볼륨명>
   ```
 
-  
+
+
+# etc
+
+## docker-entrypoint-initdb.d
+
+- `docker-entrypoint-initdb.d`
+  - DB 이미지들 중에는 컨테이너를 생성할 때 일련의 작업(DB 생성, table 생성, data 추가 등)이 자동으로 실행되도록 `docker-entrypoint-initdb.d`라는 폴더를 생성해주는 것들이 있다.
+  - 컨테이너 내부의 `docker-entrypoint-initdb.d` 폴더에 volume을 설정하면 컨테이너가 최초로 실행될 때 `docker-entrypoint-initdb.d` 폴더 내부의 파일이 실행된다.
 
 
 
-
+- 주의사항
+  - 만일 컨테이너에 이미 volume이 존재한다면 `docker-entrypoint-initdb.d`에 실행할 파일을 넣어도 실행이 되지 않는다.
+  - 따라서 반드시 volume을 삭제한 후에 실행해야 한다.
 
 
 
