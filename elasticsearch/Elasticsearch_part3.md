@@ -152,7 +152,6 @@
   ```bash
   $ curl -XGET 'http://localhost:9200/_cat/indices'
   ```
-  
 
 
 
@@ -235,6 +234,31 @@
 
 
 ## stats API로 지표 확인하기
+
+- GC(Garbage Collector)
+
+  - 정의
+
+    - Java로 만든 애플리케이션은 기본적으로 JVM이라는 가상 머신 위에서 동작하는데 OS는 JVM이 사용할 수 있도록 일정 크기의 메모리를 할당해준다.
+    - 이 메모리 영역을 힙 메모리라고 부른다.
+    - JVM은 힙 메모리 영역을 데이터를 저장하는 용도로 사용한다.
+    - 시간이 갈수록 사용 중인 영역이 점점 증가하다가 어느 순간 사용할 수 있는 공간이 부족해지면 사용 중인 영역에서 더 이상 사용하지 않는 데이터들을 지워서 공간을 확보하는데 이런 일련의 과정을 가비지 컬렉션이라 부른다.
+
+    - 사용 중인 영역은 young 영역과  old 영역 두 가지로 나뉜다.
+
+  - Stop-The-World
+
+    - GC 작업을 할 때, 즉 메모리에서 데이터를 지우는 동안에는 다른 스레드들이 메모리에 데이터를 쓰지 못하도록 막는다.
+    - GC가 진행되는 동안에너는 다른 스레드들이 동작하지 못하기 때문에 애플리케이션이 응답 불가 현상을 일으키고 이를 Stop-The-World 현상이라 한다.
+    - 특히 old GC는 비워야 할 메모리의 양이 매우 많기 때문에 경우에 따라서는 초 단위의 GC 수행 시간이 소요되기도 한다.
+    - 이럴 경우 ES 클러스터가 초 단위의 응답 불가 현상을 겪게 된다.
+
+  - Out Of Memory
+
+    - GC를 통해 더 이상 메모리를 확보할 수 없는 상황에서 애플리케이션이 계쏙해서 메모리를 사용하고자 하면 가용할 메모리가 없다는 OOM 에러를 발생시킨다.
+    - OOM  에러는 애플리케이션을 비정상 종료시키기 때문에 클러스터에서 노드가 아예 제외되는 현상이 발생한다.
+
+
 
 - 클러스터 성능 지표 확인하기
 
@@ -467,328 +491,540 @@
 
 ## 성능 확인과 문제 해결
 
+- 주요 성능
+  - 색인 성능
+    - 초당 몇 개의 문서를 색인할 수 있는지, 그리고 각 문서를 색인하는 데 소요되는 시간이 어느 정도인지
+    - 클러스터 전체 성능과 노드의 개별 성능으로 나누어 측정한다.
+  - 검색 성능
+    - 초당 몇 개의 쿼리를 처리할 수 있는지, 그리고 각 쿼리를 처리하는 데 소요되는 시간이 어느 정도인지
+    - 클러스터 전체 성능과 노드의 개별 성능으로 나누어 측정한다.
+  - GC 성능
+    - GC가 너무 자주, 오래 발생하면 Stop-The-World 같은 응답 불가 현상이 발생한다.
+    - Stop-The-World가 얼마나 자주, 오래 발생하는지를 나타낸다.
+  - rejected
+    - 클러스터가 처리할 수 없는 수준의 요청이 들어오면 클러스터는 요청을 거절하게 되는데 그 횟수를 나타낸다.
 
 
 
+- 색인 성능
 
-
-
-
-
-
-
-
-
-# 데이터 처리
-
-## 새로운 데이터 색인
-
-- curl 명령의 기본 형식
-
-  ```bash
-  curl -X 메소드 'http://연결할 일레스틱 서치 노드의 호스트명:연결할 포트/색인명/_doc/문서id'
-  ```
-
-  - `-X` 
-    - request시 사용할 메소드의 종류를 기술한다. 메소드와 띄어 써도 되지만 붙여 써도 된다.
-    - 새로운 문서 입력은 PUT, 기존 문서의 수정은 POST, 삭제는 DELETE, 조회는 GET을 사용한다.
-    - `-XGET`의 경우 생략이 가능하다.
-
-  - _doc
-    - ES5 버전 이하에서는 멀티 타입을 지원해서 하나의 인덱스 안에 다양한 타입의 데이터를 저장할 수 있었다.
-    - ES6  버전부터는 하나의 인덱스에 하나의 타입만 저장할 수 있게 되었기에 본래 타입이 올 자리에 _doc을 입력한다.
-
-
-
-- 삽입
-
-  - curl을 활용하여 삽입
-    - 파라미터로 들어간 `pretty` 또는 `pretty-true`는 JSON  응답을 더 보기 좋게 해준다.
-    - `-H` 옵션은 header를 지정한다.
-    - `-d` 옵션은 body를 지정한다.
+  - `_stats` 를 통해 확인 가능하다.
 
   ```bash
-  $ curl -XPUT 'localhost:9200/company/_doc/1?pretty' -H 'Content-Type: application/json' -d '{
-  "name":"Theo",
-  "age":"28"
-  }'
+  $ curl -XGET 'http://localhost:9200/_stats?pretty
   ```
 
-  - 응답
-    - 응답은 색인, 타입, 색인한 문서의 ID를 포함한다.
+  - 성능 지표
 
   ```json
   {
-    "_index" : "company",
-    "_type" : "colleague",
-    "_id" : "1",
-    "_version" : 1,
-    "result" : "created",  // 새로 생성한 것이므로 created로 뜨지만, 수정할 경우 updated라고 뜬다.
     "_shards" : {
-      "total" : 2,
-      "successful" : 1,
+      "total" : 14,
+      "successful" : 14,
       "failed" : 0
     },
-    "_seq_no" : 0,
-    "_primary_term" : 1
+    "_all" : {
+      "primaries" : {		// 프라이머리 샤드에 대한 색인 성능
+        "docs" : {
+          "count" : 10,
+          "deleted" : 1
+        },
+        "store" : {
+          "size_in_bytes" : 92866
+        },
+        "indexing" : {
+          "index_total" : 24,
+          "index_time_in_millis" : 209,
+          // (...)
+        },
+        // (...)
+      "total" : {		// 전체 샤드에 대한 색인 성능
+       // 내용은 primaries와 동일하다.
+       //(...)
+      }
+    }
   }
   ```
 
-  - POST 메서드로도 추가가 가능하다.
-    - 둘의 차이는 POST의 경우 도큐먼트id를 입력하지 않아도 자동으로 생성하지만 PUT은 자동으로 생성하지 않는다는 것이다.
+  - 성능 측정
+    - 위 요청을 10초 간격으로 보냈을 때, 첫 번째 호출시 색인된 문서의 수는 0개, 두 번째 호출시 색인된 문서의 수는 200개 라고 가정
+    - 10 초 동안 200개의 문서가 색인됐다고 할 수 있다.
+    - 또한 첫 번째 호출시 색인 소요 시간이 0초, 두 번째 호출 시 색인 소요 시간이 100ms라고 가정
+    - 즉 10초 동안 200개의 문서를 색인했고, 색인하는데 10ms가 걸렸기 때문에 각각의 문서를 색인하는데 에는 200/100=2ms의 시간이 소요되었음을 알 수 있다.
+    - 즉, 이 클러스터의 프라이머리 샤드에 대한 색인 성능은 2ms이다.
+    - 색인하는 양이 많으면 많을수록 색인에 소요되는 시간도 늘어나기 때문에 두 값의 절대적인 값보다는 하나의 문서를 색인하는 데 시간이 얼마나 소요되는지를 더 중요한 성능 지표로 삼아야 한다.
 
-  - 실수로 기존 도큐먼트가 덮어씌워지는 것을 방지하기 위해 입력 명령어에 `_doc` 대신 `_create`를 사용해서 새로운 도큐먼트의 입력만 허용하는 것이 가능하다.
-    - 이 경우 이미 있는 도큐먼트id를 추가하려 할 경우 오류가 발생한다.
-    - 이미 위에서 도큐먼트id가 1인 도큐먼트를 추가했으므로 아래 예시는 오류가 발생한다. 
+
+
+- 검색 성능
+
+  - query와 fetch
+    - A, B, C 노드가 있을 때 사용자가 search API를 통해 A 노드에 검색 요청을 입력했다고 가정한다.
+    - 그럼 노드 A는 자신이 받은 검색 쿼리를 B, C 노드에 전달한다.
+    - 각각의 노드는 자신이 가지고 있는 샤드 내에서 검색 쿼리에 해당하는 문서가 있는지 찾는 과정을 진행한다.
+    - 이 과정이 query이다.
+    - 그리고 이렇게 찾은 문서들을 리스트 형태로 만들어서 정리하는 과정이 fetch이다.
+    - 검색은 이렇게 query와 fetch의 과정이 모두 끝나야 만들어지기 때문에 검색 성능을 측정할 때 두 과정을 모두 포함하는 것이 좋다.
+  - `_stats`을 통해 확인 가능하다.
+
+  ```bash
+  $ curl -XGET 'http://localhost:9200/_stats?pretty
+  ```
+
+  - 성능 지표
 
   ```json
-  PUT company/_create/1
-  
   {
-      "nickname":"Theo",
-      "message":"안녕하세요!"
+    "_shards" : {
+      "total" : 14,
+      "successful" : 14,
+      "failed" : 0
+    },
+    "_all" : {
+      // (...)
+        "search" : {
+          "open_contexts" : 0,
+          "query_total" : 10916,	// 호출하는 시점까지 처리된 모든 query의 총합
+          "query_time_in_millis" : 5496,
+          "query_current" : 0,
+          "fetch_total" : 10915,	// 호출하는 시점까지 처리된 모든 fetch의 총합
+          "fetch_time_in_millis" : 476,
+          "fetch_current" : 0,
+          "scroll_total" : 9741,
+          "scroll_time_in_millis" : 18944,
+          "scroll_current" : 0,
+          "suggest_total" : 0,
+          "suggest_time_in_millis" : 0,
+          "suggest_current" : 0
+        },
+      // (...)
+      }
+    }
   }
   ```
 
+  - 성능 측정
+    - 색인 성능 측정과 동일한 방식으로 진행하면 된다.
+    - query와 fetch를 나눠서 진행한다.
 
 
 
-- 색인 과정
+- GC 성능 측정
+
+  - 각 노드에서 발생하기 때문에 `_nodes/stats`를 통해 확인한다.
+
+  ```bash
+  $ curl -XGET 'http://localhost:9200/_nodes/stats?pretty
+  ```
+
+  - 성능 지표
+
+  ```json
+  // (...)
+  "jvm" : {
+      // (...)
+    "gc" : {
+      "collectors" : {
+          "young" : {
+              "collection_count" : 333,
+              "collection_time_in_millis" : 1697
+          },
+          "old" : {
+              "collection_count" : 3,
+              "collection_time_in_millis" : 53
+          }
+      }
+  }
+  // (...)
+  ```
+
+  - 성능 측정
+    - 색인과 동일한 방법으로 측정한다.
+    - old, young을 각각 측정한다.
+    - 상황에 따라 다르지만 보통 수십에서 수백 ms 정도의 성능을 내는 것이 안정적이다.
+
+
+
+- rejected 성능 측정
+
+  - rejected 에러
+    - ES는 현재 처리할 수 있는 양보다 많은 양의 요청이 들어올 경우 큐에 요청을 쌓아놓는다.
+    - 하지만 큐도 꽉 차서 더 이상 요청을 쌓아놓을 수 없으면 rejected 에러를 발생시키며 요청을 처리하지 않는다.
+    - 보통 요청이 점차 늘어나서 초기에 구성한 클러스터의 처리량이 부족한 경우나, 평상시에는 부족하지 않지만 요청이 순간적으로 늘어나서 순간 요청을 처리하지 못하는 경우에 발생한다.
+  - node별로 측정이 가능하다.
+
+  ```bash
+  $ curl -XGET 'http://localhost:9200/_nodes/stats?pretty
+  ```
+
+  - 성능 지표
+    - 각 스레드 별로 확인할 수 있다.
+
+  ```json
+  // (...)
+  "thread_pool" : {		// 노드의 스레드 풀 상태
+      // (...)
+      "search" : {
+        "threads" : 73,
+        "queue" : 0,
+        "active" : 0,
+        "rejected" : 0,
+        "largest" : 73,
+        "completed" : 10917
+      },
+      // (...)
+      "write" : {
+        "threads" : 32,
+        "queue" : 0,
+        "active" : 0,
+        "rejected" : 0,
+        "largest" : 32,
+        "completed" : 32
+      }
+  },
+  // (...)
+  ```
+
+  - rejected 문제 해결
+    - 만일 초기에 구성한 클러스터의 처리량이 부족하다면 데이터 노드를 증설하는 방법 외에는 특별한 방법이 없다.
+    - 그러나 순간적으로 밀려들어오는 요청을 처리하지 못한다면 큐를 늘리는 것이 도움이 될 수 있다.
+    - ` elasticsearch.yml` 파일에 아래와 같이 설정하면 된다.
+
+  | 스레드 이름         | 스레드 풀 타입        | 설정 방법                                | 예시                                    |
+  | ------------------- | --------------------- | ---------------------------------------- | --------------------------------------- |
+  | get, write, analyze | fixed                 | thread_pool.[스레드 이름].queue_size     | thread_pool.write.queue_size=10000      |
+  | search              | fixed_auto_queue_size | thread_pool.[스레드 이름].max_queue_size | thread_pool.search.max_queue_size=10000 |
+
+
+
+
+
+# 분석 엔진으로 활용하기
+
+- Elastic Stack이란
+  - Elastic Stack은 로그를 수집, 가공하고 이를 바탕으로 분석하는 데 사용되는 플랫폼을 의미한다.
+    - 이전에는 Elastic Stack을 ELK Stack이라고 불렀다.
+    - Elastic Stack은 가급적 모든 구성 요소의 버전을 통일시키는 것이 좋다.
+  - Elastic Stack은 아래와 같다.
+    - 로그를 전송하는 Filebeat
+    - 전송된 로그를 JSON 형태의 문서로 파싱하는 Logstash
+    - 파싱된 문서를 저장하는 Elasticsearch
+    - 데이터를 시각화 할 수 있는 kibana
+  - Filebeat
+    - 지정된 위치에 있는 로그 파일을 읽어서 Logstash 서버로 보내주는 역할을 한다.
+    - Filebeat은 로그 파일을 읽기만 하고 별도로 가공하지 않기 때문에, 로그 파일의 포맷이 달라지더라도 별도의 작업이 필요치 않다.
+    - 로그 파일의 포맷이 달라지면 로그 파일을 실제로 파싱하는 Logstash의 설정을 바꿔주면 되기 때문에 Filebeat과 Logstash의 역할을 분명하게 나눠서 사용하는 것이 확장성이나 효율성 면에서 좋다.
+  - Logstash
+    - Filebeat으로부터 받은 로그 파일들을 룰에 맞게 파싱해서 JSON 형태의 문서로 만드는 역할을 한다.
+    - 하나의 로그에 포함된 정보를 모두 파싱할 수도 있고, 일부 필드만 파싱해서 JSON 문서로 만들 수도 있다.
+    - 파싱할 때는 다양한 패턴을 사용할 수 있으며 대부분 **grok 패턴**을 이용해서 파싱 룰을 정의한다.
+    - grok: 비정형 데이터를 정형 데이터로 변경해 주는 라이브러리
+  - Elasticsearch
+    - Logstash가 파싱한 JSON 형태의 문서를 인덱스에 저장한다.
+    - 이 때의 ES는 데이터 저장소 역할을 한다.
+    - 대부분의 경우 날짜가 뒤에 붙는 형태로 인덱스가 생성되며 해당 날짜의 데이터를 해당 날짜의 인덱스에 저장한다.
+  - Kibana
+    - ES에 저장된 데이터를 조회하거나 시각화할 때 사용한다.
+    - 데이터를 기반으로 그래프를 그리거나 데이터를 조회할 수 있다.
+    - Elastic Stack에서 사용자의 인입점을 맡게 된다.
+
+
+
+- Elastic Stack 설치하기
+  - 추후 추가(p.251-271)
+
+
+
+- Elastic Stack의 이중화
+  - Elastic Stack의 어느 한 구성 요소에 장애가 발생하더라도 나머지 요소들이 정상적으로 동작할 수 있도록 이중화하는 작업이 반드시 필요하다.
   - 추후 추가
 
 
 
-- 색인 생성과 매핑 이해하기(ES6부터는 하나의 인덱스에 하나의 타입만 저장할 수 있도록 변경)
 
-  - curl 명령은 색인과 매핑타입을 자동으로 생성한다.
-    - 위 예시에서 company라는 색인과 colleague라는 매핑 타입을 생성한 적이 없음에도 자동으로 생성되었다.
-    - 수동으로 생성하는 것도 가능하다.
-  - 색인을 수동으로 생성하기
+
+# 검색 엔진으로 활용하기
+
+## inverted index와 analyzer
+
+- inverted index(역색인)
+
+  - "I am a boy", "You are a girl" 이라는 두 문자열이 있다고 가정한다.
+    - 위 두 개의 문자열을 공백을 기준으로 나누면 각각의 문자열은 4개의 단어로 나뉜다.
+    - I, am, a, boy
+    - you, are, a girl
+  - 토큰
+    - 위와 같이 나뉜 단어들을 **토큰**이라 부른다. 
+    - 토큰을 만들어 내는 과정을 **토크나이징**이라고 한다.
+  - 특정한 기준에 의해 나뉜 토큰들은 아래와 같은 형태로 저장되는데 이것을 역색인이라 부른다.
+
+  | Tokens | Documents |
+  | ------ | --------- |
+  | I      | 1         |
+  | am     | 1         |
+  | a      | 1, 2      |
+  | boy    | 1         |
+  | girl   | 2         |
+  | you    | 2         |
+  | are    | 2         |
+
+  - 위와 같은 역색인이 생성된 상태에서 사용자가 "a boy"라는 문자열이 포함된 문서를 찾고 싶다고 가정한다.
+    - 검색어로 a boy라는 문자열을 입력하면 이 문자열은 공백을 기준으로 a, boy라는 두 개의 토큰으로 나뉜다.
+    - 이렇게 나뉜 토큰을 바탕으로 역색인을 검색한다.
+    - 두 단어가 모두 포함되어 있는 문서 1번이 검색 결과로 반환된다.
+  - 대소문자 구분
+    - 검색 결과를 얻기 위해서는 토큰이 대소문자까지 정확하게 일치해야 한다.
+    - 역색인에 대문자 I만 존재할 뿐 소문자 i는 존재하지 않는다.
+    - 따라서 소문자 i로 검색하면 아무런 검색 결과를 얻지 못한다.
+
+
+
+- ES는 어떻게 토크나이징을 하는가
+
+  - ES는 `_analyze`라는 API를 제공한다.
+    - analyzer에는 토크나이징에 사용할 analyzer를 입력한다.
+    - text에는 토크나이징 할 문자열을 입력한다.
 
   ```bash
-  $ curl -XPUT 'localhost:9200/new-index'
-  ```
-
-  - 수동 생성의 응답
-
-  ```json
-  {
-    "acknowledged" : true,
-    "shards_acknowledged" : true,
-    "index" : "test-index"
-  }
-  ```
-
-  - 스키마 확인
-    - 스키마를 보기 위해 url에 `_mapping`을 추가한다.
-    - ES 6.x 이상의 경우 _doc타입이 아닌 타입을 따로 지정했을 경우 아래와 같이 `include_type_name=true` 또는 `include_type_name`을 파라미터로 넣어야 한다.
-
-  ```bash
-  $ curl 'localhost:9200/company/_mapping/colleague?include_type_name&pretty'
+  $ curl -XPOST "localhost:9200/_analyze?pretty" -H 'Content-type:application/json' -d '{
+  "analyzer":"standard",
+  "text":"I am a boy"
+  }'
   ```
 
   - 응답
-    - 색인 명, 타입, 프로퍼티 목록, 프로퍼티 옵션 등의 데이터가 응답으로 넘어 온다.
+    - 토크나이징의 결과로 토큰의 배열을 반환한다.
+    - 아래 토큰을 보면 대문자 I가 아닌 소문자 i로 토크나이징 된 것을 볼 수 있는데, standard analyzer의 동작 중에 모든 문자를 소문자화하는 과정이 포함되어 있기 때문이다.
 
   ```json
   {
-    "company" : {
-      "mappings" : {
-        "colleague" : {
-          "properties" : {
-            "age" : {
-              "type" : "text",
-              "fields" : {
-                "keyword" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
-            },
-            "name" : {
-              "type" : "text",
-              "fields" : {
-                "keyword" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  ```
-
-
-
-## 데이터 검색
-
-- 검색하기
-
-  - 검색을 위해 데이터를 더 추가
-
-  ```bash
-  $ curl -XPUT 'localhost:9200/company/colleague/2?pretty' -H 'Content-Type: application/json' -d '{
-  "name":"Kim",
-  "age":"26"
-  }'
-  $ curl -XPUT 'localhost:9200/company/colleague/3?pretty' -H 'Content-Type: application/json' -d '{
-  "name":"Lee",
-  "age":"27"
-  }'
-  $ curl -XPUT 'localhost:9200/company/colleague/4?pretty' -H 'Content-Type: application/json' -d '{
-  "name":"An",
-  "age":"27"
-  }'
-  ```
-
-  - 데이터 검색하기
-    - `q`파라미터는 검색할 내용이 들어간다.
-    - 특정 필드에서만 찾고자 할 때는 `q=name:Kim`과 같이 작성하면 된다.
-    - 아래와 같이 필드를 지정해주지 않을 경우 `_all`이라는 모든 필드의 내용을 색인하는 필드가 자동으로 들어가게 된다.
-    - `_source` 파라미터는 특정 필드만 반환되도록 한다(유사한 파라미터로 `stored_fileds`가 있다).
-    - `size` 파라미터는 일치하는 데이터들 중 반환할 데이터의 수를 지정한다(기본값은 10이다).
-
-  ```json
-  $ curl "localhost:9200/company/colleague/_search?q=Kim&_source=name&size=1&pretty"
-  ```
-
-
-
-- 어디를 검색할지 설정하기
-
-  - 다수의 타입에서 검색하기
-    - url에서 타입을 콤마로 구분하여 검색하면 된다.
-    - ES 6.X 부터 매핑 타입이 사라짐에 따라 쓸 일이 없는 기능이 되었다.
-
-  ```bash
-  $ curl "localhost:9200/company/colleague, department/_search?q=Kim&_source=name&size=1&pretty"
-  ```
-
-  - 모든 타입에서 검색하기
-    - 타입을 지정하지 않고 검색하면 된다.
-    - 역시 ES 6.X 부터 매핑 타입이 사라짐에 따라 쓸 일이 없는 기능이 되었다.
-
-  ```bash
-  $ curl "localhost:9200/company/_search?q=Kim&_source=name&size=1&pretty"
-  ```
-
-  - 다수의 색인을 검색하기
-    - url에서 인덱스를 콤마로 구분하여 검색하면 된다.
-    - 만일 검색하려는 색인이 없는 경우 에러가 발생하는데 에러를 무시하려면 `ignore_unavailable` 플래그를 주면 된다.
-
-  ```bash
-  $ curl "localhost:9200/company,fruits/_search?q=Kim&_source=name&size=1&pretty"
-  
-  # 없는 인덱스도 포함해서 검색하기
-  $ curl "localhost:9200/company,fruits/_search?q=Kim&_source=name&size=1&pretty&ignore_unavailable"
-  ```
-
-  - 모든 색인을 검색하기
-    - url의 색인이 올 자리에 `_all`을 입력하거나 아예 색인을 빼면 모든 색인에서 검색한다.
-
-  ```bash
-  $ curl "localhost:9200/_all/_search?q=Kim&_source=name&size=1&pretty"
-  
-  $ curl "localhost:9200/_search?q=Kim&_source=name&size=1&pretty"
-  ```
-
-
-
-- 응답 내용
-
-  - 요청
-
-  ```bash
-  $ curl "localhost:9200/company/colleague/_search?q=Kim&_source=name&size=1&pretty"
-  ```
-
-  - 응답
-
-  ```json
-  {
-    // 요청이 얼마나 걸렸으며, 타임아웃이 발생했는가
-    "took" : 1,
-    "timed_out" : false,
-    // 몇 개의 샤드에 질의 했는가
-    "_shards" : {
-    "total" : 1,
-      "successful" : 1,
-      "skipped" : 0,
-      "failed" : 0
-    },
-    "hits" : {
-      // 일치하는 모든 문서에 대한 통계
-      "total" : {
-        "value" : 1,
-        "relation" : "eq"
+    "tokens" : [
+      {
+        "token" : "i",
+        "start_offset" : 0,
+        "end_offset" : 1,
+        "type" : "<ALPHANUM>",
+        "position" : 0
       },
-      "max_score" : 0.6931471,
-      // 결과 배열
-      "hits" : [
-        {
-          "_index" : "company",
-          "_type" : "colleague",
-          "_id" : "2",
-          "_score" : 0.6931471,
-          "_source" : {
-            "name" : "Kim"
+      {
+        "token" : "am",
+        "start_offset" : 2,
+        "end_offset" : 4,
+        "type" : "<ALPHANUM>",
+        "position" : 1
+      },
+      {
+        "token" : "a",
+        "start_offset" : 5,
+        "end_offset" : 6,
+        "type" : "<ALPHANUM>",
+        "position" : 2
+      },
+      {
+        "token" : "boy",
+        "start_offset" : 7,
+        "end_offset" : 10,
+        "type" : "<ALPHANUM>",
+        "position" : 3
+      }
+    ]
+  }
+  ```
+
+
+
+- analyzer 
+  - analyzer는 역색인을 만들어주는 것이다.
+    - analyzer는 운영 중에 동적으로 변경할 수 없다. 
+    - 따라서 기존 인덱스에 설정한 analyzer를 바꾸고 싶을 때는 인덱스를 새로 만들어서 재색인(reindex)해야 한다.
+  - ES의 analyzer는 다음과 같이 구성된다.
+    - character filter
+    - tokenizer
+    - token filter
+  - character filter
+    - analyzer를 통해 들어온 문자열들은 character filter가 1차로 변형한다.
+    - 예를 들어 <, >, ! 등과 같은 의미 없는 특수 문자들을 제거한다거나 HTML 태그들을 제거하는 등 문자열을 구성하고 있는 문자들을 특정한 기준으로 변경한다.
+  - tokenizer
+    - tokenizer는 일정한 기준(공백이나 쉼표)에 의해 문자열은 n개의 토큰으로 나눈다.
+    - analyzer를 구성할 때는 tokenizer를 필수로 명시해야 하며, 하나의 tokenizer만 설정할 수 있다.
+    - 반면 character filter와 token filter는 필요하지 않을 경우 기술하지 않거나, 여러 개의 character filter와 token filter를 기술할 수 있다.
+  - token filter
+    - 토큰을 전부 소문자로 바꾸는 lowercase token filter가 대표적인 token filter이다.
+
+
+
+- standard analyzer
+
+  - 아무 설정을 하지 않을 경우 디폴터로 적용되는 애널라이저
+  - filter
+    - character filter가 정의되어 있지 않다.
+    - standard tokenizer가 정의되어 있다.
+    - lowercase token filter가 정의되어 있다.
+    - stopwords로 지정한 단어가 토큰들 중에 존재 한다면 해당 토큰을 없애는 stop token filter가 존재하지만 기본값으로 비활성화 되어 있다.
+  - standard tokenizer 요청
+    - `analyzer`가 아닌 `tokenizer`를 입력한다.
+    - 아직 token filter를 거치지 않았기에 I가 대문자이다.
+  
+  ```json
+  $ curl -XPOST "localhost:9200/_analyze?pretty" -H 'Content-type:application/json' -d '{
+  "tokenizer":"standard",
+  "text":"I am a boy"
+  }'
+  
+  
+  {
+    "tokens" : [
+      {
+        "token" : "I",
+        "start_offset" : 0,
+        "end_offset" : 1,
+        "type" : "<ALPHANUM>",
+        "position" : 0
+      },
+      {
+        "token" : "am",
+        "start_offset" : 2,
+        "end_offset" : 4,
+        "type" : "<ALPHANUM>",
+        "position" : 1
+      },
+      {
+        "token" : "a",
+        "start_offset" : 5,
+        "end_offset" : 6,
+        "type" : "<ALPHANUM>",
+        "position" : 2
+      },
+      {
+        "token" : "boy",
+        "start_offset" : 7,
+        "end_offset" : 10,
+        "type" : "<ALPHANUM>",
+        "position" : 3
+      }
+    ]
+  }
+  ```
+
+
+
+- custom analyzer
+
+  > https://esbook.kimjmin.net/06-text-analysis/6.3-analyzer-1/6.4-custom-analyzer
+  >
+  > https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-custom-analyzer.html
+  
+  - 내장 애널라이저로 충분하지 않을 경우 직접 애널라이저를 만들 수 있다.
+  - 애널라이저 정의 하기
+    - type: `custom`을 입력하거나 아예  type 자체를 입력하지 않는다.
+    - tokenizer: 애널라이저에 사용할 토크나이저를 입력한다(필수).
+    - char_filter: 사용할 character filter들을 입력한다.
+    - filter: 사용할 token filter들을 입력한다.
+  
+  ```bash
+  $ curl -XPUT "localhost:9200/my_index" -H 'Content-type:application/json' -d '{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "my_custom_analyzer": {	# 커스텀 애널라이저의 이름
+          "type": "custom",
+          "tokenizer": "standard",
+          "char_filter": [
+            "html_strip"
+          ],
+          "filter": [
+            "lowercase",
+            "asciifolding"
+          ]
+        }
+      }
+    }
+  }
+  }'
+  ```
+  
+  - 위에서 적용한 tokenizer, char_filter, filter도 custom해서 적용하는 것이 가능하다.
+  
+  ```bash
+  $ curl -XPUT "localhost:9200/my_index" -H 'Content-type:application/json' -d '
+  {
+    "settings": {
+      "analysis": {
+        "analyzer": {
+          "my_custom_analyzer": { 
+            "char_filter": [
+              "emoticons"	# 아래에서 custom한 emoticons라는 char_filter를 적용
+            ],
+            "tokenizer": "punctuation",	# 아래에서 custom한 punctuation이라는 tokenizer 적용
+            "filter": [
+              "lowercase",
+              "english_stop"	# 아래에서 custom한 english_stop이라는 filter 적용
+            ]
+          }
+        },
+        "tokenizer": {
+          "punctuation": { 
+            "type": "pattern",
+            "pattern": "[ .,!?]"
+          }
+        },
+        "char_filter": {
+          "emoticons": { 
+            "type": "mapping",
+            "mappings": [
+              ":) => _happy_",
+              ":( => _sad_"
+            ]
+          }
+        },
+        "filter": {
+          "english_stop": { 
+            "type": "stop",
+            "stopwords": "_english_"
           }
         }
-      ]
+      }
     }
   }
   ```
 
-  - 시간
-    - `took` 필드는 ES가 요청을 처리하는 데 얼마나 걸렸는지 말해준다(단위는 밀리 초).
-    - `timed_out` 필드는 검색이 타임아웃 되었는지 보여준다.
-    - 기본적으로 검색은 절대로 타임아웃이 되지 않지만, 요청을 보낼 때`timeout` 파라미터를 함께 보내면 한계를 명시할 수 있다.
-    - `$ curl "localhost:9200/_search?q=Kim&timeout=3s"`와 같이 작성할 경우 3초가 지나면 타임아웃이 발생하고 `timed_out`필드의 값은 true가 된다.
-    - 타임아웃이 발생할 경우 타임아웃될 때까지의 결과만 반환된다.
-  - 샤드
-    - 총 몇 개의 샤드에 질의 했고 성공한 것과 스킵한 것, 실패한 것에 대한 정보를 반환한다.
-    - 만일 특정 노드가 이용 불가 상태라 해당 노드의 샤드를 검색하지 못했다면 질의에 실패한 것이 된다.
-  - 히트 통계
-    - `total`은 전체 문서 중 일치하는 문서 수를 나타낸다.
-    - `total`은 `size`를 몇으로 줬는지와 무관하게 일치하는 모든 문서의 수를 표시해주므로 total과 실제 반환 받은 문서의 수가 다를 수 있다.
-    - `max_score`는 일치하는 문서들 중 최고 점수를 볼 수 있다.
-  - 결과 문서
-    - 히트 배열에 담겨 있다.
-    - 일치하는 각 문서의 색인, 타입, ID, 점수 등의 정보를 보여준다.
 
 
+- analyzer와 검색의 관계
 
-- 쿼리로 검색하기
-
-  - 지금까지는 URI 요청으로 검색했다.
-    - 간단한 검색에는 좋지만 복잡한 검색에는 적절치 못한 방법이다.
-  - `query_string` 쿼리 타입으로 검색하기
-    - 쿼리스트링 타입의 쿼리를 실행하는 명령문이다.
-    - `default_field`는 검색을 실행할 필드를 특정하기 위해 사용한다.
-    - `default_operator`는 검색할 단어들이 모두 일치하는 문서를 찾을 지, 하나라도 일치하는 문서를 찾을지를 설정한다(기본값은 OR로 하나라도 일치하는 문서는 모두 찾는다).
-    - 위 두 옵션(`default_field`, `default_operator`)을 다음과 같이 쿼리 스트링 자체에 설정하는 것도 가능하다.
-    - `"query":"name:Kim AND name:Lee"`
+  - analyze의 중요성
+    - analyzer를 통해 생성한 토큰들이 역색인에 저장되고, 검색할 때는 이 역색인에 저장된 값을 바탕으로 문서를 찾는다.
+    - 따라서 검색 니즈를 잘 파악해서 적합한 analyzer를 설정해야 한다.
+  - 테스트 인덱스 생성
 
   ```bash
-  $ curl 'localhost:9200/company/colleague/_search?pretty' -H 'Content-Type: application/json' -d '{
-    "query":{
-      "query_string":{
-        "query":"Kim",
-        "default_field":"name",
-        "default_operator":"AND"
-      }
-    }
+  $ curl -XPUT "localhost:9200/books?pretty" -H 'Content-type:application/json' -d '{
+  	"mappings":{
+  		"properties":{
+  			"title":{"type":"text"},
+  			"content":{"type":"keyword"}
+  		}
+  	}
   }'
   ```
 
-  - 응답
+  - 테스트 문서 색인
+
+  ```bash
+  $ curl -XPUT "localhost:9200/books/_doc/1?pretty" -H 'Content-type:application/json' -d '{
+  "title":"Elasticsearch Training Book",
+  "content":"Elasticsearch is open source search engine"
+  }'
+  ```
+
+  - title로 검색하기
+    - 정상적으로 검색이 된다.
 
   ```json
+  $ curl "localhost:9200/books/_search?pretty&q=title:Elasticsearch"
+  
   {
-    "took" : 1,
+    "took" : 743,
     "timed_out" : false,
     "_shards" : {
       "total" : 1,
@@ -804,13 +1040,13 @@
       "max_score" : 0.6931471,
       "hits" : [
         {
-          "_index" : "company",
-          "_type" : "colleague",
-          "_id" : "2",
+          "_index" : "books",
+          "_type" : "_doc",
+          "_id" : "1",
           "_score" : 0.6931471,
           "_source" : {
-            "name" : "Kim",
-            "age" : "26"
+            "title" : "Elasticsearch Training Book",
+            "content" : "Elasticsearch is open source search engine"
           }
         }
       ]
@@ -818,430 +1054,33 @@
   }
   ```
 
-
-
-- 필터 사용(ES 6.X 부터 사용 불가)
-
-  - 필터는 결과에 점수를 반환하지 않는다.
-    - 쿼리는 결과와 함께 각 결과의 점수를 반환한다.
-    - 필터는 오직 키워드가 일치하는지만 판단하여 일치하는 값들을 반환한다.
-  - 필터 검색
-
-  ```bash
-  $ curl 'localhost:9200/_search?pretty' -H 'Content-Type: application/json' -d '{
-    "query":{
-    	"filtered":{
-    	  "filter":{
-      	"term" :{
-            "name":"Kim"
-          }
-    	  }
-    	}    
-    }
-  }'
-  ```
-
-
-
-- ID로 문서 가져오기
-
-  - 검색은 준실시간인데 반해 문서 ID로 문서를 찾는 것은 실시간이다.
-  - 특정 문서를 가져오려면 문서가 속한 색인과 타입, 그리고 ID를 알아야 한다.
-    - 그러나 타입은 현재 사라졌기 때문에 type 자리에 `_doc`을 입력하여 검색한다.
-    - 타입을 입력해도 검색은 되지만 경고문이 뜬다.
+  - content로 검색하기
 
   ```json
-  // _doc 사용
-  $ curl 'localhost:9200/company/_doc/1?pretty'
+  $ curl "localhost:9200/books/_search?pretty&q=content:Elasticsearch"
   
-  // 타입 사용
-  $ curl 'localhost:9200/company/colleague/1?pretty'
-  ```
-
-  - 응답
-    - 만일 찾는 문서가 존재하지 않으면 아래 `found`는 false가 된다.
-
-  ```json
   {
-    "_index" : "company",
-    "_type" : "_doc",
-    "_id" : "1",
-    "_version" : 5,
-    "_seq_no" : 5,
-    "_primary_term" : 1,
-    "found" : true,
-    "_source" : {
-      "name" : "Theo",
-      "age" : "28"
+    "took" : 2,
+    "timed_out" : false,
+    "_shards" : {
+      "total" : 1,
+      "successful" : 1,
+      "skipped" : 0,
+      "failed" : 0
+    },
+    "hits" : {
+      "total" : {
+        "value" : 0,
+        "relation" : "eq"
+      },
+      "max_score" : null,
+      "hits" : [ ]
     }
   }
   ```
 
-
-
-
-
-## 데이터 수정, 삭제
-
-- 삭제
-
-  - 도큐먼트 또는 인덱스 단위의 삭제가 가능하다.
-    - 도큐먼트를 삭제하면 `"result":"deleted"`가 반환된다.
-    - 도큐먼트는 삭제되었지만 인덱스는 남아있는 경우, 삭제된 도큐먼트를 조회하려하면 `"found":false`가 반환된다.
-    - 삭제된 인덱스의 도큐먼트를 조회하려고 할 경우(혹은 애초에 생성된 적 없는 도큐먼트를 조회할 경우) 에러가 반환된다.
-
-  - 도큐먼트를 삭제하는 경우
-
-  ```json
-  DELETE office/_doc/1
-  ```
-
-  - 도큐먼트 삭제의 응답
-
-  ```json
-  {
-      "_index": "office",
-      "_type": "_doc",
-      "_id": "1",
-      "_version": 2,
-      "result": "deleted",
-      "_shards": {
-          "total": 2,
-          "successful": 1,
-          "failed": 0
-      },
-      "_seq_no": 1,
-      "_primary_term": 1
-  }
-  ```
-
-  - 삭제된 도큐먼트를 조회
-
-  ```json
-  GET office/_doc/1
-  ```
-
-  - 삭제된 도큐먼트를 조회했을 경우의 응답
-
-  ```json
-  {
-      "_index": "office",
-      "_type": "_doc",
-      "_id": "1",
-      "found": false
-  }
-  ```
-
-  - 인덱스를 삭제
-
-  ```json
-  DELETE office
-  ```
-
-  - 인덱스 삭제의 응답
-
-  ```json
-  {
-      "acknowledged": true
-  }
-  ```
-
-  - 삭제된 인덱스의 도큐먼트를 조회
-
-  ```json
-  GET office/_doc/1
-  ```
-
-  - 응답
-
-  ```json
-  {
-      "error": {
-          "root_cause": [
-              {
-                  "type": "index_not_found_exception",
-                  "reason": "no such index [office]",
-                  "resource.type": "index_expression",
-                  "resource.id": "office",
-                  "index_uuid": "_na_",
-                  "index": "office"
-              }
-          ],
-          "type": "index_not_found_exception",
-          "reason": "no such index [office]",
-          "resource.type": "index_expression",
-          "resource.id": "office",
-          "index_uuid": "_na_",
-          "index": "office"
-      },
-      "status": 404
-  }
-  ```
-
-
-
-- 수정
-
-  - 위에서 삭제한 데이터를 다시 생성했다고 가정
-  - 수정 요청
-
-  ```json
-  POST office/_doc/1
-  
-  {
-      "nickname":"Oeht",
-      "message":"!요세하녕안"
-  }
-  ```
-
-  - 응답
-
-  ```json
-  {
-      "_index": "office",
-      "_type": "_doc",
-      "_id": "1",
-      "_version": 2,
-      "result": "updated",
-      "_shards": {
-          "total": 2,
-          "successful": 1,
-          "failed": 0
-      },
-      "_seq_no": 1,
-      "_primary_term": 1
-  }
-  ```
-
-  - 수정할 때 특정 필드를 뺄 경우 해당 필드가 빠진 채로 수정된다.
-    - POST 메서드로도 수정이 가능한데 POST 메서드를 사용해도 마찬가지다.
-
-  ```json
-  // 요청
-  POST office/_doc/1
-  
-  {
-      "nickname":"Theo"
-  }
-  
-  // 응답
-  {
-      "_index": "office",
-      "_type": "_doc",
-      "_id": "1",
-      "_version": 2,
-      "_seq_no": 9,
-      "_primary_term": 1,
-      "found": true,
-      "_source": {
-          // message 필드가 사라졌다.
-          "nickname": "Theo"
-      }
-  }
-  ```
-
-  - `_update`
-    - `_update`를 활용하면 일부 필드만 수정하는 것이 가능하다.
-    - 업데이트 할 내용에 `"doc"`이라는 지정자를 사용한다.
-
-  ```json
-  // 도큐먼트id가 2인 새로운 도큐먼트를 생성했다고 가정
-  POST office/_update/2
-  
-  {
-      "doc":{
-          "message":"반갑습니다.!"
-      }
-  }
-  ```
-
-  - 응답
-
-  ```json
-  {
-      "_index": "office",
-      "_type": "_doc",
-      "_id": "2",
-      "_version": 2,
-      "_seq_no": 0,
-      "_primary_term": 1,
-      "found": true,
-      "_source": {
-          "nickname": "Oeht",
-          "message": "반갑습니다!"
-      }
-  }
-  ```
-
-
-
-## 벌크 API
-
-- `_bulk`
-
-  - 복수의 요청을 한 번에 전송할 때 사용한다.
-    - 동작을 따로따로 수행하는 것 보다 속도가 훨씬 빠르다.
-    - 대량의 데이터를 입력할 때는 반드시 `_bulk` API를 사용해야 불필요한 오버헤드가 없다.
-  - 형식
-    - index, create, update, delete의 동작이 가능하다.
-    - delete를 제외하고는 명령문과 데이터문을 한 줄씩 순서대로 입력한다.
-    - delete는 내용 입력이 필요 없기 때문에 명령문만 있다.
-    - `_bulk`의 명령문과 데이터문은 반드시 한 줄 안에 입력이 되어야 하며 줄바꿈을 허용하지 않는다.
-
-  - 예시
-
-  ```json
-  POST _bulk
-  {"index":{"_index":"learning", "_id":"1"}} // 생성
-  {"field":"elasticsearch"}
-  {"index":{"_index":"learning", "_id":"2"}} // 생성
-  {"field":"Fastapi"}
-  {"delete":{"_index":"learning", "_id":"2"}} // 삭제
-  {"create":{"_index":"learning", "_id":"3"}} // 생성
-  {"field":"docker"}
-  {"update":{"_index":"learning", "_id":"1"}} // 수정
-  {"doc":{"field":"deep learning"}}
-  ```
-
-  - 응답
-
-  ```json
-  {
-    "took" : 1152,
-    "errors" : false,
-    "items" : [
-      {
-        "index" : {
-          "_index" : "learning",
-          "_type" : "_doc",
-          "_id" : "1",
-          "_version" : 1,
-          "result" : "created",
-          "_shards" : {
-            "total" : 2,
-            "successful" : 1,
-            "failed" : 0
-          },
-          "_seq_no" : 0,
-          "_primary_term" : 1,
-          "status" : 201
-        }
-      },
-      {
-        "index" : {
-          "_index" : "learning",
-          "_type" : "_doc",
-          "_id" : "2",
-          "_version" : 1,
-          "result" : "created",
-          "_shards" : {
-            "total" : 2,
-            "successful" : 1,
-            "failed" : 0
-          },
-          "_seq_no" : 1,
-          "_primary_term" : 1,
-          "status" : 201
-        }
-      },
-      {
-        "delete" : {
-          "_index" : "learning",
-          "_type" : "_doc",
-          "_id" : "2",
-          "_version" : 2,
-          "result" : "deleted",
-          "_shards" : {
-            "total" : 2,
-            "successful" : 1,
-            "failed" : 0
-          },
-          "_seq_no" : 2,
-          "_primary_term" : 1,
-          "status" : 200
-        }
-      },
-      {
-        "create" : {
-          "_index" : "learning",
-          "_type" : "_doc",
-          "_id" : "3",
-          "_version" : 1,
-          "result" : "created",
-          "_shards" : {
-            "total" : 2,
-            "successful" : 1,
-            "failed" : 0
-          },
-          "_seq_no" : 3,
-          "_primary_term" : 1,
-          "status" : 201
-        }
-      },
-      {
-        "update" : {
-          "_index" : "learning",
-          "_type" : "_doc",
-          "_id" : "1",
-          "_version" : 2,
-          "result" : "updated",
-          "_shards" : {
-            "total" : 2,
-            "successful" : 1,
-            "failed" : 0
-          },
-          "_seq_no" : 4,
-          "_primary_term" : 1,
-          "status" : 200
-        }
-      }
-    ]
-  }
-  ```
-
-  - 인덱스명이 모두 동일할 경우에는 아래와 같이 하는 것도 가능하다.
-
-  ```json
-  POST learning/_bulk
-  
-  {"index":{"_id":"1"}}
-  {"field":"elasticsearch"}
-  {"index":{"_id":"2"}}
-  {"field":"Fastapi"}
-  {"delete":{"_id":"2"}}
-  {"create":{"_id":"3"}}
-  {"field":"docker"}
-  {"update":{"_id":"1"}}
-  {"doc":{"field":"deep learning"}}
-  ```
-
-
-
-- json 파일에 실행할 명령을 저장하고 curl 며영으로 실행시킬 수 있다.
-
-  - bulk.json 파일
-
-  ```json
-  {"index":{"_index":"learning", "_id":"1"}}
-  {"field":"elasticsearch"}
-  {"index":{"_index":"learning", "_id":"2"}}
-  {"field":"Fastapi"}
-  {"delete":{"_index":"learning", "_id":"2"}}
-  {"create":{"_index":"learning", "_id":"3"}}
-  {"field":"docker"}
-  {"update":{"_index":"learning", "_id":"1"}}
-  {"doc":{"field":"deep learning"}}
-  ```
-
-  - 명령어
-    - 파일 이름 앞에는 @를 입력한다.
-
-  ```bash
-  $ curl -XPOST "http://localhost:9200/_bulk" -H 'Content-Type: application/json' --data-binary @bulk.json
-  ```
-
-
-
-# 참고
-
-https://esbook.kimjmin.net/
+  - content 필드는 검색이 정상적으로 이루어지지 않았다.
+    - title 필드는 text, content 필드는 keyword 타입으로 정의했다.
+    - text 타입의 기본 analyzer는 standard analyzer이고, keyword 타입의 기본 analyzer는 keyword analyzer이다.
+    - keyword analyzer는 standard analyzer와는 달리 문자열을 나누지 않고 통으로 하나의 토큰을 구성한다.
+    - 즉 역색인에는 "Elasticsearch is open source search engine"라는 토큰만 존재한다.
