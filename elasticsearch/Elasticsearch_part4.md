@@ -595,173 +595,6 @@
 
 
 
-## 벌크 API
-
-- `_bulk`
-
-  - 복수의 요청을 한 번에 전송할 때 사용한다.
-    - 동작을 따로따로 수행하는 것 보다 속도가 훨씬 빠르다.
-    - 대량의 데이터를 입력할 때는 반드시 `_bulk` API를 사용해야 불필요한 오버헤드가 없다.
-  - 형식
-    - index, create, update, delete의 동작이 가능하다.
-    - delete를 제외하고는 명령문과 데이터문을 한 줄씩 순서대로 입력한다.
-    - delete는 내용 입력이 필요 없기 때문에 명령문만 있다.
-    - `_bulk`의 명령문과 데이터문은 반드시 한 줄 안에 입력이 되어야 하며 줄바꿈을 허용하지 않는다.
-
-  - 예시
-
-  ```json
-  POST _bulk
-  {"index":{"_index":"learning", "_id":"1"}} // 생성
-  {"field":"elasticsearch"}
-  {"index":{"_index":"learning", "_id":"2"}} // 생성
-  {"field":"Fastapi"}
-  {"delete":{"_index":"learning", "_id":"2"}} // 삭제
-  {"create":{"_index":"learning", "_id":"3"}} // 생성
-  {"field":"docker"}
-  {"update":{"_index":"learning", "_id":"1"}} // 수정
-  {"doc":{"field":"deep learning"}}
-  ```
-
-  - 응답
-
-  ```json
-  {
-    "took" : 1152,
-    "errors" : false,
-    "items" : [
-      {
-        "index" : {
-          "_index" : "learning",
-          "_type" : "_doc",
-          "_id" : "1",
-          "_version" : 1,
-          "result" : "created",
-          "_shards" : {
-            "total" : 2,
-            "successful" : 1,
-            "failed" : 0
-          },
-          "_seq_no" : 0,
-          "_primary_term" : 1,
-          "status" : 201
-        }
-      },
-      {
-        "index" : {
-          "_index" : "learning",
-          "_type" : "_doc",
-          "_id" : "2",
-          "_version" : 1,
-          "result" : "created",
-          "_shards" : {
-            "total" : 2,
-            "successful" : 1,
-            "failed" : 0
-          },
-          "_seq_no" : 1,
-          "_primary_term" : 1,
-          "status" : 201
-        }
-      },
-      {
-        "delete" : {
-          "_index" : "learning",
-          "_type" : "_doc",
-          "_id" : "2",
-          "_version" : 2,
-          "result" : "deleted",
-          "_shards" : {
-            "total" : 2,
-            "successful" : 1,
-            "failed" : 0
-          },
-          "_seq_no" : 2,
-          "_primary_term" : 1,
-          "status" : 200
-        }
-      },
-      {
-        "create" : {
-          "_index" : "learning",
-          "_type" : "_doc",
-          "_id" : "3",
-          "_version" : 1,
-          "result" : "created",
-          "_shards" : {
-            "total" : 2,
-            "successful" : 1,
-            "failed" : 0
-          },
-          "_seq_no" : 3,
-          "_primary_term" : 1,
-          "status" : 201
-        }
-      },
-      {
-        "update" : {
-          "_index" : "learning",
-          "_type" : "_doc",
-          "_id" : "1",
-          "_version" : 2,
-          "result" : "updated",
-          "_shards" : {
-            "total" : 2,
-            "successful" : 1,
-            "failed" : 0
-          },
-          "_seq_no" : 4,
-          "_primary_term" : 1,
-          "status" : 200
-        }
-      }
-    ]
-  }
-  ```
-
-  - 인덱스명이 모두 동일할 경우에는 아래와 같이 하는 것도 가능하다.
-
-  ```json
-  POST learning/_bulk
-  
-  {"index":{"_id":"1"}}
-  {"field":"elasticsearch"}
-  {"index":{"_id":"2"}}
-  {"field":"Fastapi"}
-  {"delete":{"_id":"2"}}
-  {"create":{"_id":"3"}}
-  {"field":"docker"}
-  {"update":{"_id":"1"}}
-  {"doc":{"field":"deep learning"}}
-  ```
-
-
-
-- json 파일에 실행할 명령을 저장하고 curl 명령으로 실행시킬 수 있다.
-
-  - bulk.json 파일
-
-  ```json
-  {"index":{"_index":"learning", "_id":"1"}}
-  {"field":"elasticsearch"}
-  {"index":{"_index":"learning", "_id":"2"}}
-  {"field":"Fastapi"}
-  {"delete":{"_index":"learning", "_id":"2"}}
-  {"create":{"_index":"learning", "_id":"3"}}
-  {"field":"docker"}
-  {"update":{"_index":"learning", "_id":"1"}}
-  {"doc":{"field":"deep learning"}}
-  ```
-
-  - 명령어
-    - 파일 이름 앞에는 @를 입력한다.
-
-  ```bash
-  $ curl -XPOST "http://localhost:9200/_bulk" -H 'Content-Type: application/json' --data-binary @bulk.json
-  ```
-
-
-
 
 
 # 데이터 검색
@@ -1022,11 +855,12 @@
   - Query Context
     - Full text search를 의미한다.
     - 검색어가 문서와 얼마나 매칭되는지를 표현하는 score라는 값을 가진다.
+    - analyzer를 활용하여 검색한다.
   - Filter Context
     - Term Level Query라고도 부른다.
     - 검색어가 문서에 존재하는지 여부를 Yes나 No 형태의 검색 결과로 보여준다. 
     - score 값을 가지지 않는다.
-  - 둘 사이의 가장 큰 차이점은 analyze의 여부이다.
+    - analyzer를 활용하지 않는다.
 
 
 
@@ -1383,9 +1217,12 @@
   - `minimum_should_match` 옵션을 제공한다
     - should 항목에 포함된 쿼리 중 적어도 설정된 수치만큼의 쿼리가 일치할 때 검색 결과를 보여주는 옵션이다.
     - should절을 사용할 때 꼭 써야만 하는 옵션은 아니다.
+    - 양수일 경우 그 이상의 쿼리가, 음수일 경우 총 쿼리 개수에서 음수를 뺀 만큼의 쿼리가 일치해야 한다.
+    - 퍼센트로 설정하는 것도 가능하다.
+    - 설정해 주지 않으면 `must` 혹은 `must_not`과 함께 사용할 경우에는 0, should만 사용할 경우에는 1이 default 값이다.
   - 검색된 결과 중 should절 내에 있는 term과 일치하는 부분이 있는 문서는 스코어가 올라가게 된다.
     - 아래 결과를 should를 사용하지 않은 일반적인 쿼리문과 비교해 보면 같은 문서임에도 score가 다른 것을 확인 가능하다.
-
+  
   ```bash
   $ curl "localhost:9200/_search?pretty" -H 'Content-type:application/json' -d '{
   "query":{
