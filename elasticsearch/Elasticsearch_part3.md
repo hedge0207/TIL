@@ -233,6 +233,16 @@
 
 
 
+- segment 상태 확인
+
+  - `v`, `h`, `format` 옵션을 모두 사용 가능하다.
+
+  ```bash
+  $ curl -XGET 'http://localhost:9200/_cat/segments'
+  ```
+
+  
+
 ## stats API로 지표 확인하기
 
 - GC(Garbage Collector)
