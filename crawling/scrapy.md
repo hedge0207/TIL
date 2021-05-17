@@ -113,7 +113,7 @@
 
 
 
-## spider
+## Spider
 
 - spider 생성하기
 
@@ -156,11 +156,33 @@
     - 각 reqeust에 대한 response를 처리하는 callback 메서드.
     - 인자로 받는 `response`는 page의 내용을 담고 있고, 해당 내용을 다루기 위한 메소드들을 가진`TextResponse` 클래스의 인스턴스이다.
     - page 내에서 새로운 URL들을 찾아 새로운 요청을 생성하는 역할도 수행한다.
+  - Reqeust를 생성할 때 body 추가하기
+    - `FormRequest` 메서드를 활용한다.
+  
+  ```python
+  import scrapy
+  
+  class ExampleSpider(scrapy):
+      name = 'ExampleSpider'
+      allowed_domains = ['example.com']
+  
+      def start_requests(self):
+          params = {
+              'parameter1': 'value1',
+              'parameter2': 'value2',
+          }
+          yield scrapy.FormRequest('api.example.com', callback=self.parse,
+                                   method='POST', formdata=params)
+  
+      def parse(self, response):
+          (...)
+  ```
+  
   - `start_requests`를 더 짧게 작성하기
     - `start_requests`가  `scrapy.Request` 객체를 생성하도록하는 대신에 url들을 리스트에 담아두는 방식으로도 작성할 수 있다.
     - `parse()` 메서드는 각 request를 처리하기 위해 호출되는데, scrapy에게 명시적으로 `parse()`메서드를 호출하라고 하지 않아도 자동으로 호출된다.
     - 이는 `parse`라는 메서드명이 Scrapy에서 기본 callback 메서드명으로 사용되기 때문으로, 만일 `parse()`가 아닌 `something_else()`와 같이 메서드명을 작성한다면, 아래와 같이는 쓸 수 없다.
-
+  
   ```python
   import scrapy
   
@@ -177,6 +199,33 @@
           filename = f'quotes-{page}.html'
           with open(filename, 'wb') as f:
               f.write(response.body)
+  ```
+
+
+
+- 일반적인 API 요청 보내기
+
+  - 위 처럼 HTML 전체를 요청하지 않고 이미 만들어진 API에 요청을 보내는 것도 가능하다.
+  - `scrapy.http.Request`를 사용하면 된다.
+    - url, callback, method, meta, body, headers를 인자로 받는다.
+
+  ```python
+  import scrapy
+  
+  
+  class TestSpider(scrapy.Spider):
+      name = "test"
+  
+      def start_requests(self):
+          body = {
+              "body_key": "body_value",
+          }
+          url = "http://test-api"
+  
+          yield scrapy.http.Request(url=url, method='POST', body=body, callback=self.parse)
+  
+      def parse(self, response):
+          (...)
   ```
 
   
@@ -436,7 +485,70 @@
   $ scrapy crawl quotes -O quotes.json
   ```
 
+
+
+
+- Item Pipeline
+  - item이 spider에 의해 스크랩 된 후 Item Pipeline으로 보내지게 된다.
+  - pipeline component
+    - 각각의 Pipeline 컴포넌트들은 Python 클래스로 정의한다.
+    - 컴포넌트들은 item을 받아서 특정 동작을 수행한다.
+    - 또한 item이 계속 pipeline을 통해서 처리 되야 할 지, 아니면 더 이상 처리되지 않을 지도 결정한다.
+  - 일반적인 역할
+    - HTML 데이터 cleansing
+    - 스크랩 된 데이터의 검증(아이템이 특정 필드를 포함하고 있는지 체크)
+    - 중복 검사(중복일 경우 drop)
+    - 스크랩 된 데이터 DB에 저장
+
+
+
+- Item Pipeline의 메서드
+  - 각각의 item pipeline 컴포넌트들은 아래의 메서드들을 수행할 수 있는 Python 클래스이다.
+  - `process_item`
+    - 모든 pipeline component에서 호출된다.
+    - 반드시 item object 또는 `Deferred`를 반환하거나, `DropItem` execption를 발생시켜야 한다.
+    - `DropItem` execption은 더 이상 pipeline을 통해 처리할 것이 없을 때 발생시키면 된다.
+    - 인자로 item과 spider를 받으며 item은 스크랩 된 아이템, spider는 item을 스크랩한 spider이다.
+  - `open_spider`
+    - spider가 open 될 때 호출된다.
+    - 인자로 open된 spider를 받는다.
+  - `close_spider`
+    - spider가 close 될 때 호출된다.
+    - 인자로 close된 spider를 받는다.
+  - `from_crawler`
+    - `Crawler`로부터 pipeline을 생성하기위해 호출된다.
+    - 반드시 pipeline의 새로운 instance를 반환해야 한다.
+    - `Crawler` 객체는 settings, signals와 같은 모든 Scrapy core components이 접근할 수 있게 해준다.
+    - 이를 통해 pipeline이 Scrapy core components에 접근할 수 있게된다.
+    - 인자로 `Crawler` 오브젝트를 받는다.
+
+
+
+- 예시
+
+  ```python
+  from itemadapter import ItemAdapter
+  from scrapy.exceptions import DropItem
+  class PricePipeline:
   
+      vat_factor = 1.15
+  
+      def process_item(self, item, spider):
+          adapter = ItemAdapter(item)
+          if adapter.get('price'):
+              if adapter.get('price_excludes_vat'):
+                  adapter['price'] = adapter['price'] * self.vat_factor
+              return item
+          else:
+              # 더 이상 처리할 것이 없으면 DropItem을 raise
+              raise DropItem(f"Missing price in {item}")
+  ```
+
+
+
+
+
+
 
 ## Following links
 
