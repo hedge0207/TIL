@@ -468,6 +468,80 @@
 
 ## 데이터 저장하기
 
+### Item
+
+- Item
+  - 스크랩의 주 목표는 비구조화된 소스(e.g 웹 페이지)로부터 구조화된 데이터를 추출하는 것이다.
+  - Spider는 추출된 데이터를 key-value 형태의 Python 객체로 반환하는 데 이것이 바로 item이다.
+  - scrapy는 다양한 타입의 아이템을 지원한다.
+    - item을 직접 생성할 때, 원하는 item 타입을 사용할 수 있다.
+    - 또한 item을 받는 코드를 작성할 때에는 어떤 타입의 item을 받아도 동작하도록 작성해야 한다.
+
+
+
+- Item Types
+
+  - 스크래피는 아래와 같은 item type을 지원한다.
+  - Dictionaries
+    - Python의 딕셔너리 타입
+
+  - Item objects
+    - `Item`은 dict-like API와 가장 완벽한 item type을 만드는 추가 기능을 제공한다.
+    - Item Object는 dict API를 복제한다.
+    - Item은 customize serialization에서 사용되는 필드 메타데이터를 정의할 수 있다.
+    - trackref는 Item object를 추적하여 메모리 누수를 찾는데 도움을 준다.
+    - `copy()`, `deepcopy()` 메서드를 지원한다.
+    - Item에 선언된 모든 필드를 포함하고 있다.
+    - key는 filed name, value는 Field Object이다.
+
+  ```python
+  from scrapy.item import Item, Field
+  
+  class CustomItem(Item):
+      # key=value
+      one_field = Field()
+      another_field = Field()
+  ```
+
+  - Dataclass objects
+    - dataclass는 필드 이름과 함께 item class를 정의할 수 있게 해준다.
+    - 이를 통해 item exporter가 기본적으로 모든 필드를 export할 수 있다.
+    - 심지어 처음 스크랩 된 객체가 value를 하나도 가지고 있지 않아도 export 할 수 있다.
+    - 또한 정의된 필드에 기본 value나 type을 정의할 수 있다.
+    - `dataclass.field()`를 통해 customize serialization에서 사용되는 custom 필드 메타데이터를 정의할 수 있다.
+
+  ```python
+  from dataclasses import dataclass
+  
+  @dataclass
+  class CustomItem:
+      one_field: str
+      another_field: int
+  ```
+
+  - `attr.s()` object
+    - `attr.s()`는 필드 이름과 함께 item class를 정의할 수 있게 해준다.
+    - 이를 통해 item exporter가 기본적으로 모든 필드를 export할 수 있다.
+    - 심지어 처음 스크랩 된 객체가 value를 하나도 가지고 있지 않아도 export 할 수 있다.
+    - attr 패키지를 install해야 사용이 가능하다.
+
+  ```python
+  import attr
+  
+  @attr.s
+  class CustomItem:
+      one_field = attr.ib()
+      another_field = attr.ib()
+  ```
+
+  
+
+  
+
+
+
+### 저장하기
+
 - Feed exports 사용하기
 
   - `-O`는 기존에 파일이 없다면 새로운 파일을 생성하고, 이미 파일이 있다면 해당 파일을 덮어쓴다.
