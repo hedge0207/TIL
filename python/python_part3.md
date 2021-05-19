@@ -737,7 +737,29 @@
 
 
 
+# 이터레이터와 제너레이터
 
+- yield
+
+  - 제네레이터를 만들기 위한 Python keyword
+  - 함수 안에서 yield를 사용하면 함수는 제너레이터가 되며, yield에는 값을 지정한다.
+
+  ```python
+  def number_generator():
+      yield 0
+      yield 1
+      yield 2
+   
+  for i in number_generator():
+      print(i)
+  '''
+  0
+  1
+  2
+  '''
+  ```
+
+  
 
 
 

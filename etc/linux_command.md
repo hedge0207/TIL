@@ -42,6 +42,10 @@
 
 - 파일 복사
 
+  > - filezilla 설치가 가능하면 filezilla를 사용하는 것이 낫다.
+  >
+  > > https://filezilla-project.org/
+
   - `-r`: 디렉토리 전체 복사
 
   ```bash
@@ -116,18 +120,6 @@
   ```
 
 
-
-- 파일 복사하기
-
-  - filezilla 설치가 가능하면 filezilla를 사용하는 것이 낫다.
-
-  > https://filezilla-project.org/
-
-  ```bash
-  $ cp <복사할 파일명> <복사할 위치>
-  ```
-
-  
 
 - 현재 경로 확인
 

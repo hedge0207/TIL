@@ -326,7 +326,7 @@
 
   - 컨테이너 안의 환경변수를 지정할 때 사용한다.
     - `.env` 파일이라고 생각하면 된다.
-- YAML 배열 형식 또는 해시 형식 중 하나로 변수를 지정한다.
+  - YAML 배열 형식 또는 해시 형식 중 하나로 변수를 지정한다.
   
   ```yaml
   # 배열 형식
@@ -339,13 +339,12 @@
     FOO: bar
     VAL:
   ```
-```
   
-- 설정하고자 하는 환경변수가 많을 때는 env_file을 지정한다.
+  - 설정하고자 하는 환경변수가 많을 때는 env_file을 지정한다.
   
   ```yaml
   env_file: <env 파일 경로>
-```
+  ```
 
 
 
@@ -537,11 +536,105 @@
 
 
 
-- volume 삭제
+# docker volume
+
+- Docker는 컨테이너의 데이터를 컨테이너 내부뿐 아니라 외부에도 저장한다.
+
+  - bind mount
+    - container의 데이터를 임의의 host 경로에 저장
+  - volume
+    - container의 데이터를 host의 /var/lib/docker/volume이라는 경로에 저장
+
+  - tmpfs
+    - host의 메모리에 저장
+  - bind mount와 volume의 차이
+    - volume은 오직 해당 volume을 사용하는 컨테이너에서만 접근이 가능하지만 bind bount 된 데이터는 다른 컨테이너 또는 호스트에서도 접근이 가능하다.
+    - 바인드 마운트를 사용하면 호스트 시스템의 파일 또는 디렉토리가 컨테이너에 마운트 된다.
+    - 바인드 마운트는 양방향으로 마운트되지만(즉, 호스트의 변경 사항이 컨테이너에도 반영되고 그 반대도 마찬가지), volume의 경우 호스트의 변화가 컨테이너 내부에는 반영되지 않는다.
+    - volume의 경우  host 내부에 docker area 영역 안에서 관리된다.
+
+  ![](docker_part2.assets/volume_vs_bindmount.png)
+
+  - 공식문서에서는 volume을 사용하는 것을 추천한다.
+    - 백업이나 이동이 쉽다.
+    - docker CLI 명령어로 볼륨을 관리할 수 있다.
+    - 볼륨은 리눅스, 윈도우 컨테이너에서 모두 동작한다.
+    - 컨테이너간에 볼륨을 안전하게 공유할 수 있다.
+    - 볼륨드라이버를 사용하면 볼륨의 내용을 암호화하거나 다른 기능을 추가할 수 있다.
+    - 새로운 볼륨은 컨테이너로 내용을 미리 채울 수 있다.
+
+
+
+- volume
+
+  - 볼륨 생성하기
 
   ```bash
-  $ docker volume rm <볼륨명>
+  $ docker create volume <볼륨 이름>
   ```
+
+  - volume 목록 보기
+
+  ```bash
+  $ docker volume ls
+  ```
+
+  - 특정  volume 상세 정보 보기
+
+  ```bash
+  $ docker volume inspect <볼륨 이름>
+  ```
+
+  - volume 마운트하기
+    - `-v` 옵션 또는 `--mount` 옵션 사용
+
+  ```bash
+  $ docker run -v <볼륨 이름>:<컨테이너 경로> <이미지 이름>
+  
+  $ docker run --mount type=volume,source=<호스트 경로>,target=<도커 경로>
+  ```
+
+  - volume 삭제
+
+  ``` bash
+  $ docker volume rm <볼륨 이름>
+  ```
+
+  - 사용하지 않는 볼륨 일괄 삭제
+
+  ```bash
+  $ docker volume prune
+  ```
+
+
+
+- bind mount
+
+  - volume과 달리 다른 컨테이너나 호스트도 파일의 내용에 접근이 가능하다.
+  - 마운트하기
+    - `-v` 옵션 또는 `--mount` 옵션 사용
+
+  ```bash
+  $ docker run -v <호스트 경로>:<컨테이너 경로> <이미지이름>
+  
+  $ docker run --mount type=bind,source=<호스트 경로>,target=<도커 경로>
+  ```
+
+
+
+- `-v(--volume)`와 `--mount`
+  - 원래 독립형 컨테이너에서는 `-v`가 사용되었고, Docker cluster인 Swarm Mode의 Service에서는 `--mount`가 사용되었다.
+    - 그러나 docker 17.06부터 독립형 컨테이너에서도 `--mount`의 사용이 가능해졌다.
+    - 반면 Service에서는 오직 `--mount`만 사용이 가능하다.
+  - `--mount`
+    - key=value 쌍으로 설정한다.
+    - source, target(혹은 destination, dst), type, readonly 등의 옵션을 지정 가능하다.
+    - type에 volume, bind, tmpfs를 사용 가능하다.
+    - readonly 옵션을 줄 경우 readonly 상태로 마운트된다.
+
+
+
+
 
 
 
@@ -565,5 +658,7 @@
 
 
 
+# 참고
 
+- https://boying-blog.tistory.com/31
 
