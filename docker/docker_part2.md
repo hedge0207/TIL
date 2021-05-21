@@ -595,13 +595,14 @@
   ```
 
   - volume 삭제
-
+    - cp를 통해 볼륨을 다른 디렉터리에 복제해도 rm 명령을 사용하면 **복제 된 volume도 삭제된다.**
+  
   ``` bash
   $ docker volume rm <볼륨 이름>
   ```
-
+  
   - 사용하지 않는 볼륨 일괄 삭제
-
+  
   ```bash
   $ docker volume prune
   ```
@@ -633,6 +634,16 @@
     - readonly 옵션을 줄 경우 readonly 상태로 마운트된다.
 
 
+
+- docker volume의 기본 경로 변경하기
+  - https://stackoverflow.com/questions/36014554/how-to-change-the-default-location-for-docker-create-volume-command
+  - https://stackoverflow.com/questions/50998486/change-source-path-of-volume
+    - docker create volume 명령어와 동일하게 사용 가능한 듯 하다.
+    - https://stackoverflow.com/questions/49950326/how-to-create-docker-volume-device-host-path 참고
+    - https://stackoverflow.com/questions/59836742/docker-driver-opts-type-none none의 의미?
+  - https://carpfish.tistory.com/entry/Docker-Data-Root-Directory-%EA%B2%BD%EB%A1%9C-%EB%B3%80%EA%B2%BD
+  - https://stackoverflow.com/questions/38396139/docker-change-folder-where-to-store-docker-volumes
+  - 위 글들 참고해서 추후 정리
 
 
 

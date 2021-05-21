@@ -468,6 +468,25 @@
 
 ## 데이터 저장하기
 
+- Feed exports 사용하기
+
+  - `-O`는 기존에 파일이 없다면 새로운 파일을 생성하고, 이미 파일이 있다면 해당 파일을 덮어쓴다.
+  - `-o`는 이미 존재하는 파일에 추가한다.
+    - 단, 이 경우 기존 파일 형식과 맞지 않을 수 있다.
+    - Json 파일의 경우  `-o` 옵션을 사용할 때 json 파일 형식이 아닌 JSON Lines 형식으로 추가하는 것을 추천한다.(e.g `quotes.jl`)
+
+  ```bash
+  $ scrapy crawl <spider 이름> -O <저장할 파일 이름>
+  ```
+
+  - 예시
+
+  ```bash
+  $ scrapy crawl quotes -O quotes.json
+  ```
+
+
+
 ### Item
 
 - Item
@@ -534,32 +553,106 @@
       another_field = attr.ib()
   ```
 
+
+
+- ItemAdapter
+  - `itemadapter.ItemAdapter(item:Any)`
+    - item 유형과 무관하게 데이터를 추출하고 추가할 수 있는 인터페이스를 제공해준다.
+  - `itemadapter.is_item(obj:Any)`
+    - 인자로 받은 오브젝트가 지원하는 타입중 하나인지를 bool 값으로 반환한다.
+
+
+
+- Item 사용하기
+
+  - Field 클래스
+    - Field 객체를 `Field()`를 사용해서 정의한다.
+    - `Field()`는 각 필드의 메타데이터를 정의해주기 위해서 사용한다.
+    - Field 클래스는 Python 딕셔너리의 alias로 실제 기능은 하나도 다른 것이 없다.
+    - Field 객체로 item을 선언했을 때 Field 객체가 class attributes를 계속 유지하지 않는다.
+    - 대신 `Item.fields`로 attributes에 접근이 가능하다.
+  - Item subclasses 선언하기
+    - Django와 유사하다.
+
+  ```python
+  import scrapy
   
-
-  
-
-
-
-### 저장하기
-
-- Feed exports 사용하기
-
-  - `-O`는 기존에 파일이 없다면 새로운 파일을 생성하고, 이미 파일이 있다면 해당 파일을 덮어쓴다.
-  - `-o`는 이미 존재하는 파일에 추가한다.
-    - 단, 이 경우 기존 파일 형식과 맞지 않을 수 있다.
-    - Json 파일의 경우  `-o` 옵션을 사용할 때 json 파일 형식이 아닌 JSON Lines 형식으로 추가하는 것을 추천한다.(e.g `quotes.jl`)
-
-  ```bash
-  $ scrapy crawl <spider 이름> -O <저장할 파일 이름>
+  # scrapy.Item을 상속
+  class Product(scrapy.Item):
+      name = scrapy.Field()
+      price = scrapy.Field()
+      stock = scrapy.Field()
+      tags = scrapy.Field()
+      last_updated = scrapy.Field(serializer=str)
   ```
 
-  - 예시
+  - Item 생성하기
 
-  ```bash
-  $ scrapy crawl quotes -O quotes.json
+  ```shell
+  >>> product = Product(name='Desktop PC', price=1000)
+  >>> print(product)
+  Product(name='Desktop PC', price=1000)
+  ```
+
+  - field 값 가져오기
+    - 딕셔너리와 동일하다.
+
+  ```shell
+  >>> product['name']
+  Desktop PC
+  >>> prduct.get('name')
+  Desktop PC
+  >>> product.keys()
+  ['price', 'name']
+  >>> product.items()
+  [('price', 1000), ('name', 'Desktop PC')]
+  ```
+
+  - field 값 추가하기
+    - 딕셔너리와 동일하다.
+
+  ```shell
+  >>> product['last_updated'] = 'today'
+  >>> product['last_updated']
+  today
+  ```
+
+  - Item 복사하기
+    - 얕은 복사와 깊은 복사 모두 지원한다.
+
+  ```shell
+  # 얕은 복사
+  product2 = product.copy()
+  
+  # 깊은 복사
+  product3 = product.deepcopy()
+  ```
+
+  - item과 dict 변환하기
+
+  ```shell
+  >>> dict(product)
+  {'price': 1000, 'name': 'Desktop PC'}
+  >>> Product({'name': 'Laptop PC', 'price': 1500})
+  Product(price=1500, name='Laptop PC')
+  ```
+
+  - 확장하기
+
+  ```python
+  # 상속 받아서 새로운 필드 추가
+  class DiscountedProduct(Product):
+      discount_percent = scrapy.Field(serializer=str)
+      discount_expiration_date = scrapy.Field()
+  
+  # 상속 받은 후 기존 필드 변경
+  class SpecificProduct(Product):
+      name = scrapy.Field(Product.fields['name'], serializer=my_serializer)
   ```
 
 
+
+### Item Pipeline
 
 
 - Item Pipeline
@@ -598,11 +691,36 @@
 
 
 
+- Pipeline 실행하기
+
+  - Item Pipeline을 활성화하려면 settings.py 파일에 아래와 같이 pipeline을 추가해야 한다.
+    - 숫자는 실행 할 순서를 결정하기 위해 설정한다.
+    - 숫자가 낮을 수록 우선 순위가 높다.
+
+  ```python
+  ITEM_PIPELINES = {
+      '프로젝트명.pipelines.파이프라인명': 숫자(0-1000),
+  }
+  ```
+
+  - `open_spider`, `close_spider`의 경우 spider가 실행 될 때 자동으로 실행되지만, `process_item`은 spider의 parse 함수에서 item을 yield 해줘야 한다.
+
+  ```python
+  def parse(self, response):
+      yield item
+  ```
+
+
+
 - 예시
+
+  - 간단한 처리 하기
 
   ```python
   from itemadapter import ItemAdapter
   from scrapy.exceptions import DropItem
+  
+  
   class PricePipeline:
   
       vat_factor = 1.15
@@ -618,9 +736,26 @@
               raise DropItem(f"Missing price in {item}")
   ```
 
+  - JSON 파일로 저장하기
 
-
-
+  ```python
+  import json
+  
+  from itemadapter import ItemAdapter
+  
+  class JsonWriterPipeline:
+  
+      def open_spider(self, spider):
+          self.file = open('items.jl', 'w')
+  
+      def close_spider(self, spider):
+          self.file.close()
+  
+      def process_item(self, item, spider):
+          line = json.dumps(ItemAdapter(item).asdict()) + "\n"
+          self.file.write(line)
+          return item
+  ```
 
 
 
