@@ -227,6 +227,16 @@
 
 
 
+- 특정 브랜치 clone
+
+  ```bash
+  $ git clone -b branch명 --single-branch 저장소 URL
+  ```
+
+  
+
+
+
 ## 브랜치 워크플로우
 
 - Long-Running 브랜치
