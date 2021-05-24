@@ -334,8 +334,42 @@
   ```
 
   - histogram
+    - histogram 필드의 평균은 `counts` 배열에서 동일한 위치에 있는 수를 고려한  `values` 배열의 모든 요소들의 가중 평균이다.
+    - 아래 예시의 경우, 각 히스토그램 필드에 대해 평균을 계산할 때, <1>에 해당하는 `values` 배열의 각 요소들과 <2>에 해당하는 `counts` 배열의 각 요소들을 위치에 따라 곱한 값을 더한 후, 이 값들로 평균을 구한다. 
+    - 0.2~0.3에 해당하는 값이 가장 많으므로 0.2X가 결과값으로 나올 것이다.
+  
+  ```bash
+  $ curl -XPUT "localhost:9200/my_index/_doc/1
+  {
+    "network.name" : "net-1",
+    "latency_histo" : {
+        "values" : [0.1, 0.2, 0.3, 0.4, 0.5], # <1>
+        "counts" : [3, 7, 23, 12, 6] 			# <2>
+     }
+  }
+  
+  $ curl -XPUT "localhost:9200/my_index/_doc/2
+  {
+    "network.name" : "net-2",
+    "latency_histo" : {
+        "values" :  [0.1, 0.2, 0.3, 0.4, 0.5], # <1>
+        "counts" : [8, 17, 8, 7, 6] 			 # <2>
+     }
+  }
+  
+  $ curl -XPOST "localhost:9200/my_index/_search?size=0
+  {
+    "aggs": {
+      "avg_latency":
+        { "avg": { "field": "latency_histo" }
+      }
+    }
+  }
+  ```
 
 
+
+- Max
 
 
 
