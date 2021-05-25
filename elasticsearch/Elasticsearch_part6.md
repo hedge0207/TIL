@@ -253,6 +253,13 @@
 
 
 
+## Bucket aggregations
+
+- Bucket aggregations
+  - 
+
+
+
 ## Metrics aggregations
 
 - Metrics aggregations
@@ -285,40 +292,47 @@
     }
   }
   '
-  ```
-
-  - 응답
-
-  ```json
-  {
-    "took" : 2,
-    "timed_out" : false,
-    "_shards" : {
-      "total" : 1,
-      "successful" : 1,
-      "skipped" : 0,
-      "failed" : 0
-    },
-    "hits" : {
-      "total" : {
-        "value" : 10,
-        "relation" : "eq"
-      },
-      "max_score" : null,
-      "hits" : [ ]
-    },
-    "aggregations" : {
-      "avg_grade" : {
-        "value" : 20127.5	// 평균값은 20127.5
-      }
+  
+  # 응답
+  "aggregations" : {
+    "avg_population" : {
+      "value" : 20127.5	// 평균값은 20127.5
     }
   }
   ```
 
+  - runtime field
+    - 단일 필드가 아닌, 더 복합적인 값들의 평균을 얻을 때 사용한다.
+  
+  ```bash
+  $ curl -XPOST "localhost:9200/exams/_search?size=0" -H 'Content-type:application/json' -d'
+  {
+    "runtime_mappings": {
+      "grade.corrected": {
+        "type": "double",
+        "script": {
+          "source": "emit(Math.min(100, doc['grade'].value * params.correction))",
+          "params": {
+            "correction": 1.2
+          }
+        }
+      }
+    },
+    "aggs": {
+      "avg_corrected_grade": {
+        "avg": {
+          "field": "grade.corrected"
+        }
+      }
+    }
+  }
+  '
+  ```
+  
   - missing 파라미터
     - 집계 하려는 필드에 값이 존재하지 않을 경우 기본적으로는 해당 값을 제외하고 집계를 진행한다.
     - 그러나 만일 특정 값을 넣어서 집계하고 싶을 경우 missing 파라미터를 사용하면 된다.
-
+  
   ```bash
   $ curl -XGET "localhost:9200/nations/_search?size=0" -H 'Content-type:application/json' -d '
   {
@@ -332,36 +346,46 @@
     }
   }'
   ```
-
+  
   - histogram
-    - histogram 필드의 평균은 `counts` 배열에서 동일한 위치에 있는 수를 고려한  `values` 배열의 모든 요소들의 가중 평균이다.
+    - histogram 필드의 평균 동일한 위치에 있는 `counts` 배열의 요소와  `values` 배열의 요소를 곱한 값들의 평균이다.
     - 아래 예시의 경우, 각 히스토그램 필드에 대해 평균을 계산할 때, <1>에 해당하는 `values` 배열의 각 요소들과 <2>에 해당하는 `counts` 배열의 각 요소들을 위치에 따라 곱한 값을 더한 후, 이 값들로 평균을 구한다. 
     - 0.2~0.3에 해당하는 값이 가장 많으므로 0.2X가 결과값으로 나올 것이다.
   
   ```bash
-  $ curl -XPUT "localhost:9200/my_index/_doc/1
+  $ curl -XPUT "localhost:9200/my_index/_doc/1" -H 'Content-Type: application/json' -d'
   {
     "network.name" : "net-1",
     "latency_histo" : {
         "values" : [0.1, 0.2, 0.3, 0.4, 0.5], # <1>
         "counts" : [3, 7, 23, 12, 6] 			# <2>
      }
-  }
+  }'
   
-  $ curl -XPUT "localhost:9200/my_index/_doc/2
+  $ curl -XPUT "localhost:9200/my_index/_doc/2" -H 'Content-Type: application/json' -d'
   {
     "network.name" : "net-2",
     "latency_histo" : {
         "values" :  [0.1, 0.2, 0.3, 0.4, 0.5], # <1>
         "counts" : [8, 17, 8, 7, 6] 			 # <2>
      }
-  }
+  }'
   
-  $ curl -XPOST "localhost:9200/my_index/_search?size=0
+  $ curl -XPOST "localhost:9200/my_index/_search?size=0" -H 'Content-Type: application/json' -d'
   {
     "aggs": {
       "avg_latency":
         { "avg": { "field": "latency_histo" }
+      }
+    }
+  }'
+  
+  # 응답
+  {
+    ...
+    "aggregations": {
+      "avg_latency": {
+        "value": 0.29690721649
       }
     }
   }
@@ -369,7 +393,214 @@
 
 
 
-- Max
+- Sum
+
+  - 집계된 문서에서 추출한 숫자의 합계를 계산하는 single-value metrics aggregation
+  - 사용하기
+
+  ```bash
+  curl -XGET "http://192.168.0.237:9201/nations/_search?size=0" -H 'Content-Type: application/json' -d'
+  {  
+    "aggs":{    
+      "sum_population":{      
+        "sum":{        
+          "field": "population"      
+        }    
+      }  
+    }
+  }'
+  
+  # 응답
+  {
+    "aggregations" : {
+      "sum_population" : {
+        "value" : 201275.0
+      }
+    }
+  }
+  
+  ```
+
+  - runtime field
+    - 단일 필드가 아닌, 더 복합적인 값들의 합계를 구할 때 사용한다.
+
+  ```bash
+  curl -XPOST "http://192.168.0.237:9201/sales/_search?size=0" -H 'Content-Type: application/json' -d'
+  {
+    "runtime_mappings": {
+      "price.weighted": {
+        "type": "double",
+        "script": """
+          double price = doc['price'].value;
+          if (doc['promoted'].value) {
+            price *= 0.8;
+          }
+          emit(price);
+        """
+      }
+    },
+    "query": {
+      "constant_score": {
+        "filter": {
+          "match": { "type": "hat" }
+        }
+      }
+    },
+    "aggs": {
+      "hat_prices": {
+        "sum": {
+          "field": "price.weighted"
+        }
+      }
+    }
+  }'
+  ```
+
+  - avg와 마찬가지로 missing 파라미터를 사용할 수 있다.
+
+  - histogram
+    - histogram 필드의 합계는 동일한 위치에 있는 `counts` 배열의 요소와  `values` 배열의 요소를 곱한 값들의 합계이다.
+
+  ```bash
+  curl -XPUT "http://192.168.0.237:9201/metrics_index/_doc/1" -H 'Content-Type: application/json' -d'
+  {
+    "network.name" : "net-1",
+    "latency_histo" : {
+        "values" : [0.1, 0.2, 0.3, 0.4, 0.5], 
+        "counts" : [3, 7, 23, 12, 6] 
+     }
+  }'
+  
+  curl -XPUT "http://192.168.0.237:9201/metrics_index/_doc/2" -H 'Content-Type: application/json' -d'
+  {
+    "network.name" : "net-2",
+    "latency_histo" : {
+        "values" :  [0.1, 0.2, 0.3, 0.4, 0.5], 
+        "counts" : [8, 17, 8, 7, 6] 
+     }
+  }'
+  
+  curl -XPOST "http://192.168.0.237:9201/metrics_index/_search?size=0" -H 'Content-Type: application/json' -d'
+  {
+    "aggs" : {
+      "total_latency" : { "sum" : { "field" : "latency_histo" } }
+    }
+  }'
+  
+  # 응답
+  {
+    ...
+    "aggregations": {
+      "total_latency": {
+        "value": 28.8
+      }
+    }
+  }
+  ```
+
+
+
+- Max, Min
+
+  - 숫자 값들의 최댓(최솟)값을 구하는 single-value metrics aggregation
+  - 사용하기
+    - 반환 값은 double 타입이다.
+
+  ```bash
+  $ curl -XGET "localhost:9200/nations/_search?size=0" -H 'Content-type:application/json' -d'
+  {
+    "aggs": {
+      "max_population": {
+        "max": {
+          "field": "population"
+        }
+      }
+    }
+  }
+  '
+  
+  # 응답
+  "aggregations" : {
+    "max_population" : {
+      "value" : 126478.0
+    }
+  }
+  ```
+
+  - runtime field
+    - 단일 필드가 아닌, 더 복합적인 값들의 최댓(최솟)값을 얻을 때 사용한다.
+
+  ```bash
+  $ curl -XPOST "localhost:9200/exams/_search?size=0" -H 'Content-type:application/json' -d'
+  {
+    "size": 0,
+    "runtime_mappings": {
+      "price.adjusted": {
+        "type": "double",
+        "script": """
+          double price = doc['price'].value;
+          if (doc['promoted'].value) {
+            price *= 0.8;
+          }
+          emit(price);
+        """
+      }
+    },
+    "aggs": {
+      "max_price": {
+        "max": { "field": "price.adjusted" }
+      }
+    }
+  }
+  ```
+
+  - avg와 마찬가지로 missing 파라미터를 사용할 수 있다.
+
+  - histogram
+    - avg와 달리 counts 배열은 무시하고 values중 최댓(최솟)값을반환한다.
+
+  ```bash
+  $ curl -XPUT "localhost:9200/my_index/_doc/1" -H 'Content-Type: application/json' -d'
+  {
+    "network.name" : "net-1",
+    "latency_histo" : {
+        "values" : [0.1, 0.2, 0.3, 0.4, 0.5], # <1>
+        "counts" : [3, 7, 23, 12, 6] 			# <2>
+     }
+  }'
+  
+  $ curl -XPUT "localhost:9200/my_index/_doc/2" -H 'Content-Type: application/json' -d'
+  {
+    "network.name" : "net-2",
+    "latency_histo" : {
+        "values" :  [0.1, 0.2, 0.3, 0.4, 0.5], # <1>
+        "counts" : [8, 17, 8, 7, 6] 			 # <2>
+     }
+  }'
+  
+  $ curl -XPOST "localhost:9200/my_index/_search?size=0" -H 'Content-Type: application/json' -d'
+  {
+    "aggs": {
+      "max_latency":
+        { "max": { "field": "latency_histo" }
+      }
+    }
+  }'
+  
+  # 응답
+  {
+    ...
+    "aggregations": {
+      "max_latency": {
+        "value": 0.5
+      }
+    }
+  }
+  ```
+
+
+
+
 
 
 
