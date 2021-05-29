@@ -40,33 +40,6 @@
 
 <br/>
 
-## [Database_part1](https://github.com/hedge0207/TIL/blob/master/CS/Database_part1.md)
-
-- 데이터 베이스의 기본 개념
-  - DBMS
-  - 데이터베이스 설계
-- 데이터 모델링
-  - 데이터 모델
-    - 개념적 데이터 모델
-    - 논리적 데이터 모델
-- 데이터베이스의 언어, SQL
-- 정규화
-  - 정규형
-
-<br/>
-
-## [Database_part2](https://github.com/hedge0207/TIL/blob/master/CS/Database_part2.md)
-
-- 트랜잭션
-- 보안과 권한 관리
-- 데이터 베이스 응용 기술
-  - 객체 지향 데이터 베이스
-  - 분산 데이터베이스 시스템
-  - 웹 데이터베이스
-  - 데이터 웨어하우스
-
-<br/>
-
 ## [최신 IT 기술](https://github.com/hedge0207/TIL/blob/master/CS/%EC%B5%9C%EC%8B%A0%20IT%20%EA%B8%B0%EC%88%A0%20%EC%A0%95%EB%A6%AC.md)
 
 - Big Data
@@ -106,6 +79,35 @@
 <br/>
 
 <br/>
+
+<br/>
+
+# Database
+
+## [Database_part1](https://github.com/hedge0207/TIL/blob/master/CS/Database_part1.md)
+
+- 데이터 베이스의 기본 개념
+  - DBMS
+  - 데이터베이스 설계
+- 데이터 모델링
+  - 데이터 모델
+    - 개념적 데이터 모델
+    - 논리적 데이터 모델
+- 데이터베이스의 언어, SQL
+- 정규화
+  - 정규형
+
+<br/>
+
+## [Database_part2](https://github.com/hedge0207/TIL/blob/master/CS/Database_part2.md)
+
+- 트랜잭션
+- 보안과 권한 관리
+- 데이터 베이스 응용 기술
+  - 객체 지향 데이터 베이스
+  - 분산 데이터베이스 시스템
+  - 웹 데이터베이스
+  - 데이터 웨어하우스
 
 <br/>
 
