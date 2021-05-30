@@ -84,7 +84,7 @@
 
 # Database
 
-## [Database_part1](https://github.com/hedge0207/TIL/blob/master/CS/Database_part1.md)
+## [Database_part1](https://github.com/hedge0207/TIL/blob/master/Database/Database_part1.md)
 
 - 데이터 베이스의 기본 개념
   - DBMS
@@ -99,7 +99,7 @@
 
 <br/>
 
-## [Database_part2](https://github.com/hedge0207/TIL/blob/master/CS/Database_part2.md)
+## [Database_part2](https://github.com/hedge0207/TIL/blob/master/Database/Database_part2.md)
 
 - 트랜잭션
 - 보안과 권한 관리
