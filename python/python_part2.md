@@ -854,6 +854,104 @@
 
 
 
+- `os.path` 모듈
+
+  - 파일, 디렉토리 경로와 관련된 함수를 제공한다.
+  - `abspath(path)`
+    - path의 절대경로를 반환한다.
+
+  ```python
+  import os
+  
+  print(os.path.abspath('test.txt')) # '/home/theo/data/test.txt
+  ```
+
+  - `basename(path)`
+    - path의 상대경로를 반환한다.
+    - 입력값으로 절대경로를 받는다.
+
+  ```python
+  import os
+  
+  print(os.path.basename('/home/theo/data/test.txt')) # test.txt 
+  ```
+
+  - `dirname(path)`
+    - 입력 파일 혹은 디렉토리까지의 경로를 반환한다.
+
+  ```python
+  import os
+  
+  print(os.path.dirname('/home/theo/data/test.txt')) # /home/theo/data
+  ```
+
+  - `exists(path)`
+    - 입력 받은 경로가 존재하는지 여부를 bool 값으로 반환한다.
+
+  ```python
+  import os
+  
+  print(os.path.exists('/home/theo/data/test.txt')) # True
+  ```
+
+  - `getmtime(path)`
+    - 입력 받은 경로(폴더 혹은 파일)의 최근 변경시간을 반환한다.
+    - `getmtime(path)` 으로 생성 시간을, `getatime(path)`으로 접근 시간을 구할 수 있다.
+
+  ```python
+  import os
+  
+  print(os.path.getmtime('/home/theo/data/test.txt')) # True
+  ```
+
+  - `getsize(path)`
+    - 입력 받은 경로의 파일 크기를 반환한다.
+
+  ```python
+  import os
+  
+  print(os.path.getsize('/home/theo/data/test.txt')) # True
+  ```
+
+  - `isdir(path)`
+    - 입력 받은 경로가 디렉토리인지 여부를 bool 값으로 반환한다.
+    - `isfile(path)`로 파일이지 여부를, `isabs(path)`로 절대경로인지 여부를 확인 가능하다.
+
+  ```python
+  import os
+  
+  print(os.path.isdir('/home/theo/data/test.txt')) # False
+  ```
+
+  - `join(str1, str2, ...)`
+    - 입력 받은 문자열을 경로 형태로 합쳐준다.
+
+  ```python
+  import os
+  
+  print(os.path.join('/home/theo',"data","test.txt")) # /home/theo/data/test.txt
+  ```
+
+  - `normpath(path)`
+    - path에서 `.`, `..`와 같른 구분자를 제거해준다.
+
+  ```python
+  import os
+  
+  print(os.path.normpath('/home/theo/../data//test.txt')) # /home/theo/data/test.txt
+  ```
+
+  - `split(path)`
+    - path에서 디렉토리와 파일을 구분하여 튜플로 반환한다.
+
+  ```python
+  import os
+  
+  print(os.path.split('/home/theo/data/test.txt')) # (''/home/theo/data', 'test.txt')
+  ```
+
+  
+
 
 
 
