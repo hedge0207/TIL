@@ -781,6 +781,98 @@
     - `"doc_values" : <true | false>`: 디폴트는 true이며, keyword 값들은 기본적으로 집계나 정렬에 메모리를 소모하지 않기 위해 값들을 doc_values라고 하는 별도의 열 기반 저장소를 만들어 저장하는데, 이 값을 false로 하면 doc_values에 값을 저장하지 않아 집계나 정렬이 불가능해진다.
     - `"ignore_above" : 자연수`: 디폴트는 2,147,483,647이며 다이나믹 매핑으로 생성되면 256으로 설정된다. 설정된 길이 이상의 문자열은 색인을 하지 않아 검색이나 집계가 불가능하다. `_source`에는 남아있기 때문에 다른 필드 값을 쿼리해서 나온 결과로 가져오는 것은 가능하다.
     - `"normalizer" : 노멀라이저명`: keyword 필드는 애널라이저를 사용하지 않는 대신 노멀라이저의 적용이 가능하다. 노멀라이저는 애널라이저와 유사하게 settings에서 정의하며 토크나이저는 적용할 수 없고 캐릭터 필드와 토큰 필터만 적용해서 사용이 가능하다.
+  - text와 keyword의 차이
+    - 동적 매핑으로 문자열 필드를 생성하여 아래와 같이 text, keyword가 모두 생성된 경우, `필드`, `필드.keyword`로 모두 검색이 가능하다.
+    - 그러나 text, keyword 필드에 검색했을 때 각기 다른 결과가 나오게 된다.
+    - 상기했듯 text 필드는 문자열을 텀 단위로 쪼개기에 watching, movie 어느 것을 입력하든 watcing movie라는 문자열을 검색이 가능하다. 
+    - 그러나 keyword 필드는 문자열을 하나의 토큰으로 저장하기에 watcing movie로 입력해야만 watcing movie라는 문자열을 검색이 가능하다.
+  
+  ```bash
+  # 데이터 넣기
+  $ curl -XPOST "localhost:9200/test/_doc" -H 'Content-type: application/json' -d '
+  {
+    "hobby":"watching movie"
+  }'
+  
+  
+  # 매핑 정보 확인
+  $ curl -XGET "localhost:9200/nation3/_mapping"
+  {
+    "nation3" : {
+      "mappings" : {
+        "properties" : {
+          "hobby" : {
+            "type" : "text",		#  text 필드와
+            "fields" : {
+              "keyword" : {		# keyword 필드 모두 생성된다.
+                "type" : "keyword",
+                "ignore_above" : 256
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  
+  # text 필드 검색
+  $ curl -XGET "localhost:9200/test/_search" -H 'Content-type: application/json' -d '
+  {
+    "query":{
+      "match": {
+        "hobby": "watching"
+      }
+    }
+  }'
+  # 응답(검색 결과가 나온다)
+  {
+    ...
+    "hits" : {
+      "total" : {
+        "value" : 1,
+        "relation" : "eq"
+      },
+      "max_score" : 0.2876821,
+      "hits" : [
+        {
+          "_index" : "nation2",
+          "_type" : "_doc",
+          "_id" : "1",
+          "_score" : 0.2876821,
+          "_source" : {
+            "hobby" : "watching movie"
+          }
+        }
+      ]
+    }
+  }
+  
+  
+  # keyword 필드 검색
+  $ curl -XGET "localhost:9200/test/_search" -H 'Content-type: application/json' -d '
+  {
+    "query":{
+      "match": {
+        "hobby.keyword": "watching"
+      }
+    }
+  }'
+  # 검색 결과가 나오지 않는다.
+  
+  
+  # 아래와 같이 검색해야 결과가 나온다.
+  $ curl -XGET "localhost:9200/test/_search" -H 'Content-type: application/json' -d '
+  {
+    "query":{
+      "match": {
+        "hobby.keyword": "watching movie"
+      }
+    }
+  }'
+  ```
+  
+  
 
 
 
