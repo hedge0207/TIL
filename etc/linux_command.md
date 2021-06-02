@@ -251,3 +251,10 @@
   
   
 
+- jupyter의 ipynb 파일을 py 파일로 변환하기
+
+  ```bash
+  $ jupyter nbconvert --to script <ipynb 파일명>
+  ```
+
+  
