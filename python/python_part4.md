@@ -93,9 +93,15 @@
 
 - `eval()`: 실행 가능한 문자열을 입력으로 받아 문자열을 실행한 결과값을 반환한다.
 
+  - 혹은 특정 자료형의 형태를 띈 문자열을 형태에 맞는 자료형으로 변환한다.
+  
   ```python
   print(eval('5+7'))				# 12
   print(eval('list((1,2,3,4))'))	# [1, 2, 3, 4]
+  
+  a = "{'a':'test','b':[1,2,3,4]}"
+  print(type(a))			# <class 'str'>
+  print(type(eval(a)))	# <class 'dict'>
   ```
 
 
