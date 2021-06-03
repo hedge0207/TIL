@@ -498,7 +498,19 @@
   }
   ```
 
+  - 전체 도큐먼트 삭제하기
+    - `_delete_by_query`를 이용하여 모든 도큐먼트가 매치되도록해서 삭제한다.
 
+  ```bash
+  POST <인덱스명>/_delete_by_query
+  {
+    "query": {
+      "match_all": {}
+    }
+  }
+  ```
+
+  
 
 - 수정
 
@@ -506,7 +518,7 @@
   - 수정 요청
 
   ```json
-  POST office/_doc/1
+  POST 인덱스이름/_delete_by_query
   
   {
       "nickname":"Oeht",
