@@ -460,7 +460,7 @@
   | METRIC_SEPARATOR | .                                                            |
   | AGG_NAME         | <AGG_NAME>                                                   |
   | METRIC           | <metric 이름(multi-value metrics aggs의 경우)>               |
-  | PATH             | <AGG_NAME> [<AGG_SEPARATOR>, <AGG_NAME>] * [ <METRIC_SEPARATOR>, <METRIC> ] |
+  | PATH             | <AGG_NAME> [<AGG_SEPARATOR>, <AGG_NAME>] * [ <METRIC_SEPARATOR>, \<METRIC> ] |
 
   ```bash
   # nation버킷을 continent가 아시아인 국가들의 population을 기준으로 정렬한다.

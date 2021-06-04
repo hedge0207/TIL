@@ -1,3 +1,5 @@
+# partition
+
 - table 생성
 
   - table을 생성할 때 partition도 하나 이상 생성해줘야 한다.
@@ -23,5 +25,34 @@
    PARTITION p20210219 VALUES LESS THAN (2019) ENGINE = InnoDB, 
    PARTITION p20210223 VALUES LESS THAN (2020) ENGINE = InnoDB)
   ```
+
+
+
+
+
+
+# ETC
+
+- DB 복사
+
+  - 테이블 구조만 복사
+
+  ```sql
+  CREATE TABLE <테이블 이름> AS SELECT * FROM <복사해올 테이블 이름> where <False 조건  e.g.1=2>
+  ```
+
+  - 테이블 구조와 데이터 복사
+
+  ```sql
+  CREATE TABLE <테이블 이름> AS SELECT * FROM <복사해올 테이블 이름>
+  ```
+
+  - 이미 생성된 테이블에 데이터만 복사(스키마 동일)
+
+  ```sql
+  INSERT INTO <복사해올 테이블 이름> SELECT * FROM <테이블 이름>
+  ```
+
+  
 
   
