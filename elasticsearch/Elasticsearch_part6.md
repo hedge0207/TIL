@@ -1,3 +1,230 @@
+# Runtime field
+
+- Runtime field
+  - query time에 평가되는 필드
+    - search API로 런타임 필드에 접근이 가능하다.
+    - 인덱스 매핑이나 검색 요청에 런타임 필드를 정의할 수 있다.
+  - 7.11부터 도입 되었다.
+  - 런타임 필드를 활용하면 아래와 같은 것들이 가능해진다.
+    - 재색인(reindexing)없이 문서에 필드를 추가할 수 있다.
+    - 데이터의 구조를 몰라도 데이터 처리가 가능하다.
+    - 색인 된 필드에서 반환 받은 값을 query time에 덮어쓸 수 있다.
+    - schema 수정 없이 필드를 정의할 수 있다.
+  - 사용시 이점
+    - 런타임 필드는 인덱싱하지 않기에, index 크기를 증가시키지 안흔다.
+    - Elasticsearch는 런타임 필드와 색인된 일반적인 필드를 구분하지 않기 때문에 런타임 필드를 색인시킨다고 하더라도 기존에 런타임 필드를 참조했던 쿼리를 수정 할 필요가 없다.
+    - data를 모두 색인시킨 이후에도 런타임 필드를 추가할 수 있기 때문에, 데이터의 구조를 몰라도 일단 데이터를 색인시키고, 이후에 놓친 부분이 있다면 런타임 필드를 활용하면 된다. 
+
+
+
+# Scripting
+
+- Scripting
+
+  - custom 표현식을 사용할 수 있다.
+
+  - 기본 스크립트 언어는 Painless이다.
+
+    - `lang` 플러그인을 설치하면 다른 언어로 스크립트를 작성할 수 있다.
+
+  - ES는 새로운 스크립트를 발견하면 해당 스크립트를 컴파일한다.
+
+    - 대부분의 context에서 5분당 75개의 스크립트를 컴파일한다.
+    - ingest context의 경우 script compilation rate의 기본값은 제한 없음으로 되어 있다. 
+    - script compilation rate은 동적으로 변경 가능하다.
+
+    ```bash
+    # 예시. field context에서 10분당 100개의 스크립트를 컴파일 하도록 설정
+    script.context.field.max_compilations_rate=100/10m
+    ```
+
+    - 만일 단기간에 너무 많은 스크립트를 컴파일 할 경우 `circuit_breaking_exception` error 가 발생한다.
+
+
+
+- Painless 
+  - Elasticsearch를 위해 설계된 스크립팅 언어
+  - 장점
+    - 허용 목록(allowlist)을 통해 클러스터의 보안이 보장된다.
+    - JVM이 제공하는 최적화를 가능한한 모두 활용하기 위해 JVM 바이트 코드로 직접 컴파일하여 성능이 뛰어나다.
+    - 다른 언어들과 유사한 문법을 제공하여 배우기 쉽다.
+
+
+
+- scripts 작성하기
+
+  - 기본 패턴
+    - Elasticsearch API 중 어디에서 사용되더라도 아래와 같은 패턴을 따른다.
+    - `script`는 JSON 오브젝트 형식으로 작성한다.
+
+  ```json
+  "script":{
+      "lang":"<language>",	// 사용할 언어를 입력한다(기본값은 painless)
+      "source" | <"id":"...">, // 인라인 script로 작성한 소스 혹은 저장된 스크립트의 id를 입력한다.
+  	"params": <{...}> // script에 변수로 넘겨줄 parameters를 입력한다. 
+  }
+  ```
+
+  - 사용 예시(Painless 기준)
+    - `lang`을 따로 지정해 주지 않으면 기본값으로 Painless가 들어가게 된다.
+    - Painless script에는 하나 이상의 선언문이 있어야 한다.
+
+  ```bash
+  # 데이터 삽입
+  $ curl -XPUT "localhost:9200/script_test/_doc/1" -H "Content-type:application/json" -d '
+  {
+  	"my_field":5
+  }' 
+  
+  # 스크립트 작성
+  $ curl -XGET "localhost:9200/script_test/_search" -H "Content-type:application/json" -d '
+  {
+    "script_fields": {
+      "my_doubled_field": {
+        "script": {
+          "source": "doc['my_field'].value * params['multiplier']", 
+          "params": {
+            "multiplier": 2
+          }
+        }
+      }
+    }
+  }'
+  
+  # 응답
+  {
+  	# (...)
+  	"hits" : [
+        {
+          "_index" : "scripts_practice",
+          "_type" : "_doc",
+          "_id" : "1",
+          "_score" : 1.0,
+          "fields" : {
+            "my_doubled_field" : [
+              10
+            ]
+          }
+        }
+      ]
+  }
+  ```
+
+  - value를 하드코딩하는 것 보다 `params`에 작성하여 인자로 넘기는 것이 낫다.
+    - ES가 새로운 스크립트를 발견하면, 스크립트를 컴파일하고 컴파일 된 버전을 캐시에 저장한다.
+    - 컴파일은 무거운 과정일 수 있다.
+    - 예를 들어 위 스크립트를 아래와 같이 바꿀 경우 숫자 2를 3으로 바꾼다면 ES는 다시 컴파일을 거친다.
+    - 그러나 `params`의 값을 변경할 경우 script 자체를 수정한 것은 아니기 때문에 다시 컴파일하지 않는다.
+    - 따라서 스크립트의 유연성이나 컴파일 시간을 고려할 때 `params`에 작성하는 것이 좋다.
+
+  ```json
+  "script": {
+      "source": "doc['my_field'].value * 2", 
+  }
+  ```
+
+
+
+- script를 더 짧게 작성하기
+
+  - Painless에서 기본적으로 제공하는 문법.
+  - 아래와 같은 script가 있을 때
+
+  ```bash
+  $ curl -XGET "localhost:9200/script_test/_search" -H "Content-type:application/json" -d '
+  {
+    "script_fields": {
+      "my_doubled_field": {
+        "script": {
+          "lang":   "painless",
+          "source": "return doc['my_field'].value * params.get('multiplier');",
+          "params": {
+            "multiplier": 2
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  - 아래와 같이 축약이 가능하다.
+    - default 언어이기 때문에 `lang`을 선언하지 않아도 된다.
+    - 자동으로 `return` 키워드를 붙여주기에 빼도 된다.
+    - Map 타입에 한해서 `.get()` 메서드를 생략 가능하다.
+    - `source`의 마지막에 세미콜론을 붙이지 않아도 된다.
+
+  ```bash
+  $ curl -XGET "localhost:9200/script_test/_search" -H "Content-type:application/json" -d '
+  {
+    "script_fields": {
+      "my_doubled_field": {
+        "script": {
+          "source": "doc['my_field'].value * params['multiplier']",
+          "params": {
+            "multiplier": 2
+          }
+        }
+      }
+    }
+  }'
+  ```
+
+
+
+- scripts를 저장하고 불러오기
+
+  - stored script APIs를 활용하여 cluster state에 script를 저장하고 불러올 수 있다.
+  - script를 저장하면 스크립트를 컴파일 하는 시간이 감소되므로 검색이 보다 빨라진다.
+  - script 저장하기
+
+  ```bash
+  $ curl -XPOST "localhost:9200/_scripts/<스크립트명>" -H "Content-type:application/json" -d '
+  {
+  	"script": {
+  		<저장할 스크립트>
+  		}
+  	}
+  }'
+  ```
+
+  - 스크립트 불러오기
+
+  ```bash
+  $ curl -XGET "localhost:9200/_scripts/<불러올 스크립트명>"
+  ```
+
+  - 저장된 script를 query에 사용하기
+
+  ```bash
+  $ curl -XGET "localhost:9200/script_test/_doc/1" -H "Content-type:application/json" -d '
+  {
+    "query": {
+      # <쿼리식>,
+        "script": {
+          "id": "<저장한 스크립트의 id>", 
+          "params": {
+            [params에 맞는 값]
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  - 저장된 스크립트 삭제하기
+
+  ```bash
+  $ curl -XDELETE "localhost:9200/_scripts/<스크립트명>"
+  ```
+
+
+
+- https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-scripting-using.html#scripts-update-scripts
+
+
+
+
+
 # Aggregations
 
 - aggregations
