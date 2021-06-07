@@ -152,9 +152,18 @@
   ```bash
   $ curl -XGET 'http://localhost:9200/_cat/indices'
   ```
-
-
-
+  
+  - `s`로 정렬이 가능하다.
+  
+  ```bash
+  $ curl -XGET 'http://localhost:9200/_cat/indices?s=<정렬 할 내용>'
+  
+  #e.g.
+  $ curl -XGET 'http://localhost:9200/_cat/indices?s=docs.count:desc'
+  ```
+  
+  
+  
 - 인덱스 상태 정보
 
   ```json
