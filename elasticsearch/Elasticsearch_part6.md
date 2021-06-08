@@ -580,6 +580,32 @@
 
 
 
+- Grokking grok
+
+  - Grok은 재사용 가능한 aliased 표현을 지원하는 정규표현식이다.
+    - 시스템 로그를 확인할 때 매우 유용하다.
+    - Oniguruma 정규표현식 라이브러리 기반이다.
+    - 이미 존재하는 패턴에 이름을 붙이고, 패턴들을 결합하여 보다 복잡한 패턴을 만드는데 사용 가능하다.
+  - Grok 패턴
+    - ES는 grok을 보다 쉽게 사용할 수 있도록, 이미 정의된 다양한 grok 패턴을 제공한다.
+    - grok 패턴의 문법은 아래의 형식 중 하나의 형태를 띈다.
+    - `%{SYNTAX}`: 텍스트와 매치될 패턴의 이름을 넣는다. 만일 `%{NUMBER}`와 같이 적으면 텍스트 내의 숫자 형식의 텍스트와 매칭이 되고, `%{IP}`와 같이 적으면 텍스트 내의 IP 형식의 텍스트와 매칭이 된다.
+    - `%{SYNTAX:ID}`: 매칭 된 텍스트에 지정할 식별자이다. 예를 들어 `%{IP:client}`와 같이 적으면  IP 형식의 텍스트와 매칭 된 해당 텍스트를 clinet라고 부르겠다는 뜻이다.
+    - `%{SYNTAX:ID:TYPE}`: 매칭된 텍스트에 int, long, float, boolean과 같은 타입을 지정해준다.
+
+  ```bash
+  # 예를 들어 아래와 같은 텍스트가 있을 때
+  3.44 55.3.244.1
+  
+  # 아래와 같이 grok 표현식으로 표현이 가능하다.
+  %{NUMBER:duration} %{IP:client}
+  # durationd에는 3.44가, IP에는 55.3.244.1가 담기게 된다.
+  ```
+
+  https://www.elastic.co/guide/en/elasticsearch/reference/current/grok.html
+
+
+
 
 
 # Aggregations
