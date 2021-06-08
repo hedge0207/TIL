@@ -39,6 +39,11 @@
     ```
 
     - 만일 단기간에 너무 많은 스크립트를 컴파일 할 경우 `circuit_breaking_exception` error 가 발생한다.
+    
+  - 스크립트의 크시는 65,535 bytes로 제한되어 있다.
+  
+    - `script.max_size_in_bytes`를 통해 제한을 늘릴 수 있다.
+    - 만일 스크립트의 크기가 너무 크다면 [native script engine](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-scripting-engine.html)을 사용하는 것을 고려해볼만 하다.
 
 
 
@@ -219,7 +224,359 @@
 
 
 
-- https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-scripting-using.html#scripts-update-scripts
+- 스크립트로 문서 update
+
+  - `_update` API를 통해 script로 문서를 업데이트 할 수 있다.
+    - `_update`  API는 문서를 부분적으로 수정할 수도 있다.
+  - 필드의 값을 수정
+
+  ```bash
+  # 문서를 색인하고
+  $ curl -XPUT "localhost:9200/my_index/_doc/1" -H "Content-type:application/json" -d '
+  {
+    "counter" : 1,
+    "tags" : ["red"]
+  }'
+  
+  # _update API를 통해 counter 필드의 값을 증가
+  $ curl -XPUT "localhost:9200/my_index/_update/1" -H "Content-type:application/json" -d '
+  {
+    "script" : {
+      "source": "ctx._source.counter += params.count",
+      "lang": "painless",
+      "params" : {
+        "count" : 4
+      }
+    }
+  }'
+  
+  # _update API를 통해 tag 필드에 값을 추가
+  $ curl -XPUT "localhost:9200/my_index/_update/1" -H "Content-type:application/json" -d '
+  {
+    "script": {
+      "source": "ctx._source.tags.add(params['tag'])",
+      "lang": "painless",
+      "params": {
+        "tag": "blue"
+      }
+    }
+  }'
+  
+  # 특정 tag 값이 존재할 때 해당 태그 값을 삭제
+  $ curl -XPUT "localhost:9200/my_index/_update/1" -H "Content-type:application/json" -d '
+  {
+    "script": {
+      "source": "if (ctx._source.tags.contains(params['tag'])) { ctx._source.tags.remove(ctx._source.tags.indexOf(params['tag'])) }",
+      "lang": "painless",
+      "params": {
+        "tag": "blue"
+      }
+    }
+  }'
+  ```
+
+  - 필드 자체를 수정
+
+  ```bash
+  # 새로운 필드 추가
+  $ curl -XPUT "localhost:9200/my_index/_update/1" -H "Content-type:application/json" -d '
+  {
+    "script" : "ctx._source.new_field = 'value_of_new_field'"
+  }'
+  
+  # 기존 필드 삭제
+  $ curl -XPUT "localhost:9200/my_index/_update/1" -H "Content-type:application/json" -d '
+  {
+    "script" : "ctx._source.remove('new_field')"
+  }'
+  ```
+
+  - 문서 자체를 수정
+    - `ctx.op`를 통해 문서에 어떤 동작을 수행할 것인지를 입력한다.
+
+  ```bash
+  # 조건에 부합하면 특정 행동(operation)을 하고, 조건에 부합하지 않으면 아무 것도 하지 않는 스크립트(noop 사용)
+  # 아래 스크립트의 경우 
+  $ curl -XPUT "localhost:9200/my_index/_update/1" -H "Content-type:application/json" -d '
+  {
+    "script": {
+      "source": "if (ctx._source.tags.contains(params['tag'])) { ctx.op = 'delete' } else { ctx.op = 'none' }",
+      "lang": "painless",
+      "params": {
+        "tag": "green"
+      }
+    }
+  }'
+  ```
+
+
+
+- 스크립트 캐싱
+  - ES는 스크립트를 캐싱한다.
+    - ES는 scripts를 가능한 빠르게 사용할 수 있도록 여러 방법으로 최적화를 수행하는데 캐싱도 그 중 하나다.
+    - 컴파일 된 스크립트는 캐시에 저장되고 캐시에 저장된 스크립트를 참조하는 요청은 컴파일 되지 않는다.
+  - cache size
+    - cache size는 사용자들이 동시에 접근하는 모든 스크립트를 저장할 수 있을 만큼 커야 한다.
+    - 만일 node stats에서 확인했을 때 많은 양의 cache가 삭제되거나 컴파일 수가 증가한다면, cache가 너무 작다는 뜻이다.
+    - `script.cache.max_size`를 통해 캐시의 최대치를 설정할 수 있다.
+    - 모든 스크립트는 기본적으로 캐싱이 되므로, 스크립트에 변경 사항이 있을 때만 recompile한다.
+    - 캐시의 삭제는 일정 시간이 지나면 만료되는 방식이 **아니다.**
+    - `script.cache.expire` 를 통해 캐시 만료 방식을 설정할 수 있다.
+
+
+
+- 검색 속도 향상
+
+  - 스크립트는 인덱스의 구조나 그와 관련된 최적화를 사용할 수 없다.
+    - 따라서 떄떄로 검색 속도가 느려지게 된다.
+  - 스크립트를 사용하여 인덱싱 된 데이터를 변환한다면, 수집(ingest) 중에 데이터를 변환하여 검색을 더 빠르게 할 수 있다.
+    - 단, 이는 인덱싱 속도를 저하시킬 수 있다.
+
+  - 일반적인 검색
+    - 검색 시에 반환 되는 `math_score`와 `verbal_score` 값을 더한 값으로 검색 결과를 정렬하고자 한다.
+    - 아래 request에는 스크립트가 포함되어 있으므로 느려지게 된다.
+
+  ```bash
+  $ curl -XGET "localhost:9200/my_index/_search" -H "Content-type:application/json" -d '
+  {
+    "query": {
+      "term": {
+        "name": "maru"	# name filed가 maru인 문서 검색
+      }
+    },
+    "sort": [
+      {
+        "_script": {
+          "type": "number",
+          "script": {
+            "source": "doc['math_score'].value + doc['verbal_score'].value"
+          },
+          "order": "desc"
+        }
+      }
+    ]
+  }'
+  ```
+
+  - 검색 속도 향상시키기
+    - 작은 인덱스에서는 search query에 스크립트를 포함시는 것도 방법이 될 수 있다.
+    - 일반적으로는 아래와 같이 ingest 시에 스크립트를 활용하는 방식을 사용한다.
+    - ingest time을 증가시키긴 하지만 검색 속도는 증가헤 된다.
+
+  ```bash
+  # math_score 와 verbal_score의 합계를 저장할 새로운 필드를 추가한다.
+  $ curl -XPUT "localhost:9200/my_index/_mapping" -H "Content-type:application/json" -d '
+  {
+    "properties":{
+    	"total_score":{
+    		"type":"long"
+    	}
+    }
+  }'
+  
+  # ingest pipeline을 활용하여 math_score 와 verbal_score의 합계를 계산하고, 이를 total_score 필드에 인덱싱한다.
+  $ curl -XPUT "localhost:9200/_ingest/pipeline/my_index_pipeline" -H "Content-type:application/json" -d '
+  {
+    "description": "Calculates the total test score",
+    "processors": [
+      {
+        "script": {
+          "source": "ctx.total_score = (ctx.math_score + ctx.verbal_score)"
+        }
+      }
+    ]
+  }'
+  
+  # 이미 있는 문서들을 업데이트 하기 위해서 reindex한다.
+  $ curl -XPUT "localhost:9200/_reindex" -H "Content-type:application/json" -d '
+  {
+    "source": {
+      "index": "my_index"
+    },
+    "dest": {
+      "index": "my_index_2",
+      "pipeline": "my_index_pipeline"
+    }
+  }
+  
+  # pipeline을 활용하여 새로운 문서를 인덱싱한다.
+  $ curl -XPUT "localhost:9200/my_index/_doc/?pipeline=my_index_pipeline" -H "Content-type:application/json" -d '
+  {
+    "name": "maru",
+    "hobby": "swimming"
+  }'
+  
+  # 검색하기
+  $ curl -XGET "localhost:9200/my_index/_search" -H "Content-type:application/json" -d '
+  {
+    "query": {
+      "term": {
+        "name": "maru"
+      }
+    },
+    "sort": [
+      {
+        "total_score": {
+          "order": "desc"
+        }
+      }
+    ]
+  }'
+  ```
+
+
+
+- Dissecting data
+
+  - Dissect는 정의된 패턴과 일치하는 single text filed를 찾는다.
+    - 정규표현식을 사용하지 않을 경우, 뒤에서 설명할 grok 대신 disset 패턴을 사용하면 된다.
+    - disset이 grok 보다 문법도 훨씬 간단하고, 일반적으로 더 빠르다.
+  - Dissect patterns
+    - disset 패턴은 변수 (variables)와 구분자(separators)로 구성된다.
+    - `%{}`안에 들어간 모든 값은 변수로 간주된다.
+    - 구분자는 변수 사이에 있는 어떤 값이든 될 수 있다.
+
+  ```bash
+  # 아래와 같은 문자열은
+  247.37.0.0 - - [30/Apr/2020:14:31:22 -0500]  
+  
+  # 아래와 같은 패턴으로 표시될 수 있다.
+  # %{}안에 변수를 넣고, 그 사이에 스페이스를 구분자로 넣은 형태이다.
+  %{clientip} %{ident} %{auth} [%{@timestamp}]
+  
+  # 아래와 같은 문자열은
+  \"GET /images/hm_nbg.jpg HTTP/1.0\" 304 0
+  
+  # 아래와 같은 패턴으로 표시할 수 있다.
+  "%{verb} %{request} HTTP/%{httpversion}" %{response} %{size}
+  
+  
+  # 두 패턴을 결합하면 아래와 같다.
+  %{clientip} %{ident} %{auth} [%{@timestamp}] \"%{verb} %{request} HTTP/%{httpversion}\" %{status} %{size}
+  ```
+
+  - painless 스크립트에서 dissect 패턴 사용하기
+    - Painless execute API의 field contexts를 사용하거나 스크립트를 포함하는 runtime 필드를 생성함으로써 스크립트를 테스트 해 볼 수 있다.
+
+  ```bash
+  # 인덱스 생성
+  $ curl -XPUT "localhost:9200/my_index" -H "Content-type:application/json" -d '
+  {
+    "mappings": {
+      "properties": {
+        "message": {
+          "type": "wildcard"
+        }
+      }
+    }
+  }'
+  
+  # Painless execute API를 활용하여 스크립트 테스트하기
+  $ curl -XPOST "localhost:9200/_scripts/painless/_execute" -H "Content-type:application/json" -d '
+  {
+    "script": {
+      # dissect 패턴 정의
+      "source": """
+        String response=dissect('%{clientip} %{ident} %{auth} [%{@timestamp}] "%{verb} %{request} HTTP/%{httpversion}" %{response} %{size}').extract(doc["message"].value)?.response;
+          if (response != null) emit(Integer.parseInt(response)); 
+      """
+    },
+    "context": "long_field", 
+    "context_setup": {
+      "index": "my-index",
+      "document": {          
+        "message": """247.37.0.0 - - [30/Apr/2020:14:31:22 -0500] "GET /images/hm_nbg.jpg HTTP/1.0" 304 0"""
+      }
+    }
+  }'
+  ```
+
+  - dissect 패턴과 스크립트를 런타임 필드에서 사용하기
+    - disscet 패턴을 런타임 필드에 추가할 수 있다.
+
+  ```bash
+  # 인덱스 생성하기
+  $ curl -XPUT "localhost:9200/my_index" -H "Content-type:application/json" -d '
+  {
+    "mappings": {
+      "properties": {
+        "@timestamp": {
+          "format": "strict_date_optional_time||epoch_second",
+          "type": "date"
+        },
+        "message": {
+          "type": "wildcard"
+        }
+      }
+    }
+  }'
+  
+  # 런타임 필드 생성
+  $ curl -XPUT "localhost:9200/my_index/_mappings" -H "Content-type:application/json" -d '
+  {
+    "runtime": {
+    	# http.response라는 런타임 필드 생성
+      "http.response": {
+        "type": "long",
+        "script": """
+          String response=dissect('%{clientip} %{ident} %{auth} [%{@timestamp}] "%{verb} %{request} HTTP/%{httpversion}" %{response} %{size}').extract(doc["message"].value)?.response;
+          if (response != null) emit(Integer.parseInt(response));
+        """
+      }
+    }
+  }'
+  
+  # 데이터 추가
+  $ curl -XPOST "localhost:9200/my_index/_bulk?refresh=true" -H "Content-type:application/json" -d '
+  {"index":{}}
+  {"timestamp":"2020-04-30T14:30:17-05:00","message":"40.135.0.0 - - [30/Apr/2020:14:30:17 -0500] \"GET /images/hm_bg.jpg HTTP/1.0\" 200 24736"}
+  {"index":{}}
+  {"timestamp":"2020-04-30T14:30:53-05:00","message":"232.0.0.0 - - [30/Apr/2020:14:30:53 -0500] \"GET /images/hm_bg.jpg HTTP/1.0\" 200 24736"}
+  {"index":{}}
+  {"timestamp":"2020-04-30T14:31:12-05:00","message":"26.1.0.0 - - [30/Apr/2020:14:31:12 -0500] \"GET /images/hm_bg.jpg HTTP/1.0\" 200 24736"}
+  {"index":{}}
+  {"timestamp":"2020-04-30T14:31:19-05:00","message":"247.37.0.0 - - [30/Apr/2020:14:31:19 -0500] \"GET /french/splash_inet.html HTTP/1.0\" 200 3781"}
+  {"index":{}}
+  {"timestamp":"2020-04-30T14:31:22-05:00","message":"247.37.0.0 - - [30/Apr/2020:14:31:22 -0500] \"GET /images/hm_nbg.jpg HTTP/1.0\" 304 0"}
+  {"index":{}}
+  {"timestamp":"2020-04-30T14:31:27-05:00","message":"252.0.0.0 - - [30/Apr/2020:14:31:27 -0500] \"GET /images/hm_bg.jpg HTTP/1.0\" 200 24736"}
+  {"index":{}}
+  {"timestamp":"2020-04-30T14:31:28-05:00","message":"not a valid apache log"}'
+  
+  # 확인하기
+  $ curl -XGET "localhost:9200/my-index/_search" -H "Content-type:application/json" -d '
+  {
+    "query": {
+      "match": {
+        "http.response": "304"
+      }
+    },
+    "fields" : ["http.response"]
+  }'
+  ```
+
+  - search request에 런타임 필드 정의하기
+
+  ```bash
+  $ curl -XGET "localhost:9200/my-index/_search" -H "Content-type:application/json" -d '
+  {
+    "runtime_mappings": {
+      "http.response": {
+        "type": "long",
+        "script": """
+          String response=dissect('%{clientip} %{ident} %{auth} [%{@timestamp}] "%{verb} %{request} HTTP/%{httpversion}" %{response} %{size}').extract(doc["message"].value)?.response;
+          if (response != null) emit(Integer.parseInt(response));
+        """
+      }
+    },
+    "query": {
+      "match": {
+        "http.response": "304"
+      }
+    },
+    "fields" : ["http.response"]
+  }'
+  ```
 
 
 
