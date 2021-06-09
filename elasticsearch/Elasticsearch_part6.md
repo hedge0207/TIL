@@ -455,7 +455,7 @@
   %{clientip} %{ident} %{auth} [%{@timestamp}] \"%{verb} %{request} HTTP/%{httpversion}\" %{status} %{size}
   ```
 
-  - painless 스크립트에서 dissect 패턴 사용하기
+  - Painless 스크립트에서 dissect 패턴 사용하기
     - Painless execute API의 field contexts를 사용하거나 스크립트를 포함하는 runtime 필드를 생성함으로써 스크립트를 테스트 해 볼 수 있다.
 
   ```bash
@@ -602,7 +602,102 @@
   # durationd에는 3.44가, IP에는 55.3.244.1가 담기게 된다.
   ```
 
-  https://www.elastic.co/guide/en/elasticsearch/reference/current/grok.html
+  - Painless 스크립트에서 grok 패턴 사용하기
+    - 기존에 정의한 grok 패턴을 Painless 스크립트와 결합하여 사용하는 것이 가능하다.
+    - Painless execute API의 field contexts를 사용하거나 스크립트를 포함하는 runtime 필드를 생성함으로써 스크립트를 테스트 해 볼 수 있다.
+  
+  ```bash
+  # 아래와 같은 apache log에서 ip를 추출한다고 가정
+  "timestamp":"2020-04-30T14:30:17-05:00","message":"40.135.0.0 - -
+  [30/Apr/2020:14:30:17 -0500] \"GET /images/hm_bg.jpg HTTP/1.0\" 200 24736"
+  
+  # 테스트 인덱스 생성
+  $ curl -XPUT "localhost:9200/my-index" -H "Content-type:application/json" -d '
+  {
+    "mappings": {
+      "properties": {
+        "@timestamp": {
+          "format": "strict_date_optional_time||epoch_second",
+          "type": "date"
+        },
+        "message": {
+          "type": "wildcard"
+        }
+      }
+    }
+  }'
+  
+  # 테스트 데이터 인덱싱
+  $ curl -XPOST "localhost:9200/my-index/_bulk" -H "Content-type:application/json" -d '
+  {"index":{}}
+  {"timestamp":"2020-04-30T14:30:17-05:00","message":"40.135.0.0 - - [30/Apr/2020:14:30:17 -0500] \"GET /images/hm_bg.jpg HTTP/1.0\" 200 24736"}
+  {"index":{}}
+  {"timestamp":"2020-04-30T14:30:53-05:00","message":"232.0.0.0 - - [30/Apr/2020:14:30:53 -0500] \"GET /images/hm_bg.jpg HTTP/1.0\" 200 24736"}
+  {"index":{}}
+  {"timestamp":"2020-04-30T14:31:12-05:00","message":"26.1.0.0 - - [30/Apr/2020:14:31:12 -0500] \"GET /images/hm_bg.jpg HTTP/1.0\" 200 24736"}
+  {"index":{}}
+  {"timestamp":"2020-04-30T14:31:19-05:00","message":"247.37.0.0 - - [30/Apr/2020:14:31:19 -0500] \"GET /french/splash_inet.html HTTP/1.0\" 200 3781"}
+  {"index":{}}
+  {"timestamp":"2020-04-30T14:31:22-05:00","message":"247.37.0.0 - - [30/Apr/2020:14:31:22 -0500] \"GET /images/hm_nbg.jpg HTTP/1.0\" 304 0"}
+  {"index":{}}
+  {"timestamp":"2020-04-30T14:31:27-05:00","message":"252.0.0.0 - - [30/Apr/2020:14:31:27 -0500] \"GET /images/hm_bg.jpg HTTP/1.0\" 200 24736"}
+  {"index":{}}
+  {"timestamp":"2020-04-30T14:31:28-05:00","message":"not a valid apache log"}'
+  
+  # %{COMMONAPACHELOG} 문법과 Painless 스크립트를 결합하여 런타임 필드 생성.
+  $ curl -XPUT "localhost:9200/my-index/_mappings" -H "Content-type:application/json" -d '
+  {
+    "runtime": {
+      "http.clientip": {
+        "type": "ip",
+        "script": """
+        	# 만일 일치하는 패턴이 있을 경우 IP주소를 emit하고. 없을 경우 field value를 반환한다.
+          String clientip=grok('%{COMMONAPACHELOG}').extract(doc["message"].value)?.clientip;
+          if (clientip != null) emit(clientip);
+        """
+      }
+    }
+  }
+  
+  # 검색
+  $ curl -XGET "localhost:9200/my-index/_mappings" -H "Content-type:application/json" -d '
+  {
+    "query": {
+      "match": {
+        "http.clientip": "40.135.0.0"
+      }
+    },
+    "fields" : ["http.clientip"]
+  }'
+  ```
+  
+  - search request에 런타임 필드 정의하기
+    - 위 방식과 결과는 같다.
+  
+  ```bash
+  $ curl -XGET "localhost:9200/my-index/_search" -H "Content-type:application/json" -d '
+  {
+    "runtime_mappings": {
+      "http.clientip": {
+        "type": "ip",
+        "script": """
+          String clientip=grok('%{COMMONAPACHELOG}').extract(doc["message"].value)?.clientip;
+          if (clientip != null) emit(clientip);
+        """
+      }
+    },
+    "query": {
+      "match": {
+        "http.clientip": "40.135.0.0"
+      }
+    },
+    "fields" : ["http.clientip"]
+  }'
+  ```
+
+
+
+- https://www.elastic.co/guide/en/elasticsearch/reference/current/common-script-uses.html 부터 아래 문서들 추가
 
 
 

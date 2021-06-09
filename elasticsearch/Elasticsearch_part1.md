@@ -321,6 +321,21 @@
 
 # 엘라스틱서치 기본 개념
 
+- seqeunce number와 primary term
+  - primary term에는 primary shard에 대한 정보가 담겨 있다.
+  - ES는 비동기적이고 동시적으로 동작한다.
+    - 따라서 두 개의 요청이 순서 없이 목적지에 도착하게 된다.
+    - 그러므로 이전 버전의 요청이 새 버전의 요청을 덮어쓰지 않도록 하는 방법이 필요하다.
+    - 예를 들어 동일한 문서에 거의 동시에 각기 다른 수정 요청을 보낼 경우, 이후에 보낸 요청이 최신 요청일 것이다.
+    - 그런데 최신 요청이 먼저 도착하고 그 이후에 이전 요청이 도착한다면 문서는 최신 요청을 반영하지 못하는 상태가 된다.
+    - 이럴 때 사용하는 것이 바로 seqeunce number이다.
+  - 문서에 수행하는 모든 작업에는 해당 변경 사항을 조정하는 기본 샤드에 의해 seqeunce number가 할당된다.
+    - seqeunce number는 각 작업마다 증가하므로, 최신 작업은 이전 작업보다 더 높은 시퀀스 번호를 갖는 것이 보장된다.
+    - ES는 이 seqeunce number를 사용하여 처리 순서를 결정한다.
+  - search API에서 `seq_no_primary_term`를 true로 설정하면 두 값을 확인 가능하다.
+
+
+
 ## 클러스터와 노드
 
 - 클러스터
@@ -751,305 +766,6 @@
 
 
 
-## type
-
-- ES에서 선언 가능한 문자열 타입에는 text, keyword 두 가지가 있다.
-  - 5.0 버전부터는 텍스트 분석의 적용 여부를 text 타입과 keyword 타입으로 구분한다.
-    - 2.X 버전 이전에는 string이라는 하나의 타입만 있었고 텍스트 분석 여부, 즉 애널라이저 적용을 할 것인지 아닌지를 구분하는 설정이 있었다.
-  - 인덱스를 생성할 때 매핑에 필드를 미리 정의하지 않으면 동적 문자열 필드가 생성될 때 text 필드와 keyword 필드가 다중 필드로 함께 생성된다.
-
-
-
-- text
-  - 입력된 문자열을 텀 단위로 쪼개어 역 색인 구조를 만든다.
-  - 보통은 풀텍스트 검색에 사용할 문자열 필드들을 text 타입으로 지정한다.
-  - text 필드에는 아래와 같은 옵션들을 설정 가능하다.
-    - `"analyzer" : "애널라이저명"`:  색인에 사용할 애널라이저를 입력하며 디폴트로는 standard 애널라이저를 사용한다. 토크나이저, 토큰필터들을 따로 지정할 수가 없으며, 필요하다면 사용자 정의 애널라이저를 settings에 정의 해 두고 사용한다.
-    - `"search_analyzer" : "애널라이저명"`: 기본적으로 text필드는 match 쿼리로 검색을 할 때 색인에 사용한 동일한 애널라이저로 검색 쿼리를 분석하는데, `search_analyzer`를 지정하면 검색시에는 색인에 사용한 애널라이저가 아닌 다른 애널라이저를 사용한다. 보통 NGram 방식으로 색인을 했을 때는 지정 해 주는 것이 바람직하다.
-    - `"index" : <true | false>`: 디폴트는 true이고, false로 설정하면 해당 필드는 역 색인을 만들지 않아 검색이 불가능해진다.
-    - `"boost" : 숫자 값`: 디폴트는 1이다. 값이 1 보다 높으면 풀텍스트 검색 시 해당 필드 스코어 점수에 가중치를 부여하고, 1 보다 낮은 값을 입력하면 가중치가 내려간다.
-    - `"fielddata" : <true | false>`: 디폴트는 false이고, true로 설정하면 해당 필드의 색인된 텀들을 가지고 집계 또는 정렬이 가능하다. 이 설정은 동적으로 변경하는 것이 가능하다.
-
-
-
-- keyword
-  - 입력된 문자열을 하나의 토큰으로 저장한다.
-    - text 타입에 keyword 애널라이저를 적용한 것과 동일하다
-  - 보통은 집계 또는 정렬에 사용할 문자열 필드를 keyword 타입으로 지정한다.
-  - keyword 필드에는 다음과 같은 옵션들을 설정할 수 있다.
-    - `index`,`boost` 옵션은 text와 동일하다.
-    - `"doc_values" : <true | false>`: 디폴트는 true이며, keyword 값들은 기본적으로 집계나 정렬에 메모리를 소모하지 않기 위해 값들을 doc_values라고 하는 별도의 열 기반 저장소를 만들어 저장하는데, 이 값을 false로 하면 doc_values에 값을 저장하지 않아 집계나 정렬이 불가능해진다.
-    - `"ignore_above" : 자연수`: 디폴트는 2,147,483,647이며 다이나믹 매핑으로 생성되면 256으로 설정된다. 설정된 길이 이상의 문자열은 색인을 하지 않아 검색이나 집계가 불가능하다. `_source`에는 남아있기 때문에 다른 필드 값을 쿼리해서 나온 결과로 가져오는 것은 가능하다.
-    - `"normalizer" : 노멀라이저명`: keyword 필드는 애널라이저를 사용하지 않는 대신 노멀라이저의 적용이 가능하다. 노멀라이저는 애널라이저와 유사하게 settings에서 정의하며 토크나이저는 적용할 수 없고 캐릭터 필드와 토큰 필터만 적용해서 사용이 가능하다.
-  - text와 keyword의 차이
-    - 동적 매핑으로 문자열 필드를 생성하여 아래와 같이 text, keyword가 모두 생성된 경우, `필드`, `필드.keyword`로 모두 검색이 가능하다.
-    - 그러나 text, keyword 필드에 검색했을 때 각기 다른 결과가 나오게 된다.
-    - 상기했듯 text 필드는 문자열을 텀 단위로 쪼개기에 watching, movie 어느 것을 입력하든 watcing movie라는 문자열을 검색이 가능하다. 
-    - 그러나 keyword 필드는 문자열을 하나의 토큰으로 저장하기에 watcing movie로 입력해야만 watcing movie라는 문자열을 검색이 가능하다.
-  
-  ```bash
-  # 데이터 넣기
-  $ curl -XPOST "localhost:9200/test/_doc" -H 'Content-type: application/json' -d '
-  {
-    "hobby":"watching movie"
-  }'
-  
-  
-  # 매핑 정보 확인
-  $ curl -XGET "localhost:9200/nation3/_mapping"
-  {
-    "nation3" : {
-      "mappings" : {
-        "properties" : {
-          "hobby" : {
-            "type" : "text",		#  text 필드와
-            "fields" : {
-              "keyword" : {		# keyword 필드 모두 생성된다.
-                "type" : "keyword",
-                "ignore_above" : 256
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  
-  
-  # text 필드 검색
-  $ curl -XGET "localhost:9200/test/_search" -H 'Content-type: application/json' -d '
-  {
-    "query":{
-      "match": {
-        "hobby": "watching"
-      }
-    }
-  }'
-  # 응답(검색 결과가 나온다)
-  {
-    ...
-    "hits" : {
-      "total" : {
-        "value" : 1,
-        "relation" : "eq"
-      },
-      "max_score" : 0.2876821,
-      "hits" : [
-        {
-          "_index" : "nation2",
-          "_type" : "_doc",
-          "_id" : "1",
-          "_score" : 0.2876821,
-          "_source" : {
-            "hobby" : "watching movie"
-          }
-        }
-      ]
-    }
-  }
-  
-  
-  # keyword 필드 검색
-  $ curl -XGET "localhost:9200/test/_search" -H 'Content-type: application/json' -d '
-  {
-    "query":{
-      "match": {
-        "hobby.keyword": "watching"
-      }
-    }
-  }'
-  # 검색 결과가 나오지 않는다.
-  
-  
-  # 아래와 같이 검색해야 결과가 나온다.
-  $ curl -XGET "localhost:9200/test/_search" -H 'Content-type: application/json' -d '
-  {
-    "query":{
-      "match": {
-        "hobby.keyword": "watching movie"
-      }
-    }
-  }'
-  ```
-  
-  
-
-
-
-- 숫자
-
-  - ES는 JAVA에서 사용되는 숫자 타입들을 지원한다.
-  - 또한 half_float, scaled_float과 같이 ES에서만 사용되는 타입들도 존재한다.
-  - 종류
-    - JAVA에서 사용되는 숫자 타입들: long, integer, short, byte, double, float
-    - ES에서만 지원하는 숫자 타입들: half_float, scaled_float
-
-  - 사용 가능한 옵션들
-    - `"index"`, `"doc_values"`, `"boost"` 등의 옵션들은 text, keyword 필드의 옵션들과 동일하다.
-    - `"cource": <true | false>`: 디폴트는 true이며, 숫자 필드들은 기본적으로 숫자로 이해될 수 잇는 값들은 숫자로 변경해서 저장한다. 이를 false로 설정하면 정확한 타입으로 입력되지 않으면 오류가 발생한다. 
-    - `"null_value": 숫자값`: 필드값이 입력되지 않거나 null인 경우 해당 필드의 디폴트 값을 지정한다. 
-    - `"ignore_malformed": <true | false>`: 디폴트는 false로, 기본적으로 숫자 필드에 숫자가 아닌 불린 값이 들어오면 ES는 오류를 반환하는데, true로 설정하면 숫자가 아닌 값이 들어와도 도큐먼트를 정상적으로 저장한다. 해당 필드의 값은 `_source`에만 저장되고 겁색이나 집계에는 무시된다.
-    - `"scaling_fator": 10의 배수`: scaled_float을 사용하려면 필수로 지정해야 하는 옵션으로 소수점 몇 자리까지 저장할지를 지정한다. 12.345라는 값을 저장하는 경우 `scaling_fator:10`과 같이 설정하면 실제로는 12.3이 저장되고, `scaling_fator:100`과 같이 설정했으면 12.34가 저장된다.
-
-  - 전처리된 데이터가 아니면 항상 `_source`의 값은 변경되지 않는다.
-    - `"cource": true`로 "4.5"라는 숫자가 integer 필드에 정상적으로 저장 되어도 `_source`의 값은 그대로 "4.5"이다.
-    - `"null_value"`를 설정해도 역시 마찬가지로 `_source`에는 여전히 null로 표시된다.
-  - `_source`에 저장된 값과 필드에 저장된 값이 다를 수 있다.
-    - 예를 들어 byte 타입을 가진 필드에 4.5를 저장하는 경우에 byte는 오직 정수만을 저장하므로 4가 들어가게 된다.
-    - 그러나 `_source`에는 4.5로 값이 들어가 있다.
-    - 이 때 집계를 위해 3보다 크고 4.1보다 작은 값을 검색하면 4.5는 4.1보다 큼에도 필드에는 4로 저장되어 있으므로 검색이 되게 된다.
-    - 이러한 이유로 숫자 필드를 동적으로 생성하는 것은 매우 위험하다.
-
-
-
-- 날짜
-
-  - ES에서 날짜 타입은 ISO8601 형식을 따라 입력한다.
-    - "2021-03-18"
-    - "2021-03-18T10:08:40"
-    - "2021-03-18T10:08:40+09:00"
-    - "2021-03-18T10:08:40.428Z"
-    - ISO8601 형식을 따르지 않을 경우 text,keyword로 저장된다.
-  - ISO8601외에도 long 타입 정수인 epoch_millis 형태의 입력도 가능하다.
-    - epoch_millis는 1970-01-01 00:00:00부터의 시간을 밀리초 단위로 카운트 한 값이다.
-    - 필드가 date 형으로 정의 된 이후에는 long 타입의 정수를 입력하면 날짜 형태로 저장이 가능하다.
-    - epoch_millis외에도 epoch_second의 사용이 가능하다.
-    - 사실 날짜 필드는 내부에서는 모두 long 형태의 epoch_millis로 저장한다.
-  - 그 외에 사용 가능한 포맷들
-    - 매핑의 format 형식만 지정 해 놓으면 지정된 어떤 형식으로도 색인 및 쿼리가 가능하다.
-    - basic_date, strict_date_time과 같이 미리 정의 된 포맷들
-    - [joda.time.format](https://www.joda.org/joda-time/apidocs/org/joda/time/format/DateTimeFormat.html) 심볼을 사용하여 지정 가능하다.
-    - 정의된 포맷들은  [Elastic 홈페이지의 공식 도큐먼트](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-date-format.html#built-in-date-formats)에서 볼 수 있으며 joda 심볼 기호들은 다음과 같다.
-
-  | 심볼 | 의미                 | 예시) 2019-09-12T17:13:07.428+09.00 |
-  | ---- | -------------------- | ----------------------------------- |
-  | yyyy | 년도                 | 2019                                |
-  | MM   | 월-숫자              | 09                                  |
-  | MMM  | 월-문자(3자리)       | Sep                                 |
-  | MMMM | 월-문자(전체)        | September                           |
-  | dd   | 일                   | 12                                  |
-  | a    | 오전/오후            | PM                                  |
-  | HH   | 시각(0~23)           | 17                                  |
-  | kk   | 시각(01-24)          | 17                                  |
-  | hh   | 시각(01-12)          | 05                                  |
-  | h    | 시각(1-12)           | 5                                   |
-  | mm   | 분(00~59)            | 13                                  |
-  | m    | 분(0~59)             | 13                                  |
-  | ss   | 초(00~59)            | 07                                  |
-  | s    | 초(0~59)             | 7                                   |
-  | SSS  | 밀리초               | 428                                 |
-  | Z    | 타임존               | +0900/+09:00                        |
-  | e    | 요일(숫자 1:월~7:일) | 4                                   |
-  | E    | 요일(텍스트)         | Thu                                 |
-
-  - 사용 가능한 옵션들
-    - `"doc_values"`, `"index"`, `"null_value"`, `"ignore_malformed"` 옵션들은 문자열, 숫자 필드와 기능이 동일하다.
-    - `"format": "문자열 || 문자열..."`: 입력 가능한 날짜 형식을 ||로 구분해서 입력한다.
-
-
-
-- boolean
-  - true, false 두 가지 값을 갖는 필드 타입이다.
-  - "true"와 같이 문자열로 입력되어도 boolean으로 해석되어 저장된다.
-  - 불리언 필드를 사용할 때는 일반적으로 term 쿼리를 이용해서 검색을 한다.
-  - 사용 가능한 옵션들
-    - `"doc_values"`, `"index"` 옵션들은 문자열, 숫자 필드와 기능이 동일하다.
-    - `"null_value": true|false`: 필드가 존재하지 않거나 값이 null일 때 디폴트 값을 지정한다. 지정하지 않으면 불리언 필드가 없가나 값이 null인 경우 존재하지 않는 것으로 처리되어 true/false 모두 쿼리나 집계에 나타나지 않는다.
-
-
-
-- Object와 Nested
-
-  - JSON에서는 한 필드 안에 하위 필드를 넣는 object, 즉 객체 타입의 값을 사용할 수 있다.
-    - 보통은 한 요소가 여러 하위 정보를 가지고 있는 경우 object 타입 형태로 사용한다.
-  - object 필드를 선언할 때는 다음과 같이 `"properties"`를 입력하고 그 아래에 하위 필드 이름과 타입을 지정한다.
-
-  ```bash
-  $ curl -XPUT 'localhost:9200/movies?pretty' -H 'Content-Type: application/json' -d '{
-    "mappings": {
-      "properties": {
-        "characters": {
-          "properties": {
-            "name": {
-              "type": "text"
-            },
-            "age": {
-              "type": "byte"
-            },
-            "side": {
-              "type": "keyword"
-            }
-          }
-        }
-      }
-    }
-  }
-  ```
-
-  - object 필드를 쿼리로 검색하거나 집계를 할 때는 `.`를 이용해서 하위 필드에 접근한다.
-
-  ```bash
-  $ curl "http://localhost:9200/movie/_search" -H 'Content-Type: application/json' -d'
-  {  
-  	"query": {    
-  		"match": { 
-  			"characters.name": "Iron Man" 
-          }
-      }
-  }'
-  ```
-  
-  - Nested
-    - 만약에 object 타입 필드에 있는 여러 개의 object 값들이 서로 다른 역 색인 구조를 갖도록 하려면 nested 타입으로 지정해야 한다.
-    - nested 타입으로 지정하려면 매핑이 다음과 같이 `"type":"nested"`를 명시한다.
-    - 다른 부분은 object와 동일하다.
-  
-  ```bash
-  curl -XPUT "http://localhost:9200/movie" -H 'Content-Type: application/json' -d'{
-  "mappings":{    
-    "properties":{      
-      "characters":{        
-        "type": "nested",        
-          "properties": {          
-            "name": {            
-              "type": "text"          
-            },          
-            "side": {            
-              "type": "keyword"          
-            }        
-          }      
-        }    
-      }   
-    }
-  }'
-  ```
-  
-  - nested 필드를 검색 할 때는 반드시 nested 쿼리를 써야 한다. 
-    - nested 쿼리 안에는 path 라는 옵션으로 nested로 정의된 필드를 먼저 명시하고 그 안에 다시 쿼리를 넣어서 입력한다.
-    - nested 쿼리로 검색하면 nested 필드의 내부에 있는 값 들을 모두 별개의 도큐먼트로 취급한다.
-    - object 필드 값들은 실제로 하나의 도큐먼트 안에 전부 포함되어 있다.
-    - nested 필드 값들은 내부적으로 별도의 도큐먼트로 분리되어 저장되며 쿼리 결과에서 상위 도큐먼트와 합쳐져서 보여지게 된다.
-
-
-
-- histogram
-  - 도수분포표를 그림으로 나타낸것
-  - ES에서의 histogram은 사전 집계된 숫자 데이터들을 저장하는 필드이다.
-  - 두 쌍의 배열로 정의된다.
-    - `values` 배열은 히스토그램의 버킷을 나타내는 `double` 타입의 숫자값들로, 반드시 오름차순으로 정렬되어 있어야 한다.
-    - `counts` 배열은 각 버킷에 얼마나 많은 값들이 들어 있는지를 나타내는 `integer` 타입의 숫자값들로, 0 이상의 정수여야 한다.
-    - 두 배열의 각 요소는 위치를 기반으로 대응하므로, 두 배열의 길이는 항상 같아야 한다.
-
-
-
-- Geo
-  - 위치 정보를 저장할 수 있는 Geo Point와 Geo Shape 같은 타입들이 있다.
-  - Geo Point
-    - 위도(latitude)와 경도(longitude) 두 개의 실수 값을 가지고 지도 위의 한 점을 나타내는 값이다.
-  - Geo point는 다양한 방법으로 입력이 가능하다.
-
-
-
 # Elaistcsearch 설치하고 실행하기
 
 > https://www.elastic.co/kr/downloads/elasticsearch
@@ -1092,6 +808,613 @@
   ```
 
 
+
+# 기본적인 데이터 처리
+
+## 새로운 데이터 색인
+
+- curl 명령의 기본 형식
+
+  ```bash
+  curl -X 메소드 'http://연결할 일레스틱 서치 노드의 호스트명:연결할 포트/색인명/_doc/문서id'
+  ```
+
+  - `-X` 
+    - request시 사용할 메소드의 종류를 기술한다. 메소드와 띄어 써도 되지만 붙여 써도 된다.
+    - 새로운 문서 입력은 PUT, 기존 문서의 수정은 POST, 삭제는 DELETE, 조회는 GET을 사용한다.
+    - `-XGET`의 경우 생략이 가능하다.
+
+  - _doc
+    - ES5 버전 이하에서는 멀티 타입을 지원해서 하나의 인덱스 안에 다양한 타입의 데이터를 저장할 수 있었다.
+    - ES6  버전부터는 하나의 인덱스에 하나의 타입만 저장할 수 있게 되었기에 본래 타입이 올 자리에 _doc을 입력한다.
+
+
+
+- 삽입
+
+  - curl을 활용하여 삽입
+    - 파라미터로 들어간 `pretty` 또는 `pretty-true`는 JSON  응답을 더 보기 좋게 해준다.
+    - `-H` 옵션은 header를 지정한다.
+    - `-d` 옵션은 body를 지정한다.
+
+  ```bash
+  $ curl -XPUT 'localhost:9200/company/_doc/1?pretty' -H 'Content-Type: application/json' -d '{
+  "name":"Theo",
+  "age":"28"
+  }'
+  ```
+
+  - 응답
+    - 응답은 색인, 타입, 색인한 문서의 ID를 포함한다.
+
+  ```json
+  {
+    "_index" : "company",
+    "_type" : "colleague",
+    "_id" : "1",
+    "_version" : 1,
+    "result" : "created",  // 새로 생성한 것이므로 created로 뜨지만, 수정할 경우 updated라고 뜬다.
+    "_shards" : {
+      "total" : 2,
+      "successful" : 1,
+      "failed" : 0
+    },
+    "_seq_no" : 0,
+    "_primary_term" : 1
+  }
+  ```
+
+  - POST 메서드로도 추가가 가능하다.
+    - 둘의 차이는 POST의 경우 도큐먼트id를 입력하지 않아도 자동으로 생성하지만 PUT은 자동으로 생성하지 않는다는 것이다.
+
+  - 실수로 기존 도큐먼트가 덮어씌워지는 것을 방지하기 위해 입력 명령어에 `_doc` 대신 `_create`를 사용해서 새로운 도큐먼트의 입력만 허용하는 것이 가능하다.
+    - 이 경우 이미 있는 도큐먼트id를 추가하려 할 경우 오류가 발생한다.
+    - 이미 위에서 도큐먼트id가 1인 도큐먼트를 추가했으므로 아래 예시는 오류가 발생한다. 
+
+  ```json
+  PUT company/_create/1
+  
+  {
+      "nickname":"Theo",
+      "message":"안녕하세요!"
+  }
+  ```
+
+
+
+
+- 색인 과정
+
+  ![index_process](Elasticsearch_part1.assets/index_process.png)
+
+
+
+- 색인 생성과 매핑 이해하기(ES6부터는 하나의 인덱스에 하나의 타입만 저장할 수 있도록 변경)
+
+  - curl 명령은 색인과 매핑타입을 자동으로 생성한다.
+    - 위 예시에서 company라는 색인과 colleague라는 매핑 타입을 생성한 적이 없음에도 자동으로 생성되었다.
+    - 수동으로 생성하는 것도 가능하다.
+  - 색인을 수동으로 생성하기
+
+  ```bash
+  $ curl -XPUT 'localhost:9200/new-index'
+  ```
+
+  - 수동 생성의 응답
+
+  ```json
+  {
+    "acknowledged" : true,
+    "shards_acknowledged" : true,
+    "index" : "test-index"
+  }
+  ```
+
+  - 스키마 확인
+    - 스키마를 보기 위해 url에 `_mapping`을 추가한다.
+    - ES 6.x 이상의 경우 _doc타입이 아닌 타입을 따로 지정했을 경우 아래와 같이 `include_type_name=true` 또는 `include_type_name`을 파라미터로 넣어야 한다.
+
+  ```bash
+  $ curl 'localhost:9200/company/_mapping/colleague?include_type_name&pretty'
+  ```
+
+  - 응답
+    - 색인 명, 타입, 프로퍼티 목록, 프로퍼티 옵션 등의 데이터가 응답으로 넘어 온다.
+
+  ```json
+  {
+    "company" : {
+      "mappings" : {
+        "colleague" : {
+          "properties" : {
+            "age" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
+            },
+            "name" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  ```
+
+
+
+## 데이터 검색
+
+- 검색하기
+
+  - 검색을 위해 데이터를 더 추가
+
+  ```bash
+  $ curl -XPUT 'localhost:9200/company/colleague/2?pretty' -H 'Content-Type: application/json' -d '{
+  "name":"Kim",
+  "age":"26"
+  }'
+  $ curl -XPUT 'localhost:9200/company/colleague/3?pretty' -H 'Content-Type: application/json' -d '{
+  "name":"Lee",
+  "age":"27"
+  }'
+  $ curl -XPUT 'localhost:9200/company/colleague/4?pretty' -H 'Content-Type: application/json' -d '{
+  "name":"An",
+  "age":"27"
+  }'
+  ```
+
+  - 데이터 검색하기
+    - `q`파라미터는 검색할 내용이 들어간다.
+    - 특정 필드에서만 찾고자 할 때는 `q=name:Kim`과 같이 작성하면 된다.
+    - 아래와 같이 필드를 지정해주지 않을 경우 `_all`이라는 모든 필드의 내용을 색인하는 필드가 자동으로 들어가게 된다.
+    - `_source` 파라미터는 특정 필드만 반환되도록 한다(유사한 파라미터로 `stored_fileds`가 있다).
+    - `size` 파라미터는 일치하는 데이터들 중 반환할 데이터의 수를 지정한다(기본값은 10이다).
+
+  ```json
+  $ curl "localhost:9200/company/colleague/_search?q=Kim&_source=name&size=1&pretty"
+  ```
+
+
+
+- 어디를 검색할지 설정하기
+
+  - 다수의 타입에서 검색하기
+    - url에서 타입을 콤마로 구분하여 검색하면 된다.
+    - ES 6.X 부터 매핑 타입이 사라짐에 따라 쓸 일이 없는 기능이 되었다.
+
+  ```bash
+  $ curl "localhost:9200/company/colleague, department/_search?q=Kim&_source=name&size=1&pretty"
+  ```
+
+  - 모든 타입에서 검색하기
+    - 타입을 지정하지 않고 검색하면 된다.
+    - 역시 ES 6.X 부터 매핑 타입이 사라짐에 따라 쓸 일이 없는 기능이 되었다.
+
+  ```bash
+  $ curl "localhost:9200/company/_search?q=Kim&_source=name&size=1&pretty"
+  ```
+
+  - 다수의 색인을 검색하기
+    - url에서 인덱스를 콤마로 구분하여 검색하면 된다.
+    - 만일 검색하려는 색인이 없는 경우 에러가 발생하는데 에러를 무시하려면 `ignore_unavailable` 플래그를 주면 된다.
+
+  ```bash
+  $ curl "localhost:9200/company,fruits/_search?q=Kim&_source=name&size=1&pretty"
+  
+  # 없는 인덱스도 포함해서 검색하기
+  $ curl "localhost:9200/company,fruits/_search?q=Kim&_source=name&size=1&pretty&ignore_unavailable"
+  ```
+
+  - 모든 색인을 검색하기
+    - url의 색인이 올 자리에 `_all`을 입력하거나 아예 색인을 빼면 모든 색인에서 검색한다.
+
+  ```bash
+  $ curl "localhost:9200/_all/_search?q=Kim&_source=name&size=1&pretty"
+  
+  $ curl "localhost:9200/_search?q=Kim&_source=name&size=1&pretty"
+  ```
+
+
+
+- 응답 내용
+
+  - 요청
+
+  ```bash
+  $ curl "localhost:9200/company/colleague/_search?q=Kim&_source=name&size=1&pretty"
+  ```
+
+  - 응답
+
+  ```json
+  {
+    // 요청이 얼마나 걸렸으며, 타임아웃이 발생했는가
+    "took" : 1,
+    "timed_out" : false,
+    // 몇 개의 샤드에 질의 했는가
+    "_shards" : {
+    "total" : 1,
+      "successful" : 1,
+      "skipped" : 0,
+      "failed" : 0
+    },
+    "hits" : {
+      // 일치하는 모든 문서에 대한 통계
+      "total" : {
+        "value" : 1,
+        "relation" : "eq"
+      },
+      "max_score" : 0.6931471,
+      // 결과 배열
+      "hits" : [
+        {
+          "_index" : "company",
+          "_type" : "colleague",
+          "_id" : "2",
+          "_score" : 0.6931471,
+          "_source" : {
+            "name" : "Kim"
+          }
+        }
+      ]
+    }
+  }
+  ```
+
+  - 시간
+    - `took` 필드는 ES가 요청을 처리하는 데 얼마나 걸렸는지 말해준다(단위는 밀리 초).
+    - `timed_out` 필드는 검색이 타임아웃 되었는지 보여준다.
+    - 기본적으로 검색은 절대로 타임아웃이 되지 않지만, 요청을 보낼 때`timeout` 파라미터를 함께 보내면 한계를 명시할 수 있다.
+    - `$ curl "localhost:9200/_search?q=Kim&timeout=3s"`와 같이 작성할 경우 3초가 지나면 타임아웃이 발생하고 `timed_out`필드의 값은 true가 된다.
+    - 타임아웃이 발생할 경우 타임아웃될 때까지의 결과만 반환된다.
+  - 샤드
+    - 총 몇 개의 샤드에 질의 했고 성공한 것과 스킵한 것, 실패한 것에 대한 정보를 반환한다.
+    - 만일 특정 노드가 이용 불가 상태라 해당 노드의 샤드를 검색하지 못했다면 질의에 실패한 것이 된다.
+  - 히트 통계
+    - `total`은 전체 문서 중 일치하는 문서 수를 나타낸다.
+    - `total`은 `size`를 몇으로 줬는지와 무관하게 일치하는 모든 문서의 수를 표시해주므로 total과 실제 반환 받은 문서의 수가 다를 수 있다.
+    - `max_score`는 일치하는 문서들 중 최고 점수를 볼 수 있다.
+  - 결과 문서
+    - 히트 배열에 담겨 있다.
+    - 일치하는 각 문서의 색인, 타입, ID, 점수 등의 정보를 보여준다.
+
+
+
+- 쿼리로 검색하기
+
+  - 지금까지는 URI 요청으로 검색했다.
+    - 간단한 검색에는 좋지만 복잡한 검색에는 적절치 못한 방법이다.
+  - `query_string` 쿼리 타입으로 검색하기
+    - 쿼리스트링 타입의 쿼리를 실행하는 명령문이다.
+    - `default_field`는 검색을 실행할 필드를 특정하기 위해 사용한다.
+    - `default_operator`는 검색할 단어들이 모두 일치하는 문서를 찾을 지, 하나라도 일치하는 문서를 찾을지를 설정한다(기본값은 OR로 하나라도 일치하는 문서는 모두 찾는다).
+    - 위 두 옵션(`default_field`, `default_operator`)을 다음과 같이 쿼리 스트링 자체에 설정하는 것도 가능하다.
+    - `"query":"name:Kim AND name:Lee"`
+
+  ```bash
+  $ curl 'localhost:9200/company/colleague/_search?pretty' -H 'Content-Type: application/json' -d '{
+    "query":{
+      "query_string":{
+        "query":"Kim",
+        "default_field":"name",
+        "default_operator":"AND"
+      }
+    }
+  }'
+  ```
+
+  - 응답
+
+  ```json
+  {
+    "took" : 1,
+    "timed_out" : false,
+    "_shards" : {
+      "total" : 1,
+      "successful" : 1,
+      "skipped" : 0,
+      "failed" : 0
+    },
+    "hits" : {
+      "total" : {
+        "value" : 1,
+        "relation" : "eq"
+      },
+      "max_score" : 0.6931471,
+      "hits" : [
+        {
+          "_index" : "company",
+          "_type" : "colleague",
+          "_id" : "2",
+          "_score" : 0.6931471,
+          "_source" : {
+            "name" : "Kim",
+            "age" : "26"
+          }
+        }
+      ]
+    }
+  }
+  ```
+
+
+
+- 필터 사용(ES 6.X 부터 사용 불가)
+
+  - 필터는 결과에 점수를 반환하지 않는다.
+    - 쿼리는 결과와 함께 각 결과의 점수를 반환한다.
+    - 필터는 오직 키워드가 일치하는지만 판단하여 일치하는 값들을 반환한다.
+  - 필터 검색
+
+  ```bash
+  $ curl 'localhost:9200/_search?pretty' -H 'Content-Type: application/json' -d '{
+    "query":{
+    	"filtered":{
+    	  "filter":{
+      	"term" :{
+            "name":"Kim"
+          }
+    	  }
+    	}    
+    }
+  }'
+  ```
+
+
+
+- ID로 문서 가져오기
+
+  - 검색은 준실시간인데 반해 문서 ID로 문서를 찾는 것은 실시간이다.
+  - 특정 문서를 가져오려면 문서가 속한 색인과 타입, 그리고 ID를 알아야 한다.
+    - 그러나 타입은 현재 사라졌기 때문에 type 자리에 `_doc`을 입력하여 검색한다.
+    - 타입을 입력해도 검색은 되지만 경고문이 뜬다.
+
+  ```json
+  // _doc 사용
+  $ curl 'localhost:9200/company/_doc/1?pretty'
+  
+  // 타입 사용
+  $ curl 'localhost:9200/company/colleague/1?pretty'
+  ```
+
+  - 응답
+    - 만일 찾는 문서가 존재하지 않으면 아래 `found`는 false가 된다.
+
+  ```json
+  {
+    "_index" : "company",
+    "_type" : "_doc",
+    "_id" : "1",
+    "_version" : 5,
+    "_seq_no" : 5,
+    "_primary_term" : 1,
+    "found" : true,
+    "_source" : {
+      "name" : "Theo",
+      "age" : "28"
+    }
+  }
+  ```
+
+
+
+
+
+## 데이터 수정, 삭제
+
+- 삭제
+
+  - 도큐먼트 또는 인덱스 단위의 삭제가 가능하다.
+    - 도큐먼트를 삭제하면 `"result":"deleted"`가 반환된다.
+    - 도큐먼트는 삭제되었지만 인덱스는 남아있는 경우, 삭제된 도큐먼트를 조회하려하면 `"found":false`가 반환된다.
+    - 삭제된 인덱스의 도큐먼트를 조회하려고 할 경우(혹은 애초에 생성된 적 없는 도큐먼트를 조회할 경우) 에러가 반환된다.
+
+  - 도큐먼트를 삭제하는 경우
+
+  ```json
+  DELETE office/_doc/1
+  ```
+
+  - 도큐먼트 삭제의 응답
+
+  ```json
+  {
+      "_index": "office",
+      "_type": "_doc",
+      "_id": "1",
+      "_version": 2,
+      "result": "deleted",
+      "_shards": {
+          "total": 2,
+          "successful": 1,
+          "failed": 0
+      },
+      "_seq_no": 1,
+      "_primary_term": 1
+  }
+  ```
+
+  - 삭제된 도큐먼트를 조회
+
+  ```json
+  GET office/_doc/1
+  ```
+
+  - 삭제된 도큐먼트를 조회했을 경우의 응답
+
+  ```json
+  {
+      "_index": "office",
+      "_type": "_doc",
+      "_id": "1",
+      "found": false
+  }
+  ```
+
+  - 인덱스를 삭제
+
+  ```json
+  DELETE office
+  ```
+
+  - 인덱스 삭제의 응답
+
+  ```json
+  {
+      "acknowledged": true
+  }
+  ```
+
+  - 삭제된 인덱스의 도큐먼트를 조회
+
+  ```json
+  GET office/_doc/1
+  ```
+
+  - 응답
+
+  ```json
+  {
+      "error": {
+          "root_cause": [
+              {
+                  "type": "index_not_found_exception",
+                  "reason": "no such index [office]",
+                  "resource.type": "index_expression",
+                  "resource.id": "office",
+                  "index_uuid": "_na_",
+                  "index": "office"
+              }
+          ],
+          "type": "index_not_found_exception",
+          "reason": "no such index [office]",
+          "resource.type": "index_expression",
+          "resource.id": "office",
+          "index_uuid": "_na_",
+          "index": "office"
+      },
+      "status": 404
+  }
+  ```
+
+  - 전체 도큐먼트 삭제하기
+    - `_delete_by_query`를 이용하여 모든 도큐먼트가 매치되도록해서 삭제한다.
+
+  ```bash
+  POST <인덱스명>/_delete_by_query
+  {
+    "query": {
+      "match_all": {}
+    }
+  }
+  ```
+
+  
+
+- 수정
+
+  - 위에서 삭제한 데이터를 다시 생성했다고 가정
+  - 수정 요청
+
+  ```json
+  POST 인덱스이름/_delete_by_query
+  
+  {
+      "nickname":"Oeht",
+      "message":"!요세하녕안"
+  }
+  ```
+
+  - 응답
+
+  ```json
+  {
+      "_index": "office",
+      "_type": "_doc",
+      "_id": "1",
+      "_version": 2,
+      "result": "updated",
+      "_shards": {
+          "total": 2,
+          "successful": 1,
+          "failed": 0
+      },
+      "_seq_no": 1,
+      "_primary_term": 1
+  }
+  ```
+
+  - 수정할 때 특정 필드를 뺄 경우 해당 필드가 빠진 채로 수정된다.
+    - POST 메서드로도 수정이 가능한데 POST 메서드를 사용해도 마찬가지다.
+
+  ```json
+  // 요청
+  POST office/_doc/1
+  
+  {
+      "nickname":"Theo"
+  }
+  
+  // 응답
+  {
+      "_index": "office",
+      "_type": "_doc",
+      "_id": "1",
+      "_version": 2,
+      "_seq_no": 9,
+      "_primary_term": 1,
+      "found": true,
+      "_source": {
+          // message 필드가 사라졌다.
+          "nickname": "Theo"
+      }
+  }
+  ```
+
+  - `_update`
+    - `_update`를 활용하면 일부 필드만 수정하는 것이 가능하다.
+    - 업데이트 할 내용에 `"doc"`이라는 지정자를 사용한다.
+
+  ```json
+  // 도큐먼트id가 2인 새로운 도큐먼트를 생성했다고 가정
+  POST office/_update/2
+  
+  {
+      "doc":{
+          "message":"반갑습니다.!"
+      }
+  }
+  ```
+
+  - 응답
+
+  ```json
+  {
+      "_index": "office",
+      "_type": "_doc",
+      "_id": "2",
+      "_version": 2,
+      "_seq_no": 0,
+      "_primary_term": 1,
+      "found": true,
+      "_source": {
+          "nickname": "Oeht",
+          "message": "반갑습니다!"
+      }
+  }
+  ```
 
 
 
