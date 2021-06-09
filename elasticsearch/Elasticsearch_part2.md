@@ -511,7 +511,7 @@
     - 특정 노드에 배치하고자 한다면 `allocate_replica` 명령을 사용하여 하나씩 배치해야 한다.
 
   ```bash
-  $ curl -XPUT "localhost:9200/_cluster/reroute/retry_failed?pretty" -H 'Content-type:application/json'
+  $ curl -XPOST "localhost:9200/_cluster/reroute?retry_failed?pretty" -H 'Content-type:application/json'
   ```
 
 

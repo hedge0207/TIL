@@ -203,13 +203,19 @@
   $ curl -XGET 'http://localhost:9200/_cat/shards | grep UNASSIGNED'
   ```
 
-  - 미할달 샤드가 있을 경우, `h` 옵션을 통해 미할당 된 원인을 확인할 수 있다.
+  - 미할당 샤드가 있을 경우, `h` 옵션을 통해 미할당 된 원인을 확인할 수 있다.
     - `클러스터 운영하기`에서 살펴본  `explain`을 통해서도 확인이 가능하다.
     - 각 원인에 대한 설명은 [공식 가이드](https://www.elastic.co/guide/en/elasticsearch/reference/current/cat-shards.html#cat-shards-query-params) 참고
 
   ```bash
   # 어떤 인덱스의 어떤 샤드가 왜 미할당 상태인지 확인하는 명령어
   $ curl -XGET 'http://localhost:9200/_cat/shards?h=index,shard,prirep,unassigned.reason | grep -i UNASSIGNED'
+  ```
+  
+  - 보다 정확한 원인을 알려주는 API
+  
+  ```bash
+  $ curl -XGET 'http://localhost:9200/_cluster/allocation/explain'
   ```
 
 
