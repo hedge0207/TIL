@@ -614,6 +614,8 @@
   # refresh_interval을 30초로 변경하는 명령어
   $ curl -XPUT 'localhost:9200/company/_settings?pretty' -H 'Content-Type: application/json' -d '{"refresh_interval":30s}'
   ```
+  
+  - analyzer는 동적으로 추가가 불가능하다.
 
 
 

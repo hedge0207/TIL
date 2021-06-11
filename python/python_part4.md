@@ -247,11 +247,11 @@
 
 
 
-- os
+## os
 
-  - 환경 변수나 디렉토리, 파일 등의 OS 자원을 제어할 수 있게 해주는 모듈이다.
+- 환경 변수나 디렉토리, 파일 등의 OS 자원을 제어할 수 있게 해주는 모듈이다.
   - 내 시스템의 환경 변수 값을 알고 싶을 때
-    - 딕셔너리이기에 key로 접근 가능하다.
+  - 딕셔너리이기에 key로 접근 가능하다.
 
   ```python
   import os
@@ -285,7 +285,77 @@
   os.system("mkdir new_folder") # new_folder가 현재 디렉토리에 생성된다.
   ```
 
+
+
+
+- os.path
+
+  - 파일, 경로와 관련된 모듈
+  - isdir: 경로가 디렉토리면 True, 아니면  False를 반환한다.
+
+  ```python
+  import os
+  print(os.path.isdir('/User/Desktop'))	# True
+  ```
+
+  - abspath: 절대경로를 반환한다.
+
+  ```python
+  import os
+  print(os.path.abspath('test')) # C:\Users\User\test\test
+  ```
+
+  - basename: 상대 경로를 반환한다.
+
+  ```bash
+  import os
+  print(os.path.basename('/Users/User/theo/test')) # test
+  ```
+
+  - exists: 해당 경로가 존재하면 True, 아니면 False를 반환한다.
+
+  ```bash
+  import os
+  print(os.path.exists('/Users/User/theo/test'))	# True
+  ```
+
+  - join: 입력된 문자열들을 OS의 형식에 맞게 하나의 경로로 이어준다.
+
+  ```python
+  import os
+  print(os.path.join("/Users/User/theo/test", "test.py")) # /Users/User/theo/test\test.py
+  ```
+
+  - splitext: 파일명과 확장자를 분리하여 튜플로 반환한다.
+
+  ```python
+  import os
+  print(os.path.splitext("/c/Users/User/test/test.py")) # ('/c/Users/42Maru/theo/test/test', '.py')
+  ```
+
+  - getsize: 파일 크기를 바이트 단위로 반환한다.
+
+  ```bash
+  import os
+  print(os.path.getsize('/Users/User/theo/test')) # 4096
+  ```
+
+  - getmtime: 최근 변경 시간을 반환한다.
+
+  ```python
+  import os
+  print(os.path.getmtime('/Users/User/theo/test')) # 1623374338.4626312
+  ```
+
   
+
+
+
+
+
+
+
+## etc
 
 - shutil
 
