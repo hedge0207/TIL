@@ -497,7 +497,7 @@
 
 
 
-## bool query
+### bool query
 
 - bool query
 
@@ -671,6 +671,189 @@
 
 
 
+
+
+### Function score query
+
+- Function score query
+
+  - 쿼리를 통해 검색 된 문서들의 score를 조정할 수 있게 해준다.
+  - score funcion이 score를 계산하는데 많은 자원을 소모하고, 문서 집합의 점수를 계산하는데 필요한 자원이 충분한 경우에 유용할 수 있다.
+  - function을 하나만 사용한 예시
+
+  ```bash
+  GET /_search
+  {
+    "query": {
+      "function_score": {
+        "query": { "match_all": {} },
+        "boost": "5",
+        "random_score": {}, 
+        "boost_mode": "multiply"
+      }
+    }
+  }
+  ```
+
+  - 두 개 이상의 function을 사용하는 것도 가능하다.
+    - 이 경우 document가 주어진 filter와 일치할 때만 해당 함수에서 정의 된 방식으로 score를 계산한다.
+    - 만일 아무런 필터도 주지 않을 경우 `match_all`을 준 것과 동일한 결과가 나오게 된다.
+
+  ```bash
+  GET /_search
+  {
+    "query": {
+      "function_score": {
+        "query": { "match_all": {} },
+        "boost": "5", 
+        "functions": [
+          {
+            "filter": { "match": { "test": "bar" } },
+            "random_score": {}, 
+            "weight": 23
+          },
+          {
+            "filter": { "match": { "test": "cat" } },
+            "weight": 42
+          }
+        ],
+        "max_boost": 42,
+        "score_mode": "max",
+        "boost_mode": "multiply",
+        "min_score": 42
+      }
+    }
+  }
+  ```
+
+  - 아래와 같은 score function을 제공한다.
+    - script_score
+    - weight
+    - random_score
+    - field_value_factor
+    - decay functions: gauss, linear, exp
+
+
+
+- 파라미터
+  - `weight`
+    - 점수는 각기 다른 척도로 계산 될 수 있으며, 때때로 점수에 각기 다른 함수를 적용하길 원할 수 있다.
+    - 따라서 이를 위해 각 함수가 계산하는 점수를 조정하기 위해 `weight`를 사용한다.
+    - `weigth`는 함수마다 하나씩 선언되며, 각각의 `weight`는 함수가 계산한 점수와 곱해진다.
+    - 만일 함수의 선언 없이 `weigth`만 정의할 경우, `weight`는 `weight` 그 자체를 반환하는 함수처럼 동작한다.
+  - `score_mode`
+    - function에 의해 계산된 score 값들이 어떻게 결합될지를 결정하는 파라미터
+    - 만일 scocre_mode가 avg로 설정되었을 경우에, 점수들은 weighted average로 결합된다.
+    - 예를 들어 두 개의 함수가 각기 1, 2를 점수로 반환하였고, 각각의 weight가 3, 4로 주어졌다면, 점수는 `(1*3+2*4)/2`가 아닌`(1*3+3*4)/(3+4)`로 계산된다.
+    - multifly: 점수를 곱한다(기본값).
+    - sum: 점수를 합산한다.
+    - avg: 점수의 평균을 낸다.
+    - first: filter와 일치하는 첫 번째 함수를 적용한다.
+    - max: 점수들 중 최댓값을 사용한다.
+    - min: 점수들 중 최솟값을 사용한다.
+  - `max_boost`
+    - 계산된 점수의 최댓값을 설정할 수 있다.
+    - 만일 계산 된 점수가 `max_boost`에 설정한 값 보다 높을 경우  점수는 `max_boost`에 설정한 값이 되게 된다.
+    - 기본 값은 FLT_MAX(실수 형식으로 포함할 수 있는 최댓값)이다.
+  - `boost_mode`
+    - 계산된 점수가 query의 점수와 어떻게 결합 될 것인지를 결정하는 파라미터
+    - multifly: 쿼리 score와 function score를 곱한다(기본값).
+    - replace: function score를 사용한다.
+    - sum: 쿼리 score와 function score를 더한다.
+    - avg: 쿼리 score와 function score의 평균을 낸다.
+    - max: 점수들 중 최댓값을 사용한다.
+    - min: 점수들 중 최솟값을 사용한다.
+  - `min_score`
+    - 기본적으로, 조정 된 점수는 어떤 문서가 match될지에 영향을 주지 않는다.
+    - `min_score`는 특정 점수를 충족하지 못하는 문서를 제외시킨다. 
+    - `min_score`가 동작하려면 쿼리에서 반환 된 모든 문서에 점수를 매긴 다음 하나씩 필터링 해야 한다.
+
+
+
+- script_score
+
+  - 다른 쿼리를 래핑할 수 있게 해주고, 스크립트 표현식을 통해 문서의 숫자 필드 값을 활용하여 계산한 값으로 scoring을 할 수 있게 해준다.
+  - `_score` 스크립트 파라미터를 사용하여 래핑 된 쿼리를 기반으로 점수를 검색 할 수 있다.
+  - `custom_score` 쿼리와 달리, 쿼리의 score는 script가 계산 한 score에 곱해지게 된다.
+    - 곱하는 것을 원하지 않는다면 `"boost_mode": "replace"`와 같이 설정해주면 된다.
+  - 제약사항
+    - ES에서 score는 32-bit 부동소수점 형식을 취한다.
+    - 만일 script_score에서 이보다 더 정밀하게 계산하려 한다면 ES가 이를 2-bit 부동소수점에 맞게 변환한다.
+    - 또한 score에는 음수를 사용할 수 없으며, 음수를 사용 할 경우, 에러가 발생한다.
+  - 예시
+
+  ```bash
+  GET /_search
+  {
+    "query": {
+      "function_score": {
+        "query": {
+          "match": { "message": "elasticsearch" }
+        },
+        "script_score": {
+          "script": {
+            "params": {
+              "a": 5,
+              "b": 1.2
+            },
+            "source": "params.a / Math.pow(params.b, doc['my-int'].value)"
+          }
+        }
+      }
+    }
+  }
+  ```
+
+
+
+- `weight`
+
+  - weight를 score에 곱한 score를 얻기 위해 사용한다.
+    - 반드시 float 값을 줘야 한다.
+  - 특정 쿼리에 설정 한 부스트 값은 정규화 되는 반면, weight를 통해 곱해진 점수는 정규화 되지 않는다.
+  - 예시
+
+  ```bash
+  "weight" : float
+  ```
+
+
+
+- random
+
+  - 0이상 1미만의 랜덤한 score를 생성한다.
+    - 기본값으로 무선적인 값 생성을 위해 내부 Lucene 문서의 id들을 사용한다.
+    - 이는 매우 효율적이지만 문서들이 병합에 의해 다시 넘버링 되기 때문에 reproducible하지는 않다.
+    - reproducible하게 사용하려면 seed와 field를 주면 된다.
+  - 최종 score는 seed, 점수가 매겨질 documents들의 field의 최솟값, 인덱스명과 샤드 id에 기반한 값을 기반으로 계산되므로, 같은 값을 가지고 있지만 다른 인덱스에 저장된 문서들은 각기 다른 값을 갖게 된다. 
+    - 그러나, 같은 샤드에 같은 field의 같은 값을 지닌 문서들은 동일한 score를 갖게 된다.
+    - 따라서 모든 document들이 고윳값을 가지고 있는 field(주로 `_seq_no` field)를 사용하는 것이 권장된다.
+    - 단, 문서에 변경사항이 있으면 `_seq_no`도 변경되므로 점수도 변경되게 된다.
+  - 예시
+
+  ```bash
+  GET /_search
+  {
+    "query": {
+      "function_score": {
+        "random_score": {
+          "seed": 10,
+          "field": "_seq_no"
+        }
+      }
+    }
+  }
+  ```
+
+
+
+- field_value_factor
+  - 
+
+
+
+
+
 ## Retrieve inner hits
 
 - inner hists
@@ -818,5 +1001,181 @@
 
 
 
-- https://www.elastic.co/guide/en/elasticsearch/reference/current/inner-hits.html#nested-inner-hits-source
+- Nested inner hits와 `_source`
+
+  - 문서의 전체 source가 상위 document의 `_source`필드에 저장되어 있기 때문에 nested 문서는 `_source` 필드가 존재하지 않는다.
+    - nested 문서에 소스를 포함시키려면 상위 문서의 source가 파싱 되어야 하고, nested 문서에 관련된 부분만 inner hit의 source로 포함되어야 한다.
+    - 쿼리와 일치하는 각각의 nested 문서에 위 작업을 수행하면, 전체 검색 요청을 수행하는 시간에 영향을 미치게 된다.
+    - 특히 `size`와 inner hits의 `size`가 기본값보다 높게 설정되어 있를 때 더 큰 영향을 미치게 된다.
+  - nested inner hits에서 `source`를 추출하는데 상대적으로 많은 비용이 들어가는 것을 피하기 위해서 source를 포함시키지 않고, 오직 doc value 필드에만 의존하게 할 수 있다.
+
+  ```bash
+  # 인덱스 생성
+  PUT test
+  {
+    "mappings": {
+      "properties": {
+        "comments": {
+          "type": "nested"
+        }
+      }
+    }
+  }
+  
+  # 문서 색인
+  PUT test/_doc/1?refresh
+  {
+    "title": "Test title",
+    "comments": [
+      {
+        "author": "kimchy",
+        "text": "comment text"
+      },
+      {
+        "author": "nik9000",
+        "text": "words words words"
+      }
+    ]
+  }
+  
+  # 데이터 검색
+  GET test/_search
+  {
+    "query": {
+      "nested": {
+        "path": "comments",
+        "query": {
+          "match": { "comments.text": "words" }
+        },
+        "inner_hits": {
+          "_source": false,
+          "docvalue_fields": [	// docvalue_fields를 설정
+            "comments.text.keyword"
+          ]
+        }
+      }
+    }
+  }
+  ```
+
+
+
+- 계층적 nested object 필드와 inner hits
+
+  - nested 필드가 계층적으로  매핑되었다면 각각의 계층은 온점(`.`)을 통해서 접근이 가능하다.
+  - 만일 nested 필드 내부의 특정 계층을 바로 반환받고 싶다면 아래와 같이 하면 된다.
+    - 쿼리에 inner hits를 넣어주면 상위 doucment가 검색되게 한 계층이 검색 결과와 함께 나오게 된다.
+
+  ```bash
+  # 인덱스 생성
+  PUT test
+  {
+    "mappings": {
+      "properties": {
+        "comments": {
+          "type": "nested",
+          "properties": {
+            "votes": {
+              "type": "nested"
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  # 데이터 색인
+  PUT test/_doc/1?refresh
+  {
+    "title": "Test title",
+    "comments": [
+      {
+        "author": "kimchy",
+        "text": "comment text",
+        "votes": []
+      },
+      {
+        "author": "nik9000",
+        "text": "words words words",
+        "votes": [
+          {"value": 1 , "voter": "kimchy"},
+          {"value": -1, "voter": "other"}
+        ]
+      }
+    ]
+  }
+  
+  # 검색
+  GET test/_search
+  {
+    "query": {
+      "nested": {
+        "path": "comments.votes",
+          "query": {
+            "match": {
+              "comments.votes.voter": "kimchy"
+            }
+          },
+          "inner_hits" : {}
+      }
+    }
+  }
+  ```
+
+
+
+- Parent/child inner hits
+
+  - Parent/child `inner_hits`는 child/parent를 반환 결과에 포함시키기 위해 사용한다.
+  - 예시
+    - `has_child` 쿼리는 쿼리와 일치하는 child documents의 parent doucment를 반환한다.
+    - `inner_hits`를 사용하면 어떤 child documents가 일치하여 해당 parent document가 반환 된 것인지 알 수 있다.
+
+  ```bash
+  PUT test
+  {
+    "mappings": {
+      "properties": {
+        "my_join_field": {
+          "type": "join",
+          "relations": {
+            "my_parent": "my_child"
+          }
+        }
+      }
+    }
+  }
+  
+  PUT test/_doc/1?refresh
+  {
+    "number": 1,
+    "my_join_field": "my_parent"
+  }
+  
+  PUT test/_doc/2?routing=1&refresh
+  {
+    "number": 1,
+    "my_join_field": {
+      "name": "my_child",
+      "parent": "1"
+    }
+  }
+  
+  GET test/_search
+  {
+    "query": {
+      "has_child": {
+        "type": "my_child",
+        "query": {
+          "match": {
+            "number": 1
+          }
+        },
+        "inner_hits": {}    
+      }
+    }
+  }
+  ```
+
+  
 
