@@ -183,7 +183,7 @@
 
 
 
-# 라이브러리
+# 패키지
 
 - sys
 
@@ -356,7 +356,7 @@
       time.sleep(1)
   ```
 
-  
+
 
 - calendar
   - 파이썬에서 달력을 볼 수 있게 해준다.
@@ -374,9 +374,7 @@
   - `random.randomint(숫자1, 숫자2)`: 숫자1에서 숫자2 사이의 정수 중에서 난수 값을 반환한다.
   - `random.shuffle(순서가 있는 자료형)`: 반복 가능한 자료형의 순서를 변경시킨다.
 
-  
 
-  
 
 - webbrowser
   - 기본 웹 브라우저를 자동으로 실행하는 모듈
@@ -432,9 +430,213 @@
 
 
 
+## argparse
+
+- agrparse
+
+  - 콘솔에서 Python 파일을 실행 시킬 때 인자를 넘겨주기 위한 패키지
+    - Python 내장 패키지로 별도의 설치가 필요없다.
+
+  - 기본형
+
+  ```python
+  import argparse
+  
+  # description 옵션을 통해 설명을 붙일 수 있다.
+  parser = argparse.ArgumentParser(description="Test parser")
+  parser.add_argument("text")
+  
+  args = parser.parse_args()
+  
+  print(args.text)
+  ```
+
+  - `-h`로 위에서 정의한 인자를 확인 가능하다.
+
+  ```bash
+  $ python test.py -h
+  ```
+
+  - 실행
+
+  ```bash
+  $ python test.py Hello
+  ```
 
 
-## Json 라이브러리
+
+- 이름 지정
+
+  - `help` 옵션을 통해 인자에 대한 설명을 줄 수 있다.
+  - 축약된 이름을 주는 것이 가능하다.
+  - 단어를 구분할 때는 `-`와 `_`를 주는 것이 가능하다.
+    - 그러나 `-`의 경우 python에서 지원하지 않으므로 `-`를 활용하여 이름을 지정해 줬어도 사용할 때는 `_`로 사용해야 한다.
+
+  ```python
+  parser.add_argument("--test-text","-tt",help="text to print")
+  # 아래와 같이 _로 지정해줘야 한다.
+  print(args.test_text)
+  ```
+
+  - dest
+    - 저장 될 변수 명을 변경할 수 있다.
+
+  ```python
+  parser.add_argument("--test-text","-tt",help="text to print", dest="my_text")
+  # 아래와 같이 _로 지정해줘야 한다.
+  print(args.my_text)
+  ```
+
+
+
+- 자료형을 지정하기
+
+  - 기본적으로 인자로 받은 모든 데이터를 문자열로 취급하기에, 문자열이 아닌 자료형으로 받고 싶다면 아래와 같이 타입을 지정해 줘야 한다.
+  - FileType()함수로 파일에 접근하는 것도 가능하다.
+  - list와 같은 타입은 사용이 불가능하다.
+
+  ```python
+  import argparse
+  
+  
+  parser = argparse.ArgumentParser(description="Test parser")
+  parser.add_argument("test_int", type=int)
+  
+  args = parser.parse_args()
+  
+  print(5+args.test_int)
+  ```
+
+  - 실행
+
+  ```bash
+  $ python test.py 5
+  ```
+
+
+
+- positional/optional
+
+  - 인자의 이름 앞에 `-`가 붙어 있으면 optional, 없으면 positional 인자가 된다.
+  - positional 인자의 경우 필수로 넣어야 하며, optional 인자도 `required=True`를 옵션으로 주면 필수로 넣게 할 수 있지만, 권장되지 않는다.
+
+  ```python
+  import argparse
+  
+  
+  parser = argparse.ArgumentParser(description="Test parser")
+  parser.add_argument("text")
+  parser.add_argument("-op-int", type=int)
+  parser.add_argument("-opr-int",required=True, type=int)
+  
+  args = parser.parse_args()
+  
+  print(args.text)
+  print(5+args.op_int)
+  print(5+args.opr_int)
+  ```
+
+  - 실행
+    - positional 인자가 여러 개인 경우 반드시 순서를 지켜서 줘야 한다.
+    - -op-int의 경우 주지 않아도 error가 발생하지 않지만 -opr-int는 주지 않으면 error가 발생한다.
+    - optional 인자의 경우 `<args 명>=<args 값>`의 형태로 주거나 `<args 명> <args 값>` 형태로 주면 된다.
+
+  ```bash
+  $ python test.py hello -op-int=3 -opr-int 4
+  ```
+
+
+
+- default 값 지정
+
+  - optional 인자의 경우 default 값을 지정하는 것이 가능하다.
+  - `argparse.SUPPRESS`을 default 값으로 넣을 경우 None이 들어가는 것이 아니라 인자 자체가 생성되지 않는다.
+
+  ```python
+  import argparse
+  
+  
+  parser = argparse.ArgumentParser(description="Test parser")
+  parser.add_argument("--text", default="Bye")
+  parser.add_argument("--test", default=argparse.SUPPRESS)
+  
+  args = parser.parse_args()
+  
+  print(args.text)
+  print(args.test)
+  ```
+
+  - 실행
+    - 아래 명령어를 실행하면 `args.text`는 출력이 되지만, `args.test`에서 에러가 발생한다.
+
+  ```bash
+  $ python test.py
+  ```
+
+
+
+- action
+
+  - `add_argument()`로 인자를 정의할 때 action을 지정할 수 있다.
+  - `store`: 기본값, 인자로 받은 값을 해당 인자에 대입한다.
+
+  ```python
+  # 모두 아래 코드를 기반으로 한다.
+  import argparse
+  
+  
+  parser = argparse.ArgumentParser(description="Test parser")
+  parser.add_argument("--my-args")
+  
+  
+  args = parser.parse_args()
+  
+  print(args.my_args)
+  ```
+
+  - `store_const`:  미리 지정해준 `const`에 입력 받은 값이 대입된다.
+    - 값 없이 인자만 넘겨주면, const에 지정 된 값이 대입되게 된다.
+    - 인자와 값을 함께 넘겨줄 수는 없다.
+    - 인자도 넘겨주지 않으면 None이 저장된다.
+
+  ```bash
+  # parser.add_argument("--my-args", action="store_const", const=0)
+  $ python test.py --my-args
+  ```
+
+  - `store_true`, `store_false`: 값이 없는 인자를 받으면 각기 True, False를 저장한다.
+
+  ```bash
+  # parser.add_argument("--my-args", action="store_true")
+  $ python test.py --my-args
+  ```
+
+  - `append`: 여러 개의 값을 저장하고자 할 때 사용한다.
+
+  ```bash
+  # parser.add_argument("--my-args", action="append")
+  $ python test.py --my-args 1 --my-args 2
+  ```
+
+  - `append_const`: 사전에 지정한 const 값이 저장된다.
+
+  ```bash
+  # parser.add_argument("--my-args", action="append_const",const=3)
+  $ python test.py --my-args --my-args
+  ```
+
+  - `count`: 인자를 적은 횟수만큼 값이 증가한다.
+
+
+
+- 그 밖에 아래와 같은 옵션들을 줄 수 있다.
+  - nargs: 인자로 여러 개의 값을 받을 수 있다.
+  - choices: 값의 범위를 지정할 수 있다.
+  - metavar: 도움말 메시지를 생성할 때 표시되는 이름을 변경할 수 있다.
+
+
+
+## Json
 
 - Json 라이브러리
   - Python 표준 라이브러리
