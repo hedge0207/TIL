@@ -582,6 +582,35 @@
   ```bash
   $ python test.py 5
   ```
+  
+  - 자료형을 함수로 지정하는 것도 가능하다.
+    - 인자로 넘긴 값은 자동으로 타입으로 지정해 준 함수의 인자로 넘어가게 된다.
+  
+  ```python
+  import argparse
+  
+  
+  def str_to_bool(args):
+      args = args.lower()
+      if args in ["1", "yes", "y"]:
+          return True
+      elif args in ["0", "no", "n"]:
+          return False
+  
+  
+  parser = argparse.ArgumentParser(description="Test parser")
+  parser.add_argument("--test-args", type=str_to_bool)
+  
+  args = parser.parse_args()
+  
+  print(args.test_args)
+  ```
+  
+  - 실행
+  
+  ```bash
+  $ python --test-args No
+  ```
 
 
 

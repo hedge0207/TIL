@@ -50,7 +50,7 @@
   
   # FourCal 클래스의 인스턴스 생성
   obj = Plus()
-  print(type(obj))  # <class '__main__.FourCal'>
+  print(type(obj))  # <class '__main__.Plus'>
   ```
 
   - 클래스에 작업(함수) 추가하기
@@ -66,7 +66,7 @@
           self.second = second		  # obj.second = second
           
   # 메서드 호출 방법 1.
-  # 첫 번째 매개변수인 self에는 fc가 자동으로 넘어간다.
+  # 첫 번째 매개변수인 self에는 obj가 자동으로 넘어간다.
   obj = Plus()
   obj.set_data(2,3)
   print(obj.first)  # 2
@@ -212,7 +212,7 @@
   print(bc2.gender)	# female
   ```
 
-  
+
 
 
 
