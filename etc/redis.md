@@ -16,9 +16,10 @@
 
 
 
-- Redis
+- Redis(Remote Dictionary Server)
   - 키-값 기반의 인-메모리 데이터 저장소.
     - 인-메모리란 컴퓨터의 메인 메모리(RAM)에 DB 데이터와 같은 주요 데이터를 저장하는 것을 말한다.
+    - 오픈소스이다.
   - 특징
     - 키-값 기반이기 때문에 키만 알고 있다면 바로 값에 접근할 수 있다.
     - 또한 디스크에 데이터를 쓰는 구조가 아니라 메모리에서 데이터를 처리하기 때문에 속도가 상당히 빠르다.
@@ -95,11 +96,384 @@
 
 
 
+- Data Persistence
+  - 용어 정리
+    - Persistence: 영속성, 데이터를 생성한 프로그램의 실행이 종료되어도 사라지지 않는 데이터의 특성
+  - Redis는 다양한 PErsistence 옵션을 제공한다.
+
+
+
+
+
+# redis 사용해보기
+
+- Docker로 redis 설치하기
+
+  - redis 이미지 받기
+
+  ```bash
+  $ docker pull redis[:원하는 버전]
+  ```
+
+  - docker network 생성하기
+    - redis와 redis-cli 사이의 통신에 필요하다.
+    - redis-cli를 사용하지 않을 경우 생성하지 않아도 된다.
+
+  ```bash
+  $ docker network create <network 이름>
+  ```
+
+  - docker 컨테이너 생성 및 실행
+
+  ```bash
+  $ docker run --network <network 이름> redis
+  ```
+
+  - redis-cli로 redis 접속하기
+    - `--rm` 옵션을 주면 종료 시에 컨테이너도 함께 삭제되며, 컨테이너를 띄울 때에도 같은 이름의 컨테이너가 있으면 해당 컨테이너를 삭제하고 띄운다.
+
+  ```bash
+  $ docker run -it --network <network 이름> --rm redis-cli -h <redis 컨테이너 이름>
+  ```
+
+  - redis-cli를 docker로 띄우지 않고도 접속이 가능하다.
+    - 아래와 같이 설치 후 사용하면 된다.
+
+  ```bash
+  # 설치
+  $ sudo apt-get install redis-tools
+  
+  # 사용
+  $ redis-cli [-h 호스트 주소] [-p 포트]
+  ```
+
+  - 설정 변경하기
+    - redis.cfg 파일을 생성하고 설정하고 싶은 내용을 작성한다.
+    - 이후 해당 파일을  컨테이너 내부의 `/usr/local/etc/redis/redis.conf` 경로에 볼륨을 잡아준다.
+
+  ```bash
+  $ docker run --network <network 이름> - <redis.cfg 파일 경로>:</usr/local/etc/redis/redis.conf> redis
+  ```
+
+
+
+- redis-cli에서 사용하기
+
+  - redis-cli 접속
+
+  ```bash
+  $ redis-cli [-h 호스트 주소] [-p 포트] [-n db 번호] [-s 소켓] [-a 비밀번호] [-u 서버 url]
+  ```
+
+  - redis 정보 확인
+
+  ```bash
+  > info
+  ```
+
+  - 도움말
+
+  ```bash
+  > help
+  ```
+
+  - 모니터링
+
+  ```bash
+  > monitor
+  ```
+
+  - 모든 key 확인
+    - redis는 single thread이다.
+    - 이 명령을 처리하기 위해 뒤의 작업들은 멈춰버리므로 가급적 사용을 자제하는 것이 좋다.
+    - scan을 사용하는 것이 좋다.
+
+  ```bash
+  > keys *
+  ```
+
+  - scan
+    - cursor 기반으로 key들을 출력한다.
+    - 첫 번째 응답(`1)`)으로 다음번 cursor가 오는데 다시 이 것을 cursor애 넣고 명령어를 입력하는 것을 반복하다 0이 나오면 모든 key를 조회했다는 뜻이 된다.
+
+  ```bash
+  > scan <cursor> [Match pattern] [Count]
+  
+  # 예시
+  > scan 0
+  
+  #응답
+  1) "88"
+  2)  1) "key62"
+      2) "key71"
+      3) "key85"
+      4) "key19"
+      5) "key92"
+      6) "key84"
+      7) "key20"
+      8) "key40"
+      9) "key34"
+     10) "key21"
+     11) "key2"
+  ```
+
+  - 데이터 삽입
+
+  ```bash
+  > set <key> <value>
+  ```
+
+  - 데이터 여러 개 삽입
+
+  ```bash
+  > mset <key1> <value1> <key2> <value2> ...
+  ```
+
+  - list 자료형의 맨 앞 부터 삽입 삽입
+    - 문자열이라도 `"`는 붙이지 않아도 된다.
+    - space 로 구분한다.
+
+  ```bash
+  > lpush my_list Hello
+  > lpush my_list World
+  > lpush my_list Hello World
+  > lpush my_list HelloWorld
+  ```
+
+  - list 자료형의 맨 뒤 부터 삽입
+    - `rpush` 사용
+    - 나머지는 `lpush`와 동일
+
+  - 소멸 시간 지정해서 삽입
+    - 단위는 초
+
+  ```bash
+  > setex <key> <시간> <value>
+  ```
+
+  - 데이터 조회
+    - `*`를 와일드 카드처럼 사용이 가능하다.
+
+  ```bash
+  > get <key>
+  ```
+
+  - 데이터 여러 개 조회
+
+  ```bash
+  > mget <key1> <key2> ...
+  ```
+
+  - 리스트 데이터 앞에서부터 조회
+    - 뒤의 숫자는 몇 번째 부터 몇 번째 까지를 조회할지를 선택하는 것이다.
+
+  ```bash
+  lrange my_list 0 -1
+  
+  # 출력, 마지막에 넣은 것이 가장 먼저 나온다.
+  1) "HelloWorld"
+  2) "World"
+  3) "Hello"
+  4) "World"
+  5) "Hello"
+  ```
+
+  - 데이터 삭제
+    - `(integer) 1`은 삭제 성공, `(integer) 0`은 삭제하려는 데이터가 없을 경우 반환된다.
+
+  ```bash
+  > del <key>
+  ```
+
+  - 모든 데이터 삭제
+
+  ```bash
+  > flushall
+  ```
+
+  - 리스트형 데이터에서 맨 뒤의 데이터 삭제
+    - 맨 앞의 데이터 삭제는 `lpop`
+
+  ```bash
+  > rpop my_list
+  ```
+
+  - 리스트형 데이터에서 맨 뒤의 데이터 삭제 후, 삭제한 값을 다른 list에 삽입(deprecated)
+
+  ```bash
+  > rpop my_list other_list
+  ```
+
+  - 리스트형 데이터에서 head나 tail을 삭제하고 이를 다른 list의 head나 tail에 삽입
+
+  ```bash
+  # my_list의 tail(right)을 빼서 other_list의 head(left)에 삽입
+  > lmove my_list other_list rigth left
+  ```
+
+  - 리스트형 데이터에서 일정 범위 제외하고 삭제
+    - 삭제할 범위가 아닌 삭제하지 않을 범위를 지정한다.
+
+  ```bash
+  > ltrim my_list <시작> <끝>
+  ```
+
+  - key 이름 변경
+    - rename의 경우 변경하려는 이름의 key가 이미 존재할 경우 덮어 쓴다.
+    - renamenx의 경우 변경하려는 이름의 key가 있을 경우 `(integer) 0`을 반환한다.
+
+  ```bash
+  > rename <key>
+  
+  > renamenx <key>
+  ```
+
+  - 리스트형 데이터 변경
+
+  ```bash
+  # my_list의 value인 리스트에서, 첫 번째 인자를 Bye로 변경
+  LSET my_list 0 "Bye"
+  ```
+
+  - 타임 아웃까지 남은 시간 확인
+    - `(integer) -1`은 기한이 없는 경우, `(integer) -2`는 키 값이 없거나 소멸된 경우 반환된다.
+
+  ```bash
+  # 초 단위로 반환
+  > ttl <key>
+  
+  # 밀리 초 단위로 반환
+  > pttl <key>
+  ```
+
+  - 리스트 길이 확인
+
+  ```bash
+  > llen my_list
+  ```
+
+
+
+- python에서 사용하기
+
+  - redis 패키지 설치
+
+  ```bash
+  $ pip install redis
+  ```
+
+  - 테스트
+    - 호스트와 포트를 지정해주고 `ping()` 메서드를 통해 테스트 해본다.
+    - 그 밖에도 password, decode_response 등의 옵션을 줄 수 있다.
+
+  ```python
+  import redis
+  
+  
+  r = redis.Redis(host="111.222.333.444",port=6379)
+  print(r.ping())	# True
+  ```
+
+  - 데이터 삽입
+    - list, set, dictionary 등은 삽입이 불가능하다.
+    - json 패키지를 통해 dumps, loads를 사용하면 삽입, 조회가 가능하다.
+
+  ```bash
+  import redis
+  
+  
+  r = redis.Redis(host="111.222.333.444",port=6379)
+  r.set("key", "value")
+  
+  my_dict = {"a":1,"B":2}
+  r.set("my_dict", jsonDataDict)
+  result_data = r.get("my_dict").decode('utf-8')
+  result = dict(json.loads(result_data))
+  ```
+
+  - 데이터 여러 개 삽입
+
+  ```python
+  import redis
+  
+  
+  r = redis.Redis(host="111.222.333.444",port=6379)
+  r.mset({"key":"value","key2":"value2"})
+  ```
+
+  - 데이터 조회
+
+  ```bash
+  import redis
+  
+  
+  r = redis.Redis(host="111.222.333.444",port=6379)
+  print(r.get("key")) 	# b'value'
+  print(r.get("key").decode("utf-8"))		# value
+  ```
+
+  - scan을 통한 데이터 조회
+
+  ```python
+  import redis
+  
+  
+  r = redis.StrictRedis('192.168.0.237', port=6379)
+  init = 0 # cursor 값 0으로 스캔 시작
+  
+  while(True):
+      ret = r.scan(init)
+      print(init)
+      init = ret[0]
+      print(ret[1])
+      if (init == 0): # 반환된 cursor 값이 0이면 스캔 종료
+          break
+  ```
+  
+  - 데이터 삭제
+  
+  ```bash
+  import redis
+  
+  
+  r = redis.Redis(host="111.222.333.444",port=6379)
+  r.delete("key")
+  ```
+  
+  - 데이터 전체 삭제
+  
+  ```python
+  import redis
+  
+  
+  r = redis.Redis(host="111.222.333.444",port=6379)
+  r.flushdb()
+  ```
+
+
+
+
+
 
 
 # 참조
+
+- redis 공식 문서
+
+> https://redis.io/commands
 
 - Redis 기본 정리
 
 > https://brunch.co.kr/@jehovah/20
 
+- redis-cli에서 redis 사용
+
+> https://freeblogger.tistory.com/10
+
+- python에서 redis 사용
+
+> https://soyoung-new-challenge.tistory.com/117
+
+- Redis의 SCAN은 어떻게 동작하는가
+
+> https://tech.kakao.com/2016/03/11/redis-scan/
