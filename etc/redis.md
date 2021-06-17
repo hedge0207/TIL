@@ -104,10 +104,6 @@
   - Persistence: 영속성, 데이터를 생성한 프로그램의 실행이 종료되어도 사라지지 않는 데이터의 특성.
   - Durability: 지속성, 성공적으로 수행 된 트랜잭션은 영원히 반영되어야 함.
   - RDB: 특정 시점의 redis 데이터셋을 일정한 간격마다 .rdb 파일로 저장하는 방식
-    - 아래의 과정을 통해 dump가 이루어진다.
-    - fork를 통해 자식 프로세스를 생성한다.
-    - 자식 프로세스는 임시 RDB 파일에 데이터 세트를 저장하기 시작한다.
-    - 자식 프로세스가 새로운 RDB 파일 작성이 끝나면 이전의 것과 변경한다.
   - AOF(Append Only File): 서버에 입력된 write operation(쓰기 명령)을 파일에 추가해서 저장하는 방식.
     - 서버가 시작될 때마다 입력됐던 명령을 재실행해 dataset을 다시 만들어낸다.
   - fsync: 파일 내부 저장 상태를 장치와 동기화시키는 함수(버퍼에 있는 데이터를 파일로 옮긴다).
@@ -127,11 +123,22 @@
 
 
 
+- RDB의 동작 방식
+  - SAVE의 경우
+    - 메인 프로세스에서 메모리에 있는 데이터를 새 RDB temp 파일에 작성한다.
+    - 작성이 완료되면 기존 RDB 파일을 지우고 새 파일로 교체한다.
+  - BGSAVE의 경우
+    - fork를 통해 자식 프로세스를 생성한다.
+    - 자식 프로세스는 임시 RDB 파일에 데이터 세트를 저장하기 시작한다.
+    - 자식 프로세스가 새로운 RDB 파일 작성이 끝나면 이전의 것과 변경한다.
+
+
+
 - AOF의 장단점
   - 장점
     - RDB에 비해 지속성이 훨씬 뛰어나다.
     - 다양한 fsync 정책을 가질 수 있다.
-    - AOF가 너무 커졌을 때 백그라운드에서 자동으로 재작성 할 수 있다.
+    - AOF가 너무 커졌을 때 백그라운드에서 자동으로 재작성 할 수 있다(rewrite).
     - 실수로 flushall과 같은 명령어를 입력하여 데이터가 전부 삭제되어도 해당 명령을 제외하고 그 동안 입력되었던 명령들을 재시작하여 데이터를 복구할 수 있다.
   - 단점
     - AOF 파일은 일반적으로 동일한 데이터셋의 RDB 파일보다 크다.
@@ -144,8 +151,8 @@
   - 내구성
     - 디스크의 데이터에 fsync를 얼마나 수행할지를 설정할 수 있다.
     - ` appendfsync alway`: 매번 새로운 command가 AOF에 추가될 때마다 fsync를 수행한다. 매우 느리지만 매우 안전하다.
-    - ` appendfsync everysec`: fsync 매 초마다 수행한다. 스냅샷 만큼 빠르며, 재난 발생시 1초의 데이터를 잃을 수 있다.
-    -  `appendfsync no`: fsync를 사용하지 않는다. 빠르지만 안정성이 떨어진다.
+    - ` appendfsync everysec`: fsync 매 초마다 수행한다. 스냅샷 만큼 빠르며, 재난 발생시 1초의 데이터를 잃을 수 있다(권장).
+    -  `appendfsync no`: 디스크에 쓰는 시점을 OS에 맡긴다(리눅스는 일반적으로 30초 간격으로 내려 쓴다).
   - AOF가 잘리는 경우
     - AOF 파일이 작성되는 동안 서버가 꺼지거나 AOF 파일 작성 시점에 저장 공간이 가득 찬 경우에 발생할 수 있다.
     - 잘못된 형식의 명령이 존재하는 경우 이를 무시하고 계속 진행하는 것이 기본값으로 설정되어 있다.
@@ -155,6 +162,12 @@
     - 단순히 잘린 것이 아니고 손상된 경우에는 보다 까다롭다.
     - `--fix` 옵션 없이 redis-check-aof 툴을 실행 한 다음 문제점을 확인하고 파일 안에 해당하는 오프셋으로 이동해서 파일을 수동으로 복구할 수 있는지 확인하는 것이다.
     - 파일을 edis-check-aof 툴로 `--fix`을 넣어서 수정하도록 할 수 있지만 이렇게 하면 AOF의 유효하지 않은 부분에서 파일 끝까지의 부분이 제거될 수 있으므로 주의해야 한다.
+  - rewrite
+    - AOF는 파일의 크기가 너무 커지게 되면 자동으로 rewrite를 수행할 수 있다.
+    - AOF의 목적은 모든 연산을 기록하는 것이 아닌, 현재 데이터셋을 생성할 수 있는 연산을 기록하는 것이다.
+    - 예를 들어 현재 redis 내부에는 `{'some_key':1000}`이라는 하나의 데이터만이 존재하는데, 이 데이터는 `{'some_key':0}`부터 시작해서  value를 `+1`  씩 올리는 write 연산을 통해 총 1000번의 write 연산 결과 쓰여진 것이라고 가정한다.
+    - 일반적으로 AOF 파일의 크기가 RDB 파일의 크기보다 큰 것은 이때문이다.
+    - 이와 같이 AOF 파일의 크기가 지나치게 커질 경우 AOF 파일은 rewrtie를 1000번 진행하는 연산이 아닌 `set some_key 1000`이라는 연산을 작성하게 된다.
   - log rewrite 동작 방식
     - fork를 통해서 자식 프로세스를 생성한다.
     - 자식 프로세스는 임시 파일에 새로운 AOF를 작성한다.
@@ -292,11 +305,11 @@
   - docker 컨테이너 생성 및 실행
 
   ```bash
-  $ docker run --network <network 이름> redis
+  $ docker run --network <network 이름> -p <port 번호>:<port 번호> redis
   ```
 
   - redis-cli로 redis 접속하기
-    - `--rm` 옵션을 주면 종료 시에 컨테이너도 함께 삭제되며, 컨테이너를 띄울 때에도 같은 이름의 컨테이너가 있으면 해당 컨테이너를 삭제하고 띄운다.
+    - `--rm` 옵션을 주면 컨테이너가 내려갈 시에 컨테이너도 함께 삭제되며, 컨테이너를 띄울 때에도 같은 이름의 컨테이너가 있으면 해당 컨테이너를 삭제하고 띄운다.
 
   ```bash
   $ docker run -it --network <network 이름> --rm redis-cli -h <redis 컨테이너 이름>
@@ -304,22 +317,80 @@
 
   - redis-cli를 docker로 띄우지 않고도 접속이 가능하다.
     - 아래와 같이 설치 후 사용하면 된다.
-
+    - `-a`의 경우 `requirepass`를 설정해줬으면 해당 password를 입력하면 된다.
+  
   ```bash
   # 설치
   $ sudo apt-get install redis-tools
   
   # 사용
-  $ redis-cli [-h 호스트 주소] [-p 포트]
+  $ redis-cli [-h 호스트 주소] [-p 포트] [-a password]
   ```
-
+  
   - 설정 변경하기
     - redis.cfg 파일을 생성하고 설정하고 싶은 내용을 작성한다.
     - 이후 해당 파일을  컨테이너 내부의 `/usr/local/etc/redis/redis.conf` 경로에 볼륨을 잡아준다.
-
+  
   ```bash
-  $ docker run --network <network 이름> - <redis.cfg 파일 경로>:</usr/local/etc/redis/redis.conf> redis
+  $ docker run --network <network 이름> -v <redis.cfg 파일 경로>:</usr/local/etc/redis/redis.conf> redis
   ```
+
+
+
+- 레디스 설치 후 꼭 확인해야 할 파라미터들
+
+  - 보안 관련 파라미터
+    - `protected-mode`는 yes로 준다(기본값).
+    - `requirepass`에 접속할 때 사용할 패스워드를 입력한다.
+
+  ```txt
+  bind <서버 IP>
+  protected-mode yes
+  requirepass <"password">
+  ```
+
+  - persistence 관련 파라미터
+    - save는 time 동안 count 만큼의 key 변경이 발생하면 rdb 파일로 저장한다(사용하지 안을 경우 `""`로 주면 된다).
+    - stop-writes-on-bgsave-error가 yes인 경우 RDB 파일을 작성하다 실패하면 이후 모든 쓰기 요청을 막는다(SAVE 명령에만 적용되며 BGSAVE에는 적용되지 않는다).
+    - appendonly: AOF 기능을 사용할지 여부를 설정한다.
+    - appendfsync: AOF 파일에 기록하는 시점을 설정한다.
+    - auto-aof-rewrite-percentage: AOF 파일 사이즈가 숫자값 % 이상으로 커지면 rewrite한다(%의 기준은 레디스 서버가 시작할 시점의 AOF 파일 사이즈이다).
+
+  ```txt
+  # RDB
+  save [time], [count]
+  stop-writes-on-bgsave-error <yes/no>
+  
+  # AOF
+  appendonly <yes/no>
+  appendfsync [always/everysec/no]
+  auto-aof-rewrite-percentage [0-100]
+  ```
+
+  - replica 관련 파라미터들
+
+  ```txt
+  replicaof <마스터 IP> <마스터 port>
+  masterauth <"마스터의 requirepass">
+  ```
+
+  - back/foreground 실행 설정
+    - no로 설정할 경우(default) foregrund로 실행된다.
+
+  ```txt
+  daemonize [yes/no]
+  ```
+
+  - 메모리 관련 설정
+    - 64bit 환경에서는 maxmemory의 default 값은 0이며, swap 메모리를 사용할 때까지 계속해서 커지게 된다.
+    - 32bit 환경에서는 3GB가 기본 값이다.
+
+  ``` txt
+  maxmemory <가용 메모리의 60~70%>
+  maxmemory-policy <policy>
+  ```
+
+  
 
 
 
@@ -331,37 +402,51 @@
   $ redis-cli [-h 호스트 주소] [-p 포트] [-n db 번호] [-s 소켓] [-a 비밀번호] [-u 서버 url]
   ```
 
+  - 비밀번호 입력
+    - redis-cli를 실행할 때 `-a`를 입력하지 않았으면 아래 명령어를 통해 인증이 가능하다.
+  
+  ```bash
+  > auth <password>
+  ```
+  
   - redis 정보 확인
-
+  
   ```bash
   > info
   ```
-
+  
+  - grep 사용하기
+    - redis-cli 내부가 아닌 외부에서 아래 명령어 실행
+  
+  ```bash
+  $ redis-cli [-h 호스트 주소] [-p 포트] [-n db 번호] [-s 소켓] [-a 비밀번호] [-u 서버 url] | grep <찾을 내용>
+  ```
+  
   - 도움말
-
+  
   ```bash
   > help
   ```
-
+  
   - 모니터링
-
+  
   ```bash
   > monitor
   ```
-
+  
   - 모든 key 확인
     - redis는 single thread이다.
     - 이 명령을 처리하기 위해 뒤의 작업들은 멈춰버리므로 가급적 사용을 자제하는 것이 좋다.
     - scan을 사용하는 것이 좋다.
-
+  
   ```bash
   > keys *
   ```
-
+  
   - scan
     - cursor 기반으로 key들을 출력한다.
     - 첫 번째 응답(`1)`)으로 다음번 cursor가 오는데 다시 이 것을 cursor애 넣고 명령어를 입력하는 것을 반복하다 0이 나오면 모든 key를 조회했다는 뜻이 된다.
-
+  
   ```bash
   > scan <cursor> [Match pattern] [Count]
   
@@ -382,19 +467,19 @@
      10) "key21"
      11) "key2"
   ```
-
+  
   - 데이터 삽입
 
   ```bash
   > set <key> <value>
   ```
-
+  
   - 데이터 여러 개 삽입
-
+  
   ```bash
   > mset <key1> <value1> <key2> <value2> ...
   ```
-
+  
   - list 자료형의 맨 앞 부터 삽입 삽입
     - 문자열이라도 `"`는 붙이지 않아도 된다.
     - space 로 구분한다.
@@ -412,20 +497,20 @@
 
   - 소멸 시간 지정해서 삽입
     - 단위는 초
-
+  
   ```bash
   > setex <key> <시간> <value>
   ```
-
+  
   - 데이터 조회
     - `*`를 와일드 카드처럼 사용이 가능하다.
-
+  
   ```bash
   > get <key>
   ```
-
+  
   - 데이터 여러 개 조회
-
+  
   ```bash
   > mget <key1> <key2> ...
   ```
@@ -443,27 +528,27 @@
   4) "World"
   5) "Hello"
   ```
-
+  
   - 데이터 삭제
     - `(integer) 1`은 삭제 성공, `(integer) 0`은 삭제하려는 데이터가 없을 경우 반환된다.
-
+  
   ```bash
   > del <key>
   ```
-
+  
   - 모든 데이터 삭제
-
+  
   ```bash
   > flushall
   ```
-
+  
   - 리스트형 데이터에서 맨 뒤의 데이터 삭제
     - 맨 앞의 데이터 삭제는 `lpop`
-
+  
   ```bash
   > rpop my_list
   ```
-
+  
   - 리스트형 데이터에서 맨 뒤의 데이터 삭제 후, 삭제한 값을 다른 list에 삽입(deprecated)
 
   ```bash
@@ -471,39 +556,39 @@
   ```
 
   - 리스트형 데이터에서 head나 tail을 삭제하고 이를 다른 list의 head나 tail에 삽입
-
+  
   ```bash
   # my_list의 tail(right)을 빼서 other_list의 head(left)에 삽입
   > lmove my_list other_list rigth left
   ```
-
+  
   - 리스트형 데이터에서 일정 범위 제외하고 삭제
     - 삭제할 범위가 아닌 삭제하지 않을 범위를 지정한다.
 
   ```bash
   > ltrim my_list <시작> <끝>
   ```
-
+  
   - key 이름 변경
     - rename의 경우 변경하려는 이름의 key가 이미 존재할 경우 덮어 쓴다.
     - renamenx의 경우 변경하려는 이름의 key가 있을 경우 `(integer) 0`을 반환한다.
-
+  
   ```bash
   > rename <key>
   
   > renamenx <key>
   ```
-
+  
   - 리스트형 데이터 변경
-
+  
   ```bash
   # my_list의 value인 리스트에서, 첫 번째 인자를 Bye로 변경
   LSET my_list 0 "Bye"
   ```
-
+  
   - 타임 아웃까지 남은 시간 확인
     - `(integer) -1`은 기한이 없는 경우, `(integer) -2`는 키 값이 없거나 소멸된 경우 반환된다.
-
+  
   ```bash
   # 초 단위로 반환
   > ttl <key>
@@ -511,9 +596,9 @@
   # 밀리 초 단위로 반환
   > pttl <key>
   ```
-
+  
   - 리스트 길이 확인
-
+  
   ```bash
   > llen my_list
   ```
@@ -647,3 +732,7 @@
 - 개발자를 위한 레디스 튜토리얼
 
 > https://meetup.toast.com/posts/226
+
+- [Redis\] redis.conf 의 파라미터 의미 파악하기
+
+> https://mozi.tistory.com/368?category=1102290
