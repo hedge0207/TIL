@@ -484,7 +484,8 @@
     - 따라서 꼭 와일드카드 쿼리를 써야 하는 상황이 아니면 사용을 자제하는 것이 좋다.
   - text 필드가 아닌 keyword 타입의 쿼리에 사용해야 한다.
     - keyword 타입에 사용해야 하므로 아래 예시에서도 text 타입인 pushlisher 필드가 아닌 publisher.keyword 필드를 사용하여 키워드 타입에 사용했다.
-
+    - text 필드에도 사용은 가능하다. 그러나 이 경우 역색인을 기준으로 결과를 검색한다.
+  
   ```bash
   $ curl "localhost:9200/_search?pretty" -H 'Content-type:application/json' -d '{
   "query":{

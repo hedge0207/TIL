@@ -27,8 +27,6 @@
 
 
 
-
-
 - 클러스터 상태 정보
 
   - `format=json` 옵션을 줬을 때의 응답
@@ -80,6 +78,14 @@
   | <span style="color:red">red</span>       | 일부 혹은 모든 프라이머리/레플리카 샤드가 정상적으로 동작하고 있지 않은 상태, 데이터 유실이 발생할 수 있다. |
 
 
+
+- 미할당 샤드 수동으로 재할당하기
+
+  ```bash
+  POST _cluster/reroute?retry_failed=true
+  ```
+
+  
 
 
 
