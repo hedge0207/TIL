@@ -17,6 +17,8 @@
 
 <br/>
 
+<br/>
+
 ## [컴퓨터 공학 전공 정리_part1](https://github.com/hedge0207/TIL/blob/master/CS/%EC%BB%B4%ED%93%A8%ED%84%B0%20%EA%B3%B5%ED%95%99%20%EC%A0%84%EA%B3%B5%20%EC%A0%95%EB%A6%AC_part1.md)
 
 - 컴퓨터 프로그래밍 기초
