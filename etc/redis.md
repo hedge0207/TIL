@@ -350,12 +350,13 @@
   ```
 
   - persistence 관련 파라미터
-    - save는 time 동안 count 만큼의 key 변경이 발생하면 rdb 파일로 저장한다(사용하지 안을 경우 `""`로 주면 된다).
+    - save는 time 동안 count 만큼의 key 변경이 발생하면(time 만큼의 시간이 지났을 때) rdb 파일로 저장한다(사용하지 안을 경우 `""`로 주면 된다).
+    - save는 여러 개 지정할 수 있으며 or 연산이므로 지정한 조건들 중 하나라도 일치하면 저장된다.
     - stop-writes-on-bgsave-error가 yes인 경우 RDB 파일을 작성하다 실패하면 이후 모든 쓰기 요청을 막는다(SAVE 명령에만 적용되며 BGSAVE에는 적용되지 않는다).
     - appendonly: AOF 기능을 사용할지 여부를 설정한다.
     - appendfsync: AOF 파일에 기록하는 시점을 설정한다.
-    - auto-aof-rewrite-percentage: AOF 파일 사이즈가 숫자값 % 이상으로 커지면 rewrite한다(%의 기준은 레디스 서버가 시작할 시점의 AOF 파일 사이즈이다).
-
+  - auto-aof-rewrite-percentage: AOF 파일 사이즈가 숫자값 % 이상으로 커지면 rewrite한다(%의 기준은 레디스 서버가 시작할 시점의 AOF 파일 사이즈이다).
+  
   ```txt
   # RDB
   save [time], [count]
@@ -365,32 +366,30 @@
   appendonly <yes/no>
   appendfsync [always/everysec/no]
   auto-aof-rewrite-percentage [0-100]
-  ```
-
-  - replica 관련 파라미터들
-
+```
+  
+- replica 관련 파라미터들
+  
   ```txt
   replicaof <마스터 IP> <마스터 port>
   masterauth <"마스터의 requirepass">
-  ```
-
+```
+  
   - back/foreground 실행 설정
-    - no로 설정할 경우(default) foregrund로 실행된다.
-
+  - no로 설정할 경우(default) foregrund로 실행된다.
+  
   ```txt
   daemonize [yes/no]
-  ```
-
+```
+  
   - 메모리 관련 설정
     - 64bit 환경에서는 maxmemory의 default 값은 0이며, swap 메모리를 사용할 때까지 계속해서 커지게 된다.
-    - 32bit 환경에서는 3GB가 기본 값이다.
-
+  - 32bit 환경에서는 3GB가 기본 값이다.
+  
   ``` txt
   maxmemory <가용 메모리의 60~70%>
   maxmemory-policy <policy>
-  ```
-
-  
+```
 
 
 
@@ -413,6 +412,12 @@
   
   ```bash
   > info
+  ```
+  
+  - config 정보 확인
+  
+  ```bash
+  > config get <확인할 정보>
   ```
   
   - grep 사용하기
@@ -469,7 +474,7 @@
   ```
   
   - 데이터 삽입
-
+  
   ```bash
   > set <key> <value>
   ```
@@ -483,18 +488,18 @@
   - list 자료형의 맨 앞 부터 삽입 삽입
     - 문자열이라도 `"`는 붙이지 않아도 된다.
     - space 로 구분한다.
-
+  
   ```bash
   > lpush my_list Hello
   > lpush my_list World
   > lpush my_list Hello World
   > lpush my_list HelloWorld
   ```
-
+  
   - list 자료형의 맨 뒤 부터 삽입
     - `rpush` 사용
     - 나머지는 `lpush`와 동일
-
+  
   - 소멸 시간 지정해서 삽입
     - 단위는 초
   
@@ -508,16 +513,16 @@
   ```bash
   > get <key>
   ```
-  
+
   - 데이터 여러 개 조회
   
   ```bash
   > mget <key1> <key2> ...
   ```
-
+  
   - 리스트 데이터 앞에서부터 조회
     - 뒤의 숫자는 몇 번째 부터 몇 번째 까지를 조회할지를 선택하는 것이다.
-
+  
   ```bash
   lrange my_list 0 -1
   
@@ -544,17 +549,17 @@
   
   - 리스트형 데이터에서 맨 뒤의 데이터 삭제
     - 맨 앞의 데이터 삭제는 `lpop`
-  
+
   ```bash
   > rpop my_list
   ```
-  
-  - 리스트형 데이터에서 맨 뒤의 데이터 삭제 후, 삭제한 값을 다른 list에 삽입(deprecated)
 
+  - 리스트형 데이터에서 맨 뒤의 데이터 삭제 후, 삭제한 값을 다른 list에 삽입(deprecated)
+  
   ```bash
   > rpop my_list other_list
   ```
-
+  
   - 리스트형 데이터에서 head나 tail을 삭제하고 이를 다른 list의 head나 tail에 삽입
   
   ```bash
@@ -564,7 +569,7 @@
   
   - 리스트형 데이터에서 일정 범위 제외하고 삭제
     - 삭제할 범위가 아닌 삭제하지 않을 범위를 지정한다.
-
+  
   ```bash
   > ltrim my_list <시작> <끝>
   ```
@@ -616,7 +621,9 @@
   - 테스트
     - 호스트와 포트를 지정해주고 `ping()` 메서드를 통해 테스트 해본다.
     - 그 밖에도 password, decode_response 등의 옵션을 줄 수 있다.
-
+    - `Redis`, 혹은 `RedisStrict`를 사용할 수 있는데 둘 사이의 차이는 없다.
+    - `RedisStrict`가 구버전에서 사용하던 것이다.
+  
   ```python
   import redis
   
@@ -624,11 +631,11 @@
   r = redis.Redis(host="111.222.333.444",port=6379)
   print(r.ping())	# True
   ```
-
+  
   - 데이터 삽입
     - list, set, dictionary 등은 삽입이 불가능하다.
     - json 패키지를 통해 dumps, loads를 사용하면 삽입, 조회가 가능하다.
-
+  
   ```bash
   import redis
   
@@ -643,7 +650,7 @@
   ```
 
   - 데이터 여러 개 삽입
-
+  
   ```python
   import redis
   
@@ -653,7 +660,7 @@
   ```
 
   - 데이터 조회
-
+  
   ```bash
   import redis
   
@@ -664,7 +671,7 @@
   ```
 
   - scan을 통한 데이터 조회
-
+  
   ```python
   import redis
   
