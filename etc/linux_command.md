@@ -357,4 +357,12 @@
   $ ls test* | xargs cat > test.txt
   ```
 
+
+
+- 특정 행 삭제
+
+  ```bash
+  $ sed -i <숫자>d <파일명>
+  ```
+
   
