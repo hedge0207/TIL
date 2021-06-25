@@ -366,30 +366,29 @@
   appendonly <yes/no>
   appendfsync [always/everysec/no]
   auto-aof-rewrite-percentage [0-100]
-```
+  ```
   
-- replica 관련 파라미터들
+  - replica 관련 파라미터들
   
-  ```txt
+  ```bash
   replicaof <마스터 IP> <마스터 port>
-  masterauth <"마스터의 requirepass">
-```
+  masterauth <"마스터의 requirepass"
+  ```
+    - back/foreground 실행 설정
+        - no로 설정할 경우(default) foregrund로 실행된다.
   
-  - back/foreground 실행 설정
-  - no로 설정할 경우(default) foregrund로 실행된다.
-  
-  ```txt
+  ```bash
   daemonize [yes/no]
-```
+  ```
   
-  - 메모리 관련 설정
-    - 64bit 환경에서는 maxmemory의 default 값은 0이며, swap 메모리를 사용할 때까지 계속해서 커지게 된다.
-  - 32bit 환경에서는 3GB가 기본 값이다.
+    - 메모리 관련 설정
+      - 64bit 환경에서는 maxmemory의 default 값은 0이며, swap 메모리를 사용할 때까지 계속해서 커지게 된다.
+        - 32bit 환경에서는 3GB가 기본 값이다.
   
-  ``` txt
+  ```bash
   maxmemory <가용 메모리의 60~70%>
   maxmemory-policy <policy>
-```
+  ```
 
 
 

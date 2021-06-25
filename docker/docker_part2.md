@@ -549,7 +549,7 @@
     - host의 메모리에 저장
   - bind mount와 volume의 차이
     - volume은 오직 해당 volume을 사용하는 컨테이너에서만 접근이 가능하지만 bind bount 된 데이터는 다른 컨테이너 또는 호스트에서도 접근이 가능하다.
-    - 바인드 마운트를 사용하면 호스트 시스템의 파일 또는 디렉토리가 컨테이너에 마운트 된다.
+    - 바인드 마운트를 사용하면 호스트 시스템의 파일 또는 디렉터리가 컨테이너에 마운트 된다.
     - 바인드 마운트는 양방향으로 마운트되지만(즉, 호스트의 변경 사항이 컨테이너에도 반영되고 그 반대도 마찬가지), volume의 경우 호스트의 변화가 컨테이너 내부에는 반영되지 않는다.
     - volume의 경우  host 내부에 docker area 영역 안에서 관리된다.
 
@@ -562,6 +562,8 @@
     - 컨테이너간에 볼륨을 안전하게 공유할 수 있다.
     - 볼륨드라이버를 사용하면 볼륨의 내용을 암호화하거나 다른 기능을 추가할 수 있다.
     - 새로운 볼륨은 컨테이너로 내용을 미리 채울 수 있다.
+  - 기본 저장 경로
+    - `/var/lib/docker/volumes/`
 
 
 
@@ -636,14 +638,59 @@
 
 
 - docker volume의 기본 경로 변경하기
-  - https://stackoverflow.com/questions/36014554/how-to-change-the-default-location-for-docker-create-volume-command
-  - https://stackoverflow.com/questions/50998486/change-source-path-of-volume
-    - docker create volume 명령어와 동일하게 사용 가능한 듯 하다.
-    - https://stackoverflow.com/questions/49950326/how-to-create-docker-volume-device-host-path 참고
-    - https://stackoverflow.com/questions/59836742/docker-driver-opts-type-none none의 의미?
-  - https://carpfish.tistory.com/entry/Docker-Data-Root-Directory-%EA%B2%BD%EB%A1%9C-%EB%B3%80%EA%B2%BD
-  - https://stackoverflow.com/questions/38396139/docker-change-folder-where-to-store-docker-volumes
-  - 위 글들 참고해서 추후 정리
+
+  - docker data root directory 자체를 변경하는 방법
+    - 아래 [Data Root Directory 변경] 부분 참고
+  - 지정한 경로에 volume  생성하기
+    - 이후 run  명령이나 docker-compose 파일에서 아래에서 생성한 volume 이름을 적어주면 된다.
+
+  ```bash
+  $ docker volume create --driver local --opt type=none --opt device=<호스트 경로> --opt o=bind <volume 이름>
+  ```
+
+  - `docker run` 명령어와 함께 생성하기
+
+  ```bash
+  $ docker run --mount type=volume dst=<컨테이너 내부 경로> \
+     volume-driver=local volume-opt=type=none volume-opt=o=bind volume-opt=device=<호스트 경로> \
+     <컨테이너 이름>
+  ```
+
+  - docker-compose.yml 에서 설정 변경하기
+
+  ```yaml
+  services:
+    <컨테이너명>:
+      (...)
+      volumes:
+        - <volume 이름>:<컨테이너 내부 경로>
+    (...)
+    volumes:
+      <volume 이름>:
+        driver:local,
+        driver_opts:
+          type: none
+          o: bind
+          device: <호스트 경로>
+  
+  
+  # 예시
+  version: '2.2'
+  
+  services:
+    es:
+      (...)
+      volumes:
+        - es_data:/usr/share/elasticsearch/data
+    (...)
+    volumes:
+      es_data:
+        driver:local,
+        driver_opts:
+          type: none
+          o: bind
+          device: /home/es/data/docker_volumes/es
+  ```
 
 
 
@@ -665,7 +712,68 @@
 
 
 
+## Data Root Directory 변경
 
+- 기존 Docker Data Root 경로의 용량이 부족할 경우, 혹은 기본 경로가 아닌 다른 곳에 저장을 해야 할 경우 아래 두 가지 방식으로 Root Directory를 변경 가능하다.
+  - dockerd에 `--data-root` 옵션 추가(이전 버전에서는 `-g`를 사용했다)
+  - daemon.json에 "data-root" 추가
+
+
+
+- 기존 데이터 복사하기
+
+  - 변경하고자 하는 경로에 디렉토리를 생성한 후 기존 docker 데이터를 생성한 디렉토리에 옮긴다.
+  - 복사 전에 구동중인 Docker 데몬을 종료한다.
+
+  ```bash
+  # 새로운 디렉토리 생성
+  $ mkdir data
+  # Docker 데몬 종료
+  $ systemctl stop docker.servic
+  # 데이터 복사
+  $ cp -R /var/lib/docker data
+  ```
+
+
+
+- `--data-root` 옵션 추가하기
+
+  - docker.service 파일에 아래 내용을 추가한다.
+    - CentOS의 경우 `/usr/lib/systemd/system/docker.service` 경로에 있다.
+
+  ```bash
+  ExecStart=/usr/bin/dockerd --data-root <복사할 디렉터리> -H fd:// --containerd=/run/containerd/containerd.sock
+  ```
+
+  - docker 데몬 재실행하기
+
+  ```bash
+  $ systemctl daemon-reload
+  $ systemctl start docker.service
+  ```
+
+
+
+- daemon.json에 "data-root" 추가
+
+  - daemon.json 파일에 아래 내용을 추가한다.
+    - CentOS의 경우 `/etc/docker/daemon.json ` 경로에 있다.
+
+  ```bash
+  {
+      "data-root": "<복사할 디렉터리>"
+  }
+  ```
+
+
+
+- 변경 되었는지 확인하기
+
+  ```bash
+  $ docker info | grep -i "docker root dir"
+  ```
+
+  
 
 
 
@@ -673,3 +781,4 @@
 
 - https://boying-blog.tistory.com/31
 
+- https://carpfish.tistory.com/entry/Docker-Data-Root-Directory-%EA%B2%BD%EB%A1%9C-%EB%B3%80%EA%B2%BD
