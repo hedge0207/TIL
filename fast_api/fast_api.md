@@ -46,20 +46,22 @@
   # int형 이어야 하는 경로 매개변수와 str형 이어야 하는 경로 매개변수 q를 받는다.
   def read_item(item_id: int, q: Optional[str]=None):
       return {"item_id": item_id, "q": q}
-```
+  ```
   
   - 서버 실행하기
     - 위 코드에서 `app = FastAPI()`로 생성된 app을 명령어로 넣는다.
-  - `--reload`는 코드가 변경된 후 서버를 재시작하는 명령어이다.
+    - `--reload`는 코드가 변경된 후 서버를 재시작하는 명령어이다.
   
-  ```bash
+  ``` bash
   # uvicorn 파일명:FastAPI()로 생성한 객체 --reload
-  
+    
   $ uvicorn main:app --reload
-```
-  
+  ```
+
+
+
 - 요청 보내기
-  
+
   ```json
   GET 127.0.0.1:8000/items/5?q=Theo
   
@@ -103,7 +105,6 @@
   def update_item(item_id: int, item: Item):
       return {"item_name":item.name, "item_id": item_id}
   ```
-
 
 
 

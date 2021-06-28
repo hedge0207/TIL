@@ -19,6 +19,58 @@
 
 
 
+- Python에서 `_`(언더바)의 역할
+
+  - 인터프리터에서의 마지막 값
+
+  ```bash
+  >>> 1
+  1
+  >>> _ + 1
+  2
+  ```
+
+  - 무시하는 값
+    - `*`를 활용하여 복수의 값을 무시할 수 있다.
+
+  ```python
+  lst = [1,2,3]
+  a,_,c = lst
+  print(a,c) # 1 3
+  
+  # 아래와 같이 반복문에도 사용이 가능하다.
+  for _ in range(3):
+      print("Hello World!")
+  ```
+
+  - 숫자의 자릿수를 구분하는 역할
+
+  ```python
+  a = 100000
+  b = 100_000
+  print(a==b)		# True
+  ```
+
+  - 네이밍
+    - 언더바가 앞에 하나 붙은 경우에는 해당 식별자를 모듈 내에서만 사용하겠다는 의미이다. private이 없는 python의 특성상 private하게 활용하기 위해 사용한다. 다만, 외부 모듈에서 해당 모듈을 import할 때, 언더바가 하나 붙은 식별자는 import하지 않는다.
+    - 뒤에 언더바가 하나 붙은 경우에는 Python 키워드와 식별자의 충돌을 피하기 위해 사용하는 것이다.
+    - 앞에 언더바가 두 개 붙은 경우에는 네임 맹글링을 위해 사용한다. 이렇게 선언한 식별자는 일반적인 방법으로는 불러올 수 없다.
+    - 앞 뒤로 언더바가 2개씩 붙은 경우에는 Python이 자체적으로 정의한 변수나 함수에 사용되며, 이 네이밍 룰이 적용된 함수를 매직 매서드 혹은 던더 메서드라 부른다(e.g. `__init__`).
+
+  ```python
+  # 네임 맹글링
+  class Test():
+      def __init__(self):
+          self.__name = "Theo"
+  
+  test = Test()
+  print(test.__name)  # error
+  # 아래와 같이 접근해야 한다.
+  print(test._Test__name) # theo
+  ```
+
+
+
 - 명명 스타일
   - 캐멀 표기법
     - 여러 단어를 연달아 사용할 때 각 단어의 첫 글자를 대문자로 적되, 맨 앞에 오는 글자는 소문자로 표기하는 방법.
@@ -42,10 +94,12 @@
 - 파이썬의 스타일 가이드
 
   > `PEP8` 참고
+  >
+  > 스타일 가이드를 준수했는지 확인해주는 `pylint`라는 라이브러리가 있다(pycharm에는 내장되어 있다).
 
   - 공백
     - 들여쓰기는 공백 4칸을 권장
-    - 한 줄은 최대 79자까지
+    - 한 줄은 최대 79자까지(어쩔 수 없는 경우에도 99자를 넘기지 말아야 한다)이며, 넘어갈 경우 `\`로 줄바꿈을 한다.
     - 최상위 함수와 클래스 정의는 2줄씩 띄어 쓴다.
     - 클래스 내의 메소드 정의는 1줄씩 띄어 쓴다.
     - 변수 할당 앞 뒤에 스페이스를 하나만 사용한다.
@@ -53,7 +107,7 @@
     - 단일 글자 변수로 l(소문자 L), I(대문자 I), O(대문자 O)를 사용하지 않는다.
     - Producted 인스턴스 속성은 밑줄 하나로 시작한다.
     - Private 인스턴스 속성은 밑줄 두 개로 시작한다.
-    - 모듈 수준의 상수는 모두 대문자로 구성한다.
+    - 모듈 수준의 상수는 모두 대문자로 구성한다(언더바로 구분한다).
     - 클래스 내 인스턴스 메서드에서 첫 번째 파라미터의 이름을 self로 지정한다.
     - 클래스 메서드의 첫 번째 파라미터의 이름은 cls로 지정한다.
   - 표현식과 문장
@@ -62,7 +116,111 @@
     - 항상 파일 맨 위에 import 문을 적는다.
     - import시에 한 모듈당 한 줄을 사용한다.
     - import 순서는 표준 라이브러리 모듈-서드파티 모듈-자신이 만든 모듈 순이다.
-  - 스타일 가이드를 준수했는지 확인해주는 `pylint`라는 라이브러리가 있다. pycharm에는 내장되어 있다.
+  - 연산자가 들어간 여러 줄의 계산식은 연산자를 제일 앞에 둬라
+
+  ```python
+  total_sum = (10
+               +20
+               +30
+  ```
+
+  - 여는 괄호의 뒤와 닫는 괄호의 앞에는 띄어쓰기 하지 않는다.
+    - 괄호 내에서는 요소 단위로 띄어 쓰기를 사용한다.
+
+  ```python
+  # bad
+  lst = [ 1,2,3 ]
+  my_dict = { "a":1,"b":2,"c"3 }
+  
+  # good
+  lst = [1, 2, 3]
+  my_dict = {"a":1, "b":2, "c"3}
+  ```
+
+  - 할당 연산자 앞뒤로는 각각 한 개의 띄어쓰기를 사용한다.
+
+  ```python
+  # bad
+  var=1
+  
+  # good
+  var = 1
+  ```
+
+  - 할당 연산자 이외의 연산자 앞뒤도 각기 한 칸씩 띄운다.
+    - 그러나 띄우지 않는 것이 더 가독성이 좋을 경우 띄우지 않는다.
+
+  ```python
+  # bad
+  x = 2 + 3 * 1 + 2
+  y = (3 + 4) * (6 + 5)
+  
+  # good
+  x = 2 + 3*1 + 2
+  y = (3+4) * (6+5)
+  ```
+
+  - 여러 줄을 작성해야 할 경우
+    - 기본적인 원칙은 보기 좋은 코드를 작성하는 것이다.
+
+  ```python
+  # 첫 번째 줄에 인자가 없다면, 한 번 더 들여쓰기를 하여 다음 행과 구분이 되도록 한다.
+  def very_long_function_name(
+      	var_one,var_two,
+      	var_three,var_four):
+  	print(var_one)
+   
+  # 첫 번째 줄에 인자가 있다면 첫 번째 줄의 인자와 유사한 위치에 오도록 수직으로 정렬한다.
+  def very_long_function_name(var_one,var_two,
+      						var_three,var_four):
+  	print(var_one)
+  ```
+
+  - 괄호는 마지막 줄에 맞추거나 첫 번째 줄에 맞춰서 닫는다.
+
+  ``` python
+  # 마지막 줄의 첫 번째 아이템에 맞춘다.
+  my_lst = [
+      1,2,3,
+      4,5,6
+  	]
+  
+  # 첫 번째 줄에 맞춘다.
+  my_lst = [
+      1,2,3,
+      4,5,6
+  ]
+  ```
+
+  - 객체의 타입을 비교할 때는 직접 비교하기보다 `isinstance()`를 활용하는 것이 좋다.
+
+  ```python
+  # bad
+  a = 10
+  if type(a)==type(1):
+      pass
+  
+  # good
+  a = 10
+  if isinstance(a,int):
+      pass
+  ```
+  
+  - 예외처리를 할 때에는 `Exception`으로 퉁치지 말고 최대한 구체적으로 적어라
+  
+  ```python
+  # bad
+  try:
+      print(var)
+  except Exception as e:
+      print(e)
+  
+  # good
+  try:
+      print(a)
+  except NameError as e:
+      print(e)
+  ```
 
 
 
@@ -78,17 +236,56 @@
     - 이를 해결하기 위해 규약을 만들었다.
   - UTF-8: 유니코드 방식으로 가장 널리 쓰이는 방식
   - 만약 인코딩을 설정하려면 코드 상단에 아래와 같이 선언하면 된다.
-  - 주석으로 보이지만 Python parser에 의해 읽힌다.
+    - 주석으로 보이지만 Python parser에 의해 읽힌다.
+  
+  ```python
+  # -*- coding: <encoding-name> -*- 
+  ```
 
-```python
-# -*- coding: <encoding-name> -*- 
-```
+
+
+- 출력하기
+
+  - `print()`를 사용하여 출력한다.
+
+  ```bash
+  print("Hello World!")
+  ```
+
+  - 여러 값 사이에 문자 넣기
+
+  ```python
+  print("Hello", "World!", sep="//")	# Hello//World!
+  ```
+
+  - 줄 바꿔 출력하기
+    - `\n`을 활용하여 출력한다.
+
+  ```python
+  print("a\nb\nc")
+  '''
+  a
+  b
+  c
+  '''
+  ```
+
+  - 한 줄에 출력하기
+    - `end` 옵션을 사용한다.
+
+  ```python
+  print("Hello!", end=", ")
+  print("World")		# Hello!, World
+  ```
+
+  
 
 
 
 - 주석
 
   - 한 줄 주석은 `#`으로 표현한다.
+    - `#` 뒤에 한 칸의 공백을 두고 작성한다.
   - 여러 줄 주석은 `docstring`( `"""내용"""`)으로 표현한다.
     - docstring은 일반 주석과 달리 출력이 가능하다.
     - python의 내장 함수에 커서를 올리면 관련된 설명이 뜨는데 이는 모두 docstring으로 작성된 것이다.
@@ -120,20 +317,21 @@
 
   - 기본적으로 Python에서는 문장이 끝날 때 `;`를 붙이지 않는다.
     - 그러나 `;`는 문장이 끝났음을 의미한다.
-
+    - `;` 앞에는 띄어쓰기를 하지 않고, 뒤에만 띄어쓰기를 한다(convention).
+  
   ```python
-  print("hello! ");print("world!")
+  print("hello! "); print("world!")
   # hello!
   # world!
   
   # ; 없이 아래와 같이 작성하면 SyntaxError: invalid syntax 발생한다.
   print("hello! ")print("world!")
   ```
-
+  
   - 여러 줄을 작성할 때는 역슬래시 `\`를 사용하여 아래와 같이 할 수 있다.
     - list, tuple, dictionary는 역슬래쉬 없이도 여러 줄을 작성 가능하다.
     - 그러나 권장되는 방식은 아니다.
-
+  
   ```python
   print("
   Hello!")    # SyntaxError: EOL while scanning string literal
@@ -147,9 +345,9 @@
   ]
   print(lunch)  # ['자장면', '짬뽕', '탕수육', '냉면']
   ```
-
+  
   - 혹은 `"""`를 활용하여 여러 줄로 작성하는 방법도 있다.
-
+  
   ```python
   print("""
   동해물과 백두산이
@@ -184,7 +382,7 @@
   우리나라 만세
   """
   ```
-
+  
   
 
 
@@ -234,7 +432,7 @@
 
 
 
-## 자료형
+## 자료형_part1
 
 - Python의 자료형
   - Python의 모든 값에는 데이터 유형이 있다.
@@ -250,7 +448,7 @@
   print(type("Cha"))  # <class 'str'>
   ```
 
-  
+
 
 
 
@@ -543,7 +741,7 @@
   print(f"소수점은 {b:.2f}이렇게 표현한다")	# 소수점은 111.22이렇게 표현한다
   ```
 
-  
+
 
 ### Boolean
 
@@ -562,427 +760,3 @@
   print(bool(()))		# False
   print(bool({}))		# False
   ```
-
-  
-
-### Tuple
-
-- 튜플 생성
-
-  - 소괄호로 묶어서 생성할 수도 있고
-  - 소괄호를 생략하고 콤마로만 구분해서 생성할 수도 있다.
-  - 튜플의 원소가 하나일 경우, 반드시 마지막에 콤마를 찍어야 한다.
-  - `tuple()` 생성자를 사용할 수도 있다.
-
-  ```python
-  tup1 = (1,2,3)
-  tup2 = 1,2,3
-  tup3_1 = 1
-  tup3_2 = 1,
-  tup4 = tuple("abcde")
-  
-  print(type(tup1))	# <class 'tuple'>
-  print(type(tup2))	# <class 'tuple'>
-  print(type(tup3_1))	# <class 'int'>
-  print(type(tup3_2)) # <class 'tuple'>
-  print(tup4)			# ('a', 'b', 'c', 'd', 'e')
-  ```
-
-  
-
-- 튜플의 특징
-
-  - 튜플을 포함한 모든 자료형이 튜플에 포함될 수 있다.
-  - 순서가 있다.
-  - 한 번 생성되면 값을 변경할 수 없다.
-    - 그러나 + 연산, * 연산은 가능하다.
-  - 튜플을 활용하면 여러 값을 한 번에 각기 다른 변수에 할당하는 것이 가능하다.
-    - 상기했듯 굳이` ()`로 묶지 않아도 콤마로 구분만 되어 있으면 튜플이 생성된다.
-  - 튜플의 해제 할당 기능을 사용하면 두 변수의 값을 바꾸는 것도 가능하다.
-
-  ```python
-  # 순서가 있으므로 인덱스를 통해 접근이 가능하다.
-  tup = ('one','two', 'three')
-  print(tup[0:2])    # ('one', 'two')
-  
-  # 값을 변경할 수 없다.
-  tup[0] = 'zero'   # 'tuple' object does not support item assignment
-  
-  # +, * 연산은 가능하다.
-  tup1 = (1,2,3)
-  tup2 = (4,5,6)
-  print(tup1+tup2)  # (1, 2, 3, 4, 5, 6)
-  print(tup1*2)     # (1, 2, 3, 1, 2, 3)
-  
-  # 여러 값을 변수에 한 번에 할당하는 것이 가능하다.
-  email,phone = "email@email.com", "010-1234-5678"
-  print(email,phone)   # email@email.com 010-1234-5678
-  
-  # 두 변수의 값을 바꾸는 것도 가능하다.
-  email, phone = phone, email
-  print(email,phone)   # 010-1234-5678 email@email.com
-  ```
-
-  
-
-### List
-
-- 리스트 생성
-
-  - `list()` 생성자를 사용하여 생성이 가능하다.
-  - `[]` 로 생성이 가능하다.
-
-  ```python
-  lst1 = list()
-  lst2 = []
-  print(type(lst1))  # <class 'list'>
-  print(type(lst2))  # <class 'list'>
-  ```
-
-  
-
-- 리스트 특징
-
-  - 리스트를 포함한 모든 자료형이 리스트에 포함될 수 있다.
-  - 순서가 있다.
-  - 한 번 생성된 값을 변경 가능하다.
-
-  ```python
-  # 순서가 있으므로 인덱스를 통해 접근이 가능하다.
-  lst = ['one', 'two', 'three']
-  print(lst[0:2])   # ['one', 'two']
-  
-  # 변경이 가능하다.
-  lst[0] = 'zero'
-  print(lst)        # ['zero', 'two', 'three']
-  ```
-
-  
-
-- 리스트 관련 메서드
-
-  > 아래 메서드들 중 일부는 튜플, 문자열 등에서도 사용 가능하다.
-
-  - `len()`: 요소의 개수를 반환
-
-  ```python
-  lst = [1,2,3]
-  print(len(lst))   # 3
-  ```
-
-  - `.append()`: 요소를 추가
-
-  ```python
-  lst = [1,2,3]
-  lst.append(4)
-  print(lst)   #[1, 2, 3, 4]
-  ```
-
-  - `.insert(인덱스, 추가할 값)`: 지정한 인덱스에 값을 삽입
-
-  ```python
-  lst = [1,2,3]
-  lst.insert(1,4)
-  print(lst)   # [1, 4, 2, 3]
-  ```
-
-  - `.remove()`: 요소를 삭제
-
-  ```python
-  lst = [1,2,3]
-  lst.remove(1)
-  print(lst)  # [2,3]
-  ```
-
-  - `del`: 요소를 삭제
-    - `remove`와의 차이는 `remove`는 삭제할 값을 지정하지만 del은 삭제할 인덱스를 지정한다는 것이다.
-
-  ```python
-  lst = [1,2,3]
-  del lst[1]
-  print(lst)  # [1,3]
-  ```
-
-  - `.pop()`: 리스트의 마지막 요소를 삭제 후 반환
-
-  ```python
-  lst = [1,2,3]
-  # 삭제 후 반환한다.
-  print(lst.pop())  # 3
-  print(lst)		  # [1,2]
-  ```
-
-  - `.clear()`: 모든 요소 삭제
-
-  ```python
-  lst = [1,2,3]
-  lst.clear()
-  print(lst)      # []
-  ```
-
-  - `.reverse()`: 순서를 뒤집는다.
-
-  ```python
-  lst = [1,2,3]
-  lst.reverse()
-  print(lst)    # [3, 2, 1]
-  ```
-
-  - `.sort()`: 정렬한다.
-
-  ```python
-  lst = [9,3,6]
-  lst.sort()
-  print(lst)    # [3,6,9]
-  ```
-
-  - `sorted()`: 정렬한다.
-    - `.sort()`와의 차이는 원본 배열을 변경하지 않는다는 것이다.
-
-  ```python
-  lst = [9,3,6]
-  print(sorted(lst))  # [3,6,9]
-  print(lst)			# [9,3,6]
-  ```
-
-  - `.copy()`
-    - 복사에는 얕은 복사와 깊은 복사가 있는데 `.copy()`를 사용하면 깊은 복사가 가능하다.
-    - `[:]`를 활용해도 깊은 복사가 가능하다.
-
-  ```python
-  # 얕은 복사
-  lst1 = [1,2,3]
-  lst2 = lst1  
-  lst2[0] = 9
-  # 얕은 복사이기에 같은 객체를 가리키고 있어 하나를 변경하면 둘 다 변경된다.
-  print(lst1,lst2)  # [9, 2, 3] [9, 2, 3]
-  
-  # 깊은 복사
-  lst1 = [1,2,3]
-  lst2 = lst1.copy()
-  lst2[0] = 9
-  # 깊은 복사이기에 서로 다른 객체를 가리키고 있어 하나를 변경해도 다른 하나는 변경되지 않는다.
-  print(lst1,lst2)  # [1, 2, 3] [9, 2, 3]
-  
-  # [:]를 활용한 깊은 복사
-  lst1 = [1,2,3]
-  lst2 = lst1[:]
-  lst2[0] = 9
-  print(lst1,lst2)  # [1, 2, 3] [9, 2, 3]
-  ```
-
-
-
-### Dictionary
-
-- 생성
-
-  - `dict()`생성자를 사용해 생성 가능하다.
-  - `{}`를 사용해 생성 가능하다.
-
-  ```python
-  dict1 = dict()
-  dict2 = {}
-  print(type(dict1))  # <class 'dict'>
-  print(type(dict2))  # <class 'dict'>
-  ```
-
-  
-
-- 딕셔너리의 특징
-
-  - 키(key)-값(value) 쌍을 요소로 갖는 자료형이다.
-  - 키는 중복이 불가능하다.
-    - 키를 중복으로 사용할 경우 하나의 키를 제외한 모든 중복된 키는 무시된다.
-  - 키는 변경 immutable 타입이어야 하며 값은 immutable과 mutable 모두 가능하다.
-    - 변경 불가능한 문자열이나 튜플 등은 키가 될 수 있다.
-    - 변경 가능한 리스트는 키가 될 수 없다.
-    - 값에는 딕셔너리를 포함한 모든 자료형이 올 수 있다.
-  - 순서가 없는 자료형으로 key를 통해 값에 접근해야 한다.
-  - 이미 입력된 값의 변경이 가능하다.
-  - 요소의 추가와 삭제가 가능하다.
-
-  ```python
-  # key에는 변경 불가능한 자료형이, 값에는 모든 자료형이 올 수 있다.
-  my_dict = {"취미":['축구','야구'],"이름":'홍길동',"나이":28,"가족":{"엄마":"김엄마","아빠":"홍아빠"}}
-  
-  # key를 통해 값에 접근할 수 있다.
-  print(my_dict['이름'])  	  # 홍길동
-  
-  # 변경이 가능하다.
-  my_dict['나이']=14
-  print(my_dict['나이']) 	  # 14 
-  
-  # 요소(키-값) 추가
-  my_dict["email"] = "email@email.com"
-  print(my_dict["email"])    # email@email.com
-  
-  
-  # 요소(키-값) 삭제
-  del my_dict['email']
-  print(my_dict)  # {'취미': ['축구', '야구'], '이름': '홍길동', '나이': 14, '가족': {'엄마': '김엄마', '아빠': '홍아빠'}}
-  ```
-
-
-
-- 딕셔너리 관련 함수
-
-  - `.keys()`: key를 리스트로 반환한다.
-
-  ```python
-  my_dict = {"취미":['축구','야구'],"이름":'홍길동',"나이":28}
-  print(my_dict.keys())  # dict_keys(['취미', '이름', '나이'])
-  ```
-
-  - `.values()`: 값을 리스트로 반환한다.
-
-  ```python
-  my_dict = {"취미":['축구','야구'],"이름":'홍길동',"나이":28}
-  print(my_dict.values())  # dict_values([['축구', '야구'], '홍길동', 28])
-  ```
-
-  - `.items()`: 키-값 쌍을 리스트로 반환한다.
-
-  ```python
-  my_dict = {"취미":['축구','야구'],"이름":'홍길동',"나이":28}
-  print(my_dict.items()) # dict_items([('취미', ['축구', '야구']), ('이름', '홍길동'), ('나이', 28)])
-  ```
-
-  - `.clear()`: 모든 요소 삭제
-
-  ```python
-  my_dict = {"취미":['축구','야구'],"이름":'홍길동',"나이":28}
-  my_dict.clear()
-  print(my_dict)  # {}
-  ```
-
-  - `.get()`: 키로 값 얻기
-    - 그냥 키로만 접근하는 것과의 차이는 존재하지 않는 키로 접근할 경우, 키로만 접근하면 error가 발생하지만,  `.get()`은 None을 반환한다는 것이다.
-
-  ```python
-  my_dict = {"취미":['축구','야구'],"이름":'홍길동',"나이":28}
-  print(my_dict['email'])		 # KeyError: 'email'
-  print(my_dict.get('email'))  # None
-  ```
-
-  
-
-### Set
-
-- 생성
-
-  - 다른 자료형들과 달리 set은 `set()` 생성자로만 생성할 수 있다.
-  - 반드시 문자열 또는 괄호로 묶어줘야 한다(괄호의 종류는 상관 없다).
-  - 비어있는 자료형도 생성 가능하다.
-
-  ```python
-  my_set1 = set({1,2,3})
-  my_set2 = set("Hello!")
-  my_set3 = set()
-  
-  print(type(my_set1))  # <class 'set'>
-  print(type(my_set2))  # <class 'set'>
-  print(my_set1)		  # {1, 2, 3}
-  print(my_set2)		  # {'l', '!', 'o', 'e', 'H'}
-  print(my_set3)        # set()
-  ```
-
-  
-
-- Set(집합) 자료형의 특징
-
-  - 중복을 허용하지 않는다.
-  - 순서가 없다.
-
-  ```python
-  my_set = set("Hello!")
-  
-  print(my_set2)		  # {'l', '!', 'o', 'e', 'H'}
-  # 중복을 허용하지 않기에 두 번 들어간 l은 하나만 들어가게 된다.
-  # 순서가 없기에 순서대로 들어가지 않는다.
-  ```
-
-  
-
-- 교집합, 합집합, 차집합 구하기
-
-  ```python
-  my_set1 = set([1,2,3])
-  my_set2 = set([3,4,5])
-  
-  # 교집합
-  print(my_set1 & my_set2)				# {3}
-  print(my_set1.intersection(my_set2))	# {3}
-  
-  # 합집합
-  print(my_set1 | my_set2)				# {1, 2, 3, 4, 5}
-  print(my_set1.union(my_set2))			# {1, 2, 3, 4, 5}
-  
-  # 차집합
-  print(my_set1-my_set2)					# {1, 2}
-  print(my_set1.difference(my_set2))		# {1, 2}
-  print(my_set2-my_set1)					# {4, 5}
-  print(my_set2.difference(my_set1))		# {4, 5}
-  ```
-
-  
-
-- 집합 관련 함수들
-
-  - `.add()`: 요소를 1개 추가한다.
-
-  ```python
-  my_set = set([1,2,3])
-  my_set.add(4)
-  print(my_set)   # {1, 2, 3, 4}
-  ```
-
-  - `.update()`: 요소 여러 개 추가하기
-
-  ```python
-  my_set = set([1,2,3])
-  my_set.update([4,5,6])
-  print(my_set)   # {1, 2, 3, 4, 5, 6}
-  ```
-
-  - `.remove()`: 특정 요소 제거하기
-
-  ```python
-  my_set = set([1,2,3])
-  my_set.remove(2)
-  print(my_set)   # {1, 3}
-  ```
-
-  
-
-## 자료형의 변경
-
-- `str()`, `int()`, `float()`, `bool()` 등의 함수를 사용해서 변경하면 된다.
-
-
-
-- 주의점
-
-  - `int()`의 경우 숫자가 아닌 것을 숫자로 변환할 수 없으며, 소수점이 있는 숫자 형식의 문자열을 정수형으로 변환할 수 없다.
-  - 소수점이 없는 숫자 형식의 문자열은 정수형으로 변환이 가능하다.
-  - 소수점이 있든 없든 숫자 형식이기만 하면 실수형으로 변환이 가능하다.
-  - 변환 함수는 변환된 값을 반환할 뿐 실제로 자료형을 변경시키는 것은 아니다.
-
-  ```python
-  # 숫자 형식인 문자열의 정수와 실수 변환
-  chr = "1"
-  print(type(int(chr)))		# <class 'int'>
-  print(type(float(chr)))		# <class 'float'>
-  
-  # 변환 함수는 변환된 값을 반환만 할 뿐이다.
-  var = True
-  print(type(str(var)))	# <class 'str'>
-  print(type(var))		# <class 'bool'>
-  
-  # 아래와 같이 재할당 해주거나 다른 변수에 담아서 사용해야 한다.
-  var = True
-  var = str(var)
-  print(type(var))		# <class 'str'>
-  ```
-
-  
