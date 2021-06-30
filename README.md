@@ -438,12 +438,26 @@
   - 기초문법
 - 변수 및 자료형
   - 변수
-  - 자료형
-  - 자료형의 변경
+  - 자료형_part1
+    - 숫자
+    - 문자열
+    - Boolean
 
 <br/>
 
 ## [Python_part2](https://github.com/hedge0207/TIL/blob/master/python/python_part2.md)
+
+- 변수 및 자료형
+  - 자료형_part2
+    - Tuple
+    - List
+    - Dictionary
+    - Set
+  - 자료형의 변경
+
+<br/>
+
+## [Python_part3](https://github.com/hedge0207/TIL/blob/master/python/python_part3.md)
 
 - 연산자
 - 제어문
@@ -456,19 +470,29 @@
 
 <br/>
 
-## [Python_part3](https://github.com/hedge0207/TIL/blob/master/python/python_part3.md)
+## [Python_part4](https://github.com/hedge0207/TIL/blob/master/python/python_part4.md)
 
 - 클래스
 - 모듈
 - 패키지
 - 예외처리
+- 이터레이터와 제너레이터
 
 <br/>
 
-## [Python_part4](https://github.com/hedge0207/TIL/blob/master/python/python_part4.md)
+## [Python_part5](https://github.com/hedge0207/TIL/blob/master/python/python_part5.md)
 
 - python 내장 함수
-- 라이브러리
+- 패키지
+- Python type hint
+- with
+
+<br/>
+
+## [Python_part6](https://github.com/hedge0207/TIL/blob/master/python/python_part6.md)
+
+- 가상환경
+  - 심볼릭 링크
 
 <br/>
 
