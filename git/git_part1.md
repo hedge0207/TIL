@@ -413,6 +413,18 @@
   $ git commit -m '메세지'
   ```
 
+  - 커밋 날짜 변경하기
+    - 맨 마지막 커밋 날짜를 변경한다.
+
+  ```bash
+  $ git commit --amend --no-edit --date "<변경하고자 하는 날짜>"
+  
+  # 예시
+  $ git commit --amend --no-edit --date "Mon 20 Aug 2018 20:19:19 KST"
+  ```
+
+  
+
   
 
 - Staging Area 생략하기
