@@ -941,7 +941,26 @@
 
 ## [docker_part1](https://github.com/hedge0207/TIL/blob/master/docker/docker_part1.md)
 
+- 컨테이너와 Docker
+- 도커 명령어
+
+<br/>
+
 ## [docker_part2](https://github.com/hedge0207/TIL/blob/master/docker/docker_part2.md)
+
+- Dockerfile
+- Docker Compose
+- docker volume
+- etc
+- 참고
+
+<br/>
+
+<br/>
+
+<br/>
+
+<br/>
 
 
 # Machine learning
@@ -952,11 +971,29 @@
 - k-최근접 이웃
   - 생선 분류 문제
 
+<br/>
 
+<br/>
+
+<br/>
+
+<br/>
 
 # Crawling
 
 ## [scrapy](https://github.com/hedge0207/TIL/blob/master/crawling/scrapy.md)
 
-## [크롤링](https://github.com/hedge0207/TIL/blob/master/crawling/%ED%81%AC%EB%A1%A4%EB%A7%81.md)
+- 기본 개념
+- Spider
+- 데이터 추출하기
+- 데이터 저장하기
+- Following links
 
+<br/>
+
+## [Beatifulsoup](https://github.com/hedge0207/TIL/blob/master/crawling/beautifulsoup.md)
+
+- 크롤링의 위법성
+- Beautiful Soup
+- 기초
+- 웹 크롤러 만들기
