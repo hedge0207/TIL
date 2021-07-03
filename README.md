@@ -892,6 +892,12 @@
   - 샤드와 세그먼트
   - settings와 mappings
 - Elasticsearch 설치하고 실행하기
+
+- 기본적인 데이터 처리
+  - 새로운 데이터 색인
+  - 데이터 검색
+  - 데이터 수정, 삭제
+
 - 참고
 
 <br/>
@@ -900,17 +906,16 @@
 
 ## [Elasticsearch_part2](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part2.md)
 
-- 엘라스틱서치 모니터링
-  - Head
-  - X-Pack
 - 클러스터 구축하기
   - elasticsearch.yml
   - jvm.options
 - 클러스터 운영하기
   - 버전 업그레이드
   - 샤드 배치 방식 변경
-- 엘라스틱서치 설정하기
-- 클러스터에 노드 추가하기
+  - 클러스터와 인덱스의 설정 변경
+    - 클러스터 설정 변경
+    - 인덱스 설정 변경
+  - 템플릿 활용하기
 
 <br/>
 
@@ -918,12 +923,16 @@
 
 ## [Elasticsearch_part3](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part3.md)
 
-- 데이터 처리
-  - 새로운 데이터 색인
-  - 데이터 검색
-  - 데이터 수정, 삭제
-  - 벌크 API
-- 참고
+- 클러스터 성능 모니터링과 최적화
+  - 클러스터의 상태 확인하기
+  - 노드의 상태와 정보 확인하기
+  - 인덱스의 상태와 정보 확인하기
+  - 샤드의 상태 확인하기
+  - stats API로 지표 확인하기
+  - 성능 확인과 문제 해결
+- 분석 엔진으로 활용하기
+- 검색 엔진으로 활용하기
+  - inverted index와 analyzer
 
 <br/>
 
@@ -931,11 +940,69 @@
 
 ## [Elasticsearch_part4](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part4.md)
 
+- 데이터 검색
+  - Search API
+  - Query DSL
+    - Query Context
+    - Filter Context
+    - bool query
+    - Function score query
+  - Retrieve inner hits
+
+<br/>
+
+<br/>
+
+## [Elasticsearch_part5](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part5.md)
+
+- 엘라스틱서치 모니터링
+  - Head
+  - X-Pack
+- 색인 성능 최적화
+- 검색 성능 최적화
+  - ES 캐시 활용하기
+  - 검색 쿼리 튜닝하기
+  - 그 외의 방법들
+
+<br/>
+
+<br/>
+
+## [Elasticsearch_part6](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part6.md)
+
+- Runtime field
+- Scripting
+- Aggregations
+  - Bucket aggregations
+    - term
+  - Metrics aggregations
+
+<br/>
+
+<br/>
+
+## [Elasticsearch_part7](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part7.md)
+
+- ES 클러스터 구축 시나리오
+
+<br/>
+
+<br/>
+
+## [Elasticsearch_part8](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part8.md)
+
+- Field data types
+  - 기본 타입
+  - 심화 타입
+    - Join field type
+
+<br/>
+
 <br/>
 
 <br/>
 
-## [Elasticsearch_part5]()
+<br/>
 
 # Docker
 
