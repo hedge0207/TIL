@@ -870,13 +870,35 @@
 
 <br/>
 
-## [redis]()
+## [Redis](https://github.com/hedge0207/TIL/blob/master/etc/redis.md)
+
+- Redis
+- Data Persistence
+- HA
+- redis 사용해보기
+- Redis 사용 전략
+- 참조
 
 <br/>
 
 <br/>
 
+## [Kafka](https://github.com/hedge0207/TIL/blob/master/etc/redis.md)
 
+- Kafka란
+- 주요 개념
+- 사용하기
+  - Docker로 설치하기
+  - Python에서 사용하기
+- 참고
+
+<br/>
+
+<br/>
+
+<br/>
+
+<br/>
 
 # Elasticsearch
 
