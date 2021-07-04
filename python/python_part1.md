@@ -614,10 +614,24 @@
   print(",".join(names_dict))       # one,two,three
   ```
 
+  - `reversed()`
+    - 문자열의 순서를 역전시킨다.
+    - 문자열, 리스트 등의 순회 가능한 값을 받아서 reversed 객체를 반환한다.
+
+  ```python
+  a = "ABC"
+  
+  print(reversed(a))	# <reversed object at 0x000001DF70965220>
+  print(''.join(reversed(a))) # CBA
+  
+  # 아래와 같이 하는 방법도 있다.
+  print(a[::-1]) # CBA
+  ```
+  
   - 아스키 코드 값으로 변환
     - `ord()`: 문자의 아스키 코드 값을 리턴
     - `chr()`: 아스키 코드 값을 문자로 리턴
-
+  
   ```python
   chr_a = "a"
   ord_a = ord("a")
