@@ -863,3 +863,39 @@
 
 
 
+```sh
+#!/usr/bin/env bash
+
+# 개인별 변수 설정을 다르게 할 경우에는 파라미터로 처리 (소스 스크립트는 가급적 유지)
+PATH_TO_DIR="/home/wtjeong/workspace/repo/DSRS/etl/ocr/data/MTR_#5/OCR"
+if [ "$1" != "" ]; then
+    PATH_TO_DIR="$1"
+fi
+OUTPUT_DIR="/home/wtjeong/workspace/repo/DSRS/translator/translated/MTR_#5"
+if [ "$2" != "" ]; then
+    OUTPUT_DIR="$2"
+fi
+
+GPU_IDS="-1"
+if [ "$3" != "" ]; then
+    GPU_IDS="$3"
+fi
+
+PYTHON_PATH="python"
+if [ "$4" != "" ]; then
+    PYTHON_PATH="$4"
+fi
+
+CUDA_VISIBLE_DEVICES=$GPU_IDS \
+"${PYTHON_PATH}" run_translation.py \
+    --input_path="${PATH_TO_DIR}" \
+    --output_path="${OUTPUT_DIR}"  \
+    --gcloud_translation_fallback=False \
+    --gcloud_project_id=180212812010 \
+    --max_pages=0 \
+    --fairseq_ensemble=True \
+    --source_lang=en \
+    --target_lang=ru \
+    --debug_mode=True
+```
+
