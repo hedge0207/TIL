@@ -424,18 +424,20 @@
   print(my_dict)  # {}
   ```
 
-  - `.get()`: 키로 값 얻기
+  - `.get()`: 키로 값 얻기, 키가 존재하는지 확인하기
     - 그냥 키로만 접근하는 것과의 차이는 존재하지 않는 키로 접근할 경우, 키로만 접근하면 error가 발생하지만,  `.get()`은 None을 반환한다는 것이다.
-
+    - 키로 값을 얻는 것이 아닌 키가 존재하는지 확인만 하고자 한다면 `in` 연산자를 사용해도 된다.
+  
   ```python
   my_dict = {"취미":['축구','야구'],"이름":'홍길동',"나이":28}
   print(my_dict['email'])		 # KeyError: 'email'
   print(my_dict.get('email'))  # None
+  print('email' in my_dict)	 # False
   ```
-
+  
   - `.update()`: 키-값 수정하기
     - 만일 수정하려는 키가 없으면 새로운 키-값 쌍을 추가한다.
-
+  
   ```python
   # 키가 문자열일 경우 아래와 같이 변수를 할당하듯이 넣어준다.
   my_dict = {'a':1}
@@ -454,16 +456,16 @@
   ```
 
   - `pop(키)`: 키-값 쌍을 삭제한 뒤 삭제한 값을 반환한다.
-
+  
   ```python
   my_dict = {'a':1,'b':2}
   print(my_dict.pop('a'))	# 1
   print(my_dict)			# {'b': 2}
   ```
-
+  
   - `popitem()`: 마지막 키-값 쌍을 삭제하고 튜플로 반환한다.
     - 3.6 이전 버전에서는 임의의 키-값 쌍을 삭제하고 튜플로 반환한다.
-
+  
   ```python
   my_dict = {'a':1,'b':2}
   print(my_dict.popitem())	# ('a', 1)
@@ -471,16 +473,16 @@
   ```
 
   - `del`: 키-값 쌍을 삭제한다.
-
+  
   ```bash
   my_dict = {'a':1,'b':2}
   del my_dict['a']
   print(my_dict)			# {'b': 2}
   ```
-
+  
   - `dict.fromkeys()`: 리스트, 튜플을 딕셔너리로 만든다.
     - 두 번째 인자로 기본값을 넘길 수 있다.
-
+  
   ```python
   keys = ['a', 'b', 'c']
   my_dict = dict.fromkeys(keys)
