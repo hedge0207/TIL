@@ -19,4 +19,22 @@
   es = Elasticsearch('10.11.12.103:9200', timeout=30, max_retries=5,retry_on_timeout=True)
   ```
 
+
+
+
+- CSV 파일 bulk
+
+  ```python
+  import csv
+  # helpers import
+  from elasticsearch import helpers, Elasticsearch 
+  
+  
+  es = Elasticsearch(['localhost:9200'])
+  
+  with open('/test.csv') as f: 
+      reader = csv.DictReader(f) 
+      helpers.bulk(es, reader, index="my_index")
+  ```
+
   
