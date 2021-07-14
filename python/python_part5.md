@@ -1053,9 +1053,102 @@
   ]
   ```
 
+
+
+## CSV
+
+- csv 라이브러리
+  - Python 표준 라이브러리
+    - 별도의 설치 없이 사용이 가능하다.
+  - CSV 파일을 읽고 쓸 수 있게 해준다.
+
+
+
+- CSV 파일 쓰기
+
+  - list를 CSV로 저장
+    - `writer`를 사용한다.
+    - `writerow`는 한 줄 쓰기, `writerows`는 여러 줄 쓰기
+
+  ```python
+  import csv
+  from os import write
   
+  
+  fields = ['name','age','gender']
+  people_list = [
+      ['Theo', 28, 'male'],
+      ['Cha',27,'female']
+  ]
+  
+  with open('test.csv','w',newline='',encoding='utf-8') as f:
+      writer = csv.writer(f)
+      writer.writerow(fields)
+      writer.writerows(people_list)
+  ```
+
+  - dict를 CSV로 저장
+    - `DictWriter`를 사용한다.
+    - `fieldnames` 파라미터에 필드 정보를 넘겨줘야 한다.
+
+  ```python
+  import csv
+  from os import write
+  
+  
+  fields = ['name','age','gender']
+  people_dict = [
+      {'name':'Theo','age':28,'gender':'male'},
+      {'name':'Cha','age':27,'gender':'male'}
+  ]
+  
+  with open('test.csv','w',newline='',encoding='utf-8') as f:
+      writer = csv.DictWriter(f, fieldnames=fields)
+      writer.writeheader()
+      writer.writerows(people_dict)
+  
+  ```
+
+
+
+- CSV 파일 읽기
+
+  - `reader`로 읽기
+    - 만일 최상위에 필드 정보가 있다면 아래 예시와 같이 `next`를 사용하면 된다.
+    - 필드 정보와 필드 값을 함께 출력하려면 아래와 같이 `zip`을 활용하면 된다.
+
+  ```python
+  import csv
+  
+  
+  with open('./test.csv', 'r', encoding='utf-8') as f:
+      reader = csv.reader(f)
+      col_list = next(reader)
+      for row in reader:
+          print(row)
+          for col_name,column in zip(col_list,row):
+              print(col_name,column)
+  ```
+
+  - `DictReader`로 읽기
+
+  ```python
+  import csv
+  
+  
+  with open('./test.csv', 'r', encoding='utf-8') as f:
+      reader = csv.DictReader(f)
+      fields = reader.fieldnames
+      for field in fields:
+          print(field)
+  
+      for row in reader:
+          print(row)
+  ```
 
   
+
+
 
 # Python type hint
 
