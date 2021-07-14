@@ -84,10 +84,10 @@
 
   ```bash
   # 전체 폴더에서 찾기
-  $ find / -name 폴더명 -type d
+  $ find / -name <폴더명> -type d	# 작은 따옴표, 큰 따옴표 모두 가능하며, 안 쓰는 것도 가능하다.
   
   # 현재 폴더 및 하위 폴더에서 찾기
-  $ find ./ -name 폴더명 -type d
+  $ find ./ -name <폴더명> -type d
   ```
 
 
