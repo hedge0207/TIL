@@ -328,46 +328,55 @@
 
   - basename: 상대 경로를 반환한다.
 
-  ```bash
+  ```python
   import os
   print(os.path.basename('/Users/User/theo/test')) # test
   ```
 
-  - exists: 해당 경로가 존재하면 True, 아니면 False를 반환한다.
+  - getcwd: 실행 경로를 반환한다.
+    - 실행 경로란 해당 python 파일을 실행시킨 경로를 의미한다.
+    - 예를들어 python 파일은 `C:\Users\User\test\my_python.py`에 있고, 터미널은 `C:\Users\User\`에 있는 상태에서 `.\test\my_python.py` 명령어로 파일을 실행시키면, 이 파일을 실행시킨 경로인 `C:\Users\User\`가 반환된다.
+  
+  ```python
+  import os
+  print(os.getcwd())
+  ```
 
+  - exists: 해당 경로가 존재하면 True, 아니면 False를 반환한다.
+  
   ```bash
   import os
   print(os.path.exists('/Users/User/theo/test'))	# True
   ```
 
   - join: 입력된 문자열들을 OS의 형식에 맞게 하나의 경로로 이어준다.
-
+  
   ```python
   import os
   print(os.path.join("/Users/User/theo/test", "test.py")) # /Users/User/theo/test\test.py
   ```
 
   - splitext: 파일명과 확장자를 분리하여 튜플로 반환한다.
-
+  
   ```python
   import os
   print(os.path.splitext("/c/Users/User/test/test.py")) # ('/c/Users/42Maru/theo/test/test', '.py')
   ```
 
   - getsize: 파일 크기를 바이트 단위로 반환한다.
-
+  
   ```bash
   import os
   print(os.path.getsize('/Users/User/theo/test')) # 4096
   ```
-
+  
   - getmtime: 최근 변경 시간을 반환한다.
-
+  
   ```python
   import os
   print(os.path.getmtime('/Users/User/theo/test')) # 1623374338.4626312
   ```
-
+  
   
 
 
