@@ -76,18 +76,18 @@
   }
   ```
   
--  `Grade.java`를 enum으로 생성
+  -  `Grade.java`를 enum으로 생성
   
-```java
+  ```java
   package start.first.member;
   
   public enum Grade {
       BASIC,
       VIP
   }
-```
+  ```
   
-- `MemberRepository.java` 를 인터페이스로 생성
+  - `MemberRepository.java` 를 인터페이스로 생성
   
   ```java
   package start.first.member;
@@ -129,20 +129,20 @@
   
   - `MemberService.java`를 interface로 생성
   
-```java
+  ```java
   package start.first.member;
   
-  public interface MemberService {
-      void join(Member member);
-      Member findMember(Long memberId);
+  public enum Grade {
+      BASIC,
+      VIP
   }
   ```
   
-- `MemberService.java`의 구현체인 `MemberServiceImpl.java`를 생성
+  - `MemberService.java`의 구현체인 `MemberServiceImpl.java`를 생성
   
-```javascript
+  ```java
   package start.first.member;
-
+  
   public class MemberServiceImpl implements MemberService{
   
       private final MemberRepository memberRepository = new MemoryMemberRepository();
@@ -158,8 +158,6 @@
       }
   }
   ```
-
-
 
 
 
@@ -307,7 +305,7 @@
   ```
 
   - order 패키지 생성
-  - `Order.java` 생성
+    - `Order.java` 생성
 
   ```java
   package start.first.order;
@@ -443,7 +441,7 @@
 
 
 
-- 여기까지 완료 되었을 때 고정적으로 1000원을 깎아주는 것이 아닌 일정 비율을 할인해 주도록 코드를 변경해야 한다면 위 코드를 아래와 같이 수정해야 한다.
+- 여기까지 완료 되었을 때 고정적으로 1000원을 깎아주는 것이 아닌 일정 비율을 할인해 주도록 코드를 변경해야 한다면, 위 코드를 아래와 같이 수정해야 한다.
 
   - `rateDiscountPolicy.java`
 
@@ -468,7 +466,7 @@
   }
   ```
 
-  
+
 
 - 테스트
 
@@ -523,7 +521,7 @@
   }
   ```
 
-  
+
 
 - 변경된 할인 정책 적용
 
