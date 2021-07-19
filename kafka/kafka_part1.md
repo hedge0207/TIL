@@ -14,7 +14,7 @@
     - Pub/Sub 구조는 A,B,C,D가 모두 연결되어 있는 것이 아니라 발신자, 수신자가 지정되어 있고 발신자는 카프카에만 요청을 보내고, 수신자는 카프카에게서만 메시지를 받는 구조이다(단방향 구조).
     - 따라서 발신자와 수신자 모두 Kafka와만 연결되어 있으면 된다.
   - Publish(Producer)
-    - 발신을 하는 역할을 하는 사람은 카프카에게 전송만 하게 되고, 수신자가 누구인지 알 필요가 없다.
+    - 발신자는 카프카에게 전송만 하면 되고, 수신자가 누구인지 알 필요가 없다.
     - 따라서 특별히 수신자를 정해놓지 않고 서버에 전송하게 되는 심플한 구조를 갖게 된다.
     - 카프카는 내부에 발신자의 메시지를 토픽이라는 주소로 저장하게 된다.
   - Subscribe(Consumer)
@@ -221,12 +221,56 @@
   import time
   
   
-  producer = KafkaProducer(acks=0,compression_type='gzip',bootstrap_servers=['localhost:9092'],value_serializer=lambda x: dumps(x).encode('utf-8'))
+  producer = KafkaProducer(acks=0, compression_type="gzip", bootstrap_servers=['localhost:9092'], \
+                          value_serializer=lambda x: dumps(x).encode('utf-8'))
   
   
+  data = {'Hello':'World!'}
+  producer.send('test',value=data)
+  producer.flush()
   ```
 
+  - Producer 옵션
 
+    > 상세는 https://kafka-python.readthedocs.io/en/1.1.0/apidoc/KafkaProducer.html#kafkaproducer 참고
+
+    - `bootstrap_servers`: 브로커들을 리스트 형태로 입력한다.
+    - `acks`: 메시지를 보낸 후 요청 완료 전 승인 수, 손실과 성능의 트레이드 오프로, 낮을수록 성능은 좋고 손실이 커진다.
+    - `buffer_memory`: 카프카에 데이터를 보내기전 잠시 대기할 수 있는 메모리(byte)
+    -  `compression_type`: 데이터를 압축해서 보낼 수 있다(None, gzip, snappy, lz4 중 선택).
+    - `retries`: 오류로 전송 실패한 데이터를 다시 보낼지 여부
+    - `batch_size`: 어러 데이터를 배치로 보내는 것을 시도한다.
+    - `linger_ms`: 배치 형태 작업을 위해 기다리는 시간 조정, 배치 사이즈에 도달하면 옵션과 관계 없이 전송, 배치 사이즈에 도달하지 않아도 제한 시간 도달 시 메시지 전송
+    - `max_request_size`: 한 번에 보낼 수 있는 메시지 바이트 사이즈(기본 값은 1mb)
+
+
+
+- Consumer 구현
+
+  ```python
+  from kafka import KafkaConsumer
+  from json import loads
+  
+  
+  consumer = KafkaConsumer('test',bootstrap_servers=['localhost:9092'],auto_offset_reset='earliest', \
+                          enable_auto_commit=True, group_id="my-group", value_deserializer=lambda x: loads(x.decode('utf-8')),\
+                          consumer_timeout_ms=1000)
+  
+  for message in consumer:
+      print(message.topic)		# test
+      print(message.partition)	# 0
+      print(message.offset)		# 0
+      print(message.key)			# None
+      print(message.value)		# {'Hello': 'World!'}
+  ```
+
+  - Consumer 옵션
+    - `bootstrap_servers`: 브로커들을 리스트 형태로 입력한다.
+    - `auto_offset_reset`: earliest(가장 초기 오프셋값), latest(가장 마지막 오프셋값), none(이전 오프셋값을 찾지 못할 경우 에러) 중 하나를 입력한다.
+    - `enable_auto_commit`: 주기적으로 offset을 auto commit
+    - `group_id`: 컨슈머 그룹을 식별하기 위한 용도
+    - `value_deserializer`: producer에서 value를 serializer를 한 경우 사용.
+    - `consumer_timeout_ms`: 이 설정을 넣지 않으면 데이터가 없어도 오랜기간 connection한 상태가 된다. 데이터가 없을 때 빠르게 종료시키려면 timeout 설정을 넣는다.
 
 
 
@@ -236,3 +280,4 @@
 
 - https://needjarvis.tistory.com/category/%EB%B9%85%EB%8D%B0%EC%9D%B4%ED%84%B0%20%EB%B0%8F%20DB/%EC%B9%B4%ED%94%84%EC%B9%B4%28Kafka%29
 
+- https://kafka-python.readthedocs.io/en/1.1.0
