@@ -309,7 +309,7 @@
   - Merge 하지 않고 리모트 트래킹 브랜치에서 시작하는 새 브랜치를 만들려면 아래와 같은 명령을 사용한다.
 
   ```bash
-  git checkout -b <브랜치명> <remote>/<브랜치명>
+  $ git checkout -b <브랜치명> <remote>/<브랜치명>
   ```
 
 
