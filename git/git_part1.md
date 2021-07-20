@@ -261,7 +261,7 @@
     - push에도 적용 되는지는 확인 필요
   
   ```bash
-  $ git clone https://<github 계정>@<github repo 주소>
+  $ git clone https://<github에 등록된 유저명>@<github repo 주소>
   ```
 
 
