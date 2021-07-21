@@ -356,13 +356,20 @@
   print(os.path.join("/Users/User/theo/test", "test.py")) # /Users/User/theo/test\test.py
   ```
 
+  - split: 경로와 파일명을 분리하여 튜플로 반환한다.
+  
+  ```python
+  import os
+  print(os.path.splitext("/c/Users/User/test/test.py")) # ('/c/Users/User/test', 'test.py')
+  ```
+
   - splitext: 파일명과 확장자를 분리하여 튜플로 반환한다.
   
   ```python
   import os
   print(os.path.splitext("/c/Users/User/test/test.py")) # ('/c/Users/42Maru/theo/test/test', '.py')
   ```
-
+  
   - getsize: 파일 크기를 바이트 단위로 반환한다.
   
   ```bash

@@ -85,7 +85,7 @@
   ```
   //docker start ㅏ컨테이너명 또는 idㅓ
   
-  docker attach maria-db
+  docker start maria-db
   ```
 
   - 컨테이너에 접속하기
