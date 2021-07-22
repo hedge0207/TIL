@@ -305,6 +305,26 @@
   #아래와 같이 os.system("명령어")를 입력하면 된다.
   os.system("mkdir new_folder") # new_folder가 현재 디렉토리에 생성된다.
   ```
+  
+  - 디렉토리 생성하기
+    - `mkdir`: 깊이가 1인 폴더만 생성이 가능하다.
+    - `makedirs`: 깊이가 2 이상인 폴더도 생성이 가능하다. `exist_ok`를 인자로 받으며, True로 설정하면 이미 해당 디렉토리가 존재하더라도 다시 생성하고 False일 경우 에러가 발생한다.
+  
+  ```bash
+  import os
+  
+  
+  # 불가능(단, hello라는 폴더가 이미 존재하면 생성 가능)
+  os.mkdir('./hello/world')
+  # 가능
+  os.makedirs('./hello/world')
+  
+  # 이미 ./hello폴더가 있을 경우
+  # 정상 실행
+  os.makedirs('./hello/world', exist_ok=True)
+  # error
+  os.makedirs('./hello/world', exist_ok=False)
+  ```
 
 
 
@@ -312,27 +332,28 @@
 - os.path
 
   - 파일, 경로와 관련된 모듈
-  - isdir: 경로가 디렉토리면 True, 아니면  False를 반환한다.
-
+  - isdir: 경로가 디렉토리이면서 해당 디렉토리가 존재하면 True, 디렉토리가 아니거나 존재하지 않으면  False를 반환한다.
+    - 일반적으로는 디렉터리인지 확인을 위해 사용하며, 존재 유무는 `exists`를 사용한다.
+  
   ```python
   import os
   print(os.path.isdir('/User/Desktop'))	# True
   ```
-
+  
   - abspath: 절대경로를 반환한다.
-
+  
   ```python
   import os
   print(os.path.abspath('test')) # C:\Users\User\test\test
   ```
-
+  
   - basename: 상대 경로를 반환한다.
-
+  
   ```python
   import os
   print(os.path.basename('/Users/User/theo/test')) # test
   ```
-
+  
   - getcwd: 실행 경로를 반환한다.
     - 실행 경로란 해당 python 파일을 실행시킨 경로를 의미한다.
     - 예를들어 python 파일은 `C:\Users\User\test\my_python.py`에 있고, 터미널은 `C:\Users\User\`에 있는 상태에서 `.\test\my_python.py` 명령어로 파일을 실행시키면, 이 파일을 실행시킨 경로인 `C:\Users\User\`가 반환된다.
@@ -341,28 +362,28 @@
   import os
   print(os.getcwd())
   ```
-
+  
   - exists: 해당 경로가 존재하면 True, 아니면 False를 반환한다.
   
   ```bash
   import os
   print(os.path.exists('/Users/User/theo/test'))	# True
   ```
-
+  
   - join: 입력된 문자열들을 OS의 형식에 맞게 하나의 경로로 이어준다.
   
   ```python
   import os
   print(os.path.join("/Users/User/theo/test", "test.py")) # /Users/User/theo/test\test.py
   ```
-
+  
   - split: 경로와 파일명을 분리하여 튜플로 반환한다.
   
   ```python
   import os
   print(os.path.splitext("/c/Users/User/test/test.py")) # ('/c/Users/User/test', 'test.py')
   ```
-
+  
   - splitext: 파일명과 확장자를 분리하여 튜플로 반환한다.
   
   ```python
@@ -383,8 +404,6 @@
   import os
   print(os.path.getmtime('/Users/User/theo/test')) # 1623374338.4626312
   ```
-  
-  
 
 
 
@@ -1122,7 +1141,6 @@
       writer = csv.DictWriter(f, fieldnames=fields)
       writer.writeheader()
       writer.writerows(people_dict)
-  
   ```
 
 

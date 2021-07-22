@@ -423,3 +423,79 @@
 
 
 
+- 중복 행 제거
+
+  - uniq 사용
+    - 연속으로 중복 된 행이 있을 경우 중복된 행을 삭제한다.
+
+  ```bash
+  # test.txt
+  orange
+  apple
+  apple
+  watermelon
+  watermelon
+  apple
+  orange
+  (빈 줄)
+  
+  # 중복 제거
+  $ cat test.txt | uniq
+  
+  # out
+  orange
+  apple
+  watermelon
+  apple
+  orange
+  ```
+
+  - sort
+    - 연속되지 않은 중복 행을 삭제하려 할 경우 먼저 정렬 후에 사용한다.
+
+  ```bash
+  $ cat test.txt | sort | uniq
+  
+  # out
+  apple
+  orange
+  watermelon
+  ```
+
+  - `-c`
+    - 몇 개가 중복되었는지 확인하기 위해 사용한다.
+
+  ```bash
+  $ cat test.txt | sort | uniq -c
+  
+  # out
+  3 apple
+  2 orange
+  2 watermelon
+  ```
+
+  - 정렬하려는 대상 파일의 마지막에 빈 줄이 없으면 제대로 동작하지 않는다.
+    - 항상 마지막 행은 어떤 행과도 중복되지 않는 고유한 행으로 취급된다.
+
+  ```bash
+  # test.txt
+  orange
+  apple
+  apple
+  watermelon
+  watermelon
+  apple
+  orange
+  
+  # 중복 제거
+  $ cat test.txt | sort | uniq -c
+  
+  # out
+  3 apple
+  1 orange
+  1 orange
+  2 watermelon
+  ```
+
+  
+
