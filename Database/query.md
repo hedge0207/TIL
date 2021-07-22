@@ -28,4 +28,15 @@
   select * from test_table limit 10 offset 10
   ```
 
+
+
+
+- 중복 데이터 제거
+
+  - `distinct`를 사용한다.
+
+  ```sql
+  select distinct <column 명> from <테이블명>
+  ```
+
   
