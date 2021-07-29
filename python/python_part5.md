@@ -272,33 +272,42 @@
 
 - 환경 변수나 디렉토리, 파일 등의 OS 자원을 제어할 수 있게 해주는 모듈이다.
   - 내 시스템의 환경 변수 값을 알고 싶을 때
-  - 딕셔너리이기에 key로 접근 가능하다.
-
+    - 딕셔너리이기에 key로 접근 가능하다.
+    - `get` 메서드를 사용해서 가져올 수 있다.
+    - 혹은 `os.getenv()`도 사용할 수 있다.
+    - 검색된 환경 변수가 없을 경우 기본 값을 지정할 수 있다.
+  
   ```python
   import os
   
   print(os.environ)	# environ({.......})
-  print(os.environ['PATH'])	# C:\Program Files\Git\.....
+  print(os.environ['PATH'])		# C:\Program Files\Git\.....
+  print(os.environ.get('PATH'))	# C:\Program Files\Git\.....
+  print(os.getenv('PATH'))		# C:\Program Files\Git\.....
+  
+  # 기본 값 지정하기
+  # NAME이라는 환경변수가 지정되어 있지 않으면 THEO를 불러오겠다.
+  print(os.environ.get('NAME', 'THEO'))	# THEO
   ```
-
+  
   - 디렉토리 위치 변경하기
-
+  
   ```python
   import os
   
   os.chdir("D:/")
   ```
-
+  
   - 현재 디렉토리 위치 확인하기
-
+  
   ```python
   import os
   
   print(os.getcwd())	# C:\Users\...
   ```
-
+  
   - 시스템 명령어 호출하기
-
+  
   ```python
   import os
   
@@ -325,6 +334,43 @@
   # error
   os.makedirs('./hello/world', exist_ok=False)
   ```
+  
+  - 파일 삭제하기
+    - `remove`를 사용한다.
+    - 폴더를 삭제하려 할 경우 permissionerror가 발생한다.
+  
+  ```python
+  import os
+  
+  
+  os.remove('./tmp1/tmp2/tmp.txt')
+  ```
+  
+  - 폴더 삭제하기
+    - 폴더가 비어있지 않을 경우 에러가 발생한다.
+    - shutil 모듈을 사용하면, 디렉터리가 비어있지 않아도 삭제가 가능하다.
+  
+  ```python
+  import os
+  import shutil
+  
+  
+  os.rmdir('./qwe/asd')
+  shutil.rmtree('./qwe')
+  ```
+  
+  - 폴더 내부의 폴더 및 파일 목록 확인
+  
+  ```python
+  import os
+  
+  
+  print(os.listdir('./test'))
+  ```
+  
+  
+  
+  
 
 
 
