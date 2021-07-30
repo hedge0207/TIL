@@ -367,10 +367,8 @@
   
   print(os.listdir('./test'))
   ```
-  
-  
-  
-  
+
+
 
 
 
@@ -461,7 +459,7 @@
 
 - shutil
 
-  - 파일을 복사해주는 모듈
+  - 디렉토리, 파일과 관련된 여러 기능을 제공해주는 패키지
 
   ```python
   import shutil
