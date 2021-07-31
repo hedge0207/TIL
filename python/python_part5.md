@@ -480,7 +480,31 @@
   print(glob.glob("D:/*"))	# ['D:/github','D:/PJT' 'D:/test', 'D:/메모.txt' ...]
   ```
 
+
+
+
+- operator
+
+  - `itemgetter()`
+    - 피연산자에서 item을 꺼내는 콜러블 객체를 반환한다.
+    - 이를 활용하면 이중 리스트에서 리스트 내부의 인자를 기준으로 정렬하는 것도 가능하다.
+
+  ```python
+  from operator import itemgetter
   
+  
+  a = [('1','2'),('8','1'),('2','7')]
+  # 리스트 a의 2번째 인자를 꺼낸다.
+  f = itemgetter(1)(a)
+  print(f)		# ('8', '1')
+  
+  # 이중 리스트 내부의 2번째 인자로 정렬
+  print(sorted(a, key=itemgetter(1)))	# [('8', '1'), ('1', '2'), ('2', '7')]
+  ```
+
+  
+
+
 
 - time
 
