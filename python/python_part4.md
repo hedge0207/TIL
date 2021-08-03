@@ -286,7 +286,7 @@
   ```
 
   - `if__name__=="__main__"`을 사용하면 위와 같은 문제를 해결할 수 있다.
-    - 이제 `module1.py`에서 실행하면 `if__name__=="__main__"` 아래의 문장이 실행되고
+    - 이제 `module1.py`를 직접 실행해야 `if__name__=="__main__"` 아래의 문장이 실행되고
     - import 만으로는 실행되지 않는다.
 
   ```python
@@ -303,8 +303,9 @@
   ```
 
   - `__name__`
+    - 모듈의 이름이 저장되는 변수이다.
     - Python 내부적으로 사용하는 특별한 변수 이름이다.
-    - 만일 직접 `module1.py` 파일을 실행할 경우, `module1.py`의 `__name__`에는 `__main__` 값이 저장된다.
+    - 만일 직접 `module1.py` 파일을 실행할 경우, `module1.py`의 `__name__`에는 `__main__` 이라는 문자열이 저장된다.
     - 하지만 다른 파이썬 셸이나 다른 Python 모듈에서 `module1.py`을 `import` 할 때에는 `__name__` 변수에는 `module1.py`의 모듈 이름 값 `module1`가 저장된다.
 
 
@@ -518,7 +519,163 @@
       clean()
   ```
 
+
+
+
+# import
+
+- from과 import
+
+  - from은 모듈을 불러올 경로를, import는 불러올 모듈 혹은 모듈 내의 함수를 지정한다.
+  - 경로의 기준은 최초에 실행되는 파일이다.
+  - 즉 아래와 같은 구조로 되어 있을 때 main.py를 실행한다고 하면 모든 경로는 main.py의 위치를 기준으로 설정해야 한다.
+    - say_hello 함수를 직접 import하는 test.py 입장에서 보면 `from hello.hello import say_hello`와 같이 import 해야 하겠지만 모든 경로는 최초 실행 파일인 main.py를 기준으로 작성해야 한다.
+    - 만일 test.py를 직접 실행한다면 `from hello.hello import say_hello`와 같이 import하는 것이 맞다.
+
+  ```python
+  '''
+  module/
+    - test.py
+    - hello/
+      - hello.py
+  main.py
+  '''
   
+  # main.py
+  from module.test import excute_say_hello
+  
+  
+  excute_say_hello()
+  
+  
+  # test.py
+  from module.hello.hello import say_hello
+  
+  
+  def excute_say_hello():
+      say_hello()
+      
+      
+  # hello.py
+  def say_hello():
+      print("Hello World!")
+  ```
+
+
+
+- import할 때 정확히 무슨 일이 일어나는가?
+  - `import test`라는 명령어가 있을 때, python은 다음의 3가지 장소를 순서대로 돌아다니며 test를 찾는다.
+    - 아래의 세 군데에서 모두 찾을 수 없으면 ModuleNotFoundError를 반환한다.
+  - sys.modules
+    - 이미 import 된 모듈과 패키지들이 딕셔너리 형태로 저장되어 있는 곳이다.
+    - 이미 import 된 것들을 다시 찾을 필요가 없어지게 된다.
+  - built-in modules
+    - python이 제공하는 공식 라이브러리들이다.
+  - sys.path
+    - python 라이브러리들이 설치되어 있는 경로를 보여주며, string을 요소로 갖는 리스트로 이루어져 있다.
+    - 현재 디렉터리(python 파일이 실행되는 디렉터리)는 default로 sys.path에 포함되어 있다.
+    - 따라서 절대경로는 현재 디렉토리부터 시작하게 된다.
+
+
+
+- 절대경로와 상대경로
+
+  - 절대경로
+    - import하는 파일이나 경로에 상관 없이 항상 동일한 경로를 작성한다.
+    - 경로가 지나치게 길어질 수 있다는 문제가 존재한다.
+  - 상대경로
+    - import하는 위치를 기준으로 경로를 정의한다.
+    - 상대 경로의 기준이 되는 현재 디렉터리는 `__name__`에 의해서 정해지게 된다.
+    - 따라서 직접 실행시킬 파일에는 상대경로를 적용하면 안된다.
+  - 상대경로 error 예시
+    - 예를 들어 아래와 같이 test.py에서 import를 상대경로로 작성했을 시에, main.py를 실행하면 아무런 error도 발생하지 않는다.
+    - main.py를 실행할 경우 test.py `__name__`에는 module.test가 들어가기 때문에 `module.test.py` 파일이 상대경로의 기준 경로가 된다.
+    - 반면에, test.py를 실행할 경우 `__name__`에는 `__main__`이 들어가게 되고, python은 `__main__`이라는 경로를 찾을 수 없으므로 error를 반환한다.
+
+  ```python
+  '''
+  module/
+    - test.py
+    - hello/
+      - hello.py
+  main.py
+  '''
+  
+  # main.py
+  from module.test import excute_say_hello
+  
+  
+  excute_say_hello()
+  
+  
+  # test.py
+  from .hello.hello import say_hello
+  
+  
+  def excute_say_hello():
+      print(__name__)
+      say_hello()
+      
+      
+  # hello.py
+  def say_hello():
+      print("Hello World!")
+  ```
+
+
+
+- sys.path에 경로 추가하여 import하기
+
+  - 다른 사람이 만든 패키지를 사용하거나, 직접 만든 패키지라도 경로를 일일이 지정해주기 힘들 경우 sys.path에 경로를 추가하여 사용하면 된다.
+  - sys.path는 list형이므로 append를 통해, 문자열로 된 경로를 추가해주면 된다.
+
+  ```python
+  '''
+  module/
+    - test.py
+  main.py
+  '''
+  
+  # main.py
+  import sys
+  sys.path.append('D:/test/module')	# 추가해주고
+  from my_module import say_hello		# 불러온다.
+  
+  
+  say_hello()
+  
+  
+  # test.py
+  def say_hello():
+      print(__name__)			# my_module
+      print('Hello World!')
+  ```
+
+  - 절대경로로 import했을 때와의 차이점
+    - 위와 디렉터리 구조는 동일하지만 아래와 같이 절대경로로 import하면 `__name__`이 달라지게 된다.
+
+  ```python
+  # main.py
+  from module.my_module import say_hello	# 절대경로로 import
+  
+  say_hello()
+  
+  
+  # test.py
+  def say_hello():
+      print(__name__)			# module.my_module
+      print('Hello World!')
+  ```
+
+  - 주의점
+    - 당연하게도 이미 존재하는 경로를 추가하거나, sys.modules, built-in modules에 존재하는 모듈 명을 추가할 경우, 문제가 생길 수 있다.
+    - 또한 해당 파일의 sys.path에만 추가되는 것이지 해당 파일이 import하는 파일에는 추가되지 않는다.
+    - 예를 들어 위에서 `main.py`파일 내의 sys.path에는 추가되었지만 `test.py` 파일 내의 sys.path에는 추가되어 있지 않다.
+    - python 전역에 추가하는 방법도 있지만 권장되지는 않는다.
+
+  
+
+
 
 # 예외처리
 
