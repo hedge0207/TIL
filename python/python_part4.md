@@ -344,7 +344,80 @@
   $ set PYTHON=D:/
   ```
 
+
+
+
+- `-m` 옵션
+
+  - `-m`
+    - `python <실행시킬 python file>`은 스크립트를 실행시키는 명령어이다.
+    - 여기에 `-m` 옵션을 추가하면 모듈을 sys.path에서 찾아서 실행시킨다.
+  - 문제
+    - 아래 예시에서 main.py를 실행하면 error가 발생하는데 그 이유는 다음과 같다.
+    - import는 기본적으로 불러온 코드 전체를 실행한다.
+    - 그런데 `script.py`에는 sys.argv로 인자를 받아오는 코드가 있는데, 인자를 넣어준 적이 없으니 error가 발생하는 것이다.
+
+  ```python
+  # script.py
+  import sys
   
+  def say_hello(name):
+      print("Hello", name)
+  
+  say_hello(sys.argv[1])
+  
+  
+  # main.py
+  import say_hello
+  
+  say_hello('Theo')
+  ```
+
+  - 모듈화
+    - 위와 같은 문제를 해결하기 위해 모듈화를 한다.
+    - 이제 main.py를 실행시키든, script.py에 인자를 넘겨서 실행시키든 잘 동작한다.
+
+  ```python
+  # my_module.py
+  def say_hello(name):
+      print("Hello", name)
+  
+  
+  # script.py
+  import sys
+  import my_module
+  
+  my_module.say_hello(sys.argv[1])
+  
+  
+  # main.py
+  import say_hello
+  
+  say_hello('Theo')
+  ```
+
+  - `__name__`의 활용
+    - 위에서는 모듈과 해당 모듈을 사용하는 스크립트를 따로 작성했는데, `__name__`을 활용하면 이 코드를 합칠 수 있다.
+
+  ```python
+  # my_module.py
+  import sys
+  
+  def say_hello(name):
+      print("Hello", name)
+  
+  if __name__=="__main__":
+      say_hello(sys.argv[1])
+  ```
+
+  - `-m` 옵션으로 실행
+    - python 스크립트가 아닌 모듈을 실행하기에, 파일명이 아닌, 확장자를 떼고 입력한다.
+
+  ```bash
+  $ python -m my_module 'Theo'
+  ```
+
+
 
 
 
