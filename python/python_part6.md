@@ -273,3 +273,37 @@
 
   
 
+- tqdm
+
+  - python 코드를 실행 했을 때 진행 상황을 볼 수 있는 모듈이다.
+    - 실행에 오랜 시간이 걸리는 코드의 경우 중간에 print나 logging 모듈로 로그를 남기는 방식을 사용하기도 한다.
+    - tqdm은 print나 logging 모듈 없이도 진행 상황을 확인하게 도와준다.
+  - 설치
+
+  ```bash
+  $ pip install tqdm
+  ```
+
+  - 사용
+    - iterable을 tqdm에 넘겨 사용한다.
+
+  ```python
+  import time
+  from tqdm import tqdm
+  
+  
+  def long_time_job():
+      time.sleep(0.1)
+  
+  for i in tqdm(range(100)):
+      long_time_job()
+  ```
+
+  - 결과
+
+  ```bash
+  $ python main.py 
+  74%|████████████████████████████████████████████████████████████████████████████████████████████████▉              | 74/100 [00:07<00:02,  9.49it/s]
+  ```
+
+  
