@@ -793,9 +793,16 @@
   ```python
   a = "Hello World!"
   
-  # 문자열
+  # 아래의 출력 결과를 가지고는 바로 문자열 객체를 만들 수 없다.
   print(str(a))		# Hello World!
+  try:
+      # 따옴표가 없으므로 에러가 발생한다.
+      b = Hello World!
+  
+  # 반면 아래의 출력 결과로는 바로 문자열 객체를 만들 수 있다.
   print(repr(a))		# 'Hello World!'
+  try:
+      b = 'Hello World!'
   ```
 
   
