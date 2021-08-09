@@ -498,6 +498,12 @@
 
 <br/>
 
+- ETC
+
+<br/>
+
+<br/>
+
 <br/>
 
 <br/>
@@ -891,6 +897,15 @@
   - Docker로 설치하기
   - Python에서 사용하기
 - 참고
+
+<br/>
+
+<br/>
+
+## [AWS_EC2](https://github.com/hedge0207/TIL/blob/master/etc/AWS_EC2.md)
+
+- EC2 인스턴스 생성하기
+- 인스턴스에 접속하기
 
 <br/>
 

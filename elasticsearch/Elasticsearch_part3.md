@@ -192,6 +192,10 @@
 
 
 
+
+
+
+
 ## 샤드의 상태 확인하기
 
 - `_cat/shards`
@@ -517,6 +521,71 @@
     - rejected가 매우 중요한데, 현재 노드가 처리할 수 있는 양보다 많은 요청이 들어오고 있기 때문에 더 이상 처리할 수 없어서 처리를 거절한다는 의미이기 때문이다.
 
  
+
+- 인덱스 성능 지표
+
+  ```bash
+  $ curl -XGET 'http://localhost:9200/<인덱스명>/_stats'
+  ```
+
+
+
+## tasks API로 task 확인하기
+
+- 진행중인 task 확인
+
+  ```bash
+  # 특정 task 조회
+  $ curl -XGET 'http://localhost:9200/_tasks/<task_id>'
+  
+  # 전체 task 조회
+  $ curl -XGET 'http://localhost:9200/_tasks'
+  ```
+
+
+
+- 파라미터
+
+  - actions
+    - 콤마로 구분 된 task명이나, 와일드카드 표현식을 사용해서 task를 필터링 할 때 사용한다.
+
+  ```bash
+  # 예시
+  $ curl -XGET 'http://localhost:9200/_tasks?actions=*bulk'
+  ```
+
+  - detalied
+    - Boolean 값을 주며, true를 줄 경우 shard recoveries에 대한상세 정보를 함께 반환한다.
+    - 기본값은 false이다.
+
+  ```bash
+  $ curl -XGET 'http://localhost:9200/_tasks?actions=*bulk&detailed=true'
+  ```
+
+  - group_by
+    - task들을 grouping하기 위해 사용한다.
+    - nodes(기본값): Node ID로 그룹핑한다.
+    - parents: parent task ID로 그룹핑한다.
+    - none: 그룹핑하지 않는다.
+
+  ```bash
+  $ curl -XGET 'http://localhost:9200/_tasks?group_by=parents'
+  ```
+
+  - node_id
+    - 콤마로 구분 된 노드 ID 또는 노드 이름을 인자로 받는다.
+    - 리스트에 포함된 노드의 task만 반환한다.
+  - parent_task_id
+    - 입력한 Parent task ID에 해당하는 task들만 반환한다.
+    - 이 파라미터를 넘기지 않거나 -1을 값으로 주면 모든 task를 반환한다.
+  - master_timeout
+    - 마스터 노드에 연결되기까지의 기간(기본값은 30s)을 설정한다.
+    - 기간 내에 응답이 오지 않으면 errror를 반환한다.
+  - wait_for_completion
+    - Boolean값을 받으며, true로 줄 경우 operation이 완료될 때 까지 요청이 중단된다.
+    - 기본값은 false이다.
+
+
 
 
 
