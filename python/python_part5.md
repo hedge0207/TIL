@@ -1180,6 +1180,19 @@
           print(row)
   ```
 
+  - 옵션들
+    - `delimeter`: CSV 파일의 열을 무엇으로 구분할지 결정(기본 값은 콤마).
+    - `qutechar`: 문자열이 무엇으로 묶여있는지 결정.
+    - `quoting`: quotechar의 레벨을 결정한다(QUOTE_ALL, NONE, MINIMAL 중 선택).
+    - 이 외에도 다양한 옵션이 존재
+  
+  ```python
+  import csv
+  
+  
+  reader = csv.reader("test.csv", delimitr="|", quotechar='"', quoting=csv.QUOTE_ALL)
+  ```
+  
   
 
 
