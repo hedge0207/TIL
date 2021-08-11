@@ -546,6 +546,7 @@
 
   - 이름 그대로 얼어있는 set으로 집합 연산과 요소를 추가, 삭제하는 연산을 수행할 수 없다.
   - frozneset은 다른 일반 set과 달리 frozenset 안에 frozenset을 넣을 수 있다.
+    - 그러나 frozneset안에 일반 set을 넣거나 일반 set 안에 frozenset을 넣을 수는 없다.
 
   ```python
   a = frozenset(range(10))
@@ -574,7 +575,7 @@
   print(my_set2.difference(my_set1))		# {4, 5}
   ```
 
-  
+
 
 - 집합 관련 함수들
 
