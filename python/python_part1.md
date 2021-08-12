@@ -761,6 +761,37 @@
   print(f"소수점은 {b:.2f}이렇게 표현한다")	# 소수점은 111.22이렇게 표현한다
   ```
 
+  - b-string 포맷팅
+    - bytes를 의미하며 문자열을 바이트로 인코딩한다.
+    - 얼핏 차이가 없어 보이지만 이는 사실 출력할 때 다시 문자열로 디코딩해서 보여주기 때문이다.
+
+  ```python
+  _bytes = b'Hello World'
+  # 바이트라는 것을 표현하기 위해서 앞에 b가 붙어있다.
+  print(_bytes)	# b'Hello World'
+  ```
+
+  - u-string 포맷팅
+    - unicode를 의미하며 python2에서 사용되던 문법으로, 현재는 기본 인코딩이 unicode이므로 굳이 붙이지 않아도 된다.
+
+  ```python
+  # python2에서는 False, python3에서는 True가 나온다.
+  print(u"Hello World" == "Hello World")
+  ```
+
+  - r-string 포맷팅
+    - raw를 의미하며, 이스케이프 문자를 무시한다.
+
+  ```python
+  print("Hello\n World")
+  print(r"Hello\n World")
+  '''
+  Hello
+   World
+  Hello\n World
+  '''
+  ```
+
 
 
 - `__str__`, `__repr__`, `str()`
@@ -805,7 +836,7 @@
       b = 'Hello World!'
   ```
 
-  
+
 
 
 
