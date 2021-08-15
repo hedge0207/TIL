@@ -504,38 +504,55 @@
 
 - 생성
 
-  - 다른 자료형들과 달리 set은 `set()` 생성자로만 생성할 수 있다.
   - 반드시 문자열 또는 괄호로 묶어줘야 한다(괄호의 종류는 상관 없다).
   - 비어있는 자료형도 생성 가능하다.
+    - 단 `{}`로 생성하면 빈 딕셔너리가 되므로 주의해야 한다.
 
   ```python
   my_set1 = set({1,2,3})
   my_set2 = set("Hello!")
-  my_set3 = set()
+  my_set3 = {1, 2, 3}
+  empty_set = set()
+  empty_dict = {}
   
   print(type(my_set1))  # <class 'set'>
   print(type(my_set2))  # <class 'set'>
   print(my_set1)		  # {1, 2, 3}
   print(my_set2)		  # {'l', '!', 'o', 'e', 'H'}
-  print(my_set3)        # set()
+  print(my_set3)        # {1, 2, 3}
+  print(type(empty_set))	  # set
+  print(type(empty_dict))	  # dict
   ```
 
-  
+
 
 - Set(집합) 자료형의 특징
 
   - 중복을 허용하지 않는다.
   - 순서가 없다.
-
+- 다른 자료형과 달리 set 안에 다른 set을 넣을 수 없다.
+  
   ```python
   my_set = set("Hello!")
   
   print(my_set2)		  # {'l', '!', 'o', 'e', 'H'}
   # 중복을 허용하지 않기에 두 번 들어간 l은 하나만 들어가게 된다.
   # 순서가 없기에 순서대로 들어가지 않는다.
+```
+
+
+
+- frozenset
+
+  - 이름 그대로 얼어있는 set으로 집합 연산과 요소를 추가, 삭제하는 연산을 수행할 수 없다.
+  - frozneset은 다른 일반 set과 달리 frozenset 안에 frozenset을 넣을 수 있다.
+    - 그러나 frozneset안에 일반 set을 넣거나 일반 set 안에 frozenset을 넣을 수는 없다.
+
+  ```python
+  a = frozenset(range(10))
   ```
 
-  
+
 
 - 교집합, 합집합, 차집합 구하기
 
@@ -558,7 +575,7 @@
   print(my_set2.difference(my_set1))		# {4, 5}
   ```
 
-  
+
 
 - 집합 관련 함수들
 
@@ -585,6 +602,121 @@
   my_set.remove(2)
   print(my_set)   # {1, 3}
   ```
+
+
+
+
+
+## enum
+
+- enum
+  - Python 3.4부터 지원시작
+  - 일반적으로 서로 관련 있는 여러 상수의 집합을 정의하기 위해 사용한다.
+  - 인스턴스의 종류를 제한할 수 있기에 견고한 프로그램 작성에 도움이 된다.
+
+
+
+- 사용법
+
+  - import해서 사용해야 한다.
+  - Enum 내장 모듈을 상속 받는 클래스를 정의하여 사용한다.
+
+  ```python
+  from enum import Enum
+  
+  class Supply(Enum):
+      NOTEBOOK = 1
+      PENCIL = 2
+      MOUSE = 3
+  ```
+
+  - enum 타입의 상수 인스턴스는 이름(name)과 값(value)을 지닌다.
+
+  ```python
+  print(Supply.NOTEBOOK)			# Supply.NOTEBOOK
+  print(Supply.NOTEBOOK.name)		# NOTEBOOK
+  print(Supply.NOTEBOOK.value)	# 1
+  ```
+
+  - iterable한 값이다.
+
+  ```python
+  for supply in Supply:
+      print(supply)
+  
+  # Supply.NOTEBOOK
+  # Supply.PENCIL  
+  # Supply.MOUSE
+  ```
+
+  -  Class로 사용하는 대신에 일반 함수처럼 호출해서 enum 타입을 정의할 수도 있다.
+
+  ```python
+  Skill = Enum("Supply", "NOTEBOOK PENCIL MOUSE")
+  ```
+
+  - 값 자동 할당
+    - 대부분의 경우 value가 무엇인지 중요하지 않다.
+    - `auto()` 함수를 사용하면, 숫자를 1씩 증가시키면서 enum 내의 모든 value가 고유하도록 숫자를 할당해준다.
+    - `_generate_next_value_()` 메서드를 오버라이드하면 숫자가 아닌 다른 값을 자동 할당할 수 있다.
+
+  ```python
+  from enum import Enum, auto
+  
+  class Supply(Enum):
+      NOTEBOOK = auto()
+      PENCIL = auto()
+      MOUSE = auto()
+      
+  
+  # overide
+  class Supply(Enum):
+      def _generate_next_value_(name, start, count, last_values):
+          return name
+      
+      NOTEBOOK = auto()
+      PENCIL = auto()
+      MOUSE = auto()
+  ```
+
+
+
+- enum mixin
+
+  - enum 타입을 사용할 때 불편한 점 중 하나는 상수의 이름이나 값에 접근할 때 name이나 value 속성을 사용해야 한다는 것이다.
+  - enum mixin을 사용하면 이러한 불편을 해소할 수 있다.
+    - 완전히 문자열로 취급된다.
+
+  ```python
+  class StrEnum(str, Enum):
+      def _generate_next_value_(name, start, count, last_values):
+          return name
+  
+      def __repr__(self):
+          return self.name
+  
+      def __str__(self):
+          return self.name
+      
+  class Supply(StrEnum):
+      NOTEBOOK = auto()
+      PENCIL = auto()
+      MOUSE = auto()
+  
+  print(Supply.NOTEBOOK == 'NOTEBOOK')	# True
+  ```
+
+  
+
+
+
+
+
+
+
+
+
+
 
 
 
