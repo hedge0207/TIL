@@ -650,3 +650,66 @@
 
 
 
+# fielddata와  doc_values
+
+- fielddata
+
+  - text field는 기본적으로 검색은 가능하지만 집계, 정렬, scripting은 불가능하다.
+    -  fielddata는 text field에서 집계, 정렬 scripting을 실행할 수 있게 해주는 **유일한** 방법이다.
+  - 상당히 많은 메모리를 필요로한다.
+    - 기본값은 false로 설정되어 있다.
+    - query time에 term들(field data)을 계산한다.
+    - 주의할 점은 특정 query에 matching 되는 문서의 field뿐 아니라 모든 문서의 field들을 대상으로 계산한다는 것이다.
+    - 이는 요청 때마다 매번 메모리에 적재하여 사용하는 것 보다 미리 모든 field를 적재해 놓으면, 다음 수행되는 query에 사용이 용이하기 때문이다.
+    - field data는 heap에 저장되는데,  이는 segment의 lifetime 동안 남아 있게 된다.
+    - 따라서 가급적 집계, 정렬, scripting이 가능한 keyword 필드를 사용하는 것을 권장한다.
+  - 동적 매핑이 가능하다.
+  - `fielddata_frequency_filter`
+    - 메모리에서 불러오는 term의 수를 빈도를 기준으로 감소시켜 메모리 사용을 줄일 수 있다.
+    - `min`, `max` 값을 지정하며 둘 사이의 빈도를 지닌 term들만 메모리에서 불러온다.
+    - `min`, `max` 값은 양의 정수 혹은 0~1 사이의 소수로 지정한다.
+    - 퍼센트는 세그먼트 내의 모든 문서가 아닌, 해당 field에 값이 있는 문서들만 대상으로 계산된다.
+    - `min_segment_size` 옵션을 통해 일정 개수 이상의 문서를 가지지 못한 세그먼트를 제외시킬 수 있다.
+
+  ```bash
+  PUT my-index-000001
+  {
+    "mappings": {
+      "properties": {
+        "tag": {
+          "type": "text",
+          "fielddata": true,
+          "fielddata_frequency_filter": {
+            "min": 0.001,	# 1%
+            "max": 0.1,	# 10%
+            "min_segment_size": 500
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  - fielddata 모니터링
+
+  ```bash
+  # 각 index 별로 전체적인 fielddata 상태를 출력
+  $ curl -XGET 'localhost:9200/_stats/fielddata?fields=*&pretty'
+  
+  # 클러스터 내의 각 node 별로 사용되고 있는 fielddata 상태를 출력
+  $ curl -XGET 'localhost:9200/_nodes/stats/indices/fielddata?fields=*&pretty'
+  ```
+
+
+
+- doc_values
+  - fielddata가 in memory에서 동작하는 것과 달리 on-disk에서 동작한다.
+  - Query time이 아닌 index time에 빌드(생성)된다.
+  - fielddata와 마찬가지로 집계, 정렬, scripting을 위해 필요하다.
+    - keyword 필드에서 집계 등이 가능한 이유가 바로 doc_values가 기본값은 True로 설정되어 있기 때문이다.
+    - text 필드에는 설정이 불가능하다.
+
+
+
+
+
