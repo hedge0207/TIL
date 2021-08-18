@@ -439,7 +439,7 @@
   
   - getsize: 파일 크기를 바이트 단위로 반환한다.
   
-  ```bash
+  ```python
   import os
   print(os.path.getsize('/Users/User/theo/test')) # 4096
   ```
