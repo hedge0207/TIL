@@ -478,9 +478,10 @@
   ```
   
   - 데이터 삽입
+    - 옵션으로ttl(초)을 줄 수 있다.
   
   ```bash
-  > set <key> <value>
+  > set <key> <value> [ex seconds]
   ```
   
   - 데이터 여러 개 삽입
@@ -513,11 +514,12 @@
   
   - 데이터 조회
     - `*`를 와일드 카드처럼 사용이 가능하다.
+    - 찾으려는 키가 없는 경우 `(nil)`을 반환한다.
   
   ```bash
   > get <key>
   ```
-
+  
   - 데이터 여러 개 조회
   
   ```bash
@@ -553,11 +555,11 @@
   
   - 리스트형 데이터에서 맨 뒤의 데이터 삭제
     - 맨 앞의 데이터 삭제는 `lpop`
-
+  
   ```bash
   > rpop my_list
   ```
-
+  
   - 리스트형 데이터에서 맨 뒤의 데이터 삭제 후, 삭제한 값을 다른 list에 삽입(deprecated)
   
   ```bash
@@ -611,6 +613,22 @@
   ```bash
   > llen my_list
   ```
+  
+  - ttl(time to live) 제거하기
+    - 특정 키를 삭제하지 않고 redis에 계속 저장하고 싶을 때 사용한다.
+  
+  ```python
+  > persist <key>
+  ```
+  
+  - ttl(time to live) 설정하기
+    - 기본적으로 expire 명령을 통해 타임아웃을 설정해주지 않으면 -1(무기한)로 설정된다.
+  
+  ```bash
+  > expire <key> <seconds>
+  ```
+
+
 
 
 
@@ -633,6 +651,8 @@
   
   
   r = redis.Redis(host="111.222.333.444",port=6379)
+  # 비밀번호를 서정한 경우
+  r = redis.Redis(host="111.222.333.444",port=6379,password=1234)
   print(r.ping())	# True
   ```
   
@@ -652,7 +672,7 @@
   result_data = r.get("my_dict").decode('utf-8')
   result = dict(json.loads(result_data))
   ```
-
+  
   - 데이터 여러 개 삽입
   
   ```python
@@ -662,7 +682,7 @@
   r = redis.Redis(host="111.222.333.444",port=6379)
   r.mset({"key":"value","key2":"value2"})
   ```
-
+  
   - 데이터 조회
   
   ```bash
@@ -673,7 +693,7 @@
   print(r.get("key")) 	# b'value'
   print(r.get("key").decode("utf-8"))		# value
   ```
-
+  
   - scan을 통한 데이터 조회
   
   ```python

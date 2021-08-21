@@ -257,6 +257,51 @@
 
 
 
+### 서버 연결하기
+
+- PuTTYgen 설치
+
+  > https://www.puttygen.com/download-putty
+
+  - key pair를 생성하기 위한 툴이다.
+  - PuTTYgen 실행 후 하단의 Generate를 클릭하여 key를 생성한다.
+  - 이후 Key comment에 사용자명으로 사용할 이름을 입력하고, Key passphrase와 Confirm passphrase에 비밀번호를 입력한다.
+  - Save private key를 클릭한다.
+  - 이후 상단 메뉴바의 Conversions-Export OpenSSH key를 클릭하고 원하는 위치로 export한다.
+    - 일반적으로 `~/.ssh`
+  - 이후 아래 명령어를 통해 접속한다.
+
+  ```bash
+  $ ssh -i <key 경로> <서버 host>
+  ```
+
+
+
+- vscode
+
+  - Remote-ssh 확장 프로그램을 설치한다.
+    - Remote-ssh 탭이 생성된다.
+  - Remote-ssh 탭에서 Configure(톱니바퀴)를 클릭하고 새로운 설정을 아래와 같이 추가한다.
+
+  ```
+  Host <이름>
+    HostName <서버 호스트>
+    IdentityFile <위에서 생성한 key file 경로>
+    User <사용자명>
+  ```
+
+
+
+- Pycharm
+  - Tools-Deployment-Configuration을 클릭한다.
+  - `+` 버튼을 클릭한다.
+    - Type은 SFTP
+    - SSH configuration에 서버 Host, 사용자명, 인증 방식을 선택 후 OK를 클릭한다.
+  - 이후 Tools-Start SSH session을 통해 접속이 가능하다.
+  - 만일 vscode와 같이 디렉토리를 GUI로 보고자 한다면 Tools-Deployment-Configuration에서 Mappings탭에서 설정해주면 된다.
+
+
+
 # 단축키
 
 ## IntelliJ

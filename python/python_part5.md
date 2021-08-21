@@ -98,8 +98,10 @@
 
   
 
-- `enumerate(순서가 있는 자료형)`: 순서가 있는 자료형을 입력 받아 인덱스 값을 포함하는 객체를 돌려준다.
+- `enumerate(순서가 있는 자료형)`: 순서가 있는 자료형을 입력 받아 인덱스 값을 포함하는 튜플을 반환한다.
 
+  - 정확히는 iterator idx와 element의 쌍으로 된 iterator를 반환한다.
+  
   ```python
   for i,fruit in enumerate(["apple","banana","mango"]):
       print(i,fruit)
@@ -437,7 +439,7 @@
   
   - getsize: 파일 크기를 바이트 단위로 반환한다.
   
-  ```bash
+  ```python
   import os
   print(os.path.getsize('/Users/User/theo/test')) # 4096
   ```
