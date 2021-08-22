@@ -77,6 +77,7 @@
     - 이 가상 하드디스크는 가상머신에 20GB(위에서 설정해준 기본 용량)라고 인식시키면서도 실제 물리 파일의 크기는 겨우 10MB 정도로 설정된다.
     - 즉 10MB짜리 하드디스크를 20GB라고 가상머신을 속이는 것이다.
     - 이후 가상머신에 운영체제 등을 설치하면 실제 공간이 필요해지면서 필요한 공간만큼 자동으로 조금씩 늘어나지만, 위에서 설정한 값 이상으로 늘어나지는 않는다.
+- 각 가상 머신 별 상세 스펙은 아래 [운영체제 설치하기] 참조
 
 
 
@@ -202,7 +203,7 @@
 
 
 
-# 우분투 설치하기
+# 운영체제 설치하기
 
 > https://ubuntu.com/
 >
@@ -213,6 +214,25 @@
   - kubuntu-20.04.2.0-desktop-amd64.iso
   - ubuntu-20.04.2.0-desktop-amd64.iso
   - 대용량 파일이므로 상당한 시간이 소요된다.
+
+
+
+- 가상 머신 사양
+
+  |               | Server_A                             | Server_B               | Client          | WinClient                |
+  | ------------- | ------------------------------------ | ---------------------- | --------------- | ------------------------ |
+  | 주 용도       | 서버 전용                            | 서버 전용(텍스트 모드) | 클라이언트 전용 | Windows 클라이언트 전용  |
+  | OS            | Ubuntu 64-bit                        | 동일                   | 동일            | Windows 10               |
+  | 설치할 ISO    | Ubuntu Desktop 20.04                 | Ubuntu Server 20.04    | Kubuntu 20.04   | Windows 10 평가판(32bit) |
+  | 하드 용량     | 20GB                                 | 동일                   | 동일            | 60GB                     |
+  | 하드 타입     | SCSI                                 | 동일                   | SCSI 또는 SATA  | 동일                     |
+  | 메모리 할당   | 2GB(2048MB)                          | 동일                   | 동일            | 1GB                      |
+  | 네트워크 타입 | Use network address translation(NAT) | 동일                   | 동일            | 동일                     |
+  | CD/DVD        | O                                    | O                      | O               | O                        |
+  | Floppy 장치   | X                                    | X                      | O               | X                        |
+  | Audio 장치    | X                                    | X                      | O               | X                        |
+  | USB 장치      | X                                    | X                      | O               | X                        |
+  | Printer       | X                                    | X                      | O               | X                        |
 
 
 
@@ -409,7 +429,173 @@
     - Profile setup에서는 사용자명과 서버명, 비밀번호 등을 설정한다.
     - 설정을 모두 완료하면 설치가 진행되는데 설치가 완료되면 하단에 Reboot가 활성화된다. 이를 선택하여 재부팅한다.
     - Server_A와 마찬가지로 DVD를 제거하라는 메시지가 출력되는데 VMware가 자동으로 제거해준다.
-  - 초기 설정
-    - 처음 실행 시 로그인 하라는 메시지가 나오는데 위에서 설정한 유저명과 비밀번호를 입력하면 된다.
-
   
+
+
+
+- 초기 설정
+  - 처음 실행 시 로그인 하라는 메시지가 나오는데 위에서 설정한 유저명과 비밀번호를 입력하면 된다.
+  - ubuntu 20.04의 초기 소프트웨어만 설치되도록 설정한다.
+    - `이것이 우분투 리눅스다`의 저자가 올려놓은 파일을 다운 받는다.
+
+  ```bash
+  $ cd /etc/apt
+  # 원본 파일을 백업파일로 변경
+  $ sudo mv sources.list sources.list.bak
+  # sources.list 다운
+  $ sudo wget http://dw.hanbit.co.kr/ubuntu/20.04/sources.list
+  # 새로 받은 파일로 설정
+  $ sudo apt update
+  ```
+
+  - IP 변경하기
+    - 수정을 완료하면 ctrl+x와 y, enter를 차례로 눌러 저장하고 종료한다.
+
+  ```bash
+  # 네트워크 장치 이름 확인(ens32가 기본값이다)
+  $ ip addr
+  
+  # 관련 디렉터리로 이동 후 파일 편집
+  $ cd /etc/netplan
+  $ sudo nano 00-installer-config.yaml
+  
+  # 00-installer-config.yaml의 4행에 장치 이름, 5 행의 dhcp4:true는 자동으로 IP 주소를 할당 받는다는 의미이다.
+  # 5행을 다음과 같이 수정 및 추가한다.
+  network:
+  	ethernets:
+  		ens32:
+  			dhcp4: no
+  			addresses: [192.168.111.200/24]
+  			gateway4: 192.168.111.2
+  			nameservers:
+  				addresses:[192.168.111.2]
+  
+  ```
+
+  - root 계정 활성화
+    - 활성화 한 뒤 재부팅하여 root 계정으로 로그인한다.
+
+  ```bash
+  $ sudo su - root
+  $ passwd
+  ```
+
+  - IP 변경이 적용되었는지 확인.
+
+  ```bash
+  # ens32의 inet 부분이 설정한 대로 변경되었는지 확인한다.
+  $ ip addr
+  # 네트워크 정상 작동 확인
+  $ ping -c 3 www.google.com
+  ```
+
+  - 방화벽 켜기
+
+  ```bash
+  $ ufw enable
+  ```
+
+  - 필수 패키지 설치
+
+  ```bash
+  $ apt -t install net-tools
+  ```
+
+  - 종료
+
+  ```bash
+  $ halt -p
+  ```
+
+
+
+- 마무리
+  - 메모리 조정 및 DVD 제거
+    - Player에서 Server_B의 설정으로 들어가 `Memory` 탭에서 메모리를 1024MB(==1GB)로 변경한다.
+    - `CD/DVD` 탭에서 `Connect at power on`을 체크 해제하고, `Use physical drive`를 선택한다.
+  - 스냅숏 생성하기
+    - Pro를 실행하고 `File`-`open`을 클릭하여 Server_B가 저장된 폴더에서 `*.vmx`파일을 연다.
+    - `VM`-`Snapshot`-`Snapshot Manager`를 선택한다.
+    - `Take Snapshot`을 클릭하고 Name을 `설정완료`로 입력한 후 `Take Snapshot`을 클릭한다.
+    - `Close`를 입력하여 스냅숏을 완료한다.
+    - `File`-`Close Tab`을 선택해서 `Server_B` 가상머신을 닫는다.
+    - VMPro를 종료한다.
+
+
+
+## Clinet 설치하기
+
+- kubuntu 설치하기
+  - Client 가상 머신 설정 변경
+    - `CD/DVD` 탭에서 탭에서 Browse를 클릭하고 Server용으로 다운 받은 파일(ubuntu-20.04.2.0-desktop-amd64.iso)을 선택후 OK를 클릭한다. 
+    - connect at power on을 체크해야 한다.
+    - 가상 머신을 부팅한다.
+  - 설치하기
+    - 부팅을 시작하면 kubuntu로고가 뜨면서 DVD의 이상 여부를 체크한다.
+    - 완료되면 Welcome 창이 뜨는데 상단 바를 더블클릭하여 화면에 꽉 차도록 조정한다.
+    - 언어는 한국어를 선택하고 `kubuntu 설치하기`를 클릭한다.
+    - 그 뒤의 언어설정은 수정하지 말고 계속하기를 클릭한다.
+    - 업데이트 및 기타 소프트웨어에서는 `일반 설치`를 선택하고 `Kubuntu 설치 중 업데이트 다운로드`를 체크 해제한다.
+    - 다음 창에서도 아무 설정도 변경하지 않고 `지금 설치`를 클릭한다.
+    - 국가와 시간대를 선택하고 이름, 사용자명, 비밀번호, 컴퓨터 이름을 설정하고 자동으로 로그인을 체크한다.
+    - 설치가 완료되면 재부팅을 해야 하며 재부팅 할 때 DVD 장치를 제거하고 Enter를 누르라는 메시지가 나오는데 VMware가 자동으로 제거해주므로 Enter를 누른다.
+
+
+
+- 초기 설정
+
+  - 디스플레이 설정
+    - 20.04 버전의 버그로 디스플레이 변경이 불가능하다.
+    - 시스템 설정-디스플레이에서 변경하면 된다.
+  - 20.04 LTS 초기 패키지 설치하기
+    - Server에서 했던 것과 동일한 작업이다.
+    - Konsole 터미널을 클릭하여 터미널을 열어 아래 명령어를 입력한다.
+
+  ```bash
+  $ cd /etc/apt
+  $ sudo mv sources.list sources.list.bak
+  $ sudo wget http://dw.hanbit.co.kr/ubuntu/20.04/sources.list
+  $ sudo apt update
+  $ sudo apt -y install net-tools
+  # 터미널 닫기
+  $ exit
+  ```
+
+  - 화면 보호기 끄기
+    - `시스템 설정-전원관리-에너지 절약`에서 `화면 에너지 절약`을 체크 해제한다.
+  - 한글 입력 확인
+    - 터미널에서 ctrl+space를 눌러 한영을 전환하고 한글을 써본다.
+  - `halt -p`를 입력하여 종료한다.
+
+
+
+- 마무리
+  - DVD를 제거하고 메모리를 조절한다.
+  - 스냅숏을 만든다.
+
+
+
+
+
+## Windows Client 설치
+
+> https://www.microsoft.com/ko-kr/evalcenter/evaluate-windows-10-enterprise
+
+- 윈도우 평가판 다운로드
+  - 위 사이트에서 윈도우 평가판을 다운로드한다.
+  - 만일 이미 평가판을 사용했거나 기간이 다 된 경우 사용하는 컴퓨터가 윈도우라면 그냥 사용중인 컴퓨터로 진행해도 된다.
+
+
+
+- 설치하기
+  - 그 동안 했던 것과 동일한 방식으로 window10 설치를 진행한다.
+  - 대부분 기본으로 두고 다음을 클릭하여 설치한다.
+
+
+
+- 마무리
+  - 역시 마찬가지로 CD/DVD에서 ISO 파일을 제거하고 스냅숏을 생성한다.
+  - WinClient는 설치 완료 후에 VMware Tools를 설치하는 것이 좋다.
+    - WinClient의 가상머신 메뉴에서 Player-Manager-Install VMware Tools를 선택하면 자동으로 설치된다.
+    - 만일 자동으로 설치되지 않는다면 가상머신의 파일 탐색기에서 D:\ 폴더에 있는 setup.exe를 실행한다.
+    - VMware Tools는 가상머신에 여러 가지 드라이버 파일을 설치해서 VMware 안에 설치된 Windows를 부드럽게 사용하도록 도와준다.
