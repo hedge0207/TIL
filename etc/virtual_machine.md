@@ -596,6 +596,6 @@
 - 마무리
   - 역시 마찬가지로 CD/DVD에서 ISO 파일을 제거하고 스냅숏을 생성한다.
   - WinClient는 설치 완료 후에 VMware Tools를 설치하는 것이 좋다.
-    - WinClient의 가상머신 메뉴에서 Player-Manager-Install VMware Tools를 선택하면 자동으로 설치된다.
+    - WinClient의 가상머신을 실행시킨 상태에서 메뉴의 Player-Manager-Install VMware Tools를 선택하면 자동으로 설치된다.
     - 만일 자동으로 설치되지 않는다면 가상머신의 파일 탐색기에서 D:\ 폴더에 있는 setup.exe를 실행한다.
     - VMware Tools는 가상머신에 여러 가지 드라이버 파일을 설치해서 VMware 안에 설치된 Windows를 부드럽게 사용하도록 도와준다.
