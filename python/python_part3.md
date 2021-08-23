@@ -987,7 +987,26 @@
   print(os.path.split('/home/theo/data/test.txt')) # (''/home/theo/data', 'test.txt')
   ```
 
+
+
+
+- PDF 파일 읽고 쓰기
+
+  - 바이너리로 변환해야 한다.
+
+  ```python
+  # 바이너리로 읽고
+  with open(file_path, 'rb') as file:
+      file_contents = file.read()
   
+  # 바이너리로 저장한다.
+  with open(traslated_file_path, 'wb') as file:
+      file.write(file_contents)
+  ```
+
+  
+
+
 
 
 

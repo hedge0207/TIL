@@ -462,7 +462,8 @@
 - shutil
 
   - 디렉토리, 파일과 관련된 여러 기능을 제공해주는 패키지
-
+  - 파일 복사
+  
   ```python
   import shutil
   
