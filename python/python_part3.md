@@ -589,6 +589,23 @@
   print(user_info("Lee",27,"female",3)) # {'name': 'Lee', 'age': 27, 'gender': 'female', 'grade': 3}
   ```
 
+  - 매개변수 unpacking
+    - 인자 앞에 `*`를 붙이면 언팩이 가능하다.
+
+  ```python
+  def sum_four_nums(num1, num2, num3, num4):
+      return num1+num2+num3+num4
+      
+  
+  num_list = [1,2,3,4]
+  # 이렇게 할 수도 있지만 코드가 길어진다.
+  sum_four_nums(num_list[0], num_list[1], num_list[2], num_list[3])
+  # 아래와 같이 하면 리스트 내부의 값들이 순서대로 인자로 들어가게 된다.
+  sum_four_nums(*num_list)
+  ```
+
+  
+
   
 
 - 함수의 결과값은 언제나 하나이다.
