@@ -388,6 +388,14 @@
   - 더 간단한 방법은 아래 사이트에 접속해서 `.gitignore`파일을 작성하는 것이다.
 
     > https://www.toptal.com/developers/gitignore
+  
+  - gitignore가 제대로 적용 중인지 확인하기
+  
+  ```bash
+  $ git status --ignored
+  ```
+
+
 
 
 
