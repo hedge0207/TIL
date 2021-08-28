@@ -289,6 +289,25 @@
     IdentityFile <위에서 생성한 key file 경로>
     User <사용자명>
   ```
+  
+  - 혹은 다음과 같은 형식으로 입력한다.
+  
+  ```
+  Host <이름>
+      HostName <서버 호스트>
+      Port <port>
+      User <사용자명>
+  ```
+  
+  - 혹은 직접 입력도 가능하다.
+    -  `ctrl+shift+p`를 입력한 후 주소를 입력한다.
+  
+  ```bash
+  > Remote-SSH:Connect to Host
+  ssh <name@ssh 주소>
+  ```
+  
+  
 
 
 
