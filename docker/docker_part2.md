@@ -49,12 +49,13 @@
 - ENV 명령어
 
   - Dockerfile 안에서 환경변수를 설정하고 싶을 때는 ENV 명령을 사용한다.
+    - 리눅스 명령어 `export`에 해당한다.
   - `key value`형으로 지정
     - 단일 환경변수에 하나의 값을 지정한다.
     - 첫 번째 공백 앞을 key로 설정하면 그 이후는 모두 문자열로 취급한다.
   - `key=value`로 지정
     - 한 번에 여러 개의 값을 설정할 때 사용한다.
-
+  
   ```dockerfile
   ENV [key] [value]
   ENV [key]=[value]
