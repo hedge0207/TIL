@@ -870,8 +870,6 @@
 
 <br/>
 
-## [Linux Command](https://github.com/hedge0207/TIL/blob/master/etc/linux_command.md)
-
 <br/>
 
 <br/>
@@ -914,6 +912,12 @@
 <br/>
 
 <br/>
+
+
+
+# Linux
+
+## [Linux Command](https://github.com/hedge0207/TIL/blob/master/etc/linux_command.md)
 
 # Elasticsearch
 
