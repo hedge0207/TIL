@@ -244,6 +244,216 @@
 
 
 
+# 동시성, 병렬성 프로그래밍
+
+- 동시성과 병렬성
+  - 프로그램을 구현했는데 성능이 부족한 경우 고려해볼만 하다.
+  - 동시성
+    - 흔히 말하는 멀티 태스킹
+    - A,B,C라는 태스크가 있을 때 이를 잘게 분할하여  A,B,C를 조금씩 번갈아가면서 처리하는 방식
+    - 실제로는 A,B,C를 동시에 수행하는 것은 아니지만, 동시에 수행하는 것 처럼 보인다.
+  - 병렬성
+    - 동시성이 사실 한 순간에 하나의 일만 처리하는 것이라면, 병렬성은 실제로 한 순간에 여러 개의 일을 처리하는 것을 의미한다.
+    - A,B,C라는 태스크가 있을 때 이를 모두 동시에 수행하는 것이다.
+  - 어떤 것을 선택해야 하는가
+    - 얼핏 병렬성을 사용하는 것이 더 좋아보이지만 항상 그런 것은 아니다.
+    - 병렬성은 물리적인 코어의 개수에 제한이 있다.
+    - 일반적인 컴퓨터에는 쿼드 코어(4개의 코어) CPU를 사용하므로 한 순간에 처리할 수 있는 일의 양이 제한적이다.
+    - 만약 어떤 작업이 I/O 위주의 작업이라면 실제로 CPU가 처리해야 하는 시간은 상대적으로 적으며 대부분은 대기하는 데 소모한다.
+    - 따라서 I/O 위주의 작업이 많다면 동시성이 더 유리할 수 있다.
+
+
+
+- 프로세스와 스레드
+  - 프로세스
+    - 운영체제에서 어떤 프로그램이 실행될 때  CPU, memory와 같은 컴퓨터 자원을 사용한다.
+    - 따라서 운영체제는 프로그램이 실행될 수 있는 전용 공간을 할당하는데, 이를 프로세스라 한다.
+    - 즉, 프로그램이 메모리에 올라가서 실행 중인 것을 프로세스라 한다.
+  - 스레드
+    - 프로세스 내부에서 작업을 처리하는 주체를 스레드라 부른다.
+    - 스레드는 프로세스 내부에 할당 된 자원을 공유한다.
+    - 프로세스는 최소 하나 이상의 스레드를 갖으며 경우에 따라 여러 개의 스레드를 가질 수 있다.
+    - 운영체제가 동시에 실행되는 여러 프로그램을 관리하는 작업을 스케줄링이라 하는데, 스케줄의 단위로 스레드를 사용한다.
+  - 비유
+    - 예를 들어 프로세스가 공장의 라인이라면, 스레드는 해당 라인에서 작업을 처리하는 직원이라고 할 수 있다.
+
+
+
+- Python thread
+
+  - Python에서 스레드를 다루는 다양한 방법이 있다.
+    - 기본 모듈인 thread와 threading이 있는데 threading 모듈을 더 자주 사용한다.
+    - 이 외에도 GUI 라이브러리인 PyQt의 QThread를 사용하기도 한다.
+  - 예시
+    - 메인 스레드가 5개의 서브 스레드를 생성하고  `start`메서드를 호출하여 `Worker` 클래스에 정의한 `run`메서드를 호출한다.
+    - 메인 스레드와 5개의 서브 스레드는 운영체제의 스케줄러에 의해 스케줄링 되면서 실행된다.
+    - 가장 먼저 메인 스레드가 끝나게 되고 서브 스레드들은 시작 순서와는 다르게 종료된다.
+    - 기본적으로 메인 스레드에서 서브 스레드를 생성하면 메인 스레드는 자신의 작업을 모두 마쳤더라도 서브 스레드의 작업이 종료될 때 까지 기다렸다가 서브 스레드의 작업이 모두 완료되면 종료된다.
+
+  ```python
+  import threading
+  import time
+  
+  
+  class Worker(threading.Thread):
+      def __init__(self, name):
+          super().__init__()
+          self.name = name
+  
+      def run(self):
+          print("sub thread start", threading.currentThread().getName())
+          time.sleep(3)
+          print("sub thread end", threading.currentThread().getName())
+  
+  print("main thread start")
+  for i in range(5):
+      name = "thread {}".format(i)
+      t = Worker(name)
+      t.start()
+  print("main thread end")
+  
+  '''
+  main thread start
+  sub thread start thread 0
+  sub thread start thread 1
+  sub thread start thread 2
+  sub thread start thread 3
+  sub thread start thread 4
+  main thread end
+  sub thread end thread 4
+  sub thread end thread 1
+  sub thread end thread 3
+  sub thread end thread 2
+  sub thread end thread 0
+  '''
+  ```
+
+  - 데몬 스레드
+    - 데몬 스레드는 메인 스레드가 종료될 때 함께 종료되는 서브 스레드를 의미한다.
+    - 메인 스레드가 종료되면 서브 스레드도 종료되어야 하는 경우에 사용한다.
+    - 아래 코드의 경우 메인 스레드가 종료되면 메인 스레드는 더 이상 서브 스레드의 종료를 기다리지 않고, 서브 스레드도 함께 종료된다.
+
+  ```python
+  import threading
+  import time
+  
+  
+  class Worker(threading.Thread):
+      def __init__(self, name):
+          super().__init__()
+          self.name = name
+  
+      def run(self):
+          print("sub thread start ", threading.currentThread().getName())
+          time.sleep(3)
+          print("sub thread end ", threading.currentThread().getName())
+  
+  
+  print("main thread start")
+  for i in range(5):
+      name = "thread {}".format(i)
+      t = Worker(name)
+      t.daemon = True		# 이 부분을 추가해준다.
+      t.start()
+  
+  print("main thread end")
+  
+  '''
+  main thread start
+  sub thread start  thread 0
+  sub thread start  thread 1
+  sub thread start  thread 2
+  sub thread start  thread 3
+  sub thread start  thread 4
+  main thread end
+  '''
+  ```
+
+  - Fork와 Join
+
+    - 메인 스레드가 서브 스레드를 생성하는 것을 fork, 모든 스레드가 작업을 마칠 때 까지 기다리는 것을 join이라 한다.
+
+    - join의 경우 보통 데이터를 여러 스레드를 통해서 병렬로 처리한 후 그 값들을 다시 모아서 순차적으로 처리해야 할 필요가 있을 때 사용한다.
+    - 아래 실행 결과를 보면 t1, t2 스레드가 종료된 후 `main thread post job`이 출력된 것을 확인 가능하다.
+    - 위 예제에서는 메인 스레드가 모든 실행을 완료한 후 서브 스레드가 종료될 때까지 기다렸지만 이 예제에서는 `join` 메서드가 호출되는 지점에서 기다린다는 차이가 있다.
+
+  ````python
+  import threading
+  import time
+  
+  
+  class Worker(threading.Thread):
+      def __init__(self, name):
+          super().__init__()
+          self.name = name
+  
+      def run(self):
+          print("sub thread start ", threading.currentThread().getName())
+          time.sleep(5)
+          print("sub thread end ", threading.currentThread().getName())
+  
+  
+  print("main thread start")
+  
+  t1 = Worker("1")
+  t1.start()
+  
+  t2 = Worker("2")
+  t2.start()
+  
+  t1.join()
+  t2.join()
+  
+  print("main thread post job")
+  print("main thread end")
+  '''
+  main thread start
+  sub thread start  1
+  sub thread start  2
+  sub thread end  2
+  sub thread end  1
+  main thread post job
+  main thread end
+  '''
+  ````
+
+  - 여러 서브 스레드를 생성해야하는 경우에는 생성된 스레드 객체를 list에 저장한 후 반복문을 이용해서 각 객체에서 `join()` 메서드를 호출할 수 있다.
+
+  ```python
+  import threading
+  import time
+  
+  
+  class Worker(threading.Thread):
+      def __init__(self, name):
+          super().__init__()
+          self.name = name
+  
+      def run(self):
+          print("sub thread start ", threading.currentThread().getName())
+          time.sleep(5)
+          print("sub thread end ", threading.currentThread().getName())
+  
+  
+  print("main thread start")
+  
+  threads = []
+  for i in range(3):
+      thread = Worker(i)
+      thread.start()
+      threads.append(thread)
+  
+  
+  for thread in threads:
+      thread.join()	# join 메서드 호출
+  
+  print("main thread post job")
+  print("main thread end")
+
+
+
+
+
 
 # ETC
 
@@ -306,4 +516,3 @@
   74%|████████████████████████████████████████████████████████████████████████████████████████████████▉              | 74/100 [00:07<00:02,  9.49it/s]
   ```
 
-  

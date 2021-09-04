@@ -288,7 +288,7 @@
     - `get` 메서드를 사용해서 가져올 수 있다.
     - 혹은 `os.getenv()`도 사용할 수 있다.
     - 검색된 환경 변수가 없을 경우 기본 값을 지정할 수 있다.
-  
+
   ```python
   import os
   
@@ -301,36 +301,36 @@
   # NAME이라는 환경변수가 지정되어 있지 않으면 THEO를 불러오겠다.
   print(os.environ.get('NAME', 'THEO'))	# THEO
   ```
-  
+
   - 디렉토리 위치 변경하기
-  
+
   ```python
   import os
   
   os.chdir("D:/")
   ```
-  
+
   - 현재 디렉토리 위치 확인하기
-  
+
   ```python
   import os
   
   print(os.getcwd())	# C:\Users\...
   ```
-  
+
   - 시스템 명령어 호출하기
-  
+
   ```python
   import os
   
   #아래와 같이 os.system("명령어")를 입력하면 된다.
   os.system("mkdir new_folder") # new_folder가 현재 디렉토리에 생성된다.
   ```
-  
+
   - 디렉토리 생성하기
     - `mkdir`: 깊이가 1인 폴더만 생성이 가능하다.
     - `makedirs`: 깊이가 2 이상인 폴더도 생성이 가능하다. `exist_ok`를 인자로 받으며, True로 설정하면 이미 해당 디렉토리가 존재하더라도 다시 생성하고 False일 경우 에러가 발생한다.
-  
+
   ```bash
   import os
   
@@ -346,22 +346,22 @@
   # error
   os.makedirs('./hello/world', exist_ok=False)
   ```
-  
+
   - 파일 삭제하기
     - `remove`를 사용한다.
     - 폴더를 삭제하려 할 경우 permissionerror가 발생한다.
-  
+
   ```python
   import os
   
   
   os.remove('./tmp1/tmp2/tmp.txt')
   ```
-  
+
   - 폴더 삭제하기
     - 폴더가 비어있지 않을 경우 에러가 발생한다.
     - shutil 모듈을 사용하면, 디렉터리가 비어있지 않아도 삭제가 가능하다.
-  
+
   ```python
   import os
   import shutil
@@ -370,15 +370,26 @@
   os.rmdir('./qwe/asd')
   shutil.rmtree('./qwe')
   ```
-  
+
   - 폴더 내부의 폴더 및 파일 목록 확인
-  
+
   ```python
   import os
   
   
   print(os.listdir('./test'))
   ```
+
+  - 파일명 혹은 폴더명 변경하기
+
+  ```python
+  import os
+  
+  
+  os.rename('/old/file/or/folder/path', '/new/file/or/folder/path')
+  ```
+
+  
 
 
 
