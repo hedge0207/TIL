@@ -39,4 +39,36 @@
   select distinct <column 명> from <테이블명>
   ```
 
+
+
+
+- `%` 등의 특수문자를 문자 그대로 인식시키는 방법
+
+  - 아래와 같은 테이블이 있다고 할 때, `theo%`를 찾는 방법
+
+  | id   | name  |
+  | ---- | ----- |
+  | 1    | theo  |
+  | 2    | theoo |
+  | 3    | theo% |
+  | 4    | theo\ |
+
+  - 아래와 같은 쿼리를 입력하면 theoo와 theo%가 모두 나오게 된다.
+
+  ```sql
+  SELECT * FROM test WHERE NAME LIKE 'theo%'
+  ```
+
+  - `%`를 문자로 인식시키려면 `\`를 입력한다.
+
+  ```sql
+  SELECT * FROM test WHERE NAME LIKE 'theo\%'
+  ```
+
+  - `\`를 문자로 인식시키려면 앞에 하나를 더 붙여주면 된다.
+
+  ```sql
+  SELECT * FROM test WHERE NAME LIKE 'theo\\'
+  ```
+
   
