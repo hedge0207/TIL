@@ -660,6 +660,17 @@
   $ ./test.sh >> ./test.log 2>&1
   ```
 
+
+
+- 리눅스에서 공백 문자 표현
+
+  - 리눅스에서 공백 문자, 괄호 등은 `\+공백문자`, `\+괄호`를 통해 표현한다.
+  - 예를 들어 파일명이 `Hello World(EN).txt`인 경우 `Hello\ World\(EN\).txt`로 표현한다.
+
+  ```bash
+  $ mv Hello\ World\(EN\).txt Hello\ World\(KR\).txt
+  ```
+
   
 
 
