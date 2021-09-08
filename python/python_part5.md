@@ -1285,7 +1285,76 @@
   reader = csv.reader("test.csv", delimitr="|", quotechar='"', quoting=csv.QUOTE_ALL)
   ```
   
+
+
+
+## Random
+
+- 난수를 생성하는 모듈
+  - Python에 기본적으로 내장되어 있으므로 별도의 설치 없이 사용이 가능하다.
+
+
+
+- 메서드
+
+  - `random()`
+    - 0이상 1 미만의 숫자를 반환한다.
+
+  ```python
+  import random
   
+  
+  print(random.random())
+  ```
+
+  - `randrange()`
+    - 첫 번째 인자 이상, 두 번째 인자 미만의 정수를 반환한다.
+    - 첫 번째 인자만 줄 경우, 0 이상, 해당 인자 미만의 정수를 반환한다.
+
+  ```python
+  import random
+  
+  
+  print(random.randrange(1,7))
+  ```
+
+  - `shuffle()`
+    - 시퀀스를 뒤섞는다.
+
+  ```python
+  import random
+  
+  
+  my_list = [1,2,3,4,5]
+  random.shuffle(my_list)
+  print(my_list)	# [2, 4, 1, 3, 5]
+  ```
+
+  - `choice()`
+    - 시퀀스 타입을 인자로 받아 원소 하나를 반환한다.
+
+  ```python
+  import random
+  
+  
+  my_list = [1,2,3,4,5]
+  print(random.choice(my_list))
+  ```
+
+  - `sample()`
+    - 지정한 개수 만큼의 무작위 원소를 반환한다.
+    - 동일한 인덱스의 원소를 반환하지 않는다.
+    - 동일한 값은 반환할 수 있다.
+
+  ```python
+  import random
+  
+  
+  my_list = [1,2,3,4,5]
+  print(random.sample(my_list, 2))
+  ```
+
+
 
 
 
