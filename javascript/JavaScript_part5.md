@@ -368,7 +368,7 @@
   </html>
   ```
 
-  
+
 
 - 전역 변수의 사용 억제
 
@@ -531,7 +531,7 @@
   console.log(decreaser()) // -2
   ```
 
-  
+
 
 - 정보의 은닉
 
@@ -566,7 +566,7 @@
   console.log(counter.decrease()) // 0
   ```
 
-  
+
 
 - 자주 발생하는 실수
 

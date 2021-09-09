@@ -1,3 +1,224 @@
+# 클로저
+
+- 변수의 사용 범위
+
+  - 전역 변수
+    - 함수를 포함하여 스크립트 전체에서 접근할 수 있는 변수
+    - 전역 변수에 접근할 수 있는 범위를 전역 범위라 한다.
+
+  ```python
+  x = 10
+  
+  def foo():
+      # 함수 안에서도 접근이 가능하고
+      print(x)	# 10
+     
+  foo()
+  # 밖에서도 당연히 접근이 가능하다.
+  print(x)
+  ```
+
+  - 지역 변수
+    - 특정 함수에서만 접근이 가능한 변수
+    - 지역 변수에 접근할 수 있는 범위를 지역 범위라 한다.
+
+  ```python
+  def foo():
+      x = 10
+      print(x)	# 10
+  
+  # 지역 범위가 아닌 곳에서는 접근이 불가능하다.
+  print(x)	# NameError: name 'x' is not defined
+  ```
+
+  - `global`
+    - 함수 내에서는 전역 변수의 변경이 불가능하다.
+    - `global` 키워드를 사용하면 함수 내에서 전역 변수에 접근뿐 아니라 변경도 가능해진다.
+    - 전역 변수가 없는 상태에서 함수 내에 global을 통해 변수를 생성하면 해당 변수는 전역 변수가 된다.
+
+  ```python
+  x = 10
+  y = 10
+  def foo():
+      global x
+      x = 5
+      y = 5
+      print(x,y)	# 5 5
+  
+  foo()
+  print(x,y)	# 5 10
+  
+  
+  def bar():
+      global z
+      z = 10
+      print(z)
+  
+  # bar 함수가 아직 실행되기 전이므로 z 변수는 생성되지 않은 상태이다.
+  try:
+  	print(z)
+  except Exception as e:
+      print(e)	# name 'z' is not defined
+  bar()			# 10
+  print(z)		# 10
+  ```
+
+  - 중첩 함수에서의 범위
+    - 내부 함수에서는 외부 함수의 변수에 접근이 가능하다.
+    - 내부 함수에서는 외부 함수의 변수의 변경은 불가능하다.
+    - 외부 함수에서는 내부 함수의 변수에 접근이 불가능하다.
+
+  ```python
+  def outer():
+      msg = "Hello!"
+      my_num = 1
+      def inner():
+          # 내부 함수에서는 외부 함수의 변수에 접근이 가능하다.
+          print(msg)	# Hello!
+          my_num = 2
+          inner_var = 0
+      inner()
+      # 내부 함수에서는 외부 함수의 변수의 변경은 불가능하다.
+      print(my_num)	# 1
+      # 외부 함수에서는 내부 함수의 변수에 접근이 불가능하다.
+      print(inner_var)	# NameError: name 'inner_var' is not defined
+  
+  outer()	
+  ```
+
+  - `nonlocal`
+    - 내부 함수에서 외부 함수에 선언된 변수의 값을 변경할 수 있게 해준다.
+    - 현재 함수의 바깥 쪽에 있는 지역 변수 중 가장 가까운 함수부터 찾는다.
+
+  ```python
+  def outer():
+      my_num = 1
+      def inner():
+          nonlocal my_num
+          my_num = 2
+  
+      inner()
+      print(my_num)	# 2
+  
+  
+  outer()	
+  
+  
+  # first의 지역변수인 num이 아닌 second의 지역변수인 num을 사용한다.
+  def first():
+      num = 1
+      def second():
+          num = 2
+          def third():
+              nonlocal num
+              num+=1
+              print(num)	# 3
+          third()
+      second()
+  first()
+  ```
+
+
+
+- 클로저
+
+  - 내부함수가 자신을 포함하고 있는 외부 함수보다 더 오래 유지되는 경우, 외부 함수 밖에서 내부 함수가 호출되더라도, 외부 함수의 변수(프리 변수)에 접근할 수 있는 함수.
+    - 프리변수: 어떤 함수에서 사용은 되지만 그 함수 내부에서 선언되지 않은 함수
+
+  - 다음의 조건을 만족하는 함수를 클로저라 부른다.
+    - 어떤 함수의 내부 함수일 것
+    - 그 내부 함수가 외부 함수의 변수를 참조할 것
+    - 외부 함수가 내부 함수를 리턴할 것
+
+  ```python
+  def outer():
+      msg = "World!"
+      print("Execute?")
+      # 내부 함수
+      def inner():
+          # 외부 함수의 변수를 참조
+          print("Hello {}".format(msg))
+  	
+      # 외부 함수가 내부 함수를 return
+      return inner
+  
+  my_func = outer()	# Execute?
+  my_func()			# Hello World!
+  ```
+
+  - 설명
+    - 위 예시에서 `outer` 함수는 `my_func = outer()` 부분에서 한 번만 실행된다. 
+    - `my_func()`이 실행될 때도 `outer` 함수가 실행되었다면 `Execute?`가 한 번 더 출력되었겠지만 그렇지 않았다.
+    - 그렇다면 `inner`는 `outer`가 실행되지 않았는데도 `outer`에 선언된 `msg`라는 변수를 참조했다는 말이 된다.
+    - 이를 가능하게 한 것이 클로저이다.
+    - 클로저는 함수를 둘러싼 환경을 계속 유지하다가, 함수가 호출되면 해당 환경에서 함수가 실행될 수 있도록 해준다.
+    - 위 예시에서는 `my_func`에 저장된 함수가 클로저로, `outer`가 `inner`를 반환 할 때의 환경을 유지하고 있다가 클로저 함수(`my_func`에 할당된 함수)가 실행 될 때 해당 환경에서 함수를 실행시킨 것이다.
+
+  - 확인
+    - `dir` 함수로 클로저 함수를 분석해본다.
+    - 클로저가 생성될 때 저장 된 `World`를 확인 가능하다.
+    - 클로저가 아니더라도 `__closure__`라는 값을 가지고는 있으나, 클로저가 아닐 경우 None으로 고정되어 있다.
+
+  ```python
+  def outer():
+      msg = "World!"
+      print("Execute?")
+      def inner():
+          print("Hello {}".format(msg))
+  	
+      return inner
+  
+  my_func = outer()
+  
+  print(dir(my_func))					# [..., '__closure__', ...]
+  # __closure__는 튜플 형태다.
+  print(type(my_func.__closure__))	# <class 'tuple'>
+  print(dir(my_func.__closure__[0]))	# [..., 'cell_contents', ...]
+  print(my_func.__closure__[0].cell_contents)	# World!
+  ```
+
+
+
+
+
+# 데코레이터
+
+- 일급 객체(First-class citizen)
+
+  - 일급객체는 OOP에서 사용되는 주요 개념 중 하나로 아래의 조건을 만족하는 객체를 의미한다.
+    - 변수 혹은 자료 구조 안에 담을 수 있어야 한다.
+    - 매개 변수로 전달 할 수 있어야 한다.
+    - 리턴값으로 사용될 수 있어야 한다.
+  - 일급 함수
+    - 일급 객체의 조건을 만족하면서 실행 중(run-time)에 함수를 생성할 수 있으면 일급 함수라 부른다.
+    - 혹은 일급 객체가 함수일 경우 일급 함수라 부르기도 한다.
+  - Python의 함수는 위의 모든 조건을 만족하므로 일급 객체라고 할 수 있다.
+    - python의 함수는 def 안에서 def으로 함수를 만들거나, lambda를 활용하여 실행 중에 함수를 생성할 수 있으므로 일급 함수이기도 하다.
+
+  ```python
+  def print_message(message):
+      print(message)
+  
+  # 변수에 할당할 수 있다.
+  my_func = print_message
+  my_func("Hello!")	# Hello!
+  
+  # 자료구조에 담을 수 있다.
+  my_list = [print_message]
+  my_list[0]("Hello!")	# Hello!
+  
+  # 매개변수로 전달이 가능하고 리턴값으로 사용될 수 있다.
+  def return_func(func):
+      return func
+  
+  my_func = return_func(print_message)
+  my_func("Hello!")
+  ```
+
+
+
+
+
 # 가상환경
 
 - pyenv
