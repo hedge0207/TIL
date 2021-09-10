@@ -572,6 +572,18 @@
   def make_dict(**kargs):
       print(kargs)
   make_dict(name="Cha",gender="male") # {'name': 'Cha', 'gender': 'male'}
+  
+  
+  # 둘을 함께 사용
+  def foo(*args,**kargs):
+      print(args)
+      print(kargs)
+  
+  foo(1,2,3,4,5, name="Cha", gender="male")
+  '''
+  (1, 2, 3, 4, 5)
+  {'name': 'Cha', 'gender': 'male'}
+  '''
   ```
 
   - 매개 변수의 초기값 설정하기
@@ -604,9 +616,7 @@
   sum_four_nums(*num_list)
   ```
 
-  
 
-  
 
 - 함수의 결과값은 언제나 하나이다.
 

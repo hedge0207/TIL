@@ -217,6 +217,283 @@
 
 
 
+- 데코레이터
+
+  - 함수를 꾸며주는 함수이다.
+    - 특정 함수가 실행되기 전, 혹은 실행된 후 부가적인 처리가 필요할 때 해당 처리를 해주는 함수이다.
+    - 기존 함수의 수정 없이 데코레이터만 추가해주면 되므로 보다 간결한 코드를 작성할 수 있다.
+    - 클로저를 활용하는데, 일반적인 클로저와의 차이는 인자로 함수를 넘긴다는 것이다.
+  - Decorator 기본 형태
+    - `deco_func`이라는 데코레이터 함수는 `say_name`라는 함수를 꾸며주는 역할을 한다.
+
+  ```python
+  def deco_func(orig_func):
+      def wrapper_func():
+          orig_func()	# 2
+      return wrapper_func
+  
+  def say_name():	# 3
+      print("Cha")
+  
+  
+  my_var = deco_func(say_name)	# 함수를 인자로 넘긴다.
+  my_var()	# 1
+  ```
+
+  - `@`와 데코레이터 함수명으로 보다 간결하게 사용하기
+    - 꾸며주려는 함수 위에 `@<함수명>`을 입력하여 보다 간결하게 작성이 가능하다.
+
+  ```python
+  def deco_func(orig_func):
+      def wrapper_func():
+          orig_func()
+      return wrapper_func
+  
+  @deco_func
+  def say_name():
+      print("Cha")
+  
+  say_name()	# Hello!
+  ```
+
+  - 사용하는 이유1
+    - 기존 함수의 변경 없이 기능 변경이 가능하다.
+    - 위 예시에서 `say_name`이 실행되기 전에 `Hello`를 출력하고자 한다면 기존 함수인 `say_name`에 `print("Hello")`를 추가하는 것이 아니라 `wrapper_func`에 추가해주면 된다.
+
+  ```python
+  def deco_func(orig_func):
+      def wrapper_func():
+          print("Hello")
+          orig_func()
+      return wrapper_func
+  
+  @deco_func
+  def say_name():
+      print("Cha")
+  
+  say_name()	# Hello!
+  ```
+
+  - 사용하는 이유2
+    - 많은 함수에 동일하게 들어가는 코드를 간편하게 변경할 수 있다.
+
+  ```python
+  # 데코레이터를 사용하지 않을 경우 두 함수에 공통으로 들어가는 print("Hello")를 변경하려면 두 함수를 모두 변경해야 한다.
+  def func1():
+      print("Hello")
+      print("World")
+   
+  def func2():
+      print("Hello")
+      print("Everyone")
+      
+  
+  # 데코레이터를 사용할 경우
+  def deco(orig_func):
+      def wrapper_func():
+          # 공통으로 들어가는 부분을 여기에 추가해준다.
+          print("Bye")
+          orig_func()
+      return wrapper_func
+          
+  @deco
+  def func1():
+      print("World")
+  
+  @deco
+  def func2():
+      print("Everyone")
+  
+  func1()
+  func2()
+  ```
+
+
+
+- 데코레이터 심화
+
+  - 인자를 받아야 하는 경우
+    - 데코레이터를 공유하는 함수들끼리 인자의 개수와 종류가 다를 수 있으므로 `*`, `**`를 활용하여 `wrapper` 함수에서 인자를 받도록 한다.
+    - 아래 예시에서 `print_start_message()`는 인자를 받지 않고, `say_hello`는 하나의 인자를 받는다. 따라서 데코레이터가 이들 둘을 동시에 꾸며주기 위해서 `*`, `**`를 활용하여 인자를 받는다.
+
+  ```python
+  def deco_func(orig_func):
+      # 인자를 추가
+      def wrapper_func(*args,**kargs):
+          print("공통으로 실행할 로직")
+          # 인자를 추가
+          orig_func(*args,**kargs)
+      return wrapper_func
+    
+  @deco_func
+  def print_start_message():
+      print("Start")
+  
+  @deco_func
+  def say_hello(name):
+      print("Hello {}!".format(name))
+  
+  print_start_message()
+  say_hello("Cha")
+  '''
+  공통으로 실행할 로직
+  Start
+  공통으로 실행할 로직
+  Hello Cha!
+  '''
+  ```
+
+  - 클래스 형식으로 데코레이터 생성하기
+    - 함수 형식이 아닌 클래스 형식으로도 데코레이터를 생성할 수 있다.
+    - 그리 자주 쓰이지는 않는다.
+
+  ```python
+  class DecoClass:
+      def __init__(self, orig_func):
+          self.orig_func=orig_func
+          
+      def __call__(self, *args, **kargs):
+          print("공통으로 처리할 로직")
+          self.orig_func(*args, **kargs)
+          
+  @DecoClass
+  def print_start_message():
+      print("Start")
+  
+  @DecoClass
+  def say_hello(name):
+      print("Hello {}!".format(name))
+  
+  print_start_message()
+  say_hello("Cha")
+  '''
+  공통으로 처리할 로직
+  Start
+  공통으로 처리할 로직
+  Hello Cha!
+  '''
+  ```
+
+  - 복수의 데코레이터 설정하기
+    - 복수개의 데코레이터를 설정하는 것도 가능하다.
+    - 아래쪽의 데코레이터부터 실행된다.
+
+  ```python
+  def deco_func1(orig_func):
+      def wrapper_func1(*args,**kargs):
+          print(orig_func.__name__)
+          orig_func(*args,**kargs)
+      return wrapper_func1
+  
+  def deco_func2(orig_func):
+      def wrapper_func2(*args,**kargs):
+          print(orig_func.__name__)
+          orig_func(*args,**kargs)
+      return wrapper_func2
+  
+  @deco_func2
+  @deco_func1
+  def print_start_message():
+      print("Start")		# Start
+  
+  print_start_message()
+  '''
+  wrapper_func1
+  print_start_message
+  Start
+  '''
+  ```
+
+  - 중첩된 데코레이터가 실행되는 과정
+    - `print_start_message` 함수가 실행된다.
+    - `deco_func1` 함수에 `print_start_message` 함수가 인자로 전달되면서 실행된다.
+    - `deco_func1` 함수가 `wrapper_func1` 함수를 리턴한다.
+    - `deco_func2` 함수에 `deco_func1`의 리턴값인 `wrapper_func1`가 인자로 전달되면서 실행된다.
+    - `deco_func2` 함수가 `wrapper_func2` 함수를 리턴한다.
+    - `wrapper_func2` 함수가 실행되고 자신이 인자로 받은`orig_func`(`wrapper_func1`)를 실행
+    - `wrapper_func1`가 실행되고 자신이 인자로 받은 `orig_func(print_start_message)`를 실행
+    - `print_start_message`가 실행
+  - `@wraps`
+    - 위와 같이 중첩된 데코레이터에서 한 데코레이터의 내부 함수가 다른 데코레이터의 인자로 넘어가는 것을 막아주는 역할을 한다.
+    - `functools` 모듈에 포함되어 있다.
+
+  ```python
+  from functools import wraps
+  
+  
+  def deco_func1(orig_func):
+      @wraps(orig_func)
+      def wrapper_func1(*args,**kargs):
+          print(orig_func.__name__)
+          orig_func(*args,**kargs)
+      return wrapper_func1
+  
+  def deco_func2(orig_func):
+      @wraps(orig_func)
+      def wrapper_func2(*args,**kargs):
+          print(orig_func.__name__)
+          orig_func(*args,**kargs)
+      return wrapper_func2
+  
+  @deco_func2
+  @deco_func1
+  def print_start_message():
+      print("Start")
+  
+  print_start_message()
+  '''
+  print_start_message
+  print_start_message
+  Start
+  '''
+  ```
+
+
+
+- 활용
+
+  - 주로 로그 시스템을 만들 때 사용한다.
+
+  ```python
+  from functools import wraps
+  import datetime
+  import time
+  
+  
+  def my_logger(orig_func):
+      @wraps(orig_func)
+      def wrapper(*args, **kwargs):
+          timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+          print(
+              '[{}] 실행결과 args:{}, kwargs:{}'.format(timestamp, args, kwargs))
+          return orig_func(*args, **kwargs)
+  
+      return wrapper
+  
+  
+  def my_timer(orig_func):
+      @wraps(orig_func)
+      def wrapper(*args, **kwargs):
+          start = time.time()
+          result = orig_func(*args, **kwargs)
+          end = time.time() - start
+          print('{} 함수가 실행된 총 시간: {} 초'.format(orig_func.__name__, end))
+          return result
+  
+      return wrapper
+  
+  
+  @my_timer
+  @my_logger
+  def display_info(name, age):
+      time.sleep(1)
+      print('display_info({}, {}) 함수가 실행됐습니다.'.format(name, age))
+  
+  display_info('Jimmy', 30)
+  ```
+
+
+
 
 
 # 가상환경
