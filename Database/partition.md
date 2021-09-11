@@ -28,6 +28,14 @@
 
 
 
+- Partition 조회
+
+  ```sql
+  SELECT * FROM information_schema.partitions WHERE TABLE_NAME='<테이블명>'
+  ```
+
+  
+
 
 
 
