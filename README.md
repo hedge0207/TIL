@@ -917,6 +917,8 @@
 
 # Linux
 
+## [linux]()
+
 ## [Linux Command](https://github.com/hedge0207/TIL/blob/master/etc/linux_command.md)
 
 # Elasticsearch
