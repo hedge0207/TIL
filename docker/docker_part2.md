@@ -172,6 +172,21 @@
     - Dockerfile을 빌드하여 Docker 이미지를 작성하면 Dockerfile의 명령별로 이미지를 작성한다.
     - 작성된 여러 개의 이미지는 레이어 구조로 되어 있다.
     - 즉 이전 명령으로 생성된 이미지 파일 위에 다음 명령으로 생성된 이미지가 덮이는 형식이다.
+  - Docker image에 Python 설치하기
+  
+  ```dockerfile
+  RUN yum update -y && \
+   yum install -y wget && \
+   # Python 설치 파일 다운
+   wget https://www.python.org/ftp/python/3.7.3/Python-3.7.3.tgz && \
+   # Python 설치(압축 해제)
+   tar xzf Python-3.7.3.tgz && \
+   # Python configuration 변경
+   cd Python-3.7.3 && \
+   ./configure --enable-optimizations
+  ```
+
+
 
 
 
