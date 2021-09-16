@@ -389,6 +389,22 @@
   os.rename('/old/file/or/folder/path', '/new/file/or/folder/path')
   ```
 
+  - pid 얻기
+
+  ```python
+  import os
+  
+  print(os.getpid())
+  ```
+
+  - 부모 프로세스의 pid 얻기
+
+  ```python
+  import os
+  
+  print(os.getppid())
+  ```
+
   
 
 
