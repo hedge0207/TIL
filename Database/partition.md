@@ -13,6 +13,20 @@
   PARTITION BY RANGE (YEAR(published_at))
   (PARTITION p1989 VALUES LESS THAN (1990) ENGINE = InnoDB)  # Partition 생성
   ```
+  
+  - 일까지 특정해서 생성하기
+  
+  ```sql
+  CREATE TABLE `kpf_test` (
+  	`id` VARCHAR(30) NOT NULL COLLATE 'utf8_bin',
+  	`title` TEXT NULL DEFAULT NULL COLLATE 'utf8_bin',
+  	`content` TEXT NULL DEFAULT NULL COLLATE 'utf8_bin',
+  	`created_at` DATETIME NOT NULL,
+  	PRIMARY KEY (`id`, `created_at`) USING BTREE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=UTF8_BIN
+  PARTITION BY RANGE (to_days(created_at))
+  (PARTITION p2021_06 VALUES LESS THAN (2021-07-01) ENGINE = InnoDB)
+  ```
 
 
 
@@ -25,6 +39,14 @@
    PARTITION p20210219 VALUES LESS THAN (2019) ENGINE = InnoDB, 
    PARTITION p20210223 VALUES LESS THAN (2020) ENGINE = InnoDB)
   ```
+
+  - 일까지 특정해서 생성하기
+
+  ```sql
+  alter table kpf_test add PARTITION (PARTITION p_2021_06 VALUES LESS THAN (TO_DAYS('2021-07-01')) ENGINE = InnoDB)
+  ```
+
+  
 
 
 
