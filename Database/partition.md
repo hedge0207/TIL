@@ -25,7 +25,7 @@
   	PRIMARY KEY (`id`, `created_at`) USING BTREE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=UTF8_BIN
   PARTITION BY RANGE (to_days(created_at))
-  (PARTITION p2021_06 VALUES LESS THAN (2021-07-01) ENGINE = InnoDB)
+  (PARTITION p2021_06 VALUES LESS THAN (TO_DAYS('2021-07-01')) ENGINE = InnoDB)
   ```
 
 
@@ -43,7 +43,7 @@
   - 일까지 특정해서 생성하기
 
   ```sql
-  alter table kpf_test add PARTITION (PARTITION p_2021_06 VALUES LESS THAN (TO_DAYS('2021-07-01')) ENGINE = InnoDB)
+  alter table kpf_test add PARTITION (PARTITION p2021_06 VALUES LESS THAN (TO_DAYS('2021-07-01')) ENGINE = InnoDB)
   ```
 
   
