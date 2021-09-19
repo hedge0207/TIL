@@ -38,12 +38,138 @@
 
   ```bash
   $ docker run --name <컨테이너명> --net <네트워크명> -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" <이미지명>
-
+  ```
+  
   - Kibana 실행하기
     - ES와 연결하기위해 envirenment 값으로 `ELASTICSEARCH_HOSTS=http://<ES 컨테이너명>:9200`을 준다.
-
+  
   ```bash
   $ docker run --name kib01-test --net <네트워크명> -p 5601:5601 -e "ELASTICSEARCH_HOSTS=http://<ES 컨테이너명 >:9200" <이미지명>
+
+
+
+## Docker-compose로 설치하기
+
+- docker-compose.yml 파일에 아래와 같이 작성
+
+  - 4 대의 노드와 1 대의 kibana를 설치
+
+  ```yaml
+  version: '3.2'
+  
+  services:
+    node1:
+      build: .
+      container_name: node1
+      environment:
+        - node.name=node1
+        - node.master=true
+        - node.data=false
+        - node.ingest=false
+        - cluster.name=es-docker-cluster
+        - discovery.seed_hosts=node2,node3,node4
+        - cluster.initial_master_nodes=node1
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      volumes:
+        - data01:/usr/share/elasticsearch/data
+      ports: 
+        - 9200:9200
+      restart: always
+      networks:
+        - elastic
+  
+    node2:
+      build: .
+      container_name: node2
+      environment:
+        - node.name=node2
+        - cluster.name=es-docker-cluster
+        - discovery.seed_hosts=node1,node3,node4
+        - cluster.initial_master_nodes=node1
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      volumes:
+        - data02:/usr/share/elasticsearch/data
+      restart: always
+      networks:
+        - elastic
+  
+    node3:
+      build: .
+      container_name: node3
+      environment:
+        - node.name=node3
+        - cluster.name=es-docker-cluster
+        - discovery.seed_hosts=node1,node2,node4
+        - cluster.initial_master_nodes=node1
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      volumes:
+        - data03:/usr/share/elasticsearch/data
+      restart: always
+      networks:
+        - elastic
+  
+    node4:
+      build: .
+      container_name: node4
+      environment:
+        - node.name=node4
+        - cluster.name=es-docker-cluster
+        - discovery.seed_hosts=node1,node2,node3
+        - cluster.initial_master_nodes=node1
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      volumes:
+        - data04:/usr/share/elasticsearch/data
+      restart: always
+      networks:
+        - elastic
+  
+    kibana:
+      image: docker.elastic.co/kibana/kibana:7.5.2
+      container_name: theo_kibana
+      ports:
+        - "5603:5601"
+      environment:
+        ELASTICSEARCH_URL: http://<ES 호스트>:<ES 포트>
+        ELASTICSEARCH_HOSTS: http://<ES 호스트>:<ES 포트>
+      networks:
+        - elastic
+      depends_on:
+        - node1
+  
+  volumes:
+    data01:
+      driver: local
+    data02:
+      driver: local
+    data03:
+      driver: local
+    data04:
+      driver: local
+  
+  networks:
+    elastic:
+      driver: bridge
   ```
 
   
+
