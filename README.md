@@ -431,7 +431,7 @@
 
 # Python
 
-## [PEP8]()
+## [PEP8](https://github.com/hedge0207/TIL/blob/master/python/PEP8.md)
 
 
 
@@ -486,8 +486,15 @@
 
 ## [Python_part5](https://github.com/hedge0207/TIL/blob/master/python/python_part5.md)
 
-- python 내장 함수
+- Python 내장 함수
 - 패키지
+  - os
+  - etc
+  - argsparse
+  - logging
+  - Json
+  - CSV
+  - Random
 - Python type hint
 - with
 
@@ -495,8 +502,12 @@
 
 ## [Python_part6](https://github.com/hedge0207/TIL/blob/master/python/python_part6.md)
 
+- 클로저
+- 데코레이터
 - 가상환경
   - 심볼릭 링크
+- 동시성, 병렬성 프로그래밍
+- ETC
 
 <br/>
 
