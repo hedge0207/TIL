@@ -415,6 +415,10 @@
 
 - docker-compose.yml 작성
 
+  - `wurstmeister/kafka`이미지를 사용할 경우 `KAFKA_CREATE_TOPICS` 옵션을 통해 컨테이너 생성과 동시에 토픽 생성이 가능하다.
+    - `토픽명:partition 개수:replica 개수`
+    - 뒷 부분의 `compact`는 clean up policy이며, 다른 옵션도 선택 가능하다.
+  
   ```yaml
   version: '3'
   
@@ -432,6 +436,7 @@
       environment:
         KAFKA_ADVERTISED_HOST_NAME: localhost
         KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+        KAFKA_CREATE_TOPICS: "Topic1:1:3,Topic2:1:1:compact"
       volumes:
         - /var/run/docker.sock:/var/run/docker.sock
   ```
