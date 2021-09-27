@@ -932,38 +932,131 @@
 
 - 예외 만들기
 
-  - Python 내장 클래스인 Exception 클래스를 상속하여 만들 수 있다.
+  - Exception을 상속받는 class 생성
 
   ```python
-  class MyError(Exception):
+  class CustomException(Exception):
+      def __init__(self):
+          super().__init__('CustomException occur!')
+  ```
+  
+  - 예외 발생시키기
+  
+  ```python
+  from custom_exception import CustomException
+  
+  
+  msg = "Bye"
+  
+  try:
+      if msg=="Bye":
+          raise CustomException
+  except Exception as e:
+      print("Exception:",e)	# Exception: CustomException occur!
+  ```
+  
+  - 혹은 상속만 받고 예외를 발생시킬 때 메시지를 넣어줄 수도 있다.
+  
+  ```python
+  class CustomException(Exception):
       pass
+  ```
   
-  def is_num(a):
-      if type(a)!=int:
-          raise MyError
-      print(a)
+  - 예외 발생시키기
   
-  is_num(1)		# 1
-  is_num("1")		# __main__.MyError
+  ```python
+  from custom_exception import CustomException
+  
+  
+  msg = "Bye"
+  
+  try:
+      if msg=="Bye":
+          raise CustomException("CustomException occur!")
+  except Exception as e:
+      print("Exception:",e)	# Exception: CustomException occur!
+  ```
+  
+  - class를 아래와 같이 작성하여 추가적인 인자를 받을 수도 있다.
+    - `__str__`이 반환하는 내용이 출력되게 된다.
+  
+  ```python
+  class CustomException(Exception):
+      def __init__(self, code, name):
+          self.code  = code
+          self.name  = name
+      
+      def __str__(self):
+          return f'{self.code}, {self.name} error occur!'
+  ```
+  
+  - 예외 발생시키기
+    - 또한 args를 통해 직접 작성한 예외 클래스의 인자들을 확인 가능하다.
+  
+  ```python
+  from custom_exception import CustomException
+  
+  
+  msg = "Bye"
+  
+  try:
+      if msg=="Bye":
+          raise CustomException(1, "some exception")
+  except Exception as e:
+      print("Exception:",e)	# Exception: 1, some exception error occur!
+      print(e.args)			# (1, 'some exception')
   ```
 
-  - 에러 메세지 만들기
+
+
+- traceback
+
+  - Exception을 출력하는 것으로는 traceback까지는 확인이 불가능한데, traceback 모듈을 사용하면 traceback도 확인이 가능하다.
+  - `format_exc()`
+    - traceback을 문자열로 변환
 
   ```python
-  class MyError(Exception):
-      def __str__(self):
-          return "입력하신 값은 숫자 타입이 아닙니다!"
+  import traceback
   
-  def is_num(a):
-      if type(a)!=int:
-          raise MyError
-      print(a)
-  
-  is_num(1)		# 1
-  is_num("1")		#__main__.MyError: 입력하신 값은 숫자 타입이 아닙니다!
+  try:
+      1//0
+  except Exception as e:
+      print(e)	# integer division or modulo by zero
+      print(traceback.format_exc())
+  """
+  Traceback (most recent call last):
+    File "test.py", line 4, in <module>
+      1//0
+  ZeroDivisionError: integer division or modulo by zero
+  """
   ```
 
+  - `extract_tb()`와 `sys.exc_info()`를 활용하면 최초에 Exception이 발생한 파일을 추적 가능하다.
+
+  ```python
+  # error를 발생시킬 파일
+  # error_occur.py
+  def print_hello():
+      print(msg)
   
+  
+  # error가 발생한 파일을 추적하는 코드
+  # test.py
+  import os
+  import sys
+  import traceback
+  
+  from test2 import print_hello
+  
+  
+  try:
+      print_hello()
+  except Exception as e:
+      error_file_path = traceback.extract_tb(sys.exc_info()[-1])[-1].filename
+      print(error_file_path)
+  ```
+
+
 
 
 
