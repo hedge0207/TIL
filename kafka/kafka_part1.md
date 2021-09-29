@@ -591,20 +591,21 @@
   - consumer.py
 
   ```python
-  import time
-  from multiprocessing import Pool
-  
+  import os
   
   def consume_message(queue):
       while True:
           # 이벤트를 받아와서
           msg = queue.get()
+         	# PID 확인
+          print('PID:', os.getpid())
           # 필요한 처리를 수행한다.
           print(msg.value.get('message'))
+          print("-"*50)
   ```
-
+  
   - producer.py
-
+  
   ```python
   import json
   from kafka import KafkaProducer

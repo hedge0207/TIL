@@ -1058,6 +1058,34 @@
 
 
 
+- error가 발생한 모듈 이름을 얻는 방법
+
+  - traceback 모듈을 의 extract_tb 메서드를 사용한다.
+  - my_module.py
+
+  ```python
+  def foo():
+      print(1//0)
+  ```
+
+  - test.py
+
+  ```python
+  import sys
+  import os
+  import traceback
+  
+  import my_module
+  
+  
+  try:
+      module.foo()
+  except Exception as e:
+      print(traceback.extract_tb(sys.exc_info()[-1])[-1].filename)
+  ```
+
+  
+
 
 
 

@@ -588,5 +588,153 @@
 
 
 
+# async / await
+
+- 비동기처리
+
+  - 동기 처리와 비동기 처리
+
+    - 동기 처리는 task를 순차적으로 처리하는 것을 의미한다.
+    - 하나의 task를 완료 해야 다음 task로 넘어간다.
+    - 비동기 처리는 task를 동시에 처리하는 것을 의미한다.
+    - 하나의 task가 진행되는 와중에도 다른 task가 생기면 해당 task를 함께 처리한다.
+
+  - 멀티 스레드와 비동기 처리
+
+    - 멀티 스레드는 실제로 둘 이상의 스레드를 생성하여 task를 처리하는 것이다.
+    - 예컨데 전화 받기와 메일 쓰기를 해야 한다면 사람을 한 명 더 불러서 한 명은 전화를 받고, 한 명은 메일을 쓰는 것이다.
+
+    - 비동기처리는 단일 스레드가 여러 개의 task를 처리하는 것이다.
+    - 예컨데 위와 동일한 상황에서 한 사람이 전화를 받으면서 메일을 작성하는 것이라고 할 수 있다.
+
+  - 왜 비동기 처리를 해야 하는가
+
+    - 전통적으로 동시 프로그래밍은 멀티 스레드를 활용하여 이루어졌다.
+    - 그러나 thread safe한 프로그램을 작성하는 것은 쉬운 일이 아니며, 하드웨어의 사양에 따라 성능 차이가 심하게 날 수 있다.
+    - 이러한 이유로 최근에는 하나의 스레드로 동시 처리가 가능한 비동기 처리가 주목받고 있다.
+
+
+
+
+
+- Python과 async
+  - async
+    - 비동기적으로 동작하는 함수를 만들 수 있게 해주는 Python keyword
+    - Python 3.4에서 asyncio라는 비동기 처리를 위한 라이브러리가 표준 라이브러리로 채택되었다.
+    - Python 3.5에서 async/await가 문법으로 채택되었다.
+  - 코루틴과 async
+    - async 키워드를 사용하여 비동기처리를 하는 함수를 코루틴이라 부른다.
+    - Python에는 제네레이터 기반의 코루틴이 있으므로 async 기반의 코루틴과 구분하기 위해 async로 기반의 코루틴을 네이티브 코루틴이라 부른다.
+
+
+
+- async 사용해보기
+
+  - 아래와 같이 네이티브 코루틴을 비동기 함수가 아닌 곳에서 호출하면 Warning 메세지가 출력되고 실행도 되지 않는다.
+    - 네이티브 코루틴이 실행되지 않는 것이지 error가 발생하진 않으므로 이후의 코드가 실행은 된다.
+
+  ```python
+  async def async_func():
+      print("Hello")
+  
+  async_func()
+  print("World!")
+  '''
+  test.py:4: RuntimeWarning: coroutine 'async_func' was never awaited
+    async_func()
+  RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+  World!
+  '''
+  ```
+
+  - 따라서  asyncio 모듈을 사용해 실행해야 한다.
+    - Python 3.7 이상에서는 `run` 메서드를 활용하여 훨씬 간편하게 호출이 가능하다.
+
+  ```python
+  import asyncio
+  
+  async def async_func():
+      print("Hello")
+  
+  # 이벤트 루프를 가져온다.
+  loop = asyncio.get_event_loop()
+  # 비동기 함수가 종료할 때 까지 기다린다.
+  loop.run_until_complete(async_func())
+  # 이벤트 루프를 닫는다.
+  loop.close()
+  
+  # Python 3.7+
+  asyncio.run(async_func())
+  print("World!")
+  ```
+
+
+
+- `await`
+
+  - Python 3.5부터 사용 가능
+    - 이전 버전에서는 `yield from`으로 대체한다.
+  - async로 생성한 비동기 함수 내에서만 사용이 가능하다.
+  - await가 붙은 부분은 동기적으로 처리된다.
+
+  ```python
+  import asyncio
+   
+  async def add(a, b):
+      return a + b
+   
+  async def print_add(a, b):
+      result = await add(a, b)
+      print(result)	# 3
+   
+  asyncio.run(print_add(1, 2))
+  ```
+
+
+
+- 동기처리와 비동기처리 예시
+
+  - 동기 처리
+
+  ```python
+  from os import stat_result
+  import time
+  
+  
+  def count_number_sync(n):
+      for i in range(1, n+1):
+          print(i, '/', n)
+          time.sleep(0.5)
+  
+  start = time.time()
+  count_number_sync(5)
+  count_number_sync(5)
+  print('time:', time.time()-start)	# time: 5.006292104721069
+  ```
+
+  - 비동기처리
+
+  ```python
+  import time
+  import asyncio
+  
+  async def count_number_sync(n):
+      for i in range(1, n+1):
+          print(i, '/', n)
+          await asyncio.sleep(0.5)
+  
+  async def process_async():
+      start = time.time()
+      await asyncio.wait([
+          count_number_sync(5),
+          count_number_sync(5)
+      ])
+      print(time.time() - start)	# 2.5044925212860107
+  
+  asyncio.run(process_async())
+  ```
+
+  
+
 
 
