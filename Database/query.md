@@ -71,4 +71,15 @@
   SELECT * FROM test WHERE NAME LIKE 'theo\\'
   ```
 
+
+
+
+- Oracle 최장일치
+
+  ```sql
+  select min(t.<반환 받을 필드>) keep (DENSE_RANK first order by length(t.<검색 대상 필드>) desc)
+  from <테이블명> t
+  where <'찾을 문자열'> like t.keyword_cap || '%'
+  ```
+
   

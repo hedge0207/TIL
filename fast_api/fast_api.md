@@ -30,7 +30,8 @@
 - 만들기
 
   - main.py 파일 생성
-
+    - required인지 optional인지는 기본값 설정 여부에 달려있다.
+  
   ```python
   from typing import Optional
   from fastapi import FastAPI
@@ -44,6 +45,7 @@
   
   @app.get("/items/{item_id}")
   # int형 이어야 하는 경로 매개변수와 str형 이어야 하는 경로 매개변수 q를 받는다.
+  # q의 경우 기본값으로 None을 줬기에 optional이지만, 만일 기본값을 주지 않을 경우 required가 된다.
   def read_item(item_id: int, q: Optional[str]=None):
       return {"item_id": item_id, "q": q}
   ```
@@ -51,6 +53,7 @@
   - 서버 실행하기
     - 위 코드에서 `app = FastAPI()`로 생성된 app을 명령어로 넣는다.
     - `--reload`는 코드가 변경된 후 서버를 재시작하는 명령어이다.
+    - 호스트와 포트를 변경하고자 한다면 `--host`, `--port` 옵션을 준다.
   
   ``` bash
   # uvicorn 파일명:FastAPI()로 생성한 객체 --reload
@@ -96,6 +99,7 @@
   class Item(BaseModel):
       name: str
       price: float
+      # is_offer는 기본값으로 None을 줬기에 optional한 값이 된다.
       is_offer:Optional[bool] = None
   
   # (...중략...)

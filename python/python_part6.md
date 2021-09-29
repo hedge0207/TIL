@@ -229,7 +229,9 @@
   ```python
   def deco_func(orig_func):
       def wrapper_func():
+          print("Hello!")
           orig_func()	# 2
+          print("Bye!")
       return wrapper_func
   
   def say_name():	# 3
@@ -239,27 +241,34 @@
   my_var = deco_func(say_name)	# 함수를 인자로 넘긴다.
   my_var()	# 1
   ```
-
+  
   - `@`와 데코레이터 함수명으로 보다 간결하게 사용하기
     - 꾸며주려는 함수 위에 `@<함수명>`을 입력하여 보다 간결하게 작성이 가능하다.
-
+  
   ```python
   def deco_func(orig_func):
       def wrapper_func():
+          print("Hello!")
           orig_func()
+          print("Bye!")
       return wrapper_func
   
   @deco_func
   def say_name():
       print("Cha")
   
-  say_name()	# Hello!
+  say_name()
+  '''
+  Hello!
+  Cha
+  Bye!
+  '''
   ```
-
+  
   - 사용하는 이유1
     - 기존 함수의 변경 없이 기능 변경이 가능하다.
     - 위 예시에서 `say_name`이 실행되기 전에 `Hello`를 출력하고자 한다면 기존 함수인 `say_name`에 `print("Hello")`를 추가하는 것이 아니라 `wrapper_func`에 추가해주면 된다.
-
+  
   ```python
   def deco_func(orig_func):
       def wrapper_func():
@@ -273,10 +282,10 @@
   
   say_name()	# Hello!
   ```
-
+  
   - 사용하는 이유2
     - 많은 함수에 동일하게 들어가는 코드를 간편하게 변경할 수 있다.
-
+  
   ```python
   # 데코레이터를 사용하지 않을 경우 두 함수에 공통으로 들어가는 print("Hello")를 변경하려면 두 함수를 모두 변경해야 한다.
   def func1():
@@ -310,12 +319,10 @@
 
 
 
-- 데코레이터 심화
-
-  - 인자를 받아야 하는 경우
-    - 데코레이터를 공유하는 함수들끼리 인자의 개수와 종류가 다를 수 있으므로 `*`, `**`를 활용하여 `wrapper` 함수에서 인자를 받도록 한다.
-    - 아래 예시에서 `print_start_message()`는 인자를 받지 않고, `say_hello`는 하나의 인자를 받는다. 따라서 데코레이터가 이들 둘을 동시에 꾸며주기 위해서 `*`, `**`를 활용하여 인자를 받는다.
-
+- 꾸며줄 함수가 인자를 받아야 할 경우
+  - 데코레이터를 공유하는 함수들끼리 인자의 개수와 종류가 다를 수 있으므로 `*`, `**`를 활용하여 `wrapper` 함수에서 인자를 받도록 한다.
+  - 아래 예시에서 `print_start_message()`는 인자를 받지 않고, `say_hello`는 하나의 인자를 받는다. 따라서 데코레이터가 이들 둘을 동시에 꾸며주기 위해서 `*`, `**`를 활용하여 인자를 받는다.
+  
   ```python
   def deco_func(orig_func):
       # 인자를 추가
@@ -342,11 +349,51 @@
   Hello Cha!
   '''
   ```
+  
 
-  - 클래스 형식으로 데코레이터 생성하기
-    - 함수 형식이 아닌 클래스 형식으로도 데코레이터를 생성할 수 있다.
-    - 그리 자주 쓰이지는 않는다.
 
+
+- 데코레이터 함수가 인자를 받아야 하는 경우
+
+  - 이 경우 실제 데코레이터 역할을 하는 함수 상위에 파라미터를 받기 위한 함수를 선언해준다.
+
+  ```python
+  # 파라미터를 받기 위한 함수
+  def is_bigger(num):
+      # 실제 데코레이터 함수
+      def real_decorator(orig_func):
+          def wrapper_func(num1, num2):
+              sum_num = orig_func(num1, num2)
+              if sum_num > num:
+                  print(f"my_sum 함수의 결과값은 {num}보다 큽니다.")
+              else:
+                  print(f"my_sum 함수의 결과값은 {num}보다 작습니다.")
+              return sum_num
+          return wrapper_func
+      return real_decorator
+  
+  @is_bigger(5)
+  def my_sum(num1, num2):
+      return num1 + num2
+  
+  print(my_sum(7,8))
+  '''
+  my_sum 함수의 결과값은 5보다 큽니다.
+  15
+  '''
+  print(my_sum(1,2))
+  '''
+  my_sum 함수의 결과값은 5보다 작습니다.
+  3
+  '''
+  ```
+
+
+
+- 클래스 형식으로 데코레이터 생성하기
+  - 함수 형식이 아닌 클래스 형식으로도 데코레이터를 생성할 수 있다.
+  - 그리 자주 쓰이지는 않는다.
+  
   ```python
   class DecoClass:
       def __init__(self, orig_func):
@@ -373,11 +420,45 @@
   Hello Cha!
   '''
   ```
+  
+  - 매개변수를 받는 클래스형 데코레이터 생성하기
+    - `__init__`이 아닌 `__call__`에서 꾸며줄 함수를 받는다.
+  
+  ```python
+  class DecoClass:
+      def __init__(self, num):
+          self.num=num
+          
+      def __call__(self, orig_func):
+          def wrapper(num1, num2):
+              result = orig_func(num1, num2)
+              if result > self.num:
+                  print(f"my_sum 함수의 결과값은 {self.num}보다 큽니다.")
+              else:
+                  print(f"my_sum 함수의 결과값은 {self.num}보다 작습니다.")
+              return result
+  
+          return wrapper
+          
+  @DecoClass(8)
+  def my_sum(num1, num2):
+      return num1 + num2
+  
+  
+  print(my_sum(3, 4))
+  '''
+  my_sum 함수의 결과값은 8보다 작습니다.
+  7
+  '''
+  ```
 
-  - 복수의 데코레이터 설정하기
-    - 복수개의 데코레이터를 설정하는 것도 가능하다.
-    - 아래쪽의 데코레이터부터 실행된다.
 
+
+- 복수의 데코레이터 설정하기
+  - 복수개의 데코레이터를 설정하는 것도 가능하다.
+  - 가장 아래에 있는 데코레이터부터 실행된다.
+    - 데코레이터 함수 자체는 가장 아래 있는 데코레이터부터 실행되지만 wrapper 함수는 가장 위에 있는 데코레이터부터 실행된다.
+  
   ```python
   def deco_func1(orig_func):
       def wrapper_func1(*args,**kargs):
@@ -391,6 +472,7 @@
           orig_func(*args,**kargs)
       return wrapper_func2
   
+  
   @deco_func2
   @deco_func1
   def print_start_message():
@@ -403,20 +485,52 @@
   Start
   '''
   ```
-
+  
   - 중첩된 데코레이터가 실행되는 과정
     - `print_start_message` 함수가 실행된다.
     - `deco_func1` 함수에 `print_start_message` 함수가 인자로 전달되면서 실행된다.
     - `deco_func1` 함수가 `wrapper_func1` 함수를 리턴한다.
     - `deco_func2` 함수에 `deco_func1`의 리턴값인 `wrapper_func1`가 인자로 전달되면서 실행된다.
     - `deco_func2` 함수가 `wrapper_func2` 함수를 리턴한다.
-    - `wrapper_func2` 함수가 실행되고 자신이 인자로 받은`orig_func`(`wrapper_func1`)를 실행
-    - `wrapper_func1`가 실행되고 자신이 인자로 받은 `orig_func(print_start_message)`를 실행
+    - `wrapper_func2` 함수가 실행되고 자신이 인자로 받은`orig_func`( `wrapper_func1` )을 실행
+    - `wrapper_func1`가 실행되고 자신이 인자로 받은 `orig_func`( `print_start_message` )을 실행
     - `print_start_message`가 실행
-  - `@wraps`
-    - 위와 같이 중첩된 데코레이터에서 한 데코레이터의 내부 함수가 다른 데코레이터의 인자로 넘어가는 것을 막아주는 역할을 한다.
-    - `functools` 모듈에 포함되어 있다.
+  
+  - `@`를 사용하지 않았을 경우 아래 코드와 같다.
+  
+  ```python
+  def deco_func1(orig_func):
+      def wrapper_func1(*args,**kargs):
+          print(orig_func.__name__)
+          orig_func(*args,**kargs)
+      return wrapper_func1
+  
+  def deco_func2(orig_func):
+      def wrapper_func2(*args,**kargs):
+          print(orig_func.__name__)
+          orig_func(*args,**kargs)
+      return wrapper_func2
+  
+  
+  def print_start_message():
+      print("Start")		# Start
+  
+  decorated_func = deco_func2(deco_func1(print_start_message))
+  decorated_func()
+  '''
+  wrapper_func1
+  print_start_message
+  Start
+  '''
+  ```
 
+
+
+- `@wraps`
+  
+  - 위와 같이 중첩된 데코레이터에서 한 데코레이터의 내부 함수가 다른 데코레이터의 인자로 넘어가는 것을 막아주는 역할을 한다.
+  - `functools` 모듈에 포함되어 있다.
+  
   ```python
   from functools import wraps
   
