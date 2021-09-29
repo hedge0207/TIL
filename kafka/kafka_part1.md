@@ -627,6 +627,88 @@
 
 
 
+- Kafka Consumer에 topic과 partition을 지정하는 방법
+
+  - partition을 2개 이상 생성해줘야 한다.
+    - 만일 docker-compose로 kafka를 띄운다면 `environment`의 `KAFKA_CREATE_TOPICS`에 `토픽명:partition 개수:replica 개수` 형태로 파티션 개수를 설정해준다.
+    - 만일 kafka를 띄울 때 partition 생성을 하지 않았다면 아래와 같이 파티션을 생성해준다.
+
+  ```python
+  from kafka import KafkaAdminClient
+  from kafka.admin import NewPartitions
+  
+  bootstrap_servers='127.0.0.1:9092',
+  topic = 'test'
+  
+  # {topic명:NewPartition 인스턴스} 형태의 딕셔너리를 생셩한다.
+  topic_partitions = {}
+  topic_partitions[topic] = NewPartitions(total_count=3)
+  
+  admin_client = KafkaAdminClient(bootstrap_servers=bootstrap_servers)
+  # create_partitions 메서드에 위에서 생성한 딕셔너리를 인자로 넘겨 파티션을 생성한다.
+  admin_client.create_partitions(topic_partitions)
+  ```
+
+  - producer
+    - producer 쪽에서는 특별히 해줄 것이 없다.
+    - 만일 특정 partition에 메시지를 보내고 싶다면 `send` 메서드에 `partition=파티션 번호` 인자를 추가해주면 된다.
+
+  ```python
+  import json
+  from kafka import KafkaProducer
+  
+  
+  producer = KafkaProducer(bootstrap_servers=['127.0.0.1:9092'],
+                          value_serializer=lambda m: json.dumps(m).encode('utf-8'),
+                          max_block_ms=1000 * 60 * 10,
+                          buffer_memory=104857600 * 2,
+                          max_request_size=104857600)
+  
+  msg_list = ['Hello', 'World', 'Good']
+  topic = 'test'
+  for msg in msg_list:
+      value = {
+          'message':msg
+      }
+      producer.send(topic=topic, value=value)
+      producer.flush()
+  ```
+
+  - consumer
+    - `assign` 메서드를 통해 토픽과 파티션을 할당한다.
+
+  ```python
+  import json
+  
+  from kafka import KafkaAdminClient, KafkaConsumer
+  from kafka.structs import TopicPartition
+  from kafka.admin import NewPartitions
+  
+  
+  
+  def deserializer_value(value):
+      try:
+          return json.loads(value)
+      except Exception as e:
+          print(e)
+  
+  bootstrap_servers='127.0.0.1:9092',
+  topic = 'test'
+  
+  consumer = KafkaConsumer(bootstrap_servers=bootstrap_servers,
+                          group_id='test-group', 
+                          value_deserializer=deserializer_value, 
+                          auto_offset_reset='earliest', 
+                          enable_auto_commit=False)
+  # topic과 partition을 할당
+  consumer.assign([TopicPartition(topic, 1)])
+  
+  for msg in consumer:
+      print(msg.value.get('message'))
+      partitions = consumer.assignment()
+      print(partitions)
+      consumer.commit()
+
 
 
 
@@ -634,7 +716,6 @@
 # 참고
 
 - https://galid1.tistory.com/793
-
 - https://needjarvis.tistory.com/category/%EB%B9%85%EB%8D%B0%EC%9D%B4%ED%84%B0%20%EB%B0%8F%20DB/%EC%B9%B4%ED%94%84%EC%B9%B4%28Kafka%29
-
 - https://kafka-python.readthedocs.io/en/1.1.0
+- https://kontext.tech/column/streaming-analytics/474/kafka-topic-partitions-walkthrough-via-python#h__1
