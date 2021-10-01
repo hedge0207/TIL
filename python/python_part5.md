@@ -1473,7 +1473,8 @@
 
   - Optional
     - None이 허용되는 함수의 매개 변수의 타입을 명시할 때 사용한다.
-
+    - `Optional[type]`은 `Union[type, None]`의 shorthand다.
+  
   ```python
   def repeat(name: str,message: Optional[str] = None) -> str:
       if message:
@@ -1481,7 +1482,7 @@
       else:
           return name
   ```
-
+  
   
 
 
