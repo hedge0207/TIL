@@ -714,6 +714,16 @@
 
 # etc
 
+## docker 컨테이너 내부에서 docker 명령어 사용
+
+- `/var/run/docker.sock`파일을 볼륨을 잡아 컨테이너 내부의 동일 경로에 생성해 주면 된다.
+
+  ```
+  /var/run/docker.sock:/var/run/docker.sock
+  ```
+
+
+
 ## docker-entrypoint-initdb.d
 
 - `docker-entrypoint-initdb.d`
