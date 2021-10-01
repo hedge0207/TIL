@@ -400,13 +400,14 @@
 - 이미지 받기
 
   - kafka 이미지 받기
-
+    - 예시에서 사용한 `wurstmeister/kafka`외에도 `bitnami/kafka`, `confluentinc/cp-kafka`
+  
   ```bash
   $ docker pull wurstmeister/kafka
   ```
-
+  
   - zookeeper 이미지 받기
-
+  
   ```bash
   $ docker pull zookeeper
   ```
@@ -440,6 +441,12 @@
       volumes:
         - /var/run/docker.sock:/var/run/docker.sock
   ```
+  
+  - 설정 변경하기
+    - kafka broker의 설정 변경을 위해 `server.properties`를 수정해야 할 경우가 있다.
+    - 이 경우 두 가지 선택지가 있는데 docker-compose의 `environment`를 활용하여 설정을 변경하거나, kafka container 내부의 `/opt/kafka/config`폴더(이미지 마다 경로는 다를 수 있다)를 volume 설정해서 직접 수정할 수 있다.
+    - `wurstmeister/zookeeper` 이미지의 경우 docker-compose의 `environment`를 활용하는 것을 추천한다.
+    - `wurstmeister/zookeeper` 이미지의 경우 두 방법 다 사용할 경우 error가 발생하면서 컨테이너가 실행이 안되므로 주의해야 한다.
 
 
 
