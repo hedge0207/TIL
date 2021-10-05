@@ -213,6 +213,7 @@
     - 파일 삭제는 파일 단위로 이루어지는데 이 단위를 로그 세그먼트라 부른다.
     - 이 세그먼트에는 다수의 데이터가 들어있기에 일반적인 DB처럼 특정 데이터를 선별해서 삭제할 수 없다.
     - 세그먼트 파일은 데이터가 쌓이는 동안 열려 있으며, 저장 용량이 일정 이상이 되거나 일정 시간이 지나면 닫히게 된다.
+    - 데이터를 저장하기 위해 사용중인(열려있는) 세그먼트를 액티브 세그먼트라고한다.
     - 세그먼트에 저장할 용량 혹은 시간을 지나치게 작게 설정할 경우 세그먼트 파일을 자주 여닫음으로써 부하가 발생할 수 있다.
     - 닫힌 세그먼트 파일은 일정 용량, 혹은 일정 시간이 지나면 삭제된다.
   - 관련 옵션
@@ -265,6 +266,8 @@
     - 파티션에 저장된 데이터를 **레코드(record)**라고 부른다.
   - 파티션은 카프카 병렬 처리의 핵심으로써 레코드를 병렬로 처리할 수 있도록 컨슈머들과 매치된다.
   - 파티션은 리더와 팔로워로 구성된다.
+    - 카프카는 브로커 중 하나가 내려가더라도 다른 브로커에서 내려간 브로커의 데이터를 사용할 수 있도록 복제를 지원한다.
+    - 복제는 파티션 단위로 진행되며, 사용자가 설정한 개수 만큼 다른 브로커에 파티션이 복제된다.
     - 프로듀서 또는 컨슈머와 직접 통신하는 파티션을 리더, 나머지 복제 데이터를 가지고 있는 파티션을 팔로워라 부른다.
     - 리더 파티션이 속한 브로커에 문제가 생길 경우 팔로워 파티션 중 하나가 리더 파티션이 된다.
     - 팔로워들은 리더의 오프셋을 확인하여 현재 자신이 가지고 있는 오프셋과 차이가 나는 경우 리더 파티션으로부터 데이터를 가져와서 자신의 파티션에 저장(복제)한다.
@@ -322,10 +325,7 @@
     - 레코드의 메시지 값을 직렬화하는 클래스를 작성한다.
   - acks
     - 프로듀서가 전송한 데이터가 브로커에 정상적으로 저장되었는지 여부를 확인하는 데 사용한다.
-    - 0, 1, -1(또는 all) 중 하나로 설정이 가능하다(기본값은 1).
-    - 0은 브로커에 데이터가 정상적으로 저장되었는지 여부와 상관없이 프로듀서가 데이터를 전송했다면 성공으로 판단한다.
-    - 1은 리더 파티션에 데이터가 저장되면 전송 성공으로 판단한다.
-    - -1(또는 all)은 토픽의 리더 파티션과 팔로워 파티션에 데이터가 저장되면 성공으로 판단한다.
+    - 아래 acks 참고
   - buffer.memory
     - 브로커로 전송할 데이터를 배치로 모으기 위해 설정할 버퍼 메모리양을 지정한다.
   - retries
@@ -363,612 +363,133 @@
 
 
 
-- 파티션과 컨슈머, 컨슈머 그룹
-  - 1개의 파티션은 하나의 컨슈머 그룹 내에서는 최대 1개의 컨슈머에만 할당 가능하다.
-    - 이 말은 같은 컨슈머 그룹 내에서만 해당하는 말이다.
-    - 이미 한 컨슈머 그룹 내의 컨슈머를 할당 했다고 하더라도 다른 컨슈머 그룹 내의 컨슈머에는 할당이 가능하다.
-
-
-
-# 카프카 시작해보기
-
-## 카프카 설치 및 실행
-
-- JDK 설치
-
-  - 카프카 브로커를 실행하기 위해서는 JDK가 필요하다.
-
-  ```bash
-  $ sudo yum install -y java-1.8.0-openjdk-devel.x86_64
-  ```
-
-  - 설치 확인
-
-  ```bash
-  $ java -version
-  ```
-
-
-
-- 카프카 설치 및 설정
-
-  - 카프카 브로커 실행을 위해 카프카 바이너리 패키지를 다운로드한다.
-    - 카프카 바이너리 패키지에는 자바 소스코드를 컴파일하여 실행하기 위해 준비해 놓은 바이너리 파일들이 들어 있다.
-
-  ```bash
-  # 다운
-  $ wget https://archive.apache.org/dist/kafka/2.5.0/kafka_2.12-2.5.0.tgz
-  
-  # 압축 풀기
-  $ tar xvf kafka_2.12-2.5.0.tgz
-  ```
-
-  - 카프카 브로커 힙 메모리 확인
-    - 카프카 브로커는 레코드의 내용은 페이지 캐시로 시스템 메모리를 사용하고, 나머지 객체들은 힙 메모리에 저장하여 사용한다는 특징이 있다.
-    - 따라서 카프카 브로커를 운영할 때 힙 메모리를 5GB 이상으로 설정하지 않는 것이 일반적이다.
-    - 힙 메모리의 기본 설정은 카프카 브로커의 경우 1GB, 주키퍼는 512MB로 설정되어 있다.
-
-  ```sh
-  # ~/user-name/kafka_2.12-2.5.0/bin/kafka-start.sh
-  
-  if [ $# -lt 1 ];
-  then
-          echo "USAGE: $0 [-daemon] server.properties [--override property=value]*"
-          exit 1
-  fi
-  base_dir=$(dirname $0)
-  
-  if [ "x$KAFKA_LOG4J_OPTS" = "x" ]; then
-      export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$base_dir/../config/log4j.properties"
-  fi
-  
-  if [ "x$KAFKA_HEAP_OPTS" = "x" ]; then
-      export KAFKA_HEAP_OPTS="-Xmx1G -Xms1G"  # 따로 환경변수로 지정해주지 않았을 경우 1GB로 설정되어 있다.
-  fi
-  
-  EXTRA_ARGS=${EXTRA_ARGS-'-name kafkaServer -loggc'}
-  
-  COMMAND=$1
-  case $COMMAND in
-    -daemon)	# deamon 옵션으로 인해 백그라운드에서 실행된다.
-      EXTRA_ARGS="-daemon "$EXTRA_ARGS
-      shift
-      ;;
-    *)
-      ;;
-  esac
-  
-  exec $base_dir/kafka-run-class.sh $EXTRA_ARGS kafka.Kafka "$@"
-  ```
-
-  - 카프카 브로커 힙 메모리 설정
-    - `KAFKA_HEAP_OPTS`라는 이름으로 환경변수를 설정해준다.
-    - `export`의 경우 터미널 세션이 종료되면 초기화 되므로 bash 쉘이 실행될 때마다 입력된 스크립트를 실행시켜주는 `~/.bashrc` 파일에 export 명령어를 입력해준다.
-
-  ```bash
-  # 터미널 세션이 종료되면 초기화 된다.
-  $ export KAFKA_HEAP_OPTS="-Xmx400m -Xmx400m"
-  
-  # ~/.bashrc
-  # .bashrc
-  
-  # Source global definitions
-  if [ -f /etc/bashrc ]; then
-          . /etc/bashrc
-  fi
-  
-  # Uncomment the following line if you don't like systemctl's auto-paging feature:
-  # export SYSTEMD_PAGER=
-  
-  # User specific aliases and functions
-  # 추가해준다.
-  export KAFKA_HEAP_OPTS="-Xmx400m -Xmx400m"
-  
-  # 이후 적용한 내용을 터미널 재실행 없이 다시 실행시키기 위해 아래 명령어를 입력한다.
-  $ source ~/.bashrc
-  ```
-
-  - 카프카 브로커 실행 옵션 지정
-    - config 폴더에 있는 `server.properties` 파일에 카프카 브로커가 클러스터 운영에 필요한 옵션들을 지정할 수 있다.
-
-  ```properties
-  # ...전략
-  
-  # The id of the broker. This must be set to a unique integer for each broker.
-  # 클러스터 내에서 브로커를 구분하기 위한 id로 클러스터 내에서 고유해야 한다.
-  broker.id=0
-  
-  ############################# Socket Server Settings #############################
-  
-  # The address the socket server listens on. It will get the value returned from 
-  # java.net.InetAddress.getCanonicalHostName() if not configured.
-  #   FORMAT:
-  #     listeners = listener_name://host_name:port
-  #   EXAMPLE:
-  #     listeners = PLAINTEXT://your.host.name:9092
-  # 카프카 브로커가 통신을 위해 열어둘 인터페이스 IP, port, 프로토콜을 설정할 수 있다
-  # 설정하지 않을 경우 모든 IP, port에서 접속이 가능하다.
-  #listeners=PLAINTEXT://:9092
-  
-  # Hostname and port the broker will advertise to producers and consumers. If not set, 
-  # it uses the value for "listeners" if configured.  Otherwise, it will use the value
-  # returned from java.net.InetAddress.getCanonicalHostName().
-  # 카프카 클라이언트 또는 카프카 커맨드 라인 툴에서 접속할 때 사용하는 IP와 port 정보다.
-  #advertised.listeners=PLAINTEXT://your.host.name:9092
-  
-  # Maps listener names to security protocols, the default is for them to be the same. See the config documentation for more details
-  # SASL_SSL, SASL_PLAIN 보안 설정 시 프로토콜 매핑을 위한 설정
-  #listener.security.protocol.map=PLAINTEXT:PLAINTEXT,SSL:SSL,SASL_PLAINTEXT:SASL_PLAINTEXT,SASL_SSL:SASL_SSL
-  
-  # The number of threads that the server uses for receiving requests from the network and sending responses to the network
-  # 네트워크를 통한 처리를 할 때 사용할 네트워크 스레드 개수 설정이다.
-  num.network.threads=3
-  
-  # The number of threads that the server uses for processing requests, which may include disk I/O
-  # 카프카 브로커 내부에서 사용할 스레드 개수를 지정할 수 있다.
-  num.io.threads=8
-  
-  # (...)
-  
-  
-  ############################# Log Basics #############################
-  
-  # A comma separated list of directories under which to store log files
-  # 통신을 통해 가져온 데이터를 파일로 저장할 디렉토리 위치이다.
-  # 디렉토리가 생성되어 있지 않으면 오류가 발생할 수 있으므로 브로커 실행 전에 디렉토리 생성 여부를 확인한다.
-  log.dirs=/tmp/kafka-logs
-  
-  # The default number of log partitions per topic. More partitions allow greater
-  # parallelism for consumption, but this will also result in more files across
-  # the brokers.
-  # 파티션 개수를 명시하지 않고 토픽을 생성할 때 기본 설정되는 파티션 개수.
-  # 파티션 개수가 많아지만 병렬처리 데이터 양이 늘어난다.
-  num.partitions=1
-  
-  # (...)
-  
-  ############################# Log Retention Policy #############################
-  
-  # The following configurations control the disposal of log segments. The policy can
-  # be set to delete segments after a period of time, or after a given size has accumulated.
-  # A segment will be deleted whenever *either* of these criteria are met. Deletion always happens
-  # from the end of the log.
-  
-  # The minimum age of a log file to be eligible for deletion due to age
-  # 카프카 브로커가 저장한 파일이 삭제되기까지 걸리는 시간을 설정한다.
-  # 가장 작은 단위를 기준으로 하므로 log.retention.hours보다는 log.retention.ms 값을 설정하여 운영하는 것을 추천한다.
-  # -1로 설정할 경우 파일은 영원히 삭제되지 않는다.
-  log.retention.hours=168
-  
-  # (...)
-  
-  # The maximum size of a log segment file. When this size is reached a new log segment will be created.
-  # 카프카 브로카가 저장할 파일의 최대 크기를 지정한다.
-  # 데이터양이 많아 이 크기를 채우게 되면 새로운 파일이 생성된다.
-  log.segment.bytes=1073741824
-  
-  # The interval at which log segments are checked to see if they can be deleted according
-  # to the retention policies
-  # 카프카 브로커가 지정한 파일을 삭제하기 위해 체크하는 간격을 지정할 수 있다.
-  log.retention.check.interval.ms=300000
-  
-  ############################# Zookeeper #############################
-  
-  # Zookeeper connection string (see zookeeper docs for details).
-  # This is a comma separated host:port pairs, each corresponding to a zk
-  # server. e.g. "127.0.0.1:3000,127.0.0.1:3001,127.0.0.1:3002".
-  # You can also append an optional chroot string to the urls to specify the
-  # root directory for all kafka znodes.
-  # 카프카 브로커와 연동할 주키퍼의 IP와 port를 지정한다.
-  zookeeper.connect=localhost:2181
-  
-  # Timeout in ms for connecting to zookeeper
-  # 주키퍼의 세션 타임아웃 시간을 정한다.
-  zookeeper.connection.timeout.ms=18000
-  
-  # (...)
-  ```
-
-
-
-- 주키퍼 실행
-
-  - 카프카 바이너리가 포함된 폴더에는 브로커와 같이 실행할 주키퍼가 준비되어 있다.
-  - 주키퍼를 상용 환경에서 안전하게 운영하기 위해서는 3대 이상의 서버로 구성하여 사용하지만 실습에서는 동일한 서버에 카프카와 동시에 1대만 실행시켜 사용할 수도 있다.
-    - 1대만 실행시키는 주키퍼를 Quick-and-dirty single-node라 하며, 이름에서도 알 수 있지만 비정상적인 운영 방식이다.
-    - 실제 운영환경에서는 1대만 실행시켜선 안된다.
-
-  - 실행하기
-    - 백그라운드 실행을 위해 `--daemon` 옵션을 준다.
-    - 주키퍼 설정 경로인 `config/zookeeper.properties`를 함께 입력한다.
-
-  ```bash
-  $ bin/zookeeper-server-start.sh --daemon config/zookeeper.properties
-  ```
-
-  - 제대로 실행중인지 확인
-    - jps는 JVM 프로세스 상태를 보는 도구이다.
-    - `-m` 옵션은 main 메서드에 전달된 인자를, `-v` 옵션은 JVM에 전달된 인자를 함께 확인 가능하다.
-
-  ```bash
-  $ jps -vm
-  ```
-
-
-
-- 카프카 브로커 실행
-
-  - 실행
-
-  ```bash
-  $ bin/kafka-server-start.sh -daemon config/server.properties
-  ```
-
-  - 확인
-
-  ```bash
-  $ jps -m
-  ```
-
-
-
-- 로컬 컴퓨터에서 카프카와 통신 확인
-
-  - 로컬 컴퓨터에서 원격으로 카프카 브로커로 명령을 내려 정상적으로 통신하는지 확인.
-  - kafka-broker-api-versions.sh 명령어를 로컬 컴퓨터에서 사용하려면 로컬 컴퓨터에 카프카 바이너리 패키지를 다운로드 해야한다.
-
-  ```bash
-  $ curl https://archive.apache.org/dist/kafka/2.5.0/kafka_2.12-2.5.0.tgz --output kafka.tgz
-  ```
-
-
-
-
-
-## 카프카 커맨드 라인 툴
-
-- 카프카 커맨드 라인 툴
-  - 카프카 브로커 운영에 필요한 다양한 명령을 내릴 수 있다.
-  - 카프카 클라이언트 애플리케이션을 운영할 때 토픽이나 파티션 개수 변경과 같은 명령을 실행해야 하는 경우가 자주 발생하므로, 카프카 커맨드 라인 툴과 각 툴별 옵션에 대해서 알고 있어야 한다.
-
-
-
-- Kafka-topics.sh
-  - 토픽과 관련된 명령을 수행하는 커맨드라인.
-
-
-
-
-
-# 사용하기
-
-## Docker로 설치하기
-
-> 아래 내용은 모두 wurstmeister/kafka 이미지를 기준으로 한다.
-
-
-
-- 이미지 받기
-
-  - kafka 이미지 받기
-    - 예시에서 사용한 `wurstmeister/kafka`외에도 `bitnami/kafka`, `confluentinc/cp-kafka`
-  
-  ```bash
-  $ docker pull wurstmeister/kafka
-  ```
-  
-  - zookeeper 이미지 받기
-  
-  ```bash
-  $ docker pull zookeeper
-  ```
-
-
-
-- docker-compose.yml 작성
-
-  - `wurstmeister/kafka`이미지를 사용할 경우 `KAFKA_CREATE_TOPICS` 옵션을 통해 컨테이너 생성과 동시에 토픽 생성이 가능하다.
-    - `토픽명:partition 개수:replica 개수`
-    - 뒷 부분의 `compact`는 clean up policy이며, 다른 옵션도 선택 가능하다.
-  
-  ```yaml
-  version: '3'
-  
-  services:
-    zookeeper:
-      container_name: zookeeper
-      image: wurstmeister/zookeeper
-      ports:
-        - "2181:2181"
-  
-    kafka:
-      image: wurstmeister/kafka
-      ports:
-        - "9092:9092"
-      environment:
-        KAFKA_ADVERTISED_HOST_NAME: localhost
-        KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-        KAFKA_CREATE_TOPICS: "Topic1:1:3,Topic2:1:1:compact"
-      volumes:
-        - /var/run/docker.sock:/var/run/docker.sock
-  ```
-  
-  - 설정 변경하기
-    - kafka broker의 설정 변경을 위해 `server.properties`를 수정해야 할 경우가 있다.
-    - 이 경우 두 가지 선택지가 있는데 docker-compose의 `environment`를 활용하여 설정을 변경하거나, kafka container 내부의 `/opt/kafka/config`폴더(이미지 마다 경로는 다를 수 있다)를 volume 설정해서 직접 수정할 수 있다.
-    - `wurstmeister/zookeeper` 이미지의 경우 docker-compose의 `environment`를 활용하는 것을 추천한다.
-    - `wurstmeister/zookeeper` 이미지의 경우 두 방법 다 사용할 경우 error가 발생하면서 컨테이너가 실행이 안되므로 주의해야 한다.
-
-
-
-- Topic 생성하기
-
-  ```bash
-  $ docker exec -t <컨테이너 명> kafka-topics.sh --bootstrap-server <host 명>:9092 --create --topic <토픽 이름>
-  ```
-
-
-
-## Python에서 사용하기
-
-- Python에서 Kafka에 접근할 수 있게 해주는 라이브러리에는 아래와 같은 것들이 있다.
-  - confluent-kafka-python
-    - 성능이 가장 좋다.
-    - C로 만든 라이브러리를 호출하여 사용하는 방식이므로 별도의 설치과정이 존재한다.
-  - kafka-python
-    - pure python이기에 confluent-kafka-python에 비해 속도는 느리다.
-    - 사용법이 직관적이고 간결하다.
-
-
-
-- 설치하기(kafka-python)
-
-  ```bash
-  $ pip install kafka-python
-  ```
-
-
-
-- Producer 구현
-
-  ```python
-  from kafka import KafkaProducer
-  from json import dumps
-  import time
-  
-  
-  producer = KafkaProducer(acks=0, compression_type="gzip", bootstrap_servers=['localhost:9092'], \
-                          value_serializer=lambda x: dumps(x).encode('utf-8'))
-  
-  
-  data = {'Hello':'World!'}
-  producer.send('test',value=data)
-  producer.flush()
-  ```
-
-  - Producer 옵션
-
-    > 상세는 https://kafka-python.readthedocs.io/en/1.1.0/apidoc/KafkaProducer.html#kafkaproducer 참고
-
-    - `bootstrap_servers`: 브로커들을 리스트 형태로 입력한다.
-    - `acks`: 메시지를 보낸 후 요청 완료 전 승인 수, 손실과 성능의 트레이드 오프로, 낮을수록 성능은 좋고 손실이 커진다.
-    - `buffer_memory`: 카프카에 데이터를 보내기전 잠시 대기할 수 있는 메모리(byte)
-    -  `compression_type`: 데이터를 압축해서 보낼 수 있다(None, gzip, snappy, lz4 중 선택).
-    - `retries`: 오류로 전송 실패한 데이터를 다시 보낼지 여부
-    - `batch_size`: 어러 데이터를 배치로 보내는 것을 시도한다.
-    - `linger_ms`: 배치 형태 작업을 위해 기다리는 시간 조정, 배치 사이즈에 도달하면 옵션과 관계 없이 전송, 배치 사이즈에 도달하지 않아도 제한 시간 도달 시 메시지 전송
-    - `max_request_size`: 한 번에 보낼 수 있는 메시지 바이트 사이즈(기본 값은 1mb)
-
-
-
-- Consumer 구현
-
-  ```python
-  from kafka import KafkaConsumer
-  from json import loads
-  
-  
-  consumer = KafkaConsumer('test',bootstrap_servers=['localhost:9092'],auto_offset_reset='earliest', \
-                          enable_auto_commit=True, group_id="my-group", value_deserializer=lambda x: loads(x.decode('utf-8')),\
-                          consumer_timeout_ms=1000)
-  
-  for message in consumer:
-      print(message.topic)		# test
-      print(message.partition)	# 0
-      print(message.offset)		# 0
-      print(message.key)			# None
-      print(message.value)		# {'Hello': 'World!'}
-  ```
-
-  - Consumer 옵션
-    - `bootstrap_servers`: 브로커들을 리스트 형태로 입력한다.
-    - `auto_offset_reset`: earliest(가장 초기 오프셋값), latest(가장 마지막 오프셋값), none(이전 오프셋값을 찾지 못할 경우 에러) 중 하나를 입력한다.
-    - `enable_auto_commit`: 주기적으로 offset을 auto commit
-    - `group_id`: 컨슈머 그룹을 식별하기 위한 용도
-    - `value_deserializer`: producer에서 value를 serializer를 한 경우 사용.
-    - `consumer_timeout_ms`: 이 설정을 넣지 않으면 데이터가 없어도 오랜기간 connection한 상태가 된다. 데이터가 없을 때 빠르게 종료시키려면 timeout 설정을 넣는다.
-
-
-
-- Kafka Consumer Multiprocessing
-
-  - Broker에서 이벤트를 받아와서 각 프로세스들이 처리하게 하는 방법
-    - `multiprocessing`의 `Process`와 `Queue`를 사용한다.
-
-  - main.py
-    - 이벤트를 처리하고자 하는 프로세스+1개의 프로세스를 생성한다.
-    - 하나의 프로세스는 `Queue`에 지속적으로 이벤트를 추가한다.
-    - 나머지 프로세스는 `Queue`를 공유하면서 이벤트를 받아와서 처리한다.
-
-  ```python
-  from multiprocessing import Process, Queue
-  import consumer
-  from kafka import KafkaConsumer
-  import json
-  
-  
-  def deserializer_value(value):
-      try:
-          return json.loads(value)
-      except Exception as e:
-          print(e)
-  
-  
-  kconsumer = KafkaConsumer('test',
-                          bootstrap_servers='127.0.0.1:9092',
-                          group_id='test-group',
-                          value_deserializer=deserializer_value,
-                          auto_offset_reset='earliest',
-                          max_poll_records=1,
-                          max_poll_interval_ms=3600000,
-                          enable_auto_commit=True)
-  
-  
-  if __name__ == '__main__':
-      queue = Queue()
-      processes=[]
-      def put_items(queue):
-          # queue에 이벤트를 추가한다.
-          for msg in kconsumer:
-              queue.put(msg)
-      
-      for i in range(4):
-          if i == 0:
-              # Queue에 이벤트를 추가할 프로세스
-              processes.append(Process(target=put_items, args=[queue]))	# queue를 인자로 넘긴다.
-          else:
-              # 실제 이벤트를 처리할 프로세스들
-              processes.append(Process(target=consumer.consume_message, args=[queue]))  # queue를 인자로 넘긴다.
-      
-      for process in processes:
-          process.start()
-      for process in processes:
-          process.join()
-  ```
-
-  - consumer.py
-
-  ```python
-  import os
-  
-  def consume_message(queue):
-      while True:
-          # 이벤트를 받아와서
-          msg = queue.get()
-         	# PID 확인
-          print('PID:', os.getpid())
-          # 필요한 처리를 수행한다.
-          print(msg.value.get('message'))
-          print("-"*50)
-  ```
-  
-  - producer.py
-  
-  ```python
-  import json
-  from kafka import KafkaProducer
-  
-  
-  producer = KafkaProducer(bootstrap_servers=['192.168.0.237:9092'],
-                          value_serializer=lambda m: json.dumps(m).encode('utf-8'),
-                          max_block_ms=1000 * 60 * 10,
-                          buffer_memory=104857600 * 2,
-                          max_request_size=104857600)
-  
-  msg_list = ['Hello', 'World', 'Good', 'Morning']
-  for msg in msg_list:
-      value = {
-          'message':msg
-      }
-      producer.send(topic='test', value=value)
-      producer.flush()
-  ```
-
-
-
-- Kafka Consumer에 topic과 partition을 지정하는 방법
-
-  - partition을 2개 이상 생성해줘야 한다.
-    - 만일 docker-compose로 kafka를 띄운다면 `environment`의 `KAFKA_CREATE_TOPICS`에 `토픽명:partition 개수:replica 개수` 형태로 파티션 개수를 설정해준다.
-    - 만일 kafka를 띄울 때 partition 생성을 하지 않았다면 아래와 같이 파티션을 생성해준다.
-
-  ```python
-  from kafka import KafkaAdminClient
-  from kafka.admin import NewPartitions
-  
-  bootstrap_servers='127.0.0.1:9092',
-  topic = 'test'
-  
-  # {topic명:NewPartition 인스턴스} 형태의 딕셔너리를 생셩한다.
-  topic_partitions = {}
-  topic_partitions[topic] = NewPartitions(total_count=3)
-  
-  admin_client = KafkaAdminClient(bootstrap_servers=bootstrap_servers)
-  # create_partitions 메서드에 위에서 생성한 딕셔너리를 인자로 넘겨 파티션을 생성한다.
-  admin_client.create_partitions(topic_partitions)
-  ```
-
-  - producer
-    - producer 쪽에서는 특별히 해줄 것이 없다.
-    - 만일 특정 partition에 메시지를 보내고 싶다면 `send` 메서드에 `partition=파티션 번호` 인자를 추가해주면 된다.
-
-  ```python
-  import json
-  from kafka import KafkaProducer
-  
-  
-  producer = KafkaProducer(bootstrap_servers=['127.0.0.1:9092'],
-                          value_serializer=lambda m: json.dumps(m).encode('utf-8'),
-                          max_block_ms=1000 * 60 * 10,
-                          buffer_memory=104857600 * 2,
-                          max_request_size=104857600)
-  
-  msg_list = ['Hello', 'World', 'Good']
-  topic = 'test'
-  for msg in msg_list:
-      value = {
-          'message':msg
-      }
-      producer.send(topic=topic, value=value)
-      producer.flush()
-  ```
-
-  - consumer
-    - `assign` 메서드를 통해 토픽과 파티션을 할당한다.
-
-  ```python
-  import json
-  
-  from kafka import KafkaAdminClient, KafkaConsumer
-  from kafka.structs import TopicPartition
-  from kafka.admin import NewPartitions
-  
-  
-  
-  def deserializer_value(value):
-      try:
-          return json.loads(value)
-      except Exception as e:
-          print(e)
-  
-  bootstrap_servers='127.0.0.1:9092',
-  topic = 'test'
-  
-  consumer = KafkaConsumer(bootstrap_servers=bootstrap_servers,
-                          group_id='test-group', 
-                          value_deserializer=deserializer_value, 
-                          auto_offset_reset='earliest', 
-                          enable_auto_commit=False)
-  # topic과 partition을 할당
-  consumer.assign([TopicPartition(topic, 1)])
-  
-  for msg in consumer:
-      print(msg.value.get('message'))
-      partitions = consumer.assignment()
-      print(partitions)
-      consumer.commit()
+- 리밸런싱(rebalancing)
+  - 컨슈머 그룹 내의 컨슈머에 할당된 파티션이 재할당 되는 것.
+    - 리밸런싱은 가용성을 높여 안정적인 운영을 도와주는 유용한 기능이지만 자주 일어나서는 안된다.
+    - 리밸러시이 발생할 때 파티션을 재할당 하는 과정에서 해당 컨슈머 그룹 내의 컨슈머들이 토픽의 데이터를 읽을 수 없기 때문이다.
+  - 리밸런싱은 크게 두 가지 상황에서 일어난다.
+    - 컨슈머가 추가될 경우.
+    - 컨슈머 그룹 내의 컨슈머들 중 일부 컨슈머에 장애가 발생하면, 장애가 발생한 컨슈머에 할당된 파티션은 장애가 발생하지 않은 컨슈머에 재할당 된다.
+
+  - 그룹 조정자
+    - 컨슈머 그룹에 컨슈머가 추가되고 삭제될 때를 감지하여 리밸런싱을 발동시키는 역할을 한다.
+    - 카프카 브로커 중 한 대가 그룹 조정자의 역할을 수행한다.
+
+
+
+- 커밋과 오프셋
+  - 컨슈머는 카프카 브로커가 데이터를 어디까지 가져갔는지 커밋을 통해 기록한다.
+    - 특정 토픽의 파티션을 어떤 컨슈머 그룹이 몇 번째 가져갔는지를 브로커 내부에서 사용되는 내부 토픽(`__consumer_offsets`)에 기록한다.
+    - 컨슈머 동작 이슈가 발생하여 `__consumer_offsets`에 어느 레코드까지 읽어갔는지 오프셋 커밋이 기록되지 못했다면 데이터 처리의 중복이 발생할 수 있다.
+    - 따라서 데이터 처리의 중복이 발생되지 않게 하기 위해서는 컨슈머 애플리케이션이 오프셋 커밋을 정상적으로 처리 했는지 검증해야 한다.
+  - 자동 커밋(비명시 오프셋 커밋)
+    - 기본 옵션은 `poll()`(파티션에서 메시지를 가져오는 메서드)이 수행될 때 일정 간격마다 오프셋을 커밋하도록 설정되어 있다.
+    - 이렇게 일정 간격마다 자동으로 커밋되는 것을 비명시 오프셋 커밋이라 한다.
+    - 비명시 오프셋 커밋은 편리하지만 리밸런싱 또는 컨슈머 강제 종료 발생 시 컨슈머가 처리하는 데이터가 중복 또는 유실될 수 있는 가능성이 있다.
+    - 따라서 데이터 중복이나 유실을 허용하지 않는 서비스라면 비명시 오프셋 커밋을 사용해서는 안된다.
+  - 수동 커밋(명시 오프셋 커밋)
+    - 명시적으로 오프셋을 커밋하려면 `poll()` 메서드 호출 이후에 데이터의 처리가 완료 된 후 `commit()`메서드를 호출하면 된다.
+    - `commit()` 메서드는 브로커에 커밋 요청을 하고 커밋이 정상적으로 처리 되었는지 응답하기까지 기다리는데, 이는 컨슈머의 처리량에 영향을 미친다.
+    - 기존에는 데이터 처리만 했으면 됐는데, 이제는 데이터 처리 + 커밋 요청 및 응답 대기까지 해야 하기 때문이다.
+    - 이를 해결하기 위해 비동기적으로 커밋을 할 수도 있지만, 커밋 요청이 실패했을 경우 현재 처리 중인 데이터의 순서를 보장하지 않으며 데이터의 중복 처리가 발생할 수 있다.
 
 
+
+- 파티션, 컨슈머, 컨슈머 그룹, 오프셋
+
+  - 파티션 할당
+    - 하나의 파티션은 하나의 컨슈머 그룹 내의 하나의 컨슈머에만 할당이 가능하다.
+    - 그러나 파티션은 각기 다른 컨슈머 그룹 내의 컨슈머에는 복수 할당이 가능하다. 
+    - 하나의 컨슈머는 복수의 파티션을 할당 받을 수 있다.
+
+  ![](kafka_part1.assets/화면 캡처 2021-10-05 100653.png)
+
+  - 오프셋은 각 컨슈머 별로 관리된다.
+    - rebalancing을 통해 파티션이 다른 컨슈머에 할당 돼도 기존 컨슈머의 오프셋을 이어 받아 기존 컨슈머가 처리한 마지막 Offset 이후 부터 처리를 이어서 할 수 있다.
+
+
+
+- 컨슈머 쥬요 옵션
+  - `bootstrap.servers`
+    - `브로커의 호스트 이름:포트`를 1개 이상 작성한다.
+    - 2개 이상 브로커 정보를 입력하여 일부 브로커에 이슈가 발생하더라도 접속하는 데 이슈가 없도록 설정 가능하다.
+  - `key.deserializer`
+    - 레코드의 메시지 키를 역직렬화하는 클래스를 지정한다.
+  - `key.deserializer`
+    - 레코드의 메시지 값을 역직렬화 하는 클래스를 지정한다.
+  - `group.id`
+    - 컨슈머 그룹 아이디를 지정한다.
+    - `subscribe()` 메서드로 토픽을 구독하여 사용할 때는 이 옵션을 필수로 넣어야 한다.
+  - `auto.offset.reset`
+    - 컨슈머 그룹이 특정 파티션을 읽을 때 저장된 오프셋이 없는 경우 어느 오프셋부터 읽을지 선택한다.
+    - 이미 컨슈머 오프셋이 있다면 이 옵션값은 무시된다.
+    - `latest`: 가장 최근에 넣은 오프셋부터 읽는다.
+    - `earliest`: 가장 오래전에 넣은 오프셋부터 읽는다.
+    - `none`: 컨슈머 그룹이 커밋한 기록이 있는지 찾아보고 커밋 기록이 없으면 오류를 반환하고, 있으면 기존 커밋 기록 이후 오프셋부터 읽기 시작한다.
+  - `enable.auto.commit`
+    - 자동 커밋(비명시적 오프셋 커밋)으로 할 지 수동 커밋(명시적 오프셋 커밋)으로 할지를 설정한다.
+  - `auto.commit.interval.ms`
+    - 자동 커밋일 경우 오프셋 커밋 간격을 지정한다.
+    - `poll()` 메서드가 호출될 때, 이 옵션에 설정해준 기간이 지난 레코드들을 커밋한다.
+  - `max.poll.records`
+    - `poll()`메서드를 통해 반환되는 레코드의 개수를 지정한다.
+  - `session.timeout.ms`
+    - 컨슈머가 브로커와 연결이 끊기는 최대 시간을 설정한다.
+    - 이 시간 내에 하트비트를 전송하지 않으면 브로커는 컨슈머에 이슈가 발생했다고 가정하고 리밸런싱을 시작한다.
+    - 보통 하트비트 시간 간격의 3배로 설정한다.
+  - `heatbeat.interval.ms`
+    - 하트비트를 전송하는 시간 간격이다.
+  - `max.poll.interval.ms`
+    - `poll()` 메서드를 호출하는 간격의 최대 시간을 지정한다.
+    - `poll()` 메서드를 호출한 이후에 여기서 설정해준 시간 내에 `poll()` 메서드가 다시 실행되지 않으면, 컨슈머에 이상이 생긴 것으로 판단하고 리밸런싱을 시작한다.
+  - `isolation.level`
+    - 트랜잭션 프로듀서가 레코드를 트랜잭션 단위로 보낼 경우 사용한다.
+    - `read_commited`, `read_uncommited`로 설정할 수 있다.
+    - `read_commited`로 설정하면 커밋이 완료된 레코드만 읽는다.
+    - `read_uncommited`로 설정하면 커밋 여부와 관계 없이 파티션에 있는 모든 레코드를 읽는다.
+
+
+
+- 컨슈머의 안전한 종료
+  - 정상적으로 종료되지 않은 컨슈머는 세션 타임아웃이 발생할때까지 컨슈머 그룹에 남게 된다.
+    - 이로 인해 해당 컨슈머에 할당된 파티션의 데이터는 소모되지 못하고 컨슈머 렉이 늘어나게 된다.
+    - 컨슈머 렉이 늘어나면 데이터 처리 지연 현상이 발생한다.
+  - 따라서 각 카프카 라이브러리들이 지원하는 컨슈머 종료 관련 메서드를 통해 컨슈머를 안전하게 종료해줘야 한다.
+
+
+
+
+
+
+
+# 카프카 확장
+
+- 카프카 스트림즈
+
+  - 토픽에 적재된 데이터를 실시간으로 변환하여 다른 토픽에 적재하는 라이브러리.
+    - 카프카에서 공식적으로 지원하는 라이브러리다.
+  - JMV에서만 실행이 가능하다.
+    - Python에도 아래와 같은 라이브러리가 존재하기는 하지만 현재 관리가 되지 않고 있다.
+    - [robinhood/faust](https://github.com/robinhood/faust)
+    - [wintincode/winton-kafka-streams](https://github.com/wintoncode/winton-kafka-streams)
+
+  - 필요할 경우 추후 추가
+    - 아파치 카프카 애플리케이션 프로그래밍(p.117)
+
+
+
+- 카프카 커넥트
+  - 프로듀서, 컨슈머 애플리케이션을 만드는 것은 좋은 방법이지만 반복적인 파이프라인 생성 작업이 있을 때는 매번 프로듀서, 컨슈머 애플리케이션을 개발하고 배포, 운영하는 것이 비효율적일 수 있다.
+  - 커넥트는 특정 작업 형태를 템플릿으로 만들어 놓은 커넥터를 실행함으로써 반복 작업을 줄일 수 있다.
+  - 필요할 경우 추후 추가
+    - 아파치 카프카 애플리케이션 프로그래밍(p.153)
+
+
+
+- 카프카 미러메이커2
+  - 서로 다른 두 개의 카프카 클러스터 간에 토픽을 복제하는 애플리케이션
+  - 필요할 경우 추후 추가
+    - 아파치 카프카 애플리케이션 프로그래밍(p.188)
 
 
 
