@@ -253,28 +253,11 @@
 
 
 
-## 카프카 커맨드 라인 툴
-
-- 카프카 커맨드 라인 툴
-  - 카프카 브로커 운영에 필요한 다양한 명령을 내릴 수 있다.
-  - 카프카 클라이언트 애플리케이션을 운영할 때 토픽이나 파티션 개수 변경과 같은 명령을 실행해야 하는 경우가 자주 발생하므로, 카프카 커맨드 라인 툴과 각 툴별 옵션에 대해서 알고 있어야 한다.
 
 
-
-- Kafka-topics.sh
-  - 토픽과 관련된 명령을 수행하는 커맨드라인.
-
-
-
-
-
-# 사용하기
-
-## Docker로 설치하기
+### Docker로 설치하기
 
 > 아래 내용은 모두 wurstmeister/kafka 이미지를 기준으로 한다.
-
-
 
 - 이미지 받기
 
@@ -333,6 +316,210 @@
 
   ```bash
   $ docker exec -t <컨테이너 명> kafka-topics.sh --bootstrap-server <host 명>:9092 --create --topic <토픽 이름>
+  ```
+
+
+
+
+
+## 카프카 커맨드 라인 툴
+
+- 카프카 커맨드 라인 툴
+  - 카프카 브로커 운영에 필요한 다양한 명령을 내릴 수 있다.
+  - 카프카 클라이언트 애플리케이션을 운영할 때 토픽이나 파티션 개수 변경과 같은 명령을 실행해야 하는 경우가 자주 발생하므로, 카프카 커맨드 라인 툴과 각 툴별 옵션에 대해서 알고 있어야 한다.
+  - `wurstmeister/kafka`이미지의 경우 `/opt/kafka/bin`에서 찾을 수 있다.
+
+
+
+- Kafka-topics.sh
+  - 토픽과 관련된 명령을 수행하는 커맨드라인.
+  - 토픽 생성
+    - `--create` 명령을 사용한다.
+    - `--replication-factor`는 복제 파티션의 개수를 지정하는 것인데 1이면 복제 파티션을 사용하지 않는다는 의미이다.
+  
+  ```bash
+  $ kafka-topics.sh \
+  > --create \
+  > --bootstrap-server 127.0.0.1:9092 \	# 카프카 호스트와 포트 지정
+  > --partitions 3 \							# 파티션 개수 지정
+  > --replication-factor 1 \					# 복제 파티션 개수 지정
+  > --config retention.ms=172800000 \			# 추가적인 설정
+  > --topic hello.kafka						# 토픽 이름 지정
+  ```
+  
+  - 토픽 리스트 조회
+    - `--list` 명령을 사용한다.
+    - `--exclude-internal` 옵션을 추가하면 내부 관리를 위한 인터널 토픽을 제외하고 보여준다.
+  
+  ```bash
+  $ kafka-topics.sh --list --bootstrap-server 127.0.0.1:9092
+  ```
+  
+  - 특정 토픽 상세 조회
+    - `--describe` 명령을 사용한다.
+    - `Partition`은 파티션 번호, `Leader`는 해당 파티션의 리더 파티션이 위치한 브로커의 번호, `Replicas`는 해당 파티션의 복제 파티션이 위치한 브로커의 번호를 의미한다.
+  
+  ```bash
+  $ kafka-topics.sh --describe --bootstrap-server 127.0.0.1:9092 --topic hello.kafka
+  
+  Topic: hello-kafka      PartitionCount: 3       ReplicationFactor: 1    Configs: segment.bytes=1073741824,retention.ms=172800000
+  Topic: hello-kafka      Partition: 0    Leader: 1001    Replicas: 1001  Isr: 1001
+  Topic: hello-kafka      Partition: 1    Leader: 1001    Replicas: 1001  Isr: 1001
+  Topic: hello-kafka      Partition: 2    Leader: 1001    Replicas: 1001  Isr: 1001
+  ```
+  
+  - 토픽 옵션 수정
+    - `kafka-topics.sh` 또는  `kafka-config.sh`에서 `--alert`옵션을 사용해서 수정해야 한다.
+    - 각기 수정할 수 있는 옵션이 다르므로 확인 후 사용해야 한다.
+    - `kafka-configs.sh`의 `--add-config`는 수정하려는 옵션이 이미 존재하면 추가하고, 없으면 수정한다는 의미이다.
+  
+  ```bash
+  # 파티션 개수 변경
+  $ kafka-topics.sh --alter --bootstrap-server 127.0.0.1:9092 --topic hello.kafka --partitions 4
+  
+  # 리텐션 기간 수정
+  $ kafka-configs.sh --alter --add-config retention.ms=86400000 \
+  --bootstrap-server 127.0.0.1:9092 \
+  --entity-type topics \
+  --entity-name hello.kafka
+  ```
+
+
+
+- kafka-console.producer.sh
+
+  - 프로듀서와 관련된 명령을 수행하는 커맨드라인
+    - 이 커맨드라인으로 전송되는 레코드 값은 UTF-8을 기반으로 Byte로 변환된다.
+    - 즉 스트링만 전송이 가능하다.
+  - 메시지 값만 보내기
+    - 메시지 입력 후 엔터를 누르면 별 다른 메시지 없이 전송된다.
+
+  ```bash
+  $ kafka-console-producer.sh --bootstrap-server 127.0.0.1:9092 --topic hello.kafka
+  >hello
+  >world
+  >1
+  >True
+  >[1,2,3]
+  ```
+
+  - 메시지 키와 값 같이 보내기
+    - `key.separator`를 설정하지 않을 경우 기본 값은 `\t`dlek.
+
+  ```bash
+  kafka-console-producer.sh --bootstrap-server 127.0.0.1:9092 \
+  > --topic hello.kafka \
+  > --property "parse.key=true" \	# 키를 보낸다는 것을 알려주고
+  > --property "key.separator=:"	# 키워 값의 구분자를 :로 설정
+  >my_key:my_value
+  ```
+
+
+
+- kafka-console.consumer.sh
+
+  - 컨슈머와 관련된 명령을 수행하는 커맨드라인
+  - 토픽에 저장된 데이터 확인
+    - `--from-beginning` 옵션은 토픽에 저장된 가장 처음 데이터부터 출력한다.
+
+  ```bash
+  $ kafka-console-consumer.sh --bootstrap-server 127.0.0.1:9092 --topic kafka.test --from-beginning
+  ```
+
+  - 메시지 키와 값을 함께 확인
+    - `--property` 옵션을 사용한다.
+    - `--group` 옵션을 통해 새로운 컨슈머 그룹을 생성하였는데, 이 컨슈머 그룹을 통해 토픽에서 가져온 메시지에 대하 커밋을 진행한다.
+
+  ```bash
+  kafka-console-consumer.sh --bootstrap-server 127.0.0.1:9092 \
+  --topic kafka.test \
+  --property print.key=true \
+  --property key.separator="-" \
+  --group test-group \	# 새로운 컨슈머 그룹 생성.
+  --from-beginning
+  ```
+
+
+
+- kafka-consumer-groups.sh
+
+  - 컨슈머 그룹과 관련된 명령을 수행하는 커맨드라인
+  - 컨슈머 그룹 목록 확인
+    - `--list` 명령으로 실행한다.
+
+  ```bash
+  $ kafka-consumer-groups.sh --list test-group --bootstrap-server 127.0.0.1:9092 
+  ```
+
+  - 컨슈머 그룹 상세 정보 확인
+    -  특정 컨슈머 그룹의 상세 정보를 확인하기 위해 쓰인다.
+
+  ```bash
+  $ kafka-consumer-groups.sh --describe --group test-group --bootstrap-server 127.0.0.1:9092
+  ```
+
+  - 응답
+
+    - TOPIC과 PARTITION은 조회한 컨슈머 그룹이 구독하고 있는 토픽과 할당된 파티션을 나타낸다.
+
+    - CURRENT-OFFSET은 각 파티션 별 최신 오프셋이 몇 번인지를 나타낸다(0번 파티션은 4이므로 4개의 데이터가 들어갔다는 것을 알 수 있다).
+    - LOG-END-OFFSET은 컨슈머가 몇 번 오프셋까지 커밋했는지를 알 수 있다.
+    - LAG는 컨슈머 그룹이 파티션의 데이터를 가져가는 데 얼마나 지연이 발생하는지를 나타내는데, `CURRENT-OFFSET - LOG-END-OFFSET` 으로 계산한다.
+    - HOST는 컨슈머가 동작하는 host명을 나타낸다.
+
+  ```bash
+  GROUP           TOPIC           PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG     CONSUMER-ID     HOST            CLIENT-ID
+  test-group      kafka.test      0          4               4               0       -               -               -
+  test-group      kafka.test      1          8               8               0       -               -               -
+  test-group      kafka.test      2          1               1               0       -               -               -
+  test-group      kafka.test      3          4               4               0       -               -               -
+  ```
+
+
+
+- kafka-verifiable-producer/consumer.sh
+
+  - 카프카 클러스터 설치가 완료된 이후에 토픽에 데이터를 전송하여 간단한 네트워크 통신 테스트를 할 때 유용하게 사용이 가능하다.
+  - 메시지 보내기
+    - 최초 실행 시점이 `startup_complete` 메시지와 함께 출력된다.
+    - 메시지별로 보낸 시간과 메시지 키, 메시지 값, 토픽, 저장된 파티션, 저장된 오프셋 번호가 출력된다.
+    - `--max-message`에서 지정해준 만큼 전송이 완료되면 통계값이 출력된다.
+
+  ```bash
+  $ kafka-verifiable-producer.sh --bootstrap-server 127.0.0.1:9092 --max-message 10 --topic kafka.test
+  {"timestamp":1633505763219,"name":"startup_complete"}
+  {"timestamp":1633505763571,"name":"producer_send_success","key":null,"value":"0","partition":0,"topic":"kafka.test","offset":4}
+  {"timestamp":1633505763574,"name":"producer_send_success","key":null,"value":"1","partition":0,"topic":"kafka.test","offset":5}
+  {"timestamp":1633505763574,"name":"producer_send_success","key":null,"value":"2","partition":0,"topic":"kafka.test","offset":6}
+  ...
+  {"timestamp":1633505763598,"name":"tool_data","sent":10,"acked":10,"target_throughput":-1,"avg_throughput":26.17801047120419}
+  ```
+
+  - 메시지 확인하기
+
+  ```bash
+  $ kafka-verifiable-consumer.sh --bootstrap-server 127.0.0.1:9092  --topic kafka.test --group-id test-group
+  ```
+
+
+
+- kafka-delete-records.sh
+
+  - 적재된 토픽의 데이터를 삭제하는 커맨드라인
+    - 삭제하고자 하는 데이터에 대한 정보를 파일로 저장해서 사용해야 한다.
+
+  - 파일 생성
+    - test라는 토픽의 0번 파티션에 저장된 데이터 중 0부터 50번째 offset까지의 데이터를 삭제하려면 아래와 같이 파일을 작성한다.
+
+  ```bash
+  $ vi delete-data.json
+  {"partitions":[{"topic":"test", "partition": 0, "offset":50}]}, "version":1}
+  ```
+
+  - 삭제
+
+  ```bash
+  $ kafka-delete-records.sh --bootstrap-server 127.0.0.1:9092 --offset-json-file delete-data.json
   ```
 
 
@@ -497,7 +684,7 @@
   from kafka import KafkaProducer
   
   
-  producer = KafkaProducer(bootstrap_servers=['192.168.0.237:9092'],
+  producer = KafkaProducer(bootstrap_servers=['127.0.0.1:9092'],
                           value_serializer=lambda m: json.dumps(m).encode('utf-8'),
                           max_block_ms=1000 * 60 * 10,
                           buffer_memory=104857600 * 2,
