@@ -169,10 +169,6 @@
 
 
 
-
-
-
-
 ## 카프카 프로듀서
 
 ### acks
@@ -551,4 +547,190 @@
     - 많은 데이터 중 일부분을 신규 버전의 애플리케이션에 먼저 배포함으로써 이슈가 없는지 사전에 탐지하는 방법.
     - 예를 들어 100개 파티션으로 운영하는 토픽이 있을 경우 1개 파티션에 컨슈머를 따로 배정하여 일부 데이터에 대해 신규 버전의 애플리케이션이 우선적으로 처리하는 방식으로 테스트할 수 있다.
     - 카나리 배포로 사전 테스트를 완료한 후 나머지 99개의 파티션에 할당된 컨슈머는 롤링 또는 블루/그린 배포를 수행하여 무중단 배포가 가능하다.
+
+
+
+## 리밸런스
+
+## 사전지식
+
+- 컨슈머 제약사항
+  - 1개의 파티션은 컨슈머 그룹 내의 1개의 컨슈머에만 접근이 가능하다.
+  - 이는 컨슈머 그룹 내의 컨슈머 수는 토픽 내의 파티션 개수보다 많을 수는 없다는 것을 보장한다.
+    - 파티션을 할당받지 못 한 컨슈머는 활동을 하지 않으므로, 더 정확히는 active consumer의 수가 파티션의 개수보다 많을 수 없다는 것을 보장한다.
+
+
+
+- Group Coordinator
+  - 컨슈머 그룹의 상태를 체크하고 파티션을 컨슈머와 매칭되도록 분배를 돕는 역할을 한다.
+  - 클러스터 내 브로커 중 한 대가 Group Coordinator의 역할을 수행한다.
+
+
+
+- Group Leader
+  - 각 컨슈머 그룹 별 리더.
+  - 가장 먼저 컨슈머 그룹에 합류한 컨슈머가 컨슈머 리더가 된다.
+
+
+
+- 리밸런스
+  - 컨슈머 그룹 내의 컨슈머들끼리 파티션을 적절히 분배하는 프로세스
+    - 파티션들을 컨슈머 그룹 내의 오직 한 컨슈머에만 할당되므로 만약 만약 파티션이나 컨슈머 구성에 변화가 생길 경우 재할당 해줘야 한다.
+    - 이 재할당 과정을 리밸런스라 부른다.
+  - 리밸런스가 일어나는 경우
+    - 컨슈머 그룹이 토픽 구독을 시작할 경우.
+    - 컨슈머가 구독 중이던 토픽이 삭제될 경우.
+    - 컨슈머에 문제가 생긴 경우, 혹은 문제가 생겼다고 간주되는 경우(컨슈머가 `heartbeat.interval.ms` 내에 heatbeat을 보내지 못하거나 컨슈머가 `max.poll.interval.ms`내에 poll을 하지 못할 경우 등).
+    - 새로운 파티션이 추가 될 경우.
+    - Scaling Up and Down(새로운 컨슈머가 추가되거나 기존 컨슈머가 제거되는 경우).
+
+
+
+## Kafka Rebalance Protocol
+
+- Kafka Rebalance Protocol
+
+  - Kafka 내부에서 rebalance를 실행하는 일련의 과정
+  - 전체 과정
+
+  > 사진 출처: https://d2.naver.com/helloworld/0974525
+
+  ![](kafka_part2.assets/kafka_rebalance_protocol.png)
+
+  - 상세 과정
+
+  > 사진 출처: https://d2.naver.com/helloworld/0974525
+
+  ![](kafka_part2.assets/kafka_rebalance_protocol_detaill.png)
+
+
+
+- `GroupCoordinator` 찾기
+  - 새로운 컨슈머가 생성되고 `poll()` 메서드를 실행하면 Kafka Rebalance Protocol이 시작된다.
+    - `poll()` 메서드가 실행되면 컨슈머에 입력된 `group.id`를 바탕으로 자신이 속한 컨슈머 그룹을 찾기 시작한다.
+  - `KafkaConsumer` 내부의 `ConsumerCoordinator` 인스턴스가 `GroupCoordinator`로 부터 받은 응답을 처리하기 위한 `GroupCoordinatorResponseHandler`를 생성한다.
+  - 그 후 카프카 브로커들에게 `FindCoordinator API`를 활용하여 `GroupCoordinator` 정보를 받아오고 `GroupCoordinatorResponseHandler`가 이를 처리한다.
+
+
+
+- `JoinGroup`
+
+  - `GroupCoordinator`를 찾은 그룹 내 모든 컨슈머의 `ConsumerCoordinator`는 `JoinGroup API`를 통해 `GroupCoordinator`로 그룹 참여 요청을 보낸다.
+    - `ConsumerCoordinator`는 `JoinGroup API` 요청을 보내기 전에 Heatbeat 스레드가 `JoinGroup`을 방해하지 못하도록 Heartbeat 스레드를 일시 정지시킨다.
+    - 이 때, `GroupCoordinator`는 그룹에 합류하는 컨슈머들의 클라이언트 정보와 메터데이터(subscription 정보)를 수집한다.
+  - `JoinGroup API`요청 예시
+    - `sessionTimeout`: 컨슈머가 sessionTimeout 시간 내에 heartbeat 요청을 GroupCoordinator에 보내지 않으면 GroupCoordinator는 해당 컨슈머가 죽은 것으로 판단한다.
+    - `rebalanceTimeout`:  그룹에 속한 컨슈머들은 리밸런스가 발생했을 때 rebalanceTimeout 이내에 JoinGroup 요청을 보내야 한다. rebalanceTimeout 이내에 JoinGroup 요청을 보내지 않은 컨슈머는 컨슈머 그룹에서 제외된다.
+
+  ```json
+  {
+      type: JoinGroupRequest,
+      groupId=testGroup,		// 컨슈머가 속할 그룹
+      sessionTimeout=10000,	// session.timeout.ms를 통해 설정
+      rebalanceTimeout=300000, // max.poll.interval.ms로 설정
+      memberId=,
+      protocolType=consumer,
+      groupProtocols={	// 컨슈머가 구독하려는 토픽과 컨슈머가 지원하는 파티션 할당 정책이 포함
+          name: range,	// partition.assignment.strategy로 설정
+          metadata: topic1, topic2
+  	}
+  }
+  ```
+
+  - `JoinGroup API` 응답 예시
+
+  ```json
+  {
+      error_code=0,
+      generation_id=11,
+      group_protocol=range,	// 파티션 할당 정책
+      leader_id=consumer-1,
+      member_id=consumer-1,	// 요청을 보낸 컨슈머의 id
+      members=[				// 그룹 멤버 정보 
+          {
+              member_id=consumer-1,
+              member_metadata=Subscription(topics=[topic1, topic2])
+          },
+          {
+              member_id=consumer-2,
+              member_metadata=Subscription(topics=[topic2, topic2])
+          }
+      ]
+  }
+  ```
+
+  - 가장 먼저 컨슈머 그룹에 합류한 컨슈머가 리더 컨슈머가 된다.
+    - 리더 컨슈머는 그룹 파티션 할당 정책에 따라 그룹 내 파티션을 할당한다.
+    - 파티션 할당이 `GroupCoordinator`가 아닌 리더 컨슈머에 의해 이루어지는 이유는 `GroupCoordinator`는 결국 브로커이므로,  리밸런싱에서 `GroupCoordinator`의 역할을 축소시킴으로서 브로커의 코드를 단순화시킬 수 있기 때문이다.
+
+
+
+- `SyncGroup`
+
+  - 그룹에 참여하는 모든 컨슈머는 `SyncGroup API`요청을  `GroupCoordinator`에 보낸다.
+    - 리더 컨슈머는 `SyncGroup API`요청에 파티션 할당 결과를 포함시켜 보낸다.
+    - `GroupCoordinator`는 리더가 `SyncGroup API`요청에 담아 보낸 `groupAssignment`값을 토대로, `SyncGroup API`응답을 통해 컨슈머에 할당된 토픽, 파티션 정보를 보낸다.
+    - 응답을 받은 컨슈머는 자신에게 할당된 토픽, 파티션 정보를 `SubscriptionState`의 `assign` 메서드를 사용하여 업데이트한다.
+  - `SyncGroup API` 요청 예시
+
+  ```json
+  {
+      type=SyncGroupRequest,
+      groupId=testGroup,
+      generationId=25,
+      memberId=consumer-1,
+      groupAssignment=(	// 리더 컨슈머만 이 정보를 가지고 있다.
+          (memberId=consumer-1, assignment=Assignment(partitions=[topic1-0, topic1-1, topic2-0, topic2-1]))
+          (memberId=consumer-2, assignment=Assignment(partitions=[topic1-2, topic2-2]))
+      )
+  }
+  ```
+
+  - `SyncGroup API` 응답 예시
+
+  ```json
+  {
+      error_code=0,
+      member_assignment=Assignment(partitions=[topic1-0, topic1-1, topic2-0, topic2-1]))
+  }
+  ```
+
+
+
+- Stop The World
+
+  - 그룹 내의 모든 컨슈머가 `JoinGroup` 요청을 보내면 각 컨슈머에 할당되었던 파티션이 헤제된다.
+    - 따라서 이때 부터는 데이터의 처리가 불가능해진다.
+  - 이는 첫 번째 컨슈머에 파티션이 할당될 때 까지 데이터 처리가 불가능한데, 이 현상을 Stop The World라 부른다.
+  - 최신 Kafka 버전에서는 컨슈머 리밸런스 과정에서 KafkaConsumer 처리가 정지되는 Stop the world 현상을 없애기 위해 컨슈머 리밸런스 과정을 증분으로 진행하는 기능이 추가되었다.
+
+  >[Design and Implementation of Incremental Cooperative Rebalancing](https://www.confluent.io/online-talks/design-and-implementation-of-incremental-cooperative-rebalancing-on-demand/)
+  >
+  >[Incremental Cooperative Rebalancing in Apache Kafka: Why Stop the World When You Can Change It?](https://www.confluent.io/blog/incremental-cooperative-rebalancing-in-kafka/)
+  >
+  >[KAFKA-8179: Incremental Rebalance Protocol for Kafka Consumer](https://issues.apache.org/jira/browse/KAFKA-8179)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
