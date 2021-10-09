@@ -907,10 +907,13 @@
 ## [Kafka](https://github.com/hedge0207/TIL/blob/master/etc/redis.md)
 
 - Kafka란
-- 주요 개념
-- 사용하기
-  - Docker로 설치하기
-  - Python에서 사용하기
+  - kafka 개요
+  - 주요 개념
+    - 브로커
+    - 토픽과 파티션
+    - 프로듀서
+    - 커슈머
+- 카프카 확장
 - 참고
 
 <br/>
