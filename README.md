@@ -904,7 +904,7 @@
 
 <br/>
 
-## [Kafka](https://github.com/hedge0207/TIL/blob/master/etc/redis.md)
+## [Kafka_part1](https://github.com/hedge0207/TIL/blob/master/etc/redis.md)
 
 - Kafka란
   - kafka 개요
@@ -919,6 +919,26 @@
 <br/>
 
 <br/>
+
+# [Kafka_part2]()
+
+- Kafka 상세 개념
+  - 토픽과 파티션
+  - 적정 파티션 개수
+  - 토픽 정리 정책
+  - ISR
+- 카프카 프로듀서
+  - acks
+  - 멱등성 프로듀서
+  - 트랜잭션 프로듀서
+
+- 카프카 컨슈머
+  - 멀티 스레드 컨슈머
+  - 컨슈머 랙
+  - 컨슈머 배포 프로세스
+- 리밸런스
+  - 사전지식
+  - Kafka Rebalance Protocol
 
 ## [AWS_EC2](https://github.com/hedge0207/TIL/blob/master/etc/AWS_EC2.md)
 
