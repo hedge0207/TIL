@@ -904,7 +904,13 @@
 
 <br/>
 
-## [Kafka_part1](https://github.com/hedge0207/TIL/blob/master/etc/redis.md)
+<br/>
+
+<br/>
+
+# Kafka
+
+## [Kafka_part1](https://github.com/hedge0207/TIL/blob/master/kafka/kafka_part1.md)
 
 - Kafka란
   - kafka 개요
@@ -920,7 +926,7 @@
 
 <br/>
 
-# [Kafka_part2]()
+## [Kafka_part2](https://github.com/hedge0207/TIL/blob/master/kafka/kafka_part2.md)
 
 - Kafka 상세 개념
   - 토픽과 파티션
@@ -939,6 +945,26 @@
 - 리밸런스
   - 사전지식
   - Kafka Rebalance Protocol
+
+<br/>
+
+<br/>
+
+## [Kafka_part3](https://github.com/hedge0207/TIL/blob/master/kafka/kafka_part3.md)
+
+- 카프카 시작해보기
+  - 카프카 설치 및 실행
+    - Docker로 설치하기
+  - 카프카 커맨드 라인 툴
+  - Python에서 사용하기
+
+<br/>
+
+<br/>
+
+<br/>
+
+<br/>
 
 ## [AWS_EC2](https://github.com/hedge0207/TIL/blob/master/etc/AWS_EC2.md)
 
