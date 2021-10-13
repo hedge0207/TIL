@@ -171,5 +171,53 @@
       driver: bridge
   ```
 
+
+
+
+- single node로 구성하는 방법
+
+  - single node일 때 추가해야 할 옵션
+    - `discovery.type=single-node`
+  - single node일 때 제거해야 할 옵션
+    - `cluster.initial_master_nodes`
+    - `discovery.seed_hosts`
+    - `network.publish_host`
+
+  ```yaml
+  node1:
+      build: .
+      container_name: node1
+      environment:
+        - node.name=node1
+        - cluster.name=es-docker-cluster
+        - discovery.type=single-node
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      volumes:
+        - data01:/usr/share/elasticsearch/data
+      ports: 
+        - 9201:9200
+      restart: always
+      networks:
+        - elastic
+  
+    kibana:
+      image: kibana:7.14.0
+      container_name: theo_kibana
+      ports:
+        - "5603:5601"
+      environment:
+        ELASTICSEARCH_URL: http://192.168.0.237:9201
+        ELASTICSEARCH_HOSTS: http://192.168.0.237:9201
+      networks:
+        - elastic
+      depends_on:
+        - node1
+  ```
+
   
 
