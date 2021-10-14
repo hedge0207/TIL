@@ -1,1736 +1,684 @@
-# Runtime field
+# 엘라스틱서치 모니터링
 
-- Runtime field
-  - query time에 평가되는 필드
-    - search API로 런타임 필드에 접근이 가능하다.
-    - 인덱스 매핑이나 검색 요청에 런타임 필드를 정의할 수 있다.
-  - 7.11부터 도입 되었다.
-  - 런타임 필드를 활용하면 아래와 같은 것들이 가능해진다.
-    - 재색인(reindexing)없이 문서에 필드를 추가할 수 있다.
-    - 데이터의 구조를 몰라도 데이터 처리가 가능하다.
-    - 색인 된 필드에서 반환 받은 값을 query time에 덮어쓸 수 있다.
-    - schema 수정 없이 필드를 정의할 수 있다.
-  - 사용시 이점
-    - 런타임 필드는 인덱싱하지 않기에, index 크기를 증가시키지 안흔다.
-    - Elasticsearch는 런타임 필드와 색인된 일반적인 필드를 구분하지 않기 때문에 런타임 필드를 색인시킨다고 하더라도 기존에 런타임 필드를 참조했던 쿼리를 수정 할 필요가 없다.
-    - data를 모두 색인시킨 이후에도 런타임 필드를 추가할 수 있기 때문에, 데이터의 구조를 몰라도 일단 데이터를 색인시키고, 이후에 놓친 부분이 있다면 런타임 필드를 활용하면 된다. 
+## Head
+
+- Head
+  - 클러스터의 상태를 모니터링 할 수 있는 모니터링 도구 중 하나.
+  - 가장 큰 장점 중 하나는 샤드 배치 정보를 확인할 수 있다는 점이다.
 
 
 
-# Scripting
-
-- Scripting
-
-  - custom 표현식을 사용할 수 있다.
-
-  - 기본 스크립트 언어는 Painless이다.
-
-    - `lang` 플러그인을 설치하면 다른 언어로 스크립트를 작성할 수 있다.
-
-  - ES는 새로운 스크립트를 발견하면 해당 스크립트를 컴파일한다.
-
-    - 대부분의 context에서 5분당 75개의 스크립트를 컴파일한다.
-    - ingest context의 경우 script compilation rate의 기본값은 제한 없음으로 되어 있다. 
-    - script compilation rate은 동적으로 변경 가능하다.
-
-    ```bash
-    # 예시. field context에서 10분당 100개의 스크립트를 컴파일 하도록 설정
-    script.context.field.max_compilations_rate=100/10m
-    ```
-
-    - 만일 단기간에 너무 많은 스크립트를 컴파일 할 경우 `circuit_breaking_exception` error 가 발생한다.
-    
-  - 스크립트의 크시는 65,535 bytes로 제한되어 있다.
-  
-    - `script.max_size_in_bytes`를 통해 제한을 늘릴 수 있다.
-    - 만일 스크립트의 크기가 너무 크다면 [native script engine](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-scripting-engine.html)을 사용하는 것을 고려해볼만 하다.
+- 설치하기
+  - 기존에는 플러그인 방식을 사용했지만 ES6 이상부터는 보안상의 이유로 플러그인 방식을 사용하지 않는다.
+  - https://chrome.google.com/webstore/detail/elasticsearch-head/ffmkiejjmecolpfloofpjologoblkegm 에서 확장 프로그램을 추가하여 사용이 가능하다.
 
 
 
-- Painless 
-  - Elasticsearch를 위해 설계된 스크립팅 언어
-  - 장점
-    - 허용 목록(allowlist)을 통해 클러스터의 보안이 보장된다.
-    - JVM이 제공하는 최적화를 가능한한 모두 활용하기 위해 JVM 바이트 코드로 직접 컴파일하여 성능이 뛰어나다.
-    - 다른 언어들과 유사한 문법을 제공하여 배우기 쉽다.
+- Overview
+  - 클러스터를 구성하는 노드들의 이름과 인덱스 이름, 인덱스를 구성하는 샤드와 인덱스에 저장된 문서의 건수를 살펴볼 수 있다.
+  - 노드의 Info 버튼
+    - Cluster Node Info는 해당 노드의 호스트명과 아이피 등의 여러 가지 설정을 확인 가능하다. 
+    - Node Stats는 노드의 기본 정보와 클러스터에서 수행된 동작들의 통계 정보를 확인할 수 있다. 간단한 수치이기 때문에 특별히 유의미한 정보는 아니다.
+  - 노드의 Actions 버튼
+    - Shutdown 메뉴는 동작하지 않는다.
+    - 프로세스의 종료는 가급적이면 시스템에 접근하여 실행하는 것이 로그나 클러스터 상태를 살피기에 좋다.
+  - 인덱스의 Info 버튼
+    - Index Status는 해당 인덱스의 문서 개수나 삭제된 문서 개수, 사이즈, 해당 인덱스를 대상으로 수행한 동작들의 통계 정보를 보여준다. 이 값도 단순한 수치이기 때문에 특별히 유의미한 정보는 아니다.
+    - Index Metadata는 인덱스의 open/close 여부와 함께 인덱스를 구성하는 정보인 settings, mappings, aliases 정보를 보여준다. 해당 정보는 인덱스가 어떻게 구성되어 있는지 한 눈에 확인할 때 유용하다.
+  - 인덱스의 Actions 버튼
+    - New Alias, Refresh, Flush 등의 드롭다운 메뉴가 존재한다.
+    - 인덱스 alias, refresh, forcemerge, close, delete 등 인덱스에 수행할 수 있는 다양한 작업을 진행 가능하다.
 
 
 
-- scripts 작성하기
+- Indices
+  - 클러스터 내에 생성한 인덱스의 이름과 크기, 문서의 개수를 요약하여 보여준다.
+  - Overview 탭에서도 확인 가능하지만 인덱스가 많아져 전체 인덱스를 한 눈에 확인하기 어려울 때 사용한다.
 
-  - 기본 패턴
-    - Elasticsearch API 중 어디에서 사용되더라도 아래와 같은 패턴을 따른다.
-    - `script`는 JSON 오브젝트 형식으로 작성한다.
+
+
+- Browser
+  - 생성한 인덱스와 타입, 문서의 필드에 해당하는 내용들을 확인 가능하다.
+  - 검색 API를 사용하지 않고도 인덱스내에 어떤 문서들이 어떤 타입으로 생성되어 있는지 하나씩 확인 가능하다.
+
+
+
+- Structured Query
+  - 특정 인덱스를 선택하여 간단하게 쿼리를 해볼 수 있는 탭이다.
+  - 드롭다운 메뉴에서 항목들을 선택하고 Search 버튼을 누르면 원하는 검색 결과를 확인할 수 있다.'
+
+
+
+- Any Request
+  - Head에 연결시킨 클러스터에 쿼리를 요청할 수 있다.
+  - Structured Query가 구조화된 검색 쿼리만 요청할 수 있는 반면, 다양한 요청을 전달할 수 있다.
+  - 기본으로는 POST 메서드로 _search API를 호출하도록 되어 있다.
+  - 하단의 Request를 클릭하면 정의한 사항들을 클러스터에 요청한다.
+
+
+
+
+
+## X-Pack
+
+- X-Pack
+  - 베이직 라이선스로 활용할 수 있으며, 베이직 라이선스는 무료로 사용할 수 있다.
+  - 6.3 이전 버전은 1년에 한 번 베이직 라이선스를 재활성화하기 위해 클러스터의 노드를 전부 삭제해야 한다.
+  - 6.3 이후 버전부터 라이선스를 규칙적으로 갱신하지 않아도 모니터링 기능을 사용할 수 있다.
+
+
+
+- 설치하기
+  - ES 6.3 버전 이후부터는 ES 를 설치하면 자동으로 설치된다.
+  - Kibana를 설치해야 한다.
+
+    - Kibana는 ES에 저장된 로그를 검색하거나 그래프 등으로 시각화할 때 사용하는 도구다.
+    - 사실상 ES의 웹 UI와 같은 역할을 하는 도구라고 생각하면 된다.
+
+    - 공식 홈페이지에서 다운로드 가능하다.
+
+
+
+- 프로메테우스
+  - 위의 두 가지 외에도 프로메테우스를 사용해서도 모니터링이 가능하다.
+    - 오픈 소스 기반의 모니터링 시스템.
+    - 데이터를 시간의 흐름대로 저장할 수 있는 시계열 데이터베이스의 일종.
+    - 수집된 데이터를 바탕으로 임계치를 설정하고 경고 메세지를 받을 수 있는 오픈소스 모니터링 시스템이다.
+    - ES 외에도 많은 시스템을 모니터링할 수 있게 해준다.
+  - 컴포넌트 구성
+    - 중앙에 TSDB(Time Series Data Base)의 역할을 하는 Prometheus Server가 존재한다.
+    - 각종 지표들을 Exporter라는 컴포넌트를 통해서 가져올 수 있다.
+    - Push Gateway를 통해서 입력할 수도 있다.
+    - 각 항목에 대한 임계치를 설정하여 Alert Manager를 통해 경고 메시지를 받을 수도 있다.
+
+
+
+
+
+# 색인 성능 최적화
+
+- 색인 성능 최적화의 필요성
+  - ES는 클러스터 환경으로 구축할 수 있기 때문에 노드 추가를 통해 색인 성능을 더 높일 수 있다.
+  - 그러나 ES 설정을 변경함으로써 불필요한 리소스를 줄일 수 있고, 이를 통해 색인 성능을 향상시킬 수 있다.
+
+
+
+- 정적 매핑 적용하기
+
+  - 앞서(Elasticsearch_part1) 살펴본 동적 매핑과 정적 매핑을 다시 간단하게 표로 정리하면 다음과 같다.
+
+  | 방식      | 장점                                   | 단점                            |
+  | --------- | -------------------------------------- | ------------------------------- |
+  | 동적 매핑 | 미리 매핑 정보를 생성하지 않아도 된다. | 불필요한 필드가 생길 수 있다.   |
+  | 정적 매핑 | 필요한 필드만 정의해서 사용할 수 있다. | 미리 매핑 정보를 생성해야 한다. |
+
+  - 정적 매핑의 이점
+    - 동적 매핑을 사용하면 불필요한 매핑 정보가 생성될 수 있으며, 이러한 불필요한 매핑 정보는 불필요한 색인 작업을 유발하게 되어 색인 성능을 저하시킬 수 있다.
+    - 반대로 정적 매핑을 사용하면 필요한 필드들만 정의해서 사용할 수 있고 불필요한 매핑 정보를 사용하지 않기 때문에 색인 성능을 향상시킬 수 있다.
+  - 문자열 형태의 필드에서 색인 성능 차이가 더 크게 발생한다.
+    - 기존에 정의되지 않은 필드에 문자열 데이터를 추가할 경우(즉 동적 매핑을 할 경우), text 타입으로 생성이 되지만 동시에 keyword 타입으로도 생성이 된다.
+    - 즉 , 문자열 데이터에 대한 동적 매핑 결과는 text 타입과 keyword 타입 두개 의 타입을 만든다.
+    - 또한 동적 매핑에 의해 생성되는 keyword 타입은 `ignore_above`라는 속성이 하나 더 붙는데 문자열 중 해당 길이 이상인 값은 색인에 포함하지 않는다는 뜻이다.
+    - 정적 매핑으로 문자열 데이터에 대한 타입을 미리 text 혹은 keyword로 생성해 놓으면 두 번 해야 할 색인 작업이 한 번으로 줄어들게 된다.
 
   ```json
-  "script":{
-      "lang":"<language>",	// 사용할 언어를 입력한다(기본값은 painless)
-      "source" | <"id":"...">, // 인라인 script로 작성한 소스 혹은 저장된 스크립트의 id를 입력한다.
-  	"params": <{...}> // script에 변수로 넘겨줄 parameters를 입력한다. 
+  // 정적 매핑으로 문자열 데이터를 담을 필드를 추가한 경우
+  {
+    "name" : {
+      "type" : "text"
+    }
+  }
+  // 동적 매핑으로 문자열 데이터를 추가한 경우
+  "ename" : {
+    "type" : "text",
+    "fields" : {
+        "keyword" : {
+            "type" : "keyword",
+            "ignore_above" : 256
+        }
+     }
+  },
+  ```
+
+
+
+- _all 필드 비활성화
+
+  - **5.X 이하 버전에만 해당**한다.
+
+  - 필요할 경우 찾아 볼 것(p.360~370)
+
+
+
+- refresh_interval 변경하기
+
+  - refresh
+    - ES는 색인되는 모든 문서들을 메모리 버퍼 캐시에 먼저 저장한 후 특정 조건이 되면 메모리 버퍼 캐시에 저장된 색인 정보나 문서들을 디스크에 세그먼트 단위로 저장한다.
+    - 색인된 문서는 이렇게 세그먼트 단위로 저장되어야 검색이 가능해지며, 이런 일련의 작업들을 refresh라 한다.
+  - refresh_interval
+    - 이 refresh를 얼마나 주기적으로 할 것인지를 결정하는 값이 refresh_interval이다.
+    - 기본값은 1초이다.
+    - ES가 준 실시간 검색 엔진이라 불리는 것은 refresh_interval이 1초로 설정되어 있어 문서가 색인되고 1초 후에 검색이 가능하기 때문이다.
+    - refresh 작업은 디스크 I/O를 발생시키기 때문에 성능을 저하시킬 수 있다.
+    - 그렇다고 I/O 발생을 늦추기 위해 refresh_interval을 길게 주면 색인된 문서를 검색할 수 없어 ES 본연의 기능에 문제가 생길 수 있다.
+  - refresh_interval 변경
+    - 실시간 검색 엔진으로 사용하고자 한다면 1초로 설정해야 한다.
+    - 그러나 대용량의 로그를 수집하는 것이 주된 목적이고 색인한 로그를 당장 검색해서 사용할 필요가 없다면 refresh_interval을 충분히 늘려서 색인 성능을 확보할 수 있다.
+    - 만일 문서가 1초에 한 건씩 들어오고  refresh_interval이 1초라면 초당 한 건씩 디스크에 문서를 저장하게 되고 총 5 번의 Disk I/O가 발생한다.
+    - 반면에 문서는 그대로 1초에 한 건씩 들어오지만 refresh_interval이 5초라면 5건의 문서를 한 번에 저장하게 되고 총 한 번의 Disk I/O만 발생한다.
+    - 인덱스의 settings API를 통해 변경이 가능하다.
+
+  ```bash
+  # -1을 주면 아예 비활성화 하는 것이 가능하다.
+  $ curl -XPUT "localhost:9200/my_index/_settings" -H 'Content-type: application/json' -d'{
+  "index.refresh_interval":"2h"
   }
   ```
 
-  - 사용 예시(Painless 기준)
-    - `lang`을 따로 지정해 주지 않으면 기본값으로 Painless가 들어가게 된다.
-    - Painless script에는 하나 이상의 선언문이 있어야 한다.
 
-  ```bash
-  # 데이터 삽입
-  $ curl -XPUT "localhost:9200/script_test/_doc/1" -H "Content-type:application/json" -d '
+
+- bulk API
+
+  - 복수의 요청을 한 번에 전송할 때 사용한다.
+    - 동작을 따로따로 수행하는 것 보다 속도가 훨씬 빠르다.
+    - 하나의 문서를 처리할 때 시스템은 클라이언트와 네트워크 세션을 맺고 끊기를 반복하기 때문에 여러 건의 문서를 처리할 때 단건으로 맺고 끊기를 반복하는 방식으로 처리하면 시스템이 부하를 일으킨다. 따라서 여러 건의 문서를 처리할 때는 bulk API를 통해 작업하는 것이 좋다.
+    - 예를 들어 단 건씩 작업했을 때 112s가 걸리는데 bulk를 사용하면 1s가 채 걸리지 않을 정도로 차이가 많이 난다.
+  - bulk API 동작
+    - index: 문서 색인, 인덱스에 지정한 문서 아이디가 있으면 업데이트.
+    - create: 문서 색인, 인덱스에 지정한 문서 아이디가 없을 때에만 색인 가능.
+    - update: 문서 변경
+    - delete: 문서 삭제
+  - 형식
+    - delete를 제외하고는 명령문과 데이터문을 한 줄씩 순서대로 입력한다.
+    - delete는 내용 입력이 필요 없기 때문에 명령문만 있다.
+    - `_bulk`의 명령문과 데이터문은 반드시 한 줄 안에 입력이 되어야 하며 줄바꿈을 허용하지 않는다.
+  - 예시
+
+  ```json
+  POST _bulk
+  {"index":{"_index":"learning", "_id":"1"}} // 생성
+  {"field":"elasticsearch"}
+  {"index":{"_index":"learning", "_id":"2"}} // 생성
+  {"field":"Fastapi"}
+  {"delete":{"_index":"learning", "_id":"2"}} // 삭제
+  {"create":{"_index":"learning", "_id":"3"}} // 생성
+  {"field":"docker"}
+  {"update":{"_index":"learning", "_id":"1"}} // 수정
+  {"doc":{"field":"deep learning"}}
+  ```
+
+  - 응답
+
+  ```json
   {
-  	"my_field":5
-  }' 
-  
-  # 스크립트 작성
-  $ curl -XGET "localhost:9200/script_test/_search" -H "Content-type:application/json" -d '
-  {
-    "script_fields": {
-      "my_doubled_field": {
-        "script": {
-          "source": "doc['my_field'].value * params['multiplier']", 
-          "params": {
-            "multiplier": 2
-          }
-        }
-      }
-    }
-  }'
-  
-  # 응답
-  {
-  	# (...)
-  	"hits" : [
-        {
-          "_index" : "scripts_practice",
+    "took" : 1152,
+    "errors" : false,
+    "items" : [
+      {
+        "index" : {
+          "_index" : "learning",
           "_type" : "_doc",
           "_id" : "1",
-          "_score" : 1.0,
-          "fields" : {
-            "my_doubled_field" : [
-              10
-            ]
-          }
+          "_version" : 1,
+          "result" : "created",
+          "_shards" : {
+            "total" : 2,
+            "successful" : 1,
+            "failed" : 0
+          },
+          "_seq_no" : 0,
+          "_primary_term" : 1,
+          "status" : 201
         }
-      ]
+      },
+      {
+        "index" : {
+          "_index" : "learning",
+          "_type" : "_doc",
+          "_id" : "2",
+          "_version" : 1,
+          "result" : "created",
+          "_shards" : {
+            "total" : 2,
+            "successful" : 1,
+            "failed" : 0
+          },
+          "_seq_no" : 1,
+          "_primary_term" : 1,
+          "status" : 201
+        }
+      },
+      {
+        "delete" : {
+          "_index" : "learning",
+          "_type" : "_doc",
+          "_id" : "2",
+          "_version" : 2,
+          "result" : "deleted",
+          "_shards" : {
+            "total" : 2,
+            "successful" : 1,
+            "failed" : 0
+          },
+          "_seq_no" : 2,
+          "_primary_term" : 1,
+          "status" : 200
+        }
+      },
+      {
+        "create" : {
+          "_index" : "learning",
+          "_type" : "_doc",
+          "_id" : "3",
+          "_version" : 1,
+          "result" : "created",
+          "_shards" : {
+            "total" : 2,
+            "successful" : 1,
+            "failed" : 0
+          },
+          "_seq_no" : 3,
+          "_primary_term" : 1,
+          "status" : 201
+        }
+      },
+      {
+        "update" : {
+          "_index" : "learning",
+          "_type" : "_doc",
+          "_id" : "1",
+          "_version" : 2,
+          "result" : "updated",
+          "_shards" : {
+            "total" : 2,
+            "successful" : 1,
+            "failed" : 0
+          },
+          "_seq_no" : 4,
+          "_primary_term" : 1,
+          "status" : 200
+        }
+      }
+    ]
   }
   ```
 
-  - value를 하드코딩하는 것 보다 `params`에 작성하여 인자로 넘기는 것이 낫다.
-    - ES가 새로운 스크립트를 발견하면, 스크립트를 컴파일하고 컴파일 된 버전을 캐시에 저장한다.
-    - 컴파일은 무거운 과정일 수 있다.
-    - 예를 들어 위 스크립트를 아래와 같이 바꿀 경우 숫자 2를 3으로 바꾼다면 ES는 다시 컴파일을 거친다.
-    - 그러나 `params`의 값을 변경할 경우 script 자체를 수정한 것은 아니기 때문에 다시 컴파일하지 않는다.
-    - 따라서 스크립트의 유연성이나 컴파일 시간을 고려할 때 `params`에 작성하는 것이 좋다.
+  - 인덱스명이 모두 동일할 경우에는 아래와 같이 하는 것도 가능하다.
 
   ```json
-  "script": {
-      "source": "doc['my_field'].value * 2", 
-  }
+  POST learning/_bulk
+  
+  {"index":{"_id":"1"}}
+  {"field":"elasticsearch"}
+  {"index":{"_id":"2"}}
+  {"field":"Fastapi"}
+  {"delete":{"_id":"2"}}
+  {"create":{"_id":"3"}}
+  {"field":"docker"}
+  {"update":{"_id":"1"}}
+  {"doc":{"field":"deep learning"}}
   ```
 
 
 
-- script를 더 짧게 작성하기
+- json 파일에 실행할 명령을 저장하고 curl 명령으로 실행시킬 수 있다.
 
-  - Painless에서 기본적으로 제공하는 문법.
-  - 아래와 같은 script가 있을 때
+  - bulk.json 파일
 
-  ```bash
-  $ curl -XGET "localhost:9200/script_test/_search" -H "Content-type:application/json" -d '
-  {
-    "script_fields": {
-      "my_doubled_field": {
-        "script": {
-          "lang":   "painless",
-          "source": "return doc['my_field'].value * params.get('multiplier');",
-          "params": {
-            "multiplier": 2
-          }
-        }
-      }
-    }
-  }
+  ```json
+  {"index":{"_index":"learning", "_id":"1"}}
+  {"field":"elasticsearch"}
+  {"index":{"_index":"learning", "_id":"2"}}
+  {"field":"Fastapi"}
+  {"delete":{"_index":"learning", "_id":"2"}}
+  {"create":{"_index":"learning", "_id":"3"}}
+  {"field":"docker"}
+  {"update":{"_index":"learning", "_id":"1"}}
+  {"doc":{"field":"deep learning"}}
   ```
 
-  - 아래와 같이 축약이 가능하다.
-    - default 언어이기 때문에 `lang`을 선언하지 않아도 된다.
-    - 자동으로 `return` 키워드를 붙여주기에 빼도 된다.
-    - Map 타입에 한해서 `.get()` 메서드를 생략 가능하다.
-    - `source`의 마지막에 세미콜론을 붙이지 않아도 된다.
+  - 명령어
+    - 파일 이름 앞에는 @를 입력한다.
 
   ```bash
-  $ curl -XGET "localhost:9200/script_test/_search" -H "Content-type:application/json" -d '
-  {
-    "script_fields": {
-      "my_doubled_field": {
-        "script": {
-          "source": "doc['my_field'].value * params['multiplier']",
-          "params": {
-            "multiplier": 2
-          }
-        }
-      }
-    }
+  $ curl -XPOST "http://localhost:9200/_bulk" -H 'Content-Type: application/json' --data-binary @bulk.json
+  ```
+
+
+
+- 그 외에 색인 성능을 확보하는 방법들
+  - 문서의 id 없이 색인하기
+    - PUT 메서드로 문서의 id를 지정하여 색인하는 것 보다 POST 메서드로 ES가 문서의 id를 임의로 생성하게 하는 것이 더 빠르게 색인 된다.
+    - PUT의 경우 사용자가 입력한 id가 이미 존재하는지 검증하는 과정을 거쳐야 하지만 POST의 경우 기존에 동일한 id를 가진 문서가 없다는 전제 조건하에 색인되기 때문에 이미 존재하는 문서인지 확인하는 과정을 생략한다.
+  - 레플리카 샤드 갯수를 0으로 설정하기
+    - 프라이머리 샤드에 색인 된 후 레플리카에 복제하는 시간을 줄일 수 있다.
+    - 클러스터를 운영하는 환경에 복제본이 꼭 필요하지 않거나 하둡과 같은 별도의 저장소에 사용자의 문서를 복제하는 경우라면 고려해 볼 만 하다.
+
+
+
+
+
+# 검색 성능 최적화
+
+## ES 캐시 활용하기
+
+- ES 캐시의 종류와 특성
+
+  - ES로 요청되는 다양한 검색 쿼리는 동일한 요청에 대해 좀 더 빠른 응답을 주기 위해 해당 쿼리의 결과를 메모리에 저장한다.
+  - 결과를 메모리에 저장해 두는 것을 캐싱이라 하며 이 때 사용하는 메모리 영역을 캐시 메모리라 한다.
+  - ES에서 제공하는 대표적인 캐시 영역들
+
+  | 캐시 영역           | 설명                                                     |
+  | ------------------- | -------------------------------------------------------- |
+  | Node query cache    | 쿼리에 의해 각 노드에 캐싱되는 영역이다.                 |
+  | Shard request cache | 쿼리에 의해 각 샤드에 캐싱되는 영역이다.                 |
+  | Field data cache    | 쿼리에 의해 필드를 대상으로 각 노드에 캐싱되는 영역이다. |
+
+
+
+- Node Query Cache
+
+  - filter context에 의해 검색된 문서의 결과가 캐싱되는 영역
+    - 사용자가 filter context로 구성된 쿼리로 검색하면 내부적으로 각 문서에 0과 1로 설정할 수 있는 bitset을 설정한다.
+    - filter context로 호출한 적이 있는 문서는 bitset을 1로 설정하여 사용자가 호출한적이 있다는 것을 문서에 표시해둔다.
+    - ES는 문서별로 bitset을 설정하면서, 사용자의 쿼리 횟수와 bitset이 1인 문서들 사이에 연관 관계를 지속적으로 확인한다.
+    - bitset이 1인 문서들 중에 자주 호출되었다고 판단한 문서들을 노드의 메모리에 캐싱한다.
+    - 다만 세그먼트 하나에 저장된 문서의 수가 1만개 미만이거나, 검색 쿼리가 인입되고 있는 인덱스가 전체 인덱스 사이즈의 3% 미만일 경우에는 filter context를 사용하더라도 캐싱되지 않는다.
+  - 아래 명령어로 Query Cache Memory의 용량을 확인 가능하다.
+
+  ```bash
+  $ curl -XGET "http://localhost:9200/_cat/nodes?v&h=name,qcm"
+  ```
+
+  - 기본적으로 활성화되어 있으며, 아래와 같이 변경이 가능하다.
+    - dynamic setting이 아니기에 인덱스를 close로 바꾸고 설정해줘야 한다.
+
+  ```bash
+  # 인덱스를 close 상태로 변경하고
+  $ curl -XGET "http://localhost:9200/my_index/_close" -H 'Content-Type: application/json'
+  
+  # 바꿔준다.
+  $ curl -XGET "http://localhost:9200/my_index/_settings" -H 'Content-Type: application/json' -d'{
+  "index.queries.cache.enable":true # false면 비활성화
+  }'
+  
+  # 인덱스를 다시 open 상태로 변경한다.
+  $ curl -XGET "http://localhost:9200/my_index/_open" -H 'Content-Type: application/json'
+  ```
+
+  - 많은 문서가 캐싱되어 허용된 캐시 메모리 영역이 가득 차면 LRU(Least Recently Used Algorithm) 알고리즘에 의해 캐싱된 문서를 삭제한다.
+    - LRU: 캐시 영역에 저장된 내용들 중 가장 오래된 내용을 지우는 알고리즘
+    - elasticsearch.yml 파일에서 `indices.queries.cache.size: 10%`와 같이 수정하여 Node Query Cache 영역을 조정할 수 있다.
+    - 위와 같이 비율로도 설정할 수 있고, 512mb처럼 절댓값을 주는 것도 가능하다.
+    - 수정 후 노드를 재시작해야한다.
+
+
+
+- Shard Request Cache
+
+  - Node Query Cache가 노드에 할당된 캐시 영역이라면 Shard Request Cache는 샤드를 대상으로 캐싱되는 영역이다.
+    - 특정 필드에 의한 검색이기 때문에 전체 샤드에 캐싱된다.
+    - Node Query Cache와 달리 문서의 내용을 캐싱하는 것이 아니라, 집계 쿼리의 집계 결과 혹은 ReqeustBody의 파라미터 중 size를 0으로 설정했을 때의 쿼리 응답 결과에 포함되는 매칭된 문서의 수에 대해서만 캐싱한다.
+    - Node Query Cache가 검색 엔진에 활용하기 적합한 캐시 영역이라면 Shard Request Cache는 분석 엔진에서 활용하기 적합한 캐시 영역이라고 할 수 있다.
+    - 다만 이 영역은 refresh 동작을 수행하면 캐싱된 내용이 사라진다.
+    - 즉, 문서 색인이나 업데이트를 한 후 refresh를 통해 샤드의 내용이 변경되면 기존에 캐싱된 결과가 초기화 된다.
+    - 따라서 계속해서 색인이 일어나고 있는 인덱스에는 크게 효과가 없다.
+  - 아래 명령으로 Shard Request Cache의 상황을 볼 수 있다.
+
+  ```bash
+  $ curl -XGET "http://localhost:9200/_cat/nodes?v&h=name,rcm"
+  ```
+
+  - Shard Request Cache도 ES 클러스터에 기본적으로 활성화되어 있다.
+    - 다만 dynamic setting이어서 인덱스를 대상으로 온라인중에 설정이 가능하다.
+
+  ```bash
+  $ curl -XGET "http://localhost:9200/my_index/_settings" -H 'Content-Type: application/json' -d'{
+  "index.requests.cache.enable":true # false면 비활성화
   }'
   ```
 
-
-
-- scripts를 저장하고 불러오기
-
-  - stored script APIs를 활용하여 cluster state에 script를 저장하고 불러올 수 있다.
-  - script를 저장하면 스크립트를 컴파일 하는 시간이 감소되므로 검색이 보다 빨라진다.
-  - script 저장하기
+  - 검색시에도 활성/비활성화가 가능하다.
+    - size를 0으로 줬으므로 본래 Shard Request Cache가 생성되어야 하지만 `request_cache=false`로 인해 생성되지 않는다.
 
   ```bash
-  $ curl -XPOST "localhost:9200/_scripts/<스크립트명>" -H "Content-type:application/json" -d '
+  $ curl -XGET "http://localhost:9200/my_index/_search?request_cache=false" -H 'Content-Type: application/json' -d'{
+  "size":0,	# size가 0일 때 Shard Request Cache가 생성된다.
+  "aggs":{
+  	"cityaggs":{
+  		"terms":{"field":"city.keyword"}
+  	}
+  }
+  }'
+  ```
+
+  - 가이드라인
+    - Shard Request Cache 설정을 기본으로 활성화한 다음, 색인이 종료된 과거 인덱스는 request_cache를 true로 집계하고 색인이 한참 진행 중인 인덱스는 false로 집계하는 방식으로 사용한다 
+    - 이렇게 하면 과거 인덱스에 대해서는 캐싱 데이터를 리턴해서 빠르게 결과를 전달 받고, 색인이 빈번하게 진행 중이어서 캐싱이 어려운 인덱스는 불필요하게 캐싱하는 낭비를 막을 수 있다.
+    - 또한 과거 인덱스에 색인이 들어오면 캐싱된 데이터가 초기화되기 때문에 인덱스를 쓰지 못하도록 read only 처리하는 것도 캐싱 데이터를 유지시킬 수 있는 방법이다.
+
+  - 각 노드의  elasticsearch.yml 파일에서 다음과 같이 Shard Request Cache 영역을 조정 가능하다.
+    - `indices.requests.cache.size: 10%`
+    - 이 경우 노드를 재시작해야 한다.
+
+
+
+- Field Data Cache
+
+  - 인덱스를 구성하는 필드에 대한 캐싱
+    - 주로 검색 결과를 정렬하거나 집계 쿼리를 수행할 때 지정한 필드만을 대상으로 해당 필드의 모든 데이터를 메모리에 저장하는 캐싱 영역이다.
+    - 예를 들어 A 노드에 a, b 샤드, B 노드에 c 샤드가 있다고 가정
+    - a샤드에는 age:20이라는 데이터가, b 샤드에는 age:21이라는 데이터가, B 노드에는 age:22라는 데이터가 색인되어 있다고 할 때
+    - age 필드를 대상으로 정렬하는 검색을 진행하면
+    - A 노드에는 age 필드의 값이 20,21 인 데이터가, B 노드애는 age 필드의 값이 22인 데이터가 캐싱된다.
+  - Field Data Cache 영역은 text 필드 데이터 타입에 대해서는 캐싱을 허용하지 않는다.
+    - 다른 필드 데이터 타입에 비해 캐시 메모리에 큰 데이터가 저장되기 때문에 메모리를 과도하게 사용하게 되기 때문이다.
+
+  - Field Data Cache 사용 현황 확인
+
+  ```bash
+  $ curl -XGET "http://localhost:9200/_cat/nodes?v&h=name,fm"
+  ```
+
+  - 마찬가지로 elasticsearch.yml 파일에서 다음과 같이 Field Data Cache 영역을 조정 가능하다.
+    - `indices.fielddata.cache.size: 10%`
+    - 역시 노드를 재시작해야 한다.
+
+
+
+- 캐시 영역 클리어
+
+  - Node Query Cache 클리어
+
+  ```bash
+  $ curl -XPOST "localhost:9200/my_index/_cache/clear?query=true" -H 'Content-type:application/json'
+  ```
+
+  - Shard Request Cache 클리어
+
+  ```bash
+  $ curl -XPOST "localhost:9200/my_index/_cache/clear?request=true" -H 'Content-type:application/json'
+  ```
+
+  - Field Data Cache 클리어
+
+  ```bash
+  $ curl -XPOST "localhost:9200/my_index/_cache/clear?fielddata=true" -H 'Content-type:application/json'
+  ```
+
+
+
+
+## 검색 쿼리 튜닝하기
+
+- copy_to
+
+  - 쿼리를 어떻게 만드느냐가 검색 성능에 큰 영향을 미친다.
+  - 검색 성능을 떨어뜨리는 요인 중 하나는 너무 많은 필드를 사용하는 것이다.
+    - 처음에 인덱스의 매핑 정보를 생성할 때 우선적으로 불필요한 필드들을 제외해야 하지만 매핑 구조에 따라 필드가 많아지는 경우도 있다.
+    - 이런 경우에는 별수 없이 많은 필드에 걸쳐 검색을 해야 하는 경우도 생긴다.
+  - 여러 개의 필드를 대상으로 검색하는 예시
+    - `first_name`과 `last_name`이라는 2개의 필드를 대상으로 검색하기
+    - `match` 쿼리를 두 번 사용해서 검색해야 한다.
+
+  ```bash
+  $ curl -XPUT "localhost:9200/my_index/_search?pretty" -H 'Content-type:application/json' -d'
   {
-  	"script": {
-  		<저장할 스크립트>
+  	"query":{
+  		"bool":{
+  			"must":[
+  				{"match":{"first_name":"John"}},
+  				{"match":{"last_name":"Doe"}}
+  			]
   		}
   	}
-  }'
-  ```
-
-  - 스크립트 불러오기
-
-  ```bash
-  $ curl -XGET "localhost:9200/_scripts/<불러올 스크립트명>"
-  ```
-
-  - 저장된 script를 query에 사용하기
-
-  ```bash
-  $ curl -XGET "localhost:9200/script_test/_doc/1" -H "Content-type:application/json" -d '
-  {
-    "query": {
-      # <쿼리식>,
-        "script": {
-          "id": "<저장한 스크립트의 id>", 
-          "params": {
-            [params에 맞는 값]
-          }
-        }
-      }
-    }
-  }
-  ```
-
-  - 저장된 스크립트 삭제하기
-
-  ```bash
-  $ curl -XDELETE "localhost:9200/_scripts/<스크립트명>"
-  ```
-
-
-
-- 스크립트로 문서 update
-
-  - `_update` API를 통해 script로 문서를 업데이트 할 수 있다.
-    - `_update`  API는 문서를 부분적으로 수정할 수도 있다.
-  - 필드의 값을 수정
-
-  ```bash
-  # 문서를 색인하고
-  $ curl -XPUT "localhost:9200/my_index/_doc/1" -H "Content-type:application/json" -d '
-  {
-    "counter" : 1,
-    "tags" : ["red"]
-  }'
-  
-  # _update API를 통해 counter 필드의 값을 증가
-  $ curl -XPUT "localhost:9200/my_index/_update/1" -H "Content-type:application/json" -d '
-  {
-    "script" : {
-      "source": "ctx._source.counter += params.count",
-      "lang": "painless",
-      "params" : {
-        "count" : 4
-      }
-    }
-  }'
-  
-  # _update API를 통해 tag 필드에 값을 추가
-  $ curl -XPUT "localhost:9200/my_index/_update/1" -H "Content-type:application/json" -d '
-  {
-    "script": {
-      "source": "ctx._source.tags.add(params['tag'])",
-      "lang": "painless",
-      "params": {
-        "tag": "blue"
-      }
-    }
-  }'
-  
-  # 특정 tag 값이 존재할 때 해당 태그 값을 삭제
-  $ curl -XPUT "localhost:9200/my_index/_update/1" -H "Content-type:application/json" -d '
-  {
-    "script": {
-      "source": "if (ctx._source.tags.contains(params['tag'])) { ctx._source.tags.remove(ctx._source.tags.indexOf(params['tag'])) }",
-      "lang": "painless",
-      "params": {
-        "tag": "blue"
-      }
-    }
-  }'
-  ```
-
-  - 필드 자체를 수정
-
-  ```bash
-  # 새로운 필드 추가
-  $ curl -XPUT "localhost:9200/my_index/_update/1" -H "Content-type:application/json" -d '
-  {
-    "script" : "ctx._source.new_field = 'value_of_new_field'"
-  }'
-  
-  # 기존 필드 삭제
-  $ curl -XPUT "localhost:9200/my_index/_update/1" -H "Content-type:application/json" -d '
-  {
-    "script" : "ctx._source.remove('new_field')"
-  }'
-  ```
-
-  - 문서 자체를 수정
-    - `ctx.op`를 통해 문서에 어떤 동작을 수행할 것인지를 입력한다.
-
-  ```bash
-  # 조건에 부합하면 특정 행동(operation)을 하고, 조건에 부합하지 않으면 아무 것도 하지 않는 스크립트(noop 사용)
-  # 아래 스크립트의 경우 
-  $ curl -XPUT "localhost:9200/my_index/_update/1" -H "Content-type:application/json" -d '
-  {
-    "script": {
-      "source": "if (ctx._source.tags.contains(params['tag'])) { ctx.op = 'delete' } else { ctx.op = 'none' }",
-      "lang": "painless",
-      "params": {
-        "tag": "green"
-      }
-    }
-  }'
-  ```
-
-
-
-- 스크립트 캐싱
-  - ES는 스크립트를 캐싱한다.
-    - ES는 scripts를 가능한 빠르게 사용할 수 있도록 여러 방법으로 최적화를 수행하는데 캐싱도 그 중 하나다.
-    - 컴파일 된 스크립트는 캐시에 저장되고 캐시에 저장된 스크립트를 참조하는 요청은 컴파일 되지 않는다.
-  - cache size
-    - cache size는 사용자들이 동시에 접근하는 모든 스크립트를 저장할 수 있을 만큼 커야 한다.
-    - 만일 node stats에서 확인했을 때 많은 양의 cache가 삭제되거나 컴파일 수가 증가한다면, cache가 너무 작다는 뜻이다.
-    - `script.cache.max_size`를 통해 캐시의 최대치를 설정할 수 있다.
-    - 모든 스크립트는 기본적으로 캐싱이 되므로, 스크립트에 변경 사항이 있을 때만 recompile한다.
-    - 캐시의 삭제는 일정 시간이 지나면 만료되는 방식이 **아니다.**
-    - `script.cache.expire` 를 통해 캐시 만료 방식을 설정할 수 있다.
-
-
-
-- 검색 속도 향상
-
-  - 스크립트는 인덱스의 구조나 그와 관련된 최적화를 사용할 수 없다.
-    - 따라서 떄떄로 검색 속도가 느려지게 된다.
-  - 스크립트를 사용하여 인덱싱 된 데이터를 변환한다면, 수집(ingest) 중에 데이터를 변환하여 검색을 더 빠르게 할 수 있다.
-    - 단, 이는 인덱싱 속도를 저하시킬 수 있다.
-
-  - 일반적인 검색
-    - 검색 시에 반환 되는 `math_score`와 `verbal_score` 값을 더한 값으로 검색 결과를 정렬하고자 한다.
-    - 아래 request에는 스크립트가 포함되어 있으므로 느려지게 된다.
-
-  ```bash
-  $ curl -XGET "localhost:9200/my_index/_search" -H "Content-type:application/json" -d '
-  {
-    "query": {
-      "term": {
-        "name": "maru"	# name filed가 maru인 문서 검색
-      }
-    },
-    "sort": [
-      {
-        "_script": {
-          "type": "number",
-          "script": {
-            "source": "doc['math_score'].value + doc['verbal_score'].value"
-          },
-          "order": "desc"
-        }
-      }
-    ]
-  }'
-  ```
-
-  - 검색 속도 향상시키기
-    - 작은 인덱스에서는 search query에 스크립트를 포함시는 것도 방법이 될 수 있다.
-    - 일반적으로는 아래와 같이 ingest 시에 스크립트를 활용하는 방식을 사용한다.
-    - ingest time을 증가시키긴 하지만 검색 속도는 증가헤 된다.
-
-  ```bash
-  # math_score 와 verbal_score의 합계를 저장할 새로운 필드를 추가한다.
-  $ curl -XPUT "localhost:9200/my_index/_mapping" -H "Content-type:application/json" -d '
-  {
-    "properties":{
-    	"total_score":{
-    		"type":"long"
-    	}
-    }
-  }'
-  
-  # ingest pipeline을 활용하여 math_score 와 verbal_score의 합계를 계산하고, 이를 total_score 필드에 인덱싱한다.
-  $ curl -XPUT "localhost:9200/_ingest/pipeline/my_index_pipeline" -H "Content-type:application/json" -d '
-  {
-    "description": "Calculates the total test score",
-    "processors": [
-      {
-        "script": {
-          "source": "ctx.total_score = (ctx.math_score + ctx.verbal_score)"
-        }
-      }
-    ]
-  }'
-  
-  # 이미 있는 문서들을 업데이트 하기 위해서 reindex한다.
-  $ curl -XPUT "localhost:9200/_reindex" -H "Content-type:application/json" -d '
-  {
-    "source": {
-      "index": "my_index"
-    },
-    "dest": {
-      "index": "my_index_2",
-      "pipeline": "my_index_pipeline"
-    }
-  }
-  
-  # pipeline을 활용하여 새로운 문서를 인덱싱한다.
-  $ curl -XPUT "localhost:9200/my_index/_doc/?pipeline=my_index_pipeline" -H "Content-type:application/json" -d '
-  {
-    "name": "maru",
-    "hobby": "swimming"
-  }'
-  
-  # 검색하기
-  $ curl -XGET "localhost:9200/my_index/_search" -H "Content-type:application/json" -d '
-  {
-    "query": {
-      "term": {
-        "name": "maru"
-      }
-    },
-    "sort": [
-      {
-        "total_score": {
-          "order": "desc"
-        }
-      }
-    ]
-  }'
-  ```
-
-
-
-- Dissecting data
-
-  - Dissect는 정의된 패턴과 일치하는 single text filed를 찾는다.
-    - 정규표현식을 사용하지 않을 경우, 뒤에서 설명할 grok 대신 disset 패턴을 사용하면 된다.
-    - disset이 grok 보다 문법도 훨씬 간단하고, 일반적으로 더 빠르다.
-  - Dissect patterns
-    - disset 패턴은 변수 (variables)와 구분자(separators)로 구성된다.
-    - `%{}`안에 들어간 모든 값은 변수로 간주된다.
-    - 구분자는 변수 사이에 있는 어떤 값이든 될 수 있다.
-
-  ```bash
-  # 아래와 같은 문자열은
-  247.37.0.0 - - [30/Apr/2020:14:31:22 -0500]  
-  
-  # 아래와 같은 패턴으로 표시될 수 있다.
-  # %{}안에 변수를 넣고, 그 사이에 스페이스를 구분자로 넣은 형태이다.
-  %{clientip} %{ident} %{auth} [%{@timestamp}]
-  
-  # 아래와 같은 문자열은
-  \"GET /images/hm_nbg.jpg HTTP/1.0\" 304 0
-  
-  # 아래와 같은 패턴으로 표시할 수 있다.
-  "%{verb} %{request} HTTP/%{httpversion}" %{response} %{size}
-  
-  
-  # 두 패턴을 결합하면 아래와 같다.
-  %{clientip} %{ident} %{auth} [%{@timestamp}] \"%{verb} %{request} HTTP/%{httpversion}\" %{status} %{size}
-  ```
-
-  - Painless 스크립트에서 dissect 패턴 사용하기
-    - Painless execute API의 field contexts를 사용하거나 스크립트를 포함하는 runtime 필드를 생성함으로써 스크립트를 테스트 해 볼 수 있다.
-
-  ```bash
-  # 인덱스 생성
-  $ curl -XPUT "localhost:9200/my_index" -H "Content-type:application/json" -d '
-  {
-    "mappings": {
-      "properties": {
-        "message": {
-          "type": "wildcard"
-        }
-      }
-    }
-  }'
-  
-  # Painless execute API를 활용하여 스크립트 테스트하기
-  $ curl -XPOST "localhost:9200/_scripts/painless/_execute" -H "Content-type:application/json" -d '
-  {
-    "script": {
-      # dissect 패턴 정의
-      "source": """
-        String response=dissect('%{clientip} %{ident} %{auth} [%{@timestamp}] "%{verb} %{request} HTTP/%{httpversion}" %{response} %{size}').extract(doc["message"].value)?.response;
-          if (response != null) emit(Integer.parseInt(response)); 
-      """
-    },
-    "context": "long_field", 
-    "context_setup": {
-      "index": "my-index",
-      "document": {          
-        "message": """247.37.0.0 - - [30/Apr/2020:14:31:22 -0500] "GET /images/hm_nbg.jpg HTTP/1.0" 304 0"""
-      }
-    }
-  }'
-  ```
-
-  - dissect 패턴과 스크립트를 런타임 필드에서 사용하기
-    - disscet 패턴을 런타임 필드에 추가할 수 있다.
-
-  ```bash
-  # 인덱스 생성하기
-  $ curl -XPUT "localhost:9200/my_index" -H "Content-type:application/json" -d '
-  {
-    "mappings": {
-      "properties": {
-        "@timestamp": {
-          "format": "strict_date_optional_time||epoch_second",
-          "type": "date"
-        },
-        "message": {
-          "type": "wildcard"
-        }
-      }
-    }
-  }'
-  
-  # 런타임 필드 생성
-  $ curl -XPUT "localhost:9200/my_index/_mappings" -H "Content-type:application/json" -d '
-  {
-    "runtime": {
-    	# http.response라는 런타임 필드 생성
-      "http.response": {
-        "type": "long",
-        "script": """
-          String response=dissect('%{clientip} %{ident} %{auth} [%{@timestamp}] "%{verb} %{request} HTTP/%{httpversion}" %{response} %{size}').extract(doc["message"].value)?.response;
-          if (response != null) emit(Integer.parseInt(response));
-        """
-      }
-    }
-  }'
-  
-  # 데이터 추가
-  $ curl -XPOST "localhost:9200/my_index/_bulk?refresh=true" -H "Content-type:application/json" -d '
-  {"index":{}}
-  {"timestamp":"2020-04-30T14:30:17-05:00","message":"40.135.0.0 - - [30/Apr/2020:14:30:17 -0500] \"GET /images/hm_bg.jpg HTTP/1.0\" 200 24736"}
-  {"index":{}}
-  {"timestamp":"2020-04-30T14:30:53-05:00","message":"232.0.0.0 - - [30/Apr/2020:14:30:53 -0500] \"GET /images/hm_bg.jpg HTTP/1.0\" 200 24736"}
-  {"index":{}}
-  {"timestamp":"2020-04-30T14:31:12-05:00","message":"26.1.0.0 - - [30/Apr/2020:14:31:12 -0500] \"GET /images/hm_bg.jpg HTTP/1.0\" 200 24736"}
-  {"index":{}}
-  {"timestamp":"2020-04-30T14:31:19-05:00","message":"247.37.0.0 - - [30/Apr/2020:14:31:19 -0500] \"GET /french/splash_inet.html HTTP/1.0\" 200 3781"}
-  {"index":{}}
-  {"timestamp":"2020-04-30T14:31:22-05:00","message":"247.37.0.0 - - [30/Apr/2020:14:31:22 -0500] \"GET /images/hm_nbg.jpg HTTP/1.0\" 304 0"}
-  {"index":{}}
-  {"timestamp":"2020-04-30T14:31:27-05:00","message":"252.0.0.0 - - [30/Apr/2020:14:31:27 -0500] \"GET /images/hm_bg.jpg HTTP/1.0\" 200 24736"}
-  {"index":{}}
-  {"timestamp":"2020-04-30T14:31:28-05:00","message":"not a valid apache log"}'
-  
-  # 확인하기
-  $ curl -XGET "localhost:9200/my-index/_search" -H "Content-type:application/json" -d '
-  {
-    "query": {
-      "match": {
-        "http.response": "304"
-      }
-    },
-    "fields" : ["http.response"]
-  }'
-  ```
-
-  - search request에 런타임 필드 정의하기
-
-  ```bash
-  $ curl -XGET "localhost:9200/my-index/_search" -H "Content-type:application/json" -d '
-  {
-    "runtime_mappings": {
-      "http.response": {
-        "type": "long",
-        "script": """
-          String response=dissect('%{clientip} %{ident} %{auth} [%{@timestamp}] "%{verb} %{request} HTTP/%{httpversion}" %{response} %{size}').extract(doc["message"].value)?.response;
-          if (response != null) emit(Integer.parseInt(response));
-        """
-      }
-    },
-    "query": {
-      "match": {
-        "http.response": "304"
-      }
-    },
-    "fields" : ["http.response"]
-  }'
-  ```
-
-
-
-- Grokking grok
-
-  - Grok은 재사용 가능한 aliased 표현을 지원하는 정규표현식이다.
-    - 시스템 로그를 확인할 때 매우 유용하다.
-    - Oniguruma 정규표현식 라이브러리 기반이다.
-    - 이미 존재하는 패턴에 이름을 붙이고, 패턴들을 결합하여 보다 복잡한 패턴을 만드는데 사용 가능하다.
-  - Grok 패턴
-    - ES는 grok을 보다 쉽게 사용할 수 있도록, 이미 정의된 다양한 grok 패턴을 제공한다.
-    - grok 패턴의 문법은 아래의 형식 중 하나의 형태를 띈다.
-    - `%{SYNTAX}`: 텍스트와 매치될 패턴의 이름을 넣는다. 만일 `%{NUMBER}`와 같이 적으면 텍스트 내의 숫자 형식의 텍스트와 매칭이 되고, `%{IP}`와 같이 적으면 텍스트 내의 IP 형식의 텍스트와 매칭이 된다.
-    - `%{SYNTAX:ID}`: 매칭 된 텍스트에 지정할 식별자이다. 예를 들어 `%{IP:client}`와 같이 적으면  IP 형식의 텍스트와 매칭 된 해당 텍스트를 clinet라고 부르겠다는 뜻이다.
-    - `%{SYNTAX:ID:TYPE}`: 매칭된 텍스트에 int, long, float, boolean과 같은 타입을 지정해준다.
-
-  ```bash
-  # 예를 들어 아래와 같은 텍스트가 있을 때
-  3.44 55.3.244.1
-  
-  # 아래와 같이 grok 표현식으로 표현이 가능하다.
-  %{NUMBER:duration} %{IP:client}
-  # durationd에는 3.44가, IP에는 55.3.244.1가 담기게 된다.
-  ```
-
-  - Painless 스크립트에서 grok 패턴 사용하기
-    - 기존에 정의한 grok 패턴을 Painless 스크립트와 결합하여 사용하는 것이 가능하다.
-    - Painless execute API의 field contexts를 사용하거나 스크립트를 포함하는 runtime 필드를 생성함으로써 스크립트를 테스트 해 볼 수 있다.
-  
-  ```bash
-  # 아래와 같은 apache log에서 ip를 추출한다고 가정
-  "timestamp":"2020-04-30T14:30:17-05:00","message":"40.135.0.0 - -
-  [30/Apr/2020:14:30:17 -0500] \"GET /images/hm_bg.jpg HTTP/1.0\" 200 24736"
-  
-  # 테스트 인덱스 생성
-  $ curl -XPUT "localhost:9200/my-index" -H "Content-type:application/json" -d '
-  {
-    "mappings": {
-      "properties": {
-        "@timestamp": {
-          "format": "strict_date_optional_time||epoch_second",
-          "type": "date"
-        },
-        "message": {
-          "type": "wildcard"
-        }
-      }
-    }
-  }'
-  
-  # 테스트 데이터 인덱싱
-  $ curl -XPOST "localhost:9200/my-index/_bulk" -H "Content-type:application/json" -d '
-  {"index":{}}
-  {"timestamp":"2020-04-30T14:30:17-05:00","message":"40.135.0.0 - - [30/Apr/2020:14:30:17 -0500] \"GET /images/hm_bg.jpg HTTP/1.0\" 200 24736"}
-  {"index":{}}
-  {"timestamp":"2020-04-30T14:30:53-05:00","message":"232.0.0.0 - - [30/Apr/2020:14:30:53 -0500] \"GET /images/hm_bg.jpg HTTP/1.0\" 200 24736"}
-  {"index":{}}
-  {"timestamp":"2020-04-30T14:31:12-05:00","message":"26.1.0.0 - - [30/Apr/2020:14:31:12 -0500] \"GET /images/hm_bg.jpg HTTP/1.0\" 200 24736"}
-  {"index":{}}
-  {"timestamp":"2020-04-30T14:31:19-05:00","message":"247.37.0.0 - - [30/Apr/2020:14:31:19 -0500] \"GET /french/splash_inet.html HTTP/1.0\" 200 3781"}
-  {"index":{}}
-  {"timestamp":"2020-04-30T14:31:22-05:00","message":"247.37.0.0 - - [30/Apr/2020:14:31:22 -0500] \"GET /images/hm_nbg.jpg HTTP/1.0\" 304 0"}
-  {"index":{}}
-  {"timestamp":"2020-04-30T14:31:27-05:00","message":"252.0.0.0 - - [30/Apr/2020:14:31:27 -0500] \"GET /images/hm_bg.jpg HTTP/1.0\" 200 24736"}
-  {"index":{}}
-  {"timestamp":"2020-04-30T14:31:28-05:00","message":"not a valid apache log"}'
-  
-  # %{COMMONAPACHELOG} 문법과 Painless 스크립트를 결합하여 런타임 필드 생성.
-  $ curl -XPUT "localhost:9200/my-index/_mappings" -H "Content-type:application/json" -d '
-  {
-    "runtime": {
-      "http.clientip": {
-        "type": "ip",
-        "script": """
-        	# 만일 일치하는 패턴이 있을 경우 IP주소를 emit하고. 없을 경우 field value를 반환한다.
-          String clientip=grok('%{COMMONAPACHELOG}').extract(doc["message"].value)?.clientip;
-          if (clientip != null) emit(clientip);
-        """
-      }
-    }
-  }
-  
-  # 검색
-  $ curl -XGET "localhost:9200/my-index/_mappings" -H "Content-type:application/json" -d '
-  {
-    "query": {
-      "match": {
-        "http.clientip": "40.135.0.0"
-      }
-    },
-    "fields" : ["http.clientip"]
-  }'
-  ```
-  
-  - search request에 런타임 필드 정의하기
-    - 위 방식과 결과는 같다.
-  
-  ```bash
-  $ curl -XGET "localhost:9200/my-index/_search" -H "Content-type:application/json" -d '
-  {
-    "runtime_mappings": {
-      "http.clientip": {
-        "type": "ip",
-        "script": """
-          String clientip=grok('%{COMMONAPACHELOG}').extract(doc["message"].value)?.clientip;
-          if (clientip != null) emit(clientip);
-        """
-      }
-    },
-    "query": {
-      "match": {
-        "http.clientip": "40.135.0.0"
-      }
-    },
-    "fields" : ["http.clientip"]
-  }'
-  ```
-
-
-
-- https://www.elastic.co/guide/en/elasticsearch/reference/current/common-script-uses.html 부터 아래 문서들 추가
-
-
-
-
-
-# Aggregations
-
-- aggregations
-  - ES에서 데이터의 다양한 연산을 가능하게 해주는 기능
-  - aggregations 또는 aggs로 표기한다.
-
-
-
-- 기본형
-
-  - search API에서 query 문과 같은 수준에 지정자 `aggregations ` 또는 `aggs`를 명시한다.
-  - 꼭 query문을 함께 사용할 필요는 없다.
-
-  ```bash
-  $ curl -XGET "localhost:9200/<인덱스명>/_search" -H 'Content-type:application/json' -d'
-  {
-    "query": {
-      # [query 문]
-    },
-    "aggs": {
-      "[사용자가 지정한 aggs 이름]": {
-        "[aggregation 종류(type)]": {
-          # [aggs 문]
-        }
-      }
-    }
   }
   '
   ```
 
-  - 종류
-    - Metric: 수학적 계산을 위한 aggregation
-    - Bucket: 필드의 값을 기준으로 문서들을 그룹화해주는 aggregation
-    - Pipeline: 문서나 필드가 아닌 다른 aggregation 데이터를 가지고 집계를 해주는 aggregation
-  - 응답
-    - search API의 응답으로 오는 object 중 `aggregations`라는 key와 묶여서 온다.
+  - 이렇게 많은 필드를 모아서 검색할 수 있는 기능이 copy_to 기능이다.
+    - 가능하면 매핑 스키마 계획을 세울 때 최소한의 필드를 사용할 수 있도록 한다.
+    - 그러나 불가피하게 많은 필드를 대상으로 검색해야 한다면 copy_to를 최대한 활용한다.
 
-  ```json
+
+
+- copy_to를 활용하여 검색하기
+
+  - mapping할 때 `copy_to`를 추가한다.
+
+  ```bash
+  $ curl -XPUT "localhost:9200/my_index/_mappings?pretty" -H 'Content-type:application/json' -d'
   {
-    "took": 78,
-    "timed_out": false,
-    "_shards": {
-      "total": 1,
-      "successful": 1,
-      "skipped": 0,
-      "failed": 0
-    },
-    "hits": {
-      "total": {
-        "value": 5,
-        "relation": "eq"
-      },
-      "max_score": 1.0,
-      "hits": [...]
-    },
-    "aggregations": {		// aggregations 응답
-      "my-agg-name": {    // 사용자가 설정한 aggs 이름    
-        "doc_count_error_upper_bound": 0,
-        "sum_other_doc_count": 0,
-        "buckets": []
-      }
-    }
+  	"_doc":{
+  		"properties":{
+  			"first_name":{
+  				"type":"text",
+  				"copy_to":"full_name"	# copy_to 추가
+  			},
+  			"last_name":{
+  				"type":"text",
+  				"copy_to":"full_name"
+  			},
+  			"full_name":{		# copy_to를 위한 필드 생성
+  				"type":"text"
+  			}
+  		}
+  	}
   }
   ```
 
-  - aggregations만 응답으로 받기
-    - `size`를 0으로 설정하면 aggregations만 응답으로 받을 수 있다.
+  - 색인할 때 copy_to를 위해 생성한 필드(`full_name`) 필드에는 따로 데이터를 넣어줄 필요가 없다.
 
   ```bash
-  $ curl -XGET "localhost:9200/<인덱스명>/_search" -H 'Content-type:application/json' -d'
+  $ curl -XPUT "localhost:9200/my_index/_mappings?pretty" -H 'Content-type:application/json' -d'
   {
-    "size": 0,
-    "aggs": {
-      "[사용자가 지정한 aggs 이름]": {
-        "[aggregation 종류(type)]": {
-          # [aggs 문]
-        }
-      }
-    }
-  }
-  '
-  ```
-
-  - aggregations type도 응답으로 받기
-    - aggregations은 기본값으로 aggregation의 이름만 반환한다.
-    - type도 함께 반환받기 위해서는 아래와 같이 `typed_keys`를 요청에 포함시키면 된다.
-    - `type#aggs 이름` 형태로 이름과 타입을 함께 반환한다.
-
-  ```bash
-  $ curl -XGET "localhost:9200/<인덱스명>/_search?typed_keys" -H 'Content-type:application/json' -d'
-  {
-    "size": 0,
-    "aggs": {
-      "my-aggs": {
-        "histogram": {	# histogram type
-          "field":"my-field",
-          "interval":1000
-        }
-      }
-    }
-  }
-  '
-  
-  # 응답
-  {
-    ...
-    "aggregations": {
-      "histogram#my-agg-name": {                 
-        "buckets": []
-      }
-    }
+  	"first_name":"John",
+  	"last_name":"Doe"
   }
   ```
 
-
-
-- multiple & sub  aggregations
-
-  - 여러 개의 aggregations 실행하기
+  - 검색
+    - copy_to를 위해 생성한 필드(`full_name`)를 대상으로 검색한다.
 
   ```bash
-  $ curl -XGET "localhost:9200/<인덱스명>/_search" -H 'Content-type:application/json' -d'
+  $ curl -XPUT "localhost:9200/my_index/_search?pretty" -H 'Content-type:application/json' -d'
   {
-    "aggs": {
-      "[사용자가 지정한 aggs 이름1]": {
-        "[aggregation 종류(type)]": {
-          # [aggs 문]
-        }
-      },
-      "[사용자가 지정한 aggs 이름2]": {
-        "[aggregation 종류(type)]": {
-          # [aggs 문]
-        }
-      }
-    }
-  }
-  '
-  ```
-
-  - sub-aggregations 실행하기
-    - Bucket aggregations는 Bucket 혹은 Metric sub-aggregations을 설정 가능하다.
-    - 깊이에 제한이 없이 Bucket aggregations이기만 하면 sub-aggregations을 설정 가능하다.
-
-  ```bash
-  $ curl -XGET "localhost:9200/<인덱스명>/_search" -H 'Content-type:application/json' -d'
-  {
-    "aggs": {
-      "my-bucket-aggs": {
-        "[aggregation 종류(type)]": {
-          # [aggs 문]
-        },
-        "my-sub-aggs": {	# sub-aggregations 설정
-          "[aggregation 종류(type)]": {
-            # [aggs 문]
-          }
-        }
-      }
-    }
+  	"query":{
+  		"match":{
+  			"full_name":"John Doe"
+  		}
+  	}
   }
   '
   ```
 
 
 
-- metadata를 추가하기
+- 불필요하게 사용되는 쿼리 제거하기
+  - Query Context와 Filter Context 구분하기
+    - match 쿼리는 Query Context에 속하는 쿼리다.
+    - Query Context는 analyzer를 통해 검색어를 분석하는 과정이 포함되기 때문에 분석을 위한 추가 시간이 필요하다.
+    - 반면에 Filter Context에 속하는  term 쿼리는 검색어를 분석하는 과정을 거치지 않는다.
+    - 따라서 match 쿼리보다 term 쿼리가 성능이 더 좋다.
+  - keyword 필드 데이터 타입으로 매핑된 문자열 필드는 term 쿼리를 사용하는 것이 성능상 유리하다.
+    - keyword 필드는 분석하지 않는 필드이다.
+    - 따라서 검색할 때도 검색어를 분석하지 않는 term 쿼리가 더 적합하다.
+  - ES에서는 수치 계산에 사용되지 않는 숫자형 데이터는 keyword 필드 데이터 타입으로 매핑하도록 권고한다.
+    - 이 경우에도 keyword 타입으로 정의하고 term 쿼리를 사용하는 것이 적합하다.
+    - 단, keyword 타입으로 저장된 숫자들은 계산이 되지 않는다.
 
-  - `meta` 오브젝트를 사용하여 metadata를 추가하는 것이 가능하다.
+
+
+## 그 외의 방법들
+
+- 적절한 샤드 배치
+
+  > 샤드 배치를 적절히 하지 못할 경우 아래와 같은 문제들이 발생할 수 있다.
+
+  - 데이터 노드 간 디스크 사용량 불균형
+    - 노드는 3대이고 프라이머리 샤드는 4개로 설정했다고 가정
+    - 한 노드는 2개의 샤드를 가져갈 수 밖에 없다.
+    - 시간이 흐를수록 2개의 샤드를 가져간 노드의 디스크 사용량이 높아지게 된다.
+    - 따라서 노드의 개수에 맞게 샤드 개수를 설정해야 한다.
+  - 색인/검색 성능 부족
+    - 노드는 3대이고 프라이머리 샤드는 2개로 설정했다고 가정
+    - 하나의 노드는 샤드를 할당받지 못한다.
+    - 샤드를 할당받지 못한 노드는 클러스터에 속해 있어도 색인과 검색에 참여할 수 없다.
+  - 데이터 노드 증설 후에도 검색 성능이 나아지지 않음
+    - 최초에 노드의 개수와 샤드의 개수를 동일하게 클러스터를 구성했다고 가정
+    - 이 상황에서 노드의 개수를 증가시킨다 하더라도 해당 노드에 할당할 샤드가 없으므로 노드 추가로 인한 성능 개선을 기대하기 어렵다.
+    - 따라서 처음에 클러스터를 구성할 때 어느 정도의 증설을 미리 계획하여 최초 구성한 노드의 개수와 증설된 이후 노드의 개수의 최소공배수로 샤드의 개수를 설정하면 위와 같은 문제를 모두 예방할 수 있다.
+  - 클러스터 전체의 샤드 개수가 지나치게 많음
+    - 이 경우 마스터 노드를 고려해야 한다.
+    - 샤드의 개수가 많아질수록 마스터 노드가 관리해야 하는 정보도 많아지게 된다.
+    - 따라서 데이터 노드의 사용량에는 큰 문제가 없는데 클러스터의 성능이 제대로 나오지 않는 문제가 발생할 수 있다.
+    - 하나의 노드에서 조회할 수 있는 샤드의 개수를 제한하는 것도 방법이다.
 
   ```bash
-  $ curl -XGET "localhost:9200/<인덱스명>/_search" -H 'Content-type:application/json' -d'
+  $ curl -XPUT "localhost:9200/cluster/settings?pretty" -H 'Content-type:application/json' -d'
   {
-    "aggs": {
-      "[사용자가 지정한 aggs 이름]": {
-        "[aggregation 종류(type)]": {
-          # [aggs 문]
-        }
-      },
-      "meta":{
-      	"my-metadata-field":"foo"
-      }
-    }
-  }
-  '
-  ```
-
-
-
-- script 사용하기
-
-  - field 중 집계에 원하는 필드가 없을 경우 runtime field에서 script를 사용할 수 있다.
-    - runtime field: 쿼리를 처리할 때 평가되는 필드
-    - reindexing 하지 않고도 문서에 필드를 추가할 수 있게 해준다.
-    - 단, script를 사용할 경우 aggregation에 따라 성능에 영향을 줄 수 있다.
-  - 예시
-
-  ```bash
-  $ curl -XGET "localhost:9200/<인덱스명>/_search" -H 'Content-type:application/json' -d'
-  {
-    "runtime_mappings": {
-      "message.length": {
-        "type": "long",
-        "script": "emit(doc['message.keyword'].value.length())"
-      }
-    },
-    "aggs": {
-      "message_length": {
-        "histogram": {
-          "interval": 10,
-          "field": "message.length"
-        }
-      }
-    }
-  }
-  '
-  ```
-
-
-
-- aggregation cache
-  - 빈번하게 실행되는 aggregations의 결과는 shard request cache에 캐싱한다.
-  - https://www.elastic.co/guide/en/elasticsearch/reference/current/search-shard-routing.html#shard-and-node-preference 참고
-
-
-
--  집계 예시를 위한 데이터 추가
-
-  - nations라는 인덱스에 bulk API를 활용하여 데이터 추가
-
-  ```bash
-  $curl -XPUT "localhost:9200/nations/_bulk?pretty" -H 'Content-type:application/json' -d'
-  {"index": {"_id": "1"}}
-  {"date": "2019-06-01", "continent": "아프리카", "nation": "남아공", "population": 4000}
-  {"index": {"_id": "2"}}
-  {"date": "2019-06-01", "continent": "아시아", "nation": "한국", "population": 5412}
-  {"index": {"_id": "3"}}
-  {"date": "2019-07-10", "continent": "아시아", "nation": "싱가폴", "population": 3515}
-  {"index": {"_id": "4"}}
-  {"date": "2019-07-15", "continent": "아시아", "nation": "중국", "population": 126478}
-  {"index": {"_id": "5"}}
-  {"date": "2019-08-07", "continent": "아시아", "nation": "일본", "population": 12821}
-  {"index": {"_id": "6"}}
-  {"date": "2019-08-18", "continent": "북아메리카", "nation": "미국", "population": 21724}
-  {"index": {"_id": "7"}}
-  {"date": "2019-09-02", "continent": "북아메리카", "nation": "캐나다", "population": 9912}
-  {"index": {"_id": "8"}}
-  {"date": "2019-09-11", "continent": "유럽", "nation": "영국", "population": 7121}
-  {"index": {"_id": "9"}}
-  {"date": "2019-09-20", "continent": "유럽", "nation": "프랑스", "population": 9021}
-  {"index": {"_id": "10"}}
-  {"date": "2019-10-01", "continent": "유럽", "nation": "독일", "population": 1271}
-  '
-  ```
-
-
-
-## Bucket aggregations
-
-- Bucket aggregations
-  - 주어진 조건으로 분류된 버킷을 만들고, 각 버킷에 속하는 문서들을 모아 그룹으로 구분하는 것.
-    - 각 버킷에 들어 있는 문서 수를 반환한다.
-  - sub-aggregation을 사용 가능하다.
-
-
-
-###  term
-
-- keyword 필드의 문자열 별로 버킷을 나누어 집계한다.
-  - text 필드 값도 사용은 가능하지만 성능이 매우 떨어진다.
-  - 아래의 경우 continent 필드의 값(`key`)이 4개 밖에 없지만, 값이 많을 경우에는 많이 집계된 순(기본값은 상위 10개)으로 반환하고, 반환하지 않은 값들은 `sum_other_doc_count`에 count된다.
-  
-  ```bash
-  $curl -XGET "localhost:9200/nations/_search" -H 'Content-type:application/json' -d'
-  {
-    "size":0,	# 검색 결과는 보지 않기 위해서 0을 준다.
-    "aggs":{
-      "continents":{    # aggs 이름
-        "terms":{
-          "field":"continent.keyword" # 적용 할 필드
-        }
-      }
-    }
-  }'
-  
-  # 응답
-  "aggregations" : {
-    "continents" : {
-      "doc_count_error_upper_bound" : 0,
-      "sum_other_doc_count" : 0,
-      "buckets" : [
-        {
-          "key" : "아시아",
-          "doc_count" : 4
-        },
-        {
-          "key" : "유럽",
-          "doc_count" : 3
-        },
-        {
-          "key" : "북아메리카",
-          "doc_count" : 2
-        },
-        {
-          "key" : "아프리카",
-          "doc_count" : 1
-        }
-      ]
-     }
+  	"transient":{
+  		"cluster.max_shards_per_node":2000	# 노드당 검색 요청에 응답할 수 있는 최대 샤드 개수를 2000개로 설정
+  	}
   }
   ```
 
 
 
-- `size`
-  
-  - terms aggs는 기본값으로 상위 10개의 버킷만 반환하지만, `size` 파라미터를 통해 이를 조정할 수 있다.
-  - term의 동작 과정
-    - 노드에 검색 요청이 들어오면, 노드는 각 샤드에 요청을 보내 샤드별로 `shard_size`에 해당하는 만큼의 버킷을 받아온다.
-    - 모든 샤드가 노드로 버킷을 보내면, 노드는 버킷을 클라이언트에 보내기 전에 해당 결과값들을 취합하여  `size`에 설정된 크기의 최종 버킷 리스트를 만든다.
-    - 따라서 `size`파라미터 보다 `shard_size`의 수가 더 클 경우, 클라이언트가 반환 받은 버킷 리스트는 실제 결과와는 약간 다르다.
-    - 심지어 실제로 개수가 더 많더라도 반환되지 않을 수 있다.
-    - 예를 들어 아래 표에서 key1의 총 개수는 40, key2의 총 개수는 34이다.
-    - `shard_size`가 1일 경우 A,B,D 샤드는 key1, C샤드는 key2를 노드에 반환한다.
-    - 노드가 반환된 값을 취합하면 key1은 20, key2는 25이므로 노드는 클라이언트에 key2를 반환하게 된다.
-    - 실제 개수는 key1이 더 많음에도 key2가 반환되는 것이다.
-  
-  |      | shard A | shard B | shard C | shard D |
-  | ---- | ------- | ------- | ------- | ------- |
-  | key1 | 10      | 5       | 20      | 5       |
-  | key2 | 5       | 2       | 25      | 2       |
-  | key3 | 1       | 3       | 1       | 1       |
-
-
-
-- `sum_other_doc_count`와 `doc_count_error_upper_bound`
-
-  - `sum_other_doc_count`
-    - 결과에 포함되지 않은 버킷들에 속하는 모든 문서의 수.
-  - `doc_count_error_upper_bound`
-    - 각 샤드가 반환한 term들 중 최종 결과에는 포함되지 않은 모든 문서의 수
-  - 문제가 없는 경우
-    - 만일 `size`가 5라면 `sum_other_doc_count`와 `doc_count_error_upper_bound`는 0이 나올 것이다.
-
-  |              | shard A | shard B | shard C | shard D | shard E | total |
-  | ------------ | ------- | ------- | ------- | ------- | ------- | ----- |
-  | 모짜르트     | 55      | 50      | 40      | 60      | 45      | 250   |
-  | 베토벤       | 45      | 40      | 35      | 40      | 40      | 200   |
-  | 차이코프스키 | 20      | 15      | 25      | 30      | 10      | 100   |
-  | 바흐         | 10      | 5       | 15      | 5       | 5       | 40    |
-  | 쇼팽         | 5       | 3       | 5       | 2       | 3       | 18    |
-
-  - 문제가 있는 경우
-    - 전체 term의 개수는 6개이고, `shard_size`가 6일 경우, 집계를 합산하는 노드에는 아래와 같은 결과가 모이게 된다.
-    - shard A의 경우 Lenovo의 doc_count가 LG의 doc_count인 5 이하일 경우 아예 집계가 되지 않는다.
-    - shard B 역시 마찬가지로 LG의 doc_count가 ASUS의 doc_count인 5 이하일 경우 아예 집계가 되지 않으며, 나머지 샤드들도 마찬가지다.
-
-  |        | shard A | shard B | shard C | shard D | shard E | total |
-  | ------ | ------- | ------- | ------- | ------- | ------- | ----- |
-  | Mac    | 55      | 50      | 40      | 60      | 45      | 250   |
-  | Dell   | 45      | 40      | 35      | 40      | 40      | 200   |
-  | HP     | 20      | 15      | 25      | 30      | 10      | 100   |
-  | ASUS   | 10      | 5       | 15      | -       | 5       | 35    |
-  | Lenovo | -       | 8       | 10      | 2       | -       | 20    |
-  | LG     | 5       | -       | -       | 7       | 3       | 15    |
-
-  - 위 예시에서 집계에 포함되지 않은 문서들의 개수의 최댓값 추정치는 아래 표와 아래와 같다.
-
-  |                         | shard A | shard B | shard C | shard D | shard E | total |
-  | ----------------------- | ------- | ------- | ------- | ------- | ------- | ----- |
-  | HP worst case error     | -       | -       | -       | 2       | -       | 2     |
-  | Lenovo worst case error | 5       | -       | -       | -       | 3       | 8     |
-  | LG worst case error     | -       | 5       | 10      | -       | -       | 15    |
-
-  - 상위 5개의 문서만 반환되므로 total이 가장 적은 LG는 포함되지 않는다.
-    - `sum_other_doc_count`는 최종 결과에 포함되지 않은 버킷에 속하는 문서의 수이므로 최종 결과에 포함되지 않은 LG의 total인 15가 된다.
-    - 만일 samsung이라는 term이 존재하고, 각 샤드별로 (1, 1, 1, 1, 1) 씩 존재했다면, total은 5로 역시 최종 결과에 포함되지 못한다. 
-    - 따라서 이 경우 `sum_other_doc_count`는 15(LG)+5(samsung)으로 20이 된다.
-  - `doc_count_error_upper_bound`는 모든 샤드가 반환한 각 텀들의 문서 중 최종 집계 결과에 합산되지 못한 문서들의 개수의 최댓값을 합산한 값이다.
-    - LG는 버킷 전체가 집계 결과에 합산되지 못했고, HP, Lenovo는 각기 2, 8이 합산되지 못했다.
-    - 따라서 `doc_count_error_upper_bound`는 15+2+8=25이다.
-    - 만일 samsung이라는 term이 존재하고, 각 샤드별로 (1, 1, 1, 1, 1) 씩 존재했다면, 각 샤드가 반환한 6개의 텀에도 포함되지못한다. 
-    - 따라서 `doc_count_error_upper_bound`에는 변화가 없다.
-
-
-
-- `shard_size`
-  - 노드가 shard에 버킷을 반환하라는 요청을 보낼 때 각 샤드가 반환할 버킷의 수이다.
-    - `size`보다 작을 수 없으며, `size`보다 작게 설정할 경우 ES가 자동으로 `size`와 동일한 값을 가지게 조정한다.
-    - 기본값은 `size*1.5+10` 이다.
-  - `size`가 커질수록 정확도는 올라가지만, 결과를 계산하는 비용과 보다 많은 데이터를 클라이언트로 보내는 비용이 커지게 된다.
-    - 따라서 `size`를 늘리는 대신에 `shard_size`를 증가시키면 설정하면 보다 많은 데이터를 클라이언트로 보내는 비용을 최소화 할 수 있다.
-
-
-
-- `show_term_doc_count_error`
-
-  - `show_term_doc_count_error`를 true로 설정하면 각  term별로 집계 에러의 개수를 worst case 기준으로 보여준다.
-    - `shard_size`를 설정하는데 참고할 수 있다.
-  - term을 반환하지 않은 모든 샤드들에서 가장 낮은 counts를 합산하여 계산한다.
-    - counts가 내림차순으로 정렬되어 있어야 위와 같이 계산이 가능하다.
-    - counts가 오름차순으로 정렬되어 있거나 sub-aggregation을 기준으로 정렬되었다면, 계산이 불가능하고, 이럴 경우 -1을 반환한다.
-
-  ```bash
-  $curl -XGET "localhost:9200/nations/_search" -H 'Content-type:application/json' -d'
-  {
-    "size":0,	# 검색 결과는 보지 않기 위해서 0을 준다.
-    "aggs":{
-      "continents":{
-        "terms":{
-          "field":"continent.keyword",
-          "show_term_doc_count_error": true
-        }
-      }
-    }
-  }'
-  ```
-
-
-
-- `order`
-
-  - 버킷의 순서를 설정할 수 있는 파라미터.
-  - 기본값으로는 `doc_count`를 기준으로 내림차순으로 정렬된다.
-  - 정렬 방식
-    - pipeline aggs는 정렬에 사용할 수 없다.
-
-  ```bash
-  # counts를 기준으로 오름차순으로 정렬
-  $curl -XGET "localhost:9200/nations/_search" -H 'Content-type:application/json' -d'
-  {
-    "size":0,
-    "aggs":{
-      "continents":{
-        "terms":{
-          "field":"continent.keyword",
-          "order": { "_count": "asc" }
-        }
-      }
-    }
-  }'
-  
-  # term을 알파벳 기준으로 오름차순으로 정렬(6.0 이전까지는 "_term"을 사용)
-  $curl -XGET "localhost:9200/nations/_search" -H 'Content-type:application/json' -d'
-  {
-    "size":0,
-    "aggs":{
-      "continents":{
-        "terms":{
-          "field":"continent.keyword",
-          "order": { "_key": "asc" }  
-        }
-      }
-    }
-  }'
-  
-  # single value metrics sub-aggregation을 기준으로 정렬(아래의 경우 max 집계 값을 기준으로 대륙 버켓을 정렬)
-  $curl -XGET "localhost:9200/nations/_search" -H 'Content-type:application/json' -d'
-  {
-    "aggs": {
-      "continents": {
-        "terms": {
-          "field": "continent.keyword",
-          "order": { "max_population": "desc" }
-        },
-        "aggs": {
-          "max_population": { "max": { "field": "population" } }
-        }
-      }
-    }
-  }'
-  
-  # multi value metrics sub-aggregation을 기준으로 정렬(아래의 경우 stats 집계갑 중 max 값을 기준으로 대륙 버켓을 정렬)
-  $curl -XGET "localhost:9200/nations/_search" -H 'Content-type:application/json' -d'
-  {
-    "aggs": {
-      "continents": {
-        "terms": {
-          "field": "continent.keyword",
-          "order": { "population_stats.max": "desc" }
-        },
-        "aggs": {
-          "population_stats": { "stats": { "field": "population" } }
-        }
-      }
-    }
-  }'
-  ```
-
-  - 보다 계층적인(sub aggs의 깊이가 깊은) aggs에서도 사용이 가능하다.
-    - aggs 경로가 계층의 마지막 aggs가 single-bucket이거나 metrics일 경우에 한해서 사용이 가능하다.
-    - single-bucket type일 경우 버킷에 속한 문서의 수에 의해 순서가 결정된다.
-    - single-value metrics aggregation의 경우 aggs의 결괏값을 기준으로 정렬이 적용된다.
-    - multi-value metrics aggregation의 경우 aggs 경로는 정렬 기준으로 사용할 metric 이름을 나타내야 한다.
-
-  | 설명             | 기호                                                         |
-  | ---------------- | ------------------------------------------------------------ |
-  | AGG_SEPARATOR    | >                                                            |
-  | METRIC_SEPARATOR | .                                                            |
-  | AGG_NAME         | <AGG_NAME>                                                   |
-  | METRIC           | <metric 이름(multi-value metrics aggs의 경우)>               |
-  | PATH             | <AGG_NAME> [<AGG_SEPARATOR>, <AGG_NAME>] * [ <METRIC_SEPARATOR>, \<METRIC> ] |
-
-  ```bash
-  # nation버킷을 continent가 아시아인 국가들의 population을 기준으로 정렬한다.
-  $curl -XGET "localhost:9200/nations/_search" -H 'Content-type:application/json' -d'
-  {
-    "aggs": {
-      "countries": {
-        "terms": {
-          "field": "nation.keyword",
-          "order": { "asia>population_stats.avg": "desc" }
-        },
-        "aggs": {
-          "asia": {
-            "filter": { "term": { "continent": "아시아" } },
-            "aggs": {
-              "population_stats": { "stats": { "field": "population" } }
-            }
-          }
-        }
-      }
-    }
-  }
-  '
-  ```
-
-
-
-- 복수의 기준으로 정렬하기
-
-  - 정렬 기준을 배열에 담으면 된다.
-  - 예시
-    - nation버킷을 continent가 아시아인 국가들의 population을 기준으로 정렬한 후, doc_count를 기준으로 내림차순으로 정렬한다.
-  
-  ```bash
-  $curl -XGET "localhost:9200/nations/_search" -H 'Content-type:application/json' -d'
-  {
-    "aggs": {
-      "countries": {
-        "terms": {
-          "field": "nation.keyword",
-          "order": [{ "asia>population_stats.avg": "desc" },{"_count":"desc"}]
-        },
-        "aggs": {
-          "asia": {
-            "filter": { "term": { "continent": "아시아" } },
-            "aggs": {
-              "population_stats": { "stats": { "field": "population" } }
-            }
-          }
-        }
-      }
-    }
-  }'
-  ```
-
-
-
-- doc_count의 최솟값을 설정하기
-
-  - `min_doc_count` 옵션을 사용하면 count가 `min_doc_count`에서 설정해준 값 이상인 term만 반환된다.
-    - 기본값은 1이다.
-    - 아래 예시의 경우 continent의 term이 3 이상인 값만 반환되게 된다.
-
-  ```bash
-  $curl -XGET "localhost:9200/nations/_search" -H 'Content-type:application/json' -d'
-  {
-    "aggs": {
-      "min_doc_count_test": {
-        "terms": {
-          "field": "continent.keyword",
-          "min_doc_count": 3
-        }
-      }
-    }
-  }'
-  
-  # 응답
-  "aggregations" : {
-    "min_doc_count_test" : {
-      "doc_count_error_upper_bound" : 0,
-      "sum_other_doc_count" : 0,
-      "buckets" : [
-        {
-          "key" : "아시아",
-          "doc_count" : 4
-        },
-        {
-          "key" : "유럽",
-          "doc_count" : 3
-        }
-      ]
-    }
-  }
-  ```
-
-  - doc_count를 내림차순으로 정렬하지 않고, `min_doc_count`에 높은 값을 주면, `size`보다 작은 수의 버킷이 반환될 수 있다.
-    - 샤드에서 충분한 데이터를 얻지 못했기 때문이다.
-    - 이 경우 `shard_size`를 높게 주면 된다.
-
-  - `shard_min_doc_count`
-    - `shard_size`를 높이는 것은 보다 많은 데이터를 클라이언트로 보내는 비용은 줄일 수 있지만, 메모리 소모도 증가된다는 문제가 있다.
-    - `shard_min_doc_count`은 샤드별로 `min_doc_count`를 설정함으로써 이러한 비용을 줄여준다.
-    - 각 샤드는 term의 빈도가 `shard_min_doc_count` 보다 높을 때만 해당 term을 집계시에 고려한다.
-    - 기본값은 0이다.
-    - `shard_min_doc_count`을 지나치게 높게 주면 term이 샤드 레벨에서 걸러질 수 있으므로, `min_doc_count/shard 개수`보다 한참 낮은 값으로 설정해야 한다. 
-
-
-
-- Script
-
-  - 만일 문서의 데이터 중 집계하려는 필드가 존재하지 않는 경우에 runtime field를 사용할 수 있다.
-
-  ```bash
-  GET /_search
-  {
-    "size": 0,
-    "runtime_mappings": {
-      "normalized_genre": {
-        "type": "keyword",
-        "script": """
-          String genre = doc['genre'].value;
-          if (doc['product'].value.startsWith('Anthology')) {
-            emit(genre + ' anthology');
-          } else {
-            emit(genre);
-          }
-        """
-      }
-    },
-    "aggs": {
-      "genres": {
-        "terms": {
-          "field": "normalized_genre"
-        }
-      }
-    }
-  }
-  ```
-
-
-
-- 필터링
-  - 어떤 버킷이 생성될지 필터링하는 것이 가능하다.
-    - `include`와 `declude` 파라미터를 사용한다.
-    - 정규표현식 문자열이나 배열을 값으로 사용 가능하다.
-  
-  - 정규표현식으로 필터링하기
-  
-  ```bash
-  ```
-  
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## Metrics aggregations
-
-- Metrics aggregations
-  - 집계된 문서에서 추출된 값을 기반으로 수학적 계산을 수행한다.
-    - 일반적으로 문서에서 추출한 값을 기반으로 계산을 수행하지만 script를 활용하여 생성한 필드에서도 수행이 가능하다.
-  - Numeric metrics aggregations
-    - 숫자를 반환하는 특별한 타입의 metrics aggregations
-  - single/muli-value numeric metrics aggregation
-    - single-value numeric metrics aggregation: 단일 숫자 값을 반환하는 aggregations을 말한다.
-    - multi-value numeric metrics aggregation: 다중 metrics을 생성하는 aggregation을 말한다.
-    - 둘의 차이는 bucket aggregations의 서브 aggregation으로 사용될 때 드러난다.
-
-
-
-- Avg 
-
-  - 집계된 문서에서 추출한 숫자의 병균을 계산하는 single-value numeric metrics aggregation
-  - 사용하기
-    - 검색 결과는 반환하지 않도록 `size=0`을 입력한다.
-
-  ```bash
-  $ curl -XGET "localhost:9200/nations/_search?size=0" -H 'Content-type:application/json' -d'
-  {
-    "aggs": {
-      "avg_population": {
-        "avg": {
-          "field": "population"
-        }
-      }
-    }
-  }
-  '
-  
-  # 응답
-  "aggregations" : {
-    "avg_population" : {
-      "value" : 20127.5	// 평균값은 20127.5
-    }
-  }
-  ```
-
-  - runtime field
-    - 단일 필드가 아닌, 더 복합적인 값들의 평균을 얻을 때 사용한다.
-  
-  ```bash
-  $ curl -XPOST "localhost:9200/exams/_search?size=0" -H 'Content-type:application/json' -d'
-  {
-    "runtime_mappings": {
-      "grade.corrected": {
-        "type": "double",
-        "script": {
-          "source": "emit(Math.min(100, doc['grade'].value * params.correction))",
-          "params": {
-            "correction": 1.2
-          }
-        }
-      }
-    },
-    "aggs": {
-      "avg_corrected_grade": {
-        "avg": {
-          "field": "grade.corrected"
-        }
-      }
-    }
-  }
-  '
-  ```
-  
-  - missing 파라미터
-    - 집계 하려는 필드에 값이 존재하지 않을 경우 기본적으로는 해당 값을 제외하고 집계를 진행한다.
-    - 그러나 만일 특정 값을 넣어서 집계하고 싶을 경우 missing 파라미터를 사용하면 된다.
-  
-  ```bash
-  $ curl -XGET "localhost:9200/nations/_search?size=0" -H 'Content-type:application/json' -d '
-  {
-    "aggs": {
-      "avg_population": {
-        "avg": {
-          "field": "population",
-          "missing": 1000
-        }
-      }
-    }
-  }'
-  ```
-  
-  - histogram
-    - histogram 필드의 평균 동일한 위치에 있는 `counts` 배열의 요소와  `values` 배열의 요소를 곱한 값들의 평균이다.
-    - 아래 예시의 경우, 각 히스토그램 필드에 대해 평균을 계산할 때, <1>에 해당하는 `values` 배열의 각 요소들과 <2>에 해당하는 `counts` 배열의 각 요소들을 위치에 따라 곱한 값을 더한 후, 이 값들로 평균을 구한다. 
-    - 0.2~0.3에 해당하는 값이 가장 많으므로 0.2X가 결과값으로 나올 것이다.
-  
-  ```bash
-  $ curl -XPUT "localhost:9200/my_index/_doc/1" -H 'Content-Type: application/json' -d'
-  {
-    "network.name" : "net-1",
-    "latency_histo" : {
-        "values" : [0.1, 0.2, 0.3, 0.4, 0.5], # <1>
-        "counts" : [3, 7, 23, 12, 6] 			# <2>
-     }
-  }'
-  
-  $ curl -XPUT "localhost:9200/my_index/_doc/2" -H 'Content-Type: application/json' -d'
-  {
-    "network.name" : "net-2",
-    "latency_histo" : {
-        "values" :  [0.1, 0.2, 0.3, 0.4, 0.5], # <1>
-        "counts" : [8, 17, 8, 7, 6] 			 # <2>
-     }
-  }'
-  
-  $ curl -XPOST "localhost:9200/my_index/_search?size=0" -H 'Content-Type: application/json' -d'
-  {
-    "aggs": {
-      "avg_latency":
-        { "avg": { "field": "latency_histo" }
-      }
-    }
-  }'
-  
-  # 응답
-  {
-    ...
-    "aggregations": {
-      "avg_latency": {
-        "value": 0.29690721649
-      }
-    }
-  }
-  ```
-
-
-
-- Sum
-
-  - 집계된 문서에서 추출한 숫자의 합계를 계산하는 single-value metrics aggregation
-  - 사용하기
-
-  ```bash
-  curl -XGET "http://192.168.0.237:9201/nations/_search?size=0" -H 'Content-Type: application/json' -d'
-  {  
-    "aggs":{    
-      "sum_population":{      
-        "sum":{        
-          "field": "population"      
-        }    
-      }  
-    }
-  }'
-  
-  # 응답
-  {
-    "aggregations" : {
-      "sum_population" : {
-        "value" : 201275.0
-      }
-    }
-  }
-  
-  ```
-
-  - runtime field
-    - 단일 필드가 아닌, 더 복합적인 값들의 합계를 구할 때 사용한다.
-
-  ```bash
-  curl -XPOST "http://192.168.0.237:9201/sales/_search?size=0" -H 'Content-Type: application/json' -d'
-  {
-    "runtime_mappings": {
-      "price.weighted": {
-        "type": "double",
-        "script": """
-          double price = doc['price'].value;
-          if (doc['promoted'].value) {
-            price *= 0.8;
-          }
-          emit(price);
-        """
-      }
-    },
-    "query": {
-      "constant_score": {
-        "filter": {
-          "match": { "type": "hat" }
-        }
-      }
-    },
-    "aggs": {
-      "hat_prices": {
-        "sum": {
-          "field": "price.weighted"
-        }
-      }
-    }
-  }'
-  ```
-
-  - avg와 마찬가지로 missing 파라미터를 사용할 수 있다.
-
-  - histogram
-    - histogram 필드의 합계는 동일한 위치에 있는 `counts` 배열의 요소와  `values` 배열의 요소를 곱한 값들의 합계이다.
-
-  ```bash
-  curl -XPUT "http://192.168.0.237:9201/metrics_index/_doc/1" -H 'Content-Type: application/json' -d'
-  {
-    "network.name" : "net-1",
-    "latency_histo" : {
-        "values" : [0.1, 0.2, 0.3, 0.4, 0.5], 
-        "counts" : [3, 7, 23, 12, 6] 
-     }
-  }'
-  
-  curl -XPUT "http://192.168.0.237:9201/metrics_index/_doc/2" -H 'Content-Type: application/json' -d'
-  {
-    "network.name" : "net-2",
-    "latency_histo" : {
-        "values" :  [0.1, 0.2, 0.3, 0.4, 0.5], 
-        "counts" : [8, 17, 8, 7, 6] 
-     }
-  }'
-  
-  curl -XPOST "http://192.168.0.237:9201/metrics_index/_search?size=0" -H 'Content-Type: application/json' -d'
-  {
-    "aggs" : {
-      "total_latency" : { "sum" : { "field" : "latency_histo" } }
-    }
-  }'
-  
-  # 응답
-  {
-    ...
-    "aggregations": {
-      "total_latency": {
-        "value": 28.8
-      }
-    }
-  }
-  ```
-
-
-
-- Max, Min
-
-  - 숫자 값들의 최댓(최솟)값을 구하는 single-value metrics aggregation
-  - 사용하기
-    - 반환 값은 double 타입이다.
-
-  ```bash
-  $ curl -XGET "localhost:9200/nations/_search?size=0" -H 'Content-type:application/json' -d'
-  {
-    "aggs": {
-      "max_population": {
-        "max": {
-          "field": "population"
-        }
-      }
-    }
-  }
-  '
-  
-  # 응답
-  "aggregations" : {
-    "max_population" : {
-      "value" : 126478.0
-    }
-  }
-  ```
-
-  - runtime field
-    - 단일 필드가 아닌, 더 복합적인 값들의 최댓(최솟)값을 얻을 때 사용한다.
-
-  ```bash
-  $ curl -XPOST "localhost:9200/exams/_search?size=0" -H 'Content-type:application/json' -d'
-  {
-    "size": 0,
-    "runtime_mappings": {
-      "price.adjusted": {
-        "type": "double",
-        "script": """
-          double price = doc['price'].value;
-          if (doc['promoted'].value) {
-            price *= 0.8;
-          }
-          emit(price);
-        """
-      }
-    },
-    "aggs": {
-      "max_price": {
-        "max": { "field": "price.adjusted" }
-      }
-    }
-  }
-  ```
-
-  - avg와 마찬가지로 missing 파라미터를 사용할 수 있다.
-
-  - histogram
-    - avg와 달리 counts 배열은 무시하고 values중 최댓(최솟)값을반환한다.
-
-  ```bash
-  $ curl -XPUT "localhost:9200/my_index/_doc/1" -H 'Content-Type: application/json' -d'
-  {
-    "network.name" : "net-1",
-    "latency_histo" : {
-        "values" : [0.1, 0.2, 0.3, 0.4, 0.5], # <1>
-        "counts" : [3, 7, 23, 12, 6] 			# <2>
-     }
-  }'
-  
-  $ curl -XPUT "localhost:9200/my_index/_doc/2" -H 'Content-Type: application/json' -d'
-  {
-    "network.name" : "net-2",
-    "latency_histo" : {
-        "values" :  [0.1, 0.2, 0.3, 0.4, 0.5], # <1>
-        "counts" : [8, 17, 8, 7, 6] 			 # <2>
-     }
-  }'
-  
-  $ curl -XPOST "localhost:9200/my_index/_search?size=0" -H 'Content-Type: application/json' -d'
-  {
-    "aggs": {
-      "max_latency":
-        { "max": { "field": "latency_histo" }
-      }
-    }
-  }'
-  
-  # 응답
-  {
-    ...
-    "aggregations": {
-      "max_latency": {
-        "value": 0.5
-      }
-    }
-  }
-  ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+- forcemerge API
+
+  - 세그먼트
+    - 인덱스는 샤드로 나뉘고, 샤드는 다시 세그먼트로 나눌 수 있다.
+    - 사용자가 색인한 문서는 최종적으로 가장 작은 단위인 세그먼트에 저장된다.
+    - 또한 세그먼트는 작은 단위로 시작했다가 특정 시점이 되면 다수의 세그먼트들을 하나의 세그먼트로 합친다.
+    - 세그먼트가 잘 병합되어 있으면 검색 성능도 올라간다.
+
+  - forcemerge API와 검색 성능
+    - 샤드에 여러 개의 세그먼트가 있다면 해당 세그먼트들이 모두 검색 요청에 응답을 주어야 한다.
+    - 쿼리마다 많은 세그먼트에 접근해야 한다면 이는 곧 I/O를 발생시켜 성능 저하로 이어질 것이다.
+    - 하지만 세그먼트가 하나로 합쳐져 있다면, 사용자의 검색 요청에 응답해야 하는 세그먼트가 하나이기 떄문에 성능이 더 좋아질 수 있다.
+    - forcemerge를 통해 세그먼트를 병합하면 검색 성능이 더 좋아질 수 있다.
+  - 가이드라인
+    - 무조건 세그먼트가 적다고 좋은 것은 아니다.
+    - 샤드 하나의 크기가 100GB 정도인데 세그먼트가 하나라면 작은 크기의 문서를 찾을 때에도 100GB 전체를 대상으로 검색해야 해서 병합 전보다 성능이 떨어질 수 있다.
+    - 세그먼트를  병합했는데 이후에 색인이 발생하면 다시 세그먼트가 늘어나게 되어 병합 작업의 효과를 보기 어렵다.
+    - 색인이 모두 끝난 인덱슨는 병합 작업을 진행하고 난 이후 readonly 모드로 설정하여 더 이상 세그먼트가 생성되지 못하게 하는 것이 좋다.
+
+
+
+- ES 권고사항
+
+  - 문서를 모델링할 때 가급적이면 간결하게 구성하도록 권고한다.
+    - Parent/Child 구조의 join 구성이나, nested 타입 같이 문서를 처리할 때 문서 간의 연결 관계 처리를 필요로 하는 구성은 권장하지 않는다.
+
+  - painless script를 사용하여 하나의 문서를 처리할 때마다 부가적으로 리소스를 사용하지 않도록 하는 것도 권고사항이다.
+    - painless script: 쿼리만으로 원하는 데이터를 조회할 수 없을 때 사용하는 ES 전용 스크립트 언어
+
+  - 레플리카 샤드를 가능한 한 충분히 두는 것이 좋다.
+    - 노드 1에 프라이머리 샤드 0과 레플리카샤드 1이 있고, 노드 2에 프라이머리샤드 1과 레플리카샤드 0이 있다고 가정
+    - 두 개의 검색 요청이 들어왔고 두 요청에 대한 응답을 줄 데이터가 모두 샤드 0번에 있을 경우
+    - 한 요청을 노드1로, 다른 요청은 노드 2로 들어왔을 때, 두 노드 모두 0번 샤드를 지니고 있으므로 동시에 들어온 검색 요청에  서로 다른 노드가 응답해 줄 수 있다.
+    - 다만 레플리카 샤드는 인덱싱 성능과 볼륨 사용량의 낭비가 발생하니 클러스터 용량을 고려해서 추가하는 것이 좋다.
 
 
 
