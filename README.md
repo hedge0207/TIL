@@ -1049,6 +1049,18 @@
 
 ## [Elasticsearch_part4](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part4.md)
 
+- 인덱스 생성하기
+  - mappings
+  - settings
+
+<br/>
+
+<br/>
+
+## [Elast
+
+## [Elasticsearch_part5](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part5.md)
+
 - 데이터 검색
   - Search API
   - Query DSL
@@ -1062,7 +1074,7 @@
 
 <br/>
 
-## [Elasticsearch_part5](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part5.md)
+## [Elasticsearch_part6](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part6.md)
 
 - 엘라스틱서치 모니터링
   - Head
@@ -1077,7 +1089,7 @@
 
 <br/>
 
-## [Elasticsearch_part6](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part6.md)
+## [Elasticsearch_part7](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part7.md)
 
 - Runtime field
 - Scripting
@@ -1090,7 +1102,7 @@
 
 <br/>
 
-## [Elasticsearch_part7](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part7.md)
+## [Elasticsearch_part8](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part8.md)
 
 - ES 클러스터 구축 시나리오
 
@@ -1098,7 +1110,7 @@
 
 <br/>
 
-## [Elasticsearch_part8](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part8.md)
+## [Elasticsearch_part9](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part9.md)
 
 - Field data types
   - 기본 타입
