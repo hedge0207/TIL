@@ -162,7 +162,13 @@
     - 환경 변수(사용자 변수나 시스템 변수 중 아무 곳에서나)의 Path에 `C:\Users\사용자명\Desktop\a\b`를 추가.
     - 이후 다시 cmd창을 열고  `Hello.txt`를 입력하면 Hello.txt 파일이 실행되는 것을 확인 가능하다.
 
+<br/>
 
+<br/>
+
+<br/>
+
+<br/>
 
 ## Python 설치하기
 
@@ -184,7 +190,13 @@
   - cmd 창에 `python`을 입력했을 때 버전 정보가 뜨면 제대로 설치된 것이다.
   - 안될 경우 컴퓨터를 다시 시작하거나 `Add Python X.X to Path` 를 체크했는지 확인 후 체크하지 않았다면 체크 후 재설치한다.
 
+<br/>
 
+<br/>
+
+<br/>
+
+<br/>
 
 ## Java 설치하기
 
@@ -204,9 +216,13 @@
     - 변수 값: jdk 설치 경로(기본값은 `C:\Program Files\Java\jdk-11.0.9)`
   - 시스템 변수의 Path에 `%JAVA_HOME%bin` 추가
 
+<br/>
 
+<br/>
 
+<br/>
 
+<br/>
 
 ## IDE 설치하기
 
@@ -217,7 +233,7 @@
 - 위 사이트에서 VS Code 설치 파일 다운로드 후 설치하기
   - 파일 탐색기에서 vscode로 열기 체크 후 설치하는 것이 편하다.
 
-
+<br/>
 
 - 설치 완료 후 Extensions에서 설치할 것들
   - python
@@ -226,7 +242,9 @@
   - Vetur: Vue.js 사용시 Vue 코드를 하이라이팅 해준다.
   - Code Runner:  JS파일을 웹이 아닌 VSCode로 실행해준다.
 
+<br/>
 
+<br/>
 
 ### PyCham 설치
 
@@ -234,14 +252,16 @@
 
 - Pycham 설치 파일 다운로드 및 설치
 
-
+<br/>
 
 - 실행시 파이썬 콘솔창과 함께 실행되는데 이를 막기 위해서는 다음과 같이 하면 된다.
   - 코드 창 우클릭
   - Modify run configuration 클릭
   - Execution에서 Run with Python Console 체크 해제
 
+<br/>
 
+<br/>
 
 ### IntelliJ 설치
 
@@ -253,9 +273,9 @@
 
 - 실행시 자동으로 현재 설치된 jdk 파일을 찾아서 등록한다.
 
+<br/>
 
-
-
+<br/>
 
 ### 서버 연결하기
 
@@ -275,7 +295,7 @@
   $ ssh -i <key 경로> <서버 host>
   ```
 
-
+<br/>
 
 - vscode
 
@@ -309,7 +329,7 @@
   
   
 
-
+<br/>
 
 - Pycharm
   - Tools-Deployment-Configuration을 클릭한다.
@@ -319,7 +339,59 @@
   - 이후 Tools-Start SSH session을 통해 접속이 가능하다.
   - 만일 vscode와 같이 디렉토리를 GUI로 보고자 한다면 Tools-Deployment-Configuration에서 Mappings탭에서 설정해주면 된다.
 
+<br/>
 
+<br/>
+
+<br/>
+
+<br/>
+
+## Util 설치하기
+
+- 반디집
+
+  > https://kr.bandisoft.com/bandizip/
+
+<br/>
+
+- Postman
+
+  > https://www.postman.com/downloads/
+
+<br/>
+
+- Typora
+
+  > https://typora.io/#windows
+
+<br/>
+
+- DB
+
+  - heidi
+
+  > https://www.heidisql.com/
+
+  - sqldeveloper
+
+  > https://www.oracle.com/tools/downloads/sqldev-downloads.html
+  >
+  > hedge0207@gmail.com
+
+<br/>
+
+- workbanch
+
+  > https://dev.mysql.com/downloads/workbench/
+
+<br/>
+
+<br/>
+
+<br/>
+
+<br/>
 
 # 단축키
 
