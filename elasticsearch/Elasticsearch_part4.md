@@ -229,9 +229,17 @@
   }
   ```
 
-  
 
 
+## settings
+
+- `auto_expand_replicas`
+  - data node의 수에 따라 레플리카 샤드의 수를 자동으로 늘린다.
+  - `-`를 사이에 두고 하한값과 상한값을 설정한다(e.g. 0-3). 
+    - 상한값은  `all`로 설정이 가능하다(e.g. 0-all)
+    - 만일 `all`로 설정할 경우 [shard allocation awareness](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-cluster.html#shard-allocation-awareness)와 [`cluster.routing.allocation.same_shard.host`](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-cluster.html#cluster-routing-allocation-same-shard-host)는 무시된다.
+  - 기본값은 false로 설정되어 있다.
+  - 이 설정을 활성화할 경우 샤드 할당 정책으로 Index-level shard allocation filtering만을 적용 가능하다.
 
 
 
