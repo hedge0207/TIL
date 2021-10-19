@@ -571,7 +571,8 @@
   ```
 
   - `.find()`, `.index()`: 찾으려는 문자열의 위치를 알려준다.
-
+    - 한 문자 뿐 아니라 여러 개의 문자를 찾는 것도 가능하며 이 경우 첫 문자의 인덱스를 반환한다.
+  
   ```python
   # 아래와 같이 여러 개가 포함되어 있어도 첫 번째 위치만 알려준다.
   print("book".find('o'))   # 1
@@ -581,32 +582,32 @@
   print("book".find('u'))     # -1
   print("book".index('u'))    # ValueError: substring not found
   ```
-
+  
   - `.replace(원래 문자열,바꿀 문자열, 개수)`: 문자열 바꾸기
     - Python의 문자열은 불변 객체로 실제로 변경 되는 것이 아니라 새로운 객체를 만들어 리턴하는 것이다.
     - 왼쪽에서부터 개수를 세어 변환한다.
     - 개수를 입력하지 않을 경우 전부 변경된다.
-
+  
   ```python
   name = "book"
   print(name.replace('o','u',1))   # buok
   print(name.replace('o','u',2))   # buuk
   print(name.replace('o','u'))     # buuk
   ```
-
+  
   - `.split(구분의 기준이 되는 문자)`: 문자열을 나눈 결과를 리스트로 리턴한다.
     - 기준이 되는 문자를 입력하지 않으면 공백을 기준으로 나눈다.
     - 기준이 되는 문자를 `" "`직접 공백으로 지정해 줄 때와는 다른 결과가 나온다.
-
+  
   ```python
   names = "Cha    Kim Park"
   print(names.split())  		# ['Cha', 'Kim', 'Park']
   print(names.split(" "))		# ['Cha', '', '', '', 'Kim', 'Park']
   ```
-
+  
   - `중간에 넣을 문자.join()`: 문자열, 리스트, 튜플, 딕셔너리 등을 하나의 문자열로 합쳐준다.
     - 중간에 넣을 문자가 없을 경우 그냥 연달아 합쳐진다.
-
+  
   ```python
   names = "Cha Kim Lee"
   names_list = ["Cha", "Kim", "Lee"]
@@ -619,11 +620,11 @@
   print(",".join(names_tuple))      # Cha,Kim,Lee
   print(",".join(names_dict))       # one,two,three
   ```
-
+  
   - `reversed()`
     - 문자열의 순서를 역전시킨다.
     - 문자열, 리스트 등의 순회 가능한 값을 받아서 reversed 객체를 반환한다.
-
+  
   ```python
   a = "ABC"
   
