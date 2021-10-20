@@ -85,7 +85,7 @@
   POST _cluster/reroute?retry_failed=true
   ```
 
-  
+
 
 
 
@@ -291,7 +291,7 @@
 
   - Out Of Memory
 
-    - GC를 통해 더 이상 메모리를 확보할 수 없는 상황에서 애플리케이션이 계쏙해서 메모리를 사용하고자 하면 가용할 메모리가 없다는 OOM 에러를 발생시킨다.
+    - GC를 통해 더 이상 메모리를 확보할 수 없는 상황에서 애플리케이션이 계속해서 메모리를 사용하고자 하면 가용할 메모리가 없다는 OOM 에러를 발생시킨다.
     - OOM  에러는 애플리케이션을 비정상 종료시키기 때문에 클러스터에서 노드가 아예 제외되는 현상이 발생한다.
 
 
@@ -524,6 +524,11 @@
  
 
 - 인덱스 성능 지표
+
+  > https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-stats.html
+
+  - 위 링크를 확인해보면 각종 parameter들이 있는데 확인을 원하는 파라미터를 입력하면 된다.
+  - 쿼리 수, 쿼리 평균 시간 등도 확인 가능하다.
 
   ```bash
   $ curl -XGET 'http://localhost:9200/<인덱스명>/_stats'

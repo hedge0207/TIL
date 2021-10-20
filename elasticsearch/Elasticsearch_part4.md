@@ -231,6 +231,49 @@
 
 
 
+- mapping 작성시 field명에 `.`을 넣으면  object 타입으로 생성된다.
+
+  - 필드명에 `.`을 넣고 생성
+
+  ```bash
+  PUT mapping_test
+  {
+    "mappings": {
+      "properties": {
+        "user.name":{
+          "type":"keyword"
+        }
+      }
+    }
+  }
+  ```
+
+  - 결과
+
+  ```bash
+  GET mapping_test/_mapping
+  
+  {
+    "mapping_test" : {
+      "mappings" : {
+        "properties" : {
+          "user" : {
+            "properties" : {
+              "name" : {
+                "type" : "keyword"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  
+
+
+
 ## settings
 
 - `auto_expand_replicas`

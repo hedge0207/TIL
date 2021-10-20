@@ -425,6 +425,65 @@
 
 
 
+- array
+
+  - 공식적으로 지원하는 타입은 아니지만, 사용은 가능하다.
+    - 따라서 정적 매핑으로 array type을 지정해주는 것은 불가능하다.
+    - 그냥 한 필드에 타입이 동일한 여러 개의 데이터를 넣으면  array 가 된다.
+  - 기본적으로 하나의 array 안에는 모두 같은 타입의 데이터가 들어가야 한다.
+    - `['hello', 'world']`는 가능하지만 `['hello', 28]`은 불가능하다.
+  - 예시
+
+  ```bash
+  PUT my-index-000002
+  {
+    "mappings":{
+      "properties":{
+        "name":{
+          "type":"keyword"
+        }
+      }
+    }
+  }
+  
+  PUT my-index-000002/_doc/1
+  {
+    "name":["theo","oeht"]
+  }
+  
+  GET my-index-000002/_search
+  {
+    "query": {
+      "match_all": {}
+    }
+  }
+  ```
+
+  - 응답
+
+  ```json
+  // (...)
+  {
+      "_index" : "my-index-000002",
+      "_type" : "_doc",
+      "_id" : "1",
+      "_score" : 1.0,
+      "_source" : {
+          "name" : [
+              "theo",
+              "oeht"
+          ]
+      }
+  }
+  // (...)
+  ```
+
+
+
+
+
+
+
 ## 심화 타입
 
 - histogram
