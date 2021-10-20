@@ -593,7 +593,7 @@
 - datetime
 
   - `time`과 마찬가지로 시간과 관련된 모듈
-  - `datetime.datetime.now()`: 현재 날짜와 시간을 반환한다.
+  - `datetime.now()`: 현재 날짜와 시간을 반환한다.
     - `datetime.datetime` 타입으로 반환한다.
 
   ```python
@@ -615,6 +615,30 @@
   now = datetime.datetime.now()
   print(now.strftime('%Y-%m-%d'))		# 2021-10-19
   ```
+  
+  - `date.now()`: 현재 날짜를 반환한다.
+  
+  ```python
+  import datetime
+  
+  
+  now = datetime.date.now()
+  print(now)		# 2021-10-19
+  ```
+  
+  - `timedelta()`: `datetime` 객체에 특정 시간을 더하거나 뺄 수 있게 해준다.
+    - `days`(기본값), `seconds`, `microsecnds`, `milliseconds`, `minutes`, `hours`, `weeks`를 사용 가능하다.
+  
+  ```python
+  import datetime
+  
+  
+  today = datetime.date.today()
+  print(today)						# 2021-10-19
+  print(today-datetime.timedelta(1))	# 2021-10-18
+  ```
+
+
 
 
 
@@ -956,12 +980,12 @@
       "family": {
           "mother": "Aira", "father": "Stark"
       },
-      "hobbies": ["watching movies", "lego building"]
+      "hobbies": ["watching movies", "building lego"]
   }
   
   json_string = json.dumps(person)
   print(json_string)
-  # {"name": "John", "age": 26, "family": {"mother": "Aira", "father": "Stark"}, "hobbies": ["watching movies", "lego building"]}
+  # {"name": "John", "age": 26, "family": {"mother": "Aira", "father": "Stark"}, "hobbies": ["watching movies", "building lego"]}
   print(type(json_string))
   # <class 'str'>
   ```
