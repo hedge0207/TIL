@@ -371,7 +371,7 @@
   $ curl 'localhost:9200/인덱스명/_search' -H 'Content-Type: application/json' -d '{
   "query":{
     "query_string":{
-    "query":"텀"
+    	"query":"텀"
     }
   }'
   ```
@@ -845,6 +845,55 @@
     }
   }
   ```
+
+
+
+## Count API
+
+- 쿼리와 일치하는 문서의 개수를 셀 때 사용하는  API
+
+  - 기본형
+
+  ```bash
+  GET /<target>/_count
+  ```
+
+  - `<target>`에는 아래와 같은 것들이 올 수 있다.
+    - 인덱스 이름(wildcard 사용 가능)
+    - alias
+    - `_all`(또는 `*`)
+    - data streams
+    - 위의 것들을 포함하는 리스트
+
+
+
+- 주요 query parameters
+
+  > https://www.elastic.co/guide/en/elasticsearch/reference/current/search-count.html
+
+  - `allow_no_indices`(Optional, Boolean)
+    - false로 설정하면 검색 대상 인덱스 중 닫혀 있거나 존재하지 않는 인덱스가 있을 경우 error를 반환한다.
+  - `analyzer`(Optional, String)
+    - query string에 사용할 analyzer를 지정한다.
+  - `analyze_wildcard`(Optional, Boolean, Default:true)
+    - wildcard와 프리픽스 쿼리에 analyzer를 적용할지 여부를 지정.
+  - `default_operator`(Optional, String, Default:OR)
+    - query string의 기본 operator를 설정한다.
+    - AND, OR 중 선택 가능하다.
+  - `df`(Optional, String)
+    - query string에 필드를 지정하지 않았을 경우 기본 필드로 사용할 필드를 지정한다.
+  - `expand_wildcards`(Optional, String, Default:open)
+    - wildcard 검색이 match시킬 인덱스의 타입을 지정한다.
+    - 아래의 값들을 콤마로 구분하여 하나 이상 사용 가능하다.
+    - `all`: hidden 인덱스나 데이터 스트림을 포함하여 모든 것들을 match시킨다.
+    -  `open`: open , non-hidden 인덱스 또는 non-hidden data stream을 match 시킨다.
+    -  `close`: closed, non-hidden 인덱스 또는 non-hidden data stream을 match 시킨다.
+    - `hidden`: hidden 인덱스 또는 hidden data stream을 match 시킨다.
+    - `none`: wildcard가 어떤 것도 match시키지 않는다.
+  - `q`(Optional, string)
+    - count 대상 문서를 찾을 쿼리를 입력한다.
+
+  - etc
 
 
 

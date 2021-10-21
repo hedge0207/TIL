@@ -270,7 +270,7 @@
   }
   ```
 
-  
+
 
 
 
@@ -291,4 +291,35 @@
 
 
 
+
+# 데이터 삭제
+
+- delete api를 사용하여 삭제가 가능하다.
+
+  - 기본형
+
+  ```bash
+  DELETE /<index>/_doc/<document_id>
+  ```
+
+
+
+- ES에서 문서가 삭제되는 과정
+  - delete api를 통해 삭제 요청을 보낸다.
+  - 삭제 요청이 들어온 문서에 삭제 했다는 표시를 하고 검색시에 검색하지 않는다.
+  - 세그먼트 병합이 일어날 때 삭제 표시가 되어 있는 문서를 실제로 삭제한다.
+
+
+
+- query parameter
+  - `if_seq_no`: document가 이 파라미터에 설정해준 sequence number를 가지고 있을 때만 삭제가 수행된다.
+  - `if_primary_term`: document가 이 파라미터에 설정해준 primary term을 가지고 있을 때만 삭제가 수행된다.
+  - `refresh`
+    - `true`로 설정할 경우 delete의 변경사항을 즉각 반영(검색이 가능하게)한다. 
+    - `wait_for`로 설정할 경우 refresh를 기다리다 refresh가 발생하면 변경 사항이 반영(검색이 가능하게)된다.
+    - `false`로 설정하면 
+
+
+
+- `delete_by_query`를 통해 특정 쿼리와 일치하는 문서를 삭제하는 것도 가능하다.
 
