@@ -1057,8 +1057,6 @@
 
 <br/>
 
-## [Elast
-
 ## [Elasticsearch_part5](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part5.md)
 
 - 데이터 검색
