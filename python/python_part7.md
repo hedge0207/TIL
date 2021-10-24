@@ -12,7 +12,7 @@
     - 이처럼 데이터 생성을 뒤로 만드는 방식을 **지연평가**(lazy evaluation)라 한다.
   - 시퀀스 객체와의 차이
     - 시퀀스 객체는 기본적으로 반복 가능한 객체에 포함된다.
-    - 둘의 차이는 시퀀스 객체는 이터러블한 객체 중에서도 순서가 보장되는 객체이다.
+    - 둘의 차이는 시퀀스 객체는 이터러블한 객체 중에서도 순서가 보장되는 객체라는 것이다.
   - 이터레이터와 이터러블의 차이
     - 이터러블은 반복 가능한 객체를 의미하며 `__iter__` 메서드만 가지고 있으면 이터러블이다.
     - 이터레이터는 값을 차례대로 꺼낼 수 있는 객체를 의미하며 `__iter__`메서드와 `__next__`메서드를 가지고 있으면 이터레이터이다.
@@ -318,19 +318,27 @@
   ```
 
   - `yield from`을 사용하면 반복문을 사용하지 않고 여러 번 바깥으로 전달할 수 있다.
-    - `yield from`에는 반복 가능한 객체,, 이터레이터, 제네레이터를 지정한다.
-
+    - `yield from`에는 반복 가능한 객체, 이터레이터, 제네레이터를 지정한다.
+    - 반복이 종료될 때 까지 `yield from x`가 계속 실행된다.
+  
   ```python
   def number_generator():
       x = [1, 2, 3]
       yield from x
+      print("Hello!")
   
   for i in number_generator():
       print(i)
+  '''    
+  1
+  2
+  3
+  Hello!
+  '''
   ```
-
+  
   - `yield from`에 제네레이터 객체도 지정이 가능하다.
-
+  
   ```python
   def number_generator(end):
       n = 0
@@ -414,7 +422,7 @@
 
 - 코루틴 바깥으로 값 내보내기
 
-  - `(yield 변수)` 형식으로 yiled에 변수를 지정한 뒤 괄호로 묶어주면 값을 받아오면서 바깥으로 값을 전달한다.
+  - `(yield 변수)` 형식으로 yield에 변수를 지정한 뒤 괄호로 묶어주면 값을 받아오면서 바깥으로 값을 전달한다.
     - `yield`로 바깥으로 전달한 값은 next 함수와 send 메서드의 반환값으로 나오게 된다. 
 
   ```python
@@ -435,7 +443,7 @@
   - 실행 과정
     - 메인 루틴에서 코루틴을 생성하고 `next()` 를 통해 코루틴을 실행한다.
     - 실행되면서 yield를 만나게 되고 total을 반환한다.
-    - send를 통해 코루틴에 값을 보내고, `total += x`이 실행된 후 다시 반복문을 돌아 yield키워드를 만나면서 메인루틴에 실행을 넘겨주고 total을 반환한다.
+    - send를 통해 코루틴에 값을 보내고, `total += num`이 실행된 후 다시 반복문을 돌아 `yield`키워드를 만나면서 메인루틴에 실행을 넘겨주고 total을 반환한다.
 
 
 
@@ -514,7 +522,7 @@
     - 실제로 아래와 같이 `yield from`을 사용할 일은 거의 없다.
     - Python 3.5 이상부터는 `async`를 대신 사용한다.
   - 코루틴에서는 `yield from`을 일반적인 제네레이터와는 다르게 사용한다.
-    - 제네레이터에서 `yield from`을 사용하면 값을 바깥으로 여러 번 전달하는데 사용했다.
+    - 제네레이터에서 `yield from`는 값을 바깥으로 여러 번 전달하는데 사용했다.
     - `yield from`에 코루틴을 지정하면 해당 코루틴에서 return으로 반환한 값을 가져온다.
     - `yield from`은 정확히는 `yield from` 뒤에 오는 루틴이 완전히 종료될 때 까지 실행을 양보하는 것이다.
   
@@ -532,14 +540,12 @@
   def sum_coroutine():
       while True:
           # accumulate에 실행을 양보하고 accumulate이 실행이 종료되는 시점에 반환값을 받아온다.
-          # 이제부터 send는 sum_coroutine이 아닌 accumulate로 가게 된다.
-          # accumulate 내부의 yield가 반환하는 값 역시 sum_coroutine이 아닌 메인 루틴으로 가게 된다.
           total = yield from accumulate()    
-          print(total)
+          print("Hello!")
    
   co = sum_coroutine()
   next(co)
-   
+  
   for i in range(1, 11):
       # 코루틴 accumulate에 숫자를 보내고, total을 받아온다.
       print(co.send(i), end=" ")	# 1 3 6 10 15 21 28 36 45 55
@@ -547,6 +553,24 @@
   # 코루틴 accumulate에 None을 보내서 합산을 끝낸다.
   co.send(None)	# 55
   ```
+  
+  - 실행 순서
+    - 메인 루틴에서 `sum_coroutine` 코루틴을 생성하고 `next()` 를 통해 코루틴을 실행한다.
+    - `total = yield from accumulate()`가 실행되면서 `accumulate` 코루틴이 생성되고 실행된다.
+    - `accumulate` 코루틴에서 `x = (yield total) `가 실행되면서 다시 `sum_coroutine`로 실행이 돌아오고 `total = yield from accumulate()`의 실행이 완료되면서 메인 루틴으로 돌아온다.
+    - 메인 루틴의 for문으로 진입하고  `print(co.send(i), end=" ")`가 실행되면서 다시 `sum_coroutine` 코루틴으로 실행이 넘어간다.
+    - `sum_coroutine`은 `total = yield from accumulate()`부터 실행을 다시 시작하고, 동시에 `accumulate`로 실행을 넘긴다.
+    - `accumulate`는 `x = (yield total)`부터 실행을 다시 시작하고 `x`가 None이 아니므로 `total`에 `x`를 더하고 다음 반복으로 넘어간다.
+    - 다음 반복에서 `x = (yield total)`를 실행하면서 실행을 다시 `sum_coroutine`의 `total = yield from accumulate()`에 넘긴다.
+    - `sum_coroutine`은 `total = yield from accumulate()`의 실행이 완료되면서 다시 메인루틴에 실행을 넘기고 `accumulate`->`sum_coroutine`을 거쳐 받아온 `total`을 출력하고 다음 반복으로 넘어간다.
+    - 이 과정을 10번 반복한다.
+    - 메인 루틴의 for문이 종료되고 `co.send(None)`가 실행되면서 루틴은 다시 `sum_coroutine`->`accumulate` 순서로 넘어가게 되고  `x`가 None이므로 `return total`이 실행된다.
+    - 루틴이 `sum_coroutine`로 넘어오게 되고 `print("Hello!")`가 출력되면서 다음 반복으로 넘어간다.
+    - 다음 `total = yield from accumulate()`이 실행되면서 `accumulate` 코루틴이 다시 생성된다.
+  - 주의
+    - 위 예시 코드에서 `sum_coroutine` 코루틴 내부의 while문은 실제로는 2 번밖에 실행되지 않는다.
+    - `accumulate` 코루틴의 실행이 종료되기 전(return을 만나던가 스크립트가 끝나기 전)까지는 `total = yield from accumulate()`가 계속 실행되고 있으며 지속적으로 `accumulate` 코루틴에 실행을 넘겨주기만 한다.
+    - 그러다 x 값으로 None이 넘어오고, `accumulate` 코루틴의 실행이 종료되고 나서야 비로소 첫 반복이 종료되는 것이다.
 
 
 
@@ -612,8 +636,6 @@
     - 전통적으로 동시 프로그래밍은 멀티 스레드를 활용하여 이루어졌다.
     - 그러나 thread safe한 프로그램을 작성하는 것은 쉬운 일이 아니며, 하드웨어의 사양에 따라 성능 차이가 심하게 날 수 있다.
     - 이러한 이유로 최근에는 하나의 스레드로 동시 처리가 가능한 비동기 처리가 주목받고 있다.
-
-
 
 
 
