@@ -179,7 +179,7 @@
   $ ll
   ```
 
-  
+
 
 - vim
 
@@ -436,6 +436,9 @@
 
   ```bash
   $ cat /etc/issue
+  
+  # 또는
+  $ cat /etc/*release*
   ```
 
 
