@@ -324,6 +324,37 @@
 
 
 
+- 실행중인 프로세스 확인
+
+  - `ps` 명령어(Process Status의 약자)를 사용한다.
+  - 옵션
+    - `-e`: 모든 프로세스를 출력한다.
+    - `-f`: 모든 포맷을 보여준다.
+    - `-l`: 긴 포맷으로 보여준다.
+    - `-p`: 특정 PID의 프로세스를 보여준다.
+    - `-u`: 특정 사용자의 프로세스를 보여준다.
+
+  ```bash
+  $ ps <옵션>
+  ```
+
+  - 출력
+    - UID: 실행 유저
+    - PID: 프로세스 ID
+    - PPID: 부모 프로세스 ID
+    - C: CPU 사용량
+    - STIME: Start Time
+    - TTY: 프로세스 제어 위치
+    - TIME: 구동 시간
+    - CMD: 실행 명령어
+
+  ```bash
+  UID        PID  PPID  C STIME TTY          TIME CMD
+  root     13723 13008  1 Sep26 ?        08:43:35 python3.7 /svc/main.py
+  ```
+
+
+
 - free
 
   - 메모리 사용량을 체크할 수 있는 명령어
