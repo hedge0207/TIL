@@ -709,23 +709,30 @@
   }'
   ```
   
+
+
+
+- 동적 매핑
+
   - 인덱스에 기존 매핑에 정의되지 않은 필드를 지닌 도큐먼트가 입력되면 필드가 자동으로 추가 된다.
-    - 기존에 없던 rating 필드를 추가
+    - 동적 매핑으로 새로운 필드를 추가할 경우 기존 문서들에는 해당 필드가 추가되지 않는다.
+  - 기존에 없던 rating 필드를 추가
+
   ```bash
   $ curl -XPUT 'localhost:9200/recipes/_doc/2' -H 'Content-Type: application/json' -d '{
     "rating":4
   }'
   ```
-  
+
   - 확인
-  
+
   ```bash
   $ curl 'localhost:9200/recipes/_mappings?pretty'
   ```
-  
+
   - 응답
       - rating 필드가 새로 추가 된 것을 확인 가능하다.
-  
+
   ```json
   {
     "recipes" : {

@@ -184,12 +184,15 @@
     - `network.publish_host`
 
   ```yaml
-  node1:
+  version: '3.2'
+  
+  services:
+    single-node:
       build: .
-      container_name: node1
+      container_name: single-node
       environment:
-        - node.name=node1
-        - cluster.name=es-docker-cluster
+        - node.name=single-node
+        - cluster.name=single-node
         - discovery.type=single-node
         - bootstrap.memory_lock=true
         - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
@@ -197,27 +200,29 @@
         memlock:
           soft: -1
           hard: -1
-      volumes:
-        - data01:/usr/share/elasticsearch/data
       ports: 
-        - 9201:9200
+        - 9204:9200
       restart: always
       networks:
         - elastic
   
     kibana:
       image: kibana:7.14.0
-      container_name: theo_kibana
+      container_name: single-node-kibana
       ports:
-        - "5603:5601"
+        - "5604:5601"
       environment:
-        ELASTICSEARCH_URL: http://192.168.0.237:9201
-        ELASTICSEARCH_HOSTS: http://192.168.0.237:9201
+        ELASTICSEARCH_URL: http://192.168.0.237:9204
+        ELASTICSEARCH_HOSTS: http://192.168.0.237:9204
       networks:
         - elastic
       depends_on:
-        - node1
+        - single-node
+  
+  networks:
+    elastic:
+      driver: bridge
   ```
-
+  
   
 

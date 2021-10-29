@@ -488,22 +488,28 @@
 
 - 캐시 영역 클리어
 
+  - 전체 클리어
+
+  ```bash
+  $ curl -XPOST "localhost:9200/<인덱스명>/_cache/clear"
+  ```
+
   - Node Query Cache 클리어
 
   ```bash
-  $ curl -XPOST "localhost:9200/my_index/_cache/clear?query=true" -H 'Content-type:application/json'
+  $ curl -XPOST "localhost:9200/<인덱스명>/_cache/clear?query=true" -H 'Content-type:application/json'
   ```
 
   - Shard Request Cache 클리어
 
   ```bash
-  $ curl -XPOST "localhost:9200/my_index/_cache/clear?request=true" -H 'Content-type:application/json'
+  $ curl -XPOST "localhost:9200/<인덱스명>/_cache/clear?request=true" -H 'Content-type:application/json'
   ```
-
+  
   - Field Data Cache 클리어
-
+  
   ```bash
-  $ curl -XPOST "localhost:9200/my_index/_cache/clear?fielddata=true" -H 'Content-type:application/json'
+  $ curl -XPOST "localhost:9200/<인덱스명>/_cache/clear?fielddata=true" -H 'Content-type:application/json'
   ```
 
 
