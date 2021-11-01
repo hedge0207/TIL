@@ -284,3 +284,99 @@
   #################################################
   ```
 
+
+
+
+
+# Metricbeat
+
+- Metricbeat
+
+  - Metric을 수집할 수 있도록 해주는 ELK Stack 중 하나이다.
+  - module과 Ouput을 지정 가능하다.
+    - module은 수집 할 metric의 종류, output에는 metric을 저장 할 곳을 지정하면 된다.
+    - Elasticsearch Metric뿐 아니라 다양한 Metric을 수집할 수 있다.
+  - 수집 할 수 있는 metric의 종류(module의 종류)
+
+  > https://www.elastic.co/guide/en/beats/metricbeat/7.15/metricbeat-modules.html
+
+
+
+- Metricbeat으로  Elasticsearch metric 수집하기(linux, docker 기준)
+
+  - metricbeat 설치
+
+  ```bash
+  $ curl -L -O https://artifacts.elastic.co/downloads/beats/metricbeat/metricbeat-7.14.0-linux-x86_64.tar.gz
+  $ tar xzvf metricbeat-7.14.0-linux-x86_64.tar.gz
+  ```
+
+  - `metricbeat.yml` 파일 수정
+    - 위에서 압축을 푼 폴더 내부에 있는 `metricbeat.yml` 파일을 아래와 같이 수정한다.
+
+  ```yaml
+  # (...)
+  # ================================== Outputs ===================================
+  
+  # Configure what output to use when sending the data collected by the beat.
+  
+  # ---------------------------- Elasticsearch Output ----------------------------
+  output.elasticsearch:
+    # Array of hosts to connect to.
+    hosts: ["192.168.0.242:9204"]
+    # (...)
+  setup.kibana:
+    host: "192.168.0.242:5604"
+  # s(...)
+  ```
+
+  - elasticsearch module을 활성화한다.
+
+  ```bash
+  $ ./metricbeat modules enable elasticsearch
+  ```
+
+  - `modules.d` 폴더 내부의 `elasticsearch.yml` 파일을 아래와 같이 수정한다.
+    - `modules.d` 폴더에는 각 모듈의 설정 파일이 저장되어 있다.
+    - 활성화 되지 않은 모듈의 설정 파일은 포스트 픽스로 `.disable`가 붙어있다.
+    - `metricsets`에 입력된 값들을 수집하겠다는 의미이며, 전부 수집하지 않아도 된다면, 필요한 것만 입력하면 된다.
+
+  ```yaml
+  # (...)
+  - module: elasticsearch
+    metricsets:
+      - ccr
+      - cluster_stats
+      - enrich
+      - node
+      - node_stats
+      - index
+      - index_recovery
+      - index_summary
+      - shard
+      - ml_job
+      - pending_tasks
+    period: 10s
+    hosts: ["http://localhost:9200"]
+    #username: "user"
+    #password: "secret"
+  ```
+
+  - ES에서 수집 가능한 metric 목록
+
+  > https://www.elastic.co/guide/en/beats/metricbeat/7.15/metricbeat-module-elasticsearch.html
+
+  - setup하기
+
+  ```bash
+  $ ./metricbeat setup
+  ```
+
+  - 실행하기
+
+  ```bash
+  $ ./metricbeat -e
+  ```
+
+  - 여기까지 실행하면 Elasticsearch에 `metricbeat-<버전>-<날짜>-000001` 형식으로 인덱스가 생성 된 것을 확인 가능하다.
+
