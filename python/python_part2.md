@@ -458,12 +458,16 @@
   print(my_dict)	# {1: 3, 2: 3}
   ```
 
-  - `pop(키)`: 키-값 쌍을 삭제한 뒤 삭제한 값을 반환한다.
+  - `pop(키, [기본값])`: 키-값 쌍을 삭제한 뒤 삭제한 값을 반환한다.
+    - 첫 번째 인자로 제거 할 key를, 두 번째 인자로 키가 없을 경우 반환 할 기본 값을 설정한다.
+    - 기본값을 지정해주지 않은 상태에서 존재하지 않는 키를 첫 번째 인자로 주면 error가 발생한다.
   
   ```python
   my_dict = {'a':1,'b':2}
-  print(my_dict.pop('a'))	# 1
-  print(my_dict)			# {'b': 2}
+  print(my_dict.pop('a'))		# 1
+  print(my_dict)				# {'b': 2}
+  # 기본값을 줄 경우
+  print(my_dict.pop("c", 3))	# 3
   ```
   
   - `popitem()`: 마지막 키-값 쌍을 삭제하고 튜플로 반환한다.
@@ -474,7 +478,7 @@
   print(my_dict.popitem())	# ('a', 1)
   print(my_dict)			# {'b': 2}
   ```
-
+  
   - `del`: 키-값 쌍을 삭제한다.
   
   ```bash
