@@ -28,8 +28,10 @@
 
 - 클래스와 객체
   - 클래스: 데이터와 일정한 작업을 함께 묶어 놓은 것.
+    - attribute와 method를 갖는 논리적인 단위.
+    - method도 엄밀히 말하면 callable한 attribute이다.
   - 클래스와 객체는 과자틀과 과자틀에서 나온 과자의 관계와 같다.
-  - 클래스가 과자틀이라면 객체는 그 과자틀로 만든 과지이다.
+    - 클래스가 과자틀이라면 객체는 그 과자틀로 만든 과자이다.
   - 객체와 인스턴스
     - 객체와 인스턴스는 동일한 말 처럼 보이지만 엄밀히 말하면 다르다.
     - 인스턴스란 특정 객체가 어떤 클래스의 객체인지를 관계 위주로 사용할 때 사용한다.
@@ -55,9 +57,10 @@
 
   - 클래스에 작업(함수) 추가하기
     - 클래스 내부에 생성된 함수는 일반 함수와 구분하기 위해 메서드라고 부른다.
-    - 일반 함수와 달리 메서드는 첫 번째 매개변수로 `self`를 받는다(`self`말고 다른 이름으로 해도 무관하지만 self로 하는 것이 관례다).
-    - `self`에는 메서드를 호출한 객체를 자동으로 받는다.
-
+    - 일반 함수와 달리 메서드는 첫 번째 매개변수로 `self`를 받는다(`self`말고 다른 이름으로 해도 무관하지만 `self`로 하는 것이 관례다).
+    - `self`에는 메서드를 호출한 인스턴스를 자동으로 받는다.
+    - 메서드는 클래스가 아닌 인스턴스를 통해 호출한다.
+  
   ```python
   # 메서드 생성
   class Plus:
@@ -76,11 +79,11 @@
   obj = Plus()
   Plus.set_data(a,2,3)
   ```
-
+  
   - 객체들 간의 변수 공유
     - 객체에 생성되는 객체만의 변수를 객체변수라 한다.
     - 같은 클래스로 생성했어도 서로 다른 객체들은 객체 변수를 공유하지 않는다.
-
+  
   ```python
   # 메서드 생성
   class Plus:
@@ -98,9 +101,9 @@
   print(id(obj1.first))	# 1647180802384
   print(id(obj2.first))	# 1647180802448
   ```
-
+  
   - 원하는 작업 추가하기
-
+  
   ```python
   class Plus:
       def set_data(self,first,second):
@@ -119,8 +122,9 @@
 - 생성자
 
   - 위 예시에서는 `set_data`메서드를 활용하여 객체 변수를 설정하였다.
-  - 객체에 초기값을 설정해야 할 필요가 있을 때는 메서드를 사용하는 방법 보다 생성자를 구현하는 것이 낫다.
-  - **생성자(Constructor)**란 객체가 생성될 때 자동으로 호출되는 메서드를 말한다.
+  - 객체에 초기값을 설정해야 할 필요가 있을 때는 메서드를 사용하는 방법 보다 `__init__` 메서드를 사용하는 것이 낫다.
+    - `__init__` 메서드는 Python이 인스턴스를 생성할 때 내부적으로 사용하는 메서드이다.
+    - 이 메서드를 오버라이딩해서 사용하는 것이다.
 
   ```python
   class Plus:
@@ -134,14 +138,201 @@
 
 
 
+- 클래스 변수와 인스턴스 변수
+
+  - 클래스 변수
+    - 클래스 정의에서 메서드 밖에 존재하는 변수를 클래스 변수라 부른다.
+    - 클래스로 만든 모든 인스턴스가 공유하는 변수이다.
+    - `class명.클래스변수`의 형태로 클래스 내외부에서 접근이 가능하다.
+    - `인스턴스명.클래스변수`의 형태로도 접근이 가능한데, 먼저 인스턴스 변수가 존재하는지 찾은 후 없으면 클래스 변수 중에 해당 변수가 있는지 확인한다.
+
+  ```python
+  class BlueClub:
+      gender = "male"
+  
+  print(BlueClub.gender)	# male
+  bc1 = BlueClub()
+  bc2 = BlueClub()
+  print(bc1.gender)	# male
+  print(bc2.gender)	# male
+  
+  # 변경할 경우 모든 인스턴스의 클래스 변수도 함께 변경된다.
+  BlueClub.gender = "female"
+  print(bc1.gender)	# female
+  print(bc2.gender)	# female
+  ```
+
+  - 인스턴스 변수
+    - 클래스 정의에서 메서드 안에서 사용되면서 `self.변수명`과 같이 사용되는 변수를 의미한다.
+    - 각 인스턴스가 독립적으로 관리하는 변수이다.
+    - 클래스 내부에서는 `self.변수명`, 외부에서는 `인스턴스명.변수명` 형태로 접근한다.
+    - 단, 해당 변수가 생성된 적 있어야 한다(즉, 해당 인스턴스 변수를 선언하는 메서드가 호출된 적 있어야 한다).
+    - 따라서 일반적으로 생성자 함수에 선언한다.
+
+  ```python
+  class MyClass:
+      def my_method(self):
+          self.foo = 'foo'
+  
+   
+  my_instance = MyClass()
+  print(my_instance.foo)		# AttributeError
+  
+  # 인스턴스 변수를 생성할 수 있도록 my_method 메서드를 실행.
+  my_instance.my_method()
+  print(my_instance.foo)		# foo
+  ```
+
+
+
+- private attribute 사용하기
+
+  - Python에는 접근제어자가 존재하지 않는다.
+    - 접근제어자: 외부에서 변수, 함수, 클래스 등에 어떤 방식으로 접근을 허용할지를 결정하는 역할을 한다.
+    - Java와 같은 언어의 경우에는 public, private 등의 접근제어자가 존재한다.
+    - Python에는 접근제어자가 존재하지 않으므로 기본적으로 모두 public 상태이다.
+  - 그러나 naming을 통해 private으로 설정할 수 있다.
+    - 이름 앞에 언더바 2개(`__`)를 붙이면 private이 되어 외부에서 접근이 불가능해진다.
+    - 이름 앞에 언더바 1개(`_`)를 붙이는 것은 해당 변수 혹은 함수는 외부에서는 사용하지 않는다는 의미인데 문법적인 제약은 없다.
+    - 아래 예시에는 나오지 않았지만 메서드 역시 마찬가지로 메서드명 앞에 언더바 2개를 붙이면 외부에서는 호출이 불가능하다.
+
+  ```python
+  class MyClass:
+      def __init__(self):
+          self.foo = "foo"
+          self._bar = "bar"	# 내부에서만 사용하겠다는 의미이지만 문법적은 제약은 없다.
+          self.__baz = "baz"
+      
+      def echo(self):
+          print(self.foo)		# foo
+          print(self._bar)	# bar
+          print(self.__baz)	# baz
+  
+  my_instance = MyClass()
+  my_instance.echo()			# 클래스 내부의 echo 메서드에서는 접근 가능
+  
+  # 외부에서는 접근 불가능
+  print(my_instance.foo)		# foo
+  print(my_instance._bar)		# bar
+  print(my_instance.__baz)	# AttributeError
+  ```
+
+
+
+- 정적 매서드와 클래스 메서드
+
+  - 정적 매서드와 클래스 메서드는 인스턴스를 통하지 않고 클래스에서 발호 호출이 가능하다.
+  - 정적 메서드
+    - class와 독립적이지만 로직상 클래스 내에 포함되는 메서드에 사용한다.
+    - `self`를 인자로 받지 않는다.
+    - `@staticmethod` 데코레이터를 통해 정적 메서드임을 표시한다.
+    - 클래스 내부 뿐 아니라 외부에서도 호출이 가능하다.
+
+  ```python
+  class Email:
+      def __init__(self):
+          self.name = "theo"
+          self.gender = "male"
+          self.content = "I hope you ~"
+      
+      def read_email(self):
+          # class를 통해 호출한다.
+          salutation = Email.create_salutation(self.name, self.gender)
+          print(salutation, self.content)
+          
+      
+      # 인사말을 추가하는 것은 인스턴스에 의해 직접 호출되지 않으므로 class와 독립적이라고 볼 수 있지만 로직상 클래스 내에 포함된다.
+      # decorator를 추가한다.
+      @staticmethod
+      def create_salutation(name, gender):	# self를 인자로 받지 않는다.
+          if gender=="male":
+              salutation = f"Dear Mr.{name} How are you?"
+          else:
+              salutation = f"Dear Ms.{name} How are you?"
+  
+          return salutation
+  
+  
+  email = Email()
+  email.read_email()
+  ```
+
+  - 클래스 메서드
+    - 첫 번째 인자로 `cls`를 받는데, 이는 클래스를 의미한다(다른 이름으로 해도 되지만 관례상 cls로 작성한다).
+    - `@classmethod` 데코레이터를 통해 클래스 메서드임을 표시한다.
+    - 정적 메서드와 유사하지만 클래스 메서드는 클래스 변수에 접근이 가능하다는 점이 다르다.
+
+  ```python
+  class Email:
+      end = "Yours Sincerely"
+  
+      def __init__(self):
+          self.name = "theo"
+          self.gender = "male"
+          self.content = " I hope you ~ "
+      
+      def read_email(self):
+          salutation = Email.create_salutation(self.name, self.gender)
+          full_email = Email.add_end(salutation+self.content)
+          print(full_email)
+          
+      
+      @staticmethod
+      def create_salutation(name, gender):
+          if gender=="male":
+              salutation = f"Dear Mr.{name} How are you?"
+          else:
+              salutation = f"Dear Ms.{name} How are you?"
+  
+          return salutation
+      
+      # 데코레이터를 통해 클래스 메서드라는 것을 표현한다.
+      @classmethod
+      def add_end(cls, content):	# 첫 번째 인자로 cls를 받는다.
+          return content+cls.end	# 클래스 변수에 접근이 가능하다.
+  
+  
+  
+  email = Email()
+  email.read_email()
+  ```
+
+
+
+- `__new__`, `__init__`, `__call__`
+  - 인스턴스의 생성에 관여하는 스페셜 메서드들이다.
+  - 아래 순서대로 실행이 이루어진다.
+    - `__new__`: 클래스의 인스턴스가 생성될 때 해당 인스턴스를 위한 메모리를 할당한다.
+    - `__init__`: 생성된 인스턴스를 초기화한다.
+    - `__call__`: 생성된 인스턴스가 호출될 때 실행된다.
+
+
+
+- 생성자(constructor)는 무엇인가?
+  - 사람에따라 누군가는 `__new__`가 생성자라하고, 누군가는`__init__`이 생성자라 하는데 이런 의견차이가 생긴 원인은 바로 Python에 다른 언어(C 계열 언어 및 Java 등)에서의 생성자와 정확히 일치하는 역할을 하는 개념이 없기 때문이다.
+    - 일반적인 의미(다른 언어에서 사용되는 의미)의 생성자는 **객체를 생성하고 초기화**하는 역할을 하는 것을 의미한다.
+    - 그런데 Python의 경우 정확히 이런 역할을 하는 메서드가 존재하지 않는다.
+  - `__new__` 는 생성된 인스턴스를 반환하기는 하지만 인스턴스를 위한 메모리를 할당하는 것이므로 생성이라 보기 어려우며 초기화 역할을 하지도 않는다.
+  - `__init__`은 초기화 역할만을 담당한다.
+  - 일반적으로 생성자의 두 가지 역할 중 객체의 초기화에 방점이 찍히게 되는데, 이런 관점에서 보면 `__init__`이 그나마 생성자에 가깝긴 하다.
+    - Python 공식 문서에서도 `__init__`을 constructor라고 표현한다.
+
+
+
+
+
+##  상속
+
 - 클래스의 상속
 
   - 어떤 클래스를 만들 때 다른 클래스의 기능을 물려 받는 것을 클래스의 상속이라 한다.
-  - 위에서 만든 `Plus` 클래스를 상속한 후 뺄셈 기능을 추가하여 PlusMunis 클래스를 만들면 다음과 같이 만들 수 있다.
+    - 기능을 물려주는 클래스를 기반 클래스(base class), 상속을 받아 새롭게 만드는 클래스를 파생 클래스(derived class)라 한다.
+    - 보통 기반 클래스는 부모 클래스, 슈퍼 클래스라 부르고, 파생 클래스는 자식 클래스, 서브 클래스라고도 부른다.
   - 기존 클래스가 라이브러리 형태로 제공되거나 수정이 허용되지 않는 상황에서 상속은 유용하게 쓸 수 있다.
+  - 위에서 만든 `Plus` 클래스를 상속한 후 뺄셈 기능을 추가하여 PlusMunis 클래스를 만들면 다음과 같이 만들 수 있다.
 
   ```python
-  # 피상속 클래스
+  # 부모 클래스
   class Plus:
       def __init__(self,first,second):
           self.first = first
@@ -149,17 +340,49 @@
       def add(self):
           return self.first+self.second
   
-  # 아래와 같이 피상속 클래스를 괄호 안에 넣으면 된다.
+  # 아래와 같이 부모 클래스를 괄호 안에 넣으면 된다.
   class PlusMinus(Plus):
       def mul(self):
           return self.first-self.second
   
-  # 피상속 클래스의 생성자와
+  # 부모 클래스의 생성자와
   pm = PlusMinus(5,4)
   # 메서드를 사용 가능하다.
   print(pm.add())		# 9
   print(pm.mul())		# 1
   ```
+
+  - `issubclass` 함수를 통해 특정 클래스와 상속 관계에 있는 클래스인지 확인이 가능하다.
+    - 첫 번째 인자로 자식 클래스, 두 번째 인자로 부모 클래스를 받는다.
+
+  ```python
+  class Person:
+      pass
+  
+  
+  class Programmer(Person):
+      pass
+  
+  print(issubclass(Programmer, Person))	# True
+  ```
+
+
+
+
+- 부모 클래스의 인스턴스 변수에 접근하기
+
+  - 당연하게도 접근하려는 인스턴스 변수가 생성되어야 접근이 가능하다.
+
+  ```python
+  class Person:
+      def __init__(self):
+          print("Person __init__")
+          name = "Theo"
+          
+          
+  class Programer(Person):
+      def __init__(self):
+          print("Programmer __init__")
 
 
 
@@ -190,27 +413,7 @@
   print(pm.mul())		# 1
   ```
 
-
-
-- 클래스 변수
-
-  - 클래스로 만든 모든 인스턴스가 공유하는 변수이다.
-
-  ```python
-  class BlueClub:
-      gender = "male"
-  
-  print(BlueClub.gender)	# male
-  bc1 = BlueClub()
-  bc2 = BlueClub()
-  print(bc1.gender)	# male
-  print(bc2.gender)	# male
-  
-  # 변경할 경우 모든 인스턴스의 클래스 변수도 함께 변경된다.
-  BlueClub.gender = "female"
-  print(bc1.gender)	# female
-  print(bc2.gender)	# female
-  ```
+- - - 
 
 
 
@@ -258,7 +461,7 @@
   print(hello())	# Hello!
   ```
 
-  
+
 
 - `if__name__=="__main__"`
 
