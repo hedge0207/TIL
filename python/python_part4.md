@@ -365,6 +365,20 @@
   
   print(issubclass(Programmer, Person))	# True
   ```
+  
+  - 사실 Pyhon의 모든 클래스는 모든 클래스의 조상 클래스인 `object` 클래스를 상속받는다.
+    - Python 3 이전 버전의 경우 모든 클래스를 정의할 때 `object`를 상속한다는 것을 명시적으로 표시해줘야 했다.
+    - 그러나 Python 3 이후부터는 아무 것도 상속받지 않을 경우 자동으로 `object`를 상속 받도록 변경되었다.
+  
+  ```python
+  # 아래 두 클래스는 완전히 동일하다.
+  
+  class Person:
+      pass
+  
+  
+  class Person(object):
+  	pass
 
 
 
@@ -372,48 +386,263 @@
 - 부모 클래스의 인스턴스 변수에 접근하기
 
   - 당연하게도 접근하려는 인스턴스 변수가 생성되어야 접근이 가능하다.
+    - 아래 코드의 경우 Person의 `__init__` 메서드가 실행되지 않으므로 클래스 초기화가 발생하지 않아 `name`이라는 인스턴스 변수도 생성되지 않고, 따라서 접근이 불가능하다.
 
   ```python
   class Person:
-      def __init__(self):
+      def __init__(self, name):
           print("Person __init__")
-          name = "Theo"
+          self.name = name
           
           
   class Programer(Person):
-      def __init__(self):
+      def __init__(self, part):
           print("Programmer __init__")
+          self.part = part
+  
+  
+  programmer = Programer('server')
+  print(programmer.part)	# server
+  print(programmer.name)	# AttributeError
+  ```
+
+  - `super()`를 통해 부모 클래스의 특정 메서드를 실행시킬 수 있다.
+
+  ```python
+  class Person:
+      def __init__(self, name):
+          print("Person __init__")
+          self.name = name
+          
+          
+  class Programer(Person):
+      def __init__(self, name, part):
+          print("Programmer __init__")
+          super().__init__(name)		# super(Student, self).__init__()와 동일한 코드
+          self.part = part
+  
+  
+  programmer = Programer('theo', 'server')
+  print(programmer.part)		# server
+  print(programmer.name)		# theo
+  ```
+
+  - 자식 클래스의 인스턴스가 인스턴스 변수를 찾는 과정
+    - 자식 클래스에 해당 인스턴스 변수가 있으면, 해당 인스턴스 변수를 사용.
+    - 자식 클래스에 해당 인스턴스 변수가 없으면, 부모 클래스의 인스턴스 변수를 탐색.
+    - 부모 클래스에 해당 인스턴스 변수가 있으면, 해당 인스턴스 변수를 사용.
+    - 부모 클래스에도 없을 경우 `AttributeError`
+  - 자식 클래스에 `__init__` 메서드를 지정해주지 않을 경우, 자식 클래스가 생성될 때 부모 클래스의 `__init__`이 실행된다.
+    - 따라서 부모 클래스의 인스턴스 변수에 바로 접근이 가능하다.
+
+  ```python
+  class Person:
+      def __init__(self, name):
+          print("Person __init__")
+          self.name = name
+          
+          
+  class Programer(Person):
+      pass
+  
+  
+  programmer = Programer('theo')
+  print(programmer.name)
+  ```
+
+  - 단순히 부모 클래스의 `__init__`메서드의 호출 여부가 중요한 것이 아니다.
+    - 아래와 같이 개별적으로 실행시킬 경우에도 부모 클래스의 인스턴스 변수에도 접근이 불가능하다.
+
+  ```python
+  class Person:
+      def __init__(self, name):
+          print("Person __init__")
+          self.name = name
+          
+          
+  class Programer(Person):
+      def __init__(self, part):
+          print("Programmer __init__")
+          self.part = part
+  
+  
+  Person('theo')
+  programmer = Programer('server')
+  print(programmer.name)	# AttributeError
+  ```
 
 
 
 - 메서드 오버라이딩
 
-  - 피상속 클래스의 메서드를 동일한 이름으로 다시 만드는 것을 메서드 오버라이딩이라 한다.
+  - 부모 클래스의 메서드를 동일한 이름으로 다시 만드는 것을 메서드 오버라이딩이라 한다.
+    - 부모 클래스의 메서드를 재정의해서 사용하는 것이다.
+    - 코드의 가독성을 높이기 위해서 사용한다.
+    - Java의 경우 메서드 이름, 매개변수, 반환값의 타입까지 동일해야 하지만 Python은 이름만 동일하면 된다.
   - 이렇게 하면 상속을 받은 클래스의 메서드가 실행된다.
 
   ```python
-  # 피상속 클래스
-  class Plus:
-      def __init__(self,first,second):
-          self.first = first
-          self.second = second
-      def add(self):
-          return self.first+self.second
+  class Person:
+      def __init__(self, name):
+          self.name = name
+      
+      def greeting(self):
+          print("Hello My name is {}".format(self.name))
+          
+          
+  class Programer(Person):
+      def __init__(self, part):
+          self.part = part
   
-  class PlusMinus(Plus):
-      # 아래와 같이 피상속 클래스의 메서드와 동일한 이름으로 메서드를 생성하면 된다.
-      def add(self):
-          return self.first*self.second
-      def mul(self):
-          return self.first-self.second
+      def greeting(self):
+          print("Hello I'm {} programmer".format(self.part))
   
-  pm = PlusMinus(5,4)
-  # 상속 받은 클래스의 메서드가 실행 된다.
-  print(pm.add())		# 20
-  print(pm.mul())		# 1
+  
+  programmer = Programer('server')
+  programmer.greeting()
   ```
 
-- - - 
+
+
+
+- 메서드 오버로딩
+  - Python은 자체적으로는 메서드 오버로딩을 지원하지는 않는다.
+  - 관련 라이브러리를 사용하면 구현은 가능하다.
+
+
+
+- 다중 상속
+
+  - 둘 이상의 부모 클래스로부터 상속을 받을 수 있다.
+    - 상속 받을 클래스들의 이름을 콤마로 구분해서 입력한다.
+
+  ```python
+  class Person:
+      def greeting(self):
+          print("Hello!")
+          
+  
+  class Company:
+      def work(self):
+          print("work hard")
+  
+          
+  class Programer(Person, Company):
+      def coding(self):
+          print('coding')
+      
+  
+  
+  programmer = Programer()
+  programmer.greeting()
+  programmer.work()
+  programmer.coding()
+  ```
+
+  - 다이아몬드 상속
+    - Husband와 Wife는 Person을 상속 받고, Child는 Husband와 Wife를 상속 받는다.
+    - 이를 그림으로 표현하면 트럼프 카드의 다이아 모양이 되는데, 이런 상속 관계를 다이아몬드 상속이라 부른다.
+    - 명확하지 않고 애매한 코드가 되므로 죽음의 다이아몬드라고도 불린다.
+    - 예를 들어 아래 코드에서 `greeting` 메서드를 호출했을 때 어떤 `greeting` 메서드가 호출될지가 애매해진다.
+
+  ```python
+  class Person:
+      def greeting(self):
+          print("Hello!")
+          
+  
+  class Husband(Person):
+      def greeting(self):
+          print("Huband")
+  
+          
+  class Wife(Person):
+      def greeting(self):
+          print("Wife")
+  
+  class Child(Husband, Wife):
+      pass
+  
+  
+  child = Child()
+  child.greeting()
+  ```
+
+  - 메서드 탐색 순서
+    - 위 예시의 경우 `Husband` 클래스의 `greeting` 메서드가 호출되는데 이는 `Child`의 상속 관계를 정의할 때 `Husband`를 먼저 입력했기 때문이다.
+    - `mro` 메서드를 통해 탐색 순서를 확인이 가능하다.
+
+  ```python
+  class Person:
+      def greeting(self):
+          print("Hello!")
+          
+  
+  class Husband(Person):
+      def greeting(self):
+          print("Huband")
+  
+          
+  class Wife(Person):
+      def greeting(self):
+          print("Wife")
+  
+  class Child(Husband, Wife):
+      pass
+  
+  
+  Child.mro()
+  # [<class '__main__.Child'>, <class '__main__.Husband'>, <class '__main__.Wife'>, <class '__main__.Person'>, <class 'object'>]
+  ```
+
+
+
+- 추상 클래스
+
+  - 미구현 추상 메서드의 목록만을 가진 클래스
+    - 추상 클래스를 상속 받는 클래스에서 메서드 구현을 강제하기 위해 사용한다.
+    - 추상 클래스를 상속 받은 자식 클래스에 추상 클래스에 정의된 추상 메서드가 정의되지 않았다면, 자식 클래스의 객체 생성시 에러가 발생한다. 
+    - 추상 클래스는 인스턴스를 생성할 수 없다.
+  - `abc` 모듈을 불러와서 사용해야 한다.
+    - abstract base class의 약자이다.
+  - 추상 클래스 생성하기
+
+  ```python
+  # abc 모듈을 불러온다.
+  from abc import *
+  
+  
+  # metaclass에 ABCMeta를 입력한다.
+  class AbstractClass(metaclass=ABCMeta):
+      # 데코레이터를 통해 추상 메서드를 생성한다.
+      @abstractmethod
+      def foo():
+          pass
+  ```
+
+  - 자식 클래스에 추상 메서드를 구현하지 않을 경우
+    - Hello!까지는 출력이 되지만 인스턴스를 생성할 때 에러가 발생한다.
+
+  ```python
+  from abc import *
+  
+  
+  class AbstractClass(metaclass=ABCMeta):
+      @abstractmethod
+      def foo():
+          pass
+  
+  
+  class MyClass(AbstractClass):
+      pass
+  
+  print("Hello!")		# Hello!
+  my_inst = MyClass()	# TypeError
+  ```
+
+  
+
+
 
 
 
