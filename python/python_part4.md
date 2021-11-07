@@ -640,7 +640,210 @@
   my_inst = MyClass()	# TypeError
   ```
 
+
+
+
+## 메타클래스
+
+- Python의 class
+
+  - 대부분의 언어에서 class는 어떻게 객체를 생성할지에 대해 정의하는 코드 조각일 뿐이다.
+    - 물론 Python에서도 어떻게 객체를 생성할지 정의하는 역할을 한다.
+  - 그러나 Python의 클래스는 객체이기도 하다.
+    - `class` 키워드를 사용할 때 Python은 객체를 만들어낸다.
+    - 즉 Python에서의 class는 객체를 생성하는 객체인 셈이다.
+    - 아래 코드가 실행될 때 메모리에 `ObjectCreator`라는 이름의 객체를 생성한다.
+
+  ```python
+  class ObjectCreator:
+      pass
+  ```
+
+  - 따라서 Python의 class는 아래와 같은 특징을 지닌다.
+    - 변수에 할당이 가능하다.
+    - 복사가 가능하다.
+    - 새로운 속성을 추가할 수 있다.
+    - 함수의 인자로 넘길 수 있다.
+
+
+
+- `type` 함수로 class를 동적으로 생성하기
+
+  - 정적인 class 생성
+    - 일반적으로 class는 아래와 같이 정적으로 생성한다.
+
+  ```python
+  class MyClass:
+      pass
+  ```
+
+  -  동적으로 생성하기
+     - `type`  함수는 일반적으로 객체의 type을 알아내기 위해 사용한다.
+     - `type` 함수는 class를 만들 때도 사용이 가능하다.
+
+  ```python
+  # 기본형
+  # 모두 required이며, 상속 받을 클래스나 attributes가 없을 경우 각기 빈 튜플과 빈 딕셔너리를 넣어줘야 한다.
+  type(<클래스명>, <상속 받을 클래스들(tuple)>, <attributes(dict)>)
   
+  # 예시
+  type('MyClass', (), {})
+  ```
+
+
+
+- Metaclass
+
+  - class를 만드는 class라고 할 수 있다.
+    - Python에서 class는 객체이므로 이 객체를 생성하는 class 역시 존재하는데, 이것이 바로 metaclass이다.
+  - `type`
+    - 위에서 `type` 함수를 활용하여 class를 생성했는데, 이것이 가능했던 이유는 `type`이 metaclass이기 때문이다.
+    - 아래와 같이 모든 class의 class는 type이다.
+
+  ```python
+  class MyClass:
+      pass
+  
+  # int class의 instance
+  some_int = 1
+  # str class의 instance
+  some_str = 'hello'
+  print(some_int.__class__.__class__)		# <class 'type'>
+  print(type(type(some_int)))				# <class 'type'>
+  print(some_str.__class__.__class__)		# <class 'type'>
+  print(type(type(some_str)))				# <class 'type'>
+  print(MyClass.__class__)				# <class 'type'>
+  print(type(MyClass))					# <class 'type'>
+  ```
+
+
+
+- `type`이외의 metaclass를 직접 정의해 주는 것도 가능하다.
+
+  - Python이 metaclass를 지정하는 방법
+    - 생성하려는 클래스에 metaclass를 직접 지정해줬는지 확인한다.
+    - 만일 metaclass를 지정해줬다면 해당 metaclass를 사용한다.
+    - 지정해주지 않았다면 모듈 레벨에서 metaclass를 찾는다.
+    - 그래도 찾을 수 없다면 가장 첫 번째 부모 클래스가 가진 metaclass를 사용한다.
+  - Metaclass는 꼭 class일 필요는 없다.
+    - callable하기만 하면 된다.
+    - 그러나 일반적으로 class를 상용한다.
+  - 간단한 예시
+    - 기본 metaclass인 type을 상속 받아 생성한다.
+
+  ```python
+  class MyMetaClass(type):
+      pass
+  
+  class MyClass(metaclasss=MyMetaClass):
+      pass
+  
+  print(MyClass.__class__)	# <class '__main__.MyMetaClass'>
+  ```
+
+  - 함수 형태의 metaclass
+    - `type`으로 생성한 class를 반환하는 함수를 metaclass로 사용한다.
+    - class의 이름을 모두 대문자로 생성하는 metaclass
+
+  ```python
+  def upper_name(future_name, future_parents, future_attr):
+      future_name = future_name.upper()
+      return type(future_name, future_parents, future_attr)
+  
+  
+  class MyClass(metaclass=upper_name):
+      pass
+  
+  print(MyClass.__name__)		# MYCLASS
+  ```
+
+  - class 형태의 metaclass
+    - `type`을 상속받는 클래스를 metaclass로 사용한다.
+    - `__new__`는 항상 첫 번째 인자로 정의된 클래스를 받는다(일반적으로는 `cls`라는 이름을 사용한다).
+
+  ```python
+  class UpperNameMetaClass(type):
+      def __new__(uppername_metaclass, future_name, future_parents, future_attr):
+          future_name = future_name.upper()
+  
+          return type(future_name, future_parents, future_attr)
+  
+  
+  class MyClass(metaclass=UpperNameMetaClass):
+      pass
+  
+  print(MyClass.__name__)		# MYCLASS
+  ```
+
+  - OOP코드로 변경하기
+    - 위 코드는 완전한 OOP 코드가 아니다.
+    - type을 직접 호출했고, `__new__` 코드를 오버라이드하거나 호출하지 않았기 때문이다.
+
+  ```python
+  class UpperNameMetaClass(type):
+      def __new__(uppername_metaclass, future_name, future_parents, future_attr):
+          future_name = future_name.upper()
+  
+          return type.__new__(uppername_metaclass, future_name, future_parents, future_attr)
+  
+  
+  class MyClass(metaclass=UpperNameMetaClass):
+      pass
+  
+  print(MyClass.__name__)		# MYCLASS
+  ```
+
+  - super를 사용하여 더 깔끔하게 작성하기
+
+  ```python
+  class UpperNameMetaClass(type):
+      def __new__(cls, future_name, future_parents, future_attr):
+          future_name = future_name.upper()
+  
+          return super(UpperNameMetaClass, cls).__new__(cls, future_name, future_parents, future_attr)
+  
+  
+  class MyClass(metaclass=UpperNameMetaClass):
+      pass
+  
+  print(MyClass.__name__)		# MYCLASS
+  ```
+
+
+
+- 왜 사용해야 하는가?
+  - class의 변형이 필요할 경우 사용한다.
+    - 간단한 class의 변형이 필요하다고 해서 꼭 복잡하고 에러가 발생할 가능성이 큰 metaclass를 사용할 필요는 없다.
+    - 복잡한 class의 변형이 필요할 경우 사용하는 것이 좋지만 클래스를 변형할 일이 많지는 않다.
+  - Python 사용자의 99%는 metaclass를 사용할 필요가 없다.
+    - metaclass를 진짜로 사용해야하는 사람들은 왜 필요한지에 대해 설명할 필요가 없는 사람들이다.
+
+
+
+- metaclass로 singleton 구현하기
+
+  - singleton은 클래스의 인스턴스를 하나만 생성하는 방식이다.
+  - metaclass를 활용하면 간단하게 구현이 가능하다.
+
+  ```python
+  class Singleton(type):
+      instances = {}
+      def __call__(cls, *args, **kwargs):
+          # 인스턴스가 생성된 적 없을 경우에만 새 인스턴스를 생성한다.
+          if cls not in cls.instances:
+              cls.instances[cls] = super().__call__(*args, **kwargs)
+          
+          return cls.instances[cls]
+  
+  
+  class MyClass(metaclass=Singleton):
+      pass
+  
+  
+  first_inst = MyClass()
+  second_inst = MyClass()
+  print(first_inst is second_inst)
+  ```
 
 
 
