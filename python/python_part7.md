@@ -756,7 +756,346 @@
   asyncio.run(process_async())
   ```
 
+
+
+
+
+
+# 예외처리
+
+- 예외처리
+  - 프로그래밍을 하다 보면 수 없이 많은 오류와 마주하게 된다.
+  - 오류가 발생하면 오류가 발생한 줄 아래로는 실행이 되지 않는데 때로는 오류가 발생하더라도 실행해야 할 때가 있다.
+  - 그럴 때 사용하기 위한 것이 예외처리 기법이다.
+
+
+
+- `try`, `except` 문
+
+  - 기본 구조
+    - try 블록 실행 중 오류가 발생하면 except 블록이 실행된다.
+    - except문에 발생 오류를 적어놓으면 해당 오류가 발생했을 때에만 except 블록이 실행된다.
+
+  ```python
+  # 괄호 안의 내용은 모두 생략이 가능하다.
+  try:
+      실행할 문장
+  except [발생 오류 as 오류 메세지 담을 변수]:
+      실행할 문장
+  ```
+
+  - 예시
+
+  ```python
+  # arr을 설정해 준 적 없기에 아래 문장은 error을 발생시킨다.
+  print(arr)
+  print("에러가 발생했으므로 출력이 안됩니다.")
+  """
+  Traceback (most recent call last):
+    File "c:\Users\pract.py", line 6, in <module>
+      print(arr)
+  NameError: name 'arr' is not defined
+  """
   
+  # 아래와 같이 예외 처리가 가능하다.
+  try:
+      print(arr)
+  except:
+      print("에러 발생")
+  print("에러가 발생했지만 실행이 됩니다.")
+  """
+  에러 발생
+  에러가 발생했지만 실행이 됩니다.
+  """
+  
+  # error를 특정하는 것도 가능하다.
+  try:
+      print(arr)
+  except NameError as e:
+      print("e에는 error message가 담겼습니다.")
+      print(e)
+  print("에러가 발생했지만 실행이 됩니다.")
+  """
+  e에는 error message가 담겼습니다.
+  name 'arr' is not defined
+  에러가 발생했지만 실행이 됩니다.
+  """
+  
+  # error를 특정할 경우 특정하지 않은 에러가 발생하면 except로 빠지지 않는다.
+  try:
+      3//0
+  except NameError as e:
+      print("에러 종류가 다르므로 빠지지 않습니다.")
+      print(e)
+  """
+  Traceback (most recent call last):
+    File "c:\Users\pract.py", line 2, in <module>
+      3//0
+  ZeroDivisionError: integer division or modulo by zero
+  """
+  ```
+
+  
+
+- `finally`
+
+  - try문 수행 도중 예외 발생 여부와 무관하게 수행된다.
+  - 보통 사용한 리소스를 close해야 할 때 사용한다.
+
+  ```python
+  try:
+      3//0
+  finally:
+      print("ZeroDivisionError가 발생했지만 finally 블록은 실행됩니다.")
+  """
+  ZeroDivisionError가 발생했지만 finally 블록은 실행됩니다.
+  Traceback (most recent call last):
+    File "c:\Users\pract.py", line 2, in <module>
+      3//0
+  ZeroDivisionError: integer division or modulo by zero
+  """    
+  ```
+
+  
+
+- 복수의 오류 처리하기
+
+  - except를 여러 개 사용하면 된다.
+  - 가장 먼저 빠진 except문만 실행 되고 다음 try 블록의 다음 줄은 실행 되지 않는다.
+
+  ```python
+  try:
+      3//0
+      print(arr)
+  except ZeroDivisionError as e:
+      print(e)
+  except NameError as e:
+      print(e)
+  
+  # integer division or modulo by zero 
+  
+  
+  
+  # 아래와 같이 하는 것도 가능하다.
+  try:
+      3//0
+      print(arr)
+  except (ZeroDivisionError,NameError) as e:
+      print(e)
+  
+  # integer division or modulo by zero
+  ```
+
+
+
+- 오류 회피하기
+
+  - except 블록에 pass를 쓰면 에러를 그냥 지나칠 수 있다.
+
+  ```python
+  try:
+      3//0
+      print(arr)
+  except ZeroDivisionError as e:
+      pass
+  print("pass 됐습니다.")
+  
+  # pass 됐습니다.
+  ```
+
+  
+
+- 오류 강제로 발생시키기
+
+  - `raise`를 사용한다.
+  - 프로그래밍을 하다 보면 예외를 강제로 발생시켜야 할 때가 있다.
+  - Dog이라는 class를 생속 받는 자식 클래스는 반드시 bark라는 메서드를 구현하도록 하고 싶은 경우 아래와 같이 할 수 있다.
+    - NotImplementedError는 python 내장 에러로 꼭 구현해야 할 부분이 구현되지 않았을 경우 발생한다.
+
+  ```python
+  class Dog:
+      def bark(self):
+          raise NotImplementedError
+          
+  class Bichon(Dog):
+      pass
+  
+  bcn = Bichon()
+  bcn.bark()			# NotImplementedError
+  ```
+
+  - 다음과 같이 bark 메서드를 오버라이딩하여 생성하면 에러가 발생하지 않는다.
+
+  ```python
+  class Dog:
+      def bark(self):
+          raise NotImplementedError
+          
+  class Bichon(Dog):
+      def bark(self):
+          print("멍멍")
+  
+  bcn = Bichon()
+  bcn.bark()		# 멍멍
+  ```
+
+  
+
+- 예외 만들기
+
+  - Exception을 상속받는 class 생성
+
+  ```python
+  class CustomException(Exception):
+      def __init__(self):
+          super().__init__('CustomException occur!')
+  ```
+
+  - 예외 발생시키기
+
+  ```python
+  from custom_exception import CustomException
+  
+  
+  msg = "Bye"
+  
+  try:
+      if msg=="Bye":
+          raise CustomException
+  except Exception as e:
+      print("Exception:",e)	# Exception: CustomException occur!
+  ```
+
+  - 혹은 상속만 받고 예외를 발생시킬 때 메시지를 넣어줄 수도 있다.
+
+  ```python
+  class CustomException(Exception):
+      pass
+  ```
+
+  - 예외 발생시키기
+
+  ```python
+  from custom_exception import CustomException
+  
+  
+  msg = "Bye"
+  
+  try:
+      if msg=="Bye":
+          raise CustomException("CustomException occur!")
+  except Exception as e:
+      print("Exception:",e)	# Exception: CustomException occur!
+  ```
+
+  - class를 아래와 같이 작성하여 추가적인 인자를 받을 수도 있다.
+    - `__str__`이 반환하는 내용이 출력되게 된다.
+
+  ```python
+  class CustomException(Exception):
+      def __init__(self, code, name):
+          self.code  = code
+          self.name  = name
+      
+      def __str__(self):
+          return f'{self.code}, {self.name} error occur!'
+  ```
+
+  - 예외 발생시키기
+    - 또한 args를 통해 직접 작성한 예외 클래스의 인자들을 확인 가능하다.
+
+  ```python
+  from custom_exception import CustomException
+  
+  
+  msg = "Bye"
+  
+  try:
+      if msg=="Bye":
+          raise CustomException(1, "some exception")
+  except Exception as e:
+      print("Exception:",e)	# Exception: 1, some exception error occur!
+      print(e.args)			# (1, 'some exception')
+  ```
+
+
+
+- traceback
+
+  - Exception을 출력하는 것으로는 traceback까지는 확인이 불가능한데, traceback 모듈을 사용하면 traceback도 확인이 가능하다.
+  - `format_exc()`
+    - traceback을 문자열로 변환
+
+  ```python
+  import traceback
+  
+  try:
+      1//0
+  except Exception as e:
+      print(e)	# integer division or modulo by zero
+      print(traceback.format_exc())
+  """
+  Traceback (most recent call last):
+    File "test.py", line 4, in <module>
+      1//0
+  ZeroDivisionError: integer division or modulo by zero
+  """
+  ```
+
+  - `extract_tb()`와 `sys.exc_info()`를 활용하면 최초에 Exception이 발생한 파일을 추적 가능하다.
+
+  ```python
+  # error를 발생시킬 파일
+  # error_occur.py
+  def print_hello():
+      print(msg)
+  
+  
+  # error가 발생한 파일을 추적하는 코드
+  # test.py
+  import os
+  import sys
+  import traceback
+  
+  from test2 import print_hello
+  
+  
+  try:
+      print_hello()
+  except Exception as e:
+      error_file_path = traceback.extract_tb(sys.exc_info()[-1])[-1].filename
+      print(error_file_path)
+  ```
+
+
+
+- error가 발생한 모듈 이름을 얻는 방법
+
+  - traceback 모듈을 의 extract_tb 메서드를 사용한다.
+  - my_module.py
+
+  ```python
+  def foo():
+      print(1//0)
+  ```
+
+  - test.py
+
+  ```python
+  import sys
+  import os
+  import traceback
+  
+  import my_module
+  
+  
+  try:
+      module.foo()
+  except Exception as e:
+      print(traceback.extract_tb(sys.exc_info()[-1])[-1].filename)
+  ```
+
+
 
 
 
