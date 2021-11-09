@@ -241,7 +241,7 @@
   sys.path.append("C:/test")
   ```
 
-  - python 인터프리터의 실행 경로 알아내기
+  - python 인터프리터의 위치
 
   ```python
   import sys
