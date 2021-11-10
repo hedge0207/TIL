@@ -481,7 +481,6 @@
 - 모듈
 - 패키지
 - import
-- 예외처리
 - 이터레이터와 제너레이터
 
 <br/>
@@ -515,7 +514,14 @@
 
 <br/>
 
-- ETC
+## [Python_part7](https://github.com/hedge0207/TIL/blob/master/python/python_part7.md)
+
+- 이터레이터와 제너레이터
+  - 이터레이터
+  - 제너레이터
+- 코루틴
+- async / await
+- 예외처리
 
 <br/>
 
