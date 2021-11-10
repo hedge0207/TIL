@@ -903,7 +903,8 @@
   # pass 됐습니다.
   ```
 
-  
+
+
 
 - 오류 강제로 발생시키기
 
@@ -939,7 +940,8 @@
   bcn.bark()		# 멍멍
   ```
 
-  
+
+
 
 - 예외 만들기
 
@@ -1071,7 +1073,7 @@
 
 - error가 발생한 모듈 이름을 얻는 방법
 
-  - traceback 모듈을 의 extract_tb 메서드를 사용한다.
+  - `traceback` 모듈을 의 `extract_tb()` 메서드를 사용한다.
   - my_module.py
 
   ```python
