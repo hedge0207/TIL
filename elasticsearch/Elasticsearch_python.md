@@ -1,3 +1,24 @@
+# elasticsearch-dsl
+
+- elasticsearch-dsl
+
+  - Python에서 보다 깔끔하게 dsl을 작성하도록 도와주는 library
+    - Python에서 ES를 사용하다보면 쿼리 때문에 코드가 지저분해진다.
+    - elasticsearch-dsl을 사용하면 보다 깔끔하게 작성이 가능하다.
+  - 설치
+
+  ```bash
+  $ pip install elasticsearch-dsl
+  ```
+
+
+
+- 
+
+
+
+# ETC
+
 - readtimeout error
 
   - 아래와 같이 ES 클라이언트를 생성후 ES에 요청을 보냈을 때,  readtimeout 에러가 뜨는 경우가 있다.
@@ -37,4 +58,4 @@
       helpers.bulk(es, reader, index="my_index")
   ```
 
-  
+
