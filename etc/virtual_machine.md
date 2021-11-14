@@ -56,6 +56,7 @@
   > https://www.vmware.com/kr.html
 
   - 위 사이트에 접속해서 VMware Workstation Pro(이하 Pro) 평가판의 설치 파일을 다운 받는다.
+    - Pro를 설치하면 Player도 함께 설치된다.
   - 설치 파일을 실행하여 설치를 진행하면 되며, 설치 진행 중에 특별히 설정을 변경할 만한 것은 없다.
   - 설치가 완료되면 프로그램을 실행하여 `I want tp try VMware Workstation 16 for 30 days`를 클릭하고 진행한다.
     - 이후 창을 종료하고 VMware Workstation Player(이하 Player)를 실행한다.
@@ -183,7 +184,6 @@
     - 게이트웨이 주소
     - DNS 서버 주소
   - cmd에 ipconfig/all을 입력하면 위 정보를 확인 가능하다.
-    - `VMware Virtual Ethernet Adapter for VMnet8`부분에 나온 내용을 입력하면 된다.
   - 가상 IP를 생성한다.
     - Pro를 실행한다.
     - 메뉴의 `Edit-Virtual Network Editor`를 클릭한다.
@@ -247,7 +247,7 @@
     - X 윈도 창이 나오는데, X 윈도는 리눅스와 유닉스 대부분에서 사용되는 그래픽 환경 기반 시스템 소프트웨어로 1984년 MIT에서 최초 공개한 이후 지금까지 보편적으로 사용되고 있다.
     - 중간에 Welcome이라는 창에서 언어를 선택할 수 있는데 여기서 한국어를 선택 후 ubuntu 체험하기를 클릭한다.
     - 이후 우측 상단바를 클릭하여 settings를 클릭하고 원하는 해상도로 변경해준다.
-  - 바탕화면에서 ubuntu 20.04.X LTS를 클릭한다.
+  - 바탕화면에서 `ubuntu 20.04.X LTS 설치`를 클릭한다.
     - 언어는 한국어를 클릭하고, 가장 상단에 있는 Korean을 누르고 계속하기를 선택한다.
     - 이후 일반설치를 클릭하고, ubuntu 설치 중 업데이트 다운로드는 체크 해제한다.
     - 설치 형식은 기타를 클릭한다.
@@ -287,7 +287,7 @@
   - custom.conf 수정
     - 다시 터미널을 겨서 아래 명령어를 입력한다.
     - nano는 텍스트 편집기다.
-    - 중간쯤의 AutomaticLogin을 root로 변경하고 security 아랫 부분에 `AllowRoot=True`를 추가한다.
+    - 중간쯤의 `AutomaticLogin`을 `root`로 변경하고 `security` 아랫 부분에 `AllowRoot=True`를 추가한다.
     - 편집이 완료되면 ctrl+X를 누른 후 Y와 Enter를 눌러 변경 내용을 저장한다.
 
   ```bash
@@ -307,7 +307,7 @@
     - 변경 내용을 저장하고 종료한다.
 
   ```bash
-  nano /etc/pam.d/gdm-autologin
+  $ nano /etc/pam.d/gdm-autologin
   ```
 
   - 여기까지 진행하면 별도의 입력 없이 root 사용자로 자동 로그인된다.
@@ -345,7 +345,8 @@
   $ apt update
   ```
 
-  
+
+
 
 - IP 주소 변경하기
 
@@ -354,7 +355,7 @@
     - 우측 상단의 네비바를 클릭하고 `[유선 연결됨]`->`[유선 네트워크 설정]`을 선택한다.
     - `유선`-`연결됨-1000 Mb/s`칸에 있는 설정 버튼을 클릭하고 설정을 변경한다.
     - 케이블 연결 창에서 `IPv4 탭`을 선택하고 `IPv4 방식`을 수동으로 변경한다.
-    - `주소` 에 `주소`는 192.168.0.100, 네트마스크에 255.255.255.0, 게이트웨이에 192.168.111.2를 입력한다.
+    - `주소` 에 `주소`는 192.168.111.100, 네트마스크에 255.255.255.0, 게이트웨이에 192.168.111.2를 입력한다.
     - `네임 서버(DNS)`부분에 192.168.111.2를 입력하고 네임서버 우측의 `자동`을 클릭해서 수동으로 변경한다.
 
     - `적용`을 클릭한다.
@@ -373,7 +374,7 @@
     - 설정에 들어가서 전원을 클릭한 후 절전의 빈 화면을 안함으로 선택한다.
   - 한글 키보드 설정
     - 설정 창에서 지역 및 언어를 선택하고 입력 소스에서 첫 번째 `한국어`의 삭제 아이콘을 클릭해 제거한다.
-    - 즉 한글은 한국어(Hangul) 하나만 남아있으면 된다.
+    - 즉 한글은 `한국어(Hangul)` 하나만 남아있으면 된다.
   - 터미널에서 한글 사용하기
     - 한/영 전환은 shift + space다.
   - 필수 패키지 설치하기
@@ -423,10 +424,11 @@
   - player를 실행 후 VMware Workstation 15 Player 창에서 위에서 생성한 Server_B를 선택하고 Edit virtual machine settings를 클릭한다.
     - CD/DVD 탭에서 Browse를 클릭하고 Server용으로 다운 받은 파일(ubuntu-20.04.2-live-server-amd64.iso )을 선택후 OK를 클릭한다. 
     - connect at power on을 체크해야 한다.
-  - Play virtual machine을 클릭하여 가상머신을 부팅한다.
+  - Play virtual machine을 클릭하여 가상머신을 부팅한 뒤 설치를 진행한다.
     - 언어 선택에서는 English를 선택하고 enter를 누른다.
     - 전부 Done을 누른다.
     - Profile setup에서는 사용자명과 서버명, 비밀번호 등을 설정한다.
+    - 중간에 나오는 것들은 전부 Done을 누른다.
     - 설정을 모두 완료하면 설치가 진행되는데 설치가 완료되면 하단에 Reboot가 활성화된다. 이를 선택하여 재부팅한다.
     - Server_A와 마찬가지로 DVD를 제거하라는 메시지가 출력되는데 VMware가 자동으로 제거해준다.
   
@@ -469,40 +471,41 @@
   			gateway4: 192.168.111.2
   			nameservers:
   				addresses:[192.168.111.2]
-  
   ```
-
+  
   - root 계정 활성화
     - 활성화 한 뒤 재부팅하여 root 계정으로 로그인한다.
-
+  
   ```bash
   $ sudo su - root
   $ passwd
   ```
-
+  
   - IP 변경이 적용되었는지 확인.
+    - 적용이 안됐다면 `reboot`를 통해 재부팅 후 확인한다.
 
+  
   ```bash
   # ens32의 inet 부분이 설정한 대로 변경되었는지 확인한다.
   $ ip addr
   # 네트워크 정상 작동 확인
   $ ping -c 3 www.google.com
   ```
-
+  
   - 방화벽 켜기
-
+  
   ```bash
   $ ufw enable
   ```
-
+  
   - 필수 패키지 설치
-
+  
   ```bash
-  $ apt -t install net-tools
+  $ apt -y install net-tools
   ```
-
+  
   - 종료
-
+  
   ```bash
   $ halt -p
   ```
@@ -527,7 +530,7 @@
 
 - kubuntu 설치하기
   - Client 가상 머신 설정 변경
-    - `CD/DVD` 탭에서 탭에서 Browse를 클릭하고 Server용으로 다운 받은 파일(ubuntu-20.04.2.0-desktop-amd64.iso)을 선택후 OK를 클릭한다. 
+    - `CD/DVD` 탭에서 탭에서 Browse를 클릭하고 Server용으로 다운 받은 파일(kubuntu-20.04.2.0-desktop-amd64.iso)을 선택후 OK를 클릭한다. 
     - connect at power on을 체크해야 한다.
     - 가상 머신을 부팅한다.
   - 설치하기
@@ -589,7 +592,8 @@
 
 - 설치하기
   - 그 동안 했던 것과 동일한 방식으로 window10 설치를 진행한다.
-  - 대부분 기본으로 두고 다음을 클릭하여 설치한다.
+  - 설치 선택 화면에서 고급 설치를 선택한다.
+    - 그 밖의 옵션은 모두 기본으로 두고 다음을 클릭하여 설치한다.
 
 
 
