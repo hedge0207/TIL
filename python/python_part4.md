@@ -1429,3 +1429,10 @@
     - 예를 들어 위에서 `main.py`파일 내의 sys.path에는 추가되었지만 `test.py` 파일 내의 sys.path에는 추가되어 있지 않다.
     - python 전역에 추가하는 방법도 있지만 권장되지는 않는다.
 
+
+
+
+
+# 참고
+
+https://stackoverflow.com/questions/100003/what-are-metaclasses-in-python/6581949#6581949
