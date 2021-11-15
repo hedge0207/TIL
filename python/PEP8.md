@@ -456,7 +456,8 @@
     - class Exception: 파스칼 표기법
     - 변수, 함수: 스네이크 표기법
     - 모듈: 무조건 소문자로만 적는다.
-
+  -  여러 표기법
+  
   | 표기법                                                       | 명칭            | 예시                               |
   | ------------------------------------------------------------ | --------------- | ---------------------------------- |
   | 단일 소문자                                                  |                 | b                                  |
@@ -469,12 +470,106 @@
   | 각 단어의 첫 글자를 대문자로 표기                            | 파스칼 표기법   | CapitalizedWord                    |
   | 접두어로 자료형을 표기                                       | 헝가리안 표기법 | strFirstName                       |
   | 소문자, 대문자, undersocore 조합                             |                 | Capitalized_Words_With_Underscores |
-
-  - 여러 단어를 연달아 사용할 때 각 단어의 첫 글자를 대문자로 적는 것(파스칼 표기법):
-
   
 
 
+
+
+
+# SQL Formatting
+
+- pep8에서는 따로 SQL query에 대한 명명 규칙을 정해 놓지는 않았다.
+  - 아래 내용은 SQL query를 Python 스럽게 작성하는 방법을 찾아본 것이다.
+  - 아래에서 소개한 방법 말고도 더 나은 방법이 있을 수 있다.
+  - 핵심은 보다 깔끔하고 눈에 잘 들어오는 sql 형식의 문자열을 만드는 것이다.
+
+
+
+- 일반적으로 쿼리문 자체는 쌍따옴표(`"`)로 묶는 것이 권장된다.
+  - 작은 따옴표(`'`)는 쿼리문 내에서 사용되기 때문이다.
+
+
+
+- 소괄호를 사용하는 방법
+
+  - 소괄호를 사용하여 긴 문자열을 보다 깔끔하게 만들 수 있다.
+
+  ```python
+  sql = (
+      "select * "
+      "from my_table "
+      "where name = 'theo'"
+  )
+  
+  print(sql)	
+  # select * from my_table where name = 'theo'
+  ```
+
+  - 각 문장의 끝에 공백을 넣어줘야 한다는 단점이 있다.
+
+
+
+- triple quotes을 사용하는 방법
+
+  - 일반적으로는 docstring을 작성할 때 사용하지만 sql query를 작성할 때도 유용하다.
+
+  ```python
+  sql = """
+  	select * 
+  	from my_table
+  	where name = 'theo'
+  """
+  print(sql)
+  """
+          select * 
+          from my_table
+          where name = 'theo'
+  """
+  ```
+
+  - 위 처럼 공백과 줄 바꿈이 발생하지만 DB가 인식하는 데는 아무런 문제가 없다.
+
+
+
+- SQL Paramstyle
+
+  - sql문에 변수를 포함시키는 방식에는 아래와 같은 것들이 있다.
+
+  | paramstyle | 설명                                           |
+  | ---------- | ---------------------------------------------- |
+  | qmark      | 물음표 활용(e.g. where name=?)                 |
+  | numeric    | 숫자 활용(e.g. where name=:1)                  |
+  | named      | 변수명 활용(e.g. where name = :name)           |
+  | format     | ANSI C printf format 활용(e.g. where name=%s)  |
+  | pyformat   | Python format 활용(e.g. where name = %(name)s) |
+
+  - 각 DB library별로 권장하는 스타일이 다른데 이는 아래와 같이 확인 가능하다.
+    - 대부분의 DB library가 `paramstyle`라는 변수에 자신들이 권장하는 스타일을 저장해놓았다.
+
+  ```python
+  pymysql.paramstyle
+  'pyformat'
+  
+  MySQLdb.paramstyle
+  'format'
+  
+  mysql.connector.paramstyle
+  'pyformat'
+  
+  # Postgresql
+  psycopg2.paramstyle
+  'pyformat'
+  
+  # Oracle
+  cx_Oracle.paramstyle
+  'named'
+  
+  # Sqlite3
+  sqlite3.paramstyle
+  'qmark'
+  ```
+
+  - 각 library가 권장하는 방식을 사용하면 된다.
 
 
 

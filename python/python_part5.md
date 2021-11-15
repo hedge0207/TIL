@@ -540,9 +540,75 @@
   print(sorted(a, key=itemgetter(1)))	# [('8', '1'), ('1', '2'), ('2', '7')]
   ```
 
+
+
+
+- random
+
+  - 난수를 발생시키는 모듈이다.
+  - `random.random()`: 0~1사이의 실수 중에서 난수 값을 돌려준다.
+  - `random.randomint(숫자1, 숫자2)`: 숫자1에서 숫자2 사이의 정수 중에서 난수 값을 반환한다.
+  - `random.shuffle(순서가 있는 자료형)`: 반복 가능한 자료형의 순서를 변경시킨다.
+
+
+
+- webbrowser
+  - 기본 웹 브라우저를 자동으로 실행하는 모듈
+  - `webbrower.open("주소")`: 주소에 해당하는 사이트를 기본 웹 브라우저로 접속
+  - `webbrowser.open_new(주소)`: 주소에 해당하는 사이트를 기본 웹 브라우저로 새 창에서 열기
+
+
+
+- threading
+
+  - 스레드를 다루는 모듈
+
+  ```python
+  # 스레드를 사용하지 않을 경우
+  import time
   
+  def long_task():  # 한 번 실행에 3초의 시간이 걸리는 함수
+      for i in range(3):
+          time.sleep(1)  # 1초간 대기
+          print("count:", i)
+  
+  print("Start")
+  
+  for i in range(3):  # long_task를 3회 수행한다.
+      long_task()
+  
+  print("End")
+  
+  # 스레드를 사용하는 경우
+  import time
+  import threading
+  
+  def long_task():
+      for i in range(3):
+          time.sleep(1)
+          print("count:", i)
+  
+  print("Start")
+  
+  threads = []
+  for i in range(5):
+      t = threading.Thread(target=long_task)  # 스레드를 생성
+      threads.append(t)
+  
+  for t in threads:
+      t.start()
+  
+  for t in threads:
+      t.join()  # join으로 스레드가 종료될때까지 기다린다.
+  
+  print("End")
+  ```
 
 
+
+
+
+## time
 
 - time
 
@@ -615,9 +681,9 @@
   now = datetime.datetime.now()
   print(now.strftime('%Y-%m-%d'))		# 2021-10-19
   ```
-  
+
   - `date.now()`: 현재 날짜를 반환한다.
-  
+
   ```python
   import datetime
   
@@ -625,10 +691,10 @@
   now = datetime.date.now()
   print(now)		# 2021-10-19
   ```
-  
+
   - `timedelta()`: `datetime` 객체에 특정 시간을 더하거나 뺄 수 있게 해준다.
     - `days`(기본값), `seconds`, `microsecnds`, `milliseconds`, `minutes`, `hours`, `weeks`를 사용 가능하다.
-  
+
   ```python
   import datetime
   
@@ -640,77 +706,12 @@
 
 
 
-
-
 - calendar
   - 파이썬에서 달력을 볼 수 있게 해준다.
   - `calendar.calendar(연도)`: 해당 연도 전체의 달력을 반환
   - `calendar.prmonth(연도, 월)`: 해당 연도, 해당 월의 달력을 반환
   - `calender.weekday(연도, 월, 일)`: 해당 날짜의 요일 정보를 숫자로 반환한다(0~6까지로 각기 월~일에 해당)
   - `calender.monthrange(연도, 월)`: 해당 월의 1일이 무슨 요일인지와 그 달이 며칠까지 있는지를 튜플 형태로 반환한다.
-
-
-
-- random
-
-  - 난수를 발생시키는 모듈이다.
-  - `random.random()`: 0~1사이의 실수 중에서 난수 값을 돌려준다.
-  - `random.randomint(숫자1, 숫자2)`: 숫자1에서 숫자2 사이의 정수 중에서 난수 값을 반환한다.
-  - `random.shuffle(순서가 있는 자료형)`: 반복 가능한 자료형의 순서를 변경시킨다.
-
-
-
-- webbrowser
-  - 기본 웹 브라우저를 자동으로 실행하는 모듈
-  - `webbrower.open("주소")`: 주소에 해당하는 사이트를 기본 웹 브라우저로 접속
-  - `webbrowser.open_new(주소)`: 주소에 해당하는 사이트를 기본 웹 브라우저로 새 창에서 열기
-
-
-
-- threading
-
-  - 스레드를 다루는 모듈
-
-  ```python
-  # 스레드를 사용하지 않을 경우
-  import time
-  
-  def long_task():  # 한 번 실행에 3초의 시간이 걸리는 함수
-      for i in range(3):
-          time.sleep(1)  # 1초간 대기
-          print("count:", i)
-  
-  print("Start")
-  
-  for i in range(3):  # long_task를 3회 수행한다.
-      long_task()
-  
-  print("End")
-  
-  # 스레드를 사용하는 경우
-  import time
-  import threading
-  
-  def long_task():
-      for i in range(3):
-          time.sleep(1)
-          print("count:", i)
-  
-  print("Start")
-  
-  threads = []
-  for i in range(5):
-      t = threading.Thread(target=long_task)  # 스레드를 생성
-      threads.append(t)
-  
-  for t in threads:
-      t.start()
-  
-  for t in threads:
-      t.join()  # join으로 스레드가 종료될때까지 기다린다.
-  
-  print("End")
-  ```
 
 
 
