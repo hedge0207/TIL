@@ -474,6 +474,97 @@
   }
   }'
   ```
+  
+  - Elasticsearch의 **Date Math**
+  
+    - ES에서 date를 기준으로 쿼리를 작성하는 경우(range query, daterange aggs 등)아래와 같은 Date Math를 사용 가능하다.
+    - `now`의 기준은 UTC이므로 한국에서 사용한다면 `+09:00`을 해줘야 한다.
+    - 또한 `now`는 `range` query에서 설정 가능한 `timezone` 옵션의 영향을 받지 않는다.
+  
+  | 기호 | 뜻             | 기호   | 뜻        |
+  | ---- | -------------- | ------ | --------- |
+  | y    | years          | h(==H) | hours     |
+  | M    | months         | m      | minutes   |
+  | w    | weeks          | s      | seconds   |
+  | d    | days           | now    | 현재 시간 |
+  | /    | 내림 또는 올림 | +, -   | 시간 +, - |
+  
+    - 예시
+      - `now`가 `2021-01-01 12:00:00`일 경우
+      - `now+1h`: `2021-01-01 13:00:00`
+      - `now+1d`: `2021-01-02 12:00:00`
+      - `now-1h/d`: `now`에서 한 시간을 뺀 뒤 내림(rounded down)해서 `2021-01-01 00:00:00`이 된다.
+      - `2021-02-01||+1M/d`: 1달을 추가한 뒤 내림해서 `2021-03-01 00:00:00`이 된다.
+    - `gt`, `gte`, `lt`, `lte` 중 어디에 쓰이는지에 따라서도 달라진다.
+      - `gt`: Rounds up to the first millisecond not covered by the rounded date.
+      - `gte`: Rounds down to the first millisecond.
+      - `lt`: Rounds down to the last millisecond before the rounded value.
+      - `lte`: Rounds up to the latest millisecond in the rounding interval.
+  
+  - 쿼리 예시
+  
+    - 1시간 전 데이터 검색
+  
+  
+  ```bash
+  # 예시 데이터 bulk
+  PUT time-test/_bulk
+  {"index":{"_id":"1"}}
+  {"test_time":"2021-01-01T00:00:00"}
+  {"index":{"_id":"2"}}
+  {"test_time":"2021-01-01T00:15:00"}
+  {"index":{"_id":"3"}}
+  {"test_time":"2021-01-01T00:30:00"}
+  {"index":{"_id":"4"}}
+  {"test_time":"2021-01-01T00:45:00"}
+  {"index":{"_id":"5"}}
+  {"test_time":"2021-01-01T00:59:59"}
+  {"index":{"_id":"6"}}
+  {"test_time":"2021-01-01T01:00:00"}
+  {"index":{"_id":"7"}}
+  {"test_time":"2021-01-01T01:15:00"}
+  {"index":{"_id":"8"}}
+  {"test_time":"2021-01-01T01:30:00"}
+  {"index":{"_id":"9"}}
+  {"test_time":"2021-01-01T01:45:00"}
+  {"index":{"_id":"10"}}
+  {"test_time":"2021-01-01T01:59:99"}
+  {"index":{"_id":"11"}}
+  {"test_time":"2021-01-01T02:00:00"}
+  
+  # 1시간 전 데이터 검색
+  GET time-test/_search
+  {
+    "query": {
+      "range":{
+        "test_time": {
+          "gte": "2021-01-01T01:00:00||-1h",
+          "lt": "2021-01-01T01:00:00"
+        }
+      }
+    }
+  }
+  ```
+  
+  - `now`를 활용하여 1시간 전 data를 검색하는 쿼리
+    - `now`는 UTC기준이므로 현재는 `now+9h`가 된다.
+  
+  ```json
+  GET test-index/_search
+  {
+    "query": {
+      "range": {
+        "my_date_field": {
+          "gte": "now+8h/h",
+          "lt": "now+9h/h"
+        }
+      }
+    }
+  }
+  ```
+  
+  
+
 
 
 
