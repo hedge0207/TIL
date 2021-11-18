@@ -799,7 +799,47 @@
   $ docker info | grep -i "docker root dir"
   ```
 
+
+
+
+
+
+## Docker Container Timezone 설정
+
+- Docker Container Timezone 설정
+
+  - 기본적으로 UTC로 설정되어 우리나라보다 9시간 느리다.
+    - 따라서 시간에 따른 로그를 출력해야 하거나 정확한 시간이 필요한 경우 아래와 같이 timezone을 변경해 줘야 한다.
+  - `TZ`라는 환경 변수를 통해 설정이 가능하다.
+    - 어떤 방식으로든 환경 변수로 넘겨주기만 하면 된다.
+  - `Dockerfile`에서 설정하기
+
+  ```dockerfile
+  ENV TZ=Asia/Seoul
+  ```
+
+  - 컨테이너를 실행할 때 설정하기
+
+  ```bash
+  $ docker run -e TZ=Asia/Seoul
+  ```
+
+  - docker-compose에서 설정하기
+
+  ```yaml
+  version: '3'
   
+  services:
+    some-container:
+      environment:
+        - TZ=Asia/Seoul
+  ```
+
+
+
+
+
+
 
 
 

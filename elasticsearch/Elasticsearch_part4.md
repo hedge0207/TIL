@@ -323,3 +323,20 @@
 
 - `delete_by_query`를 통해 특정 쿼리와 일치하는 문서를 삭제하는 것도 가능하다.
 
+  - 삭제할 문서들을 지정해줄 query를 작성한다.
+
+  ```json
+  POST /test-index/_delete_by_query
+  {
+      "query":{
+          "match":{
+              "name":"test"
+          }
+      }
+  }
+  ```
+
+  
+
+  
+
