@@ -367,6 +367,138 @@
 
 
 
+- `__getattr__`, `__getattribute__`
+
+  - `__getattr__`
+    - 인스턴스에서 어떤 attribute를 호출할 때 해당 attribute가 없을 경우 호출된다.
+    - 가장 후순위로 호출된다.
+    - parameter로 해당 attribute를 받는다.
+
+  - `__getattr__` 예시
+
+  ```python
+  class MyClass:
+      def __init__(self, name):
+          self.name = name
+  
+      def __getattr__(self, attr):
+          print("__getattr__")
+      
+      def foo(self):
+          print("FOO!")
+  
+  
+  my_inst = MyClass('theo')
+  my_inst.name
+  my_inst.age		# 없을 때만 호출된다.
+  ```
+
+  - 없는 메서드를 호출할 경우
+    - `bar()`는 없는 attribute(method)이므로 호출시에 `__getattr__`이 호출된다.
+    - `__getattr__`은 아무 것도 return하지 않으므로 None을 return하게 되고, 결국 `bar()`는 `None()`이 되어 `TypeError`가 발생한다.
+
+  ```python
+  class MyClass:
+      def __init__(self, name):
+          self.name = name
+  
+      def __getattr__(self, attr):
+          print("__getattr__")
+          print(attr)
+      
+      def foo(self):
+          print("FOO!")
+  
+  
+  my_inst = MyClass('theo')
+  my_inst.bar()	# TypeError: 'NoneType' object is not callable
+  ```
+
+  - 활용
+    - attribute를 동적으로 생성하는데 활용이 가능하다.
+    - 아래 `say_name`과 같이 원래 정의되지 않은 메서드를 동적으로 생성하는 것이 가능하다.
+
+  ```python
+  class MyClass:
+      def __init__(self, name):
+          self.name = name
+  
+      def __getattr__(self, attr):
+          return lambda *args, **kwargs: print('name:', args[0], 'age:', kwargs['age'])
+  
+  my_inst = MyClass('theo')
+  my_inst.say_name('theo', age=20)
+  ```
+
+  - `__getattribute__`
+    - 인스턴스에서 어떤 attribute를 호출하든 먼저 호출된다.
+    - 가장 선순위로 호출된다.
+    - parameter로 해당 attribute를 받는다.
+  - `__getattribute__` 예시
+
+  ```python
+  class MyClass:
+      def __init__(self, name):
+          self.name = name
+  
+      def __getattribute__(self, attr):
+          print("__getattribute__")
+      
+      def foo(self):
+          print("FOO!")
+  
+  
+  my_inst = MyClass('theo')
+  my_inst.name	# 있든 없든 호출된다.
+  my_inst.age
+  ```
+
+  - 이미 존재하는 메서드를 호출할 경우
+    - `__getattribute__`은 해당 attribute가 있던 없던 무조건 호출된다.
+    - 따라서 `my_inst.name`가 호출될 때 `__getattribute__`가 호출되고, `__getattribute__`는 return값이 없으므로 None을 return한다.
+    - 따라서 `my_inst.name`은 None이 된다.
+    - `my_inst.foo()` 역시 마찬가지 이유로 `my_inst.None()`가 되어 `TypeError`가 발생한다.
+
+  ```python
+  class MyClass:
+      def __init__(self, name):
+          self.name = name
+  
+      def __getattribute__(self, attr):
+          print("__getattribute__")
+      
+      def foo(self):
+          print("FOO!")
+  
+  
+  my_inst = MyClass('theo')
+  print(my_inst.name)	# None
+  my_inst.foo()	    # TypeError: 'NoneType' object is not callable
+  ```
+
+  - 해결법
+
+  ```python
+  class MyClass:
+      def __init__(self, name):
+          self.name = name
+  
+      def __getattribute__(self, attr):
+          return super().__getattribute__(attr)
+      
+      def foo(self):
+          print("FOO!")
+  
+  
+  my_inst = MyClass('theo')
+  print(my_inst.name)	# name
+  my_inst.foo()	    # FOO!
+  ```
+
+
+
+
+
 
 
 ##  상속
