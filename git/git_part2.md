@@ -869,41 +869,48 @@
 
 
 
+# git 저장소 옮기기
+
+> https://ithub.tistory.com/258 참고
+
+- 아래 방법을 사용하면 단순히 파일만 옮기는 것이 아니라 커밋 내역, 브랜치 등도 함께 옮길 수 있다.
+
+1. 원본 저장소의 모든 이력 복사
+
+   ```bash
+   $ git clone --mirror [원본 저장소 경로]
+   ```
+
+2. clone한 디렉터리 안으로 이동
+
+   ```bash
+   $ cd [원본 저장소 이름].git 
+   ```
+
+3. 이동할 원격 저장소 경로 지정
+
+   ```bash
+   $ git remote set-url --push origin [이동할 원격 저장소 경로] 
+   ```
+
+4. 원격 저장소로 push
+
+   ```bash
+   $ git push --mirror 
+   ```
+
+   
+
+- gitlab과 달리 github은 100MB 이상의 파일을 올릴 수 없다. 따라서 100MB이상의 파일이 존재하는 경우 error가 발생할 수 있다. 따라서 해당 커밋 내역을 삭제하여 옮겨야 한다.
+
+  ```bash
+  # BFG Repo-Cleaner를 사용한다.
+  # https://rtyley.github.io/bfg-repo-cleaner에서 jar 파일을 다운 받는다.
+  
+  # 2. 원본저장소를 clone한 디렉터리의 경로에서 아래 명령어를 사용하여 실행한다.
+  $ java -jar bfg_x.x.x.jar --strip-blobs-bigger-than 100M # bfg의 버전과 jar 파일의 경로에 주의해야 한다.
+  $ git push --mirror # 다시 원격 저장소로 push
+  ```
 
 
-```sh
-#!/usr/bin/env bash
-
-# 개인별 변수 설정을 다르게 할 경우에는 파라미터로 처리 (소스 스크립트는 가급적 유지)
-PATH_TO_DIR="/home/wtjeong/workspace/repo/DSRS/etl/ocr/data/MTR_#5/OCR"
-if [ "$1" != "" ]; then
-    PATH_TO_DIR="$1"
-fi
-OUTPUT_DIR="/home/wtjeong/workspace/repo/DSRS/translator/translated/MTR_#5"
-if [ "$2" != "" ]; then
-    OUTPUT_DIR="$2"
-fi
-
-GPU_IDS="-1"
-if [ "$3" != "" ]; then
-    GPU_IDS="$3"
-fi
-
-PYTHON_PATH="python"
-if [ "$4" != "" ]; then
-    PYTHON_PATH="$4"
-fi
-
-CUDA_VISIBLE_DEVICES=$GPU_IDS \
-"${PYTHON_PATH}" run_translation.py \
-    --input_path="${PATH_TO_DIR}" \
-    --output_path="${OUTPUT_DIR}"  \
-    --gcloud_translation_fallback=False \
-    --gcloud_project_id=180212812010 \
-    --max_pages=0 \
-    --fairseq_ensemble=True \
-    --source_lang=en \
-    --target_lang=ru \
-    --debug_mode=True
-```
 
