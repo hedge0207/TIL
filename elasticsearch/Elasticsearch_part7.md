@@ -1354,23 +1354,6 @@
   ```bash
   ```
   
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1713,6 +1696,74 @@
     }
   }
   ```
+
+
+
+
+
+## Pipeline aggregations
+
+### Bucket sort
+
+- 상위의 multi-bucket aggregation을 정렬하는데 사용한다.
+  - `_key`, `_count` 혹은 sub aggs를 기준으로 정렬된다.
+  - `from`, `size`를 통해 pagination이 가능하다.
+
+
+
+- parameters
+  - `sort`(List, Optional): 정렬할 필드들의 목록 
+  - `from`(int, Optional): pagination을 시작 할 번호
+  - `size`(int, Optional): 반환 할 bucket의 개수(기본 값은 모든 버킷을 반환)
+  - `gap_policy`(Optional): data 사이에 gaps이 존재할 경우 적용할 정책(기본값은 `skip`)
+
+
+
+- 예시
+
+  - 기본형
+
+  ```json
+  GET test-index/_search
+  {
+    "bucket_sort": {
+      "sort": [
+        { "sort_field_1": { "order": "asc" } },   
+        { "sort_field_2": { "order": "desc" } },
+        "sort_field_3"
+      ],
+      "from": 1,
+      "size": 3
+    }
+  }
+  ```
+
+  - sort 없이 pagination만 하는 것도 가능하다.
+
+  ```json
+  POST /test-index/_search
+  {
+    "size": 0,
+    "aggs": {
+      "sales_per_month": {
+        "date_histogram": {
+          "field": "date",
+          "calendar_interval": "month"
+        },
+        "aggs": {
+          "bucket_truncate": {
+            "bucket_sort": {
+              "from": 1,
+              "size": 1
+            }
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  
 
 
 
