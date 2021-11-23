@@ -856,7 +856,7 @@
 
   ```bash
   # 클러스태 내 reindex
-  $ curl -XPOST "localhost:9200/인덱스명/_reindex?pretty" -H 'Content-type:application/json' -d'
+  $ curl -XPOST "localhost:9200/_reindex?pretty" -H 'Content-type:application/json' -d'
   {
   	"source":{
   		"index":"test"	# 원본 인덱스
