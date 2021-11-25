@@ -1059,6 +1059,10 @@
   - mappings
   - settings
 
+
+
+- 데이터 삭제
+
 <br/>
 
 <br/>
