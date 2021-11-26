@@ -31,10 +31,9 @@
     - 타 브라우저 대비 빠른 속도와 표준을 지키는 개발로 주목을 받기 시작
     - 빠른 속도는 HTML,CSS,Javascript를 받아서 브라우저가 처리하는 속도가 빨랐기 때문, 특히 Javascript 처리 속도가 빨랐다(V8 엔진을 사용하여 Javascript를 읽고 처리).
     - 이로 인해 Javascript가 느리다는 인식이 변화
-
-
-
-- 이런 과정에서 발전한 만큼 JS코드는 브라우저마다 언제나 같게 동작하지는 않는다.
+  
+  - 이런 과정에서 발전한 만큼 JS코드는 브라우저마다 언제나 같게 동작하지는 않는다.
+  
 
 
 
@@ -169,8 +168,6 @@
   
     - 이렇게 해석하고 구조화한 HTML파일을 rendering한다.
   
-      
-  
   - ES(ECMAScript): DOM을 조작하기 위한 프로그래밍 언어, JS
 
 
@@ -182,8 +179,11 @@
   - 브라우저의 최상위 객체는 window고 document가 그 아래 존재하며 그 아래 함수가 존재하는 형태다.
   - document는 윈도우(탭)에서 띄우고 있는 문서를 의미한다.
   - print(),close(), console 함수 등 document에 속하지 않는 함수들도 있다.
+
+
+
 - 모든 명령어는 window를 써야 하므로 생략해도 동작한다. 
-  
+
   ```js
   window.document.함수
   //window객체의 하부 객체 중 document객체의 하부 객체 중 함수 객체를 사용
@@ -191,11 +191,14 @@
   //아래와 같이 작성해도 된다.
   document.함수
   ```
+
+
+
 - 스타일 가이드
 
   > https://github.com/airbnb/javascript/tree/master/css-in-javascript
 
-  - airbnb나 google을 주로 기준으로 사용
+  - airbnb나 google에서 사용하는 style을 주로 사용
     - Naming Convention은 lowerCamelCase(첫 글자는 소문자, 이후 단어 시작마다 대문자)
     - 오브젝트는 `-`를 허용하지 않는다(하면 오류가 발생한다).
     - cf. 자바스크립트는 웹에서 사용하는 언어이므로 vscode에서 작상할 경우 vscode저장-웹 페이지 새로고침을 해야 작성 결과를 볼 수 있다. 그러나 vscode에서 Live Server를 설치하면 VScode에서 저장만 하면 자동으로 새로고침이 된다. vscode의 코드 창에서 우클릭 후 Open With Live Server를 클릭하면 된다.
@@ -640,7 +643,7 @@
   - 파이썬과 달리 0으로 나눌 경우 에러를 발생시키는 것이 아니라 Infinity를 반환
 
   ```javascript
-var x = 1  //var는 요즘은 쓰지 않지만 명시적 표기를 위해 적는다.
+  var x = 1  //var는 요즘은 쓰지 않지만 명시적 표기를 위해 적는다.
   ```
 
   
