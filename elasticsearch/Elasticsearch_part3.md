@@ -168,8 +168,22 @@
   $ curl -XGET 'http://localhost:9200/_cat/indices?s=docs.count:desc'
   ```
   
+  - size를 표시할 때 어떤 단위로 보여줄지 설정이 가능하다.
+    - `bytes=<단위>`를 입력하면 된다.
   
   
+  ```json
+  GET _cat/indices?h=i,p,r,dc,ss,cds&bytes=kb
+  ```
+  
+  - `expand_wildcards` 옵션을 통해 open 상태인 인덱스만 보는 것도 가능하다.
+  
+  ```json
+  GET _cat/indices?h=i,status,p,r,dc,ss,cds&s=cds:desc&expand_wildcards=open
+  ```
+
+
+
 - 인덱스 상태 정보
 
   ```json
