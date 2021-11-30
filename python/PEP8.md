@@ -474,6 +474,17 @@
 
 
 
+- Python keyword와 충돌을 피해야 할 때는 변수명 뒤에 `_`를 붙인다.
+
+  - 예시
+    - `from`은 python keyword이기에 사용이 불가능하다.
+    - 따라서 뒤에 `_`를 붙여준다.
+
+  ```python
+  from_ = "2021-11-12"
+  until = "2021-11-14"
+  ```
+
 
 
 # SQL Formatting
