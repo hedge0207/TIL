@@ -43,3 +43,79 @@
     - RDBMS에서 블로그용 DB를 설계한다면, 각 포스트, 댓글마다 테이블을 만들어 필요에 따라 JOIN해서 사용하는 것이 일반적이다.
     - 그러나 NoSQL에서는 그냥 모든 것을 문서 하나에 넣는다. 즉, 포스트 문서 내부에 댓글을 넣는다.
     - 포스트 문서 내부에 댓글 문서를 넣는 것 처럼 문서 내부에 또 다른 문서가 위치할 수 있는데 이를 **서브다큐먼트**라 한다.
+
+
+
+## mongo shell
+
+- mongodb cli 실행
+
+  - `mongosh` 명령어로 실행한다.
+    - `mongo` 명령어로도 실행이 가능하지만 곧 사라질 예정이다.
+  - 인증이 필요할 경우 아래 옵션을 준다.
+    - `-u <사용자명> -p <비밀번호>`
+
+  ```bash
+  $ mongosh [옵션1] [옵션2] ...
+  ```
+
+
+
+- 조회
+
+  - DB 목록 조회
+
+  ```bash
+  $ show dbs
+  ```
+
+  - DB 선택
+
+  ```bash
+  $ use <DB 명>
+  ```
+
+  - 현재 사용중인 DB 확인
+
+  ```bash
+  $ db
+  ```
+
+  - collection 목록 조회
+
+  ```bash
+  $ show collections
+  ```
+
+  - document select
+    - `find`의 인자로 조건을 넣을 수 있다.
+    - `.pretty()`는 결과를 json 형식에 맞게 출력한다.
+    - 출력할 필드는 `{필드명: 0 or 1}` 형식으로 들어가며, 1일 경우에만 출력한다(아예 작성하지 않을 경우 모든 필드를 출력한다.).
+    - `_id`의 경우 명시적으로 지정하지 않더라도 출력한다.
+
+  ```bash
+  $ db.<collection 명>.find([조건], [{출력할 필드들}])[.pretty()]
+  
+  # 예시
+  $ db.books.find({price:{$gt:5000, $lte:8000}}, {name, author, published_date})
+  
+  # 위 예시는 sql문으로 다음과 같다.
+  select name, author. published_date from books where price > 5000 and price <=8000
+  ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
