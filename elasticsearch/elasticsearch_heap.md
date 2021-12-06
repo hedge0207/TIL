@@ -168,6 +168,7 @@
 
   - Elasticsearch도 Java application이므로 heap memory를 사용한다.
     - index의 data가 disk의 어느 위치에 저장되어 있는지 파악하기 위해 사용한다.
+    - 따라서 당연히 색인, 검색 등에도 사용되며, aggs 시에도 사용한다.
   - `jvm.options` 파일에서 설정이 가능하다.
     - ES는 각 노드의 역할과 시스템의 전체 메모리를 고려하여 자동으로 heap size를 설정한다.
     - 가급적이면 이 값을 수정하지 않고 사용하는 것을 권장한다.
@@ -175,15 +176,15 @@
   - heap memory는 일반적으로 아래와 같은 패턴을 보인다.
     - heap memory의 사용률이 서서히 증가하다가 급격히 감소하는 패턴을 보인다.
     - GC를 통해 heap memory 공간이 확보되면서 사용률이 급격히 감소한다.
-
+  
   ![image-20211101174858397](elasticsearch_heap.assets/image-20211101174858397.png)
-
+  
   - ES에서의 이상적인 GC는 다음과 같다(사진과 무관).
     - Young GC가 50ms내로 종료될만큼 빠르다.
     - Young GC가 빈번하게 발생하지 않는다(약 10초에 한 번).
     - Old GC가 1초 내로 종료될 만큼 빠르다.
     - Old GC가 빈번하게 수행되지 않는다(약 10분 혹은 그 이상에 한 번).
-
+  
   ![image-20211101180912839](elasticsearch_heap.assets/image-20211101180912839.png)
 
 ![image-20211101180925729](elasticsearch_heap.assets/image-20211101180925729.png)
