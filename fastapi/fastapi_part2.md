@@ -70,3 +70,42 @@
 
 
 
+- Header의 유효성 검증하기
+
+  - Header에 주로 인증 관련 정보들이 담겨 있으므로 그 정보의 유효성을 검증할 필요가 있다.
+  - 아래와 같이 유효성을 검증할 함수를 생성한다.
+
+  ```python
+  from fastapi import Header, HTTPException
+  
+  def verify_token(authorization: str = Header(None)):
+      if not authorization:
+          raise HTTPException(status_code=401, detail="Token does not exist")
+      if authorization != "something":
+          raise HTTPException(status_code=403, detail="Token invalid")
+  ```
+
+  - api에 `dependencies`에 `Depends`를 활용하여 유효성 검증 함수를 추가한다.
+
+  ```python
+  from fastapi import FastAPI, Depends
+  
+  @app.get("/search", dependencies=[Depends(verify_token)])
+  def get_items():
+      pass
+  ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
