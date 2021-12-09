@@ -45,6 +45,16 @@
 
 
 
+- 특정 row가 이미 존재하면 update, 없으면 insert
+
+  - `on conflict`의 대상이 되는 값은 반드시 pk값이어야한다.
+
+  ```sql
+  INSERT INTO test (application_id, name, age, ingested_date) VALUES('qqq', 'theo', 28, '2021-12-09') ON conflict (application_id, ingested_date) DO UPDATE SET application_id='qqq', NAME='theo', AGE='30';
+  ```
+
+
+
 - shell script로 테이블 생성하기
 
   ```shell
