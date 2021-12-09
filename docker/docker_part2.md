@@ -839,6 +839,28 @@
 
 
 
+## 컨테이너 생성시 sql문 자동 실행
+
+- 아래와 같이 실행시킬 sql 파일을  `/docker-entrypoint-initdb.d/`에 볼륨을 잡으면 자동으로 실행된다.
+
+  ```yaml
+  version: '3'
+  
+  services:
+    postgresql:
+      container_name: postgressql
+      image: postgres:latest
+      environment:
+        - POSTGRES_PASSWORD=my_password
+        - TZ=Asia/Seoul
+      volumes:
+        - ./create_table.sql:/docker-entrypoint-initdb.d/create_table.sql
+  ```
+
+  
+
+
+
 
 
 
