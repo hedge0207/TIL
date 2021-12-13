@@ -380,3 +380,266 @@
 
   - 여기까지 실행하면 Elasticsearch에 `metricbeat-<버전>-<날짜>-000001` 형식으로 인덱스가 생성 된 것을 확인 가능하다.
 
+
+
+# ILM(Index Lifecycle Management)
+
+- Index lif cycle
+  - Hot
+    - 인덱스에 지속적으로 쓰기 및 검색 요청이 들어오는 상태
+  - Warm
+    - 쓰기 요청은 더 이상 들어오지 않지만, 지속적으로 검색 요청이 들어오는 상태
+  - Cold
+    - 쓰기 요청이 더 이상 들어오지 않고 검색도 빈번히 일어나는 것도 아닌 상태.
+    - 아직은 검색할 필요는 있지만, 빠른 속도로 검색 될 필요는 없는 데이터들이 저장되어 있다.
+  - Forzen
+    - 쓰기 요청이 더 이상 들어오지 않고 검색도 거의 들어오지 않는 상태.
+    - 아직은 검색할 필요는 있지만, 매우 느린 속도로 검색 되도 상관 없는 데이터들이 저장되어 있다.
+  - Delete
+    - index가 더 이상 필요 없어 안전하게 삭제된 상태.
+
+
+
+
+
+# Data streams
+
+## 개요
+
+- Data stream
+  - 여러 인덱스를 하나로 묶어 하나의 인덱스처럼 사용할 수 있게 해주는 기능
+  - logs, events, metrics 같이 지속적으로 생산되는 데이터를 관리하는 데 도움을 준다.
+  - data stream은 data stream에 저장된 데이터에 거의 변경이 일어나지 않는다고 가정하고 만들어졌다.
+    - 따라서 update, delete 요청을 보낼 수 없다.
+    - `update by query`, `delete by query`로는 update, delete가 가능하다.
+
+
+
+- ILM(Index Lifecycle Management)
+  - 인덱스의 lifecycle을 관리할 수 있게 도와주는 기능
+  - Data stream의 backing index들을 관리하는 데도 사용된다.
+
+
+
+- backing index
+
+  - data stream의 데이터를 저장하고 있는 인덱스들이다.
+    - 자동으로 생성되며 hidden 인덱스이다.
+    - 검색 및 색인 요청은 backing indices에 직접 하는 것이 아니라 data stream을 통해서 간접적으로 한다.
+
+  - Read & write requests
+    - Read requests의 경우에는 data stream 내의 모든 backing indices를 대상으로 보낸다.
+    - Write requests의 경우에는 data stream 내의 가장 최신(가장 최근에 생성된) backing index(이를 write index라 부른다)를 대상으로 보낸다.
+    - 가장 최근에 생성된 인덱스가 아닌 다른 backing index를 지정해서 write request를 보내도, doc이 추가되지 않는다.
+  - convention
+    - data stream의 이름, 생성된 날짜, 0으로 패딩 된 6자리 숫자가 인덱스명에 들어간다.
+
+  ```bash
+  .ds-<data stream 명>-<yyyy.MM.dd>-<6자리 숫자>
+  ```
+
+
+
+## 생성하기
+
+- 순서
+  - ILM을 생성한다.
+  - component template을 생성한다(Optional).
+    - index template을 보다 원활히 생성하기 위해 사용하는 것이므로 필수적인 단계는 아니다.
+  - index template을 생성한다.
+    - 데이터 스트림을 사용하기 위해서는 index template을 먼저 생성해야 한다.
+    - backing indices는 index template에 정의한 mapping, setting에 따라 생성된다.
+    - data stream에 색인되는 모든 문서는 `@timestamp` 필드가 있어야 한다.
+    - `@timestamp` 필드는  `date`, 혹은 `date_nanos` 타입으로 정의되어야 한다.
+    - data stream에 사용할 index template에 따로 `@timestamp` 필드를 정의하지 않을 경우 ES는 자동으로 `@timestamp` 필드를 생성하고 date type으로 mapping한다.
+  - data stream을 생성한다.
+  - data stream의 보안을 설정한다.
+
+
+
+- ILM 생성하기
+
+  - Kibana로 생성하기
+    - `Stack Management` → `Index Lifecycle Policies`에서 `Create policy`를 통해 생성 가능하다.
+  - api를 통해서도 생성이 가능하다.
+    - `PUT _ilm/policy/<policy 명>`으로 생성이 가능하다.
+    - `hot`만 required이며 나머지는 optional이다.
+
+  ```json
+  PUT _ilm/policy/my-lifecycle-policy
+  {
+    "policy": {
+      "phases": {
+        "hot": {
+          "actions": {
+            "rollover": {
+              "max_primary_shard_size": "50gb"
+            }
+          }
+        },
+        "warm": {
+          "min_age": "30d",
+          "actions": {
+            "shrink": {
+              "number_of_shards": 1
+            },
+            "forcemerge": {
+              "max_num_segments": 1
+            }
+          }
+        },
+        "cold": {
+          "min_age": "60d",
+          "actions": {
+            "searchable_snapshot": {
+              "snapshot_repository": "found-snapshots"
+            }
+          }
+        },
+        "frozen": {
+          "min_age": "90d",
+          "actions": {
+            "searchable_snapshot": {
+              "snapshot_repository": "found-snapshots"
+            }
+          }
+        },
+        "delete": {
+          "min_age": "735d",
+          "actions": {
+            "delete": {}
+          }
+        }
+      }
+    }
+  }
+  ```
+
+
+
+- component template 생성하기
+
+  - index template을 구성하기 위해서 component template을 생성한다.
+  - component template에도 date 혹은 date_nanos 필드로 매핑된 `@timestamp` 필드가 필요하다.
+    - 만일 정의하지 않으면 ES가 자동으로 date 타입으로 `@timestamp` 필드를 생성한다.
+
+  - Kibana로 생성하기
+    - `Stack Management` → `Index Management` → `Component Template`에서 `Create component template`을 통해 생성 가능하다.
+
+  - api로 생성하기
+    - `PUT _component_template/<component template 명>`으로 생성한다.
+
+  ```json
+  // mappings를 정의하는 component template 생성
+  PUT _component_template/my-mappings
+  {
+    "template": {
+      "mappings": {
+        "properties": {
+          "@timestamp": {
+            "type": "date",
+            "format": "date_optional_time||epoch_millis"
+          },
+          "message": {
+            "type": "wildcard"
+          }
+        }
+      }
+    },
+    "_meta": {
+      "description": "Mappings for @timestamp and message fields",
+      "my-custom-meta-field": "More arbitrary metadata"
+    }
+  }
+  
+  // settings를 정의하는 component template 생성
+  PUT _component_template/my-settings
+  {
+    "template": {
+      "settings": {
+        "index.lifecycle.name": "my-lifecycle-policy"
+      }
+    },
+    "_meta": {
+      "description": "Settings for ILM",
+      "my-custom-meta-field": "More arbitrary metadata"
+    }
+  }
+  ```
+
+
+
+- index template 생성하기
+
+  - Kibana로 생성하기
+    - `Stack Management`  → `Index Management` → `Index Templates`에서 `Create template`을 통해 생성 가능하다.
+  - api로 생성하기
+
+  ```json
+  PUT _index_template/my-index-template
+  {
+    // data stream 이름
+    "index_patterns": ["my-data-stream*"],
+    "data_stream": { },
+    // component template에서 정의한 이름
+    "composed_of": [ "my-mappings", "my-settings" ],
+    "priority": 500,
+    "_meta": {
+      "description": "Template for my time series data",
+      "my-custom-meta-field": "More arbitrary metadata"
+    }
+  }
+  ```
+
+  - component template을 작성하지 않았을 경우 아래와 같이 생성한다.
+
+  ```json
+  PUT /_index_template/template_1
+  {
+    // data stream 이름
+    "index_patterns" : ["my-data-stream*"],
+    "priority" : 1,
+    "template": {
+      "settings" : {
+        "number_of_shards" : 2,
+        "index.lifecycle.name": "my-lifecycle-policy"
+      }
+    }
+  }
+  ```
+
+
+
+- data stream 생성하기
+
+  - index template에서 정의한 `index_pattenrs`와 일치하는 index명으로 index 요청을 보내면 자동으로 data stream이 생성된다.
+
+  ```json
+  POST my-data-stream/_doc
+  {
+    "@timestamp": "2099-05-06T16:21:15.000Z",
+    "message": "192.0.2.42 - - [06/May/2099:16:21:15 +0000] \"GET /images/bg.jpg HTTP/1.0\" 200 24736"
+  }
+  ```
+
+  - 수동으로 생성하고자 한다면 아래와 같이 하면 된다.
+    - `PUT _data_stream/my-data-stream`
+    - index template에서 정의한 `index_pattenrs`와 일치하는 datastream명으로 위 요청을 보낸다.
+
+
+
+- Data stream 조회 삭제
+
+  - 조회
+
+  ```bash
+  GET _data_stream/<data stream 이름>
+  ```
+
+  - 삭제
+
+  ```bash
+  DELETE _data_stream/<data stream 이름>
+  ```
+
+  
