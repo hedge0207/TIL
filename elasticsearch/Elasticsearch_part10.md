@@ -598,6 +598,7 @@
   {
     // data stream 이름
     "index_patterns" : ["my-data-stream*"],
+    "data_stream": {}
     "priority" : 1,
     "template": {
       "settings" : {

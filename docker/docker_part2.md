@@ -843,6 +843,8 @@
 
 - 아래와 같이 실행시킬 sql 파일을  `/docker-entrypoint-initdb.d/`에 볼륨을 잡으면 자동으로 실행된다.
 
+  - 꼭 sql 파일이 아니어도 되며, sql문이 작성된 sh 파일도 가능하다.
+  
   ```yaml
   version: '3'
   
@@ -856,8 +858,9 @@
       volumes:
         - ./create_table.sql:/docker-entrypoint-initdb.d/create_table.sql
   ```
-
   
+  - 주의
+    - 이미 데이터가 존재 할 경우 실행되지 않는다.
 
 
 
