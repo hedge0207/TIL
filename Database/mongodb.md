@@ -96,8 +96,12 @@
   ```bash
   $ db.<collection 명>.find([조건], [{출력할 필드들}])[.pretty()]
   
-  # 예시
+  # 예시1
+  $ db.books.find({name:"hello"})
+  
+  # 예시2
   $ db.books.find({price:{$gt:5000, $lte:8000}}, {name, author, published_date})
+  
   
   # 위 예시는 sql문으로 다음과 같다.
   select name, author. published_date from books where price > 5000 and price <=8000
