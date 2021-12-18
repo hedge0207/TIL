@@ -337,9 +337,7 @@
     - 복잡한 실제 구현은 숨기고 목적을 분명히하여 핵심만 드러내는 것이다.
     - 실제 구현과 멀리 떨어져 있을 수록 추상화 수준이 높다고 볼 수있다.
   - 아래 코드는 추상화 수준이 매우 낮은 함수이다(보다 적절한 예시를 찾을 경우 변경).
-    - 함수 내에 실제 구현이 모두 들어가 있기 때문이다.
-    - 함수가 구체적으로 어떤 과정을 거쳐 id를 통해 user 이름을 가져오는지 딱 봐서는 알 수가 없다.
-
+  
   ```python
   def get_user_name_by_id(user_id):
       user_name_id_pair = []
@@ -350,7 +348,7 @@
           if id==user_id:
               return name 
   ```
-
+  
   - 위 코드를 추상화하여 아래와 같이 변경할 수 있다.
     - 아래 코드도 `user_name_id_pair = make_name_id_pair()` 부분은 아직 추상화 수준이 높다고 볼 수 는 없다.
     - 추상화 수준이 중간인 `user_name_id_pair = make_name_id_pair()` 부분과 추상화 수준이 높은 `return find_name(user_name_id_pair)`가 혼재되어 있으므로 추상화 수준이 둘이다.
@@ -386,5 +384,347 @@
 
 ## 함수당 추상화 수준은 하나로
 
+- 한 함수 내에  추상화 수준을 섞으면 코드를 읽는 사람이 헷갈린다.
+  - 특정 표현이 근본 개념인지 아니면 세부사항인제 구분하기 어려운 탓이다.
+  - 근본 개념과 세부 사항을 뒤섞기 시작하면, 깨어진 창문 처럼 사람들이 함수에 세부사항을 점점 더 추가한다.
 
 
+
+- 내려가기 규칙
+  - 코드는 위에서 아래로 이야기처럼 읽혀야 좋다.
+  - 한 함수 다음에는 추상화 수준이 한 단계 낮은 함수가 온다.
+    - 즉, 위에서 아래로 프로그램을 읽으면 함수 추상화 수준이 한 번에 한 단계씩 낮아진다.
+    - 이것을 내려가기 규칙이라 부른다.
+
+
+
+
+
+## Switch문
+
+- switch문은 작게 만들기 어렵다.
+  - case가 증가할 수록 길이는 점점 길어진다.
+  - 또한 기본적으로 N가지 일을 처리하기 위한 문이기 때문에 한 가지 작업만 하기도 힘들다.
+  - 불행하게도 switch문을 완전히 피할 방법은 없다.
+    - 그러나 다형성을 활용하여 그나마 잘 사용하는 방법은 존재한다.
+
+
+
+- 다형성을 활용하기
+
+  - 원본
+    - 직원 유형에 따라 봉급을 계산해서 반환하는 함수다.
+
+  ```java
+  public Money calculatePay(Employee e) throws InvalidEmployeeType{
+      switch (e.type){
+          case COMMISIONED:
+              return calcualteCommissionedPay(e);
+          case HOURLY:
+              return calculateHourlyPay(e);
+          case SALARIED:
+              return calculateSalariedPay(e);
+          default:
+              throw new InvalidEmployeeType(e.type);
+      }
+  }
+  ```
+
+  - 위 함수에는 몇 가지 문제가 있다.
+    - 첫째로 함수가 길다. 새로운 직원 유형을 추가할 때마다 switch문이 계속 길어진다.
+    - 둘쨰로 한 가지 작업만을 수행하지 않는다.
+    - 셋째로 SPR(Single Responseibility Principle)을 위반한다(코드를 변경할 이유가 여럿이기 때문이다).
+    - 넷째로 OCP(Open Closed Principle)을 위반한다(새 직원 유형을 추가할 때마다 코드를 변경해야 하기 때문이다).
+    - 마지막으로 `calculatePay` 함수와 같이 직원 유형에 기반하여 처리를 해줘야 하는 다른 함수들(`isPayDay`, `deliverPay`) 등이 있을 경우 모두 저런 switch문이 들어가야 한다.
+  - 해결
+    - switch문을 추상 팩토리에 숨긴다.
+    - 팩토리는 switch문을 사용해 적절한 Employee 파생 클래스의 인스턴스를 생성한다.
+    - `calculatePay` 등의 함수는 Employee 인터페이스를 거쳐 호출되는데, 다형성으로 인해 실제 파생 클래스의 함수가 실행된다.
+
+  ```java
+  public abstract class Employee {
+      public abstract boolean isPayDay();
+      public abstract Money calculatePay();
+      public abstract void deliverPay(Money pay);
+  }
+  
+  public interface EmployeeFactory {
+      public Employee makeEmployee(EmployeeRecord r) throws InvalidEmployeeType;
+  }
+  
+  public class EmployeeFactoryImpl implements EmployeeFactory {
+      public Employee makeEmployee(EmployeeRecord r) throws InvalidEmployeeType;{
+          switch (e.type){
+              case COMMISIONED:
+                  return new CommisionedEmployee(r);
+              case HOURLY:
+                  return new HourlyEmployee(r);
+              case SALARIED:
+                  return SalariedEmployee(r);
+              default:
+                  throw new InvalidEmployeeType(r.type);
+          }
+      }
+  }
+  ```
+
+
+
+## 서술적인 이름을 사용해라
+
+- 이름이 길어도 괜찮다.
+  - 길고 서술적인 이름이 짧고 어려운 이름보다 낫다.
+  - 길고 서술적인 이름이 길고 서술적인 주석보다 좋다.
+  - 서술적인 이름을 사용하면 개발자 머릿속에서도 설계가 뚜렷해지므로 코드를 개선하기 쉬워진다.
+
+
+
+- 함수 이름을 정할 때는 여러 단어가 쉽게 읽히는 명명법을 사용한다.
+  - 여러 단어를 사용해 함수 기능을 잘 표현하는 이름을 선택한다.
+
+
+
+- 이름을 붙일 때는 일관성이 있어야 한다.
+  - 모듈 내에서 함수 이름은 같은 문구, 명사, 동사를 사용한다.
+
+
+
+## 함수 인수
+
+- 함수에서 이상적인 인수 개수는 0개다.
+  - 다음은 1개(단항)고, 다음은 2개(이항)다.
+  - 3개는 가능한 피하는 편이 좋고, 4개 이상은 특별한 이유가 필요하다.
+    - 4개 이상은 특별한 이유가 있어도 사용하면 안 된다.
+
+
+
+- 인수가 적어야 하는 이유
+  - 인수가 많을 수록 코드를 읽고 직관적으로 이해하기 어렵게 만든다.
+  - 테스트도 어렵게 만든다.
+    - 갖가지 인수를 가진 함수를 검증하는 테스트 케이스를 작성하는 것은 매우 귀찮은 일이다.
+    - 반면에 아예 인수가 없는 함수를 검증하는 것은 매우 간단하다.
+    - 인수가 3개를 넘어가면 인수마다 유효한 값으로 모든 조함을 구성해 테스트하기가 상당히 부담스러워진다.
+
+
+
+- 많이 쓰는 단항 형식
+  - 함수에 인수 1개를 넘기는 이유로 가장 흔한 경우는 두 가지다.
+    - 하나는 인수에 질문을 던지는 경우다(e.g.`file_exists("my/file/path")`).
+    - 다른 하나는 인수를 뭔가로 변환해 결과를 반환하는 경우다.
+  - 다소 드물게 사용하지만 아주 유용한 단항 함수 형식이 이벤트다.
+    - 단, 이벤트 함수는 조심해서 사용해야 한다.
+    - 이벤트라는 사실이 코드에 명확히 드러나야 한다.
+  - 위의 경우들이 아니라면 단항 함수는 가급적 피한다.
+
+
+
+- 플래그 인수
+  - 플래그 인수는 추하다.
+    - 함수에 부울 값을 넘기는 관례는 정말로 끔찍하다.
+    - 플레그가 참이면 이걸 하고, 거짓이면 저걸 한다는, 즉 함수가 한 번에 여러 가지를 처리한다는 뜻이기 때문이다.
+  - 따라서 플래그 인수를 받는 함수는 되도록 두 개의 함수로 나누는 것이 바람직하다.
+
+
+
+- 이항 함수
+  - 인수가 2개인 함수는 인수가 1개인 함수보다 이해하기 어렵다.
+  - 이항 함수가 적절한 경우도 있다.
+    - 예를 들어 직선 상의 좌표(x, y)는 일반적으로 인수 2개를 취해야 한다.
+    - 위 처럼 한 값(좌표)를 표현하는 데 두 개의 요소가 필요할 경우 또는 두 개의 인수 사이에 자연스러운 순서가 존재할 경우(x좌표는 y좌표보다 항상 앞에 있다) 이항 함수를 쓰는 것이 적절하다.
+  - 이항 이상의 함수의 가장 큰 문제 중 하나는 인수의 순서를 헷갈릴 수 있다는 것이다.
+    - 예를 들어 x좌표와 y 좌표 사이에는 자연스러운 순서가 존재해서, 인수를 넘길 때 헷갈릴 일이 많지 않다.
+    - 그러나 expected와 actual이라는 두 개의 인수를 넘길 때, 두 인수 사이에는 자연스러운 순서가 존재하지 않으므로(혹은 사람마다 자연스러운 순서가 다를 수 있으므로) 첫 번째 인수가 expected인지, 두 번째 인수가 actual인지 헷갈릴 수 있다.
+  - 이항 함수가 무조건 나쁘다는 것은 아니다.
+    - 프로그래밍을 하다보면 불가피한 경우도 있다.
+    - 그러나, 위험이 따른다는 사실을 인지하고 가능하면 단항 함수로 바꾸도록 노력해야 한다.
+    - 예를 들어 두 개의 인자를 받아야 하는 경우 하나의 인자를 클래스의 attribute로 만들어 하나만 받도록 할 수 있다.
+
+
+
+- 삼항 함수
+  - 인수가 3개인 함수는 인수가 2개인 함수보다 훨씬 더 이해하기 어렵다.
+  - 따라서 삼항 함수를 만들 때는 신중히 고려해야한다.
+
+
+
+- 인수 객체
+
+  - 인수가 2-3개 필요하다면 인수의 일부를 독자적인 클래스 변수로 선언할 수 있는지 살펴본다.
+  - 예시
+
+  ```python
+  # 아래와 같이 3개의 인수를 넘겨야 하는 경우에
+  def make_circle(x:int, y:int, redius:float):
+      pass
+  
+  # x, y를 Point라는 클래스의 클래스 변수로 묶어 넘기는 것을 고려해볼법하다.
+  def make_circle(center:Point, radius:float):
+      pass
+  ```
+
+
+
+- 가변 인수
+
+  - 때로는 인수 개수가 가변적인 함수도 필요하다.
+    - 가변적인 인수 전부를 동등하게 취급하면 list 혹은 dict 형 인수 하나로 취급할 수 있다.
+    - 즉 가변인수는 전부 묶어 하나의 인수로 취급한다.
+  - 예시
+    - 아래 두 함수는 각기 고정된 인수 name과 가변인수로 list와 dict를 받는 이항 함수이다. 
+
+  ```python
+  def insert_user(name, *args):
+      pass
+  
+  def insert_user(name, **kwargs):
+      pass
+  ```
+
+
+
+- 동사와 키워드
+  - 함수의 의도나 인수의 순서와 의도를 제대로 표현하려면 좋은 함수 이름이 필수다.
+  - 단항 함수는 함수와 인수가 동사/명사 쌍을 이루어야 한다.
+    - 예를 들어 `write(name)`은 누구나 이름을 쓰는 역할을 한다는 것을 알 수 있다.
+    - 좀 더 나은 이름은 `write_field(name)`으로, name이 필드명 중 하나라는 것이 보다 분명히 드러나기 때문이다.
+  - 함수 이름에 인수의 순서를 기억할 수 있도록 키워드를 추가하는 것도 좋은 방법이다.
+    - `assert_expected_equals_actual`이라는 함수 명은 expected가 먼저 오고, actual이 뒤에 온다는 사실을 함수 이름만 보고도 알 수 있게 해준다.
+
+
+
+## 부수효과를 일으키지 마라
+
+- 부수효과
+
+  - 함수에서 한 가지를 하겠다고 약속하고선 남몰래 다른 짓도 하는 것이다.
+  - 예시
+    - 아래 함수가 일으키는 부수 효과는 `Session.initialze()`를 통해 세션을 초기화한다는 것이다.
+    - `check_password`만 봐서는 이 함수가 세션을 초기화시킬수도 있다는 사실을 짐작도 할 수 없다.
+
+  ```python
+  def check_password(user_name, password):
+      user=UserGateWay.find_by_name(user_name)
+      if user != None:
+          coded_phrase = user.get_phrase_encoded_by_password()
+          phrase = crytographer.decrypt(codedPhrase, password)
+          if "Valid Password"==phrase:
+              Session.initialze()
+              return True
+      return False
+  ```
+
+
+
+- 위와 같은 부수 효과는 시간적인 결합을 초래한다.
+
+  -  위 예시에서 `check_password`라는 함수는 세션을 초기화해도 될 때에만 호출이 가능해진다.
+    - 즉 세션을 초기화해도 될 때라는 시간에 종속되어 버린다.
+  - 이러한 시간적인 결합은 혼란을 일으킨다.
+
+  - 만약 불가피하다면 반드시 함수명에 부수효과를 명시해야 한다(`check_password_and_initalize_session`)
+    - 물론 이 경우에도 함수는 한 가지만 해야 한다는 원칙을 위반하기는 하지만 명시하고 위반하는 것이 낫다.
+
+
+
+## 명령과 조회를 분리해라
+
+- 함수는 뭔가를 수행하거나 뭔가에 답하거나 둘 중 하나만 해야 한다.
+  - 즉 객체 상태를 변경하거나, 객체 정보를 반환하거나 둘 중 하나만 해야 한다.
+  - 둘 다 하면 혼란을 초래한다.
+
+
+
+- 예시
+
+  - `set` 함수는 이름이 attr인 attribute를 찾아, 그 값을 value로 설정한 후 성공하면 true, 실패하면 false를 반환한다.
+  - 수행과 응답을 둘 다 하므로 `if set(attr, value)`와 같은 괴상한 코드가 나오게 되는 것이다.
+
+  ```python
+  def set(attr, value):
+      pass
+  
+  if set(attr, value):
+      pass
+  ```
+
+
+
+- 올바른 코드
+
+  - set이라는 혼라스러운 함수를 2개의 함수로 분리한다.
+
+  ```python
+  if attr_exists("username"):
+      set_attr("username", "theo")
+
+
+
+
+
+## Try/Catch
+
+- try/catch 블록은 코드 구조에 혼란을 일으키며 정상 동작과 오류 처리 동작을 뒤섞는다.
+
+  - 그러므로 try/catch 블록을 별도 함수로 뽑아내는 편이 좋다.
+  - 예시
+    - 아래 코드에서 실제 삭제는 `delete_page_and_all_references` 함수가 담당하지만 `delete_page_and_all_references` 함수 내부에 try/catch문을 넣을 경우 정상 동작과 오류 처리 동작이 뒤섞이게 된다.
+    - 따라서 예외 처리를 위한 `delete`함수를 따로 생성하고 호출은 `delete`를 하되, 실제 삭제는 `delete_page_and_all_references`에서 하도록 한다.
+
+  ```python
+  def delete_page_and_all_references(page):
+      delete_page(page)
+      registry.delete_reference(page.name)
+  
+  
+  def delete(page):
+      try:
+          delete_page_and_all_references(page)
+      except Exception as e:
+          print(e)
+  ```
+
+
+
+- 오류 처리도 하나의 작업이다.
+  - 오류를 처리하는 함수는 오류만 처리해야 한다.
+    - 함수는 한 가지 작업만 해야 한다.
+    - 오류처리도 한 가지 작업이다.
+  - 예외처리를 하는 함수는 try로 시작해 catch, finally로 끝나야 한다는 말이다.
+
+
+
+## 구조적 프로그래밍
+
+- 구조적 프로그래밍
+  - 다익스트라가 go to문의 해로움을 주장하면서 대두된 방법론이다.
+  - 다익스트라는 모든 함수와 함수 내 모든 블록에 입구와 출구가 하나만 존재해야 한다고 말했다.
+    - 즉 함수의 return문은 하나여야 한다.
+    - 반복문 안에서 break이나 continue를 사용해선 안된다.
+    - go to는 절대로 안된다.
+
+
+
+- 구조적 프로그래밍은 함수가 작을 경우 별 이익을 제공하지 못한다.
+  - 함수가 아주 클 때에만 상당한 이익을 제공한다.
+  - 따라서 함수를 작게 만든다면 간혹 return, continue, break 등을 여러 번 사용해도 괜찮다.
+  - 오히려 때로는 단일 입/출구 규칙보다 의도를 표현하기 쉬워진다.
+  - 다만 go to문은 큰 함수에서만 의미가 있으므로, 작은 함수에서는 피해야 한다.
+
+
+
+## 함수를 어떻게 짜는가
+
+- 소프트웨어를 짜는 행위는 여느 글짓기와 비슷하다.
+  - 먼저 생각을 기록한 후 읽기 좋게 다듬는다.
+  - 초안은 대개 서투르고 어수선하므로 원하는 대로 읽힐 때까지 말을 다듬고 문장을 고치고 문단을 정리한다.
+
+
+
+- 함수를 짤 때도 마찬가지다.
+
+  - 처음에는 길고 복잡하며, 들여쓰기 단계도 많고, 중복된 루프도 많으며, 인수도 아주 많다. 이름은 즉흥적이고 코드는 중복된다.
+
+  - 그 서투른 코드를 빠짐없이 테스트하는 단위 테스트도 만든다.
+  - 그런 다음 코드를 다듬고, 함수를 만들고, 이름을 바꾸고, 중복을 제거한다.
+  - 이 와중에도 코드는 항상 단위 테스트를 통과한다.
+  - 최종적으로는 이 장에서 설명한 규칙을 따르는 함수가 얻어진다.
