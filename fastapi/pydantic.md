@@ -147,3 +147,28 @@
       foo: Dict[str, Element]
   ```
 
+
+
+- List  element들의 유효성 검증하기
+
+  - 아래와 같이 배열에 일정한 값들이 담겨서 와야 할 때가 있다.
+
+  ```json
+  {
+      "fruits":["apple", "orange", "banana"]
+  }
+  ```
+
+  - 아래와 같이 model을 정의한다.
+    - 정의한 배열에 있는 요소들이 요청으로 들어오지 않아도 유효한 것으로 판단한다.
+    - 그러나 배열에 없는 요소가 요청으로 들어올 경우 유효하지 않은 것으로 판단한다.
+
+  ```python
+  from pydantic import BaseModel
+  from typing import List, Optional, Literal
+  
+  
+  class Fruit(BaseModel):
+      fruits: Optional[List[Literal['apple', 'orange', 'banana']]]
+  ```
+
