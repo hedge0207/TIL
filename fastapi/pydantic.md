@@ -117,3 +117,33 @@
 
 
 
+- pydantic의 Dict type에 key, value 타입 지정하기
+
+  - 리스트의 첫 번째 요소에 key의 type, 두 번째 요소에 value의 type을 입력한다.
+
+   ```python
+   from pydantic import BaseModel
+   from typing import Dict
+    
+   class Foo(BaseModel):
+       foo: Dict[str, int]
+   ```
+
+  - key 혹은 value의 값을 제한하기
+      - Enum을 사용한다.
+      - `Element`에 정의된 값만 받게 된다.
+
+  ```python
+  from pydantic import BaseModel
+  from typing import Dict
+  from enum import Enum
+    
+  class Element(Enum):
+      RED="red"
+      GREEN="green"
+      YELLOW="yellow"
+    
+  class Foo(BaseModel):
+      foo: Dict[str, Element]
+  ```
+
