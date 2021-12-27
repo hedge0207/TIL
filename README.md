@@ -80,7 +80,14 @@
 
 <br/>
 
-## web_application_architecture
+## [web_application_architecture](https://github.com/hedge0207/TIL/blob/master/CS/web_application_architecture.md)
+
+- web_application_architecture
+  - Web Sevice의 전체적인 흐름
+  - WAS와 Web Server
+- Proxy
+- Python으로 웹 개발하기
+  - WSGI와 ASGI
 
 <br/>
 
