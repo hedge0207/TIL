@@ -864,6 +864,45 @@
 
 
 
+## Container 상태 보기
+
+- 아래 명령어를 통해 모든 컨테이너의 상태를 볼 수 있다.
+
+  ```bash
+  $ docker stats [옵션1] [옵션2] [...]
+  ```
+
+
+
+- 결과
+
+  - `NET I/O`
+    - 컨테이너가 네트워크 인터페이스를 통해 주고 받은 데이터의 양
+  - `BLOCK I/O`
+    - 컨테이너가 disk에서 읽고 쓴(read and write) 데이터의 양
+
+  ```bash
+  CONTAINER ID   NAME           CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O         PIDS
+  34ac359a659b   container1     0.00%     41.64MiB / 125.6GiB   0.03%     392kB / 15.1MB    0B / 0B           49
+  d71698367f39   container2     0.23%     227.7MiB / 125.6GiB   0.18%     168MB / 68.7MB    8.19kB / 0B       62
+  d62202653708   container3	  0.19%     59.24MiB / 125.6GiB   0.05%     27.7MB / 11MB     4.1kB / 8.19kB    13
+  4b6e5264a8f2   container4	  0.54%     368.5MiB / 125.6GiB   0.29%     2.98GB / 4.09GB   4.1kB / 0B        19
+  ```
+
+
+
+- 옵션
+  - `--all`, `-a`
+    - 모든 컨테이너의 상태를 보여준다.
+    - 기본값은 실행 중인 컨테이너의 상태만 보여준다.
+  - `--format`
+    - Go 템플릿을 통해 format을 설정할 수 있다.
+  - `--no-stream`
+    - 명령어 실행 시점의 상태를 보여준다.
+    - 기본값은 지속적으로 변화하는 상태를 보여준다.
+  - `--no-trunc`
+    - 결과를 잘라내지 않고 전부 보여준다.
+
 
 
 
