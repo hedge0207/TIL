@@ -27,6 +27,7 @@
   
   # 리모트->로컬
   $ scp 유저명@IP주소:파일디렉토리 목적디렉토리(경로)
+  # scp theo@127.0.0.1:/home/theo/test.txt C:\Users\user\Desktop
   
   # 리모트->리모트
   $ scp 유저명@IP주소:파일디렉토리 유저명@IP주소:파일디렉토리
