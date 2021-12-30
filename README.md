@@ -546,15 +546,15 @@
 
 # FastAPI
 
-## fastapi_part1
+## [fastapi_part1](https://github.com/hedge0207/TIL/blob/master/fastapi/fastapi_part1.md)
 
-## fastapi_part2
+## [fastapi_part2](https://github.com/hedge0207/TIL/blob/master/fastapi/fastapi_part2.md)
 
-## gunicorn
+## [gunicorn](https://github.com/hedge0207/TIL/blob/master/fastapi/guincorn.md)
 
-## open_api
+## [open_api](https://github.com/hedge0207/TIL/blob/master/fastapi/open_api.md)
 
-## pydantic
+## [pydantic](https://github.com/hedge0207/TIL/blob/master/fastapi/pydantic.md)
 
 
 
