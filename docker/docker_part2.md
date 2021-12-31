@@ -552,38 +552,81 @@
 
 
 
-# docker volume
+# Manage application data
 
-- Docker는 컨테이너의 데이터를 컨테이너 내부뿐 아니라 외부에도 저장한다.
+- Docker는 컨테이너 내부에 데이터를 저장한다.
+  - 컨테이너가 삭제될 경우 데이터도 함께 삭제된다.
+    - 따라서 컨테이너가 삭제되더라도 데이터를 남겨야 하는 경우 컨테이너의 외부에 데이터를 저장할 방법이 필요하다.
+  - 또한 다른 프로세스(호스트 혹은 다른 컨테이너)에서 컨테이너 내부의 데이터에 접근하기도 번거롭다.
+  - 따라서 컨테이너 이외의 장소에 데이터를 저장할 방법이 필요하다.
+  - Docker는 크게 아래 3가지 방식을 제공한다.
+    - Volumes
+    - Bind mounts
+    - tmpfs mounts
+  - 위 방식 중 어떤 방식을 사용하더라도 컨테이너 내부에서는 차이가 없다.
+
+
+
+- Docker 컨테이너 내부의 데이터를 외부에 저장하는 방법.
 
   - bind mount
+    - data를 host의 filesystem 내부의 어느 곳에든 저장하는 방식이다.
     - container의 데이터를 임의의 host 경로에 저장
+  
   - volume
-    - container의 데이터를 host의 /var/lib/docker/volume이라는 경로에 저장
-
+    - data를 host의 filesystem중 docker가 관리하고 있는 영역에 저장하는 방식이다.
+    - container의 데이터를 host의 `/var/lib/docker/volume`이라는 경로에 저장
+    - 해당 경로는 docker를 설치할 때 지정된 docker의 root 경로(`/var/lib/docker`)로, 볼륨 외에도 이미지, 컨테이너 관련된 정보들이 저장되어 있다.
+  
   - tmpfs
     - host의 메모리에 저장
+    - 파일로 저장하는 것이 아니라 메모리에 저장하는 것이므로 영구적인 방법은 아니다.
   - bind mount와 volume의 차이
-    - volume은 오직 해당 volume을 사용하는 컨테이너에서만 접근이 가능하지만 bind bount 된 데이터는 다른 컨테이너 또는 호스트에서도 접근이 가능하다.
+    - volume은 오직 해당 volume을 사용하는 컨테이너에서만 접근이 가능하지만 bind mount 된 데이터는 다른 컨테이너 또는 호스트에서도 접근이 가능하다.
+    - 즉 Non-docker process는 volume을 수정할 수 없다.
     - 바인드 마운트를 사용하면 호스트 시스템의 파일 또는 디렉터리가 컨테이너에 마운트 된다.
     - 바인드 마운트는 양방향으로 마운트되지만(즉, 호스트의 변경 사항이 컨테이너에도 반영되고 그 반대도 마찬가지), volume의 경우 호스트의 변화가 컨테이너 내부에는 반영되지 않는다.
-    - volume의 경우  host 내부에 docker area 영역 안에서 관리된다.
-
+  
   ![](docker_part2.assets/volume_vs_bindmount.png)
-
+  
   - 공식문서에서는 volume을 사용하는 것을 추천한다.
     - 백업이나 이동이 쉽다.
-    - docker CLI 명령어로 볼륨을 관리할 수 있다.
+    - docker CLI 명령어로 볼륨을 관리할 수 있다(`docker volume ~`).
     - 볼륨은 리눅스, 윈도우 컨테이너에서 모두 동작한다.
     - 컨테이너간에 볼륨을 안전하게 공유할 수 있다.
     - 볼륨드라이버를 사용하면 볼륨의 내용을 암호화하거나 다른 기능을 추가할 수 있다.
     - 새로운 볼륨은 컨테이너로 내용을 미리 채울 수 있다.
-  - 기본 저장 경로
-    - `/var/lib/docker/volumes/`
 
 
 
-- volume
+- 볼륨 내부의 데이터 유무에 따른 차이
+
+  - 빈 볼륨을 컨테이너 내부의 디렉토리에 마운트 할 경우
+    - 컨테이너 내부의 디렉토리가 비어 있던 볼륨에 복사된다.
+
+  - 컨테이너 내부의 디렉토리에 바인드 마운트하거나 비어 있지 않은 볼륨을 마운트할 경우
+    - 기존에 컨테이너 내부에 존재하던 디렉토리가 가려지게 된다.
+    - 그렇다고 삭제되거나 대체되는 것은 아니며, 마운트를 해제할 경우 다시 보이게 된다.
+
+
+
+## Volumes
+
+> https://docs.docker.com/storage/volumes/
+
+- volume을 사용해야 하는 경우
+  - 여러 컨테이너들이 데이터를 공유해야 하는 경우
+    - 여러 컨테이너는 동시에 같은 volume에 마운트 할 수 있다.
+    - 다를 컨테이너에 연결된 하나의 볼륨에서 읽기, 쓰기 모두 동시에 처리 가능하다.
+  - 마운트 하려는 디렉토리 혹은 파일이 호스트의 filesystem에 있는지 확신하기 어려울 경우
+    - volume은 host의 filesystem 중에서도 docker가 관리하는 영역에 생성되므로 호스트의 filesystem에 마운트할 파일 혹은 폴더가 실제로 존재한다는 것이 보장된다.
+  - data를 local(host의 filesystem)이 아닌 cloud나 remote 호스트에 저장해야 할 경우
+  - data를 백업하거나 복원하거나 다른 host로 옮겨야 할 경우
+  - 높은 수준의 I/O가 발생하는 작업을 해야 할 경우
+
+
+
+- 관련 명령어
 
   - 볼륨 생성하기
 
@@ -614,29 +657,15 @@
 
   - volume 삭제
     - cp를 통해 볼륨을 다른 디렉터리에 복제해도 rm 명령을 사용하면 **복제 된 volume도 삭제된다.**
-  
+
   ``` bash
   $ docker volume rm <볼륨 이름>
   ```
-  
+
   - 사용하지 않는 볼륨 일괄 삭제
-  
+
   ```bash
   $ docker volume prune
-  ```
-
-
-
-- bind mount
-
-  - volume과 달리 다른 컨테이너나 호스트도 파일의 내용에 접근이 가능하다.
-  - 마운트하기
-    - `-v` 옵션 또는 `--mount` 옵션 사용
-
-  ```bash
-  $ docker run -v <호스트 경로>:<컨테이너 경로> <이미지이름>
-  
-  $ docker run --mount type=bind,source=<호스트 경로>,target=<도커 경로>
   ```
 
 
@@ -653,11 +682,15 @@
 
 
 
+
+
 - docker volume의 기본 경로 변경하기
 
   - docker data root directory 자체를 변경하는 방법
     - 아래 [Data Root Directory 변경] 부분 참고
   - 지정한 경로에 volume  생성하기
+    - `--driver local`의 의미는 local, 즉 호스트에 저장하겠다는 의미이다.
+    - local이 아닌 다른 옵션을 주면 외부 호스트에 저장이 가능하다.
     - 이후 run  명령이나 docker-compose 파일에서 아래에서 생성한 volume 이름을 적어주면 된다.
 
   ```bash
@@ -709,6 +742,37 @@
   ```
 
 
+
+## Bind mounts
+
+> https://docs.docker.com/storage/bind-mounts/
+
+- bind mounts를 사용해야 하는 경우
+  - 설정 파일을 호스트와 컨테이너가 공유해야 하는 경우
+  - 소스코드를 호스트와 컨테이너가 공유해야 하는 경우
+
+
+
+- bind mount
+
+  - volume과 달리 다른 컨테이너나 호스트도 파일의 내용에 접근이 가능하다.
+  - 마운트하기
+    - `-v` 옵션 또는 `--mount` 옵션 사용
+
+  ```bash
+  $ docker run -v <호스트 경로>:<컨테이너 경로> <이미지이름>
+  
+  $ docker run --mount type=bind,source=<호스트 경로>,target=<도커 경로>
+  ```
+
+
+
+## tmpfs
+
+> https://docs.docker.com/storage/tmpfs/
+
+- tmpfs를 사용해야 하는 경우
+  - 보안상의 이유 등으로 데이터를 호스트나 컨테이너에 일시적으로 저장하고자 할 경우.
 
 
 
