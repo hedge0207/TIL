@@ -1161,7 +1161,11 @@
 
 - Dockerfile
 - Docker Compose
-- docker volume
+- manage application data
+  - volumes
+  - bind mounts
+  - tmpfs
+
 - etc
 - 참고
 
