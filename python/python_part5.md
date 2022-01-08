@@ -1423,8 +1423,6 @@
 
 
 
-
-
 # Python type hint
 
 - 타입 힌트
