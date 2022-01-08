@@ -1,0 +1,2 @@
+- 최대 request body size
+  - https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-network.html 에 보면 100mb라고 나와 있는데 그 이상 벌크가 되는 이유?
