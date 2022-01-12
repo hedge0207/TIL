@@ -6,15 +6,26 @@
   - Restful API를 기술하는 표준
     - 서비스에서 제공하는 API 기능과 End Point를 개발자나 시스템이 자동으로 발견하고 처리하는데 필요한 정보를 제공한다.
     - json이나 yml 형식으로 기술하여야 하며 OAS 파일을 읽어서 디플로이 해주는 도구(e.g. swagger-ui)를 사용하면 브라우저에서 편리하게 API를 볼 수 있다.
+    - MS, Google, IBM 등이 명세 작성에 참여하였다.
   - 이전에는 Swagger spec으로 불렸다.
     - 3.0부터 OpenAPI 3.0 Specification이라는 이름으로 표준화 되었다.
+    - 기존의 Swagger spec이라는 이름은 Swagger라는 툴의  spec인 것 같은 느낌이 강해 Restful API design의 spec이라는 것을 강조하기 위해 이름을 변경했다.
+
+
+
+- Swagger
+  - OAS를 수행하기위한 도구
   - Swagger는 OAS에 맞게 디자인하고 빌드하기 위한 도구들의 모음으로 아래와 같은 요소로 이루어져 있다.
     - Swagger Editor: 브라우저 기반 편집기로 OAS를 쉽게 작성할 수 있게 해준다.
     - Swagger UI: OAS 문서를 디플로이하고 브라우저에서 예쁘게 표시할 수 있도록 해준다(redoc으로 대체 가능).
     - Swagger Codegen: OAS에 맞게 서버나 클라이언트의 stub code를 생성해 준다.
-  - Redoc
-    - OAS 파일을 읽어서 디플로이 해주는 도구로 Swagger-UI와 비슷한 역할을 수행한다.
-    - 설치와 사용이 간편하다는 장점이 있지만, Swagger-UI와 달리 브라우저에서 API TEST 기능을 해볼수는 없다는 단점이 있다.
+    - 그 밖에 여러 도구들이 있다.
+
+
+
+- Redoc
+  - OAS 파일을 읽어서 디플로이 해주는 도구로 Swagger-UI와 비슷한 역할을 수행한다.
+  - 설치와 사용이 간편하다는 장점이 있지만, Swagger-UI와 달리 브라우저에서 API TEST 기능을 해볼수는 없다는 단점이 있다.
 
 
 
@@ -27,7 +38,7 @@
   - 문서 생성 과정
     - fastapi 어플리케이션(인스턴스)은 OpenAPI 스키마(title, description, tags 등)를 반환하는 `.openapi()`라는 메서드를 가지고 있다.
     - application 인스턴스가 생성될 때,  `openapi_url`에 등록된 url(기본값은 `/openapi.json`)도 함께 등록된다.
-    - 해당 url에 요청을 보내면 openapi 스키마 정보를 반환한다.
+    - 해당 url에 요청을 보내면 openapi 스키마(Json) 정보를 반환한다.
     - `.openapi()`는 등록된 스키마 정보가 있는지 확인해서 있으면 반환해주는 역할만 할 뿐이고, 실제 스키마 생성은 `.get_openapi()`메서드에서 이루어진다.
 
 
@@ -677,3 +688,4 @@
 
 - [fastapi-github](https://github.com/tiangolo/fastapi)
 
+- https://swagger.io/blog/api-strategy/difference-between-swagger-and-openapi/
