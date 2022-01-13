@@ -125,11 +125,31 @@
 
 
 
+- fastapi에서 문서를 생성하는 과정
+
+  - fastapi가 OAS를 기반으로 json 형식의 스키마를 생성한다.
+
+  ![](open_api.assets/화면 캡처 2022-01-11 161438.png)
+
+  - `/docs`로 요청이 들어오면 fastapi는 Swagger UI(javascript, css, html의 묶음)를 반환한다.
+
+  ![](open_api.assets/화면 캡처 2022-01-11 170958.png)
+
+  - Swagger UI가 렌더링을 시작하고 javascript가 실행되면서 fastapi가 작성한 json 파일을 요청한다.
+    - 별도로 설정해주지 않을 경우 endpoint는 `/openapi.json`이다.
+    - 아래 예시의 경우 설정을 변경해서 `/myopenapi`로 요청을 보낸다.
+
+  ![](open_api.assets/화면 캡처 2022-01-11 170647.png)
+
+  - 응답으로 받아온 json파일을 파싱하여 화면에 뿌려준다.
+
+  ![](open_api.assets/화면 캡처 2022-01-11 171101.png)
 
 
 
 
-## 확장
+
+## 상세
 
 ### openapi 스키마 변경하기
 
@@ -364,65 +384,7 @@
       "description": "My First OpenAPI Doc",
       "version": "0.0.1"
     },
-    "paths": {
-      "/user/find-by-id": {
-        "get": {
-          "tags": [
-            "user"
-          ],
-          "summary": "Find User By Id",
-          "operationId": "find_user_by_id_user_find_by_id_get",
-          "responses": {
-            "200": {
-              "description": "Successful Response",
-              "content": {
-                "application/json": {
-                  "schema": {}
-                }
-              }
-            }
-          }
-        }
-      },
-      "/user/find-by-nickname": {
-        "get": {
-          "tags": [
-            "user"
-          ],
-          "summary": "Find User By Nickname",
-          "operationId": "find_user_by_nickname_user_find_by_nickname_get",
-          "responses": {
-            "200": {
-              "description": "Successful Response",
-              "content": {
-                "application/json": {
-                  "schema": {}
-                }
-              }
-            }
-          }
-        }
-      },
-      "/pet/find-by-id": {
-        "get": {
-          "tags": [
-            "pet"
-          ],
-          "summary": "Find Pet By Id",
-          "operationId": "find_pet_by_id_pet_find_by_id_get",
-          "responses": {
-            "200": {
-              "description": "Successful Response",
-              "content": {
-                "application/json": {
-                  "schema": {}
-                }
-              }
-            }
-          }
-        }
-      }
-    },
+    // (...)
     "tags": [
       {
         "name": "user",
@@ -439,14 +401,14 @@
     ]
   }
   ```
-
+  
   - `/docs`
-
+  
   ![image-20220110155402123](open_api.assets/image-20220110155402123.png)
 
 
 
-### Request,  Response 설정하기
+### Request 설정하기
 
 - API와 마찬가지로 Request, Response 역시 설정만 해놓으면 자동으로 openapi에 추가된다.
 
@@ -618,7 +580,7 @@
 - Request body 예시 추가하기
 
   - 코드
-    - Reuqest의 inner class로 Config를 선언한다.
+    - Reuqest의 inner class로 `Config`를 선언한다.
     - `schema_extra`라는 이름으로 딕셔너리를 선언하고 `example`라는 key의 value로 예시로 사용할 값을 넣는다.
     - `schema_extra` attirbute는 JSON 스키마를 확장하거나 변경할 때 사용된다.
 
@@ -642,6 +604,7 @@
 
   - 결과
     - example이 추가된 것을 확인 가능하다.
+    - `components.schema.User.example`에 추가된다.
 
   ```json
   {	
@@ -679,13 +642,275 @@
 
 
 
+- `Field`를 사용하여 예시 추가
+
+  - pydantic의 `Field`를 사용하여 추가가 가능하다.
+
+  ```python
+  from typing import Optional
+  from pydantic import BaseModel, Field
+  
+  
+  class User(BaseModel):
+      id: int = Field(..., example=11)
+      name: str = Field(..., example="John")
+  ```
+
+  - 결과
+    - `schema_extra` 에 추가하는 것과 비교할 때 `/docs`에서 봤을 때의 결과는 동일하지만, json파일은 다르게 생성된다.
+    - `components.schema.User.properties`의 각 필드 별로 `example`이 추가된다.
+
+  ```json
+  // ...
+  "User": {
+      "title": "User",
+      "required": [
+          "id",
+          "name"
+      ],
+      "type": "object",
+      "properties": {
+          "id": {
+              "title": "Id",
+              "type": "integer",
+              "example": 11
+          },
+          "name": {
+              "title": "Name",
+              "type": "string",
+              "example": "John"
+          }
+      }
+  }
+  // ...
+  ```
+
+
+
+- `Body`를 사용하여 추가
+
+  - ` fastapi`의 `Body`를 활용하여 추가가 가능하다.
+
+  ```python
+  from fastapi import FastAPI, Body
+  from models.request import User
+  from models.response import Pet
+  import uvicorn
+  
+  # ...(중략)...
+  
+  # 예시를 생성
+  example = Body(
+      ...,
+      example={
+          "id": 11,
+          "name": "John"
+      }
+  )
+  
+  @app.post("/find-pet-by-user", tags=["pet"], response_model=Pet, responses=responses)
+  def find_pet_by_user(request:User = example):	# 예시를 추가
+      response = {
+          "id": 1,
+          "name": "spring",
+          "breed": "bichon",
+          "owner": request,
+          "age": 2
+      }
+      return response
+  
+  if __name__ == '__main__':
+      uvicorn.run(app, host='0.0.0.0', port=8002)
+  ```
+
+  - 결과
+    - 이 경우 위의 두 방식(`schema_extra`, `Field`를 사용해서 추가)과 example이 들어가는 위치가 완전히 다르다.
+    - `components.schema`가 아닌 `paths/<endpoint>/<http method>/requestBody/content/<content type>/example`에 추가된다.
+    - 문서에서 보여주는 방식은 위의 두 방식과 차이가 없다.
+
+  ```json
+  {
+      // (...)
+      "paths": {
+          "/find-pet-by-user": {
+              "post": {
+                  "tags": [
+                      "pet"
+                  ],
+                  "summary": "Find Pet By User",
+                  "operationId": "find_pet_by_user_find_pet_by_user_post",
+                  "requestBody": {
+                      "content": {
+                          "application/json": {
+                              "schema": {
+                                  "$ref": "#/components/schemas/User"
+                              },
+                              "example": {
+                                  "id": 11,
+                                  "name": "John"
+                              }
+                          }
+                      },
+                      "required": true
+                  },
+                  // (...)
+          }
+      ]
+  }
+  ```
+
+
+
+- Request body에 복수의 예시 추가하기
+
+  - 딕셔너리 형태로 복수의 예시를 추가할 수 있다.
+    - key에는 각 예시를 구분할 수 있는 값이 들어간다.
+    - value에는 `summary`, `description`, `value`, `externalValue`를 key로 가지는 딕셔너리가 들어간다.
+    - `description`에는 markdown 형식으로 작성이 가능하다.
+    - `externalValue`는 `value`에 담기 힘들 정도로 긴 예시나, 보다 쉬운 설명을 위해 json, 혹은 image등을 가리키는 url을 값으로 받는다.
+    - 그러나 `externalValue`의 경우 Swagger UI에서 지원하지 않아 사용이 불가능하다.
+  - `Body()`뿐 아니라 아래와 같은 것들에 모두 example을 선언할 수 있다.
+    - `Path()`, `Query()`, `Header()`, `Cookie()`, `Form()`, `File()`
+
+  - 예시
+
+  ```python
+  from fastapi import FastAPI, Body
+  from models.request import User
+  from models.response import Pet
+  import uvicorn
+  
+  
+  # (...)
+  
+  
+  examples = Body(
+      ...,
+      examples={
+          "good":{
+              "summary":"A normal example",
+              "description": "A **normal** user works correctly",
+              "value":{
+                  "id":11,
+                  "name":"John"
+              }
+          },
+          "bad":{
+              "summary":"A abnormal example",
+              "description":"""This example will return 422 Unprocessable Entity. 
+                              Because the id is not a valid integer""",
+              "value":{
+                  "id":"wrong_value",
+                  "name":"John"
+              }
+          },
+          "external_value":{
+              "summary":"external value",
+              "externalValue":"http://example.com/examples/object-example.json"
+          }
+      }
+  )
+  
+  @app.post("/find-pet-by-user", tags=["pet"], response_model=Pet, responses=responses)
+  def find_pet_by_user(request:User = examples):
+      response = {
+          "id": 1,
+          "name": "spring",
+          "breed": "bichon",
+          "owner": request,
+          "age": 2
+      }
+      return response
+  
+  if __name__ == '__main__':
+      uvicorn.run(app, host='0.0.0.0', port=8002)
+  ```
+
+  - 결과
+    - `paths/<endpoint>/<http method>/requestBody/content/<content type>/examples`에 추가된다.
+
+  ```json
+  {
+      "openapi": "3.0.2",
+      "info": {
+          "title": "My OpenAPI Doc",
+          "description": "My First OpenAPI Doc",
+          "version": "0.0.1"
+      },
+      "paths": {
+          "/find-pet-by-user": {
+              "post": {
+                  "tags": [
+                      "pet"
+                  ],
+                  "summary": "Find Pet By User",
+                  "operationId": "find_pet_by_user_find_pet_by_user_post",
+                  "requestBody": {
+                      "content": {
+                          "application/json": {
+                              "schema": {
+                                  "$ref": "#/components/schemas/User"
+                              },
+                              "examples": {
+                                  "good": {
+                                      "summary": "A normal example",
+                                      "description": "A **normal** user works correctly",
+                                      "value": {
+                                          "id": 11,
+                                          "name": "John"
+                                      }
+                                  },
+                                  "bad": {
+                                      "summary": "A abnormal example",
+                                      "description": "This example will return 422 Unprocessable Entity. \n                            											Because the id is not a valid integer",
+                                      "value": {
+                                          "id": "wrong_value",
+                                          "name": "John"
+                                      }
+                                  }
+                              }
+                          // (...)
+  ```
+
+  - `/docs`
+
+  ![image-20220112134050937](open_api.assets/image-20220112134050937.png)
+
+
+
+- example이 추가되는 과정
+  - `schema_extra`나 `Field`에 예시를 추가하는 경우
+    - example을 작성하면 Pydantic Model의 JSON Schema에 example이 포함된다.
+    - Pydantic Model의 JSON Schema는  OpenAPI에 포함되므로 결국 docs에 example이 나타나게 된다.
+    - JSON Schema에는 example이라는 필드가 원래 존재하지 않는다(최신 버전에는 examples라는 필드가 추가되었다).
+    - 따라서 OpenAPI는 자체적으로 JSON Schema를 정의하고, example 필드를 추가해서 사용한다.
+    - 따라서 example이라는 필드는 JSON Schema의 필드는 아니지만, OpenAPI가 자체적으로 정의한 JSON Schema의 일부이므로 docs에서 보여줄 수 있게 된다.
+  - `Body()`(혹은 `Query()`, `Path()`등)를 활용해서 예시를 추가하는 경우
+    - 이 경우  JSON Schema에 포함되지 않으며, OpenAPI가 자체적으로 정의한 JSON Schema에도 포함되지 않는다.
+    - OpenAPI의 path operation을 선언하는 부분에 직접 추가된다(즉 JSON Schema를 사용하지 않는 부분에 직접 추가 된다).
+    - `Path()`, `Query()`, `Header()`, `Cookie()`의 경우 `example` 혹은 `examples`는 OpenAPI의 [Parameter Object](https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#parameter-object)에 추가된다.
+    - `Body()`, `File()`, `Form()`의 경우 `example` 혹은 `examples`는 OpenAPI의 Request Body 오브젝트의 content 필드 내부의 [Media Type Object](https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#mediaTypeObject)에 추가된다.
+  - OpenAPI:3.1.0부터는 최신 버전의 JSON Schema(즉 examples가 추가된 버전)를 기반으로 하므로 JSON Schema와 OpenAPI가 직접 정의한 JSON Schema 사이의 차이가 거의 사라졌다.
+    - 그럼에도 Swagger UI는 아직 OpenAPI:3.1.0을 지원하지 않으므로 위와 같이 사용해야 한다.
+
+
+
+### Response 설정하기
+
+
+
+## Extending OpenAPI
+
+> https://fastapi.tiangolo.com/advanced/extending-openapi/ 참고
+
+
+
 
 
 # 참고
 
 - [pydantic-Model Config](https://pydantic-docs.helpmanual.io/usage/model_config/)
 - [Swagger-Grouping Operations With Tags](https://swagger.io/docs/specification/2-0/grouping-operations-with-tags/?sbsearch=tags)
-
 - [fastapi-github](https://github.com/tiangolo/fastapi)
-
 - https://swagger.io/blog/api-strategy/difference-between-swagger-and-openapi/
+- https://fastapi.tiangolo.com/tutorial/schema-extra-example/
