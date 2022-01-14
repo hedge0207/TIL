@@ -115,21 +115,21 @@
 
   - fastapi가 OAS를 기반으로 json 형식의 스키마를 생성한다.
 
-  ![](open_api.assets/image-2022-01-11 161438.png)
+  ![](open_api.assets/image-2022-01-11161438.png)
 
   - `/docs`로 요청이 들어오면 fastapi는 Swagger UI(javascript, css, html의 묶음)를 반환한다.
 
-  ![](open_api.assets/image-2022-01-11 170958.png)
+  ![](open_api.assets/image-2022-01-11170958.png)
 
   - Swagger UI가 렌더링을 시작하고 javascript가 실행되면서 fastapi가 작성한 json 파일을 요청한다.
     - 별도로 설정해주지 않을 경우 endpoint는 `/openapi.json`이다.
     - 아래 예시의 경우 설정을 변경해서 `/myopenapi`로 요청을 보낸다.
 
-  ![](open_api.assets/image-2022-01-11 170647.png)
+  ![](open_api.assets/image-2022-01-11170647.png)
 
   - 응답으로 받아온 json파일을 파싱하여 화면에 뿌려준다.
 
-  ![](open_api.assets/image-2022-01-11 171101.png)
+  ![](open_api.assets/image-2022-01-11171101.png)
 
 
 
@@ -609,7 +609,7 @@
   - `/docs`
     - request body가 추가되었다.
 
-  ![image-20220110163801611](open_api.assets/image-20220110163801611.png)
+![image-20220110163801611](open_api.assets/image-20220110163801611.png)
 
   ![image-20220113145702030](open_api.assets/image-20220113145702030.png)
 
@@ -837,10 +837,14 @@
   ```python
   from fastapi import FastAPI, Body
   from models.request import User
-  from models.response import Pet
   import uvicorn
   
-  # ...(중략)...
+  
+  app = FastAPI(
+      title="My OpenAPI Doc",
+      version="0.0.1",
+      openapi_url="/myopenapi",
+      description="My First OpenAPI Doc")
   
   # 예시를 생성
   example = Body(
@@ -851,7 +855,7 @@
       }
   )
   
-  @app.post("/find-pet-by-user", tags=["pet"], response_model=Pet, responses=responses)
+  @app.post("/find-pet-by-user")
   def find_pet_by_user(request:User = example):	# 예시를 추가
       response = {
           "id": 1,
@@ -925,11 +929,14 @@
   ```python
   from fastapi import FastAPI, Body
   from models.request import User
-  from models.response import Pet
   import uvicorn
   
   
-  # (...)
+  app = FastAPI(
+      title="My OpenAPI Doc",
+      version="0.0.1",
+      openapi_url="/myopenapi",
+      description="My First OpenAPI Doc")
   
   
   examples = Body(
@@ -951,15 +958,11 @@
                   "id":"wrong_value",
                   "name":"John"
               }
-          },
-          "external_value":{
-              "summary":"external value",
-              "externalValue":"http://example.com/examples/object-example.json"
           }
       }
   )
   
-  @app.post("/find-pet-by-user", tags=["pet"], response_model=Pet, responses=responses)
+  @app.post("/find-pet-by-user")
   def find_pet_by_user(request:User = examples):
       response = {
           "id": 1,
@@ -973,11 +976,11 @@
   if __name__ == '__main__':
       uvicorn.run(app, host='0.0.0.0', port=8002)
   ```
-
-  - 결과
+  
+- 결과
     - `paths/<endpoint>/<http method>/requestBody/content/<content type>/examples`에 추가된다.
-
-  ```json
+  
+```json
   {
       "openapi": "3.0.2",
       "info": {
@@ -1019,10 +1022,10 @@
                               }
                           // (...)
   ```
-
-  - `/docs`
-
-  ![image-20220112134050937](open_api.assets/image-20220112134050937.png)
+  
+- `/docs`
+  
+![image-20220112134050937](open_api.assets/image-20220112134050937.png)
 
 
 
