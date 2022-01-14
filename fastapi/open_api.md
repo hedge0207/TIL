@@ -29,20 +29,6 @@
 
 
 
-- FastAPI는 OpenAPI를 기반으로 한다.
-
-  - 이를 통해 FastAPI에서 작성한 API들을 자동으로 문서화가 가능하다.
-  - Swagger UI가 제공하는 문서와 Redoc이 제공하는 문서를 모두 자동으로 만들어 준다.
-    - 각기 `/docs`, `/redoc` 으로 접근하면 된다.
-
-  - 문서 생성 과정
-    - fastapi 어플리케이션(인스턴스)은 OpenAPI 스키마(title, description, tags 등)를 반환하는 `.openapi()`라는 메서드를 가지고 있다.
-    - application 인스턴스가 생성될 때,  `openapi_url`에 등록된 url(기본값은 `/openapi.json`)도 함께 등록된다.
-    - 해당 url에 요청을 보내면 openapi 스키마(Json) 정보를 반환한다.
-    - `.openapi()`는 등록된 스키마 정보가 있는지 확인해서 있으면 반환해주는 역할만 할 뿐이고, 실제 스키마 생성은 `.get_openapi()`메서드에서 이루어진다.
-
-
-
 - 기본 예시
 
   - 코드 작성하기
@@ -147,13 +133,110 @@
 
 
 
+- FastAPI가 어떻게 OpenAPI 문서를 보여줄 수 있는가
+
+  - FastAPI는 Pydantic과 완벽하게 호환된다.
+    - FastAPI에서 reqeust나 response model을 선언할 때 pydantic을 활용하여 선언한다.
+  - Pydantic에는 JSON Schema를 자동으로 생성하는 기능이 있다.
+    - Pydantic을 통해 생성된 model은 자동으로 JSON Schema로도 생성된다.
+
+  ```python
+  from pydantic import BaseModel
+  
+  
+  class FooBar(BaseModel):
+      count: int
+      size: float = None
+  
+  # Pydantic으로 생성한 FooBar 모델을 JSON Schema로 변환.
+  print(FooBar.schema_json(indent=2))
+  '''
+  JSON Schema
+  {
+    "title": "FooBar",
+    "type": "object",
+    "properties": {
+      "count": {
+        "title": "Count",
+        "type": "integer"
+      },
+      "size": {
+        "title": "Size",
+        "type": "number"
+      }
+    },
+    "required": [
+      "count"
+    ]
+  }
+  '''
+  ```
+
+  - JSON Schema
+
+    > http://json-schema.org/
+
+    - JSON data의 유효성 검증을 위해서 JSON data의 형식을 기술한 문서.
+
+  - OpenAPI는 JSON schema를 기반으로 한다.
+
+    > https://swagger.io/docs/specification/data-models/keywords/
+
+    - 단, 완벽하게 일치하는 것은 아니고, 일부를 수정한 OpenAPI만의 JSON schema를 사용한다.
+    - 또한 Restful API를 목적으로 만들어진 OAS와 달리 JSON schema는 API만을 위해 만들어진 것이 아니므로, path section(endpoint와 http method  등을 정의한 부분)과 같이 API만을 위한 section이 존재하지 않아 OpenAPI는 이런 section을 직접 정의해서 사용한다.
+
+  - OpenAPI는 크게 세 부분으로 나눌 수 있다.
+
+    - JSON schema와 동일한 부분
+    - JSON schema를 수정한 부분
+    - JSON schema에 아예 존재하지 않는 부분
+
+  - 결론
+
+    - FastAPI에서 Pydantic을 활용하여 작성한 모델들은 Pydantic에 의해 JSON schema로 변환된다. 
+    - OpenAPI는 JSON schema를 기반 만들어졌으므로, 별도의 작업 없이도 Swagger UI를 통해 문서를 볼 수 있다.
+
+
+
 
 
 ## 상세
 
-### openapi 스키마 변경하기
+- FastAPI에서 반환하는 OpenAPI Schema는 크게 네 부분으로 나눌 수 있다.
 
-- fastapi app 인스턴스를 생성할 때, openapi 스키마 정보를 변경할 수 있다.
+  - 메타데이터(`openapi`와 `info`  부분)
+    - OpenAPI 버전과 문서의 제목, 설명, 버전, 라이센스 정보 등이 들어 있다.
+    - FastAPI 인스턴스(App)을 생성할 때 설정한 내용들이 이곳에 들어가게 된다.
+  - `path`
+    - 각 endpoint에 대한 정보가 들어 있다.
+    - FastAPI 인스턴스(App)를 통해 추가한 내용들이 이곳에 들어간다.
+  - `components.schemas`
+    - Request, Response, Error 등의 model과 관련된 내용들이 들어 있다.
+    - Pydantic을 통해 선언한 내용들이 이곳에 들어간다.
+  - `tags`
+    - FastAPI 인스턴스(App)를 통해 설정이 가능하다.
+
+  ```json
+  {
+      "openapi": "3.0.2",
+      "info": {
+          "title": "My OpenAPI Doc",
+          "description": "My First OpenAPI Doc",
+          "version": "0.0.1"
+      },
+      "paths": {},
+      "components": {
+          "schemas": {}
+      },
+      "tags": []
+  }
+  ```
+
+
+
+### Metadata
+
+- fastapi app 인스턴스를 생성할 때, OpenAPI metadata를 변경할 수 있다.
 
   - 아래와 같이 인스턴스를 생성할 때 아무 값도 넣지 않으면 전부 기본값으로 설정된다.
 
@@ -181,10 +264,12 @@
 
 
 
-- 스키마 변경하기
+- metadata 변경하기
 
-  - 아래와 같이 FastAPI 인스턴스 생성시에 변경하고자 하는 스키마 값들을 설정해준다.
-
+  - 아래와 같이 FastAPI 인스턴스 생성시에 변경하고자 하는 metadata들을 설정해준다.
+    - 아래에서 설정해준 값 외에도 `license_info`, `contact` 등을 추가 가능하다.
+  
+  
   ```python
   from fastapi import FastAPI
   import uvicorn
@@ -201,19 +286,19 @@
   ```
 
   - 결과
-
+  
   ```json
   // /myopenapi
   {"openapi":"3.0.2","info":{"title":"My OpenAPI Doc","description":"My First OpenAPI Doc","version":"0.0.1"},"paths":{}}
   ```
 
   - `/docs`
-
+  
   ![image-20220110145449246](open_api.assets/image-20220110145449246.png)
 
 
 
-### 태그 추가하기
+### Tags
 
 - 아무 태그도 주지 않은 경우
 
@@ -247,7 +332,9 @@
   ```
 
   - 결과
-
+    - 아무 태그도 존재하지 않는다.
+  
+  
   ```json
   // /myopenapi
   {
@@ -309,10 +396,10 @@
     }
   }
   ```
-
+  
   - `/docs`
     - 태그를 따로 설정해주지 않았으므로 default로 설정된다.
-
+  
   ![image-20220110152509010](open_api.assets/image-20220110152509010.png)
 
 
@@ -408,14 +495,13 @@
 
 
 
-### Request 설정하기
+### Request
 
-- API와 마찬가지로 Request, Response 역시 설정만 해놓으면 자동으로 openapi에 추가된다.
+- pydantic으로 model 작성하기
 
-  - model 작성하기
-    - User를 request시에 사용하고, Pet을 Response시에 사용한다.
-  
-  
+  - 상기했듯 Pydantic으로 Model을 작성하면 Open API Schema의 `components.schemas.<model명>` section에 model에 관한 정보가 추가된다.
+
+
   ```python
   from typing import Optional
   from pydantic import BaseModel
@@ -424,17 +510,12 @@
   class User(BaseModel):
       id: int
       name: str
-  
-  class Pet(BaseModel):
-      id: int
-      name: str
-      breed: str
-      owner: User
-      age: Optional[int]
   ```
-  
+
   - API에 적용하기
-  
+    - Pydantic을 사용하여 선언한 모델을 API에 적용하면 `paths.<endpoint>.<http method>.requestBody.content.<content type>.schema` section에 추가된다.
+
+
   ```python
   from fastapi import FastAPI
   from models.request import User
@@ -456,7 +537,7 @@
       description="My First OpenAPI Doc",
       openapi_tags=tags)
   
-  @app.post("/find-pet-by-user", tags=["pet"], response_model=Pet)	# response model을 지정
+  @app.post("/find-pet-by-user", tags=["pet"])
   def find_pet_by_user(request:User):	# request Model을 지정
       response = {
           "id": 1,
@@ -470,122 +551,235 @@
   if __name__ == '__main__':
       uvicorn.run(app, host='0.0.0.0', port=8002)
   ```
-  
+
   - 결과
-  
+    - `components.schemas.User`가 추가되었다.
+
+
   ```json
-  // /myopenapi
   {
-    // ...
-    "paths": {
-      "/find-pet-by-user": {
-        "post": {
-          "tags": [
-            "pet"
-          ],
-          "summary": "Find Pet By User",
-          "operationId": "find_pet_by_user_find_pet_by_user_post",
-          "requestBody": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"		// RequestBody에 User가 추가
-                }
+      // (...)
+      "paths": {
+          "/find-pet-by-user": {
+              "post": {
+                  "tags": [
+                      "pet"
+                  ],
+                  "summary": "Find Pet By User",
+                  "operationId": "find_pet_by_user_find_pet_by_user_post",
+                  "requestBody": {
+                      "content": {
+                          "application/json": {
+                              "schema": {
+                                  "$ref": "#/components/schemas/User"	// api에 추가한 대로 request body 추가
+                              }
+                          }
+                      },
+                      "required": true
+                  },
+                  //(...)
               }
-            },
-            "required": true
-          },
-          "responses": {
-            "200": {
-              "description": "Successful Response",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/Pet"	// Response에 Pet이 추가
+          }
+      },
+      "components": {
+          "schemas": {
+              // (...)
+              // Pydantic을 통해 선언한 User 추가
+              "User": {
+                  "title": "User",
+                  "required": [
+                      "id",
+                      "name"
+                  ],
+                  "type": "object",
+                  "properties": {
+                      "id": {
+                          "title": "Id",
+                          "type": "integer"
+                      },
+                      "name": {
+                          "title": "Name",
+                          "type": "string"
+                      }
                   }
-                }
-              }
-            },
-            //...
-          }
-        }
-      }
-    },
-    "components": {
-      "schemas": {
-        // ...
-        "Pet": {
-          "title": "Pet",
-          "required": [
-            "id",
-            "name",
-            "breed",
-            "owner"
-          ],
-          "type": "object",
-          "properties": {
-            "id": {
-              "title": "Id",
-              "type": "integer"
-            },
-            "name": {
-              "title": "Name",
-              "type": "string"
-            },
-            "breed": {
-              "title": "Breed",
-              "type": "string"
-            },
-            "owner": {
-              "$ref": "#/components/schemas/User"
-            },
-            "age": {
-              "title": "Age",
-              "type": "integer"
-            }
-          }
-        },
-        "User": {
-          "title": "User",
-          "required": [
-            "id",
-            "name"
-          ],
-          "type": "object",
-          "properties": {
-            "id": {
-              "title": "Id",
-              "type": "integer"
-            },
-            "name": {
-              "title": "Name",
-              "type": "string"
-            }
-          }
-        },
-        // ...
+              },
+              // (...)
   ```
-  
+
   - `/docs`
-    - request와 response가 추가되었다.
-  
+    - request body가 추가되었다.
+
   ![image-20220110163801611](open_api.assets/image-20220110163801611.png)
+
+  ![image-20220113145702030](open_api.assets/image-20220113145702030.png)
+
+
+
+- Body의 각 필드별 descrption 추가
+
+  - Pydantic을 통해 model을 선언하면 기본적으로 각 필드마다 `title`과 `type`이 OpenAPI Schema에 포함되는데, description도 추가 가능하다.
+  - 방법1. `Field`를 사용하는 방법
+
+  ```json
+  from pydantic import BaseModel, Field
   
-  ![image-20220110163821233](open_api.assets/image-20220110163821233.png)
   
-  ![image-20220110163959344](open_api.assets/image-20220110163959344.png)
+  class User(BaseModel):
+      id: int = Field(..., description="User ID")
+      name: str = Field(..., description="User Name")
+  ```
+
+  - 방법2. `schema_extra`를 사용하는 방법
+    - Reuqest의 inner class로 `Config`를 선언한다.
+    - `schema_extra`라는 이름으로 딕셔너리를 선언한다.
+    - `schema_extra` attirbute는 JSON 스키마를 확장하거나 변경할 때 사용된다.
+    - 아래 코드는 `components.schemas.User.properties`를 수정하는 것이다.
+
+  ```python
+  from pydantic import BaseModel
+  
+  
+  class User(BaseModel):
+      id: int
+      name: str
+  
+      class Config:
+          schema_extra = {
+              "properties": {
+                  "id": {
+                      "title": "Id",
+                      "type": "integer",
+                      "description": "User ID"
+                  },
+                  "name": {
+                      "title": "Name",
+                      "type": "string",
+                      "description": "User Name"
+                  }
+              }
+          }
+  ```
+
+  - 두 방식의 결과는 동일하다.
+    - 두 방식의 차이는 다음과 같다.
+    - `Field`를 활용한 방법은 `components.schemas.User.properties.<필드명>`에 직접 접근하여 description을 추가하는 것이고
+    - `schema_extra`를 활용한 방법은 `components.schemas.User.properties` 전체를 재정의하는 방식으로 descripntion을 추가하는 것이다.
+
+  ```json
+  {
+      // (...)
+      "components": {
+          "schemas": {
+              // (...)
+              "User": {
+                  "title": "User",
+                  "required": [
+                      "id",
+                      "name"
+                  ],
+                  "type": "object",
+                  "properties": {
+                      "id": {
+                          "title": "Id",
+                          "type": "integer",
+                          "description": "User ID"	// description 추가
+                      },
+                      "name": {
+                          "title": "Name",
+                          "type": "string",
+                          "description": "User Name"
+                      }
+                  }
+              }
+          }
+      }
+  }
+  ```
+
+  - `docs`
+
+  ![image-20220113155718973](open_api.assets/image-20220113155718973.png)
 
 
 
 - Request body 예시 추가하기
 
-  - 코드
-    - Reuqest의 inner class로 `Config`를 선언한다.
-    - `schema_extra`라는 이름으로 딕셔너리를 선언하고 `example`라는 key의 value로 예시로 사용할 값을 넣는다.
-    - `schema_extra` attirbute는 JSON 스키마를 확장하거나 변경할 때 사용된다.
-
+  - 방법1. `Field`를 사용.
+  
   ```python
-  from typing import Optional
+  from pydantic import BaseModel, Field
+  
+  
+  class User(BaseModel):
+      id: int = Field(..., example=11)
+      name: str = Field(..., example="John")
+  ```
+  
+  - 방법2-1. `schema_extra`를 사용.
+  
+  ```python
+  from pydantic import BaseModel
+  
+  
+  class User(BaseModel):
+      id: int
+      name: str
+  
+      class Config:
+          schema_extra = {
+              "properties": {
+                  "id": {
+                      "title": "Id",
+                      "type": "integer",
+                      "example": 11
+                  },
+                  "name": {
+                      "title": "Name",
+                      "type": "string",
+                      "example": "John"
+                  }
+              }
+          }
+  ```
+  
+  - 결과
+    - 두 방법 모두 결과는 동일하며 추가 방식에 차이가 있을 뿐이다.
+    - `components.schema.User.properties.<field명>.example`에 추가된다.
+  
+  
+  ```json
+  {
+      // (...)
+      "components": {
+          "schemas": {
+              // (...)
+              "User": {
+                  "title": "User",
+                  "required": [
+                      "id",
+                      "name"
+                  ],
+                  "type": "object",
+                  "properties": {
+                      "id": {
+                          "title": "Id",
+                          "type": "integer",
+                          "example": 11
+                      },
+                      "name": {
+                          "title": "Name",
+                          "type": "string",
+                          "example": "John"
+                      }
+                  }
+              },
+  // (...)
+  ```
+  
+  - 방법2-2.`schema_extra`를 활용
+    - 방법 2-1과 달리 `components.schema.User.properties.<field명>.example`가 아닌 `components.schema.User.example`에 추가한다.
+  
+  ```python
   from pydantic import BaseModel
   
   
@@ -601,96 +795,45 @@
               }
           }
   ```
-
+  
   - 결과
-    - example이 추가된 것을 확인 가능하다.
-    - `components.schema.User.example`에 추가된다.
-
+  
   ```json
-  {	
-      // ...
-      "User": {
-          "title": "User",
-          "required": [
-              "id",
-              "name"
-          ],
-          "type": "object",
-          "properties": {
-              "id": {
-                  "title": "Id",
-                  "type": "integer"
+  {
+      // (...)
+      "components": {
+          "schemas": {
+              // (...)
+              "User": {
+                  "title": "User",
+                  "required": [
+                      "id",
+                      "name"
+                  ],
+                  "type": "object",
+                  "properties": {
+                      "id": {
+                          "title": "Id",
+                          "type": "integer"
+                      },
+                      "name": {
+                          "title": "Name",
+                          "type": "string"
+                      }
+                  },
+                  // properties와 같은 깊이에 추가된다.
+                  "example": {
+                      "id": 11,
+                      "name": "John"
+                  }
               },
-              "name": {
-                  "title": "Name",
-                  "type": "string"
-              }
-          },
-          "example": {
-              "id": 11,
-              "name": "John"
-          }
-      }
-      // ...
-  }
+  // (...)
   ```
-
-  - `/docs`
-    - Example Value가 위에서 입력한 값으로 변경되었다.
-
-  ![image-20220110164944811](open_api.assets/image-20220110164944811.png)
-
-
-
-- `Field`를 사용하여 예시 추가
-
-  - pydantic의 `Field`를 사용하여 추가가 가능하다.
-
-  ```python
-  from typing import Optional
-  from pydantic import BaseModel, Field
+  
+  - 방법3. ` fastapi`의 `Body`를 활용
+    - Pydantic의 `Field`,  `extra_schema`을 활용한 방법들은 모두 example이 `components` section에 들어갔지만, fastapi의 `Body`를 활용할 경우 `paths` section에 들어가게 된다.
   
   
-  class User(BaseModel):
-      id: int = Field(..., example=11)
-      name: str = Field(..., example="John")
-  ```
-
-  - 결과
-    - `schema_extra` 에 추가하는 것과 비교할 때 `/docs`에서 봤을 때의 결과는 동일하지만, json파일은 다르게 생성된다.
-    - `components.schema.User.properties`의 각 필드 별로 `example`이 추가된다.
-
-  ```json
-  // ...
-  "User": {
-      "title": "User",
-      "required": [
-          "id",
-          "name"
-      ],
-      "type": "object",
-      "properties": {
-          "id": {
-              "title": "Id",
-              "type": "integer",
-              "example": 11
-          },
-          "name": {
-              "title": "Name",
-              "type": "string",
-              "example": "John"
-          }
-      }
-  }
-  // ...
-  ```
-
-
-
-- `Body`를 사용하여 추가
-
-  - ` fastapi`의 `Body`를 활용하여 추가가 가능하다.
-
   ```python
   from fastapi import FastAPI, Body
   from models.request import User
@@ -722,12 +865,12 @@
   if __name__ == '__main__':
       uvicorn.run(app, host='0.0.0.0', port=8002)
   ```
-
+  
   - 결과
     - 이 경우 위의 두 방식(`schema_extra`, `Field`를 사용해서 추가)과 example이 들어가는 위치가 완전히 다르다.
     - `components.schema`가 아닌 `paths/<endpoint>/<http method>/requestBody/content/<content type>/example`에 추가된다.
-    - 문서에서 보여주는 방식은 위의 두 방식과 차이가 없다.
-
+    - 문서에서 보여주는 방식은 다른 방식과 차이가 없다.
+  
   ```json
   {
       // (...)
@@ -758,6 +901,11 @@
       ]
   }
   ```
+  
+  - `/docs`
+    - 네 가지 방식 모두 문서를 통해 보여지는 방식에는 차이가 없다.
+  
+  ![image-20220110164944811](open_api.assets/image-20220110164944811.png)
 
 
 
@@ -880,22 +1028,275 @@
 
 - example이 추가되는 과정
   - `schema_extra`나 `Field`에 예시를 추가하는 경우
-    - example을 작성하면 Pydantic Model의 JSON Schema에 example이 포함된다.
-    - Pydantic Model의 JSON Schema는  OpenAPI에 포함되므로 결국 docs에 example이 나타나게 된다.
-    - JSON Schema에는 example이라는 필드가 원래 존재하지 않는다(최신 버전에는 examples라는 필드가 추가되었다).
-    - 따라서 OpenAPI는 자체적으로 JSON Schema를 정의하고, example 필드를 추가해서 사용한다.
-    - 따라서 example이라는 필드는 JSON Schema의 필드는 아니지만, OpenAPI가 자체적으로 정의한 JSON Schema의 일부이므로 docs에서 보여줄 수 있게 된다.
+    - example을 작성하면 Pydantic이 자동으로 생성하는 JSON Schema에 example이 포함된다.
+    - 원래 JSON Schema에는 example이라는 필드가 존재하지 않는다(최신 버전에는 examples라는 필드가 추가되었다).
+    - 그러나 OpenAPI는 JSON Schema를 그대로 사용하는 것이 아니라 수정해서 사용하므로 JSON Schema에 없는 필드(이 경우 example)라 하더라도 사용이 가능하다.
+    - 즉 example이라는 필드는 JSON Schema의 필드는 아니지만, OpenAPI가 자체적으로 정의한 JSON Schema의 일부이므로 docs에서 보여줄 수 있게 된다.
   - `Body()`(혹은 `Query()`, `Path()`등)를 활용해서 예시를 추가하는 경우
-    - 이 경우  JSON Schema에 포함되지 않으며, OpenAPI가 자체적으로 정의한 JSON Schema에도 포함되지 않는다.
-    - OpenAPI의 path operation을 선언하는 부분에 직접 추가된다(즉 JSON Schema를 사용하지 않는 부분에 직접 추가 된다).
+    - 이들은 모두 API를 위해 필요한 것들이므로 JSON Schema에 포함되지 않는다. 
+    - OpenAPI의 path section에 직접 추가된다(즉 JSON Schema에 원래 존재하지 않았던 부분에 직접 추가 된다).
     - `Path()`, `Query()`, `Header()`, `Cookie()`의 경우 `example` 혹은 `examples`는 OpenAPI의 [Parameter Object](https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#parameter-object)에 추가된다.
     - `Body()`, `File()`, `Form()`의 경우 `example` 혹은 `examples`는 OpenAPI의 Request Body 오브젝트의 content 필드 내부의 [Media Type Object](https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#mediaTypeObject)에 추가된다.
-  - OpenAPI:3.1.0부터는 최신 버전의 JSON Schema(즉 examples가 추가된 버전)를 기반으로 하므로 JSON Schema와 OpenAPI가 직접 정의한 JSON Schema 사이의 차이가 거의 사라졌다.
+  - OpenAPI:3.1.0부터는 최신 버전의 JSON Schema(examples가 추가된 버전)를 기반으로 하므로 JSON Schema와 OpenAPI가 직접 정의한 JSON Schema 사이의 차이가 거의 사라졌다.
     - 그럼에도 Swagger UI는 아직 OpenAPI:3.1.0을 지원하지 않으므로 위와 같이 사용해야 한다.
 
 
 
-### Response 설정하기
+### Response
+
+- Response 역시 설정만 해놓으면 자동으로 OpenAPI에 추가된다.
+
+  - pydantic으로 model 작성하기
+
+  ```python
+  from typing import Optional
+  from pydantic import BaseModel
+  
+  
+  class Pet(BaseModel):
+      id: int
+      name: str
+      breed: str
+      age: Optional[int]
+  ```
+
+  - API에 적용하기
+
+  ```python
+  from fastapi import FastAPI
+  from models.response import Pet
+  import uvicorn
+  
+  
+  tags = [
+      {
+          "name":"pet",
+          "description":"Find pet by some info"
+      }
+  ]
+  
+  app = FastAPI(
+      title="My OpenAPI Doc",
+      version="0.0.1",
+      openapi_url="/myopenapi",
+      description="My First OpenAPI Doc",
+      openapi_tags=tags)
+  
+  
+  @app.post("/find-pet-by-user", tags=["pet"], response_model=Pet)	# response_model에 적용
+  def find_pet_by_user():
+      response = {
+          "id": 1,
+          "name": "spring",
+          "breed": "bichon",
+          "age": 2
+      }
+      return response
+  
+  if __name__ == '__main__':
+      uvicorn.run(app, host='0.0.0.0', port=8002)
+  ```
+
+  - 결과
+
+  ```json
+  {
+      "openapi": "3.0.2",
+      "info": {
+          "title": "My OpenAPI Doc",
+          "description": "My First OpenAPI Doc",
+          "version": "0.0.1"
+      },
+      "paths": {
+          "/find-pet-by-user": {
+              "post": {
+                  "tags": [
+                      "pet"
+                  ],
+                  "summary": "Find Pet By User",
+                  "operationId": "find_pet_by_user_find_pet_by_user_post",
+                  "responses": {
+                      "200": {
+                          "description": "Successful Response",
+                          "content": {
+                              "application/json": {
+                                  "schema": {
+                                      "$ref": "#/components/schemas/Pet"		// response에 추가
+                                  }
+                              }
+                          }
+                      }
+                  }
+              }
+          }
+      },
+      "components": {
+          "schemas": {
+              // shcemas에 추가
+              "Pet": {
+                  "title": "Pet",
+                  "required": [
+                      "id",
+                      "name",
+                      "breed",
+                      "owner"
+                  ],
+                  "type": "object",
+                  "properties": {
+                      "id": {
+                          "title": "Id",
+                          "type": "integer"
+                      },
+                      "name": {
+                          "title": "Name",
+                          "type": "string"
+                      },
+                      "breed": {
+                          "title": "Breed",
+                          "type": "string"
+                      },
+                      "age": {
+                          "title": "Age",
+                          "type": "integer"
+                      }
+                  }
+              }
+          }
+      },
+      // (...)
+  }
+  ```
+
+  - `/docs`
+
+  ![image-20220113150350435](open_api.assets/image-20220113150350435.png)![image-20220113150407108](open_api.assets/image-20220113150407108.png)
+
+
+
+- Response에 추가 정보 설정하기
+
+  - Description과 Links를 추가할 수 있다.
+  - Links는 한 요청의 응답이 다른 요청의 파라미터로 들어간다는 것을 표현하기 위해 사용한다.
+
+  > https://swagger.io/docs/specification/links/
+
+  ```python
+  from fastapi import FastAPI
+  from models.response import Pet
+  import uvicorn
+  
+  # 설정할 response를 선언한다.
+  responses = {
+      200: {
+          "description": "Successfully find user", 
+          "links":{
+              "UserRepositories":{
+                  "operationRef":"getUserInfo",
+                  "parameters":{
+                      "pet_id": '$response.body#/id'
+                  }
+              }
+          }
+      }
+  }
+  
+  app = FastAPI(
+      title="My OpenAPI Doc",
+      version="0.0.1",
+      openapi_url="/myopenapi",
+      description="My First OpenAPI Doc")
+  
+  
+  
+  @app.post("/find-pet-by-user", tags=["pet"], response_model=Pet, responses=responses)	# responses를 넘긴다.
+  def find_pet_by_user():
+      response = {
+          "id": 1,
+          "name": "spring",
+          "breed": "bichon",
+          "age": 2
+      }
+      return response
+  
+  if __name__ == '__main__':
+      uvicorn.run(app, host='0.0.0.0', port=8002)
+  ```
+
+  - 결과
+    - responses에 description과 links가 추가되었다.
+
+  ```json
+  {
+      // (...)
+      "paths": {
+          "/find-pet-by-user": {
+              "post": {
+                  "tags": [
+                      "pet"
+                  ],
+                  "summary": "Find Pet By User",
+                  "operationId": "find_pet_by_user_find_pet_by_user_post",
+                  "responses": {
+                      "200": {
+                          "description": "Successfully find user",
+                          "content": {
+                              "application/json": {
+                                  "schema": {
+                                      "$ref": "#/components/schemas/Pet"
+                                  }
+                              }
+                          },
+                          "links": {
+                              "UserRepositories": {
+                                  "operationRef": "getUserInfo",
+                                  "parameters": {
+                                      "pet_id": "$response.body#/id"
+                                  }
+                              }
+                          }
+                      }
+                  }
+              // (...)
+  ```
+
+  - `/docs`
+
+  ![image-20220113165800830](open_api.assets/image-20220113165800830.png)
+
+
+
+- Response의 각 필드별 설명 추가하기
+  - Request에서 추가한 것과 같은 방식으로 추가하면 된다.
+
+
+
+### API Description
+
+- API에 docstring을 작성하면 docstring 내부의 내용이 API 설명란에 들어가게 된다.
+
+```python
+from fastapi import FastAPI
+import uvicorn
+
+
+app = FastAPI()
+
+@app.post("/foo")
+def foo():
+    """
+    This is foo api, return bar
+    """
+    return "bar"
+
+if __name__ == '__main__':
+    uvicorn.run(app, host='0.0.0.0', port=8002)
+```
+
+- `/docs`
+
+![image-20220113171319607](open_api.assets/image-20220113171319607.png)
+
+
 
 
 
