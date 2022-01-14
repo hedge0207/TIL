@@ -115,21 +115,21 @@
 
   - fastapi가 OAS를 기반으로 json 형식의 스키마를 생성한다.
 
-  ![](open_api.assets/화면 캡처 2022-01-11 161438.png)
+  ![](open_api.assets/image-2022-01-11 161438.png)
 
   - `/docs`로 요청이 들어오면 fastapi는 Swagger UI(javascript, css, html의 묶음)를 반환한다.
 
-  ![](open_api.assets/화면 캡처 2022-01-11 170958.png)
+  ![](open_api.assets/image-2022-01-11 170958.png)
 
   - Swagger UI가 렌더링을 시작하고 javascript가 실행되면서 fastapi가 작성한 json 파일을 요청한다.
     - 별도로 설정해주지 않을 경우 endpoint는 `/openapi.json`이다.
     - 아래 예시의 경우 설정을 변경해서 `/myopenapi`로 요청을 보낸다.
 
-  ![](open_api.assets/화면 캡처 2022-01-11 170647.png)
+  ![](open_api.assets/image-2022-01-11 170647.png)
 
   - 응답으로 받아온 json파일을 파싱하여 화면에 뿌려준다.
 
-  ![](open_api.assets/화면 캡처 2022-01-11 171101.png)
+  ![](open_api.assets/image-2022-01-11 171101.png)
 
 
 
