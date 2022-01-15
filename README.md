@@ -544,6 +544,20 @@
 
 <br/>
 
+# FastAPI
+
+## fastapi_part1
+
+## fastapi_part2
+
+## gunicorn
+
+## open_api
+
+## pydantic
+
+
+
 # JavaScript
 
 ## [JavaScript_part1](https://github.com/hedge0207/TIL/blob/master/javascript/JavaScript_part1.md)
