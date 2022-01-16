@@ -1012,7 +1012,20 @@
 
 # Linux
 
-## [linux]()
+## [Linux](https://github.com/hedge0207/TIL/blob/master/linux/linux.md)
+
+- 리눅스 개요
+- 가상머신 준비하기
+- 리눅스 기본 개념
+  - 리눅스 에디터
+  - 마운트
+  - 사용자 관리와 파일 속성
+  - 링크
+  - 리눅스 패키지 설치
+
+<br/>
+
+<br/>
 
 ## [Linux Command](https://github.com/hedge0207/TIL/blob/master/etc/linux_command.md)
 
