@@ -512,6 +512,8 @@
       name: str
   ```
 
+
+
   - API에 적용하기
     - Pydantic을 사용하여 선언한 모델을 API에 적용하면 `paths.<endpoint>.<http method>.requestBody.content.<content type>.schema` section에 추가된다.
 
@@ -551,6 +553,8 @@
   if __name__ == '__main__':
       uvicorn.run(app, host='0.0.0.0', port=8002)
   ```
+
+
 
   - 결과
     - `components.schemas.User`가 추가되었다.
@@ -605,6 +609,8 @@
               },
               // (...)
   ```
+
+
 
   - `/docs`
     - request body가 추가되었다.
@@ -977,10 +983,11 @@
       uvicorn.run(app, host='0.0.0.0', port=8002)
   ```
   
-- 결과
-    - `paths/<endpoint>/<http method>/requestBody/content/<content type>/examples`에 추가된다.
+  - 결과
+      - `paths/<endpoint>/<http method>/requestBody/content/<content type>/examples`에 추가된다.
   
-```json
+  
+  ```json
   {
       "openapi": "3.0.2",
       "info": {
@@ -1020,12 +1027,14 @@
                                       }
                                   }
                               }
-                          // (...)
+                              // (...)
   ```
   
-- `/docs`
+  - `/docs`
   
-![image-20220112134050937](open_api.assets/image-20220112134050937.png)
+  ![image-20220112134050937](open_api.assets/image-20220112134050937.png)
+
+
 
 
 
