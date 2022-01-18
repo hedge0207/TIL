@@ -97,6 +97,86 @@
 
 
 
+# Pydantic validator
+
+- Pydantic에서 제공하는 `validator` 데코레이터를 통해 Request Model에 대한 validation이 가능하다.
+
+  - model
+
+  ```python
+  from pydantic import BaseModel
+  
+  
+  class UserModel(BaseModel):
+      name: str
+      username: str
+      password1: str
+      password2: str
+  ```
+
+  - `validator` 데코레이터 추가하기
+    - `v`에는 validatiom 대상이 되는 값(예시의 경우 name)이 들어간다.
+    - `values`에는 `v`보다 위에 선언 된 값 이 경우(name)이 들어간다.
+    - `field`에는 검증 대상 값(`v`)에 대한 정보가 들어간다.
+    - `**kwargs`:에는 추가적으로 제공된 값들이 들어가게 된다.
+
+  ```python
+  from pydantic import BaseModel, validator
+  
+  
+  class UserModel(BaseModel):
+      name: str
+      username: str
+      password1: str
+      password2: str
+  
+      @validator('username')
+      def username_must_contain_space(cls, v, values, field, **kwargs):
+          if ' ' not in v:
+              raise ValueError('must contain a space')
+          return v.title()
+  ```
+
+
+
+- 예외처리하기
+
+  - pydantic의 `ValidationError`를 활용한다.
+
+  ```python
+  from pydantic import BaseModel, validator
+  
+  
+  class UserModel(BaseModel):
+      name: str
+      username: str
+      password1: str
+      password2: str
+  
+  
+      @validator('password2')
+      def passwords_match(cls, v, values, **kwargs):
+          if 'password1' in values and v != values['password1']:
+              raise ValueError('passwords do not match')
+          return v
+  
+  try:
+      UserModel(
+          name='samuel',
+          username='scolvin',
+          password1='zxcvbn',
+          password2='zxcvbn2',
+      )
+  except ValidationError as e:
+      print(e)
+  ```
+
+
+
+
+
+
+
 
 
 
