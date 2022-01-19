@@ -173,6 +173,287 @@
 
 
 
+# Testing
+
+- FastAPI는 Starlette의 TestClient를 사용한다.
+
+  - Starlette은 requests를 사용하여 TestClient를 구현했다.
+    - 테스트하려는 API에 request를 보내는 방식으로 테스트한다.
+  - FastAPI에서 TestClient를 import해도 실제 import 되는 것은 Starlette의 TestClient이다.
+    - `starlette.testclient`에서 import한 `TestClient`를 import하는 것이다.
+    - 사용자의 편의를 위해서 아래와 같이 구현했다.
+
+  ```python
+  # 아래의 두 줄은 완전히 동일한 TestClient를 import한다.
+  from fastapi.testclient import TestClient
+  from starlette.testclient import TestClient
+  
+  
+  # fastapi.testclient의 코드는 아래와 같다.
+  from starlette.testclient import TestClient as TestClient  # noqa
+  ```
+
+  - pytest를 설치해야 한다.
+
+  ```bash
+  $ pip install pytest
+  ```
+
+
+
+- Test 코드 작성하기
+
+  - fastapi에서는 일반적으로 아래의 규칙에 따라 테스트 코드를 작성한다.
+    - 테스트 함수에 `async`를 붙이지 않으며, TestClient를 통해 테스트 할 때도 `await`을 붙이지 않는다.
+    - 이는 pytest를 사용하여 직접 테스트 할 수 있도록 하기 위함이다.
+    - 테스트 함수 이름은 `test_`를 prefix로 붙인다(pytest의 컨벤션이다).
+  - 테스트 할 코드 작성
+
+  ```python
+  from fastapi import FastAPI
+  
+  app = FastAPI()
+  
+  
+  @app.get("/")
+  async def read_main():
+      return {"msg": "Hello World"}
+  ```
+
+  - 테스트 코드 작성
+    - TestClient는 인자로 app을 받는다.
+    - Starlette은 내부적으로 requests 라이브러리를 사용하여 테스트한다.
+    - 즉 아래 코드에서 `client.get`은 결국 `request.get`을 호출하는 것이다.
+
+  ```python
+  from fastapi.testclient import TestClient
+  
+  from main import app
+  
+  client = TestClient(app)
+  
+  
+  def test_read_main():
+      response = client.get("/")
+      assert response.status_code == 200
+      assert response.json() == {"msg": "Hello World"}
+  ```
+
+  - 테스트 실행
+    - 실행하려는 폴더에서 아래 명령어를 입력한다.
+    - 테스트 하려는 파일의 이름을 입력하지 않으면, 아래 명령을 실행한 디렉터레이서 `test`라는 이름이 포함 된 `.py` 파일을 모두 테스트 한다.
+
+  ```bash
+  $ pytest [파일 이름]
+  ```
+
+
+
+- 여러 개의 test case 작성하기
+
+  - 테스트 할 코드
+
+  ```python
+  from typing import Optional
+  
+  from fastapi import FastAPI, Header, HTTPException
+  from pydantic import BaseModel
+  
+  fake_secret_token = "coneofsilence"
+  
+  fake_db = {
+      "foo": {"id": "foo", "title": "Foo", "description": "There goes my hero"},
+      "bar": {"id": "bar", "title": "Bar", "description": "The bartenders"},
+  }
+  
+  app = FastAPI()
+  
+  
+  class Item(BaseModel):
+      id: str
+      title: str
+      description: Optional[str] = None
+  
+  
+  @app.get("/items/{item_id}", response_model=Item)
+  async def read_main(item_id: str, x_token: str = Header(...)):
+      if x_token != fake_secret_token:
+          raise HTTPException(status_code=400, detail="Invalid X-Token header")
+      if item_id not in fake_db:
+          raise HTTPException(status_code=404, detail="Item not found")
+      return fake_db[item_id]
+  
+  
+  @app.post("/items/", response_model=Item)
+  async def create_item(item: Item, x_token: str = Header(...)):
+      if x_token != fake_secret_token:
+          raise HTTPException(status_code=400, detail="Invalid X-Token header")
+      if item.id in fake_db:
+          raise HTTPException(status_code=400, detail="Item already exists")
+      fake_db[item.id] = item
+      return item
+  ```
+
+  - 테스트 코드
+    - 하나의 API에서 발생할 수 있는 경우의 수들을 고려해서 test case로 만든다.
+
+  ```python
+  from fastapi.testclient import TestClient
+  
+  from .main import app
+  
+  client = TestClient(app)
+  
+  
+  def test_read_item():
+      response = client.get("/items/foo", headers={"X-Token": "coneofsilence"})
+      assert response.status_code == 200
+      assert response.json() == {
+          "id": "foo",
+          "title": "Foo",
+          "description": "There goes my hero",
+      }
+  
+  
+  def test_read_item_bad_token():
+      response = client.get("/items/foo", headers={"X-Token": "hailhydra"})
+      assert response.status_code == 400
+      assert response.json() == {"detail": "Invalid X-Token header"}
+  
+  
+  def test_read_inexistent_item():
+      response = client.get("/items/baz", headers={"X-Token": "coneofsilence"})
+      assert response.status_code == 404
+      assert response.json() == {"detail": "Item not found"}
+  
+  
+  def test_create_item():
+      response = client.post(
+          "/items/",
+          headers={"X-Token": "coneofsilence"},
+          json={"id": "foobar", "title": "Foo Bar", "description": "The Foo Barters"},
+      )
+      assert response.status_code == 200
+      assert response.json() == {
+          "id": "foobar",
+          "title": "Foo Bar",
+          "description": "The Foo Barters",
+      }
+  
+  
+  def test_create_item_bad_token():
+      response = client.post(
+          "/items/",
+          headers={"X-Token": "hailhydra"},
+          json={"id": "bazz", "title": "Bazz", "description": "Drop the bazz"},
+      )
+      assert response.status_code == 400
+      assert response.json() == {"detail": "Invalid X-Token header"}
+  
+  
+  def test_create_existing_item():
+      response = client.post(
+          "/items/",
+          headers={"X-Token": "coneofsilence"},
+          json={
+              "id": "foo",
+              "title": "The Foo ID Stealers",
+              "description": "There goes my stealer",
+          },
+      )
+      assert response.status_code == 400
+      assert response.json() == {"detail": "Item already exists"}
+  ```
+
+  
+
+- 비동기 함수 테스트하기
+
+  - Anyio
+    - 테스트 함수 내부에서 비동기 함수를 호출해야 하는 경우, 테스트 함수도 비동기 함수여야 한다.
+    - pytest의 Anyio를 통해 테스트 함수가 비동기적으로 호출되도록 할 수 있다.
+  - HTTPX
+    - 사실 API 함수에서 async를 사용하지 않아도, FastAPI 앱 자체는 비동기적으로 동작한다.
+    - `TestClient`는 pytest를 활용하여, `async`를 붙이지 않은 test 함수에서 비동기적인 FastAPI 앱을 호출할 수 있게 한다.
+    - 그러나 test 함수에 `async`를 사용하면 이 방식이 불가능해진다.
+    - HTTPX는 Python3를 위한 HTTP 클라이언트이다.
+    - HTTPX를 `TestClient` 대신 사용함으로써 비동기적인 test 함수를 구현할 수 있다.
+  - 테스트 할 코드
+
+  ```python
+  from fastapi import FastAPI
+  
+  app = FastAPI()
+  
+  
+  @app.get("/")
+  async def root():
+      return {"message": "Tomato"}
+  ```
+
+  - 테스트 코드
+    - 위에서 말한 anyio와 httpx를 사용하여 구현한다.
+    - `@pytest.mark.anyio` annotation은 pytest에게 이 테스트 함수는 비동기적으로 호출되어야 한다는 것을 알려준다.
+    - 그 후 httpx의 `AsyncClient`에  app과 요청을 보낼 url을 넣는다.
+
+  ```python
+  import pytest
+  from httpx import AsyncClient
+  
+  from main import app
+  
+  
+  @pytest.mark.anyio
+  async def test_root():
+      async with AsyncClient(app=app, base_url="http://test") as ac:
+          response = await ac.get("/")
+      assert response.status_code == 200
+      assert response.json() == {"message": "Tomato"}
+  ```
+
+
+
+- test 코드에서 이벤트 발생시키기
+
+  - fastapi에는 앱이 시작될 때나 종료되는 등의 event가 발생할 때 특정 로직을 실행시킬 수 있다.
+    - 그러나 테스트는 실제 앱을 실행하는 것은 아니므로 event가 발생하지는 않는데, test 코드에서 event를 발생시키는 방법이 있다.
+  - 아래와 같이 `with`를 사용하면 앱이 실행된 것과 같은 효과가 있다.
+
+  ```python
+  from fastapi import FastAPI
+  from fastapi.testclient import TestClient
+  
+  app = FastAPI()
+  
+  items = {}
+  
+  
+  @app.on_event("startup")
+  async def startup_event():
+      items["foo"] = {"name": "Fighters"}
+      items["bar"] = {"name": "Tenders"}
+  
+  
+  @app.get("/items/{item_id}")
+  async def read_items(item_id: str):
+      return items[item_id]
+  
+  
+  def test_read_items():
+      with TestClient(app) as client:
+          response = client.get("/items/foo")
+          assert response.status_code == 200
+          assert response.json() == {"name": "Fighters"}
+  ```
+
+
+
+- Dependency 테스트하기
+
+  > https://fastapi.tiangolo.com/advanced/testing-dependencies/
+
+
+
 
 
 
