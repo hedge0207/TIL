@@ -1,5 +1,25 @@
 # 오프라인 환경에서 linux에 Python 설치하기
 
+- linux library 설치
+
+  - Python을 실행하기 위해 운영체제에 필요한 라이브러리들을 먼저 설치해야 한다.
+    - yum으로 설치할 경우 의존성이 있는 라이브러리들을 함께 설치해주지만, 아래와 같이 source file로 설치할 경우 직접 설치해야 한다.
+  - 온라인 환경에서 필요한 라이브러리들을 설치한다(centos 기준).
+    - --downloadonly로 필요한 라이브러리들의 설치 파일만 받는다.
+    - 옮기기 쉽도록 `--downloaddir`을 현재 디렉토리로 설정한다.
+
+  ```bash
+  $ yum install -y --downloadonly --downloaddir=. gcc openssl-devel bzip2-devel libffi-devel
+  ```
+
+  - 위에서 다운 받은 라이브러리 설치 파일들을 오프라인 환경으로 옮긴 후 설치한다.
+
+  ```bash
+  $ yum install -y <파일명 혹은 *(디렉토리 내의 rpm 파일 전부 설치)>
+  ```
+
+
+
 - python 설치 파일 다운
 
   > https://www.python.org/downloads/
@@ -29,7 +49,7 @@
   $ ./configure [--enable-optimizations] [--with-ensurepip=install] [--prefix=설치 경로]
   ```
   
-  - `make`를 통해 소스 파일을 컴파일한다.
+  - `make`를 통해 소스 파일을 컴파일한다(skip 가능).
     - make과정이 끝나면 `setup.py` 파일이 생성된다.
     - `test`를 통해 test도 가능하다.
   
@@ -44,6 +64,14 @@
   
   ```bash
   $ make altinstall
+  ```
+  
+  - 만일 리눅스 library를 설치하지 않고 Python을 먼저 설치했다면 아래 과정을 통해 재설치해야 한다.
+  
+  ```bash
+  $ make clean
+  $ ./configure [--enable-optimizations] [--with-ensurepip=install] [--prefix=설치 경로]
+  $ make install
   ```
 
 
