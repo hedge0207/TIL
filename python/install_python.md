@@ -58,6 +58,12 @@
   $ make [test]
   ```
   
+  - `command not found`가 뜰 경우 make를 설치한다.
+  
+  ```bash
+  $ yum install make
+  ```
+  
   - 설치하기
     - `altinstall` 옵션은 기존에 설치된 Python과의 충돌을 피하기 위한 옵션이다.
     - `install`을 입력해도 되지만, 이 경우 기존 Python에 덮어 씌워진다.
