@@ -49,8 +49,6 @@
     - 필요한 라이브러리를 설치하지 않은 상태에서 logstash를 실행하면 아래와 같이 `NoClassDefFoundError`가 발생하면서 어떤 class가 없는지를 알려준다.
     - 추후 필요한 라이브러리를 한 번에 확인하는 방법을 찾으면 추가 예정
 
-  ![image-20220125161454311](C:\Users\Dell\AppData\Roaming\Typora\typora-user-images\image-20220125161454311.png)
-
   - 라이브러리 설치
     - 위 링크로 가서 필요한 버전의 apach-hive를 다운 받는다.
     - 압축을 풀면 다양한 jar 파일이 있을텐데 원래는 `jdbc/hive-jdbc-2.3.9-standalone.jar`  하나만 있으면 실행이 가능하다.
@@ -58,7 +56,7 @@
     - 그러나 log4j 문제로 이전 버전인 `hive-jdbc-2.3.9-standalone.jar` 파일이 실행되지 않는 문제가 있어 일일이 필요한 라이브러리를 찾아서 옮겨줘야 한다.
     - 위 예시의 경우 `StringUtil`이라는 클래스가 없다고 하므로 `lib/` 폴더 내부의 `commons-lang-2.6.jar` 파일을 logstash 폴더 내부에 옮긴 후, 아래와 같이 추가해준다.
     - 위 예외가 발생하지 않을 때 까지 이 과정을 반복한다.
-
+  
   ```yaml
   input {
      jdbc {
@@ -66,7 +64,7 @@
      }
   }
   ```
-
+  
   
 
 
