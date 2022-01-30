@@ -1059,6 +1059,31 @@
 
 # Elasticsearch
 
+## [faiss](https://github.com/hedge0207/TIL/blob/master/elasticsearch/faiss.md)
+
+- 사전지식
+  - 용어
+  - 벡터 사이의 유사도 측정 방식
+- faiss Tutorial
+  - 시작하기
+  - 검색 속도 향상
+  - 메모리 사용 줄이기
+  - GPU에서 실행하기
+- 기초
+  - MetricType and distance
+  - Clustering, PCA, Quntization
+  - 인덱스를 선택할 때 고려할 사항
+- Faiss indexes
+  - basic index 목록
+  - 벡터를 인코딩하는 방식
+  - Flat indexes
+  - Cell-probe methods
+  - IndexHNSW
+
+<br/>
+
+<br/>
+
 ## [Elasticsearch_part1](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part1.md)
 
 - 검색 엔진 개요
