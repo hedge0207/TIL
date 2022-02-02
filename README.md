@@ -42,6 +42,8 @@
 
 <br/>
 
+<br/>
+
 ## [최신 IT 기술](https://github.com/hedge0207/TIL/blob/master/CS/%EC%B5%9C%EC%8B%A0%20IT%20%EA%B8%B0%EC%88%A0%20%EC%A0%95%EB%A6%AC.md)
 
 - Big Data
@@ -50,7 +52,11 @@
 
 <br/>
 
+<br/>
+
 ## [IT 기술 용어](https://github.com/hedge0207/TIL/blob/master/CS/IT%20%EA%B8%B0%EC%88%A0%20%EC%9A%A9%EC%96%B4.md)
+
+<br/>
 
 <br/>
 
@@ -114,6 +120,8 @@
 
 <br/>
 
+<br/>
+
 ## [Database_part2](https://github.com/hedge0207/TIL/blob/master/Database/Database_part2.md)
 
 - 트랜잭션
@@ -123,6 +131,8 @@
   - 분산 데이터베이스 시스템
   - 웹 데이터베이스
   - 데이터 웨어하우스
+
+<br/>
 
 <br/>
 
