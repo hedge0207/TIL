@@ -278,7 +278,8 @@
   print("World")		# Hello!, World
   ```
 
-  
+
+
 
 
 
@@ -311,14 +312,15 @@
   """
   ```
 
-  
+
+
 
 - 코드 라인
 
   - 기본적으로 Python에서는 문장이 끝날 때 `;`를 붙이지 않는다.
     - 그러나 `;`는 문장이 끝났음을 의미한다.
     - `;` 앞에는 띄어쓰기를 하지 않고, 뒤에만 띄어쓰기를 한다(convention).
-  
+
   ```python
   print("hello! "); print("world!")
   # hello!
@@ -327,11 +329,11 @@
   # ; 없이 아래와 같이 작성하면 SyntaxError: invalid syntax 발생한다.
   print("hello! ")print("world!")
   ```
-  
+
   - 여러 줄을 작성할 때는 역슬래시 `\`를 사용하여 아래와 같이 할 수 있다.
     - list, tuple, dictionary는 역슬래쉬 없이도 여러 줄을 작성 가능하다.
     - 그러나 권장되는 방식은 아니다.
-  
+
   ```python
   print("
   Hello!")    # SyntaxError: EOL while scanning string literal
@@ -345,9 +347,9 @@
   ]
   print(lunch)  # ['자장면', '짬뽕', '탕수육', '냉면']
   ```
-  
+
   - 혹은 `"""`를 활용하여 여러 줄로 작성하는 방법도 있다.
-  
+
   ```python
   print("""
   동해물과 백두산이
@@ -382,8 +384,9 @@
   우리나라 만세
   """
   ```
-  
-  
+
+
+
 
 
 
@@ -405,7 +408,8 @@
   print(id(var))  # 2107048935088
   ```
 
-  
+
+
 
 
 
