@@ -826,6 +826,7 @@
   - `r` : 읽기모드, 파일을 읽기만 할 때 사용
   - `w` : 쓰기모드, 파일에 내용을 작성할 때 사용
   - `a` : 추가모드, 파일의 마지막에 새로운 내용을 추가 시킬 때 사용
+  - `x`: 생성모드, 파일을 생성하고, 쓰기 모드로 열며, 파일이 있을 경우 에러가 발생한다.
   - `r`, `a`, `w`뒤에 `+`를 붙이면 읽기와 쓰기를 동시에 할 수 있다.
     - `w+`, `r+` 사이에는 차이가 존재한다.
     - `w+`는 기존 파일의 내용을 전부 삭제하고 새로 쓴다.
@@ -844,7 +845,8 @@
   txt_file.close()
   ```
 
-  
+
+
 
 - 작성은 `write()`함수를 사용한다.
 
@@ -882,7 +884,8 @@
   """
   ```
 
-  
+
+
 
 - `readlines()` 함수는 파일의 모든 줄을 읽어서 한 줄을 하나의 요소로 갖는 리스트를 반환한다.
 
@@ -892,9 +895,12 @@
   print(txt_file.readlines())  # ['안녕하세요!\n', '반갑습니다!\n', '저는 지금 행복합니다!']
   ```
 
-  
+
+
 
 - `read()` 함수는 파일의 모든 내용을 문자열로 반환한다.
+
+  - 인자로 정수를 넘길 수 있는데, 이 경우 해당 개수 만큼의 문자를읽어 온다.
 
   ```python
   txt_file = open("test.txt",'r')
@@ -907,111 +913,14 @@
   """
   ```
 
-  
+
+
 
 - with문은 블록을 벗어나는 순간 `close()`를 자동으로 수행해준다.
 
   ```python
   with open("test.txt","w") as txt_file:
       txt_file.write("안녕하세요!")
-  ```
-
-
-
-- `os.path` 모듈
-
-  - 파일, 디렉토리 경로와 관련된 함수를 제공한다.
-  - `abspath(path)`
-    - path의 절대경로를 반환한다.
-
-  ```python
-  import os
-  
-  print(os.path.abspath('test.txt')) # '/home/theo/data/test.txt
-  ```
-
-  - `basename(path)`
-    - path의 상대경로를 반환한다.
-    - 입력값으로 절대경로를 받는다.
-
-  ```python
-  import os
-  
-  print(os.path.basename('/home/theo/data/test.txt')) # test.txt 
-  ```
-
-  - `dirname(path)`
-    - 입력 파일 혹은 디렉토리까지의 경로를 반환한다.
-
-  ```python
-  import os
-  
-  print(os.path.dirname('/home/theo/data/test.txt')) # /home/theo/data
-  ```
-
-  - `exists(path)`
-    - 입력 받은 경로가 존재하는지 여부를 bool 값으로 반환한다.
-
-  ```python
-  import os
-  
-  print(os.path.exists('/home/theo/data/test.txt')) # True
-  ```
-
-  - `getmtime(path)`
-    - 입력 받은 경로(폴더 혹은 파일)의 최근 변경시간을 반환한다.
-    - `getmtime(path)` 으로 생성 시간을, `getatime(path)`으로 접근 시간을 구할 수 있다.
-
-  ```python
-  import os
-  
-  print(os.path.getmtime('/home/theo/data/test.txt')) # True
-  ```
-
-  - `getsize(path)`
-    - 입력 받은 경로의 파일 크기를 반환한다.
-
-  ```python
-  import os
-  
-  print(os.path.getsize('/home/theo/data/test.txt')) # True
-  ```
-
-  - `isdir(path)`
-    - 입력 받은 경로가 디렉토리인지 여부를 bool 값으로 반환한다.
-    - `isfile(path)`로 파일이지 여부를, `isabs(path)`로 절대경로인지 여부를 확인 가능하다.
-
-  ```python
-  import os
-  
-  print(os.path.isdir('/home/theo/data/test.txt')) # False
-  ```
-
-  - `join(str1, str2, ...)`
-    - 입력 받은 문자열을 경로 형태로 합쳐준다.
-
-  ```python
-  import os
-  
-  print(os.path.join('/home/theo',"data","test.txt")) # /home/theo/data/test.txt
-  ```
-
-  - `normpath(path)`
-    - path에서 `.`, `..`와 같른 구분자를 제거해준다.
-
-  ```python
-  import os
-  
-  print(os.path.normpath('/home/theo/../data//test.txt')) # /home/theo/data/test.txt
-  ```
-
-  - `split(path)`
-    - path에서 디렉토리와 파일을 구분하여 튜플로 반환한다.
-
-  ```python
-  import os
-  
-  print(os.path.split('/home/theo/data/test.txt')) # (''/home/theo/data', 'test.txt')
   ```
 
 
@@ -1031,25 +940,18 @@
       file.write(file_contents)
   ```
 
-  
 
 
 
+- `tell`과 `seek`
 
+  - 워드나 메모장에 글을 입력할 때 깜빡 거리는 커서와 같이, 파일 오브젝트에도 커서가 존재한다.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+  - seek
+    - 커서의 위치를 이동한다.
+    - 인자로 이동시킬 위치를 받는다.
+  - tell
+    - 커서의 현재 위치를 알려준다.
 
 
 

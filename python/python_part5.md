@@ -485,8 +485,15 @@
   import os
   print(os.path.getmtime('/Users/User/theo/test')) # 1623374338.4626312
   ```
-
-
+  
+  - `normpath(path)`
+    - path에서 `.`, `..`와 같른 구분자를 제거해준다.
+  
+  ```python
+  import os
+  
+  print(os.path.normpath('/home/theo/../data//test.txt')) # /home/theo/data/test.txt
+  ```
 
 
 
