@@ -248,6 +248,15 @@
   
   print(sys.executable)
   ```
+  
+  - 객체의 사이즈 구하기
+  
+  ```python
+  import sys
+  
+  foo = []
+  print(sys.getsizeof(foo))
+  ```
 
 
 
