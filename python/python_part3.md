@@ -108,8 +108,10 @@
 - 일치 연산자
 
 
-  - `==`: 값이 일치 할 경우 True, 불일치 할 경우 False
-  - `!=`: 값이 일치 할 경우 False, 불일치 할 경우 True
+    - `==`: 값이 일치 할 경우 True, 불일치 할 경우 False
+
+
+    - `!=`: 값이 일치 할 경우 False, 불일치 할 경우 True
 
   ```python
   print("abc"=="abc")		# True
@@ -118,8 +120,7 @@
   print("abc"!="xyz")		# True
   ```
 
-
-    - `is`: 같은 객체를 가리킬 경우 True, 다른 객체를 가리킬 경우 False
+  - `is`: 같은 객체를 가리킬 경우 True, 다른 객체를 가리킬 경우 False
 
   ```python
   a = [1,2,3]
@@ -132,8 +133,6 @@
   # a와 c는 같은 객체를 가리킨다.
   print(a is c)	# True
   ```
-
-
 
 
 
