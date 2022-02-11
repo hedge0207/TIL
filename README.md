@@ -567,11 +567,21 @@
 
 ## [fastapi_part1](https://github.com/hedge0207/TIL/blob/master/fastapi/fastapi_part1.md)
 
+- 튜토리얼
+- 매개변수
+  - 경로 매개변수
+  - 쿼리 매개변수
+- Request Body
+
 <br/>
 
 <br/>
 
 ## [fastapi_part2](https://github.com/hedge0207/TIL/blob/master/fastapi/fastapi_part2.md)
+
+- Request Header
+- Pydantic validator
+- Testing
 
 <br/>
 
