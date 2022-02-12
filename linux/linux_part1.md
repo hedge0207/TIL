@@ -1009,4 +1009,24 @@
   $ tar [옵션]
   ```
 
-  
+
+
+## 파일 위치 검색
+
+- find
+  - 옵션
+    - `-name`
+    - `-user`
+    - `-newer`
+    - `-perm`
+    - `-size`
+  - action
+    - `-print`
+    - `-exec`
+
+
+
+- 기타
+  - `which`
+  - `whereis`
+  - `locate`
