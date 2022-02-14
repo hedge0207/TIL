@@ -291,6 +291,100 @@
 
 
 
+- `copy_to`
+
+  - 한 필드의 값을 다른 필드에 복사할 수 있는 기능이다.
+    - 일반적으로 여러 필드를 한 필드를 통해 검색하기 위해 사용한다.
+    - 여러 필드를 검색하는 것 보다 한 필드를 검색하는 것이 검색 성능이 더 뛰어나기 때문이다.
+
+  - mapping 설정하기
+    - 아래와 같이 하나의 필드만 설정해도 되고, array 안에 여러 개의 필드도 설정 가능하다.
+    - object 형태의 필드에는 적용이 불가능하다.
+
+  ```json
+  // PUT test-inex
+  {
+    "mappings": {
+      "properties": {
+        "first_name": {
+          "type": "text",
+          "copy_to": "full_name" 
+        },
+        "last_name": {
+          "type": "text",
+          "copy_to": "full_name" 
+        },
+        "full_name": {
+          "type": "text"
+        }
+      }
+    }
+  }
+  ```
+
+  - 데이터 색인하기
+
+  ```json
+  // PUT test-index/_doc/1
+  {
+    "first_name": "John",
+    "last_name": "Smith"
+  }
+  ```
+
+  - 검색
+    - mapping상에는 존재하지만 검색 결과로 표출되지는 않는다.
+
+  ```json
+  // GET test-index/_search
+  {
+    "query": {
+      "match": {
+        "full_name": { 
+          "query": "John Smith",
+          "operator": "and"
+        }
+      }
+    }
+  }
+  
+  
+  // output
+  {
+    "took" : 1,
+    "timed_out" : false,
+    "_shards" : {
+      "total" : 1,
+      "successful" : 1,
+      "skipped" : 0,
+      "failed" : 0
+    },
+    "hits" : {
+      "total" : {
+        "value" : 1,
+        "relation" : "eq"
+      },
+      "max_score" : 0.5753642,
+      "hits" : [
+        {
+          "_index" : "test-index",
+          "_type" : "_doc",
+          "_id" : "1",
+          "_score" : 0.5753642,
+          "_source" : {
+            "first_name" : "John",
+            "last_name" : "Smith"
+          }
+        }
+      ]
+    }
+  }
+  ```
+
+  
+
+
+
 
 
 ## settings
