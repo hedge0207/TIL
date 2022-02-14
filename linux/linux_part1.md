@@ -1014,19 +1014,63 @@
 ## 파일 위치 검색
 
 - find
-  - 옵션
-    - `-name`
-    - `-user`
-    - `-newer`
-    - `-perm`
-    - `-size`
+  - 옵션(아래는 대표적인 옵션일 뿐, 보다 다양한 옵션이 존재한다.)
+    - `-name`: 파일 혹은 폴더 이름(기본값)
+    - `-user`: 사용자 이름
+    - `-newer`: 일정 파일이 생성된 이후에 생성된 파일을 찾는다.
+    - `-perm`: 허가권
+    - `-size`: 파일 사이즈
   - action
-    - `-print`
-    - `-exec`
+    - `-print`: 기본 옵션
+    - `-exec`: 외부 명령 실행
+  
+  ```bash
+  $ <파일을 찾을 위치> [옵션] [-exce <실행할 명령>] <찾을 파일 정보>
+  ```
+  
+  - 예시
+  
+  ```bash
+  $ find /home *.md
+  $ find /home -user theo
+  $ find /home -perm 644
+  $ find /home -newer test.txt # test.txt보다 이후에 생성된 파일을 찾는다.
+  $ find /home ! -newer test.txt # test.txt보다 이전에 생성된 파일을 찾는다.
+  $ find /home -size +100k -size -300k # 100kb이상, 300kb이하인 파일을 찾는다.
+  ```
+  
+  - `-exec` 옵션 예시
+    - `\;`는 외부 명령어의 끝을 의미한다.
+    - `{}`에 find 명령어의 결과(예시의 경우 `find /home -user theo` 명령의 결과가 들어간다고 생각하면 된다.)
+  
+  ```bash
+  # home 디렉토리의 하위에서 사용자명이 theo인 파일을 모두 삭제
+  $ find /home -user theo -exec rm {} \;
+  ```
 
 
 
 - 기타
   - `which`
+    - PATH에 설정된 디렉터리만 검색(python, java 등과 같이 PATH에 설정된 것들만 검색한다).
+    - 절대 경로를 포함한 위치를 검색한다.
   - `whereis`
+    - 실행 파일 및 소스, man 페이지 파일까지 검색
   - `locate`
+
+
+
+## cron과 at
+
+- cron
+
+  - 주기적으로 특정 명령을 실행할 수 있도록 시스템 작업을 예약해놓는 것이다.
+
+  - cron과 관련된 데몬은 crond이고, 관련 파일은 /etc/crontab이다.
+  - /etc/crontab의 형식은 다음과 같다.
+
+  ```bash
+  분 시 일 월 요일 사용자 실행명령
+  ```
+
+  
