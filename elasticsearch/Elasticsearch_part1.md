@@ -963,6 +963,47 @@
 
 
 
+- `op_type`
+
+  - 색인하려는 문서가 이미 인덱스에 존재할 때의 동작을 정의할 수 있다.
+  - `create`로 설정할 경우, 색인하려는 문서가 인덱스에 없을 경우에만 색인을 진행한다.
+    - `_id` 필드를 기준으로 판단하며, 이미 존재할 경우 색인이 실패하게 된다.
+    - `<인덱스명>/_create/<doc_id>`와 같이 보낼 경우 `op_type`은 `create`로 설정된다.
+  - `index`로 설정할 경우, 색인하려는 문서가 이미 인덱스에 있으면 해당 문서를 업데이트한다.
+    - `<인덱스명>/_doc/<doc_id>`와 같이 보낼 경우 `op_type`은 `index`로 설정된다.
+
+  ```bash
+  # 아래 두 명령은 동일하게 동작한다.
+  $ curl -XPUT my-index/_create/1
+  $ crul -XPUT my-index/_doc/1?op_type=create
+  ```
+
+  - data stream의 경우  `op_type`이 `create`여야만 색인이 가능하다.
+    - 따라서 `?op_type=create`와 같이 명시하거나 `_create` API를 사용해야 한다.
+    - bulk의 경우에도 create라는 action을 명시해줘야한다.
+
+  ```bash
+  # 단 건 색인
+  $ curl -XPUT my-data-stream/_create/1
+  
+  # bulk
+  $ curl -XPUT my-data-stream/_bulk?refresh
+  {"create":{ }}
+  {"message": "Login attempt failed" }
+  {"create":{ }}
+  {"message": "Login successful" }
+  {"create":{ }}
+  {"message": "Logout successful" }
+  ```
+
+
+
+
+
+
+
+
+
 ## 데이터 검색
 
 - 검색하기
