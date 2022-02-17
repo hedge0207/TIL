@@ -6,7 +6,8 @@
     - ES 공식 홈페이지에는 mysql을 연결하는 예시가 나와 있다.
   - 설정 파일
     - 대략적인 설정은 아래와 같다.
-
+    - schedule을 주지 않을 경우 1번만 실행된다.
+  
   ```yml
   input {
      jdbc {
@@ -26,7 +27,7 @@
      }
   }
   ```
-
+  
   - input
     - `jdbc_driver_library`: 연결에 필요한 라이브러리들을 입력한다.
     - `jdbc_driver_class`: 드라이버 클래스를 설정한다(DB마다 다르므로 다른 DB를 사용하고자 하면 드라이버 클래스를 찾아봐야 한다).
@@ -65,6 +66,18 @@
   }
   ```
   
+
+
+
+- 실행하기
+
+  - `/bin/logstash` 파일에 logstash 실행 경로 관련 설정이 있어 반드시 아래와 같이 실행해야 한다.
+
+  ```bash
+  $ cd <logstash 설치 폴더>
+  $ bin/logstash -f <conf 파일 경로>
+  ```
+
   
 
 
