@@ -44,6 +44,44 @@
 
 
 
+## yum으로 설치
+
+- 설치
+
+  ```bash
+  $ yum install nginx
+  ```
+
+
+
+- 명령어
+
+  - 실행
+
+  ```bash
+  $ nginx
+  ```
+
+  - 실행중인지 확인
+
+  ```bash
+  $ ps -ef | grep nginx
+  ```
+
+  - 정지
+
+  ```bash
+  $ nginx -s stop
+  ```
+
+  - 재실행
+
+  ```bash
+  $ nginx -s reload
+  ```
+
+
+
 ## Nginx 설정 파일
 
 > 아래에 나온 설정들 보다 훨씬 다양한 설정들이 존재한다.
