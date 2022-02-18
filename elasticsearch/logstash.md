@@ -78,7 +78,61 @@
   $ bin/logstash -f <conf 파일 경로>
   ```
 
+
+
+
+- 로그 파일 전송하기
+
+  - logstash가 지원하는 input plugin 중 `file`을 사용하여, 읽어들일 log 파일을 지정한다.
+    - path 외에도 다양한 설정이 있으나, path만이 required 값이다.
+
+  ```json
+  input {
+     file {
+         path => "/home/es/theo/logstash/test.log"
+     }
+  }
+  ```
+
+  - filter를 사용하여 로그를 파싱한다.
+    - 주로 `grok` plugin을 사용하지만 명확한 구분자가 있을 경우 `disscet`을 사용하는 것이 훨씬 편하다.
+    - 둘 이상의 filter를 적용 가능하기에 grok과 disscet을 둘 다 사용할 수도 있다.
+
+  ```json
+  filter {
+     dissect {
+         mapping => {
+             "message" => "[%{date}] [%{level}] [%{path}] [%{status_code}] %{req_body}"
+         }
+     }
+  }
+  ```
+
+  - 원하는 output을 지정해준다.
+
+  ```bash
+  output {
+     stdout {}
+  }
+  ```
+
+  - 예시
+
+  ```bash
+  # 아래와 같은 데이터는
+  [2022-02-16 17:11:23] [INFO] [/v1/search] [200] {"name":"theo", "age":78}
   
+  # 다음과 같이 파싱된다.
+  {
+  	"date": 2022-02-16 17:11:23
+  	"level": INFO
+  	"path": /v1/search
+  	"status_code": 200
+  	"req_body": {"name":"theo", "age":78}
+  }
+  ```
+
+
 
 
 
