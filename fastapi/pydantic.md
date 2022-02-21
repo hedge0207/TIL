@@ -172,3 +172,75 @@
       fruits: Optional[List[Literal['apple', 'orange', 'banana']]]
   ```
 
+
+
+- validation하기
+
+  - pydantic에서 제공하는 `@validator` 데코레이터를 사용한다.
+    - 첫 번째 인자로는 class 자체를 받는다.
+    - 두 번째 인자는 검증 대상 필드를 받는다.
+    - 세 번째 인자는 검증 대상 필드를 제외한 다른 필드들의 정보를 받는다.
+
+  ```python
+  from pydantic import BaseModel, ValidationError, validator
+  
+  
+  class UserModel(BaseModel):
+      name: str
+      username: str
+      password1: str
+      password2: str
+  
+      @validator('name')
+      def name_must_contain_space(cls, v):
+          if ' ' not in v:
+              raise ValueError('must contain a space')
+          return v.title()
+  
+      @validator('username')
+      def username_alphanumeric(cls, v):
+          assert v.isalnum(), 'must be alphanumeric'
+          return v
+      
+      @validator('password2')
+      def passwords_match(cls, v, values, **kwargs):
+          if 'password1' in values and v != values['password1']:
+              raise ValueError('passwords do not match')
+          return v
+  
+  
+  user = UserModel(
+      name='samuel colvin',
+      username='scolvin',
+      password1='zxcvbn',
+      password2='zxcvbn',
+  )
+  print(user)
+  ```
+
+
+
+- Enum class 사용하기
+
+  - `use_enum_values`를 `True`로 주면, 자동으로 Enum 클래스의 value를 할당한다.
+
+  ```python
+  from enum import Enum
+  from pydantic import BaseModel
+  
+  class Gender(str, Enum):
+      MALE = "male"
+      FEMALE = "female"
+  
+  class Student(BaseModel):
+      name:str
+      gender:Gender
+  
+      class Config:  
+          use_enum_values = True
+  
+  student = Student(name="Kim", gender='male')
+  print(student.dict())
+  ```
+
+  
