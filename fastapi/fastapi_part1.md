@@ -605,9 +605,29 @@
 
 
 
+# Request
+
+- 요청을 보낸 client의 host 확인하기
+
+  - `Reqeust`에 ip 정보가 담겨 있다. 
+
+  ```python
+  from fastapi import FastAPI, Request
+  
+  
+  app = FastAPI()
+  
+  @app.get("/")
+  def read_root(request: Request):
+      client_host = request.client.host
+      return {"client_host": client_host}
+  ```
+
+  
 
 
-# Request Body
+
+## Request Body
 
 - 개요
   -  만일 client에서 API로 data를 보내려 한다면 request body에 담아서 보내야 한다.
@@ -1061,7 +1081,7 @@
 
 
 
-# Request Header
+## Request Header
 
 - Header parameter는 Query, Path 등과 같은 방식으로 정의할 수 있다.
 
