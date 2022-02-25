@@ -532,6 +532,22 @@
 
 
 
+- 컨테이너 로그 확인
+
+  - `--tail <숫자>`(`-n <숫자>`): 숫자만큼의 마지막 로그만 보여준다.
+  - `--details`: 상세 로그를 보여준다.
+  - `--follow`(`-f`): 로그를 live로 보여준다.
+  - `--timestamps`(`-t`): timestamp를 보여준다.
+  - `--until <timestamp or relatvie>`:  timestamp 이전 까지의 로그 혹은 상대 시간(`10s`, `5m`, `1h`)전 까지의 로그를 보여준다.
+
+  ```bash
+  $ docker logs [옵션] <컨테이너 식별자>
+  ```
+
+  
+
+
+
 
 ## 가동 중인 Docker Container 연결
 
