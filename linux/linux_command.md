@@ -771,17 +771,19 @@
 
 - crontab
 
+  > https://crontab.guru/  corntab 설정을 해볼 수 있는 사이트
+  
   - 특정 시간에 특정 프로그램을 특정 주기로 실행시키는 프로그램
   - 설치
-
+  
   ```bash
   $ apt-get install cron
   ```
-
+  
   - 크론탭 설정하기
     - vi 에디터를 사용하여 크론탭 설정을 입력한다.
     - `*` , 숫자,  `,`, `-`를 조합해서 설정한다.
-
+  
   ```bash
   $ corntab -e
   
@@ -800,13 +802,13 @@
   ```
 
   - 크론탭 설정 내용 확인
-
+  
   ```bash
   $ crontab -l
   ```
 
   - 크론탭 설정 내용 삭제
-
+  
   ```bash
   $ crontab -d
   ```
