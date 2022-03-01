@@ -643,4 +643,419 @@
   DELETE _data_stream/<data stream 이름>
   ```
 
-  
+
+
+
+
+
+# Search template
+
+- search template
+  - 검색 양식을 미리 생성한 후 해당 검색 양식에 값을 넘겨서 검색식을 완성할 수 있게 해주는 기능.
+  - 검색식 때문에 코드가 지저분해지는 등 검색식 관리가 힘들 때 활용할 수 있는 기능이다.
+  - 또한 검색식을 ES 내부에 저장하기에 검색식이 외부에 노출되지 않는다는 장점이 있다.
+
+
+
+- 생성하기
+
+  - search template을 생성하고 수정하기 위해서는 `_script` API를 사용한다.
+    - requests의 `source` 부분에 search API 사용되는 reqeust body를 넣는다.
+    - Mustache 값으로 각 쿼리의 검색 값을 표시한다(즉 함수의 파라미터를 선언해주는 부분이라 보면 된다).
+  - ES는 search template을  cluster state에 [mustache scripts](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-scripting.html)로 저장한다.
+
+  - 예시
+    - 아래 예시는 `my-search-template`라는 search template을 생성하는 예시이다.
+
+  ```json
+  PUT _scripts/my-search-template
+  {
+    "script": {
+      "lang": "mustache",
+      "source": {
+        "query": {
+          "match": {
+            "message": "{{query_string}}"
+          }
+        },
+        "from": "{{from}}",
+        "size": "{{size}}"
+      },
+      "params": {
+        "query_string": "My query string"
+      }
+    }
+  }
+  ```
+
+
+
+- 유효성 검증하기
+
+  - `_render` API를 통해 search template을 검색식으로 변환할 수 있다.
+    - GET/POST 모두 사용 가능하며 template_id를 path parameter로 넘길 수도 있다(`POST _render/template/my-search-template`).
+    - `params`에는 key-value 쌍의 값을 받는다.
+
+  ```json
+  POST _render/template
+  {
+    "id": "my-search-template",
+    "params": {
+      "query_string": "hello world",
+      "from": 20,
+      "size": 10
+    }
+  }
+  ```
+
+  - output
+
+  ```json
+  {
+    "template_output": {
+      "query": {
+        "match": {
+          "message": "hello world"
+        }
+      },
+      "from": "20",
+      "size": "10"
+    }
+  }
+  ```
+
+  - `source`는 템플릿 생성 전에 임시로 템플릿을 렌더링하면 어떤 모습이 될지를 확인하기 위해 사용한다. 
+    - search API 사용되는 reqeust body를 넣는다.
+    - `template_id`가 없을 경우 `source`는 required field가 된다.
+    - 이미 템플릿이 있는 상태에서 `source` 파라미터를 주면 기존 템플릿은 무시되고 source에 정의 된 내용만 렌더링된다.
+
+  ```json
+  GET _render/template
+  {
+    "id": "my-search-template",
+    "params": {
+      "query_string": "hello world",
+      "from": 20,
+      "size": 10
+    },
+    "source": {
+      "sort":{
+        "@timestamp":"desc"
+      }
+    }
+  }
+  ```
+
+  - ouput
+
+  ```json
+  {
+    "template_output" : {
+      "sort" : {
+        "@timestamp" : "desc"
+      }
+    }
+  }
+  ```
+
+
+
+- 기본값 설정하기
+
+  - 아래와 같은 형식으로 기본 값을 설정할 수 있다.
+
+  ```bash
+  {{my-var}}{{^my-var}}default value{{/my-var}}
+  ```
+
+  - 예시
+
+  ```json
+  POST _render/template
+  {
+    "source": {
+      "query": {
+        "match": {
+          "message": "{{query_string}}"
+        }
+      },
+      "from": "{{from}}{{^from}}0{{/from}}",
+      "size": "{{size}}{{^size}}10{{/size}}"
+    },
+    "params": {
+      "query_string": "hello world"
+    }
+  }
+  ```
+
+
+
+- URL 인코딩하기
+
+  - `{{@url}}`을 통해 URL이라는 것을 표시한다.
+
+  ```json
+  POST _render/template
+  {
+    "source": {
+      "query": {
+        "term": {
+          "url.full": "{{#url}}{{host}}/{{page}}{{/url}}"
+        }
+      }
+    },
+    "params": {
+      "host": "http://example.com",
+      "page": "hello-world"
+    }
+  }
+  ```
+
+
+
+- 여러 개의 값을 하나의 문자열로 묶기
+
+  - `{{@join}}`을 활용하여 list형의 값을 하나의 문자열로 이어서 받을 수 있다.
+    - 기본적으로 `,`로 구분한다.
+
+  ```json
+  POST _render/template
+  {
+    "source": {
+      "query": {
+        "match": {
+          "user.group.emails": "{{#join}}emails{{/join}}"
+        }
+      }
+    },
+    "params": {
+      "emails": [ "user1@example.com", "user_one@example.com" ]
+    }
+  }
+  ```
+
+  - 구분자를 `,`가 아닌 다른 것으로 직접 지정하는 것도 가능하다.
+    - `{{#join delimiter='||'}}`와 같이 구분자를 `||`로 지정이 가능하다.
+
+  ```json
+  POST _render/template
+  {
+    "source": {
+      "query": {
+        "range": {
+          "user.effective.date": {
+            "gte": "{{date.min}}",
+            "lte": "{{date.max}}",
+            "format": "{{#join delimiter='||'}}date.formats{{/join delimiter='||'}}"
+  	      }
+        }
+      }
+    },
+    "params": {
+      "date": {
+        "min": "2098",
+        "max": "06/05/2099",
+        "formats": ["dd/MM/yyyy", "yyyy"]
+      }
+    }
+  }
+  ```
+
+  - output
+
+  ```json
+  {
+    "template_output": {
+      "query": {
+        "range": {
+          "user.effective.date": {
+            "gte": "2098",
+            "lte": "06/05/2099",
+            "format": "dd/MM/yyyy||yyyy"
+          }
+        }
+      }
+    }
+  }
+  ```
+
+
+
+- Json으로 변환하기
+
+  - json 표현식으로도 변환이 가능하다.
+
+  ```json
+  POST _render/template
+  {
+    "source": "{ \"query\": {{#toJson}}my_query{{/toJson}} }",
+    "params": {
+      "my_query": {
+        "match_all": { }
+      }
+    }
+  }
+  ```
+
+  - output
+
+  ```json
+  {
+    "template_output" : {
+      "query" : {
+        "match_all" : { }
+      }
+    }
+  }
+  ```
+
+
+
+- 검색 템플릿 조회하기
+
+  - 개별 템플릿 조회하기
+    - 아래와 같이 GET 메서드와  template_id를 활용하여 조회가 가능하다.
+
+  ```bash
+  GET _scripts/my-search-template
+  ```
+
+  - 모든 template 조회하기
+    - cluster state에 저장되므로 아래와 같이 조회한다.
+
+  ```bash
+  GET _cluster/state/metadata?pretty&filter_path=metadata.stored_scripts
+  ```
+
+
+
+- 검색 템플릿 삭제하기
+
+  - DELETE 메서드와 template_id를 활용하여 삭제한다.
+
+  ```bash
+  DELETE _scripts/my-search-template
+  ```
+
+
+
+- 검색하기
+
+  - `_search/template` API를 활용하여 검색이 가능하다.
+    - 아래와 같이 template id를 지정하고 mustache로 정의한 값들을 params에 넣어서 검색한다.
+    - 응답값은 일반적인 검색과 같다.
+
+  ```json
+  GET my-index/_search/template
+  {
+    "id": "my-search-template",
+    "params": {
+      "query_string": "hello world",
+      "from": 0,
+      "size": 10
+    }
+  }
+  ```
+
+  - [다중 템플릿 검색](https://www.elastic.co/guide/en/elasticsearch/reference/current/multi-search-template.html)
+    - `_msearch/template` API를 활용하여 검색한다.
+    - 단일 검색을 두 번 수행하는 것 보다 오버헤드가 적고 속도가 빠를 수 있다.
+
+  ```json
+  GET my-index/_msearch/template
+  { }
+  { "id": "my-search-template", "params": { "query_string": "hello world", "from": 0, "size": 10 }}
+  { }
+  { "id": "my-other-search-template", "params": { "query_type": "match_all" }}
+  ```
+
+
+
+- 조건문 활용하기
+
+  - 아래와 같은 형식으로 조건문을 사용 가능하다.
+
+  ```bash
+  {{#condition}}content{{/condition}}
+  ```
+
+  - 예시
+
+  ```json
+  POST _render/template
+  {
+    "source": "{ \"query\": { \"bool\": { \"filter\": [ {{#year_scope}} { \"range\": { \"@timestamp\": { \"gte\": \"now-1y/d\", \"lt\": \"now/d\" } } }, {{/year_scope}} { \"term\": { \"user.id\": \"{{user_id}}\" }}]}}}",
+    "params": {
+      "year_scope": true,
+      "user_id": "kimchy"
+    }
+  }
+  ```
+
+  - `year_scope`값이 true면
+
+  ```json
+  {
+    "template_output" : {
+      "query" : {
+        "bool" : {
+          "filter" : [
+            {
+              "range" : {
+                "@timestamp" : {
+                  "gte" : "now-1y/d",
+                  "lt" : "now/d"
+                }
+              }
+            },
+            {
+              "term" : {
+                "user.id" : "kimchy"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+  ```
+
+  - `year_scope`값이 false면
+
+  ```json
+  {
+    "template_output" : {
+      "query" : {
+        "bool" : {
+          "filter" : [
+            {
+              "term" : {
+                "user.id" : "kimchy"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+  ```
+
+  - if - else도 활용이 가능하다.
+
+  ```bash
+  {{#condition}}if content{{/condition}}{{^condition}}else content{{/condition}}
+  ```
+
+  - 예시
+
+  ```json
+  POST _render/template
+  {
+    "source": "{ \"query\": { \"bool\": { \"filter\": [ { \"range\": { \"@timestamp\": { \"gte\": {{#year_scope}} \"now-1y/d\" {{/year_scope}} {{^year_scope}} \"now-1d/d\" {{/year_scope}} , \"lt\": \"now/d\" }}}, { \"term\": { \"user.id\": \"{{user_id}}\" }}]}}}",
+    "params": {
+      "year_scope": true,
+      "user_id": "kimchy"
+    }
+  }
+  ```
+
