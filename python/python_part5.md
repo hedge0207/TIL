@@ -534,6 +534,16 @@
   
   shutil.copy("test.txt", "test2.txt")	# test.txt 파일의 내용이 복사 된 text2.txt 파일이 생긴다.
   ```
+  
+  - 터미널 창의 size를 구하는 것도 가능하다.
+  
+  ```python
+  import shutil
+  
+  print(shutil.get_terminal_size())	# os.terminal_size(columns=160, lines=24)
+  ```
+  
+  
 
 
 
