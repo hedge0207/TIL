@@ -83,9 +83,9 @@
   platform linux -- Python 3.8.0, pytest-6.2.5, py-1.11.0, pluggy-1.0.0
   rootdir: /some/path
   plugins: anyio-3.4.0
-  collected 1 item                                                                                  
+  collected 1 item  # 하나의 테스트가 감지되었음을 의미한다.                                                                         
   
-  sample_test.py F                                                                            [100%]
+  sample_test.py F # sample_test.py의 테스트가 실패 했음을 의미한다(성공일 경우 .으로 표사).          [100%]
   
   ============================================ FAILURES =============================================
   ___________________________________________ test_answer ___________________________________________
@@ -103,20 +103,24 @@
 
 
 
-- pytest 명령어
+- 마커 기반 테스트
 
-  - 아무 옵션도 주지 않을 경우
-    - 현재 디렉터리와 하위 디렉터리의 모든 `test_*.py`, `*_test.py`파일을 테스트한다.
-    - 해당 파일들에서 `test_` prefix가 붙은 모든 함수를 테스트한다.
-    - `Test` prefix가 붙은 class 내부의 `test_` prefix가 붙은 메서드를 테스트한다(단, `__init__` 메서드가 없어야 한다.).
-  - `-q`(`--quiet`)
-    - pass, fail을 축약해서 보여준다.
-    - fail이라 하더라도 왜 fail인지 이유는 보여준다.
-  - 모듈명 지정하기
-    - 테스트할 파일을 입력하면 해당 모듈만 테스트한다.
+  - 각 테스트별로 마커를 설정해줄 수 있다.
+  - 테스트 함수에 `@pytest.mark.<marker명>`와 같이 데코레이터를 설정해준다.
+
+  ```python
+  import pytest
+  
+  
+  @pytest.mark.foo
+  def test_foo():
+      pass
+  ```
+
+  - `-m` 옵션으로 특정 마커가 붙어있는 테스트 코드만 테스트 하는 것이 가능하다.
 
   ```bash
-  $ pytest [테스트_파일.py]
+  $ pytest -m foo
   ```
 
 
@@ -124,7 +128,7 @@
 - 특정 예외가 발생했는지 확인하기
 
   - 특정 예외가 발생했으면 pass, 아니면 fail이 된다.
-  - 코드
+  - 예시
     - `with`와 pytest의 `raises`를 활용한다.
 
   ```python
@@ -138,6 +142,185 @@
   def test_mytest():
       with pytest.raises(ValueError):
           foo()
+  ```
+  
+  - 구체적인 예외 정보 확인하기
+    - 아래 코드에서 `excinfo`는 `ExceptionInfo`의 인스턴스이다.
+    - type, value, traceback 등의 정보를 확인 가능하다.
+  
+  ```python
+  import pytest
+  
+  
+  def my_func():
+      raise ValueError("Exception 111 raised")
+  
+  def test_foo():
+      with pytest.raises(ValueError) as excinfo:
+          my_func()
+      assert '111' in str(excinfo.value)
+  ```
+  
+  - match parameter 사용하기
+    - 정규표현식을 사용하여 발생한 예외의 메시지가 특정 형식과 일치하는지를 확인 가능하다.
+  
+  ```python
+  import pytest
+  
+  
+  def my_func():
+      raise ValueError("Exception 111 raised")
+  
+  def test_foo():
+      with pytest.raises(ValueError, match=r".* 111 .*"):
+          my_func()
+  ```
+  
+  - `xfail`을 사용하여 체크하는 것도 가능하다.
+    - 코드 내에서 `raises`를 사용하는 방식은 특정 예외가 확실히 발생해야 하는 상황에서 정말 발생하는지 확인하는 용도이다.
+    - `xfail`은 특정 예외가 발생할 수도 있는 상황에서 해당 예외가 발생해도 fail처리 하지 않겠다는 의미이다.
+  
+  ```python
+  import pytest
+  
+  
+  def my_func():
+      raise ValueError("Exception 111 raised")
+  
+  @pytest.mark.xfail(raises=ValueError)
+  def test_xfail():
+      my_func()
+  
+  def test_raises():
+      with pytest.raises(ValueError):
+          my_func()
+  ```
+  
+  - `xfail`을 사용할 경우 `raises`를 사용한 것과 표시도 다르게 해준다.
+    - `xfail`은 `F`도 `.`도 아닌  `x`로, raises는 성공했으므로 `.`로 표기한다. 
+  
+  ```bash
+  =========================================== test session starts ============================================
+  platform linux -- Python 3.8.0, pytest-7.0.0, pluggy-1.0.0
+  rootdir: /data/theo/workspace
+  plugins: anyio-3.5.0, asyncio-0.18.0
+  asyncio: mode=legacy
+  collected 2 items                                                                                          
+  
+  test_qwe.py x.                                                                                       [100%]
+  
+  ======================================= 1 passed, 1 xfailed in 0.04s =======================================
+
+
+
+- Fail시에 설명 커스텀하기
+
+  - `pytest_assertrepr_compare` hook을 사용하여 설명을 커스텀 할 수 있다.
+  - 예시1
+
+  ```python
+  def test_compare():
+      assert 1 == 2
+  ```
+
+  - conftest.py에 `pytest_assertrepr_compare` hook 작성
+
+  ```python
+  def pytest_assertrepr_compare(op, left, right):
+      if op == "==":
+          return [
+              "Comparing Two Ingeger:",
+              "   vals: {} != {}".format(left, right),
+          ]
+  ```
+
+  - 결과1
+
+  ```python
+  ============================================== test session starts ===============================================
+  platform linux -- Python 3.8.0, pytest-7.0.0, pluggy-1.0.0
+  rootdir: /data/theo/workspace
+  plugins: anyio-3.5.0, asyncio-0.18.0
+  asyncio: mode=legacy
+  collected 1 item                                                                                                 
+  
+  test_qwe.py F                                                                                              [100%]
+  
+  ==================================================== FAILURES ====================================================
+  __________________________________________________ test_compare __________________________________________________
+  
+      def test_compare():
+  >       assert 1 == 2
+  E       assert Comparing Two Ingeger:
+  E            vals: 1 != 2
+  
+  test_qwe.py:2: AssertionError
+  
+  ============================================ short test summary info =============================================
+  FAILED test_qwe.py::test_compare - assert Comparing Two Ingeger:
+  ========================================== 1 failed, 1 warning in 0.03s ==========================================
+  ```
+
+  - 예시2
+
+  ```python
+  # content of test_foocompare.py
+  class Foo:
+      def __init__(self, val):
+          self.val = val
+  
+      def __eq__(self, other):
+          return self.val == other.val
+  
+  
+  def test_compare():
+      f1 = Foo(1)
+      f2 = Foo(2)
+      assert f1 == f2
+  ```
+
+  - conftest.py에 `pytest_assertrepr_compare` hook 작성
+
+  ```python
+  # content of conftest.py
+  from test_foo import Foo
+  
+  
+  def pytest_assertrepr_compare(op, left, right):
+      if isinstance(left, Foo) and isinstance(right, Foo) and op == "==":
+          return [
+              "Comparing Foo instances:",
+              "   vals: {} != {}".format(left.val, right.val),
+          ]
+  ```
+
+  - 결과2
+
+  ```python
+  ========================================== test session starts ===========================================
+  platform linux -- Python 3.8.0, pytest-7.0.0, pluggy-1.0.0
+  rootdir: /data/theo/workspace
+  plugins: anyio-3.5.0, asyncio-0.18.0
+  asyncio: mode=legacy
+  collected 1 item                                                                                         
+  
+  test_qwe.py F                                                                                      [100%]
+  
+  ================================================ FAILURES ================================================
+  ______________________________________________ test_compare ______________________________________________
+  
+      def test_compare():
+          f1 = Foo(1)
+          f2 = Foo(2)
+  >       assert f1 == f2
+  E       assert Comparing Foo instances:
+  E            vals: 1 != 2
+  
+  test_qwe.py:13: AssertionError
+          
+  ======================================== short test summary info =========================================
+  FAILED test_qwe.py::test_compare - assert Comparing Foo instances:
+  ====================================== 1 failed, 1 warning in 0.03s ======================================
   ```
 
 
@@ -179,6 +362,88 @@
 
 
 
+- pytest 명령어
+
+  - 아무 옵션도 주지 않을 경우
+    - 현재 디렉터리와 하위 디렉터리의 모든 `test_*.py`, `*_test.py`파일을 테스트한다.
+    - 해당 파일들에서 `test_` prefix가 붙은 모든 함수를 테스트한다.
+    - `Test` prefix가 붙은 class 내부의 `test_` prefix가 붙은 메서드를 테스트한다(단, `__init__` 메서드가 없어야 한다.).
+  - `-q`(`--quiet`)
+    - pass, fail을 축약해서 보여준다.
+    - fail이라 하더라도 왜 fail인지 이유는 보여준다.
+  - 모듈명 지정하기
+    - 테스트할 파일을 입력하면 해당 모듈만 테스트한다.
+    - `*`를 wildcard로 활용 가능하다.
+
+  ```bash
+  $ pytest [테스트_파일.py]
+  ```
+
+  - 테스트명 지정하기
+    - `-k` 옵션으로 어떤 테스트를 실행할지 지정이 가능하다.
+
+  ```bash
+  $ pytest -k <지정할 테스트>
+  
+  # 예시: test.py 모듈에 있는 테스트들 중 테스트 이름에 elasticsearch가 포함된 것만 테스트한다.
+  $ pytest -k elasticsearch test.py
+  ```
+
+  - `::`구분자 사용하기
+    - `::` 구분자를 통해 특정 모듈의 특정 클래스의 특정 함수를 테스트 할수 있다.
+
+  ```bash
+  # test_foo.py 모듈의 FooClass 내부에 있는 test_foo 함수를 테스트한다.
+  $ pytest test_foo.py:FooClass:test_foo
+  ```
+
+
+
+
+- fixture
+
+  - 적용된 각 테스트 함수 직전에 실행되는 함수.
+  - DB 연결 등의 외부 의존관계를 테스트 외부에서 설정하기 위해 사용한다.
+    - 매 테스트마다 의존관계를 일일이 설정해줄 필요 없이 한 번 작성하면 여러 테스트에서 사용 가능하다.
+  - 예시
+    - fixture 이름을 테스트 함수의 인자에 넣어서 사용한다.
+
+  ```python
+  import pytest
+  from elasticsearch import Elasticsearch
+  
+  
+  @pytest.fixture
+  def es_client():
+      return Elasticsearch('127.0.0.1:9200')
+  
+  def test_ping(es_client):
+      assert es_client.ping() == True
+  ```
+
+  - conftest
+    - fixture 함수들을 `conftest.py` 파일에 작성하면 여러 테스트 파일들에서 접근가능하다.
+    - 각 테스트는 테스트가 작성된 모듈 내에서 fixture를 먼저 찾고, 없을 경우 conftest.py에서 찾는다. 그래도 없을 경우 pytest가 제공하는 bulit-in fixture에서 찾는다.
+    - `conftest.py`파일은 테스트 대상 모듈과 같은 디렉터리에 있거나 상위 디렉터리에 있으면 자동으로 감지된다.
+    - `contest.py`의 위치를 찾을 때, pyest 명령을 실행하는 위치와는 관계가 없다. 오직 테스트 모듈의 위치를 기반으로 찾는다.
+  - fixture 확인하기
+    - 아래 명령어를 통해 확인 가능하다.
+
+  ```bash
+  $ pytest --fixtures
+  ```
+
+  - built-in fixture
+    - pytest는 build-in fixture를 제공한다.
+    - `--fixture` 옵션과 `-v` 옵션을 주면 built-in fixture를 확인 가능하다.
+
+  ```bash
+  # 아래 명령어를 통해 어떤 것들이 있는지 확인 가능하다
+  $ pytest --fixtures -v
+  ```
+
+
+
 - test 함수에 인자 받기
   - 
 
@@ -187,3 +452,6 @@
 # 참고
 
 - [unittest vs pytest](https://www.bangseongbeom.com/unittest-vs-pytest.html#fn:python-internal-test)
+- [Pytest](https://velog.io/@samnaka/Pytest)
+- [pytest 공식 document](https://docs.pytest.org/en/7.0.x/contents.html)
+
