@@ -103,28 +103,6 @@
 
 
 
-- 마커 기반 테스트
-
-  - 각 테스트별로 마커를 설정해줄 수 있다.
-  - 테스트 함수에 `@pytest.mark.<marker명>`와 같이 데코레이터를 설정해준다.
-
-  ```python
-  import pytest
-  
-  
-  @pytest.mark.foo
-  def test_foo():
-      pass
-  ```
-
-  - `-m` 옵션으로 특정 마커가 붙어있는 테스트 코드만 테스트 하는 것이 가능하다.
-
-  ```bash
-  $ pytest -m foo
-  ```
-
-
-
 - 특정 예외가 발생했는지 확인하기
 
   - 특정 예외가 발생했으면 pass, 아니면 fail이 된다.
@@ -210,6 +188,37 @@
   test_qwe.py x.                                                                                       [100%]
   
   ======================================= 1 passed, 1 xfailed in 0.04s =======================================
+
+
+
+- 마커 기반 테스트
+
+  - 각 테스트별로 마커를 설정해줄 수 있다.
+  - 테스트 함수에 `@pytest.mark.<marker명>`와 같이 데코레이터를 설정해준다.
+
+  ```python
+  import pytest
+  
+  
+  @pytest.mark.foo
+  def test_foo():
+      pass
+  ```
+
+  - `-m` 옵션으로 특정 마커가 붙어있는 테스트 코드만 테스트 하는 것이 가능하다.
+
+  ```bash
+  $ pytest -m foo
+  ```
+
+  - built-in marker
+    - pytest에 내장되어 있는 marker들이 있다.
+    - 위에서 본 `xfail`도 내장 마커 중 하나이다.
+    - 아래 명령어로 확인이 가능하다.
+
+  ```bash
+  $ pytest --markers
+  ```
 
 
 
@@ -396,8 +405,54 @@
   # test_foo.py 모듈의 FooClass 내부에 있는 test_foo 함수를 테스트한다.
   $ pytest test_foo.py:FooClass:test_foo
   ```
+  
+  - `--collect-only`를 사용하면 실제 테스트는 하지 않고 테스트 대상들만 보여준다.
+    - 각 테스트의 ID 값도 알 수 있다.
+    - 테스트 ID는 fixtrue가 있는 경우 `<Function 테스트함수명>`으로 생성된다.
+  
+  ```bash
+  $ pytest --collect-only
+  ```
 
 
+
+- 명령어 실행시 새로운 옵션 추가하기
+
+  - `conftest.py` 파일에 `pytest_addoption` 훅을 통해 새로운 옵션을 추가할 수 있다.
+
+  ```python
+  # conftest.py
+  
+  def pytest_addoption(parser):
+      parser.addoption("--hello-world", action='store', default='False', choices=["True", "False"])
+  ```
+
+  - 테스트 코드 작성하기
+    - `hello_world` fixture가 받은 request는 pytest의 built-in fixture이다.
+    - `request`에는 config를 비롯한 각종 데이터가 들어 있다.
+    - pytest의 Config 클래스의 `getoption` 메서드를 활용하여 옵션의 값을 가져올 수 있다(두 번째 인자로 해당 옵션이 없을 경우의 기본값을 받는다).
+
+  ```python
+  @pytest.fixture
+  def hello_world(request):
+      return request.config.getoption('--hello-world')
+  
+  def test_foo(hello_world):
+      assert hello_world=="True"
+  ```
+
+  - 실행하기
+    - 주의할 점은 여기서 넘어간 True는 bool 값이 아닌 string 값이라는 점이다.
+
+  ```bash
+  $ pytest --hello-world=True
+  ```
+
+
+
+
+
+### fixture
 
 
 - fixture
@@ -444,8 +499,489 @@
 
 
 
+- fixture의 특징
+
+  - fixture에서 다른 fixture를 호출할 수 있다.
+    - 테스트 코드 뿐  아니라 fixture에서도 fixture를 호출할 수 있다.
+
+  ```python
+  import pytest
+  
+  
+  @pytest.fixture
+  def first_entry():
+      return "a"
+  
+  
+  @pytest.fixture
+  def order(first_entry):		# fixture에서 다른 fixture를 호출
+      return [first_entry]
+  
+  
+  def test_string(order):
+      # Act
+      order.append("b")
+  
+      # Assert
+      assert order == ["a", "b"]
+  ```
+
+  - fixture는 호출될 때마다 실행된다.
+    - 따라서 여러 테스트에서 재사용이 가능하다.
+    - 아래 예시에서 test_string 테스트에서 이미 order fixture를 호출했지만, test_int는 test_string이 호출하고 값을 추가한 fixture가 아닌, 새로운 fixture를 사용한다.
+
+  ```python
+  import pytest
+  
+  
+  @pytest.fixture
+  def first_entry():
+      return "a"
+  
+  
+  @pytest.fixture
+  def order(first_entry):
+      return [first_entry]
+  
+  
+  def test_string(order):
+      # Act
+      order.append("b")
+  
+      # Assert
+      assert order == ["a", "b"]
+  
+      
+  def test_int(order):
+      # Act
+      order.append(2)
+  
+      # Assert
+      assert order == ["a", 2]
+  ```
+
+  - 하나의 test 혹은 fixture에서 복수의 fixture를 사용하는 것이 가능하다.
+
+  ```python
+  import pytest
+  
+  
+  @pytest.fixture
+  def first_entry():
+      return "a"
+  
+  
+  @pytest.fixture
+  def second_entry():
+      return 2
+  
+  
+  @pytest.fixture
+  def order(first_entry, second_entry):
+      return [first_entry, second_entry]
+  
+  
+  @pytest.fixture
+  def expected_list():
+      return ["a", 2, 3.0]
+  
+  
+  def test_string(order, expected_list):
+      order.append(3.0)
+  
+      assert order == expected_list
+  ```
+
+  - 한 테스트에서 같은 fixture가 여러 번 호출될 경우 fixture를 caching한다.
+    - 이 경우 매 번 fixture를 생성하지 않고, 생성된 fixture를 caching한다.
+    - 만일 매 번 fixture를 생성한다면, 아래 예시는 fail 처리 될 것이지만, fixture를 caching하므로 pass된다.
+    - 즉 `test_string_only`에서 `append_first` fixture를 호출하면서 `order` fixture에 `a`가 들어가게 되고, `test_string_only`가 두 번째 fixture로 `order`를 다시 받지만 이를 다시 생성하지 않고 이미 생성되어 cache된 order를 사용한다. 
+
+  ```python
+  import pytest
+  
+  
+  @pytest.fixture
+  def first_entry():
+      return "a"
+  
+  
+  @pytest.fixture
+  def order():
+      return []
+  
+  
+  @pytest.fixture
+  def append_first(order, first_entry):
+      return order.append(first_entry)
+  
+  
+  def test_string_only(append_first, order, first_entry):
+      assert order == [first_entry]
+  ```
+
+
+
+- Autouse fixture
+
+  - 특정 fixture를 모든 test에 사용해야 하는 경우 fixture 혹은 test에 fixture를 지정하지 않고도 자동으로 호출되도록 할 수 있다.
+  - fixture decorator에 `autouse=True`를 추가하면 된다.
+    - `append_first` fixture는 어디에서도 명시적으로 호출되지 않았지만 자동으로 호출 됐다.
+
+  ```python
+  import pytest
+  
+  
+  @pytest.fixture
+  def first_entry():
+      return "a"
+  
+  
+  @pytest.fixture
+  def order(first_entry):
+      return []
+  
+  
+  @pytest.fixture(autouse=True)
+  def append_first(order, first_entry):
+      return order.append(first_entry)
+  
+  
+  def test_string_only(order, first_entry):
+      assert order == [first_entry]
+  
+  
+  def test_string_and_int(order, first_entry):
+      order.append(2)
+      assert order == [first_entry, 2]
+  ```
+
+  - 아래와 같이 사용할 수는 없다.
+
+  ```python
+  import pytest
+  
+  
+  @pytest.fixture(autouse=True)
+  def my_list():
+      return [1, 2, 3]
+  
+  def test_string_only():
+      # my_list는 list가 아닌 function이다.
+      assert my_list == [1, 2, 3]
+  ```
+
+
+
+- fixture의 scope 설정하기
+
+  - fixture의 범위를 설정하여 동일한 fixture를 재호출 없이 사용할 수 있다.
+  - `scope=<function, class, module, pacakge, session>`을 통해 설정이 가능하다.
+    - 아래 예시에서 `test_foo`에서의 es_client의 id값과 `test_bar`에서의 es_client의 id 값은 같다.
+
+  ```python
+  from elasticsearch import Elasticsearch
+  import pytest
+  
+  
+  @pytest.fixture(scope="module")
+  def es_client():
+      return Elasticsearch('127.0.0.1:9200')
+  
+  def test_foo(es_client):
+      assert id(es_client) == -1	# id 값 확인을 위해 일부러 fail이 뜨도록 한다.
+  
+  def test_bar(es_client):
+      assert id(es_client) == -1
+  ```
+
+  - 아래와 같이 따로 scope를 설정해주지 않을 경우 기본 값은 function이며, 매 function마다 es_client가 재실행되어 두 테스트 함수에서의 es_client의 id 값이 달라지게 된다.
+
+  ```python
+  from elasticsearch import Elasticsearch
+  import pytest
+  
+  
+  @pytest.fixture
+  def es_client():
+      return Elasticsearch('192.168.0.242:9214')
+  
+  def test_foo(es_client):
+      assert id(es_client) == -1	# id 값 확인을 위해 일부러 fail이 뜨도록 한다.
+  
+  def test_bar(es_client):
+      assert id(es_client) == -1
+  ```
+
+
+
+- 동적 scope
+
+  - 코드의 변경 없이 스코프를 변경하고 싶을 경우 scope를 반환하는 callable한 값을 입력하면 된다.
+  - conftest.py에 옵션을 추가한다.
+
+  ```python
+  # 옵션에 추가해준다.
+  import pytest
+  
+  
+  def pytest_addoption(parser):
+      parser.addoption("--my-scope", action='store', default='function', choices=['function', 'module'])
+  ```
+
+  - 테스트 코드 작성
+
+  ```python
+  from elasticsearch import Elasticsearch
+  import pytest
+  
+  
+  def determine(fixture_name, config):
+      if config.getoption("--my-scope")=="module":
+          return "module"
+      return "function"
+  
+  
+  @pytest.fixture(scope=determine)
+  def es_client():
+      return Elasticsearch('192.168.0.242:9200')
+  
+  
+  def test_foo(es_client):
+      assert id(es_client) == -1	# id 값 확인을 위해 일부러 fail이 뜨도록 한다.
+  
+  
+  def test_bar(es_client):
+      assert id(es_client) == -1
+  ```
+
+  - 테스트1
+
+  ```bash
+  $ pytest test_.py --my-scope=module
+  
+  # 두 테스트에 사용된 es_client의 id 값이 같은 것을 확인 가능하다.
+  ============================================== short test summary info ==================================================
+  FAILED test_.py::test_foo - AssertionError: assert 140035742347024 == -1
+  FAILED test_.py::test_bar - AssertionError: assert 140035742347024 == -1
+  ```
+
+  - 테스트2
+
+  ```bash
+  # pytest test_.py --my-scope=function과 같다(default를 function으로 줬으므로)
+  $ pytest test_.py
+  # 두 테스트에 사용된 es_client의 id 값이 다른 것을 확인 가능하다.
+  ============================================== short test summary info ==================================================
+  FAILED test_.py::test_foo - AssertionError: assert 140163754811056 == -1
+  FAILED test_.py::test_bar - AssertionError: assert 140163754908064 == -1
+  ```
+
+
+
+- params option을 통해 fixture를 parameter화 할 수 있다.
+
+  - fixture 데코레이터에 params를 추가하고 그 값으로 리스트 형식의 데이터를 넘기면, 해당 리스트를 순회하면서 각 테스트가 실행된다.
+  - 예시
+
+  ```python
+  from elasticsearch import Elasticsearch
+  import pytest
+  
+  # params를 추가하고 값을 넘긴다.
+  @pytest.fixture(params=['127.0.0.1:9200', '127.0.0.1:9201'])
+  def es_client(request):
+      return Elasticsearch(request.param)
+  
+  
+  def test_foo(es_client):
+      assert es_client.ping()==True
+  ```
+
+  - 결과
+    - 테스트는 `test_foo` 뿐이지만 fixture에 params가 2개 선언되어 있으므로 2번 실행된다.
+    - 첫 번째 실행과 두 번째 실행은 각기 다른 Elasticsearch에 연결된다.
+
+  ```bash
+  ========================================== test session starts ==========================================
+  platform linux -- Python 3.8.0, pytest-7.0.0, pluggy-1.0.0
+  rootdir: /data/theo/workspace
+  plugins: anyio-3.5.0, asyncio-0.18.0
+  asyncio: mode=legacy
+  collected 2 items        # 2개의 테스트를 감지                                                                               
+  
+  test_.py ..                                                                                       [100%]
+  
+  =========================================== 2 passed in 0.24s ===========================================
+  ```
+
+
+
+- 각 테스트마다 id 값을 지정할 수 있다.
+
+  - pytest의 모든 테스트는 각자의 id값을 가진다.
+    - 아래 명령어를 통해 확인이 가능하다.
+
+  ```bash
+  $ pyteset --collect-only
+  ```
+
+  - 기본적으로 `<Function 테스트함수명[parameterized_fixture]>` 형태로 생성된다.
+
+  ```python
+  import pytest
+  
+  
+  def idfn(fixture_value):
+      if fixture_value == 'p':
+          return "eggs"
+      else:
+          return None
+  
+  
+  @pytest.fixture(params=['p', 'q'])
+  def b(request):
+      return request.param
+  
+  
+  def test_b(b):
+      pass
+  
+  # pytest --collect-only
+  <Module test_.py>
+    <Function test_b[p]>
+    <Function test_b[q]>
+  ```
+
+  - fixture 데코레이터에 `ids`값을 주면 fixture 데코레이터의 params 순서대로 id가 생성된다.
+    - None을 넘길 경우, ids를 설정하지 않았을 때와 마찬가지로 parameter 값으로 id를 생성한다.
+
+  ```python
+  import pytest
+  
+  @pytest.fixture(params=['p', 'q'], ids=[1, None])
+  def b(request):
+      return request.param
+  
+  
+  def test_b(b):
+      pass
+  
+  # pytest --collect-only
+  <Module test_.py>
+    <Function test_b[1]>
+    <Function test_b[2]>
+  ```
+
+  - callable한 값을 넘길 수도 있다.
+
+  ```python
+  import pytest
+  
+  
+  def idfn(fixture_value):
+      if fixture_value == 'p':
+          return "eggs"
+      else:
+          return None
+  
+  
+  @pytest.fixture(params=['p', 'q'], ids=idfn)
+  def b(request):
+      return request.param
+  
+  
+  def test_b(b):
+      pass
+  
+  # pytest --collect-only
+  <Module test_.py>
+    <Function test_b[eggs]>
+    <Function test_b[q]>
+  ```
+
+
+
+- 테스트가 끝난 후 fixture 정리하기
+
+  > https://docs.pytest.org/en/7.0.x/how-to/fixtures.html#teardown-cleanup-aka-fixture-finalization 참고
+
+
+
+- fixture 모듈화하기
+
+  > https://docs.pytest.org/en/7.0.x/how-to/fixtures.html#teardown-cleanup-aka-fixture-finalization 참고
+
+
+
+### parameterize
+
 - test 함수에 인자 받기
-  - 
+  - pytest의 built-in marker인 `parametrize` 마커를 사용한다.
+    - 인자로 넘긴 리스트의 길이만큼 테스트가 수행된다.
+  
+  ```python
+  import pytest
+  
+  
+  @pytest.mark.parametrize("test_input, expected", [('1+1', 2), ('3+3', 4)])
+  def test_eval(test_input, expected):
+      assert eval(test_input)==expected
+  ```
+  
+  - 복수의  마커를 추가하는 것도 가능하다.
+  
+  ```python
+  import pytest
+  
+  
+  @pytest.mark.parametrize("x", [0, 1])
+  @pytest.mark.parametrize("y", [2, 3])
+  def test_foo(x, y):
+      pass
+  ```
+
+
+
+- class에 추가하여  class 내부의 모든 테스트 함수에 적용되도록 할 수 있다.
+
+  - 예시
+
+  ```python
+  import pytest
+  
+  
+  @pytest.mark.parametrize("n,expected", [(1, 2), (3, 4)])
+  class TestClass:
+      def test_simple_case(self, n, expected):
+          assert n + 1 == expected
+  
+      def test_weird_simple_case(self, n, expected):
+          assert (n * 1) + 1 == expected
+  ```
+
+
+
+- 전역으로 사용하기
+
+  - `pytestmark`라는 이름으로 전역 변수를 선언하면 전역 parameter로 사용이 가능하다.
+    - 다른 이름으로 선언하면 적용되지 않는다.
+
+  ```python
+  import pytest
+  
+  pytestmark = pytest.mark.parametrize("n,expected", [(1, 2), (3, 4)])
+  
+  
+  class TestClass:
+      def test_simple_case(self, n, expected):
+          assert n + 1 == expected
+  
+      def test_weird_simple_case(self, n, expected):
+          assert (n * 1) + 1 == expected
+  ```
+
+  
 
 
 
