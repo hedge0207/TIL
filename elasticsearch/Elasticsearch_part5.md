@@ -1314,6 +1314,179 @@
 
 
 
+## search after
+
+- Elasticsearch의 pagination
+  - 방법은 다음과 같은 것들이 있다.
+    - `from`, `size`를 활용한 방법.
+    - search after를 활용하는 방법.
+    - scroll api를 활용하는 방법.
+  - 위 셋 중 ES에서 추천하는 방법은 searach after를 활용하는 것이다.
+    - `from`, `size`의 경우 두 값의 합이 10000을 넘을 수 없다. 즉 최대 10000건의 데이터만 pagination이 가능하다.
+    - scroll api의 경우 7버전 이전까지는 ES가 추천하는 방법이었으나 7+버전부터는 추천하지 않는다.
+    - searach after 역시 page jump(e.g from page 1 to 5)를 할 수 있는 방법이 없다는 문제가 있다.
+  - `from`, `size`의 경우 ES 설정을 변경하여 10000개 이상도 가능하게 할 수 있지만 권장되지 않는다.
+
+
+
+- Point in Time(PIT)
+
+  - PIT는 동일한 시점에 대해서 서로 다른 검색을 하기 위해서 사용된다.
+  - search_after를 정확히 사용하기 위해서는 PIT도 함께 사용해야 한다.
+    - PIT를 활용하지 않고 search after를 사용할 경우 pagination을 하는 중에 문서의 추가나 삭제 등으로 refresh가 발생하면 순서가 보장되지 않는다.
+    - 또한 PIT를 검색에 활용할 때 자동으로 `_shard_doc`이라는 필드가 tiebreak(동점일 때 승자를 정하는 것, 즉 이 경우 정렬시 동일한 점수일 때 순서를 정하는 것)를 위해 포함되게 된다(기본값은 오름차순).
+    - `_shard_doc`은 각 문서마다 고유하므로, 추가적인 tiebreak이 필요 없다.
+    - 만일 PIT없이 search_after를 사용하려 한다면 반드시 별도의 tiebreaker를 설정해줘야 하며, 그렇지 않을 경우 일부 문서가 누락되거나 중복되어 나올 수 있다.
+  - ES에서 검색은 기본적으로 검색 대상 인덱스의 가장 최근 상태에 행해진다.
+    - 예를 들어 검색 중에 데이터가 들어온다 하더라도 해당 데이터는 검색 결과에 영향을 미치지 못한다.
+    - 즉 검색 직전에 인덱스의 상태를 사진을 찍어 놓고 해당 사진의 상태를 기반으로 검색을 수행하는 것이다.
+    - 이 시점을 PIT라 부른다.
+  - 생성하기
+    - `_pit` api를 통해 생성한다.
+    - PIT를 생성할 인덱스명과  `keep_alive` 쿼리 파라미터가 필요하다.
+
+  ```bash
+  POST /my-index-000001/_pit?keep_alive=1m
+  ```
+
+  - 응답
+    - pit의 고유 id가 반환된다.
+
+  ```json
+  {
+    "id" : "u5mzAwELc2FtcGxlLWRhdGEWd1BSSXdMa2VReTJyMWt3dUxSakRVZwAWUk9CSkRNY3FTT1M3NFdIdFNhak1aUQAAAAAAABPZLhZHYnNneFNwZVFUbXNsVmZLU2ZpQmx3AAEWd1BSSXdMa2VReTJyMWt3dUxSakRVZwAA"
+  }
+  ```
+
+  - 활용하기
+    - 검색시에 request body에 `pit`을 추가한다.
+    - `keep_alive`를 주면 해당 시간만큼 `keep_alive` 시간이 연장된다.
+
+  ```json
+  POST /_search 
+  {
+      "size": 100,
+      "query": {
+          "match" : {
+              "title" : "elasticsearch"
+          }
+      },
+      "pit": {
+  	    "id":  "u5mzAwELc2FtcGxlLWRhdGEWd1BSSXdMa2VReTJyMWt3dUxSakRVZwAWUk9CSkRNY3FTT1M3NFdIdFNhak1aUQAAAAAAABPZLhZHYnNneFNwZVFUbXNsVmZLU2ZpQmx3AAEWd1BSSXdMa2VReTJyMWt3dUxSakRVZwAA", 
+  	    "keep_alive": "1m"  
+      }
+  }
+  ```
+
+  - 아래 요청을 통해 얼마나 많은 pit가 생성되어 있는지 확인 가능하다.
+    - `indices.search.open_contexts`에서 볼 수 있다.
+
+  ```bash
+  GET /_nodes/stats/indices/search
+  ```
+
+  - 삭제하기
+
+  ```bash
+  DELETE /_pit
+  {
+      "id" : "u5mzAwELc2FtcGxlLWRhdGEWd1BSSXdMa2VReTJyMWt3dUxSakRVZwAWUk9CSkRNY3FTT1M3NFdIdFNhak1aUQAAAAAAABPZLhZHYnNneFNwZVFUbXNsVmZLU2ZpQmx3AAEWd1BSSXdMa2VReTJyMWt3dUxSakRVZwAA"
+  }
+  ```
+
+
+
+- 정렬하기
+
+  - PIT 생성
+
+  ```bash
+  POST /my-index-000001/_pit?keep_alive=1m
+  ```
+
+  - 검색하기
+    - PIT가 index 기반으로 생성되기 때문에 요청 url에 index name이 포함되지 않는다.
+    - 상기했듯 PIT를 활용하는 모든 검색은 _shard_doc라는 필드가 tiebreaker로 들어가는데, 내림차순으로 정렬하고자하면 아래와 같이 직접 추가한다.
+
+  ```json
+  GET /_search
+  {
+    "size": 10000,
+    "query": {
+      "match" : {
+        "user.id" : "elkbee"
+      }
+    },
+    "pit": {
+      "id":  "46ToAwMDaWR5BXV1aWQyKwZub2RlXzMAAAAAAAAAACoBYwADaWR4BXV1aWQxAgZub2RlXzEAAAAAAAAAAAEBYQADaWR5BXV1aWQyKgZub2RlXzIAAAAAAAAAAAwBYgACBXV1aWQyAAAFdXVpZDEAAQltYXRjaF9hbGw_gAAAAA==", 
+      "keep_alive": "1m"
+    },
+    "sort": [ 
+      {"@timestamp": {"order": "asc"}}
+      {"_shard_doc":"desc"}
+    ]
+  }
+  ```
+
+  - 응답
+    - `sort` 부분에 마지막으로 hits된 문서의 sorrt 값들이 온다.
+    - search after 검색시에 이 값들을 사용하면 된다.
+
+  ```json
+  {
+    "pit_id" : "46ToAwMDaWR5BXV1aWQyKwZub2RlXzMAAAAAAAAAACoBYwADaWR4BXV1aWQxAgZub2RlXzEAAAAAAAAAAAEBYQADaWR5BXV1aWQyKgZub2RlXzIAAAAAAAAAAAwBYgACBXV1aWQyAAAFdXVpZDEAAQltYXRjaF9hbGw_gAAAAA==", 
+    "took" : 17,
+    "timed_out" : false,
+    "_shards" : ...,
+    "hits" : {
+      "total" : ...,
+      "max_score" : null,
+      "hits" : [
+        ...
+        {
+          "_index" : "my-index-000001",
+          "_id" : "FaslK3QBySSL_rrj9zM5",
+          "_score" : null,
+          "_source" : ...,
+          "sort" : [                                
+            "2021-05-20T05:30:04.832Z",
+            4294967298                              
+          ]
+        }
+      ]
+    }
+  }
+  ```
+
+  - search after 검색하기
+    - 응답의 `sort`에 왔던 값들을 `search_after` 부분에 추가해준다.
+
+  ```json
+  GET /_search
+  {
+    "size": 10000,
+    "query": {
+      "match" : {
+        "user.id" : "elkbee"
+      }
+    },
+    "pit": {
+      "id":  "46ToAwMDaWR5BXV1aWQyKwZub2RlXzMAAAAAAAAAACoBYwADaWR4BXV1aWQxAgZub2RlXzEAAAAAAAAAAAEBYQADaWR5BXV1aWQyKgZub2RlXzIAAAAAAAAAAAwBYgACBXV1aWQyAAAFdXVpZDEAAQltYXRjaF9hbGw_gAAAAA==", 
+      "keep_alive": "1m"
+    },
+    "sort": [
+      {"@timestamp": {"order": "asc", "format": "strict_date_optional_time_nanos"}}
+    ],
+    "search_after": [                                
+      "2021-05-20T05:30:04.832Z",
+      4294967298
+    ],
+    "track_total_hits": false                    
+  }
+  ```
+
+
+
 
 ## 검색 관련 옵션
 
