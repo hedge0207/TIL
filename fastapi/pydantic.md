@@ -220,6 +220,70 @@
 
 
 
+- pydantic validator 재사용하기
+
+  - pydantic에서  한 class 내의 validation 함수 이름은 중복될 수 없다.
+  - 두 개의 필드에 대해서 `change_to_str`라는 같은 이름의 validation 함수를 사용하면 error가 발생한다.
+
+  ```python
+  from datetime import date
+    
+    
+  class MyRange(pyd.BaseModel):
+      gte:date
+      lte:date
+  
+      @pyd.validator('gte')
+      def change_to_str(cls, v):
+          return v.strftime('%Y-%m-%d')
+  
+      @pyd.validator('lte')
+      def change_to_str(cls, v):
+          return v.strftime("%Y-%m-%d")
+  ```
+
+  - 위와 같이 정확히 동일하게 동작하는 validate을 여러 필드에 해줘야 할 경우
+
+  ```python
+  from datetime import date, timedelta
+  from pydantic import BaseModel, validator
+  
+  def change_to_str(date_param: date) -> str:
+      return date_param.strftime("%Y-%m-%d")
+  
+  class MyRange(BaseModel):
+      gte:date
+      lte:date
+  
+      str_gte = validator('gte', allow_reuse=True)(change_to_str)
+      str_lte = validator('lte', allow_reuse=True)(change_to_str)
+  
+  my_range = MyRange(gte=date.today()-timedelta(days=1), lte=date.today())
+  print(my_range.gte)		# 2022-03-04
+  print(my_range.lte)		# 2022-03-05
+  ```
+
+  - class 내의 모든 field에 하나의 validation 적용하기
+    - class 내의 모든 field에 하나의 validation 적용하기
+
+  ```python
+  from datetime import date, timedelta
+  from pydantic import BaseModel, root_validator
+  
+  
+  class MyRange(BaseModel):
+      gte:date
+      lte:date
+  
+      @root_validator
+      def change_to_str(cls, values):
+          return {key:value.strftime("%Y-%m-%d") for key,value in values.items()}
+  ```
+
+
+
+
+
 - Enum class 사용하기
 
   - `use_enum_values`를 `True`로 주면, 자동으로 Enum 클래스의 value를 할당한다.
