@@ -595,6 +595,15 @@
 
 ## [open_api](https://github.com/hedge0207/TIL/blob/master/fastapi/open_api.md)
 
+- 기본 개념
+- 상세
+  - metadata
+  - tags
+  - request
+  - response
+  - api description
+- Extending OpenAPI
+
 <br/>
 
 <br/>
