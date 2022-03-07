@@ -1411,6 +1411,37 @@
 
 
 
+- Python으로 csv를 생성하고 excel로 열 경우, 인코딩 문제로 한글이 깨지는 경우가 있다.
+
+  - 반대의 경우도 마찬가지로 csv 파일을 python을 통해 읽을 경우 인코딩이 제대로 되지 않는 문제가 있다.
+  - 이는 BOM(Byte Order Mask) 때문이다.
+    - BOM은 Byte의 인코딩 방식을 표현한 기호 같은 것이다.
+    - 파일의 가장 첫 부분에 들어가게 된다.
+  - 만일 `open`을 통해 파일을 열 때 위와 같은 문제가 발생했다면 인코딩 방식을 `utf-8-sig`로 변경하면 된다.
+
+  ```python
+  with open('./test.csv', 'r', encoding="utf-8-sig") as f:
+  	f.readlines()
+  ```
+
+  - 만일 StringIO등에 csv 데이터를 썼는데 위와 같은 에러가 났다면 BOM(아래의 경우 `u'ufeff'`)를 맨 앞에 추가해주면 된다.
+
+  ```python
+  import csv
+  from io import StringIO
+  
+  data = [['안녕하세요', '반갑습니다'], ['안녕히가세요', '감사합니다']]
+  
+  output = StringIO()
+  writer = csv.writer(output)
+  writer.writerows()
+  content=u'\ufeff'+output.getvalue()
+  ```
+
+
+
+
+
 ## Random
 
 - 난수를 생성하는 모듈
