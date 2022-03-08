@@ -1257,7 +1257,7 @@
   - 크론탭 설정 내용 삭제
 
   ```bash
-  $ crontab -d
+  $ crontab -r
   ```
 
 
