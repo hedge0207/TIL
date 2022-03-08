@@ -598,7 +598,7 @@
   class Programer(Person):
       def __init__(self, name, part):
           print("Programmer __init__")
-          super().__init__(name)		# super(Student, self).__init__()와 동일한 코드
+          super().__init__(name)		# super(Programer, self).__init__()와 동일한 코드
           self.part = part
   
   

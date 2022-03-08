@@ -787,7 +787,7 @@
   $ chown <변경할 사용자 이름[.변경할 그룹 이름]> <파일명>
   
   # e.g. 파일 소유권을 cha 유저에게, 파일의 그룹을 ubuntu로 변경
-  $ chowm cha.ubuntu test.txt
+  $ chown cha.ubuntu test.txt
   ```
 
   - 그룹만 변경하기
