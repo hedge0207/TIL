@@ -1234,7 +1234,7 @@
   ```bash
   $ corntab -e
   
-  *			*			*			*			*
+  *			*			*			*			*	[사용자명] <실행할 명령>
   분(0-59)	   시간(0-23)   일(1-31)	 월(1-12)	요일(0-7, 0과 7은 일요일, 1-6은 월-토요일 순이다.)
   
   # 만일 아래와 같이 설정하면 test.sh를 매분 실행하겠다는 뜻이다.
@@ -1258,6 +1258,25 @@
 
   ```bash
   $ crontab -r
+  ```
+  
+  - crontab log
+    - `/var/spool/mail/<사용자명>`과 `/var/log/cron`에서 확인 가능하다.
+    - 아니면 아래와 같이 직접 로그 파일을 지정할 수도 있다.
+  
+  ```bash
+  * * * * * <실행할 명령> > <log를 남길 파일 경로> 2>&1
+  ```
+  
+  - crontab으로 shell script 실행
+  
+  ```bash
+  # 아래와 같이 sh 명령어와 함께 입력한다.
+  * * * * * sh /some/path/test.sh
+  
+  # 혹은 shell script 파일에 실행 권한을 추가한다.
+  $ chmod +x /some/path/test.sh
+  * * * * * /some/path/test.sh
   ```
 
 
