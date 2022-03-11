@@ -1357,6 +1357,115 @@
 
 
 
+## rare_terms
+
+- 지정한 숫자 미만으로 존재하는 term들을 집계한다.
+
+  - `field`
+    - 집계 할 필드를 지정한다.
+    - keyword 필드여야한다.
+  - `max_doc_count`
+    - 최대 몇 개 까지 존재하는 값을 rare한 값으로 볼 것인지를 지정한다.
+    - 기본값은 1이다.
+  - 그 밖의 옵션은 아래 링크 참조
+
+  > https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-rare-terms-aggregation.html
+
+
+
+- 예시
+
+  - 데이터 색인하기
+
+  ```json
+  // PUT test-index/_bulk
+  {"index":{"_id":"1"}}
+  {"family_name":"kim"}
+  {"index":{"_id":"2"}}
+  {"family_name":"kim"}
+  {"index":{"_id":"3"}}
+  {"family_name":"kim"}
+  {"index":{"_id":"4"}}
+  {"family_name":"lee"}
+  {"index":{"_id":"5"}}
+  {"family_name":"lee"}
+  {"index":{"_id":"6"}}
+  {"family_name":"park"}
+  ```
+
+  - 집계1. `max_doc_count`값을 기본값(1)로 줄 경우
+    - 1개 밖에 존재하지 않는 park 만 집계된다.
+
+  ```json
+  // GET test-index/_search
+  {
+    "query": {
+      "match_all": {}
+    },
+    "aggs": {
+      "genres": {
+        "rare_terms": {
+          "field": "family_name.keyword"
+        }
+      }
+    },
+    "size":0
+  }
+  
+  // output
+  "aggregations" : {
+      "genres" : {
+        "buckets" : [
+          {
+            "key" : "park",
+            "doc_count" : 1
+          }
+        ]
+      }
+    }
+  ```
+
+  - 집계2. `max_doc_count`값을 2로 줄 경우
+    - 2개 이하로 존재하는 lee와 park이 집계된다.
+
+  ```json
+  // GET test-index/_search
+  {
+    "query": {
+      "match_all": {}
+    },
+    "aggs": {
+      "genres": {
+        "rare_terms": {
+          "field": "family_name.keyword",
+          "max_doc_count": 2
+        }
+      }
+    },
+    "size":0
+  }
+  
+  // output
+  "aggregations" : {
+      "genres" : {
+        "buckets" : [
+          {
+            "key" : "park",
+            "doc_count" : 1
+          },
+          {
+            "key" : "lee",
+            "doc_count" : 2
+          }
+        ]
+      }
+    }
+  ```
+
+
+
+
+
 
 
 ## Metrics aggregations
