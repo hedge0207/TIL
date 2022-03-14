@@ -1192,7 +1192,8 @@
   '''
   ```
 
-  
+
+
 
 - csv를 json으로 변환하기
 
@@ -1439,6 +1440,44 @@
   ```
 
 
+
+# excel
+
+- Python으로  excel을 다룰 수 있는 다양한 라이브러리가 존재한다.
+
+  > http://www.python-excel.org/ 참고
+
+  - 위 사이트에서 어떤 라이브러리들이 있는지 확인이 가능하다.
+    - 위 목록에서 library를 선택할 때 중요한 기준 중 하나는  xlsx 파일을 지원하는지 여부이다.
+      - xlsx는 Excel 2010부터 지원하기 시작한 파일로 기존에 사용하던 xls 파일은 행, 열 모두 최대 65,535까지밖에 지원하지 않는다.
+      - 따라서 그 이상의 대용량 데이터를 처리할 경우 xlsx를 지원하는 라이브러리를 사용해야 한다.
+    - 또한 excel파일을 다루는 속도도 중요한데 아래 표는 PyExcelerate 라이브러리에서 자체적으로 실시한 벤치마크 결과이다.
+      - pyexcelerate - xlsxwriter - openpyxl 순으로 빠르다.
+
+  | TEST_NAME                   | NUM_ROWS | NUM_COLS | TIME_IN_SECONDS |
+  | --------------------------- | -------- | -------- | --------------- |
+  | pyexcelerate value fastest  | 1000     | 100      | 0.47            |
+  | pyexcelerate value faster   | 1000     | 100      | 0.51            |
+  | pyexcelerate value fast     | 1000     | 100      | 1.53            |
+  | xlsxwriter value            | 1000     | 100      | 0.84            |
+  | openpyxl                    | 1000     | 100      | 2.74            |
+  | pyexcelerate style cheating | 1000     | 100      | 1.23            |
+  | pyexcelerate style fastest  | 1000     | 100      | 2.40            |
+  | pyexcelerate style faster   | 1000     | 100      | 2.75            |
+  | pyexcelerate style fast     | 1000     | 100      | 6.15            |
+  | xlsxwriter style cheating   | 1000     | 100      | 1.21            |
+  | xlsxwriter style            | 1000     | 100      | 4.85            |
+  | openpyxl                    | 1000     | 100      | 6.32            |
+
+
+
+- pyexcelerate
+  - excel 파일을 읽는 것은 불가능하지만, excel을 다루는 라이브러리 중 쓰기 속도가 가장 빠르다.
+  - 공식 문서가 따로 존재하지 않지만 github repository의 README에 예시가 존재한다.
+  
+  > https://github.com/kz26/PyExcelerate
+  
+  - 가끔 xlsx 파일이 깨지는 경우가 있다.
 
 
 
