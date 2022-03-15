@@ -1314,7 +1314,7 @@
 
 
 
-## search after
+## search after(pagination)
 
 - Elasticsearch의 pagination
   - 방법은 다음과 같은 것들이 있다.
@@ -1429,7 +1429,7 @@
   ```
 
   - 응답
-    - `sort` 부분에 마지막으로 hits된 문서의 sorrt 값들이 온다.
+    - `sort` 부분에 마지막으로 hits된 문서의 sort 값들이 온다.
     - search after 검색시에 이 값들을 사용하면 된다.
 
   ```json
@@ -1480,8 +1480,7 @@
     "search_after": [                                
       "2021-05-20T05:30:04.832Z",
       4294967298
-    ],
-    "track_total_hits": false                    
+    ]                 
   }
   ```
 
