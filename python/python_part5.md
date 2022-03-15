@@ -208,17 +208,28 @@
 
 # 패키지
 
-- Python package 위치 확인하기
+- inspect
 
-  - `inspect`를 사용한다.
-    -  내장 라이브러리로 별도의 설치가 필요 없다.
-  - 코드
-
+  - 내장 라이브러리로 별도의 설치가 필요 없다.
+  - Python package 위치 확인하기
+  
   ```python
   import inspect
   import requests
   
   print(inspect.getfile(requests))
+  ```
+  
+  - 함수의 argument 확인하기
+  
+  ```python
+  import inspect
+  
+  
+  def foo(a, b):
+      return
+  
+  print(inspect.signature(foo).parameters)
   ```
 
 

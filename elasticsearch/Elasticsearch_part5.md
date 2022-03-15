@@ -1406,8 +1406,11 @@
 
   - 검색하기
     - PIT가 index 기반으로 생성되기 때문에 요청 url에 index name이 포함되지 않는다.
+    
     - 상기했듯 PIT를 활용하는 모든 검색은 _shard_doc라는 필드가 tiebreaker로 들어가는데, 내림차순으로 정렬하고자하면 아래와 같이 직접 추가한다.
-
+    
+      정렬 대상 field가 date 타입일 경우  format을 추가 가능하다. foramt은 아래와 같이 직접 패턴을 넣어도 되고, ES에서 [미리 정의한 format](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-date-format.html)을 사용해도 된다.
+  
   ```json
   GET /_search
   {
@@ -1422,16 +1425,16 @@
       "keep_alive": "1m"
     },
     "sort": [ 
-      {"@timestamp": {"order": "asc"}}
+      {"@timestamp": {"order": "asc", "format":"yyyy-MM-dd'T'HH:mm:ss"}}
       {"_shard_doc":"desc"}
     ]
   }
   ```
-
+  
   - 응답
     - `sort` 부분에 마지막으로 hits된 문서의 sort 값들이 온다.
     - search after 검색시에 이 값들을 사용하면 된다.
-
+  
   ```json
   {
     "pit_id" : "46ToAwMDaWR5BXV1aWQyKwZub2RlXzMAAAAAAAAAACoBYwADaWR4BXV1aWQxAgZub2RlXzEAAAAAAAAAAAEBYQADaWR5BXV1aWQyKgZub2RlXzIAAAAAAAAAAAwBYgACBXV1aWQyAAAFdXVpZDEAAQltYXRjaF9hbGw_gAAAAA==", 
@@ -1460,7 +1463,7 @@
 
   - search after 검색하기
     - 응답의 `sort`에 왔던 값들을 `search_after` 부분에 추가해준다.
-
+  
   ```json
   GET /_search
   {
