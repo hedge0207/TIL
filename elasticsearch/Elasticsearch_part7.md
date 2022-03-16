@@ -967,7 +967,7 @@
 
 
 
-###  term
+###  terms
 
 - keyword 필드의 문자열 별로 버킷을 나누어 집계한다.
   - text 필드 값도 사용은 가능하지만 성능이 매우 떨어진다.
@@ -1357,7 +1357,7 @@
 
 
 
-## rare_terms
+### rare_terms
 
 - 지정한 숫자 미만으로 존재하는 term들을 집계한다.
 
@@ -1461,6 +1461,235 @@
       }
     }
   ```
+
+
+
+### composite
+
+- 서로 다른 데이터를 합해 하나의 버킷을 만들어주는 aggregation이다.
+
+  - 예를 들어 아래와 같은 데이터를 만들어주는 것이다.
+
+  ```json
+  // 원본
+  {
+    "keyword": ["foo", "bar"],
+    "number": [23, 65, 76]
+  }
+  
+  // composite aggs
+  { "keyword": "foo", "number": 23 }
+  { "keyword": "foo", "number": 65 }
+  { "keyword": "foo", "number": 76 }
+  { "keyword": "bar", "number": 23 }
+  { "keyword": "bar", "number": 65 }
+  { "keyword": "bar", "number": 76 }
+  ```
+
+  - 합 할 서로 다른 source를 지정해주면 된다.
+
+  ```json
+  // 예시 데이터 생성
+  PUT time-test/_bulk
+  {"index":{"_id":"1"}}
+  {"test_time":"2021-12-08T23:59:59", "family_name":"kim", "age":11}
+  {"index":{"_id":"2"}}
+  {"test_time":"2021-12-09T00:00:00", "family_name":"kim", "age":12}
+  {"index":{"_id":"3"}}
+  {"test_time":"2021-12-09T05:51:00", "family_name":"kim", "age":13}
+  {"index":{"_id":"4"}}
+  {"test_time":"2021-12-09T13:00:00", "family_name":"lee", "age":14}
+  {"index":{"_id":"5"}}
+  {"test_time":"2021-12-09T14:00:00", "family_name":"lee", "age":15}
+  {"index":{"_id":"6"}}
+  {"test_time":"2021-12-09T23:59:59", "family_name":"park", "age":13}
+  {"index":{"_id":"7"}}
+  {"test_time":"2021-12-10T08:59:59", "family_name":"park", "age":12}
+  
+  
+  // 집계
+  GET time-test/_search
+  {
+    "size": 0,
+    "aggs": {
+      "my_buckets": {
+        "composite": {
+          "sources": [
+             { "date": { "date_histogram": { "field": "test_time", "calendar_interval": "1d", "order": "desc" } } },
+            { "product": { "terms": { "field": "age"} } }
+          ]
+        }
+      }
+    }
+  }
+  ```
+
+  - 결과
+    - 날짜별 family name이 몇 명인지 출력된다.
+
+  ```json
+  "aggregations" : {
+      "my_buckets" : {
+        "after_key" : {
+          "date" : 1638921600000,
+          "product" : 11
+        },
+        "buckets" : [
+          {
+            "key" : {
+              "date" : 1639094400000,
+              "product" : 12
+            },
+            "doc_count" : 1
+          },
+          {
+            "key" : {
+              "date" : 1639008000000,
+              "product" : 12
+            },
+            "doc_count" : 1
+          },
+          {
+            "key" : {
+              "date" : 1639008000000,
+              "product" : 13
+            },
+            "doc_count" : 2
+          },
+          {
+            "key" : {
+              "date" : 1639008000000,
+              "product" : 14
+            },
+            "doc_count" : 1
+          },
+          {
+            "key" : {
+              "date" : 1639008000000,
+              "product" : 15
+            },
+            "doc_count" : 1
+          },
+          {
+            "key" : {
+              "date" : 1638921600000,
+              "product" : 11
+            },
+            "doc_count" : 1
+          }
+        ]
+      }
+    }
+  ```
+
+
+
+- bucket pagination
+
+  - 위 예시에서 응답을 보면 `after_key`가 포함된 것을 볼 수 있는데 이를 활용하여 bucket pagination이 가능하다.
+
+  - 예시 data bulk
+
+  ```json
+  PUT time-test/_bulk
+  {"index":{"_id":"1"}}
+  {"test_time":"2021-12-08T23:59:59", "family_name":"kim", "age":11}
+  {"index":{"_id":"2"}}
+  {"test_time":"2021-12-09T00:00:00", "family_name":"lee", "age":12}
+  {"index":{"_id":"3"}}
+  {"test_time":"2021-12-09T05:51:00", "family_name":"park", "age":13}
+  {"index":{"_id":"4"}}
+  {"test_time":"2021-12-09T13:00:00", "family_name":"choi", "age":14}
+  {"index":{"_id":"5"}}
+  {"test_time":"2021-12-09T14:00:00", "family_name":"jeong", "age":15}
+  {"index":{"_id":"6"}}
+  {"test_time":"2021-12-09T23:59:59", "family_name":"shin", "age":13}
+  {"index":{"_id":"7"}}
+  {"test_time":"2021-12-10T08:59:59", "family_name":"moon", "age":12}
+  {"index":{"_id":"8"}}
+  {"test_time":"2021-12-10T09:00:00", "family_name":"won", "age":13}
+  {"index":{"_id":"9"}}
+  {"test_time":"2021-12-10T09:01:00", "family_name":"jang", "age":13}
+  {"index":{"_id":"10"}}
+  {"test_time":"2021-12-10T09:59:59", "family_name":"cha", "age":14}
+  {"index":{"_id":"11"}}
+  {"test_time":"2021-12-10T10:00:00", "family_name":"an", "age":14}
+  {"index":{"_id":"12"}}
+  {"test_time":"2021-12-10T10:30:55", "family_name":"yun", "age":15}
+  {"index":{"_id":"13"}}
+  {"test_time":"2021-12-10T11:00:00", "family_name":"kang", "age":15}
+  {"index":{"_id":"14"}}
+  {"test_time":"2021-12-10T11:00:12", "family_name":"jo", "age":16}
+  ```
+
+  - 집계하기
+    - source에 terms aggs를 넣는다.
+
+  ```json
+  GET time-test/_search
+  {
+    "size": 0,
+    "aggs": {
+      "my_buckets": {
+        "composite": {
+          "sources": [
+            { "product": { "terms": { "field": "family_name.keyword"} } }
+          ]
+        }
+      }
+    }
+  }
+  ```
+
+  - 결과
+    - 아래 결과의 `after_key`를 pagination에 사용한다.
+
+  ```json
+  "aggregations" : {
+      "my_buckets" : {
+        "after_key" : {
+          "product" : "moon"
+        },
+        "buckets" : [
+          {
+            "key" : {
+              "product" : "an"
+            },
+            "doc_count" : 1
+          },
+          // ...
+          {
+            "key" : {
+              "product" : "moon"
+            },
+            "doc_count" : 1
+          }
+        ]
+      }
+    }
+  ```
+
+  - 다음 페이지 검색
+    - `after`를 추가하고, 그 값으로 위에서 받은  `after_key` 값을 넣는다.
+
+  ```json
+  GET time-test/_search
+  {
+    "size": 0,
+    "aggs": {
+      "my_buckets": {
+        "composite": {
+          "sources": [
+            { "product": { "terms": { "field": "family_name.keyword"} } }
+          ],
+          "after":{"product" : "moon"}
+        }
+      }
+    }
+  }
+  ```
+
+
 
 
 
