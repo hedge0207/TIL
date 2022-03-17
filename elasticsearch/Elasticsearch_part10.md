@@ -327,7 +327,7 @@
     # (...)
   setup.kibana:
     host: "192.168.0.242:5604"
-  # s(...)
+  # (...)
   ```
 
   - elasticsearch module을 활성화한다.
@@ -336,11 +336,17 @@
   $ ./metricbeat modules enable elasticsearch
   ```
 
+  - 활성화된 module list 보기
+  
+  ```bash
+  $ ./metricbeat modules list
+  ```
+  
   - `modules.d` 폴더 내부의 `elasticsearch.yml` 파일을 아래와 같이 수정한다.
     - `modules.d` 폴더에는 각 모듈의 설정 파일이 저장되어 있다.
-    - 활성화 되지 않은 모듈의 설정 파일은 포스트 픽스로 `.disable`가 붙어있다.
+    - 활성화 되지 않은 모듈의 설정 파일은 suffix로 `.disable`가 붙어있다.
     - `metricsets`에 입력된 값들을 수집하겠다는 의미이며, 전부 수집하지 않아도 된다면, 필요한 것만 입력하면 된다.
-
+  
   ```yaml
   # (...)
   - module: elasticsearch
@@ -363,22 +369,55 @@
   ```
 
   - ES에서 수집 가능한 metric 목록
-
+  
   > https://www.elastic.co/guide/en/beats/metricbeat/7.15/metricbeat-module-elasticsearch.html
 
   - setup하기
-
+    - `metricbeat.yml`에서 `setup.kibana`에 설정해준대로 setup된다.
+  
+  
   ```bash
   $ ./metricbeat setup
   ```
-
+  
   - 실행하기
-
+    - `-e` 옵션을 주면 log를 터미널에 출력해준다.
+    - 주지 않을 경우 `/usr/share/metricbeat/logs`에 log 파일이 생성된다.
+  
+  
   ```bash
   $ ./metricbeat -e
   ```
-
+  
   - 여기까지 실행하면 Elasticsearch에 `metricbeat-<버전>-<날짜>-000001` 형식으로 인덱스가 생성 된 것을 확인 가능하다.
+
+
+
+- docker container로 실행하기
+
+  - 이미지를 받는다.
+
+  > https://www.docker.elastic.co/r/beats
+
+  - docker container 실행하기
+
+  ```yaml
+  version: '3.2'
+  
+  services:
+    metricbeat:
+      image: <위에서 받은 image>
+      user: root
+      environment:
+        ELASTICSEARCH_HOSTS: http://<elasticsearch_host:port>
+        KIBANA_HOST: http://<kibana_host:port>
+      networks:
+        - <elasticsearch_network>
+  
+  volumes:
+    data01:
+      driver: local
+  ```
 
 
 
