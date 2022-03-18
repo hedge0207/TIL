@@ -684,10 +684,38 @@
 
 
 
+- 네트워크 연결 해제
+
+  ```bash
+  $ docker network disconnect <네트워크명 혹은 id> <컨테이너명 혹은 id>
+  ```
+
+
+
+- 연결 확인
+
+  - `ping` 명령어를 container 내에서 실행한다.
+
+  ```bash
+  $ docker exec <컨테이너1 식별자> ping <컨테이너2 식별자>
+  ```
+
+
+
 - 네트워크 삭제
 
   ```bash
   $ docker network rm [옵션] <네트워크명 혹은 id>
+  ```
+
+
+
+- 일괄삭제
+
+  - 아무 컨테이너에도 연결되지 않은 network를 모두 삭제한다.
+
+  ```bash
+  $ docker network prune
   ```
 
 

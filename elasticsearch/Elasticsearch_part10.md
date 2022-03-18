@@ -348,7 +348,6 @@
     - `metricsets`에 입력된 값들을 수집하겠다는 의미이며, 전부 수집하지 않아도 된다면, 필요한 것만 입력하면 된다.
   
   ```yaml
-  # (...)
   - module: elasticsearch
     metricsets:
       - ccr
@@ -367,11 +366,11 @@
     #username: "user"
     #password: "secret"
   ```
-
+  
   - ES에서 수집 가능한 metric 목록
   
   > https://www.elastic.co/guide/en/beats/metricbeat/7.15/metricbeat-module-elasticsearch.html
-
+  
   - setup하기
     - `metricbeat.yml`에서 `setup.kibana`에 설정해준대로 setup된다.
   
