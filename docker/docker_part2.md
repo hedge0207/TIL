@@ -403,6 +403,80 @@
 
 
 
+- network
+
+  - 컨테이너 사이의 통신에 사용할 network를 지정한다.
+
+  - 만일 지정해주지 않을 경우 `<compose 파일의 위치>_default` 라는 이름으로 network이 생성되고 compose 파일에 선언된 모든 컨테이너가 연결된다.
+
+  - default로 생성하기
+    - default로 생성하면 각 container별로 network을 지정해주지 않아도 default에 설정된 network에 연결된다.
+
+  ```yaml
+  version: "3.9"
+  
+  services:
+    proxy:
+      build: ./proxy
+    app:
+      build: ./app
+    db:
+      image: postgres
+  
+  networks:
+    default:
+      driver: custom-driver
+  ```
+
+  - custom network 생성하기
+    - 네트워크를 생성하고 각 컨테이너에 네트워크를 지정해준다.
+
+  ```yaml
+  version: "3.9"
+  
+  services:
+    proxy:
+      build: ./proxy
+      networks:
+        - frontend
+    app:
+      build: ./app
+      networks:
+        - frontend
+        - backend
+    db:
+      image: postgres
+      networks:
+        - backend
+  
+  networks:
+    frontend:
+      # Use a custom driver
+      driver: custom-driver-1
+    backend:
+      # Use a custom driver which takes special options
+      driver: custom-driver-2
+      driver_opts:
+        foo: "1"
+        bar: "2"
+  ```
+
+  - 이미 생성된 네트워크 사용하기
+    - 아래와 같이 `external`로 외부 network를 불러온다.
+
+  ```yaml
+  version: '3.2'
+  
+  services:
+    other_app:
+      build: ./other_app
+  
+  networks:
+    default:
+      external:
+        name: backend
+  ```
+
 
 
 ## 명령어
