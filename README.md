@@ -1254,6 +1254,25 @@
 
 ## [Elasticsearch_part10](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part10.md)
 
+- Loggin Confuguration
+- Slow Log
+- Metricbeat
+- ILM
+- Data streams
+- Search template
+
+<br/>
+
+<br/>
+
+## [Logstash](https://github.com/hedge0207/TIL/blob/master/elasticsearch/logstash.md)
+
+<br/>
+
+<br/>
+
+## [elasticsearch_heap](https://github.com/hedge0207/TIL/blob/master/elasticsearch/elasticsearch_heap.md)
+
 <br/>
 
 <br/>
