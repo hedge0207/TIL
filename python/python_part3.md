@@ -284,8 +284,6 @@
       조건문일 참일 동안 수행할 문장
   ```
 
-  
-
   - 예시
 
   ```python
@@ -306,9 +304,7 @@
   while True:
       print("안녕하세요!")
   ```
-
   
-
   - 반복문과 관련된 키워드
     - `break`: 반복을 즉시 중지한다.
     - `continue`: 뒤는 실행하지 않고 다음 반복으로 넘어간다.
@@ -335,8 +331,9 @@
   4
   """
   ```
-
   
+
+
 
 - for문
 
@@ -405,8 +402,6 @@
   print(list(reversed(range(6))))	# [5, 4, 3, 2, 1, 0]
   ```
 
-  
-
   - 리스트 내포
     - 리스트 안에 for문, if문을 포함하여 좀 더 편리하게 리스트를 생성할 수 있다.
 
@@ -426,7 +421,52 @@
   print(result)  # [2, 3]
   ```
 
+
+
+
+- 반복문 + else문
+
+  - Python은 C, Java와는 달리 반복문과 else문을 쓸 수 있다.
+  - 형식
+    - 반복문이 break로 중단되지 않고 반복이 끝나면 else문이 실행된다.
+    - 만일 반복문이 중단될 경우 else문은 실행되지 않는다.
+
+  ```python
+  cnt = 0
+  while cnt<3:
+      cnt+=1
+  else:
+      print("else")
   
+  for i in range(3):
+      if i==2:
+          break
+  
+  else:
+      print("else")
+  ```
+
+  - 주로 flag 변수 대신 사용한다.
+
+  ```python
+  # 아래와 같이 flag 변수를 사용하는 코드를
+  flag = False
+  for i in range(3):
+      if i==2:
+          flag=True
+          break
+  if flag:
+      print("hello world!")
+      
+  # 반복문+else로 아래와 같이 작성할 수 있다.
+  for i in range(3):
+      if i==2:
+          break
+  else:
+      print("hello world!")
+  ```
+
+
 
 
 
