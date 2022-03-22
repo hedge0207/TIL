@@ -24,7 +24,7 @@
   ```
 
   - 리스트, 딕셔너리와 달리 표현식으로 생성이 불가능하다.
-  - 소괄호로 표현식을 작성하면 튜플이 아닌 제네레이터(part7 참조)가 생성된다.
+    - 소괄호로 표현식을 작성하면 튜플이 아닌 제네레이터(part7 참조)가 생성된다.
 
 
 
@@ -61,7 +61,8 @@
   print(email,phone)   # 010-1234-5678 email@email.com
   ```
 
-  
+
+
 
 ### List
 
@@ -120,6 +121,38 @@
   ```
 
 
+
+- List comprehension 사용시 주의사항
+
+  - List comprehension은 generator가 아니라 실제 리스트를 반환한다.
+    - 코드가 간결하여 간과하기 쉬운 점 중 하나로, 실제 리스트를 생성하고 메모리에 할당된다.
+    - 즉, list의 생성이 끝나야 list comprehension 코드가 종료된다.
+
+  - 예시
+    - 아래의 두 코드는 10만번을 순회하는 동일한 코드임에도 range가 list comprehension에 비해 첫 반복이 실행되는 속도가 훨씬 빠르다.
+    - 이는 list comprehension의 경우 list를 생성하는 시간이 있기 때문이다.
+
+  ```python
+  import time
+  
+  start = time.time()
+  for i in range(10000000):
+      print(time.time()-start)			# 3.337860107421875e-06
+      break
+  
+  start = time.time()
+  for i in [n for n in range(10000000)]:
+      print(time.time()-start)			# 0.006056308746337891
+      break
+  ```
+
+  - 따라서 list comprehension으로 생성한 list를 순회해야 할 경우 아래와 같이 generator를 생성해준다.
+    - 대괄호가 아닌 소괄호로 묶으면 list가 아닌 generator가 생성된다.
+
+  ```python
+  for i in (n*2 for n in range(10000000)):
+      continue
+  ```
 
 
 

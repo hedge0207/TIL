@@ -283,6 +283,17 @@
   foo = []
   print(sys.getsizeof(foo))
   ```
+  
+  - 참조된 횟수 구하기
+    - 단, string, int와 같은 타입의 값은 CPython 내부에서 참조한 횟수도 포함되므로 직접 작성한 코드상에서 몇 번이나 참조되었는지 알 수는 없다.
+    - 또한 백그라운드에서 실행 중인 프로그램에서 사용한 값들도 모두 count된다.
+  
+  ```python
+  import sys
+  
+  foo = []
+  print(sys.getrefcount(foo))	# 2 (foo를 선언하면서 1번, getrefcount 함수의 매개변수로 넘어가면서 1번)
+  ```
 
 
 
@@ -364,7 +375,7 @@
     - `mkdir`: 깊이가 1인 폴더만 생성이 가능하다.
     - `makedirs`: 깊이가 2 이상인 폴더도 생성이 가능하다. `exist_ok`를 인자로 받으며, True로 설정하면 이미 해당 디렉토리가 존재하더라도 다시 생성하고 False일 경우 에러가 발생한다.
 
-  ```bash
+  ```python
   import os
   
   
@@ -437,10 +448,6 @@
   
   print(os.getppid())
   ```
-
-
-
-
 
 
 
