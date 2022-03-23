@@ -313,10 +313,22 @@
 
 - `yield from`
 
-  - `yield from`은 다른 반복 가능한 값으로 부터 값을 받아와서 해당 값을 yield하는 용도로 사용한다.
-    - `yield from`에는 반복 가능한 객체, 이터레이터, 제네레이터를 지정한다.
+  - `yield from`은 다른 반복 가능한 객체에 실행을 위임하기 위해 사용한다.
+    - `yield from`에는 반복 가능한 객체를 지정한다.
+    - 바깥쪽 호출자와 가장 안쪽에 있는 하위 제너레이터 사이에 양방향 채널을 열어주는 역할을 한다.
+  - `yield from` 관련 용어
+    - 대표 제너레이터(delegating generator): `yield from <반복형>`을 담고 있는 제너레이터 함수, 즉 다른 제너레이터를 호출하는 제너레이터.
+    - 하위 제너레이터(subgenerator): yield from 표현식 중 <반복형> 가져오는 제너레이터.
+    - 호출자(caller): 대표 제너레이터를 호출하는 코드.
+  - `yield from`의 동작 원리
+    - `yield from`은 뒤에 오는 반복자의 `iter` 메서드를 호출한다.
+    - 하위 제너레이터가 실행되는 동안 대표 제너레이터는 중단된다.
+    - 호출자는 하위 제너레이터에 데이터를 직접 전송하고, 하위 제너레이터는 다시 데이터를 생성해서 호출자에 전달한다.
+    - 하위 제너레이터가 실행을 완료하고 인터프리터가 반환된 값을 첨부한 StopIteraion을 발생시키면 대표 제너레이터가 실행을 재개한다.
+    - 따라서 반드시 하위 제너레이터에 종료 조건이 있어야한다.
+  
   - `yield from`을 사용하지 않고 여러 번 바깥으로 전달하기
-    - 기존에는 아래와 같이 반복문을 사용하여 전달했다. 
+    - 기존에는 아래와 같이 반복문을 사용하여 전달했다.
   
   
   ```python
@@ -366,6 +378,32 @@
   for i in three_generator():
       print(i)
   ```
+  
+  - `yield from`의 sudo code
+    - PEP 380에서 제안된 `yield from`이 사용된 대표 제너레이터의 내부 sudo code이다.
+  
+  ```python
+  # 하위 제너레이터를 가져온다.
+  _i = iter(EXPR)
+  try:
+      _y = next(_i)	# 하위 제너레이터를 기동시킨다.
+  except StropIteration as _e:
+      _r = _e.value	# StopIteration이 발생하면 예외 객체에서 value 속성을 꺼내 _r에 할당한다.
+  else:
+      # 이 루프가 실행되는 동안 외부적으로 대표 제너레이터의 실행은 중단된다.
+      while 1:
+          _s = yield _y	# 하위 제너레이터가
+          try:
+              _y = _i.send(_S)
+          except StopIteration as _e:
+              _r = e.value
+              break
+  RESULT = _r
+  ```
+  
+  
+
+
 
 
 
