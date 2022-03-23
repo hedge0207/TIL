@@ -23,7 +23,7 @@
   print(tup4)			# ('a', 'b', 'c', 'd', 'e')
   ```
 
-  - 리스트, 딕셔너리와 달리 표현식으로 생성이 불가능하다.
+  - 리스트, 딕셔너리와 달리 comprehension으로 생성이 불가능하다.
     - 소괄호로 표현식을 작성하면 튜플이 아닌 제네레이터(part7 참조)가 생성된다.
 
 
@@ -79,14 +79,14 @@
   print(type(lst2))  # <class 'list'>
   ```
 
-  - 리스트 표현식으로 생성하기
+  - list comprehension으로 생성하기
 
   ```python
   lst = [i for i in range(3)]
   print(lst)		# [0, 1, 2]
   ```
 
-  - 리스트 표현식에 조건문 포함시키기
+  - list comprehension에 조건문 포함시키기
 
   ```python
   lst = [i for i in range(5) if i % 2 == 0]
@@ -391,7 +391,7 @@
   print(type(dict2))  # <class 'dict'>
   ```
 
-  - 표현식으로 생성이 가능하다.
+  - comprehension으로 생성이 가능하다.
 
   ```python
   a = ['a', 'b', 'c']

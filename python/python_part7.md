@@ -7,6 +7,7 @@
 - 이터레이터
   - 값을 차례대로 꺼낼 수 있는 객체를 의미한다.
     - 반복자라고도 부른다.
+    - 단순하게 말해서, `__iter__` , `__next__` 메서드를 지닌 객체를 말한다. 
   - `range`는 이터레이터를 생성하는 함수로, `range(10)`은 실제로 10개의 숫자를 생성하는 것이 아니라 이터레이터를 생성하는 것이다.
     - 이터레이터만 미리 생성하고 값이 필요한 시점이 되었을 때 값을 만든다.
     - 이처럼 데이터 생성을 뒤로 만드는 방식을 **지연평가**(lazy evaluation)라 한다.
@@ -24,22 +25,26 @@
 - 이터레이터인지 확인하기
 
   - 객체에 `__iter__` 메서드가 있는지 확인하면 된다.
-
+    - `__iter__` 메서드는 이터레이터를 반환하는 메서드이다.
+  
+  
   ```python
   my_list = [1, 2, 3]
   print(dir(my_list))	# [..., '__iter__', ...]
   ```
 
-  - `__iter__`를 호출하면 이터레이터가 나오게 된다.
-
+  - `__iter__`를 호출하면 이터레이터가 반환된다.
+  
   ```python
   my_list = [1, 2, 3]
   print(my_list.__iter__())	# <list_iterator object at 0x7fcd468eb580>
   ```
-
-  - `__next__` 메서드를 화출하여 요소를 차례로 꺼낼 수 있다.
+  
+  - `__next__` 메서드를 호출하여 요소를 차례로 꺼낼 수 있다.
+    - `__next__` 메서드는 호출할 때 마다 다음 값을 리턴하는 메서드이다.
     - 더 이상 꺼낼 요소가 없다면 `StopIteration` 예외를 발생시킨다.
-
+  
+  
   ```python
   my_list = [1, 2, 3]
   my_iter = my_list.__iter__()
@@ -48,8 +53,8 @@
   print(my_iter.__next__())	# 3
   print(my_iter.__next__())	# StopIteration
   ```
-
-  - for문의 동작 방식
+  
+  - `range`의 동작 방식
     - `range(3)`는 이터레이터를 생성한다.
     - `range`에서 `__iter__`를 통해 이터레이터를 얻는다.
     - 반복할 때마다 이터레이터에서 `__next__`를 통해 반복을 수행한다.
@@ -62,7 +67,9 @@
 - 이터레이터 직접 구현하기
 
   - `__iter__`와 `__next__`메서드를 직접 구현하여 이터레이터를 만들 수 있다.
-
+    - Python spec에 따르면 `__iter__`함수는 자기 자신(iterator)을 반환해야 한다.
+  
+  
   ```python
   class Iterator:
       def __init__(self, end):
@@ -188,11 +195,12 @@
 ## 제너레이터
 
 - 제너레이터
-  - 이터레이터를 생성해주는 함수
-    - 이터레이터는 클래스에 `__iter__`와 `__next__`  또는 `__getitem__` 메서드를 구현해야 하지만 제너레이터는 함수 안에서 `yield`라는 키워드만 사용하면 된다.
-    - 즉, 이터레이터를 클래스로 작성하는 것 보다 훨씬 간단하게 작성이 가능하다.
+  - 이터레이터를 생성해주는 함수이다.
+    - 즉, 제너레이터 객체는 이터레이터이다.
     - 발생자라고도 부른다.
-  - 즉, 제너레이터 객체는 이터레이터이다.
+  - 이터레이터는 훌륭한 기능이지만, 작성해야 하는 코드가 많아진다는 단점이 있다.
+    - 이터레이터는 클래스에 `__iter__`와 `__next__`  또는 `__getitem__` 메서드를 구현해야 하지만 제너레이터는 함수 안에서 `yield`라는 키워드만 사용하면 된다.
+    - 이터레이터를 클래스로 작성하는 것 보다 훨씬 간단하게 작성이 가능하다.
 
 
 
@@ -201,7 +209,7 @@
   - 제네레이터를 만들기 위한 Python keyword
     - yield는 ''양보하다''라는 뜻도 가지고 있는데, 함수 바깥으로 전달하면서 코드 실행을 함수 바깥에 양보한다는 의미에서 yield를 키워드로 지정한 것이다.
   - 함수 안에서 yield를 사용하면 함수는 제너레이터가 되며, yield에는 값을 지정한다.
-    - `number_generator` 함수를 호출하면 제터레이터 객체가 반환된다.
+    - `number_generator` 함수를 호출하면 **제터레이터 객체가 반환**된다(함수가 실행되는 것이 아니다).
     - 제네레이터는 `__next__` 메서드가 호출될 때마다 yield 까지 코드를 실행하며, yield에서 값을 발생시킨다.
     - yield가 값을 발생시킨 후에는 다음 `__next__` 메서드가 실행되기 전까지 함수 바깥으로 코드 실행을 양보한다.
 
@@ -240,8 +248,8 @@
   ```
 
   - yield와 return
-    - yield도 제너레이터 함수 끝까지 도달하면 `StopIteration`가 발생한다.
-    - return도 마찬가지로 중간에 return이 될 경우 `StopIteration`가 발생한다.
+    - yield도 제너레이터 함수 끝까지 도달하면 `StopIteration`이 발생한다.
+    - return도 마찬가지로 중간에 return이 될 경우 `StopIteration`이 발생한다.
 
   ```python
   def number_generator():
@@ -303,10 +311,14 @@
 
 
 
-- `yield from`으로 여러 번 바깥으로 전달하기
+- `yield from`
 
-  - 기존에는 아래와 같이 반복문을 사용하여 전달했다. 
-
+  - `yield from`은 다른 반복 가능한 값으로 부터 값을 받아와서 해당 값을 yield하는 용도로 사용한다.
+    - `yield from`에는 반복 가능한 객체, 이터레이터, 제네레이터를 지정한다.
+  - `yield from`을 사용하지 않고 여러 번 바깥으로 전달하기
+    - 기존에는 아래와 같이 반복문을 사용하여 전달했다. 
+  
+  
   ```python
   def number_generator():
       x = [1, 2, 3]
@@ -316,10 +328,10 @@
   for i in number_generator():
       print(i)
   ```
-
+  
   - `yield from`을 사용하면 반복문을 사용하지 않고 여러 번 바깥으로 전달할 수 있다.
-    - `yield from`에는 반복 가능한 객체, 이터레이터, 제네레이터를 지정한다.
     - 반복이 종료될 때 까지 `yield from x`가 계속 실행된다.
+    - 즉, `yield from`에 지정한 반복 가능한 객체가 종료될 때 까지 해당 객체에 실행을 양보한다.
   
   ```python
   def number_generator():
@@ -342,6 +354,7 @@
   ```python
   def number_generator(end):
       n = 0
+      
       while n < end:
           yield n
           n += 1
@@ -385,23 +398,36 @@
   - cooperative routine의 약어로 서로 협력하는 루틴이다.
     - 메인 루틴과 서브 루틴처럼 종속된 관계가 아니라 서로 대등한 관계이며 특정 시점에 상대의 코드를 실행한다.
     - 메인루틴-서브루틴과 마찬가지로 한 루틴이 실행되는 동안 다른 루틴은 대기상태에 있게 된다.
+  
   - 함수의 코드를 실행하는 지점을 진입점(entry point)라 하는데 코루틴은 진입점이 여러 개인 함수이다.
     - 코루틴은 함수가 종료되지 않은 상태에서 메인 루틴의 코드를 실행한 뒤 다시 돌아와 코루틴의 코드를 실행한다.
     - 따라서 코루틴이 종료되지 않으므로 코루틴의 내용도 계속 유지된다.
+  
   - 제너레이터의 특별한 형태이다.
     - 제너레이터는 yield로 값을 발생시키지만, 코루틴은 yield로 값을 받아올 수 있다.
+  
+  - 코루틴은 네 가지 상태를 가진다.
+  
+    > inspect.getgeneratorstate 함수로 확인 가능하다.
+  
+    - GEN_CREATED: 실행을 위해 대기하고 있는 상태
+    - GEN_RUNNING: 현재 인터프리터가 실행하고 있는 상태(이 상태는 다중 스레드에서만 볼 수 있다)
+    - GEN_SUSPENDED: 현재 yield 문에서 대기하고 있는 상태
+    - GEN_CLOSED: 실행이 완료된 상태
 
 
 
 - 코루틴에 값 보내기
 
-  - 코루틴에 값을 보내면서 코드를 실행할 때는 `send` 메서드를 사용하고,  `send` 메서드가 보낸 값을 받아오기 위해 `(yield)` 형식으로 yield를 괄호로 묶어준 후 변수에 저장한다.
-
+  - 코루틴에 값을 보내면서 코드를 실행할 때는 `send` 메서드를 사용한다.
+    - 값을 받아오는 yield에는 괄호를 씌워야 한다고 하는데, 안씌워도 동작한다(무슨 차이가 있는지 모르겠다).
+  
+  
   ```python
   def my_coroutine():
       # 코루틴을 유지하기 위해 무한 루프를 사용한다.
       while 1:
-          num = (yield)	# 코루틴 바깥에서 받은 값을 받아서 사용.
+          num = yield	# 코루틴 바깥에서 받은 값을 받아서 사용.
           print(num)
   
   co = my_coroutine()
@@ -412,7 +438,7 @@
   co.send(2)	# 코루틴에 숫자 2 보내기
   co.send(3)	# 코루틴에 숫자 3 보내기
   ```
-
+  
   - 실행 과정
     - 메인 루틴에서 코루틴을 생성하고 `next()`를 통해 코루틴을 실행한다.
     - while문이 실행되고 `yield` 키워드를 만나면서 메인루틴에 실행을 넘겨준다.
@@ -420,16 +446,46 @@
 
 
 
+- 기동(primming)
+
+  - 코루틴은 기동(primming) 과정이 필요하다. 
+    - 즉, 코루틴 객체를 생성하고 난 후, `next`를 통해 코루틴이 호출자로부터 값을 받을 수 있도록 처음 나오는 `yield`문까지 실행을 진행하는 과정이 필요하다.
+  - 만일 기동 과정 없이 `send`를 호출하면 error가 발생하는데, 이는 data를 받아올 `yield`문이 아직 실행되지도 않았기 때문이다.
+  - decorator를 통해서 코루틴 생성 시에 자동으로 기동이 되게 할 수 있다.
+
+  ```python
+  def coroutine(func):
+      def wrapper(*args, **kwargs):
+          gen = func(*args, **kwargs)
+          next(gen)
+          return gen
+      return wrapper
+  
+  @coroutine
+  def test_coro():
+      cnt = -10
+      while cnt<0:
+          x = yield cnt
+          cnt+=1
+          print(x)
+  
+  coro = test_coro()
+  for i in range(0,10):
+      print(coro.send(i))
+  ```
+
+
+
 - 코루틴 바깥으로 값 내보내기
 
-  - `(yield 변수)` 형식으로 yield에 변수를 지정한 뒤 괄호로 묶어주면 값을 받아오면서 바깥으로 값을 전달한다.
+  - `yield 변수` 형식으로 yield에 변수를 지정하면 값을 받아오면서 바깥으로 값을 전달한다.
     - `yield`로 바깥으로 전달한 값은 next 함수와 send 메서드의 반환값으로 나오게 된다. 
 
   ```python
   def sum_coroutine():
       total = 0
       while True:
-          num = (yield total)    # 코루틴 바깥에서 값을 받아오면서 바깥으로 값을 전달
+          num = yield total    # 코루틴 바깥에서 값을 받아오면서 바깥으로 값을 전달
           total += num
    
   co = sum_coroutine()
@@ -456,7 +512,7 @@
   def number_coroutine():
       total = 0
       while True:
-          num = (yield total)
+          num = yield total
           total += num
    
   co = number_coroutine()
@@ -523,8 +579,7 @@
     - Python 3.5 이상부터는 `async`를 대신 사용한다.
   - 코루틴에서는 `yield from`을 일반적인 제네레이터와는 다르게 사용한다.
     - 제네레이터에서 `yield from`는 값을 바깥으로 여러 번 전달하는데 사용했다.
-    - `yield from`에 코루틴을 지정하면 해당 코루틴에서 return으로 반환한 값을 가져온다.
-    - `yield from`은 정확히는 `yield from` 뒤에 오는 루틴이 완전히 종료될 때 까지 실행을 양보하는 것이다.
+    - `yield from`에 코루틴을 지정하면 해당 코루틴이 종료될 때 까지(`returrn`이 실행되는 등) 실행을 양보한다.
   
   ```python
   # 합계를 계산할 코루틴
@@ -555,6 +610,9 @@
   ```
   
   - 실행 순서
+  
+    > https://pythontutor.com/live.html#mode=edit 참고
+  
     - 메인 루틴에서 `sum_coroutine` 코루틴을 생성하고 `next()` 를 통해 코루틴을 실행한다.
     - `total = yield from accumulate()`가 실행되면서 `accumulate` 코루틴이 생성되고 실행된다.
     - `accumulate` 코루틴에서 `x = (yield total) `가 실행되면서 다시 `sum_coroutine`로 실행이 돌아오고 `total = yield from accumulate()`의 실행이 완료되면서 메인 루틴으로 돌아온다.
@@ -565,8 +623,9 @@
     - `sum_coroutine`은 `total = yield from accumulate()`의 실행이 완료되면서 다시 메인루틴에 실행을 넘기고 `accumulate`->`sum_coroutine`을 거쳐 받아온 `total`을 출력하고 다음 반복으로 넘어간다.
     - 이 과정을 10번 반복한다.
     - 메인 루틴의 for문이 종료되고 `co.send(None)`가 실행되면서 루틴은 다시 `sum_coroutine`->`accumulate` 순서로 넘어가게 되고  `x`가 None이므로 `return total`이 실행된다.
-    - 루틴이 `sum_coroutine`로 넘어오게 되고 `print("Hello!")`가 출력되면서 다음 반복으로 넘어간다.
+    - `accumulate`루틴이 완전히 종료되었으므로 루틴이 `sum_coroutine`로 넘어오게 되고 `print("Hello!")`가 출력되면서 다음 반복으로 넘어간다.
     - 다음 `total = yield from accumulate()`이 실행되면서 `accumulate` 코루틴이 다시 생성된다.
+  
   - 주의
     - 위 예시 코드에서 `sum_coroutine` 코루틴 내부의 while문은 실제로는 2 번밖에 실행되지 않는다.
     - `accumulate` 코루틴의 실행이 종료되기 전(return을 만나던가 스크립트가 끝나기 전)까지는 `total = yield from accumulate()`가 계속 실행되고 있으며 지속적으로 `accumulate` 코루틴에 실행을 넘겨주기만 한다.
@@ -608,7 +667,12 @@
   co.send(None)	# 55
   ```
 
-  
+
+
+
+- generator based coroutine
+  - 위와 같이 generator를 통해 만든 coroutine을 generator base coroutine이라 부른다.
+  - async, await가 공식 문법으로 채택된 python 3.7 부터는 굳이 사용하지 않는 방식이다.
 
 
 
@@ -636,6 +700,7 @@
     - 전통적으로 동시 프로그래밍은 멀티 스레드를 활용하여 이루어졌다.
     - 그러나 thread safe한 프로그램을 작성하는 것은 쉬운 일이 아니며, 하드웨어의 사양에 따라 성능 차이가 심하게 날 수 있다.
     - 이러한 이유로 최근에는 하나의 스레드로 동시 처리가 가능한 비동기 처리가 주목받고 있다.
+    - 더구나 Python은 GIL로 인해 multi thread의 효용이 떨어지므로 더구나 비동기 처리가 중요하다.
 
 
 
@@ -646,7 +711,7 @@
     - Python 3.5에서 async/await가 문법으로 채택되었다.
   - 코루틴과 async
     - async 키워드를 사용하여 비동기처리를 하는 함수를 코루틴이라 부른다.
-    - Python에는 제네레이터 기반의 코루틴이 있으므로 async 기반의 코루틴과 구분하기 위해 async로 기반의 코루틴을 네이티브 코루틴이라 부른다.
+    - Python에는 제네레이터 기반의 코루틴이 있으므로 async 기반의 코루틴과 구분하기 위해 async 기반의 코루틴을 네이티브 코루틴이라 부른다.
 
 
 
@@ -722,7 +787,6 @@
   from os import stat_result
   import time
   
-  
   def count_number_sync(n):
       for i in range(1, n+1):
           print(i, '/', n)
@@ -733,9 +797,9 @@
   count_number_sync(5)
   print('time:', time.time()-start)	# time: 5.006292104721069
   ```
-
+  
   - 비동기처리
-
+  
   ```python
   import time
   import asyncio
