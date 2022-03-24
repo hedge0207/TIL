@@ -379,8 +379,9 @@
       print(i)
   ```
   
-  - `yield from`의 sudo code
-    - PEP 380에서 제안된 `yield from`이 사용된 대표 제너레이터의 내부 sudo code이다.
+  - `yield from`의 sudo code 단순화
+    - PEP 380에서 제안된 `yield from`이 사용된 대표 제너레이터의 내부 sudo code를 더 단순화 시킨 것이다.
+    - 실제로는 호출자가 호출하는 `throw()`와 `close()`를 처리해서 하위 제너레이터에 전달해야 하므로 실제 논리는 더 복잡하다.
   
   ```python
   # 하위 제너레이터를 가져온다.
@@ -392,20 +393,76 @@
   else:
       # 이 루프가 실행되는 동안 외부적으로 대표 제너레이터의 실행은 중단된다.
       while 1:
-          _s = yield _y	# 하위 제너레이터가
+          _s = yield _y	# 하위 제너레이터에서 생성한 값을 그대로 생성하고, 호출자가 보낼 _s를 기다린다.
           try:
-              _y = _i.send(_S)
-          except StopIteration as _e:
+              _y = _i.send(_S)	# 호출자가 보낸 _s를 하위 제너레이터에 전달한다.
+          # 하위 제너레이터가 StopIteraion 예외를 발생시키면, 예외 객체 안의 value 속성을 가져와 _r에 할당한다.
+          # 그 후 루프를 빠져나오고 대표 제너레이터의 실행을 재개한다.
+          except StopIteration as _e:	
               _r = e.value
               break
+  # _r이 전체 yield from의 표현식 값이 디어 RESULT에 저장된다.
   RESULT = _r
   ```
   
+  - `yield from`의 sudo code 전체
+    - 전체 코드에서 yield는 단 한 번밖에 사용되지 않는다.
   
-
-
-
-
+  ```python
+  EXPR = "QWE"
+  
+  _i = iter(EXPR)
+  try:
+      _y = next(_i)
+  except StopIteration as _e:
+      _r = _e.value
+  else:
+      while 1:
+          try:
+              _S = yield _y
+          # 대표 제너레이터와 하위 제너레이터의 종료를 처리한다.
+          except GenerationExit as _e:
+              try:
+                  _m = _i.close
+              # 모든 반복형이 하위 제너레이터가 될 수 있으므로, 하위 제너레이터에 close()메서드가 없을 수 있다.
+              except AttributeError:
+                  pass
+              else:
+                  _m()
+              raise _e
+          # 호출자가 throw로 던진 예외를 처리한다.
+          except BaseException as _e:
+              _x = sys.exc_info()
+              try:
+                  _m = _i.throw
+              # 하위 제너레이터에 throw() 메서드가 구현되어있지 않을 경우
+              # 대표 제너레이터레서 예외가 발생한다.
+              except AttributeError:
+                  raise _e
+              else:
+                  # 하위 제너레이터가 throw 메서드를 가진 경우, 호출자로부터 받은 예외를 이용해서 호출한다.
+                  # 하위 제너레이터는 예외를 처리하거나(이 경우 루프는 계속 실행된다).
+                  try:
+                      _y = _m(*_x)
+                  # StopIteration 예외를 발생시키거나
+                  # 여기서 처리할 수 없는 예외를 발생시킬 수도 있다(이 예외는 대표 제너레이터로 전파된다)
+                  except StopIteration as _e:
+                      _r = _e.value
+                      break
+          # yield문에서 예외가 발생하지 않은 경우
+          else:
+              try:
+                  # 마지막으로 호출자로부터 받은 값이 None이면 next 호출
+                  if _s in None:
+                      _y = next(_i)
+                  # 아니면 send를 호출한다.
+                  else:
+                      _y = _i.send(_s)
+              except StopIteration as _e:
+                  _r = _e.value
+                  break
+  RESULT = _r
+  ```
 
 
 
@@ -442,8 +499,9 @@
     - 따라서 코루틴이 종료되지 않으므로 코루틴의 내용도 계속 유지된다.
   
   - 제너레이터의 특별한 형태이다.
-    - 제너레이터는 yield로 값을 발생시키지만, 코루틴은 yield로 값을 받아올 수 있다.
-  
+    - 제너레이터는 yield로 값을 발생시키지만, 코루틴은 `send()`로 값을 받아올 수 있다.
+    - 코루틴을 명확히 정의하기는 쉽지 않지만 일반적으로 "`send`를 호출하거나 `yield from`을 이용해서 데이터를 보내는 클라이언트에 의해 실행되는 제너레이터"로 정의한다.
+    
   - 코루틴은 네 가지 상태를 가진다.
   
     > inspect.getgeneratorstate 함수로 확인 가능하다.
@@ -490,7 +548,10 @@
     - 즉, 코루틴 객체를 생성하고 난 후, `next`를 통해 코루틴이 호출자로부터 값을 받을 수 있도록 처음 나오는 `yield`문까지 실행을 진행하는 과정이 필요하다.
   - 만일 기동 과정 없이 `send`를 호출하면 error가 발생하는데, 이는 data를 받아올 `yield`문이 아직 실행되지도 않았기 때문이다.
   - decorator를 통해서 코루틴 생성 시에 자동으로 기동이 되게 할 수 있다.
-
+    - 단, 모든 코루틴이 이러한 방식으로 기동되는 것 만은 아니라는 것을 염두에 두어야 한다.
+    - 예를 들어 `yield from`은 뒤에 오는 코루틴이 기동된 적 없다고 가정하고 자동으로 기동을 시킨다(따라서 아래와 같이 decorator를 사용하면 2번 기동된다).
+  
+  
   ```python
   def coroutine(func):
       def wrapper(*args, **kwargs):
@@ -543,9 +604,14 @@
 
 - 코루틴을 종료하고 예외처리하기
 
+  - 코루틴의 종료
+    - 코루틴은 아래의 두 가지 경우에 종료된다.
+    - `close` 메서드를 호출하는 경우
+    - 해당 객체에 대한 참조가 모두 사라져 GC 되는 경우
+  
   - `close` 메서드를 통해 코루틴을 종료할 수 있다.
     - Python 스크립트가 끝나도 코루틴이 자동으로 종료된다.
-
+  
   ```python
   def number_coroutine():
       total = 0
@@ -561,10 +627,10 @@
    
   co.close()
   ```
-
+  
   - `GeneratorExit` 예외처리하기
     - 코루틴 객체에서 close 메서드를 호출하면 코루틴이 종료될 때 `GeneratorExit ` 예외가 발생한다.
-
+  
   ```python
   def number_coroutine():
       total = 0
@@ -583,11 +649,11 @@
    
   co.close()
   ```
-
+  
   - 코루틴 안에서 예외 발생시키기
     - 코루틴 안에서 예외를 발생시켜 코루틴 종료하기
     - `throw` 메서드를 사용한다.
-
+  
   ```python
   def sum_coroutine():
       total = 0
@@ -610,14 +676,53 @@
 
 
 
-- 하위 코루틴의 반환값 가져오기
+- 코루틴의 반환값 가져오기
+
+  - Python 3.3부터 코루틴이 값을 반환하는 기능이 추가되었다.
+  - 코루틴이 종료되면 StopIteration 예외가 발생한다.
+    - return 문이 반환하는 값은 StopIteration 예외의 속성이 담겨 호출자에게 전달된다.
+
+  ```python
+  from itertools import count
+  
+  
+  def averager():
+      total = 0.0
+      cnt = 0
+      average = None
+      while 1:
+          term = yield
+          if term is None:
+              break
+          total += term
+          cnt += 1
+          average = total / cnt
+      return average
+  
+  coro = averager()
+  next(coro)
+  for i in range(1,4):
+      coro.send(i)
+  # yield from은 아래 로직을 자동으로 처리해준다.
+  try:
+  	coro.send(None)
+  except StopIteration as e:
+      # StopIteration 예외의 value에 코루틴의 반환값이 담기게 된다.
+      print(e.value)
+  ```
+
+
+
+- `yield from`을 사용하여 코루틴의 반환값 가져오기
 
   - 주의
     - 실제로 아래와 같이 `yield from`을 사용할 일은 거의 없다.
     - Python 3.5 이상부터는 `async`를 대신 사용한다.
-  - 코루틴에서는 `yield from`을 일반적인 제네레이터와는 다르게 사용한다.
-    - 제네레이터에서 `yield from`는 값을 바깥으로 여러 번 전달하는데 사용했다.
-    - `yield from`에 코루틴을 지정하면 해당 코루틴이 종료될 때 까지(`returrn`이 실행되는 등) 실행을 양보한다.
+  - `yield from` 이 실행되는 동안에는 대표 코루틴의 동작이 멈추게 된다.
+  - `yield from` 내부에는 StopIteration 예외가 발생했을 때 해당 예외 객체에서 `value`를 추출하는 작업이 짜여져 있다.
+    - 즉 `accumulate`이 `return total`을 만나는 순간 StopIteration가 발생하고 그 객체에 반환값을 넣는다.
+    - `yield from`은 반환된 StopIteration 객체에서 value를 추출한다.
+  
   
   ```python
   # 합계를 계산할 코루틴
@@ -704,6 +809,138 @@
   
   co.send(None)	# 55
   ```
+
+
+
+- 코루틴 사용 예시
+
+  - 코루틴이 반복적으로 핵심 루프에 제어권을 넘겨 주어 핵심 루프가 다른 코루틴을 활성화하고 실행할 수 있게 해줌으로써 작업을 동시에 실행한다.
+
+  ```python
+  import random
+  import collections
+  import queue
+  import argparse
+  
+  
+  DEFAULT_NUMBER_OF_TAXIS = 3
+  DEFAULT_END_TIME = 180
+  SEARCH_DURATION = 5
+  TRIP_DURATION = 20
+  DEPARTURE_INTERAVAL = 5
+  
+  
+  # time is the simulation time when the event occurs, proc is the number of the taxi process instance, and action is a string describing the activity
+  Event = collections.namedtuple('Event','time proc action')
+  
+  # 각 텍시마다 한 번씩 호출되어 택시의 행동을 나타내는 제너레이터 객체를 생성한다.
+  def taxi_process(ident, trips, start_time=0):
+      '''
+      :param ident: taxi number
+      :param trips: the number of trips before the taxi goes home
+      :param start_time: Time to leave the garage
+      :return: 
+      '''
+      # 각 상태 변화마다 이벤트를 발생키는 시뮬레이터에 양보한다.
+      time = yield Event(start_time, ident,'leave garage')
+      for _ in range(trips):
+          time = yield Event(time, ident,'pick up passenger')
+          time = yield Event(time, ident,'drop off passenger')
+      yield Event(time, ident,'going home')
+      # 코루틴이 끝 까지 실행되면 제너레이터 객체가 StopIteration 예외를 발생시킨다.
+  
+  
+  def compute_duration(previous_action):
+      # 지수분포를 이용하여 행동 기간을 계산한다.
+      if previous_action in ['leave garage','drop off passenger']:
+          # 손님 없이 배회하는 상태가 된다.
+          interval = SEARCH_DURATION
+      elif previous_action =='pick up passenger':
+          # 손님을 태우고 운행하는 상태가 된다.
+          interval = TRIP_DURATION
+      elif previous_action =='going home':
+          interval = 1
+      else:
+          raise ValueError('Unkonw previous_action: %s'% previous_action)
+      return int(random.expovariate(1/interval)) + 1
+  
+  
+  # Start simulation
+  class Simulator:
+  
+      def __init__(self, procs_map):
+          # 이벤트를 시간 순으로 정렬해서 보관 할 변수
+          self.events = queue.PriorityQueue()
+          # taxis 딕셔너리의 사본, 시뮬레이션이 실행되면 집으로 돌아가는 택시들이 self.procs에서는 제거되지만,
+          # 클라이언트가 전달한 객체를 변경하면 안되기 때문에 사본을 사용한다.
+          self.procs = dict(procs_map)
+  
+      def run(self, end_time):
+          '''
+          Schedule and display events until the end of the time
+          :param end_time: only one parameter needs to be specified for the end time
+          :return:
+          '''
+          for _, proc in sorted(self.procs.items()):
+              # 코루틴을 기동한다.
+              first_event = next(proc)
+              # 기동시에 생성된 이벤트(leave garage)를 우선순위큐에 저장한다.
+              self.events.put(first_event)
+  
+          sim_time = 0
+          # 시뮬레이션 핵심 루프
+          while sim_time < end_time:
+              if self.events.empty():
+                  print('*** end of event ***')
+                  break
+              # 우선순위 큐에서 time 값이 가장 작은 이벤트를 가져와서 current_event에 저장한다.
+              current_event = self.events.get()
+              sim_time, proc_id, previous_action = current_event
+              print('taxi:', proc_id, proc_id * ' ', current_event)
+              # 활성화된 택시에 대한 코루틴을 가져온다.
+              active_proc = self.procs[proc_id]
+              next_time = sim_time + compute_duration(previous_action)
+              try:
+                  # 택시 코루틴에 시각을 전송한다.
+                  # 코루틴은 다음 이벤트를 반환하거나 StopIteration 예외를 발생시킨다.
+                  next_event = active_proc.send(next_time)
+              except StopIteration:
+                  # StopIteration 예외가 발생하면, self.procs 딕셔너리에서 해당 코루틴을 제거한다.
+                  del self.procs[proc_id]
+              else:
+                  # 예외가 발생하지 않으면 다음 이벤트를 우선순위 큐에 넣는다.
+                  self.events.put(next_event)
+          else:
+              msg ='*** end of simulation time: {} event pendding ***'
+              print(msg.format(self.events.qsize()))
+  
+  
+  def main(end_time=DEFAULT_END_TIME, num_taxis=DEFAULT_NUMBER_OF_TAXIS,
+           seed=None):
+      # 난수 생성을 초기화, 프로세스 생성, 시뮬레이션 실행
+      if seed is not None:
+          random.seed(seed) # 다시 생성할 수 있는 결과를 가져온다.
+      
+      # 제너레이터를 value로 갖는 dict
+      taxis = {i: taxi_process(i, (i + 1) * 2, i*DEPARTURE_INTERAVAL)
+               for i in range(num_taxis)}
+      sim = Simulator(taxis)
+      sim.run(end_time)
+  
+  
+  if __name__ =='__main__':
+      parser = argparse.ArgumentParser(description='Taxi fleet simulator.')
+      parser.add_argument('-e','--end-time', type=int,
+                          default=DEFAULT_END_TIME,
+                          help='simulation end time; default=%s'% DEFAULT_END_TIME)
+      parser.add_argument('-t','--taxis', type=int,
+                          default=DEFAULT_NUMBER_OF_TAXIS,
+                          help='number of taxis running; default = %s'% DEFAULT_NUMBER_OF_TAXIS)
+      parser.add_argument('-s','--seed', type=int, default=None,
+                          help='random generator seed (for testing)')
+  
+      args = parser.parse_args()
+      main(args.end_time, args.taxis, args.seed)
 
 
 
