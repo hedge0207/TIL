@@ -48,12 +48,27 @@
 
 
 
+- elasticsearch container network
+
+  - elasticsearch 공식 이미지로 컨테이너를 생성하면 elasticsearch.yml의 network는 아래와 같이 설정된다.
+    - 0.0.0.0으로 설정하면, 클라이언트의 요청, 클러스터 내부의 다른 노드와의 통신에는 elasticsearch docker container에 할당된 IP를 사용하고, 내부에서는 localhost(127.0.0.1)로 통신이 가능해진다.
+
+  ```yaml
+  network.host: 0.0.0.0
+  ```
+  
+  - 만일 한 서버에 여러 대의 node로 cluster를 구성하고자 하면 반드시 같은 network로 묶어줘야한다.
+    - 위에서 말한 것 처럼 클러스터 내부의 다른 노드와의 통신에는 elasticsearch docker container에 할당된 IP를 사용하는데, 같은 네트워크에 속하지 않을 경우 해당 IP에 접근이 불가능하기 때문이다.
+
+
+
 ## Docker-compose로 설치하기
 
 - docker-compose.yml 파일에 아래와 같이 작성
 
+  - `environment`에는 elasticsearch.yml에 있는 모든 설정을 적용 가능하다.
   - 4 대의 노드와 1 대의 kibana를 설치
-
+  
   ```yaml
   version: '3.2'
   
@@ -224,5 +239,78 @@
       driver: bridge
   ```
   
+
+
+
+- 각기 다른 서버에 설치된 node들로 클러스터 구성하기(with docker)
+
+  - 가장 중요한 설정은 `network.publish_host`이다.
+    - 만일 이 값을 따로 설정해주지 않을 경우 `network.host`의 기본 값은 0.0.0.0으로 설정된다.
+    - `network.host`는 내부 및 클라이언트의 요청 처리에 사용할 `network.bind_host`와 `network.pulbish_host`를 동시에 설정한다.
+    - 따라서 다른 node와 통신할 때 사용하는  `network.pulbish_host` 값은 docker container의 IP(정확히는 IP의 host)값이 설정된다.
+    - 그런데 docker container의 IP는 같은 docker network에 속한 것이 아니면 접근이 불가능하다.
+    - 한 서버에서, 다른 서버에 있는 docker network에 접근하는 것은 불가능하므로, 다른 서버에 있는 node가 접근할 수 있도록 docker network의 host가 아닌,서버의 host를 설정하고 port를 열어줘야한다.
+  - master node 생성하기
+    - `network.host`가 아닌 `network.publish_host`로 설정해줘야 한다.
+    - 그러나 docker container 내부에서는 docker network의 ip를 host로 사용하므로, `network.bind_host` 값에 서버의 host는 할당할 수 없다.
+    - 따라서 `network.publish_host`만 따로 설정해줘야한다.
+
+  ```yaml
+  version: '3.2'
+  
+  services:
+    master-node:
+      build: .
+      container_name: master-node
+      environment:
+        - node.name=master-node
+        # cluster name을 설정한다.
+        - cluster.name=my-cluster
+        - bootstrap.memory_lock=true
+        # cluster가 구성될 때 master node가 될 node의 이름을 적어준다.
+        - cluster.initial_master_nodes=master-node
+        # 다른 node와 통신할 host를 입력한다.
+        - network.publish_host=<서버의 host>
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      restart: always
+      # 다른 노드와 통신을 위한 port를 열어준다.
+      # 내부 port인 9300은 elasticsearch.yml의 transport.port 값으로, 다른 노드와 통신을 위한 tcp port이다. 
+      ports:
+        - 9300:9300
+  ```
+
+  - 다른 서버의 노드 생성하기
+
+  ```yaml
+  version: '3.2'
+  
+  services:
+    other-node:
+      build: .
+      container_name: other-node
+      environment:
+        - node.name=other-node
+        # 위에서 설정한 cluster명과 동일하게 설정한다.
+        - cluster.name=my-cluster
+        # 합류할 cluster의 내의 node ip를 적어준다.
+        - discovery.seed_hosts=192.168.0.242:9300
+        - bootstrap.memory_lock=true
+        # 역시 마찬가지로 다른 서버의 node와 통신하기 위한 host를 입력한다.
+        - network.publish_host=192.168.0.231
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      # 다른 노드와 통신을 위한 port를 열어준다.
+      ports:
+        - 9300:9300
+      restart: always
+  ```
+
   
 
