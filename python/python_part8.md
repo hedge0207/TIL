@@ -981,7 +981,18 @@
           assert (n * 1) + 1 == expected
   ```
 
-  
+
+
+
+## 참고
+
+- [unittest vs pytest](https://www.bangseongbeom.com/unittest-vs-pytest.html#fn:python-internal-test)
+- [Pytest](https://velog.io/@samnaka/Pytest)
+- [pytest 공식 document](https://docs.pytest.org/en/7.0.x/contents.html)
+
+
+
+
 
 # ETC
 
@@ -1044,11 +1055,4 @@
   74%|████████████████████████████████████████████████████████████████████████████████████████████████▉              | 74/100 [00:07<00:02,  9.49it/s]
   ```
 
-
-
-# 참고
-
-- [unittest vs pytest](https://www.bangseongbeom.com/unittest-vs-pytest.html#fn:python-internal-test)
-- [Pytest](https://velog.io/@samnaka/Pytest)
-- [pytest 공식 document](https://docs.pytest.org/en/7.0.x/contents.html)
 
