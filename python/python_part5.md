@@ -129,6 +129,27 @@
 
 
 
+- `exec()`: 실행 가능한 문자열을 입력으로 받아 실행한다.
+  - `eval`과 달리 반환값이 없다.
+  - 굉장히 위험한 기능으로 가급적 사용하지 않는 것이 좋다.
+  
+  ```python
+  # 실행시킬 코드
+  test_func = """
+  def foo():
+      return "bar"
+  
+  my_bar = foo()
+  """
+  
+  a = {}
+  # 코드 실행
+  exec(test_func, a)
+  print(a['my_bar'])	# bar
+  ```
+
+
+
 - `hex(정수)`: 정수를 16진수로 변환하여 반환한다.
 
   ```python
