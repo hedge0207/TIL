@@ -978,11 +978,68 @@
 
 
 
+- Third party를 통한 인증
+  - `fastapi.security.oauth2`에 이와 관련된 기능이 포함되어 있다.
 
 
 
 
 
+## HTTP Basic Auth
+
+- OAuth2 기반 인증 보다 훨씬 간단하게 인증을 구현할 수 있다.
+  - `Authorization` Header에 `Basic username:password` 형식의 값 base64로 인코딩한 값을 받아, 이를 통해 인증을 진행한다.
+  - 만일 `Authorization` header가 없거나 값의 형식이 다를 경우 HTTP 401("Unauthorized") erorr를 반환한다.
+  - 그 후 `WWW-Authenticate` header에 `Basic`라는 값과 realm(optional) parameter를 반환한다.
+  - 이를 받은 브라우저는 username과 password 입력을 위한 창을 띄우게 된다.
+  - 해당 창에 username과 password를 입력하면 인증이 진행된다.
+
+
+
+- 예시
+
+  - `HTTPBasic`, `HTTPBasicCredentials`를 사용한다.
+
+  ```python
+  from fastapi import Depends, FastAPI
+  from fastapi.security import HTTPBasic, HTTPBasicCredentials
+  
+  app = FastAPI()
+  # HTTPBasic의 인스턴스 생성
+  security = HTTPBasic()
+  
+  
+  # HTTPBasic의 인스턴스를 dependency로 넣어준다.
+  # security는 HTTPBasicCredentials의 인스턴스를 반환한다.
+  @app.get("/users/me")
+  def read_current_user(credentials: HTTPBasicCredentials = Depends(security)):
+      return {"username": credentials.username, "password": credentials.password}
+  ```
+
+  - `Authorization`  header를 넘기지 않을 경우
+    - 아래와 같이 응답의 header에 `www-authentication`의 값으로 Basic을 반환한다.
+
+  ![image-20220330180812647](fastapi_part3.assets/image-20220330180812647.png)
+
+  - base64로 인코딩하기
+    - `username:password` 형태의 문자열을 base64로 인코딩한다.
+    - 암호화가 아닌 단순 인코딩만 하면 된다.
+
+  ```python
+  import base64
+  
+  value = "john:1234"
+  bytes_value = value.encode()
+  base64_value = base64.b64encode(bytes_value)
+  print(base64_value)	# am9objoxMjM0
+  ```
+
+  - `Authorization`  header 넘기기
+    - 위에서 encoding한 값을 `Basic 인코딩한 값` 형태로 넘긴다.
+
+  ![image-20220330181238456](fastapi_part3.assets/image-20220330181238456.png)
+
+  
 
 
 
