@@ -456,15 +456,13 @@
   - bcrypt는 같은 input이 들어와도 다른 output을  반환한다.
     - salt 과정이 추가되었기 때문이다.
     - 따라서 단순히 password를 hash된 password와 비교해서는 안되며, 별도의 방법으로 유요한 password인지 비교해야한다.
-
-
+  
   ```python
   from typing import Optional
   
   # passlib context를 import한다.
   from passlib.context import CryptContext
   from pydantic import BaseModel
-  
   
   
   pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

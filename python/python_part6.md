@@ -301,7 +301,7 @@
   def deco(orig_func):
       def wrapper_func():
           # 공통으로 들어가는 부분을 여기에 추가해준다.
-          print("Bye")
+          print("Hello")
           orig_func()
       return wrapper_func
           
@@ -1130,5 +1130,4 @@
   print("main thread post job")
   print("main thread end")
   ```
-
 
