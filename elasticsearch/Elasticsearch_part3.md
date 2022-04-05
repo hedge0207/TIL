@@ -850,11 +850,6 @@
 
 
 
-- Elastic Stack 설치하기
-  - 추후 추가(p.251-271)
-
-
-
 - Elastic Stack의 이중화
   - Elastic Stack의 어느 한 구성 요소에 장애가 발생하더라도 나머지 요소들이 정상적으로 동작할 수 있도록 이중화하는 작업이 반드시 필요하다.
   - 추후 추가
@@ -863,9 +858,7 @@
 
 
 
-# 검색 엔진으로 활용하기
-
-## inverted index와 analyzer
+# Analyzer와 inverted index
 
 - inverted index(역색인)
 
@@ -969,6 +962,8 @@
     - analyzer를 구성할 때는 tokenizer를 필수로 명시해야 하며, 하나의 tokenizer만 설정할 수 있다.
     - 반면 character filter와 token filter는 필요하지 않을 경우 기술하지 않거나, 여러 개의 character filter와 token filter를 기술할 수 있다.
   - token filter
+    - tokenizer에 의해 분리된 각각의 텀들을 지정한 규칙에 따라 처리해주는 필터들이다.
+    - `filter` 항목에 배열로 나열해서 지정하며, 나열된 순서대로 처리되기에 순서를 잘 고려해서 입력해야한다.
     - 토큰을 전부 소문자로 바꾸는 lowercase token filter가 대표적인 token filter이다.
 
 
@@ -1176,7 +1171,7 @@
 
   - content로 검색하기
 
-  ```json
+  ```bash
   $ curl "localhost:9200/books/_search?pretty&q=content:Elasticsearch"
   
   {
@@ -1202,5 +1197,96 @@
   - content 필드는 검색이 정상적으로 이루어지지 않았다.
     - title 필드는 text, content 필드는 keyword 타입으로 정의했다.
     - text 타입의 기본 analyzer는 standard analyzer이고, keyword 타입의 기본 analyzer는 keyword analyzer이다.
-    - keyword analyzer는 standard analyzer와는 달리 문자열을 나누지 않고 통으로 하나의 토큰을 구성한다.
+    - keyword analyzer는 standard analyzer와는 달리 analyze를 하지 않는다.
     - 즉 역색인에는 "Elasticsearch is open source search engine"라는 토큰만 존재한다.
+
+
+
+- 색인된 문서의 역 인덱스 내용 확인하기
+
+  - `_termvectors ` API를 사용한다.
+
+  - `<인덱스명>/_termvectors/<doc_id>?fields=<확인할 필드>`
+
+  ```bash
+  $ curl "localhost:9200/test-index/_termvectors/1?fields=title"
+  ```
+
+
+
+## token filter
+
+- stopword(불용어)
+
+  - 검색에 불필요한 조사나 전치사 등을 처리하기 위한 token filter
+    - `stopwords` 항목에 적용된 단어들은 tokenizing 된 텀에서 제거된다.
+    - 예를 들어 "아버지가 방에" 라는 문장을 `nori_tokenizer`로 token화하면 `아버지 / 가 / 방 / 에`로 분리되는데, 만일 "가"와 "에"를 `stopwords`에 추가했다면 `아버지 / 방`만 추출된다.
+    - settings에 추가할 수도 있고, 파일로 관리할 수도 있다.
+  - settings에 추가하기
+
+  ```json
+  {
+    "settings": {
+      "analysis": {
+        "filter": {
+          "test_stop_filter": {
+            "type": "stop",
+            "stopwords": [
+              "가",
+              "에"
+            ]
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  - 일일이 지정하지 않고 언어별로 지정하기
+
+    > https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-stop-tokenfilter.html
+
+    - 위 페이지에서 지원하는 언어팩을 확인 가능하다(아직까지 한국어는 없다).
+
+  ```json
+  {
+    "settings": {
+      "analysis": {
+        "filter": {
+          "test_stop_filter": {
+            "type": "stop",
+            "stopwords": "_french_"
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  - 파일로 관리하기
+    - 각각의 stopword는 파일 내에서 줄바꿈으로 구분된다.
+    - 사전 파일의 경로는 config 디렉터리를 기준으로 상대 경로를 지정해야 한다.
+    - 텍스트 인코딩은 반드시 UTF-8이어야한다.
+
+  ```json
+  {
+    "settings": {
+      "analysis": {
+        "filter": {
+          "test_stop_filter": {
+            "type": "stop",
+            "stopwords_path": "user_dict/stopword_dict.txt"
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  - 파일로 관리할 경우 주의사항
+    - 파일로 관리할 때, 파일의 내용이 변경되었다면 해당 파일을 사용하는 인덱스를 close/open 해주어야 적용된다.
+    - 또한, 파일이 변경되면, 그 이후로 색인되는 문서들에만 적용되고 이미 색인된 문서들에는 적용되지 않는다.
+    - 따라서 기존에 색엔된 문서들에도 적용하려면 재색인 해야한다.
+
+  
+
