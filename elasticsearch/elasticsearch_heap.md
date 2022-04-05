@@ -212,6 +212,13 @@
 
 
 
+- 권장 heap memory
+  - 75% 미만: 가장 이상적인 상황이다.
+  - 75~85%: 검색 시간이 만족스럽게 나온다면 별 문제가 없지만, bulk, aggs 혹은 대량의 검색을 수행한다면 문제가 될 수 있다는 사실을 인지해야한다.
+  - 85%이상: 메모리 사용을 줄이거나 메모리를 늘리는 등의 조치가 필요하다.
+
+
+
 - Elasticsearch circuit breaker
 
   > https://www.elastic.co/guide/en/elasticsearch/reference/current/circuit-breaker.html
