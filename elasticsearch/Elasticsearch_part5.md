@@ -636,6 +636,11 @@
     }
   }
   ```
+  
+  - must와 should의 차이
+    - must는 must내에 있는 모든 쿼리가 일치해야 한다(and 조건).
+    - should는 should 내에 있는 쿼리 중 하나라도 일치하면 된다(or 조건).
+    - 단, should의 경우 많이 일치된 문서일수록 socre가 높아진다.
 
 
 
