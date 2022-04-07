@@ -516,3 +516,147 @@
 - nori
 
   > https://lucene.apache.org/core/9_1_0/analysis/nori/org/apache/lucene/analysis/ko/POS.Tag.html
+
+
+
+
+
+# auto completion
+
+- java-cafe plugin
+
+  > https://github.com/javacafe-project/elasticsearch-plugin
+
+  - java-cafe plugin은 한글 text를 초성, 자모 단위로 분해해준다.
+  - plugin 다운 받기
+    - 사용중인 elasticsearch 버전에 맞는 플러그인을 위 사이트에서 찾아서 설치한다.
+    - 지원하는현재 사용중인 elasticsearch 버전을 지원하는 plugin이 없을 경우 일단 plugin 내부의 `plugin-descriptor.properties` 파일에서 `elasticsearch.version` 옵션을 현재 사용중인 es 버전으로 변경한다.
+    - plugin 자체를 수정하는 것이 아니라 es 버전만 변경해주는 것이므로 불완전할 수 있다.
+
+  - 설치
+
+  ```bash
+  $ bin/elasticsearch-plugin install file://<plugin 파일 경로>
+  ```
+
+
+
+- 자동완성 구현하기
+
+  - 주의사항
+    - 아래 방식은 성능상으로 불완전한 방식이다.
+    - `match_phrase_prefix` 쿼리의 옵션으로 `max_expansions`을 10000으로 줬는데 이는 기본값인 50보다 훨씬 큰 값으로, 성능상에 문제가 있을 수 있다.
+    - 또한 ngram filter역시 min, max를 각각 2, 10으로 설정하여 토큰이 지나치게 많이 생성될 수 있다.
+  - 자동완성을 위한 인덱스 생성
+    - ngram filter의 min값과 max값은 기본적으로 2 이상으로 차이가 날 수 없으므로, 2 이상 차이가 나도록 설정하려면 `settings.index.max_ngram_diff` 옵션을 변경해야 한다.
+
+  ```json
+  {
+      "settings": {
+          "index": {
+              "max_ngram_diff":8
+          },
+          "analysis": {
+              "filter": {
+                  "2_5_gram":{
+                      "type":"ngram",
+                      "min_gram": 2,
+                      "max_gram": 10
+                  }
+              },
+              "analyzer": {
+                  "jamo-analyzer": {
+                      "type": "custom",
+                      "tokenizer": "standard",
+                      "filter": [
+                          "lowercase",
+                          "2_5_gram",
+                          "javacafe_jamo"
+                      ]
+                  },
+                  "chosung-analyzer": {
+                      "type": "custom",
+                      "tokenizer": "standard",
+                      "filter": [
+                          "lowercase",
+                          "2_10_edgegram",
+                          "javacafe_chosung"
+                      ]
+                  },
+                  "search-analyzer": {
+                      "type": "custom",
+                      "tokenizer": "standard",
+                      "filter": [
+                          "lowercase",
+                          "javacafe_jamo"
+                      ]
+                  }
+              }
+          }
+          
+      },
+      "mappings": {
+          "properties": {
+              "title": {
+                  "type": "text",
+                  "analyzer": "jamo-analyzer",
+                  "search_analyzer": "search-analyzer",
+                  "fields": {
+                      "chosung": {
+                          "type": "text",
+                          "analyzer": "chosung-analyzer",
+                          "search_analyzer": "search-analyzer"
+                      },
+                      "keyword": {
+                          "type": "keyword"
+                      }
+                  }
+              }
+          }
+      }
+  }
+  ```
+
+  - 자동완성을 위한 쿼리
+
+  ```json
+  {
+      "query": {
+          "bool":{
+              "should": [
+                  {
+                      "match_phrase_prefix": {
+                          "title": {
+                              "query":search_input,
+                              "slop":6,
+                              "max_expansions":10000
+                          }
+                      }
+                  },
+                  {
+                      "prefix": {
+                          "title.keyword": {
+                              "value": search_input
+                          }
+                      }
+                  },
+                  {
+                      "match_phrase_prefix": {
+                          "title.chosung": {
+                              "query":search_input,
+                              "slop":6,
+                              "max_expansions":10000
+                          }
+                      }
+                  }
+              ]
+          }
+      }
+  }
+  ```
+
+
+
+# completion suggester
+
+- 이름은 completion suggester지만 자동완성보다는 연관 검색에 적합할 듯 하다.
