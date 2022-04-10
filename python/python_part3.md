@@ -657,6 +657,34 @@
 
 
 
+- 함수가 keyword argument만 받도록 하는 방법
+
+  - 가변인수 (일반적으로  `*args`) 뒤에는 keyword arguments만이 와야 한다는 점을 이용한다.
+  - 가변인수 자체를 사용할 것은  아님므로 asterisk를 parameter로 선언한다.
+    - asterisk 뒤에 선언된 모든 파라미터는 keyword arguments로 넘겨야 한다.
+
+  ```python
+  def foo(a, *qwe, b):
+      print(a, b)
+  
+  
+  foo(a=1, b=2)	# 1 2
+  foo(1, b=2)		# 1 2
+  foo(1, 2)		# TypeError: foo() takes 1 positional argument but 2 were given
+  ```
+
+  - `**kwargs`와 함께 사용하는 것도  가능하다.
+
+  ```python
+  def foo(*, a, b, **kwargs):
+      print(a, b, kwargs)
+  
+  
+  foo(a=1, b=2, c=3, d=4)		# 1 2 {'c': 3, 'd': 4}
+  ```
+
+
+
 - 함수의 결과값은 언제나 하나이다.
 
   - 복수의 결과값을 결과값으로 반환할 경우 튜플로 묶여서 반환된다.
