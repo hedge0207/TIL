@@ -1,3 +1,52 @@
+# docker로 실행하기
+
+> https://www.elastic.co/guide/en/logstash/current/docker.html 참고
+
+- config 파일 작성하기
+
+  - `test.conf` 파일을 작성한다.
+
+  ```yaml
+  input {
+      elasticsearch {
+          hosts => "${ES_HOST}"
+          index => "logstash-test"
+          query => '{"query":{"match_all":{}}}'
+      }
+  }
+  
+  output {
+      stdout {}
+  }
+  ```
+
+
+
+- docker compose file 작성하기
+
+  - 이 파일을 실행하면 logstash는 컨테이너 내부의 `/usr/share/logstash/pipeline` 디렉터리에서 `.conf` 파일들을 찾아 해당 config로 실행된다.
+  - 따라서 위에서 생성한 `test.conf`파일을 `/usr/share/logstash/pipeline`에 volume을 잡아줘야한다.
+
+  ```yaml
+  version: '3.2'
+  
+  services:
+    logstash:
+      image: logstash:7.16.2
+      container_name: theo_logstash
+      ports:
+        - 9600:9600
+      volumes:
+        - ./config:/usr/share/logstash/pipeline
+      environment:
+        ES_HOST: "<es_host>:<es_port>"
+      restart: always
+  ```
+
+
+
+
+
 ## logstash와 DB 연결하기
 
 - hive의 데이터를 logstash를 통해 elasticsearch에 바로 색인할 수 있다.
