@@ -1414,12 +1414,13 @@
 
 - from과 import
 
-  - from은 모듈을 불러올 경로를, import는 불러올 모듈 혹은 모듈 내의 함수를 지정한다.
+  - from은 모듈을 불러올 경로를, import는 불러올 모듈 혹은 모듈 내의 불러올 것들(함수, class, 변수 등)를 지정한다.
   - 경로의 기준은 최초에 실행되는 파일이다.
-  - 즉 아래와 같은 구조로 되어 있을 때 main.py를 실행한다고 하면 모든 경로는 main.py의 위치를 기준으로 설정해야 한다.
+    - 즉 아래와 같은 구조로 되어 있을 때 main.py를 실행한다고 하면 모든 경로는 main.py의 위치를 기준으로 설정해야 한다.
     - say_hello 함수를 직접 import하는 test.py 입장에서 보면 `from hello.hello import say_hello`와 같이 import 해야 하겠지만 모든 경로는 최초 실행 파일인 main.py를 기준으로 작성해야 한다.
     - 만일 test.py를 직접 실행한다면 `from hello.hello import say_hello`와 같이 import하는 것이 맞다.
 
+  
   ```python
   '''
   module/
@@ -1453,7 +1454,7 @@
 
 - import할 때 정확히 무슨 일이 일어나는가?
   - `import test`라는 명령어가 있을 때, python은 다음의 3가지 장소를 순서대로 돌아다니며 test를 찾는다.
-    - 아래의 세 군데에서 모두 찾을 수 없으면 ModuleNotFoundError를 반환한다.
+    - 아래의 세 군데에서 모두 찾을 수 없으면 `ModuleNotFoundError`를 반환한다.
   - sys.modules
     - 이미 import 된 모듈과 패키지들이 딕셔너리 형태로 저장되어 있는 곳이다.
     - 이미 import 된 것들을 다시 찾을 필요가 없어지게 된다.
@@ -1461,8 +1462,25 @@
     - python이 제공하는 공식 라이브러리들이다.
   - sys.path
     - python 라이브러리들이 설치되어 있는 경로를 보여주며, string을 요소로 갖는 리스트로 이루어져 있다.
-    - 현재 디렉터리(python 파일이 실행되는 디렉터리)는 default로 sys.path에 포함되어 있다.
+    - 실행시킨 Python 스크립트의 경로는 default로 sys.path에 포함되어 있다.
     - 따라서 절대경로는 현재 디렉토리부터 시작하게 된다.
+
+
+
+- sys.path
+
+  - 생성 과정
+    - 최초 시행된 Python 스크립트의 디렉터리의 위치를 리스트에 추가한다.
+    - 환경변수 중 `PYTHONPATH`의 값을 가져온다.
+    - OS나 Python 배포판이 설정한 값들을 더한다.
+
+  - `sys` module을 통해 list에 어떤 값들이 있는지 확인 가능하다.
+
+  ```python
+  import sys
+  
+  print(sys.path)
+  ```
 
 
 
@@ -1474,12 +1492,13 @@
   - 상대경로
     - import하는 위치를 기준으로 경로를 정의한다.
     - 상대 경로의 기준이 되는 현재 디렉터리는 `__name__`에 의해서 정해지게 된다.
+    - 스크립트를 직접 실행시킨 경우 `__name__`에는 `__main__`이 저장되고, import한 경우 `__name__`에는 import 된 모듈의 경로가 저장된다.
     - 따라서 직접 실행시킬 파일에는 상대경로를 적용하면 안된다.
   - 상대경로 error 예시
     - 예를 들어 아래와 같이 test.py에서 import를 상대경로로 작성했을 시에, main.py를 실행하면 아무런 error도 발생하지 않는다.
     - main.py를 실행할 경우 test.py `__name__`에는 module.test가 들어가기 때문에 `module.test.py` 파일이 상대경로의 기준 경로가 된다.
     - 반면에, test.py를 실행할 경우 `__name__`에는 `__main__`이 들어가게 되고, python은 `__main__`이라는 경로를 찾을 수 없으므로 error를 반환한다.
-
+  
   ```python
   '''
   module/

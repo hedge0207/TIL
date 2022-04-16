@@ -618,7 +618,9 @@
   ```
 
   - 자동완성을 위한 쿼리
-
+    - `slop`과 `max_expansions` 옵션은 데이터에 따라 다르게 주면 된다.
+  
+  
   ```json
   {
       "query": {
@@ -627,23 +629,16 @@
                   {
                       "match_phrase_prefix": {
                           "title": {
-                              "query":search_input,
+                              "query":<search_input>,
                               "slop":6,
                               "max_expansions":10000
                           }
                       }
                   },
                   {
-                      "prefix": {
-                          "title.keyword": {
-                              "value": search_input
-                          }
-                      }
-                  },
-                  {
                       "match_phrase_prefix": {
                           "title.chosung": {
-                              "query":search_input,
+                              "query":<search_input>,
                               "slop":6,
                               "max_expansions":10000
                           }

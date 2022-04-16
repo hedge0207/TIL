@@ -422,7 +422,7 @@
 
 # ILM(Index Lifecycle Management)
 
-- Index lif cycle
+- Index life cycle
   - Hot
     - 인덱스에 지속적으로 쓰기 및 검색 요청이 들어오는 상태
   - Warm
@@ -612,7 +612,9 @@
   - Kibana로 생성하기
     - `Stack Management`  → `Index Management` → `Index Templates`에서 `Create template`을 통해 생성 가능하다.
   - api로 생성하기
-
+    - data stream뿐 아니라 일반 index에도 적용 가능하다.
+  
+  
   ```json
   PUT _index_template/my-index-template
   {
@@ -630,7 +632,7 @@
   ```
 
   - component template을 작성하지 않았을 경우 아래와 같이 생성한다.
-
+  
   ```json
   PUT /_index_template/template_1
   {
