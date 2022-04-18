@@ -40,6 +40,64 @@
 
 
 
+## StreamingResponse
+
+- 예외처리
+
+  - StreamingResponse는 특성상 일단 응답을 보내기만 하면 error 발생 여부와 관계 없이 status code가 200 OK로 반환된다.
+  - 아래 방법을 통해 error 발생시 status code를 변경해서 보낼 수 있다.
+    - `middleware`에서 처리한다.
+
+  ```python
+  import time
+  
+  from fastapi import FastAPI
+  from fastapi.responses import StreamingResponse, JSONResponse
+  
+  app = FastAPI()
+  
+  @app.middleware("http")
+  async def test_middleware(request, call_next):
+      res = await call_next(request)
+      # /stream endpoint에만 적용한다.
+      if request.url.path=="/stream":
+          has_content = False
+          # response에 아무 값도 없으면 for문이 돌지 않아 has_content값이 False로 유지된다.
+          async for _ in res.body_iterator:
+              has_content = True
+              break
+          # 만약 content가 없으면 status code 418을 반환한다.
+          if not has_content:
+              return JSONResponse(status_code=418)
+      return res
+  
+  @app.get("/stream")
+  async def strean():
+      def iterfile():
+          try:
+              for _ in range(10):	# 1
+                  raise
+                  data = [str(i) for i in range(10)]
+                  time.sleep(1)
+                  yield from data
+          except Exception as e:
+              yield e
+  
+      return StreamingResponse(iterfile(), media_type="text")
+  ```
+
+  - `res.body_iterator`
+    - `res.body_iterator`에 단순히 값이 없는 것(즉, 위 예시에서 `iterfile` 함수가 아무 것도 yield하지 않는 것)과 error가 발생한 것에는 차이가 있다.
+    - `res.body_iterator`에 단순히 값이 없을 경우 `b''`라는 빈 bytes문자열이 1번 yield되어 for문이 실행은 된다.
+    - 반면에 error가 발생한 경우 `res.body_iterator`은 아예 빈 값이 되어 for문이 아예 실행되지 않는다.
+  - 한계
+    - 실행 중간에 error가 난 경우에는 처리가 불가능하다.
+    - 예를 들어 #1 부분에서 3번째 반복쯤에 raise를 설정했다면, 어쨌든 `res.body_iterator`안에는 1, 2번째 반복때 yield된 값은 들어있으므로 예외 처리가 불가능하다.
+
+
+
+
+
 # Testing
 
 - FastAPI는 Starlette의 TestClient를 사용한다.
