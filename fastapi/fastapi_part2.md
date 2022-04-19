@@ -62,20 +62,22 @@
       # /stream endpoint에만 적용한다.
       if request.url.path=="/stream":
           has_content = False
-          # response에 아무 값도 없으면 for문이 돌지 않아 has_content값이 False로 유지된다.
-          async for _ in res.body_iterator:
-              has_content = True
-              break
-          # 만약 content가 없으면 status code 418을 반환한다.
+          try:
+              # response에 enocde가 불가능한 error 객체가 넘어오면 아래 코드가 실행되지 않고 except문으로 넘어간다.
+              async for _ in res.body_iterator:
+                  has_content = True
+                  break
+          except:
+              pass
           if not has_content:
               return JSONResponse(status_code=418)
       return res
   
   @app.get("/stream")
-  async def strean():
+  async def stream():
       def iterfile():
           try:
-              for _ in range(10):	# 1
+              for _ in range(10):
                   raise
                   data = [str(i) for i in range(10)]
                   time.sleep(1)
@@ -85,7 +87,7 @@
   
       return StreamingResponse(iterfile(), media_type="text")
   ```
-
+  
   - `res.body_iterator`
     - `res.body_iterator`에 단순히 값이 없는 것(즉, 위 예시에서 `iterfile` 함수가 아무 것도 yield하지 않는 것)과 error가 발생한 것에는 차이가 있다.
     - `res.body_iterator`에 단순히 값이 없을 경우 `b''`라는 빈 bytes문자열이 1번 yield되어 for문이 실행은 된다.
