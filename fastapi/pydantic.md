@@ -209,13 +209,15 @@
           return v
   
   
-  user = UserModel(
-      name='samuel colvin',
-      username='scolvin',
-      password1='zxcvbn',
-      password2='zxcvbn',
-  )
-  print(user)
+  try:
+      UserModel(
+          name='samuel',
+          username='scolvin',
+          password1='zxcvbn',
+          password2='zxcvbn2',
+      )
+  except ValidationError as e:
+      print(e)
   ```
 
 
