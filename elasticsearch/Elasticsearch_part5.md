@@ -945,6 +945,34 @@
 
 
 
+- document의 `_version` field 로 정렬하기
+
+    - `_version` 필드는 색인된 필드가 아니라 `sort`의 대상 필드가 될 수 없다.
+    - 그러나 painless script를 사용하면 sort가 가능하다.
+
+    ```json
+    // GET <index>/_search
+    {
+      "query": {
+        "match": {
+          "<field>": <term>
+        }
+      },
+      "sort": {
+        "_script": {
+          "type": "number",
+          "script": {
+            "lang": "painless",
+            "source": "doc['_version']"
+          },
+          "order": "asc"
+        }
+      }
+    }
+    ```
+
+
+
 ## Count API
 
 - 쿼리와 일치하는 문서의 개수를 셀 때 사용하는  API
