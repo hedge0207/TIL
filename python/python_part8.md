@@ -1,5 +1,7 @@
 # Testing
 
+## Test in Python
+
 - Python에서 널리 사용되는 test 라이브러리에는 아래와 같은 것들이 있다.
   - pytest
   - unittiest
@@ -27,11 +29,138 @@
 
 
 
-- 용어
-  - fixture
-    - 테스트를 하는데 필요한 부분들을 미리 준비해 놓은 리소스 혹은 코드.
-    - 예를 들어 어떤 테스트를 진행하는데 DB와 연결이 필요하다면 DB와 연결하는 코드가 fixture가 될 수 있다.
-  - Mock
+## 용어
+
+- test double
+  - 실제 객체를 대신해서 테스팅에서 사용하는 모든 방법의 총칭
+  - 영화에서 위험한 장면을 대신 촬영하는 배우를 뜻하는 stunt double에서 유래되었다.
+  - mock, fake, stub 등
+
+
+
+
+- fixture
+  - 테스트를 하는데 필요한 부분들을 미리 준비해 놓은 리소스 혹은 코드.
+  - 예를 들어 어떤 테스트를 진행하는데 DB와 연결이 필요하다면 DB와 연결하는 코드가 fixture가 될 수 있다.
+
+
+
+- Mock
+
+  > [Mock Object란 무엇인가?](https://medium.com/@SlackBeck/mock-object%EB%9E%80-%EB%AC%B4%EC%97%87%EC%9D%B8%EA%B0%80-85159754b2ac) 참고
+
+  - 테스트를 수행할 모듈이 의존하는 실제 외부의 서비스나 모듈을 사용하지 않고 실제 서비스 혹은 모듈을 흉내내는 가짜 모듈을 작성하여 테스트의 효용성을 높이는데 사용하는 객체이다.
+  - 즉, 테스트의 의존성을 단절하기 위해 사용하는 객체이다.
+
+  - 예를 들어 아래 코드는 휴대 전화 서비스 기능(의존성)을 제공 받아, 이를 사용한 휴대 전화 문자 발신기를 개발한 것이다.
+
+  ```python
+  class CellPhoneService:
+      def send_mms(self, msg):
+          """
+          외부와 통신해야 하는 복잡한 로직
+          """
+  
+  class CellPhoneMmsSender:
+      cell_phone_service = None
+  
+      def __init__(self, cell_phone_service:CellPhoneService):
+          CellPhoneMmsSender.cell_phone_service = cell_phone_service
+      
+      def send(self, msg):
+          CellPhoneMmsSender.cell_phone_service.send_mms(msg)
+  ```
+
+  - 이 때 어떻게 하면 `send` 메서드를 테스트 할 수 있을까?
+    - 가장 간단한 방법은 `send` 메서드의 반환 값을 체크하는 것이겠지만 `send` 메서드는 반환값이 존재하지 않는다.
+    - `send` 메서드를 테스트할 때 중요한 점은 실제 메시지를 보내는 것은 `send` 메서드가 아닌 `send_mms` 메서드라는 것이다.
+    - 따라서 `send` 메서드의 검증은 실제 메시지가 전송되었는지가 아니라 parameter로 받은 `msg`를 `send_mms`의 argument로 제대로 넘겨서 호출했는가를 확인하는 방식으로 수행되어야 한다.
+    - 문제는 그 단순한 기능을 테스트하기 위해서 복잡한 `send_mms` 메서드가 실제로 실행되어야 한다는 점이다.
+    - 이럴 때  mock object를 생성해서 테스트한다.
+  - Mock Object 생성
+    - `CellPhoneService`의 `send_mms`를 override하는 메서드를 생성한다.
+    - 오버라이드한 메서드가 잘 실행됐는지 확인할 수 있는 메서드들과 변수들을 추가한다.
+
+  ```python
+  class CellPhoneService:
+      def send_mms(self, msg):
+  		"""
+          외부와 통신하는 복잡한 로직
+          """
+          pass
+  
+  class CellPhoneMmsSenderMock(CellPhoneService):
+      def __init__(self):
+          self.is_send_mms_called = False
+          self.sent_msg = ""
+      
+      def send_mms(self, msg):
+          self.is_send_mms_called = True
+          self.send_msg = msg
+      
+      def check_send_mms_called(self):
+          return self.is_send_mms_called
+      
+      def get_sent_msg(self):
+          return self.sent_msg
+  ```
+
+  - 테스트 코드 작성
+    - 실제 의존하는 클래스가 아닌, mock object를 주입한다.
+
+  ```python
+  class CellPhoneService:
+      def send_mms(self, msg):
+          """
+          외부와 통신하는 복잡한 로직
+          """
+          pass
+  
+  class CellPhoneMmsSender:
+      cell_phone_service = None
+  
+      def __init__(self, cell_phone_service:CellPhoneService):
+          CellPhoneMmsSender.cell_phone_service = cell_phone_service
+      
+      def send(self, msg):
+          CellPhoneMmsSender.cell_phone_service.send_mms(msg)
+  
+  
+  class CellPhoneMmsSenderMock(CellPhoneService):
+      def __init__(self):
+          self.is_send_mms_called = False
+          self.sent_msg = ""
+      
+      def send_mms(self, msg):
+          self.is_send_mms_called = True
+          self.send_msg = msg
+      
+      def check_send_mms_called(self):
+          return self.is_send_mms_called
+      
+      def get_sent_msg(self):
+          return self.sent_msg
+  
+  
+  def test_send():
+      msg = "Hello World!"
+      cell_phone_mms_sender_mock = CellPhoneMmsSenderMock()
+      # 실제 의존하는 클래스가 아닌, mock object를 주입한다.
+      cell_phone_mms_sender = CellPhoneMmsSender(cell_phone_mms_sender_mock)
+      cell_phone_mms_sender.send(msg)
+      assert cell_phone_mms_sender_mock.is_send_mms_called==True
+      assert cell_phone_mms_sender_mock.send_msg=="Hello World!"
+  ```
+
+  
+
+
+
+
+- 마저 작성
+  - https://medium.com/@SlackBeck/mock-object%EB%9E%80-%EB%AC%B4%EC%97%87%EC%9D%B8%EA%B0%80-85159754b2ac
+  - https://medium.com/@SlackBeck/%ED%85%8C%EC%8A%A4%ED%8A%B8-%EC%8A%A4%ED%85%81-test-stub-%EC%9D%B4%EB%9E%80-%EB%AC%B4%EC%97%87%EC%9D%B8%EA%B0%80-ff9c8840c1b0#.68pavd8tg
+  - https://eminentstar.github.io/2017/07/24/about-mock-test.html
 
 
 
