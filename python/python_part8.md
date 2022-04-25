@@ -380,17 +380,20 @@
   - `-q`(`--quiet`)
     - pass, fail을 축약해서 보여준다.
     - fail이라 하더라도 왜 fail인지 이유는 보여준다.
+  - `-s`
+    - test code 내부의 print문을 터미널에 출력한다.
+  
   - 모듈명 지정하기
     - 테스트할 파일을 입력하면 해당 모듈만 테스트한다.
     - `*`를 wildcard로 활용 가능하다.
-
+  
   ```bash
   $ pytest [테스트_파일.py]
   ```
 
   - 테스트명 지정하기
     - `-k` 옵션으로 어떤 테스트를 실행할지 지정이 가능하다.
-
+  
   ```bash
   $ pytest -k <지정할 테스트>
   
@@ -400,7 +403,7 @@
 
   - `::`구분자 사용하기
     - `::` 구분자를 통해 특정 모듈의 특정 클래스의 특정 함수를 테스트 할수 있다.
-
+  
   ```bash
   # test_foo.py 모듈의 FooClass 내부에 있는 test_foo 함수를 테스트한다.
   $ pytest test_foo.py:FooClass:test_foo
@@ -412,6 +415,19 @@
   
   ```bash
   $ pytest --collect-only
+  ```
+  
+  - warning 무시하기
+    - 아래와 같이 두 가지 방식이 있다.
+    - `--disable-warnings`는 상세한 warning을 출력을 안 할 뿐 summary로 몇 개의 warning이 있는지 보여주기는 한다.
+    - 반면에 `-W ignore`는 워닝 자체를 보여주지 않는다.
+  
+  ```bash
+  # --disable-warnings
+  $ pytest --disable-warnings
+  
+  # -W ignore
+  $ pytest -W ignore
   ```
 
 
@@ -1054,5 +1070,4 @@
   $ python main.py 
   74%|████████████████████████████████████████████████████████████████████████████████████████████████▉              | 74/100 [00:07<00:02,  9.49it/s]
   ```
-
 
