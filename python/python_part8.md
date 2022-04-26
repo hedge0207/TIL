@@ -1,47 +1,92 @@
 # Testing
 
-## Test in Python
+## 테스트시 주의 사항
 
-- Python에서 널리 사용되는 test 라이브러리에는 아래와 같은 것들이 있다.
-  - pytest
-  - unittiest
+> https://jojoldu.tistory.com/614
 
+- 테스트 코드에서 내부 구현 검증은 피해라
 
+  - 테스트 코드는 내부 구현이 아닌 최종 결과를 검증해야한다.
+    - 내부 구현을 검증하는 테스트들은 구현을 조금만 변경해도 테스트가 깨질 가능성이 높다.
+  - 예를 들어 아래와 같은 코드가 있다고 하자.
+    - `OrderAmountSum`의 주요 기능은 `get_sum_amount`이고, `add_plus_amount`, `add_minus_amont`는 부차적인 기능이다.
+    - 테스트를 할 때 흔히 하는 실수 중 하나가 부차적인 기능들까지 테스트하는 것이다.
 
-- pytest
-  - Flask, Requests, pip에서 사용중이다.
-  - 장점
-    - unitest가 지원하지 않는 고급 기능을 많이 제공한다.
-  - 단점
-    - 일반적인 Python의 코드 흐름과 다른, pytest만의 독자적인 방식을 사용하기에 pylint 등의 코드 분석 툴이 에러로 감지할 수 있다.
+  ```python
+  class OrderAmountSum:
+      def __init__(self, amounts):
+          self.plus_sum = 0
+          self.minus_sum = 0
+          self.add_minus_amont(amounts)
+          self.add_minus_amont(amounts)
+  
+      def get_sum_amount(self):
+          return self.plus_sum + self.minus_sum
+      
+      def add_plus_amount(self, amounts):
+          self.plus_sum = sum([num for num in amounts if num > 0])
+      
+      def add_minus_amont(self, amounts):
+          self.minus_sum = sum([num for num in amounts if num < 0])
+  
+  # 테스트 코드
+  def test_order_amount_sum():
+      oas = OrderAmountSum([1,2,3,-1,-1,-1])
+      # 부차적인 기능 테스트
+      assert oas.plus_sum == 6
+      # 부차적인 기능 테스트
+      assert oas.minus_sum == -3
+      assert oas.get_sum_amount() == 3
+  ```
 
+  - 만일 테스트 하려는 코드가 아래와 같이 바뀌었다고 생각해보자.
+    - 이제 기존에 작성했던 테스트는 `get_sum_amount`를 제외하고눈 전부 깨지게 된다.
 
+  ```python
+  class OrderAmountSum:
+      def __init__(self, amounts):
+          self.amounts = amounts
+  
+      def get_sum_amount(self):
+          return sum(self.amounts)
+  ```
 
-- unittiest
-  - Python 자체의 테스트 및 Django에서 사용중이다.
-  - 장점
-    - Python 기본 내장 라이브러리로 별도 설치가 필요 없다.
-    - 다른 언어의 테스트 툴과 거의 사용법이 유사하다(Java의 JUnit이라는 테스트 프레임워크로부터 강한 영향을 받았다).
-  - 단점
-    - 테스트 코드를 작성하기 위해 반드시 클래스를 정의해야 하므로 코드가 장황해질 수 있다.
-    - 보일러 플레이트 코드가 많아진다는 단점이 있다(매번 클래스를 생성하고, unitest를 상속 받아야 한다).
-    - 테스트를 위한 메서드들이 모두 캐멀 케이스이다.
+  - 따라서 부가적인 기능을 전부 테스트하기보다는 비즈니스 기능 단위의 검증만 테스트코드로 작성하는 것이 낫다.
+    - 이것에 구현에 독립적인 테스트를 작성하는 최선의 방법이다.
 
 
 
 ## 용어
 
+> https://martinfowler.com/bliki/TestDouble.html
+>
+> https://martinfowler.com/articles/mocksArentStubs.html
+>
+> https://blog.pragmatists.com/test-doubles-fakes-mocks-and-stubs-1a7491dfa3da
+>
+> http://xunitpatterns.com/Test%20Double%20Patterns.html
+
+
+
+- SUT(System Under test)
+  - 테스트하고자하는 대상이 되는 unit을 의미한다.
+  - 테스트 코드가 아닌, 테스트 코드를 통해 테스트하고자 하는 unit을 의미한다.
+  -  OUT(Object-Under-Test)라고도 불린다.
+
+
+
+- 협력객체
+  - 테스트하고자하는 대상이 되는 unit은 아니지만, 테스트에 사용되는 객체.
+  - SUT이 의존성을 가진 객체라고 볼 수 있다.
+
+
+
 - test double
   - 실제 객체를 대신해서 테스팅에서 사용하는 모든 방법의 총칭
   - 영화에서 위험한 장면을 대신 촬영하는 배우를 뜻하는 stunt double에서 유래되었다.
   - mock, fake, stub 등
-
-
-
-
-- fixture
-  - 테스트를 하는데 필요한 부분들을 미리 준비해 놓은 리소스 혹은 코드.
-  - 예를 들어 어떤 테스트를 진행하는데 DB와 연결이 필요하다면 DB와 연결하는 코드가 fixture가 될 수 있다.
+    - 이들의 구분은 모호하다.
+    - 따라서 정확히 이들의 차이가 무엇인지 보다는 테스트에 어떻게 이들의 특성을 활용할 것인지를 고민해야 한다.
 
 
 
@@ -106,7 +151,8 @@
   ```
 
   - 테스트 코드 작성
-    - 실제 의존하는 클래스가 아닌, mock object를 주입한다.
+    - 실제 의존하는 클래스(`CellPhoneService`)가 아닌, mock object를 주입한다.
+    - 얼핏 보면 상태 기반 테스트처럼 보이지만 `is_send_mms_called`, `send_msg`라는 상태를 체크하는 것이 아니라 해당 상태를 통해 행위를 체크하는 것이다.
 
   ```python
   class CellPhoneService:
@@ -152,21 +198,77 @@
       assert cell_phone_mms_sender_mock.send_msg=="Hello World!"
   ```
 
-  
+  -  Mock Object 사용시 주의 사항
+    - Mock Object를 만들기 전에 정말 필요한 것인지 생각해본다.
+    - Mock Object를 사용한 테스트가 통과했다는 사실이 실제 객체가 들어왔을 때에도 잘 동작한다는 것을 보장하지는 않는다.
+
+
+
+- stub
+
+  - 테스트 중인 유닛의 요청에 따라 canned answer를 제공하는 객체.
+    - canned answer란 정해진 질문에 대해 사전에 준비한 답을 의미한다.
+    - 미리 정의된 data를 가지고 있다가 테스트 대상 유닛으로부터 요청이 오면 해당 데이터를 반환한다.
+
+  - 아래와 같은 경우에 주로 사용한다.
+    - 구현이 되지 않은 함수나 라이브러리에서 제공하는 함수를 사용할 때.
+    - 함수가 반환하는 값을 임의로 생성하고 싶을 때(주로 특이한 예외 상황을 테스트하고자 할 때).
+    - 의존성을 가지는 유닛의 응답을 모사하여 독립적으로 테스트를 수행하고자 할 때.
 
 
 
 
-- 마저 작성
-  - https://medium.com/@SlackBeck/mock-object%EB%9E%80-%EB%AC%B4%EC%97%87%EC%9D%B8%EA%B0%80-85159754b2ac
-  - https://medium.com/@SlackBeck/%ED%85%8C%EC%8A%A4%ED%8A%B8-%EC%8A%A4%ED%85%81-test-stub-%EC%9D%B4%EB%9E%80-%EB%AC%B4%EC%97%87%EC%9D%B8%EA%B0%80-ff9c8840c1b0#.68pavd8tg
-  - https://eminentstar.github.io/2017/07/24/about-mock-test.html
+- 상태 기반 테스트와 행위 기반 테스트
+
+  - 정의
+
+    - 상태 기반 테스트: 메서드가 실행된 후 SUT과 협력객체의 상태를 살펴봄으로써 실행된 메서드가 올바르게 동작했는지를 판단한다.
+    - 행위 기반 테스트: SUT이 협력객체의 메서드를 올바르게 호출했는지를 판단한다.
+
+  - 상태 기반 테스트
+  - 행위 기반 테스트
 
 
 
 
 
-## pytest
+
+- fixture
+  - 테스트를 하는데 필요한 부분들을 미리 준비해 놓은 리소스 혹은 코드.
+  - 예를 들어 어떤 테스트를 진행하는데 DB와 연결이 필요하다면 DB와 연결하는 코드가 fixture가 될 수 있다.
+
+
+
+## Test in Python
+
+- Python에서 널리 사용되는 test 라이브러리에는 아래와 같은 것들이 있다.
+  - pytest
+  - unittiest
+
+
+
+- pytest
+  - Flask, Requests, pip에서 사용중이다.
+  - 장점
+    - unitest가 지원하지 않는 고급 기능을 많이 제공한다.
+  - 단점
+    - 일반적인 Python의 코드 흐름과 다른, pytest만의 독자적인 방식을 사용하기에 pylint 등의 코드 분석 툴이 에러로 감지할 수 있다.
+
+
+
+- unittiest
+  - Python 자체의 테스트 및 Django에서 사용중이다.
+  - 장점
+    - Python 기본 내장 라이브러리로 별도 설치가 필요 없다.
+    - 다른 언어의 테스트 툴과 거의 사용법이 유사하다(Java의 JUnit이라는 테스트 프레임워크로부터 강한 영향을 받았다).
+  - 단점
+    - 테스트 코드를 작성하기 위해 반드시 클래스를 정의해야 하므로 코드가 장황해질 수 있다.
+    - 보일러 플레이트 코드가 많아진다는 단점이 있다(매번 클래스를 생성하고, unitest를 상속 받아야 한다).
+    - 테스트를 위한 메서드들이 모두 캐멀 케이스이다.
+
+
+
+### pytest
 
 - 설치하기
 
@@ -595,9 +697,7 @@
 
 
 
-
-
-### fixture
+#### fixture
 
 
 - fixture
@@ -1059,7 +1159,7 @@
 
 
 
-### parameterize
+#### parameterize
 
 - test 함수에 인자 받기
   - pytest의 built-in marker인 `parametrize` 마커를 사용한다.
