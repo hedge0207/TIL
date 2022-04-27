@@ -78,6 +78,17 @@
 - 협력객체
   - 테스트하고자하는 대상이 되는 unit은 아니지만, 테스트에 사용되는 객체.
   - SUT이 의존성을 가진 객체라고 볼 수 있다.
+  - DOC(Depended-On Conponent)라고도 부른다.
+
+
+
+- 상태 기반 테스트와 행위 기반 테스트
+  - 상태 기반 테스트(statebased test)
+    - 상태 검증(state verification)이라고도 부른다.
+    - 메서드가 실행된 후 SUT과 협력객체의 상태를 살펴봄으로써 실행된 메서드가 올바르게 동작했는지를 판단한다.
+  - 행위 기반 테스트(behavior based test)
+    - 행위 검증(behavior verification)이라고도 부른다.
+    - SUT이 협력객체의 메서드를 올바르게 호출했는지를 판단한다.
 
 
 
@@ -87,6 +98,61 @@
   - mock, fake, stub 등
     - 이들의 구분은 모호하다.
     - 따라서 정확히 이들의 차이가 무엇인지 보다는 테스트에 어떻게 이들의 특성을 활용할 것인지를 고민해야 한다.
+
+
+
+- Fake
+
+  - 실제로 동작하는 구현을 가지고는 있지만, 실제 프로덕션에는 적합하지 않은 객체이다.
+    - 일반적으로 단순화된 동작을 제공한다.
+    - 인메모리 데이터 베이스가 좋은 예이다.
+  - 예를 들어 게시글을 작성하는 코드의 테스트 코드를 작성해야 한다고 가정해보자.
+    - 게시글 작성을 위해서 사용자는 반드시 토큰을 함께 보내야 한다.
+    - 그런데 아직 사용자 관련 기능이 구현되지 않아 DB에서 사용자 정보를 가져올 수 없는 상황이다.
+    - 이 때  DB와 통신하는 가짜 객체(Fake)를 만들어 실제 DB와 통신하는 것 처럼 동작하게 할 수 있다.
+
+  ```python
+  class PostRepository:
+      def create_post(self, token, post_id, content):
+          pass
+      
+      def get_post(self, post_id):
+          pass
+  
+  class FackAccountRepository:
+      def __init__(self):
+          # 인 메모리 데이터베이스 역할
+          self.accounts = {}
+      
+      def hash_password(self):
+          pass
+      
+      def get_token(self, user_name, password):
+          pass
+      
+      def sign_in(self, user_name, password):
+          self.accounts[user_name] = self.hash_password(password)
+      
+      def login(self, user_name, password):
+          hased_password = self.accounts.get(user_name)
+          if hased_password == self.hash_password(password):
+              return self.get_token(user_name)
+  
+  def test_create_post():
+      encoded_pwd = "e1geg544g8sd4gege"
+      fake_repo = FackAccountRepository()
+      fake_repo.sign_in("John", "1234")
+      token = fake_repo.login("John", "1234")
+      post_repo = PostRepository()
+      post_repo.create_post(token,"1", "some_content")
+      post = post_repo.get_posts("1")
+      assert post.id == "1"
+      assert post.content == "some_content"
+  ```
+
+  - 주의 사항
+    - Fake 오브젝트는 다른 오브젝트를 대체하는 간소화된 오브젝트라고는 해도, 경우에 따라서는 상당한 코드를 작성해야 할 수도 있다.
+    - Fake 오브젝트가 정상적으로 동작한다는 것을 보장해야하기에 Fake 오브젝트를 테스트하는 테스트 코드를 작성해야 할 수도 있다.
 
 
 
@@ -204,31 +270,41 @@
 
 
 
-- stub
+- Stub
 
   - 테스트 중인 유닛의 요청에 따라 canned answer를 제공하는 객체.
     - canned answer란 정해진 질문에 대해 사전에 준비한 답을 의미한다.
     - 미리 정의된 data를 가지고 있다가 테스트 대상 유닛으로부터 요청이 오면 해당 데이터를 반환한다.
-
   - 아래와 같은 경우에 주로 사용한다.
     - 구현이 되지 않은 함수나 라이브러리에서 제공하는 함수를 사용할 때.
     - 함수가 반환하는 값을 임의로 생성하고 싶을 때(주로 특이한 예외 상황을 테스트하고자 할 때).
     - 의존성을 가지는 유닛의 응답을 모사하여 독립적으로 테스트를 수행하고자 할 때.
-
-
-
-
-- 상태 기반 테스트와 행위 기반 테스트
-
-  - 정의
-
-    - 상태 기반 테스트: 메서드가 실행된 후 SUT과 협력객체의 상태를 살펴봄으로써 실행된 메서드가 올바르게 동작했는지를 판단한다.
-    - 행위 기반 테스트: SUT이 협력객체의 메서드를 올바르게 호출했는지를 판단한다.
-
-  - 상태 기반 테스트
-  - 행위 기반 테스트
-
-
+  - 예시
+    - 만약 영어를 일본어로 번역하고 일본어를 다시 한국어로 번역하는 서비스를 개발한다고 가정해보자.
+    - 일본어를 한국어로 번역하는 기능은 직접 개발하고, 영어를 일본어로 번역하는 기능은 비용이 발생하는 외부 API를 사용한다면, 테스트 할 때마다 비용이 발생하므로 사용이 부담스럽다.
+    - 따라서 외부 API가 반환한 영어를 일본어로 번역한 결과물을 stub으로 생성하고 테스트 할 때는 외부 API에 요청을 보내는 대신 stub에서 데이터를 받아오는 식으로 구현이 가능하다.
+  
+  ```python
+  def english_to_japanese_stub():
+      return {"original":"Hello", "translated":"こんにちは"}
+  
+  def japanese_to_korean():
+      """
+      일본어를 한국어로 번역한 후 번역된 한국어를 반환
+      """
+  
+  def test_foo():
+      japanese = english_to_japanese_stub()
+      result = japanese_to_korean(japanese)
+      assert result == "안녕하세요"
+  ```
+  
+  - 주의사항
+    - 정해진 질문에 대한 정해진 답변(canned answer)만 반환하므로 다양한 경우에 대한 테스트가 어려울 수 있다.
+  
+  - Mock과 stub의 차이
+    - Mock은 행위 검증에 사용한다.
+    - Mock을 제외한 다른 test double들은 상태 검증에 사용한다.
 
 
 
