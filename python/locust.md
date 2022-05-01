@@ -87,7 +87,7 @@
     - Spwan rate: 시작할 때 몇 명의 사용자로 시작할지, 초당 몇 명씩 사용자를 늘릴지 설정한다.
     - Host: 테스트하려는 API의 주소를 입력한다.
 
-  ![image-20220428093431331](locust.assets/image-20220428093431331.png)
+  ![locust_main](D:\github\TIL\python\python_part8.assets\locust_main.png)
 
   - Command line으로 바로 시작하기
     - Web UI는 부가적인 기능으로 꼭 사용해야하는 것은 아니다.
@@ -99,6 +99,13 @@
 
 
 
+- locust의 기본적인 동작 과정은 다음과 같다.	
+  - 설정한 사용자 수 만큼 User class의 instance를 생성한다.
+  - user instance는 각자의 green thread 안에서 동작을 시작한다.
+  - 각 user instance는 task를 선택하고, task를 실행한다.
+  - 그 후 설정된 시간 만큼 대기한다.
+  - 대기 시간이 끝나면 다시 다음 task를 선택하고, 실행한다.
+
 
 
 
@@ -109,12 +116,6 @@
 
 - locustfile은 적어도 하나의 사용자 클래스가 있어야 한다.
   - 사용자 클래스인지는 `HttpUser` class를 상속 받은 class의 유무에 따라 판단한다.
-
-
-
-- 사용자 클래스는 `HttpUser` class를 상속받는다.
-  - 이를 통해 `HttpUser`의 attribute인 `client`에 접근할 수 있게 된다.
-  - `client`는 `HttpSession`의 instance로, load test 대상 시스템에 HTTP 요청을 보내는 데 사용된다.
 
 
 
@@ -133,7 +134,100 @@
 
 
 
-## 옵션들
+### HttpUSer
+
+- 사용자 클래스는 `HttpUser` class를 상속받는다.
+  - 이를 통해 `HttpUser`의 attribute인 `client`에 접근할 수 있게 된다.
+  - `client`는 `HttpSession`의 instance로, load test 대상 시스템에 HTTP 요청을 보내는 데 사용된다.
+    - `HttpSession`은 `requests` 모듈의 `Session`를 상속받는다.
+
+
+
+- validating response
+
+  - 기본적으로 response code가 OK면 request가 성공한 것으로 간주한다.
+  - 이를 custom할 수 있다.
+    - `catch_response`를 True로 준다.
+
+  ```python
+  with self.client.get("/", catch_response=True) as response:
+      if response.text != "Success":
+          response.failure("Got wrong response")
+      elif response.elapsed.total_seconds() > 0.5:
+          response.failure("Request took too long")
+  ```
+
+  - 아래와 같이 400 이상의 status code가 반환되었을 때에도 성공으로 간주하게 할 수 있다.
+
+  ```python
+  with self.client.get("/does_not_exist/", catch_response=True) as response:
+      if response.status_code == 404:
+          response.success()
+  ```
+
+
+
+- JSON 형식으로 request보내고 응답 받아오기
+
+  ```python
+  from json import JSONDecodeError
+  ...
+  with self.client.post("/", json={"foo": 42, "bar": None}, catch_response=True) as response:
+      try:
+          if response.json()["greeting"] != "hello":
+              response.failure("Did not get expected value in greeting")
+      except JSONDecodeError:
+          response.failure("Response could not be decoded as JSON")
+      except KeyError:
+          response.failure("Response did not contain expected key 'greeting'")
+  ```
+
+
+
+- Grouping requests
+
+  - query parameter를 받는 경우 qeury parameter가 변경될 때마다 각기 다른 endpoint로 요청을 보내는 것으로 간주된다.
+    - 즉 아래 예시와 같은 요청은 10개의 endpoint에 대한 요청을 1번씩 보내는 것으로 간주된다.
+    - 이럴 경우 나중에 결과를 통계내기 어려워질 수 있으므로 그룹화 해야한다.
+
+  ```python
+  for i in range(10):
+      self.client.get("/blog?id=%i" % i, name="/blog?id=[id]")
+  ```
+
+  - 그룹화하기
+
+  ```python
+  # /blog?id=[id] 라는 이름으로 그룹화된다.
+  self.client.request_name="/blog?id=[id]"
+  for i in range(10):
+      self.client.get("/blog?id=%i" % i)
+  self.client.request_name=None
+  ```
+
+  - boilerplate를 최소화하기 위해 아래와 같이 작성하는 것도 가능하다.
+
+  ```python
+  @task
+  def multiple_groupings_example(self):
+      # Statistics for these requests will be grouped under: /blog/?id=[id]
+      with self.client.rename_request("/blog?id=[id]"):
+          for i in range(10):
+              self.client.get("/blog?id=%i" % i)
+  
+      # Statistics for these requests will be grouped under: /article/?id=[id]
+      with self.client.rename_request("/article?id=[id]"):
+          for i in range(10):
+              self.client.get("/article?id=%i" % i)
+  ```
+
+  
+
+
+
+
+
+### 옵션들
 
 - `wait_time`
 
@@ -235,14 +329,40 @@
 
 
 
-## task
+- etc
+
+  - host를 미리 지정할 수 있다.
+
+  ```python
+  class QuickstartUser(HttpUser):
+      host = "http://192.168.0.242:8002"
+  ```
+
+  - 사용자가 테스트를 시작할 때와 종료할 때 수행할 메서드를 설정 가능하다.
+    - `on_start`, `on_stop` 메서드를 선언한다.
+    - `on_start`는 사용자가 TaskSet을 실행하기 시작 했을 때, `on_stop`은  `interrupt()`가 호출되거나 해당 사용자가 kill 됐을 때 실행된다.
+
+  ```python
+  class QuickstartUser(HttpUser):
+      def on_start(self):
+          self.client.post("/login", json={"username":"foo", "password":"bar"})
+      
+      def on_stop(self):
+          print("QuickstartUser stop test")
+  ```
+
+
+
+
+
+## Task
 
 - task 생성하기
 
-  - 사용자가 어떤 동작을 할 것인지를 정의한 메서드이다.
+  - 사용자가 어떤 동작을 할 것인지를 정의한 시나리오이다.
   - User class의 method로 선언한다.
     - `@task` decorator를 붙여야한다.
-    - 테스트가 시작되면 `QuickstartUser`의 instance들이 생성되고 각 instance들은 `hello_world`를 실행한다.
+    - 테스트가 시작되면 `QuickstartUser`의 instance들이 생성되고 각 instance들은 `foo`를 실행한다.
 
   ```python
   from locust import HttpUser, task
@@ -270,19 +390,124 @@
           self.client.get("/bar")
   ```
 
+
+
+
+- Task를 user class의 method가 아닌 일반 함수로 선언하는 것도 가능하다.
+
+  - 일반 함수로 선언 후 user class의 `tasks` attribute에 할당한다.
+    - user를 인자로 받는다.
+    - `tasks` attribute는 callable이나 TaskSet class를 list 형태, 혹은 dict 형태로 받는다.
+
+  ```python
+  from locust import User
   
+  def my_task(user):
+      pass
+  
+  class MyUser(User):
+      tasks = [my_task]
+  ```
+
+  - 가중치 설정하기
+    - dict 형태로 선언한다.
+    - key에 task를, value에 가중치를 넣는다.
+
+  ```python
+  from locust import User
+  
+  def my_task(user):
+      pass
+  
+  def another_task(user):
+      pass
+  
+  class MyUser(User):
+      # another_task에 비해 my_task가 3배 더 실행될 확률이 높다.
+      tasks = {my_task:3, another_task:1}
+  ```
+
+
+
+- Tag 설정하기
+
+  - `@tag` decorator를 통해 tag 설정이 가능하다.
+    - 테스트 실행시에 `--tags` 혹은 `--exclude-tags` 옵션으로 어떤 tag가 붙어있는 task를 수행할지, 혹은 수행하지 않을지 지정 가능하다.
+    - 예를 들어 `locust --tags tag1`은 task1과 task2만 실행한다.
+
+  ```python
+  from locust import User, constant, task, tag
+  
+  class MyUser(User):
+      wait_time = constant(1)
+  
+      @tag('tag1')
+      @task
+      def task1(self):
+          pass
+  
+      @tag('tag1', 'tag2')
+      @task
+      def task2(self):
+          pass
+  
+      @tag('tag3')
+      @task
+      def task3(self):
+          pass
+  
+      @task
+      def task4(self):
+          pass
+  ```
 
 
 
 
 
+## Event
+
+- test시작, 종료시에 실행될 코드 작성하기
+
+  - `@events.test_start.add_listener`, `@events.test_stop.add_listener` decorator를 사용한다.
+
+  ```python
+  from locust import events
+  
+  # test_start라는 event에 대한 listener를 추가한다.
+  @events.test_start.add_listener
+  def on_test_start(environment, **kwargs):
+      print("A new test is starting")
+  
+  # test_stop이라는 event에 대한 listener를 추가한다. 
+  @events.test_stop.add_listener
+  def on_test_stop(environment, **kwargs):
+      print("A new test is ending")
+  ```
 
 
 
+- `init` event
+
+  - 각 locust process가 시작될 때 trigger 된다.
+  - 분산 모드에서 각 locust process가 initialization이 필요할 때 유용하다.
+
+  ```python
+  from locust import events
+  from locust.runners import MasterRunner
+  
+  @events.init.add_listener
+  def on_locust_init(environment, **kwargs):
+      if isinstance(environment.runner, MasterRunner):
+          print("I'm on master node")
+      else:
+          print("I'm on a worker or standalone node")
+  ```
 
 
 
+- 더 상세한 event hook은 아래 링크 참고
 
+  - https://docs.locust.io/en/stable/api.html#event-hooks
 
-
-
+  - command line의 option을 custom하거나 각 request event마다 특정 동작을 수행하는 것이 가능하다.
