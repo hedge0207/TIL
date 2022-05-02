@@ -97,10 +97,103 @@
     - 2010년 Compass에서 Elasticsearch라고 이름을 바꾸고 프로젝트를 오픈소스로 공개.
     - 2012년에 창시자 샤이 배논과 함께 스티븐 셔르만, 우리 보네스 그리고 아파치 루씬 커미터인 사이먼 윌너 4인이 네델란드 암스텔담에서 회사를 설립 설립.
     - 현재는 주 본사인 네덜란드 암스테르담과 캘리포니아 마운틴 뷰를 비롯한 전 세계에 직원들이 분포되어 있다.
-    -  Logstash, Kibana와 함께 사용 되면서 한동안 ELK Stack (Elasticsearch, Logstash, Kibana) 이라고 널리 알려지게 된 Elastic은 2013년에 Logstash, Kibana 프로젝트를 정식으로 흡수.
+    - Logstash, Kibana와 함께 사용 되면서 한동안 ELK Stack (Elasticsearch, Logstash, Kibana) 이라고 널리 알려지게 된 Elastic은 2013년에 Logstash, Kibana 프로젝트를 정식으로 흡수.
     - 2015년에는 회사명을 Elasticsearch 에서 Elastic으로 변경 하고, ELK Stack 대신 제품명을 Elastic Stack이라고 정식으로 명명하면서 모니터링, 클라우드 서비스, 머신러닝 등의 기능을 계속해서 개발, 확장 하고 있다.
     - 창시자인 샤이 배논은 트위터와 공식 아이디로 kimchy 를 사용하고 있는데, 2000년대 초반 한국에서 생활한 적이 있어 김치를 좋아한다고도 이야기 하고 있고, 또 Kimchy는 샤이 배논의 어머니 성씨이기도 하다.
     - 샤이 배논은 동양 문화에 관심이 많으며 Elasticsearch 첫 로고는 소나무 분재였고 샤이 배논의 블로그에는 지금도 용(竜) 한자가 메인 로고로 있다.
+
+
+
+- Lucene
+
+  - 오픈소스 기반의 검색 라이브러리.
+  - 색인, 검색, 형태소 분석 등 검색 엔진이 갖춰야 하는 기본 기능을 제공한다.
+
+  - Lucene 기반의 대표적인 검색 엔진
+    - Elasticsearch
+    - Solr
+  - Index, Document, Field, Term, Inverted Index 등 Lucene의 기본 개념은 elasticsearch에서도 그대로 사용된다.
+
+
+
+- Index File Foramts
+
+  > https://lucene.apache.org/core/9_1_0/core/org/apache/lucene/codecs/lucene91/package-summary.html#package.description
+
+  - Segment File이라고도 한다.
+  - Segment File은 여러 Index File Formats 중 하나이다.
+  - Index File에는 아래와 같은 정보가 저장되어, 색인과 검색 시에 활용된다.
+    - Field
+    - Field Data
+    - Term
+    - Frequenciies Position
+    - Delete Documents
+  - file format의 종류
+
+  ![](Elasticsearch_part1.assets/image_20220430101924294_16514513898521.png)
+
+
+
+- 색인
+
+  - IndexWriter가 Index File들을 생성하는 과정
+
+    > IndexWriter의 [source code](https://github.com/apache/lucene/blob/d5d6dc079395c47cd6d12dcce3bcfdd2c7d9dc63/lucene/core/src/java/org/apache/lucene/index/IndexWriter.java)
+
+  - 수정이 불가능한 Immutable Type
+
+    - 수정, 삭제가 발생하면 실제로 수정, 삭제는 이루어지지 않고 새로운 Segments file을 생성한다.
+
+  - 여러개로 생성된 Segments file들을 merge라는 작업을 통해 하나의 색인 파일로 만드는 과정이 필요하다.
+
+  - 하나의 Index는 하나의 IndexWriter로 구성된다.
+
+  - 색인 과정
+
+  ![](Elasticsearch_part1.assets/image_20220430102842642_16514514070062.png)
+
+
+
+- 검색
+
+  - 색인이 IndexWriter를 통해 이루어진다면, 검색은 IndexSearcher를 통해 이루어진다.
+
+    > IndexSearcher의 [source code](https://github.com/apache/lucene/blob/d5d6dc079395c47cd6d12dcce3bcfdd2c7d9dc63/lucene/core/src/java/org/apache/lucene/search/IndexSearcher.java)
+
+  - 하나의 Index에는 Segment별로 N개의 LeafReader가 존재한다.
+
+    - LeafReader가 여러 개로 나뉘어져 있는 각 Segment 정보를 읽어온다.
+
+  - 검색의 흐름
+
+    - IndexSearcher로 query가 들어온다.
+    - IndexSearcher는 IndexLeader를 통해서 LeafReader의 list를 받아온다.
+    - 각 LeafReader를 순회하면서 입력으로 받은 query를 통해 검색이 실행된다.
+    - 각 LeafReader가 검색한 결과를 CollectorManager가 수집한다.
+    - 수집된 결과를 정렬, 필요한 개수 만큼만 잘라낸 후 반환한다.
+
+
+
+- 형태소 분석
+
+  - 입력 받은 문자열을 검색 가능한 정보 구조로 분석 및 분해하는 과정
+
+  - 아래와 같은 구성 요소로 이루어져 있다.
+    - Analyzer
+    - Tokenizer
+    - CharFilter
+    - TokenFilter
+
+  - 형태소 분석 과정
+    - Text가 입력된다.
+    - CharFilter에서 불필요한 것들을 제거한다.
+    - 그 결과물을 가지고 Tokenizer에서 Token들을 생성한다.
+    - 생성된 Token들은 TokenFilter를 통해 filtering되고 최종 결과물이 된다.
+  - 분석 결과에는 Position 결과와 Offest 정보가 나오게 된다.
+    - Position은 0부터 시작해서 1씩 증가하는 구조를 가진다.
+    - Offset은 Token의 start와 end에 대한 정보를 가지고 있다.
+    - End offset은 실제보다 1 크게 추출되는데, 이는 lucene 내부에서 `substring()`을 사용하기 때문이다.
+  - 추출된 Token, Position, Offset 정보를 포함하여 Term이라 하고, 이를 사용하여 강조와 동의어에 활용한다.
 
 
 
@@ -421,6 +514,57 @@
     - 실제 데이터를 저장하고 처리하지는 않지만, 사용자의 색인이나 검색 등 모든 요청을 데이터 노드에 전달하는 역할을 한다.
     - 문서를 저장하지 않는 데이터 노드라고도 생각할 수 있다.
     - 클라이언트 노드라고도 부른다.
+
+
+
+- 노드의 역할 13가지
+
+  > hot, cold, warm, frozen과 같이 data tier가 나뉘어 있긴 하지만 그렇다고 데이터가 각 노드들에 자동으로 옮겨지는 것은 아니다.
+  >
+  > 굳이 data tier 개념을 노드에 적용한 것은 각 tier별로 hardware 스펙을 동일하게 하게 맞추도록 하려는 의도이다.
+  >
+  > data node 끼리는 hardware 스펙을 동일하게 맞춰주는 것이 좋다. 각기 다를 경우 병목 현상으로 색인, 검색 시에 성능에 문제가 생길 수 있다.
+  >
+  > 단, index에 data tier를 설정하면, 해당 tier에 맞는 노드로 index가(정확히는 인덱스의 shard가) 할당된다.
+
+  - master
+    - 클러스터의 상태를 변경
+    - 클러스터의 상태를 모든 노드에 게시
+    - 전역 클러스터 상태를 유지
+    - 샤드에 대한 할당과 클러스터 상태 변화 게시
+  - data
+    - 문서의 색인 및 저장
+    - 문서의 검색 및 분석
+    - 코디네이팅
+  - data_content
+    - 색인과 검색 요청이 많은 경우 사용
+  - data_hot
+    - 색인에 대한 요청이 많으며 자주 검색 요청을 하게 되는 경우
+    - log, metrics 등의 time series 데이터들에 주로 사용
+  - data_warm
+    - time series 데이터를 유지하고 있는 노드로 업데이트와 검색이 드물게 이루어지는 경우
+  - data_cold
+    - time series 데이터를 유지하고 있는 노드로 업데이트와 검색이 거의 이루어지지 않는 경우
+  - data_frozen
+    - time series 데이터를 유지하고 있는 노드로 업데이트와 검색이 아예 이루어지지 않는 경우
+  - ingest
+    - 클러스터 내 적어도 하나 이상의 ingest 역할을 하는 노드가 필요하다(ingest pipeline 기능을 사용하기 위해 필요하다).
+    - master, data 역할을 같이 수행하지 않는 것이 좋다.
+    - 색인 전에 데이터에 대한 전처리를 위해 사용한다.
+  - ml
+    - xpack에서 제공하는 머신러닝 기능을 사용하기 위한 노드
+    - basic에서는 사용이 불가능하다.
+  - remote_cluster_client
+    - 다른 클러스터에 연결되어 해당 클러스트의 원격 노드 역할을 수행하는 노드
+  - transform
+    - 색인된 데이터로부터 데이터의 pivot이나 latest 정보를 별도 데이터로 변환해서 transform index로 저장한다.
+  - voting_only
+    - 마스터 노드를 선출하는 역할만 하는 노드
+    - 마스터 노드 역할을 동시에 줘야하지만, 마스터 노드로 선출되지 않는다.
+  - coordinating node
+    - 모든 노드가 설정해준 역할과 무관하게 수행하는 역할이다.
+    - `node.rules`에 빈 리스트를 주면 순수 coordinating node가 된다.
+    - 주로 search reqeust를 받거나 bulk indexing request를 받는 역할을 한다.
 
 
 
