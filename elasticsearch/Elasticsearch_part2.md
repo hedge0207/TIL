@@ -695,6 +695,55 @@
 
 
 
+
+
+# Circuit Breaker Settings
+
+- Circuit Breaker Settings
+  - node level에서 설정한다.
+  - OOM이 발생하지 않도록 안전장치를 걸어두는 것이다.
+  - 검증된 기본값들이 설정되어 있지만, 문제 발생시(OOM이 빈번하게 발생) 튜닝이 필요할 수 있다.
+
+
+
+- Parent circuit breaker
+  - 전체 heap size에 대한 total limit
+  - `indices.breaker.total.use_real_memory`
+    - 전체 heap size를 전부 사용할 것인지 여부를 설정한다.
+    - 기본값은 true
+  - `indices.breaker.total.limit`
+    - `indices.breaker.total.use_real_memory`이 true면 95%로 설정된다.
+    - `indices.breaker.total.use_real_memory`이 false면 기본값으로 70%로 설정된다.
+
+
+
+- Field data circuit breaker
+  - Aggregation, sorting 등에 사용되는 Field data cache가 과도한 heap memory를 사용하는 것을 방지하는 목적이다.
+  - `indices.breaker.fielddata.limit`
+    - field data cache가 heap size를 최대 몇 퍼센트까지 사용할 수 있는지 설정한다.
+    - 기본값은 heap size의 40%로 설정되어 있다.
+  - `indices.breaker.fielddata.overhead`
+    - field data cache의 크기를 몇 배로 측정할 것인지를 설정한다.
+    - `indices.breaker.fielddata.limit`을 기본 값인 40%로 설정해 놨어도, 막상 40%가 되면 위험할 수 있다.
+    - 따라서 field data cache의 값을 실제보다 크게 측정하도록 하여 위에서 설정한 limit에 도달하는 것을 막을 수 있다.
+    - 예를 들어 2로 설정하면 heap memory의 20%를 사용하더라도 heap 메모리 사용에 제한이 걸리게 된다.
+    - 기본값은 1.03이다.
+
+
+
+- Reuqest circuit breaker
+  - Aggregation과 같은 요청에서 메모리 사용량 초과를 방지한다.
+  - `indices.breaker.request.limit`
+    - request 요청이 heap size 중 최대 몇 프로까지 사용할 수 있는지를 설정한다.
+    - 기본값은 60%.
+  - `indices.breaker.total.limit`
+    - `indices.breaker.fielddata.overhead` 설정과 같이 가중치를 얼마나 줄 것인지 설정하는 것이다.
+    - 기본값은 1이다.
+
+
+
+
+
 ## 클러스터와 인덱스의 설정 변경
 
 ### 클러스터 설정 변경
