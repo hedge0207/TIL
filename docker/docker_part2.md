@@ -28,6 +28,40 @@
 
 
 
+- USER 명령어
+
+  - Container를 실행시킬 user를 입력한다.
+  - Dockerfile을 사용하여 이미지를 만들다보면 권한 문제가 발생할 때가 있다.
+    - 예를 들어 `mkdir` 명령어를 사용하여 디렉터리를 생성해야 하는데 기본 사용자가 root 이외의 사용자로 설정되어 있어 생성이 불가능한 경우가 있다.
+    - 이 때 `sudo`를 붙이거나 `su -`을 통해 root 사용자로 변경도 불가능하다.
+    - 만일 가능하다고 해도 Docker는 기본적으로 Dockerfile에 작성된 매 명령을 수행할 때마다 이미지를 하나씩 생성하는 방식이다.
+    - 따라서 이전 명령에서 `su -`를 통해 root 사용자로 변경 했어도 다음 명령에서는 다시 기본 사용자로 돌아오게 된다.
+    - 반면에, USER 명령어를 통해 설정한 사용자는 모든 명령시에 자동으로 적용된다.
+
+  - 예시
+    - `elasticsearch:8.1.3` 이미지의 기본 사용자는 `elasticsearch`로 설정되어 있다.
+    - `elasticsearch`라는 사용자는 modules 디렉터리에 쓰기 권한이 없어 폴더 생성이 불가능하다.
+    - `USER` 명령어를 통해 root로 사용자를 변경한다.
+
+  ```dockerfile
+  # 문제
+  FROM docker.elastic.co/elasticsearch/elasticsearch:8.1.3
+  RUN mkdir -p /usr/share/elasticsearch/modules/test
+  RUN mkdir -p /usr/share/elasticsearch/modules/test2
+  
+  # 예시
+  FROM docker.elastic.co/elasticsearch/elasticsearch:8.1.3
+  USER root
+  RUN mkdir -p /usr/share/elasticsearch/modules/test
+  RUN mkdir -p /usr/share/elasticsearch/modules/test2
+  # elasticsearch:8.1.3 이미지의 경우 elasticsearch 사용자 이외의 사용자는 컨테이너 실행이 불가능하므로 다시 변경해준다.
+  USER elasticsearch	
+  ```
+
+
+
+
+
 
 - FROM 명령어
 
