@@ -87,7 +87,7 @@
     - Spwan rate: 시작할 때 몇 명의 사용자로 시작할지, 초당 몇 명씩 사용자를 늘릴지 설정한다.
     - Host: 테스트하려는 API의 주소를 입력한다.
 
-  ![locust_main](D:\github\TIL\python\python_part8.assets\locust_main.png)
+  ![locust_main](locust.assets/locust_main.png)
 
   - Command line으로 바로 시작하기
     - Web UI는 부가적인 기능으로 꼭 사용해야하는 것은 아니다.

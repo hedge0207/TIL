@@ -695,10 +695,7 @@
 
 
 
-
-
 ## Circuit Breaker Settings
-
 - Circuit Breaker Settings
   - node level에서 설정한다.
   - OOM이 발생하지 않도록 안전장치를 걸어두는 것이다.
