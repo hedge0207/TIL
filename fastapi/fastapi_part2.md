@@ -98,6 +98,63 @@
 
 
 
+- fastapi redirect response
+
+  - `status_code`를 따로 설정하지 않을 경우 `307 Temporary Redirect`를 반환한 후 바로 redirect url로 연결된다.
+    - 따로 설정해주는 것도 가능한데, status_code에 따라서 redirection이 발생하지 않을 수 있다.
+
+  - 방식1.
+
+  ```python
+  import uvicorn
+  from fastapi import FastAPI
+  from fastapi.responses import RedirectResponse
+  
+  app = FastAPI()
+  
+  
+  @app.get("/hello-world")
+  async def hello_world():
+      return "Hello!"
+  
+  
+  @app.get("/my-redirect")
+  async def redirect_typer():
+      return RedirectResponse("http://192.168.0.242:8002/hello-world")
+  
+  
+  if __name__ == '__main__':
+      uvicorn.run(app, host='0.0.0.0', port=8002)
+  ```
+
+  - 방식2.
+
+  ```python
+  import uvicorn
+  from fastapi import FastAPI
+  from fastapi.responses import RedirectResponse
+  
+  app = FastAPI()
+  
+  
+  @app.get("/hello-world")
+  async def hello_world():
+      return "Hello!"
+  
+  
+  @app.get("/my-redirect", response_class=RedirectResponse)
+  async def redirect_typer():
+      return "http://192.168.0.242:8002/hello-world"
+  
+  
+  if __name__ == '__main__':
+      uvicorn.run(app, host='0.0.0.0', port=8002)
+  ```
+
+
+
+
+
 
 
 # Testing
