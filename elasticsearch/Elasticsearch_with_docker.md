@@ -242,18 +242,26 @@
 
 
 
-- 각기 다른 서버에 설치된 node들로 클러스터 구성하기(with docker)
 
-  - 가장 중요한 설정은 `network.publish_host`이다.
-    - 만일 이 값을 따로 설정해주지 않을 경우 `network.host`의 기본 값은 0.0.0.0으로 설정된다.
-    - `network.host`는 내부 및 클라이언트의 요청 처리에 사용할 `network.bind_host`와 `network.pulbish_host`를 동시에 설정한다.
-    - 따라서 다른 node와 통신할 때 사용하는  `network.pulbish_host` 값은 docker container의 IP(정확히는 IP의 host)값이 설정된다.
-    - 그런데 docker container의 IP는 같은 docker network에 속한 것이 아니면 접근이 불가능하다.
-    - 한 서버에서, 다른 서버에 있는 docker network에 접근하는 것은 불가능하므로, 다른 서버에 있는 node가 접근할 수 있도록 docker network의 host가 아닌,서버의 host를 설정하고 port를 열어줘야한다.
-  - master node 생성하기
-    - `network.host`가 아닌 `network.publish_host`로 설정해줘야 한다.
-    - 그러나 docker container 내부에서는 docker network의 ip를 host로 사용하므로, `network.bind_host` 값에 서버의 host는 할당할 수 없다.
-    - 따라서 `network.publish_host`만 따로 설정해줘야한다.
+
+
+
+# 각기 다른 서버에 설치된 node들로 클러스터 구성하기(with docker)
+
+- 가장 중요한 설정은 `network.publish_host`이다.
+  - 만일 이 값을 따로 설정해주지 않을 경우 `network.host`의 기본 값은 0.0.0.0으로 설정된다.
+  - `network.host`는 내부 및 클라이언트의 요청 처리에 사용할 `network.bind_host`와 `network.pulbish_host`를 동시에 설정한다.
+  - 따라서 다른 node와 통신할 때 사용하는  `network.pulbish_host` 값은 docker container의 IP(정확히는 IP의 host)값이 설정된다.
+  - 그런데 docker container의 IP는 같은 docker network에 속한 것이 아니면 접근이 불가능하다.
+  - 한 서버에서, 다른 서버에 있는 docker network에 접근하는 것은 불가능하므로, 다른 서버에 있는 node가 접근할 수 있도록 docker network의 host가 아닌,서버의 host를 설정하고 port를 열어줘야한다.
+
+
+
+- master node 생성하기
+
+  - `network.host`가 아닌 `network.publish_host`로 설정해줘야 한다.
+  - 그러나 docker container 내부에서는 docker network의 ip를 host로 사용하므로, `network.bind_host` 값에 서버의 host는 할당할 수 없다.
+  - 따라서 `network.publish_host`만 따로 설정해줘야한다.
 
   ```yaml
   version: '3.2'
@@ -297,10 +305,10 @@
         # 위에서 설정한 cluster명과 동일하게 설정한다.
         - cluster.name=my-cluster
         # 합류할 cluster의 내의 node ip를 적어준다.
-        - discovery.seed_hosts=192.168.0.242:9300
+        - discovery.seed_hosts=<합류할 node의 host>:9300
         - bootstrap.memory_lock=true
         # 역시 마찬가지로 다른 서버의 node와 통신하기 위한 host를 입력한다.
-        - network.publish_host=192.168.0.231
+        - network.publish_host=<현재 서버의 host>
         - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       ulimits:
         memlock:
@@ -311,6 +319,78 @@
         - 9300:9300
       restart: always
   ```
+
+
+
+
+- 주의사항
+
+  > 아래 내용은 docker로 띄울 때 국한된 것이다.
+
+  - 만일 기본 포트인 9300이 아닌 다른 포트를 사용할 경우 `transport.port` 값을 반드시 설정해줘야한다.
+  - Docker로 생성한 두 개의 노드가 통신하는 과정은 다음과 같다.
+    - `discovery.seed_hosts`에 설정된 ip로 handshake 요청을 보낸다.
+    - `handshake`이 완료 되면 `network.publish_host`에 설정된 host + `transport.port`에 설정된 port를 응답으로 보낸다.
+    - 응답으로 받은 ip로 클러스터 구성을 위한 요청을 보낸다.
+    - 따라서 만일 `transport.port` 값을 설정해주지 않아 기본값인 9300으로 설정되었다면 `discovery.seed_hosts`에 다른 port를 입력했더라도 handshake 이후의 통신이 불가능해진다.
+
+  - 노드 A
+    - 아래와 같이 기본 port가 아닌 port를 사용한다면 `transport.port`를 반드시 설정해줘야한다.
+
+  ```yaml
+  version: '3.2'
+  
+  services:
+    node_A:
+      image: elasticsearch:8.1.3
+      container_name: node_A
+      environment:
+        - node.name=node_A
+        - cluster.name=remote-cluster
+        - bootstrap.memory_lock=true
+        - cluster.initial_master_nodes=node_A
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        # node A가 handshake 이후에 응답으로 보내는 ip는 아래 두 개의 값이 조합되어 생성된다.
+        - network.publish_host=<현재 node의 host>
+        - transport.port=9301
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      restart: always
+      ports:
+        - 9301:9301
+      networks:
+        - elasticsearch_elastic
+  ```
+
+  - 노드 B
+
+  ```yaml
+  version: '3.2'
+  
+  services:
+    node231:
+      image: theo_elasticsearch:8.1.3
+      container_name: node231
+      environment:
+        - node.name=node231
+        - cluster.name=remote-cluster
+        # handshake은 아래에서 설정한 ip로 이루어지고, handshake이 완료되면 node A는 응답으로 ip를 보낸다.
+        - discovery.seed_hosts=192.168.0.242:9301
+        - bootstrap.memory_lock=true
+        - network.publish_host=192.168.0.231
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      ports:
+        - 9300:9300
+      restart: always
+  ```
+
+  
 
   
 
