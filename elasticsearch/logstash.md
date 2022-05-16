@@ -183,7 +183,65 @@
 
 
 
+# output
 
+- elasticsearch output 사용시 template을 미리 정의할 수 있다.
+
+  - 아래와 같이 임의의 템플릿을 생성한다.
+
+  ```json
+  // template.json
+  {
+    "index_patterns": ["test*"],
+    "settings": {
+      "number_of_shards": 3
+    },
+    "mappings": {
+      "_source": {
+        "enabled": false
+      },
+      "properties": {
+        "host_name": {
+          "type": "keyword"
+        },
+        "created_at": {
+          "type": "date",
+          "format": "EEE MMM dd HH:mm:ss Z yyyy"
+        }
+      }
+    }
+  }
+  ```
+
+  - output 설정하기
+
+  ```yaml
+  input {
+      stdin {}
+  }
+  
+  output {
+      elasticsearch {
+          hosts => "<ES_HOST:PORT>"
+          action => "index"
+          template => "/usr/share/logstash/template.json"
+          template_overwrite => true
+          template_name => "bbung"
+          index => "test_index"
+      }
+  }
+  ```
+
+  - template 관련 옵션들
+    - `manage_template`(default true): 템플릿을 수동으로 관리할지 여부를 설정한다. 이 값이 true여야 나머지 옵션들도 의미가 있다.
+    - `template`: template 설정파일의 경로.
+    - `template_name`: 생성할 index template의 이름.
+    - `template_overwrite`: 동일한 이름의 template이 존재할 때 덮어씌울지 여부를 설정한다. 
+  - logstash 7.16 기준으로 legacy template을 생성한다.
+    - ES 7.8부터 index template 생성 방식이 변경되었는데, logstash로 생성할 경우 기존의 방식으로 index template을 생성한다.
+  - 템플릿은 최초 input이 들어올 때가 아닌, logstash가 실행될 때 생성된다.
+    - 만일 logstash가 실행됐음에도 template이 생성되지 않는다면 template 설정을 잘못했을 수 있다.
+    - log를 확인 후 `Failed to install template`와 같은 error 메시지가 있다면 template 파일을 확인 후 수정하면 된다.
 
 
 
