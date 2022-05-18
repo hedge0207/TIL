@@ -36,11 +36,31 @@
   WantedBy=multi-user.target
   ```
 
-  - 등록된 service를 실행한다.
+  - 아래 명령어로 등록 된 서비스들을 확인 가능하다.
 
   ```bash
-  $ systemctl start hello
+  $ systemctl list-units --type=service
   ```
+  
+  - `.service` 파일을 수정했을 경우 아래 명령어로 변경 사항을 적용한다.
+  
+  ```bash
+  $ systemctl daemon-reload
+  ```
+  
+  - 등록된 service를 실행한다.
+  
+  ```bash
+  $ systemctl start <서비스명>
+  ```
+  
+  - 특정 서비스의 상태 확인
+  
+  ```bash
+  $ systemctl status <서비스명>
+  ```
+  
+  
 
 
 
@@ -51,25 +71,49 @@
   - Description
 
     - 해당 유닛에 대한 설명
-
-  - Type
-
-    - 유닛 타입을 선언한다.
+- Type
+  
+  - 유닛 타입을 선언한다.
     - simple: 기본값으로, 유닛이 시작된 즉시 systemd는 유닛의 시작이 완료됐다고 판단한다.
-
-    - forking: 자식 프로세스 생성이 완료되는 단계까지를 systemd가 시작이 완료됐다고 판단한다.
-
+  
+  - forking: 자식 프로세스 생성이 완료되는 단계까지를 systemd가 시작이 완료됐다고 판단한다.
   - ExecStart
 
     - 시작 명령을 정의한다.
-
-  - ExecStop
-
-    - 중지 명령을 정의한다.
-
+- ExecStop
   
+  - 중지 명령을 정의한다.
+  - WorkingDirectory
+  - 해당 동작을 수행할 Directory를 지정한다.
 
 
+
+
+- 실행이 안 될 경우
+  - status 203이 뜨면서 실행이 안 될 경우 원인은 아래와 같다.
+    - shebang을 추가하지 않은 경우.
+    - 실행 파일 경로가 잘못된 경우.
+    - 실행 파일에 실행 권한이 없을 경우.
+
+
+
+- root 사용자가 아닌 사용자로 실행하려고 할 경우
+
+  - `systemctl`은 기본적으로 root 권한이 있어야한다.
+  - 만일 root 유저가 아닌 다른 사용자로 실행하고자 한다면 아래와 같이 `/etc/sudoers`에 추가해줘야한다.
+    - `ALL=NOPASSWD`는 매번 아래 명령어들을 입력할 때마다 비밀번호를 입력하지 않아도 실행되도록 해준다.
+    - 실행할 명령어를 `,`로 구분하여 나열해준다.
+
+  ```bash
+  <사용자명> ALL=NOPASSWD:/bin/systemctl start <service 명>, /bin/systemctl stop <service 명>, /bin/systemctl status <service 명>, /bin/systemctl restart <service 명>
+  ```
+
+  - 등록이 완료된 후에는 sudo를 붙여서 명령어를 실행하면 된다.
+  - 또한 `/usr/lib/systemd/system` 내부의 파일들을 root 권한이 있어야 수정이 가능하므로 아래와 같이 root 이외의 사용자에게 읽고 쓰는 권한을 준다.
+
+  ```bash
+  setfacl -m u:<사용자명>:rw <service 파일 경로>
+  ```
 
 
 
