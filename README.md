@@ -54,12 +54,6 @@
 
 <br/>
 
-## [IT 기술 용어](https://github.com/hedge0207/TIL/blob/master/CS/IT%20%EA%B8%B0%EC%88%A0%20%EC%9A%A9%EC%96%B4.md)
-
-<br/>
-
-<br/>
-
 ## [브라우저는 어떻게 동작하는가](https://github.com/hedge0207/TIL/blob/master/CS/%EB%B8%8C%EB%9D%BC%EC%9A%B0%EC%A0%80%EB%8A%94%20%EC%96%B4%EB%96%BB%EA%B2%8C%20%EB%8F%99%EC%9E%91%ED%95%98%EB%8A%94%EA%B0%80.md) 
 
 - 브라우저
@@ -1260,6 +1254,27 @@
 - ILM
 - Data streams
 - Search template
+
+<br/>
+
+<br/>
+
+## [Elasticsearch_part11](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part11.md)
+
+- Analyzer와 inverted index
+  - token filter
+- auto completion
+- completion suggestor
+
+<br/>
+
+<br/>
+
+## [Elasticsearch_with_docker](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_with_docker.md)
+
+- Docker로 ES, Kibana 설치하기
+  - Docker-compose로 설치하기
+- 각기 다른 서버에 설치된 node들로 클러스터 구성하기
 
 <br/>
 
