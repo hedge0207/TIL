@@ -945,6 +945,81 @@
 
 
 
+## gRPC
+
+> https://chacha95.github.io/2020-06-15-gRPC1/
+>
+> https://grpc.io/docs/what-is-grpc/introduction/
+
+- gRPC
+  - Google에서 개발한 RPC 시스템
+  - TCP/IP 프로토콜과 HTTP 2.0 프로토콜을 사용한다.
+    - HTTP 2.0은 HTTP 1.1의 프로토콜을 계승해 성능을 더욱 발전시켰다.
+  - HTTP 2.0의 특징
+    - Multiplexed Streams: 한 connection으로 동시에 여러 개의 메시지를 주고 받을 수 있으며, Response는 순서와 상관 없이 stream으로 주고 받는다.
+    - Stream Prioritization: 리소스간 우선 순위를 설정해 클라이언트가 먼저 필요로하는 리소스부터 보내준다.
+    - Server Push: 서버는 클라이언트의 요청에 대해 요청하지 않은 리소스를 마음대로 보내줄 수 있다.
+    - Header Compression: Header table과 Huffman Encoding 기법을 사용해 header를 압축한다.
+  - IDL로 protocol buffers를 사용한다.
+    - google에서 자체 개발한 IDL이다.
+    - 구조화된 데이터를 직렬화 할 수 있게 해준다.
+    - 다른 방식(XML, Json 등)에 비해 간단하고, 파일 크기도 3~10배 작으며 속도도 20~100배 빠르다는 장점이 있다.
+    - Json 같은 IDL도 사용이 불가능 한 것은 아니다.
+  - Python, Java, C++, C#, JavaScript, Ruby 등에서 사용 가능하다.
+
+
+
+- gRPC의 구조
+
+  ![Concept Diagram](IT_Essential.assets/landing-2-16534518558762.svg)
+
+  - 다른 RPC들과 마찬가지로 service를 정의하고, 원격으로 호출할 수 있는 메서드들을 정의하고, type을 반환한다.
+  - 서버에서는 위와 같은 명세를 구현하고 gRPC 서버를 실행시킨다.
+  - 클라이언트는 stub을 통해 gRPC 서버와 통신한다.
+
+
+
+### Protocol Buffers
+
+- Protocol Buffers
+  - Google에서 개발한 IDL이다.
+    - Open source로 개발되었다.
+  - 구조화된 데이터를 직렬화하는 데 사용한다.
+  - 일반적인 text 파일과 동일하지만, `.proto`라는 확장자를 지닌다.
+
+
+
+- 개요
+
+  - 구조 정의하기
+    - 직렬화 하려는 데이터의 구조를 정의한다.
+    - `message`라는 키워드를 사용하며, field라 불리는 name-value 쌍으로 정의한다.
+
+  ```protobuf
+  message HelloRequest {
+    string name = 1;
+  }
+  
+  message HelloReply {
+    string message = 1;
+  }
+  ```
+
+  - 서비스 정의하기
+    - `message` 키워드를 통해 정의해둔 데이터들로 RPC method parameter들과 return type을 정의한다.
+
+  ```protobuf
+  service Greeter {
+    rpc SayHello (HelloRequest) returns (HelloReply) {}
+  }
+  ```
+
+  - 컴파일하기
+    - protocol buffer compiler(`protoc`)을 통해 proto 파일을 컴파일한다.
+    - 자신이 원하는 언어로 컴파일이 가능하며 컴파일 과정을 통해 message를 통해 정의한 데이터에 접근할 수 있는 방법과, raw bytes로 직렬화하거나 parsing하는 메서드가 각 언어에 맞게 생성된다.
+
+
+
 
 
 
