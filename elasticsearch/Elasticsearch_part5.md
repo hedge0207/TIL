@@ -973,6 +973,149 @@
 
 
 
+ 
+
+- match_phrase_prefix
+
+  - 검색어가 주어진 순서대로 존재하는 문서를 검색한다.
+  - 마지막 검색어는 prefix로 취급된다.
+  - 예시 데이터 색인
+
+  ```json
+  PUT test/_bulk
+  {"index":{"_id":"1"}}
+  {"title":"quick brown fox"}
+  {"index":{"_id":"2"}}
+  {"title":"two quick brown ferrets"}
+  {"index":{"_id":"3"}}
+  {"title":"the fox is quick and brown."}
+  ```
+
+  - 검색
+    - 1번, 2번 문서는 hit되지만, 3번 문서는 순서가 맞지 않기에 hit되지 않는다.
+
+  ```json
+  GET test/_search
+  {
+    "query":{
+      "match_phrase_prefix": {
+        "title": {
+          "query":"quick brown f"
+        }
+      }
+    }
+  }
+  ```
+
+  - 옵션
+    - `query`: 검색어를 입력한다.
+    - `analyzer`: 검색어를 분석할 analyzer를 입력한다.
+    - `slop`: matching된 토큰들 사이에 몇 개의 토큰을 허용할 것인지를 설정한다. 순서가 바뀐경우 slop은 2로 계산된다. 기본값은 0.
+    - `max_expansions`: prefix로 취급되는 마지막 검색어가 확장될 최대 수를 지정한다(기본값은 50).
+    - `zero_terms_query`: anayzer가 모든 토큰을 제거하여 hit된 doc이 없을 때, 어떻게 할지를 설정한다(default는 `none`). `none`은 아무 문서도 반환하지 않고 `all`일 경우 `match_all`과 같이 모든 문서를 반환한다.
+  - `slop` 상세 설명
+    - `the fox is quick and brown.`를 찾기 위해 `the`, `brown`을 검색했다면. `the`와 `brown`이라는 matching된 토큰들 사이에 `fox`, `is`, `quick`, `and`라는 4개의 토큰이 존재하므로 slop은 4로 설정해야한다.
+    - 만일 `quick brown fox`를 찾기 위해 `brown quick`을 입력했다면, 원래 토큰의 순서가 뒤바뀐 것이므로 slop은 2로 설정해야한다.
+    - 몇 번의 테스트 결과, 결과가 이상하게 나오는 경우가 있어 확인이 필요하다.
+  - match_phrase_prefix 쿼리의 동작 방식
+    - `quick brown f`라는 검색어가 들어왔을 때 prefix 쿼리로 동작하는 맨 마지막 어절(`f`)을 제외한 어절들(`quick brown`)은 match_phrase 쿼리로 동작한다.
+    - 마지막 어절의 prefix를 위해서 인덱스 내의 토큰들 중 f로 시작하는 것을 사전순으로 찾는다.
+    - 찾은 토큰들을 match_phrase 쿼리에 추가한다.
+    - 즉 이 때 찾은 토큰의 개수만큼 쿼리가 생성된다.
+  - 예시
+
+  ```json
+  GET test/_search
+  {
+    "query":{
+      "match_phrase_prefix": {
+        "title": {
+          "query":"quick brown f"
+        }
+      }
+    }
+  }
+  // 위 쿼리는 내부적으로 아래와 같이 동작한다.
+  // 1. 맨 마지막 어절을 제외한 나머지 어절들로 match_phrase query를 생성한다.
+  // 2. f로 시작하는 token을 사전순으로 찾는다(ferrets, fox)
+  // 3. 해당 token들을 match_phrase query에 추가하여 검색한다.
+  GET test/_search
+  {
+    "query":{
+      "bool":{
+          "should":[
+              {
+                  "match_phrase":{
+                      "title":"quick brown ferrets"
+                  }
+              },
+              {
+                  "match_phrase":{
+                      "title":"quick brown fox"
+                  }
+              }
+          ]
+      }
+    }
+  }
+  ```
+
+  - `max_expansions` 상세 설명
+    - 상기했듯 match_phrase_prefix는 마지막 어절의 prefix를 위해서 인덱스 내의 토큰들 중 마지막 어절로 시작하는 토큰을 찾는 과정을 거친다.
+    - 이 때, 몇 개의 토큰을 찾을지 설정하는 값이 `max_expansions`이다.
+    - 따라서 찾으려는 값이 사전순으로 뒤로 밀려 있어서 `max_expansions`보다 뒤에 있다면, 찾지 못하는 경우가 생길 수 있다.
+    - 또한 `max_expansion` 값이 너무 크고, 마지막 어절로 시작하는 토큰이 너무 많을 경우 검색 성능에 영향을 줄 수 있다.
+    - 예를 들어 "aaaaaa", "aaaaab", "aaaaac", ..., "azzzzz"와 같이 색인된 문서가 있고, `max_expansions`값이 10000일 때, "a"로 검색하면 10000만개의 쿼리가 생성되게 된다.
+    - 이는 한 번의 query에 담을 수 있는 최대 clause의 개수(기본값은 4096)을 훨씬 뛰어 넘는 개수이므로 error가 발생하게 된다.
+
+  ```json
+  // 예시 데이터 bulk
+  PUT test/_bulk
+  {"index":{"_id":"1"}}
+  {"title":"the word abuse"}
+  {"index":{"_id":"2"}}
+  {"title":"the word acid"}
+  {"index":{"_id":"3"}}
+  {"title":"the word advancement"}
+  {"index":{"_id":"4"}}
+  {"title":"the word aerialist"}
+  
+  // 검색
+  GET test/_search
+  {
+    "query":{
+      "match_phrase_prefix": {
+        "title": {
+          "query":"the word a",
+          "max_expansions": 1
+        }
+      }
+    }
+  }
+  
+  // 응답
+  // 위에서 max_expansions를 1로 줬으므로 a로 시작하는 토큰 중 사전순으로 가장 먼저 있는 abuse로만 query가 생성된다.
+  // 따라서 the word abuse만 검색되게 된다.
+  {
+      // (...)
+      "hits" : [
+        {
+          "_index" : "test",
+          "_type" : "_doc",
+          "_id" : "1",
+          "_score" : 1.4146937,
+          "_source" : {
+            "title" : "the word abuse"
+          }
+        }
+      ]
+  }
+  ```
+
+
+
+
+
 ## Count API
 
 - 쿼리와 일치하는 문서의 개수를 셀 때 사용하는  API
