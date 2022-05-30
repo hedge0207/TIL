@@ -221,7 +221,6 @@
               self.client.get("/article?id=%i" % i)
   ```
 
-  
 
 
 
@@ -511,3 +510,62 @@
   - https://docs.locust.io/en/stable/api.html#event-hooks
 
   - command line의 option을 custom하거나 각 request event마다 특정 동작을 수행하는 것이 가능하다.
+
+
+
+# Library로 사용하기
+
+- `locust` command 대신 python script로 test를 실행할 수 있다.
+
+  - 코드
+
+  ```python
+  import gevent
+  from locust import HttpUser, task, between
+  from locust.env import Environment
+  from locust.stats import stats_printer, stats_history
+  from locust.log import setup_logging
+  
+  setup_logging("INFO", None)
+  
+  
+  class User(HttpUser):
+      wait_time = between(1, 3)
+      host = "https://docs.locust.io"
+  
+      @task
+      def my_task(self):
+          self.client.get("/")
+  
+      @task
+      def task_404(self):
+          self.client.get("/non-existing-path")
+  
+  
+  # Environment의 instance 생성 후 runner 생성
+  env = Environment(user_classes=[User])
+  env.create_local_runner()
+  
+  # web ui 호스트와 포트 설정
+  env.create_web_ui("127.0.0.1", 8089)
+  
+  # 테스트 상태가 print되도록 설정
+  gevent.spawn(stats_printer(env.stats))
+  
+  # 과거 테스트 이력을 저장하도록 설정(chart 등에 사용)
+  gevent.spawn(stats_history, env.runner)
+  
+  # 테스트 시작
+  env.runner.start(1, spawn_rate=10)
+  
+  # 테스트 기간 설정
+  gevent.spawn_later(60, lambda: env.runner.quit())
+  
+  # wait for the greenlets
+  env.runner.greenlet.join()
+  
+  # stop the web server for good measures
+  env.web_ui.stop()
+  ```
+
+  
