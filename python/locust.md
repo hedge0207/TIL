@@ -110,12 +110,14 @@
 
 
 
+
+
 # locustfile 작성하기
 
 ## User class
 
 - locustfile은 적어도 하나의 사용자 클래스가 있어야 한다.
-  - 사용자 클래스인지는 `HttpUser` class를 상속 받은 class의 유무에 따라 판단한다.
+  - 사용자 클래스인지는 `HttpUser` class를 상속 받은 클래스인가로 판단한다.
 
 
 
@@ -566,6 +568,14 @@
   
   # stop the web server for good measures
   env.web_ui.stop()
-  ```
-
   
+  # aggs 결과 확인
+  print(self.env.stats.total)
+  
+  # 각 task별 결과 확인
+  for task, stats in self.env.stats.entries.items():
+      print(task)
+      print(stats)
+  ```
+  
+
