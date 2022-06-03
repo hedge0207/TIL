@@ -520,7 +520,9 @@
 - `locust` command 대신 python script로 test를 실행할 수 있다.
 
   - 코드
-
+    - tag 등은 Environment를 통해 넣으면 된다.
+  
+  
   ```python
   import gevent
   from locust import HttpUser, task, between
