@@ -107,3 +107,24 @@
   def digest(hash_type):
       click.echo(hash_type)
   ```
+
+
+
+- Option의 충돌
+
+  - locust와 같이 자체적으로 cli을 사용하는 패키지와 함께 사용할 경우 충돌이 발생할 수 있다.
+  - 이 경우 click으로 추가한 option들을 충돌이 발생한 패키지에도 추가해주거나, 충돌이 난 패키지에서 삭제해줘야 한다.
+  - 삭제
+    - `sys.argv`에는 option 값들이 List[str] 형태로 저장되어 있는데, 여기서 삭제해주면 된다.
+
+  ```python
+  import sys
+  
+  sys.argv.remove("<삭제할 옵션 이름>")
+  ```
+
+  - 추가
+    - 충돌이 발생한 패키지에서 command line option을 추가하는 기능을 제공하면 click으로 받은 옵션 값들을 해당 패키지의 cli에도 추가해준다.
+
+
+
