@@ -136,7 +136,7 @@
 
 
 
-### HttpUSer
+### HttpUser
 
 - 사용자 클래스는 `HttpUser` class를 상속받는다.
   - 이를 통해 `HttpUser`의 attribute인 `client`에 접근할 수 있게 된다.
