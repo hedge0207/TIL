@@ -311,9 +311,13 @@
 - Nested
 
   - 만약에 object 타입 필드에 있는 여러 개의 object 값들이 서로 다른 역 색인 구조를 갖도록 하려면 nested 타입으로 지정해야 한다.
-  - nested 타입으로 지정하려면 매핑이 다음과 같이 `"type":"nested"`를 명시한다.
-  - 다른 부분은 object와 동일하다.
+    - nested type으로 색인 된 값들은 각각 하나의 document로 count되어 `_cat` API로 문서의 개수를 확인하면 전체 문서 개수에 함께 집계된다.
+    - `_count` API나 `_search`의 total hits를 통해 nested 문서는 합산하지 않은 문서의 개수를 알 수 있다.
 
+  - nested 타입으로 지정하려면 매핑이 다음과 같이 `"type":"nested"`를 명시한다.
+    - 다른 부분은 object와 동일하다.
+  
+  
   ```bash
   curl -XPUT "http://localhost:9200/movie" -H 'Content-Type: application/json' -d'{
   "mappings":{    
@@ -333,7 +337,7 @@
     }
   }'
   ```
-
+  
   - nested 필드를 검색 할 때는 반드시 nested 쿼리를 써야 한다. 
     - nested 쿼리 안에는 path 라는 옵션으로 nested로 정의된 필드를 먼저 명시하고 그 안에 다시 쿼리를 넣어서 입력한다.
     - nested 쿼리로 검색하면 nested 필드의 내부에 있는 값 들을 모두 별개의 도큐먼트로 취급한다.
@@ -343,7 +347,7 @@
   - 역색인 방식
     - Object 타입과 달리 필드 내부의 값들이 각각 역색인 된다.
     - 따라서 아래와 같은 검색 쿼리를 보내면 `characters.name`이 Loki 이면서 `characters.side`가 villain인 1번 문서만 검색되게 된다.
-
+  
   ```bash
   # 인덱스 생성
   curl -XPUT 'localhost:9200/movies' -H 'Content-Type: application/json' -d '
@@ -616,6 +620,8 @@
   ```bash
   $ curl -XPUT "http://localhost:9200/my-index/_doc/3?routing=1" -H 'Content-Type: application/json' -d'{  "my_id": "3",  "text": "This is an answer",  "my_join_field": {    "name": "answer",     "parent": "1" # parent id를 입력  }}'$ curl -XPUT "http://localhost:9200/my-index/_doc/4?routing=1" -H 'Content-Type: application/json' -d'{  "my_id": "4",  "text": "This is another answer",  "my_join_field": {    "name": "answer",    "parent": "1"  }}'
   ```
+
+
 
 - Join filed 와 성능
 
