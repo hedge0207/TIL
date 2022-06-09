@@ -581,3 +581,80 @@
   ```
   
 
+
+
+# Worker
+
+- locust는 여러 개의 worker를 생성하여 테스트가 가능하다.
+
+  - 간단한 테스트의 경우에는 하나의 프로세스로도 충분한 throughput을 발생시킬 수 있다. 그러나 복잡한 테스트를 진행하거나, 보다 많은 load를 실행하기 위해서는 여러 프로세스를 생성해야 한다.
+
+  - master는 locust의 web interface를 실행하고, worker들에게 언제 User를 생성하는지나 멈추는 지를 알려주는 역할을 한다.
+    - master는 직접 test를 실행하지는 않는다.
+  - worker는 User를 생성하고, 테스트를 진행하며, 그 결과를 master에 전송한다.
+  - Python은 GIL로 인해 프로세스 당 둘 이상의 코어를 완전히 활용할 수 없다.
+    - 따라서 프로세서 코어 하나 당 worker 하나를 실행해야 한다.
+    - 또한 하나의 프로세스에 worker와 master를 동시에 실행해선 안 된다.
+
+
+
+- 실행하기
+
+  - master 모드로 실행하기
+
+  ```bash
+  $ locust --master
+  ```
+
+  - worker 실행하기
+    - 만일 master와 다른 machine에서 실행한다면 `--master-host` 옵션을 통해 master machine의 host를 입력해야 한다.
+
+  ```bash
+  $ locsut --worker
+  ```
+
+  - 옵션
+    - `--master-bind-host`: master 노드가 bind할 network interface의 host를 입력한다.
+    - `--master-bind-port`: master 노드의 port를 설정한다.
+    - `--master-host`: worker를 master와 다른 machine에 생성한 경우에 master의 host를 입력한다.
+    - `--master-port`: 만일 master의 port를 설정해준 경우에 woreker를 실행할 때 master의 port를 입력한다.
+    - `--expect-workers`: master node를 `--headless` 옵션과 함께 실행할 때, master node는 설정값 만큼의 노드가 실행되기를 기다렸다가 테스트를 시작한다.
+
+
+
+- 노드 사이의 통신
+
+  ```python
+  from locust import events
+  from locust.runners import MasterRunner, WorkerRunner
+  
+  # Fired when the worker receives a message of type 'test_users'
+  def setup_test_users(environment, msg, **kwargs):
+      for user in msg.data:
+          print(f"User {user['name']} received")
+      environment.runner.send_message('acknowledge_users', f"Thanks for the {len(msg.data)} users!")
+  
+  # Fired when the master receives a message of type 'acknowledge_users'
+  def on_acknowledge(msg, **kwargs):
+      print(msg.data)
+  
+  @events.init.add_listener
+  def on_locust_init(environment, **_kwargs):
+      if not isinstance(environment.runner, MasterRunner):
+          environment.runner.register_message('test_users', setup_test_users)
+      if not isinstance(environment.runner, WorkerRunner):
+          environment.runner.register_message('acknowledge_users', on_acknowledge)
+  
+  @events.test_start.add_listener
+  def on_test_start(environment, **_kwargs):
+      if not isinstance(environment.runner, MasterRunner):
+          users = [
+              {"name": "User1"},
+              {"name": "User2"},
+              {"name": "User3"},
+          ]
+          environment.runner.send_message('test_users', users)
+  ```
+
+  
+
