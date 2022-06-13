@@ -655,3 +655,46 @@
 # completion suggester
 
 - 이름은 completion suggester지만 자동완성보다는 연관 검색에 적합할 듯 하다.
+
+
+
+
+
+# Elasticsearch 8
+
+## Upgrade
+
+- 7.17 미만 version에서 8 version으로 바로 업그레이드는 불가능
+  - 7.17 미만일 경우 7.17로 업그레이드 후 8로 업그레이드 해야 한다.
+  - Upgrade Assistant를 통해 issue를 해결하고 기존에 색인된 index들을 재색인하는 과정을 거친다.
+  - Kibana -> Stack Management -> Upgrade Assistant
+
+
+
+- `node.<role>` setting이 deprecate 됐다.
+  - 대신 `node.roles` 옵션을 사용해야한다.
+
+
+
+
+
+## Security
+
+- 보안 비활성화하기
+
+  - `~/config/elastcsearch.yml`파일에서 아래 두 옵션을  false로 준다.
+
+  ```yaml
+  # disable security features
+  xpack.security.enabled: false
+  
+  xpack.security.enrollment.enabled: false
+  ```
+
+
+
+- elasticsearch가 실행되면 아래와 같은 작업들이 일어난다.
+  - TLS용 certificate와 key들이 생성된다.
+  - TLS 관련 설정이 elasticsearch.yml 파일에 작성된다.
+  - elastic(elasticsearch가 자동으로 생성하는 기본 유저) user의 password가 생성된다.
+  - kibana와 연결에 사용되는 enrollment token이 생성된다.
