@@ -257,12 +257,14 @@
 
 
 
-- master node 생성하기
+- 클러스터 구성하기
 
   - `network.host`가 아닌 `network.publish_host`로 설정해줘야 한다.
-  - 그러나 docker container 내부에서는 docker network의 ip를 host로 사용하므로, `network.bind_host` 값에 서버의 host는 할당할 수 없다.
-  - 따라서 `network.publish_host`만 따로 설정해줘야한다.
+    - 그러나 docker container 내부에서는 docker network의 ip를 host로 사용하므로, `network.bind_host` 값에 서버의 host는 할당할 수 없다.
+    - 따라서 `network.publish_host`만 따로 설정해줘야한다.
 
+  - 마스터 노드 생성하기
+  
   ```yaml
   version: '3.2'
   
@@ -277,8 +279,8 @@
         - bootstrap.memory_lock=true
         # cluster가 구성될 때 master node가 될 node의 이름을 적어준다.
         - cluster.initial_master_nodes=master-node
-        # 다른 node와 통신할 host를 입력한다.
-        - network.publish_host=<서버의 host>
+        # 현재 서버의 host를 입력한다.
+        - network.publish_host=<현재 서버의 host>
         - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       ulimits:
         memlock:
@@ -292,7 +294,7 @@
   ```
 
   - 다른 서버의 노드 생성하기
-
+  
   ```yaml
   version: '3.2'
   
@@ -329,7 +331,7 @@
 
   - 만일 기본 포트인 9300이 아닌 다른 포트를 사용할 경우 `transport.port` 값을 반드시 설정해줘야한다.
   - Docker로 생성한 두 개의 노드가 통신하는 과정은 다음과 같다.
-    - `discovery.seed_hosts`에 설정된 ip로 handshake 요청을 보낸다.
+    - `discovery.seed_hosts`에 설정된 ip(아래의 경우 192.168.0.242:9302)로 handshake 요청을 보낸다.
     - `handshake`이 완료 되면 `network.publish_host`에 설정된 host + `transport.port`에 설정된 port를 응답으로 보낸다.
     - 응답으로 받은 ip로 클러스터 구성을 위한 요청을 보낸다.
     - 따라서 만일 `transport.port` 값을 설정해주지 않아 기본값인 9300으로 설정되었다면 `discovery.seed_hosts`에 다른 port를 입력했더라도 handshake 이후의 통신이 불가능해진다.
@@ -359,7 +361,7 @@
           hard: -1
       restart: always
       ports:
-        - 9301:9301
+        - 9302:9301
       networks:
         - elasticsearch_elastic
   ```
@@ -377,7 +379,7 @@
         - node.name=node231
         - cluster.name=remote-cluster
         # handshake은 아래에서 설정한 ip로 이루어지고, handshake이 완료되면 node A는 응답으로 ip를 보낸다.
-        - discovery.seed_hosts=192.168.0.242:9301
+        - discovery.seed_hosts=192.168.0.242:9302
         - bootstrap.memory_lock=true
         - network.publish_host=192.168.0.231
         - "ES_JAVA_OPTS=-Xms512m -Xmx512m"

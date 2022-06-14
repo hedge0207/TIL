@@ -204,10 +204,10 @@
     - 클러스터 구성을 위해 바인딩 할 원격 노드의 IP 또는 도메인 주소를 배열 형태로 입력한다.
     - 주소만 적는 경우 9300~9305 사이의 포트값을 검색하며, tcp port가 이 범위 밖에 설정 된 경우 포트번호도 함께 적어줘야 한다.
     - 이렇게 원격에 있는 노드들을 찾아 바인딩하는 과정을 **디스커버리**라 부른다.
-    - 7.0부터 추가 된 옵션으로 이전 버전에서는 `discovery.zen.ping.unicast.hosts`를 사용했다.
+    - 7.0부터 추가 된 옵션으로, 이전 버전에서는 `discovery.zen.ping.unicast.hosts`를 사용했다.
   - `cluster.initial_master_nodes`는 마스터 노드들을 설정한다.
     - 클러스터가 최초 실행 될 때 명시된 노드들을 대상으로 마스터 노드를 선출한다.
-    - 7.0부터 추가 된 옵션으로 이전 버전에서는 `discovery.zen.minmum_master_nodes`를 사용했다.
+    - 7.0부터 추가 된 옵션으로, 이전 버전에서는 `discovery.zen.minmum_master_nodes`를 사용했다.
     - `discovery.type` 옵션과 동시에 사용할 수 없다.
   - `discovery.type`
     - single-node라는 값을 줄 경우 단일 노드로 클러스터가 생성된다.

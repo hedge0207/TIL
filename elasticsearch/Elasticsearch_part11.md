@@ -766,7 +766,7 @@
 
 
 
-## Security
+# Security
 
 - 보안 비활성화하기
 
@@ -781,8 +781,65 @@
 
 
 
-- elasticsearch가 실행되면 아래와 같은 작업들이 일어난다.
-  - TLS용 certificate와 key들이 생성된다.
-  - TLS 관련 설정이 elasticsearch.yml 파일에 작성된다.
-  - elastic(elasticsearch가 자동으로 생성하는 기본 유저) user의 password가 생성된다.
-  - kibana와 연결에 사용되는 enrollment token이 생성된다.
+- Elasticsearch가 처음 실행 될 때 아래와 같은 보안과 관련된 기능들이 실행된다.
+  - trasnport와 HTTP 계층의 TLS를 위한 certificate와 key가 생성된다.
+  - TLS 설정이 `elasticsearch.yml`파일에 작성된다.
+  - `elastic`이라는 user를 위한 password가 생성된다.
+  - kibana와 연결하기 위한 enrollment token이 생성된다.
+
+
+
+- Elasticsearch는 크게 아래 3가지 방식으로 보안 기능을 제공한다.
+  - 인가되지 않은 접근을 막는다.
+    - role-base로 접근을 통제한다.
+    - 사용자와 password를 통해 인증을 진행한다.
+  - SSL/TLS encryption을 통해 데이터를 온전히 보존한다.
+  - 누가 cluster에 어떤 동작을 실행했는지를 기록한다.
+
+
+
+- Elasticsearch security의 원칙
+  - 절대 security 기능을 비활성화한 상태로 cluster를 운영해선 안된다.
+  - 지정된 non-root user로 elasticsearch를 운영해라.
+    - 절대 root user로 운영해선 안된다.
+  - 절대 elasticsearch를 public internet traffic에 노출시키지 마라.
+  - role-base로 접근을 통제해라.
+
+
+
+- Elasticsearch가 실행되면 아래와 같은 보안 작업들이 실행된다.
+  - Transport and HTTP layers에 대해 TLS용 certificate와 key가 생성된다.
+  - elasticsearh.yml 파일에 TLS 관련 설정이 작성된다.
+  - elastic이라는 기본 사용자에 대한 비밀번호가 생성된다.
+  - kibana에서 사용되는 enrollment token이 생성된다.
+    - enrollment token의 유효기간은 30분이다.
+    - node에서도 사용되지만, node를 위한 enrollment token은 자동으로 생성되지 않는다.
+    - cluster에 합류시킬 node를 준비하는 데 상당한 시간이 걸릴 수 있고, 그러는 동안 enrollment token의 유효시간이 끝날 수 있기 때문이다.
+
+
+
+- 클러스터에 새로운 node 합류시키기
+
+  - Elasticsearch가 최초로 실행되면 security auto-configuration process는 HTTP layer를 0.0.0.0에 바인드한다.
+    - transport layer만 localhost에 바인드한다.
+    - 이는 추가적인 설정 없이도 보안 기능을 활성화 한 상태로 single node를 실행할 수 있도록 하기 위함이다.
+  - 다른 node를 합류시키기 위한 enrollment token 생성하기
+
+  ```bash
+  # 이미 cluster에 합류한 node
+  $ bin/elasticsearch-create-enrollment-token -s node
+  ```
+
+  - kibana와 달리 node용 enrollment token을 자동으로 생성하지 않는 이유
+    - production 환경에 새로운 node를 cluster에 합류시킬 때에는 합류 전에 address를 localhost가 아닌 다른 address에 binding하거나 bootstrap check등의 작업이 필요하다.
+    - 만일 enrollment token을 자동으로 발급할 경우 위 작업을 하는 도중에 enrollment token이 만료될 수 있으므로, 자동으로 생성하지 않는다.
+
+  - 합류시킬 node를 실행시킬 때 아래와 같이 enrollment token을 넣어준다.
+    - 만일 다른 host에 존재하는 경우 `transport.host` 설정을 해줘야한다.
+
+  ```bash
+  # cluster에 합류할 node
+  $ bin/elasticsearch --enrollment-token <enrollment-token>
+  ```
+
+
