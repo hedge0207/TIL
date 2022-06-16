@@ -782,7 +782,8 @@
 
 
 - Elasticsearch가 처음 실행 될 때 아래와 같은 보안과 관련된 기능들이 실행된다.
-  - trasnport와 HTTP 계층의 TLS를 위한 certificate와 key가 생성된다.
+  - trasnport(node들 사이의 통신)와 HTTP 계층(client와의 통신)의 TLS를 위한 certificate와 key가 생성된다.
+    - `http_ca.crt`: 
   - TLS 설정이 `elasticsearch.yml`파일에 작성된다.
   - `elastic`이라는 user를 위한 password가 생성된다.
   - kibana와 연결하기 위한 enrollment token이 생성된다.
@@ -841,5 +842,4 @@
   # cluster에 합류할 node
   $ bin/elasticsearch --enrollment-token <enrollment-token>
   ```
-
 
