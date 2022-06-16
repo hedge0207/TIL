@@ -244,9 +244,7 @@
 
 
 
-
-
-# 각기 다른 서버에 설치된 node들로 클러스터 구성하기(with docker)
+## 각기 다른 서버에 설치된 node들로 클러스터 구성하기
 
 - 가장 중요한 설정은 `network.publish_host`이다.
   - 만일 이 값을 따로 설정해주지 않을 경우 `network.host`의 기본 값은 0.0.0.0으로 설정된다.
@@ -660,5 +658,202 @@
         interval: 10s
         timeout: 10s
         retries: 120
+  ```
+
+
+
+## 각기 다른 서버에 설치된 node들로 클러스터 구성하기
+
+- CA와 certificates 생성하기
+
+  - CA와 certificates 생성을 위해서 노드를 생성한다.
+    - master node로 사용할 node에 해도 되고, 새로운 노드를 하나 더 생성한 후 CA와 certs를 생성한 뒤 삭제해도 된다.
+
+  ```yaml
+  version: '3.2'
+  
+  services:
+    single-node:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.1.3
+      container_name: master-node
+      environment:
+        - node.name=master-node
+        - cluster.name=my-cluster
+        - cluster.initial_master_nodes=master-node
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - ELASTIC_PASSWORD=qweasd
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      restart: always
+      ports:
+        - 9200:9200
+        - 9300:9300
+  ```
+
+  - CA 생성
+    - 컨테이너 내부에서 아래 명령어를 실행한다.
+    - 실행하면 `ca.crt` 파일과 `ca.key` 파일이 생성되는데, 이는 certificate를 생성할 때 사용한다.
+
+  ```bash
+  $ bin/elasticsearch-certutil ca --silent --pem -out config/certs/ca.zip;
+  $ unzip config/certs/ca.zip -d config/certs;
+  ```
+
+  - certificate를 silent mdoe로 생성하기 위해 yaml 파일을 작성한다.
+    - slient mode로 생성하지 않을 경우 건너뛰어도 된다.
+
+  ```bash
+  $ echo -ne \
+  "instances:\n"\
+  "  - name: master-node\n"\
+  "    dns:\n"\
+  "      - localhost\n"\
+  "    ip:\n"\
+  "      - <master node를 띄울 host machine의 ip>\n"\
+  "  - name: other-node\n"\
+  "    dns:\n"\
+  "      - localhost\n"\
+  "    ip:\n"\
+  "      - <다른 node를 띄울 host machine의 ip>\n"\
+  > config/certs/instances.yml;
+  ```
+
+  - certificate 생성하기
+    - 아래 명령어를 실행하면 `master-node.crt/key`, `other-node.crt/key` 파일이 생성된다.
+
+  ```bash
+  $ bin/elasticsearch-certutil cert --silent --pem -out config/certs/certs.zip --in config/certs/instances.yml --ca-cert config/certs/ca/ca.crt --ca-key config/certs/ca/ca.key;
+  $ unzip config/certs/certs.zip -d config/certs
+  ```
+
+
+
+- 노드 생성하기
+
+  - master node 띄우기
+    - 위에서 생성한 CA와 certificates를 컨테이너 밖으로 가져온 후 해당 file들을 master node와 다른 노드에 복사한다.
+    - `network.publish_host`를 설정하고 아래와 같이 node와 통신을 위한 port 값을 기본값인 9300이 아닌 다른 값으로 설정해줬으면 `transport.port`도 설정해준다.
+
+  ```yaml
+  version: '3.2'
+  
+  services:
+    single-node:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.1.3
+      container_name: master-node
+      environment:
+        - node.name=master-node
+        - cluster.name=my-cluster
+        - cluster.initial_master_nodes=master-node
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - network.publish_host=<host machine의 ip>
+        - transport.port=9310
+        - ELASTIC_PASSWORD=qweasd
+        - xpack.security.enabled=true
+        - xpack.security.http.ssl.enabled=true
+        - xpack.security.http.ssl.key=certs-tmp/master-node.key
+        - xpack.security.http.ssl.certificate=certs-tmp/master-node.crt
+        - xpack.security.http.ssl.certificate_authorities=certs-tmp/ca.crt
+        - xpack.security.http.ssl.verification_mode=certificate
+        - xpack.security.transport.ssl.enabled=true
+        - xpack.security.transport.ssl.key=certs-tmp/master-node.key
+        - xpack.security.transport.ssl.certificate=certs-tmp/master-node.crt
+        - xpack.security.transport.ssl.certificate_authorities=certs-tmp/ca.crt
+        - xpack.security.transport.ssl.verification_mode=certificate
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      restart: always
+      volumes:
+        - ./certs:/usr/share/elasticsearch/config/certs-tmp
+      ports:
+        - 9210:9200
+        - 9310:9310
+  ```
+
+  - 다른 node 띄우기
+    - 마찬가지로 위에서 생성한 CA와 certificates를 노드에 복사한다.
+    - `discovery.seed_hosts`에 다른 node들의 url을 입력한다.
+
+  ```yaml
+  version: '3.2'
+  
+  services:
+    single-node:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.1.3
+      container_name: other-node
+      environment:
+        - node.name=other-node
+        - cluster.name=my-cluster
+        - discovery.seed_hosts=<master node를 띄운 host machine의 ip>:9310
+        - bootstrap.memory_lock=true
+        - network.publish_host=<host machine의 ip>
+        - xpack.security.enabled=true
+        - xpack.security.http.ssl.enabled=true
+        - xpack.security.http.ssl.key=certs-tmp/other-node.key
+        - xpack.security.http.ssl.certificate=certs-tmp/other-node.crt
+        - xpack.security.http.ssl.certificate_authorities=certs-tmp/ca.crt
+        - xpack.security.http.ssl.verification_mode=certificate
+        - xpack.security.transport.ssl.enabled=true
+        - xpack.security.transport.ssl.key=certs-tmp/other-node.key
+        - xpack.security.transport.ssl.certificate=certs-tmp/other-node.crt
+        - xpack.security.transport.ssl.certificate_authorities=certs-tmp/ca.crt
+        - xpack.security.transport.ssl.verification_mode=certificate
+      volumes:
+        - ./certs:/usr/share/elasticsearch/config/certs-tmp
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      restart: always
+      ports:
+        - 9210:9200
+        - 9300:9300
+  ```
+
+
+
+- 연결 테스트
+
+  - 제대로 연결이 되었는지 테스트한다.
+
+  ```bash
+  $ curl https://<master-node의 ip>:9210/_cat/nodes --cacert <path>/master-node.crt -u elastic
+  ```
+
+
+
+- kibana 연결하기
+
+  - `kibana_system` user의 password를 설정한다.
+    - `kibana_system`은 kibana가 elasticsearch와 통신하기 위해 사용하는 user이다.
+
+  ```bash
+  # 방법1
+  $ curl -s -X POST --cacert <ca.crt 파일의 경로> -u elastic:<elastic user의 password> -H "Content-Type: application/json" https://<es url>/_security/user/kibana_system/_password -d "{\"password\":\"<설정할 password>\"}"
+  
+  # 방법2
+  $ bin/elasticsearch-reset-password -u kibana_system
+  ```
+
+  - kibana container 생성
+
+  ```yaml
+  kibana:
+      image: docker.elastic.co/kibana/kibana:8.1.3
+      container_name: es8-kibana
+      environment:
+        - ELASTICSEARCH_HOSTS=https://<elasticsearch host>:<port>
+        - ELASTICSEARCH_USERNAME=kibana_system
+        - ELASTICSEARCH_PASSWORD=<위에서 설정한 passowrd>
+        - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs-tmp/ca.crt
+      restart: always
+      volumes:
+        - ./certs:/usr/share/kibana/config/certs-tmp
+      ports:
+        - "5602:5601"
   ```
 
