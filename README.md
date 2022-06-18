@@ -551,7 +551,19 @@
 ## [Python_part8](https://github.com/hedge0207/TIL/blob/master/python/python_part8.md)
 
 - Testing
-  - pytest
+  - 테스트시 주의 사항
+  - 용어
+  - Test in Python
+    - fixture
+    - parameterize
+
+<br/>
+
+<br/>
+
+## [Python_part9](https://github.com/hedge0207/TIL/blob/master/python/python_part9.md)
+
+- GIL
 
 <br/>
 
@@ -1265,6 +1277,8 @@
   - token filter
 - auto completion
 - completion suggestor
+- Elasticsearch 8
+- security
 
 <br/>
 
