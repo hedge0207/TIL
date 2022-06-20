@@ -1055,3 +1055,137 @@
     - `full`: certificate가 믿을 수 있는 CA에 의해 sign 된 것인지와, 서버의 hostname(또는 IP)가 certificate 내부에 있는 값과 일치하는지도 검증한다.
     - `certificate`: certificate가 믿을 수 있는 CA에의해 sign된 것인지만 검사한다.
     - `none`: certificate에 대한 검증을 수행하지 않는다. 절대 production 환경에서 사용해선 안된다. 
+
+
+
+
+
+## HTTP layer 보안
+
+- CSR
+  - `elasticsearch-certutil` tool을 실행하면 어떻게 certificate을 생성할 것인지에 대한 여러 질문을 던진다. 
+  - 가장 중요한 질문은 Certificate Signing Reqeust(CSR)을 생성할지 여부이다.
+    - CSR은 CA에게 certificate에 sign해줄 것을 요청하는 것이다.
+  - 만일 `bin/elasticsearch-certutil ca` 명령어를 통해서 CA를 생성했다면 `n`을 입력한다.
+    - 그 후 CA 파일의 경로를 입력한다.
+  - 사내에 이미 구축되어 있는 CA로 sign하길 원한다면 `y`를 입력한다.
+    - 만일 사내에 security 팀이 있을 경우, 신뢰할만한 CA가 존재할 것이므로 CSR을 사용하고, 해당 요청을 CA를 제어하는 팀에 보내면 된다.
+
+
+
+- HTTP 통신을위한 certificate와 key 생성하기
+
+  - `elasticsearch-certutil`에 http 옵션을 줘서 실행한다.
+
+  ```bash
+  $ elasticsearch-certutil http
+  ```
+
+  - 생성 과정 예시
+    - CSR을 생성하지를 물으면 `n`을 입력한다.
+    - 기존에 생성한 CA를 사용할지를 물으면 `y`를 입력한다.
+    - CA와 key의 경로를 입력한다.
+    - CA의 password를 입력한다.
+    - certificate의 만료 기한을 설정한다. 년, 월, 일로 설정 가능하며 기본값은 90D이다.
+    - 노드별로 certificate를 생성할지 물으면 `y`를 입력한다.
+    - node에 연결할 때 사용할 hostname들을 입력한다. 여기서 입력한 hostname들은 DNS name으로 certificate의 Subject Alternative name(SAN) 필드에 추가된다.
+    - 각 노드의 IP를 입력한다.
+    - certificate를 생성할 때 필요한 설정값들 중 변경할 것이 있는지 물으면 `n`을 입력한다.
+    - 마지막으로 certificate의 password를 입력한다.
+  - 위 과정을 모두 마치면 `.zip`파일(기본 파일명은 `elasticsearch-ssl-http.zip`)이 생성된다.
+    - 파일의 압축을 풀면 `elasticsearch` 폴더와 `kibana` 폴더가 생성된다.
+    - `elasticsearch` 폴더의 `http.p12` 파일은 PKCS#12 포맷의 keystore로, certificate의 복사본과 private key가 담겨 있다.
+    - `kibana` 폴더의 `elasticsearch-ca.pem`은 HTTP layer에 대해서 elasticsearch CA를 신뢰할 수 있게 해주는데 사용한다.
+
+
+
+- Cluster 내의 모든 node에 아래 과정을 실행한다.
+
+  - `http.p12` 파일을 `$ES_PATH_CONF`에 복사한다.
+  - `elasticsearch.yml` 파일을 아래와 같이 수정한다.
+
+  ```yaml
+  xpack.security.http.ssl.enabled: true
+  xpack.security.http.ssl.keystore.path: http.p12
+  ```
+
+  - 아래 명령어를 실행한다.
+
+  ```bash
+  $ bin/elasticsearch-keystore add xpack.security.http.ssl.keystore.secure_password
+  ```
+
+  - 노드를 다시 시작한다.
+
+
+
+### Kibana HTTP client 암호화하기.
+
+- Browser는 kibana로 traffic을 보내고, kibana는 elasticsearch에 trafic을 보낸다.
+  - 이 두 개의 채널은 TLS를 사용하기 위해 개별적으로 설정을 해줘야한다.
+
+
+
+- Kibana와 Elasticsearch 사이의 traffic 암호화하기
+
+  - `elasticsearch-certutil http` 명령어의 결과로 생성된 압축 파일을 풀면 `kibana` 디렉터리가 생성된다.
+    - 이 디렉터리 내부의 `elasticsearch-ca.pem` 파일을 포함하고 있다.
+    - 해당 파일을 `$KBN_PATH_CONF` 폴더에 복사한다.
+
+  - `kibana.yml` 파일을 아래와 같이 수정한다.
+
+  ```yaml
+  elasticsearch.username: kibana_system
+  elasticsearch.password: <kibana_system의 password>
+  elasticsearch.ssl.certificateAuthorities: $KBN_PATH_CONF/elasticsearch-ca.pem
+  elasticsearch.hosts: https://<elasticsearch_host>:<port>
+  ```
+
+  - kibana를 재실행한다.
+    - 만일 login을 해도 계속 login 창으로 redirect가 된다면 브라우저를 완전히 종료하고 다시 열면 된다.
+
+
+
+- Kibana와 Browser 사이의 traffic을 암호화하기
+
+  - Kibana를 위한 server certificate와 private key를 생성한다.
+    - Browser가 kibana로 통신을 보내면, kibana는 이 server certificate와 private key를 사용한다.
+    - Server certificate를 얻으면, 브라우저가 신뢰할 수 있도록 subject alternative name(SAN)을 정확히 설정해야한다.
+    - 하나 이상의 SAN을 kibana 서버의 FQDN(Fully Quailified Domain Name), hostname, IP로 설정할 수 있다.
+    - SAN을 선택할 때, browser와 kibana가 통신하기 위해 사용할 속성(FQDN, hostanme, IP)을 선택한다.
+  - Kibana용 CSR
+    - CSR은 certificate를 생성하고 sign하는데 사용되는 CA에 대한 정보를 담고 있다.
+    - Certificate는 신뢰할 수도(public, trusted CA에 의해 sign된 경우)있고 신뢰할 수 없을 수도(internal CA에 의해 sign된 경우) 있다.
+    - self-sign하거나 internally-sign된 certificate는 development 환경에서는 사용 가능하지만 production 환경에서는 사용할 수 없다.
+  - 인증되지 않은 server certificate와 암호화되지 않은 private key 생성하기
+    - CSR에 사용할 인증되지 않은 server certificate와 암호화되지 않은 private key 생성한다.
+    - 아래 명령의 결과로 생성된 certificate는 kibana-server라는 common name(CN)과, `example.com`, `www.example.com`이라는 SAN을 가진다.
+
+  ```bash
+  $ bin/elasticsearch-certutil csr -name kibana-server -dns example.com,www.example.com
+  ```
+
+  - 위 명령어의 결과 `csr-bundle.zip`이라는 파일이 생성된다.
+    - `kibana-server.csr`: sign되지 않은 certificate
+    - `kibana-server.key`: 암호화되지 않은 private key
+  - internal CA 또는 믿을 수 있는 CA에 CSR 요청을 보낸다.
+    - 인증을 받은 후의 certificate는 다른 `.crt` 등의 다른 format으로 format이 변경될 수 있다.
+  - `kibana.yml`파일 수정하기
+
+  ```yaml
+  server.ssl.enabled: true
+  
+  server.ssl.certificate: $KBN_PATH_CONF/kibana-server.crt
+  server.ssl.key: $KBN_PATH_CONF/kibana-server.key
+  ```
+
+  - kibana를 실행한다.
+
+
+
+## Beats 보안
+
+> https://www.elastic.co/guide/en/elasticsearch/reference/current/security-basic-setup-https.html#configure-beats-security 참고
+
+
+
