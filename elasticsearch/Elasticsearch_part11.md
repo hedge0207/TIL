@@ -843,3 +843,215 @@
   $ bin/elasticsearch --enrollment-token <enrollment-token>
   ```
 
+- enrollment token은 security가 자동으로 설정되었을 때만 사용할 수 있다.
+
+
+
+-  PKCS#12
+   - 사용자의 개인 정보 보호를 위한 포맷이다.
+   - 바이너리 형식으로 저장되며 pkcs#12 포멧의 파일은 인증서, 개인키에 관한 내용을 하나의 파일에 모두 담고 있다.
+   - 보통 `.pfx`, `.p12` 등의 확장자를 사용한다.
+     - `.p12` 파일은 하나 이상의 certificate과 그에 대응하는 비공개키를 포함하고 있는 keystore 파일이며, 패스워드로 암호화되어 있다.
+
+
+
+- `config/certs`의 파일들
+
+  - `http_ca.crt`: HTTP layer(elasticsearch와 client 사이의 통신)를 위한 인증서를 sign하는 CA certificate파일.
+    - 만일 enrollment token을 사용하여 kibana와 elasticsearch를 연결할 경우 HTTP layer의 CA certificate는 kibana의 `/data` 디렉터리에도 저장되어, elasticsearch의 CA와 kibana 사이의 신뢰를 확립하는 데 사용된다.
+  - `http.p12`: HTTP layer를 위한 certificate와 key(비공개키)를 담고 있는 파일
+  - `transport.p12`: transport layer(cluster 내부의 node들 사이의 통신)를 위한 certificate와 key(비공개키)를 담고 있는 파일.
+  - `http.p12`와  `transport.p12` 파일은 password로 보호되고 있는 PKCS#12 keystores 파일이다.
+    - elasticsearch는 이 keystore 파일의 password를 [`secure_settings`](https://www.elastic.co/guide/en/elasticsearch/reference/current/secure-settings.html#reloadable-secure-settings)에 저장하고 있다.
+    - password 조회를 위해서는 `bin/elasticsearch-keystore`를 사용한다.
+
+  ```bash
+  # http.p12
+  $ bin/elasticsearch-keystore show xpack.security.http.ssl.keystore.secure_password
+  
+  # transport.p12
+  $ bin/elasticsearch-keystore show xpack.security.transport.ssl.keystore.secure_password
+  ```
+
+
+
+- 보안 관련 설정이 자동으로 실행되지 않는 경우
+  - Elasticsearch가 처음 실행될 때 아래와 같은 사항들을 체크하는데, 하나라도 fail이 된다면 보안 관련 설정이 자동으로 실행되지 않는다.
+    - node가 처음 실행되는 것인지(처음 실행되는 것이 아니라면 실행되지 않는다).
+    - 보안 관련 설정이 이미 설정되었는지(이미 설정되었다면 실행되지 않는다).
+    - startup process가 node의 설정을 수정하는 것이 가능한지.
+  - node 내부의 환경에 따라 실행되지 않기도 한다.
+    - `/data` 디렉터리가 이미 존재하고, 비어있지 않은 경우.
+    - `elasticsearch.yml` 파일이 존재하지 않거나 `elasticsearch.keystore`파일을 읽을 수 없는 경우
+    - elasticsearch의 configuration 디렉터리가 writable 하지 않은 경우
+  - setting에 따라 실행되지 않기도 한다.
+    - `node.roles`에 해당 node가 master node로 선출될 수 없게 설정되었거나, data를 저장할 수 없게 설정된 경우
+    - `xpack.security.autoconfiguration.enabled`가 false로 설정된 경우
+    - `xpack.security.enabled`을 설정한 경우
+    - `elasticsearch.keystore`또는 `elasticsearch.yml`에 `xpack.security.http.ssl.*` 또는 `xpack.security.transport.ssl.*`을 설정한 경우.
+    - `discovery.type`, `discovery.seed_hosts`, 또는 `cluster.initial_master_nodes`에 값이 설정된 경우.
+    - 단, `discovery.type`이 `single-node`이거나, `cluster.initial_master_nodes`의 값이 현재 노드 하나 뿐인 경우는 예외이다.
+
+
+
+- SSL certificate API
+
+  - certificate들에 대한 정보를 반환한다.
+
+  ```bash
+  GET /_ssl/certificates
+  ```
+
+  - 응답
+
+  ```json
+  [
+    {
+      "path" : "<certificate의 경로>",
+      "format" : "<jks | PKCS12 | PEM 중 하나가 온다>",
+      "alias" : null,
+      "subject_dn" : "<certificate의 subject의 Distinguished Name>",
+      "serial_number" : "<인증서의 일련번호가 16진수로 온다>",
+      "has_private_key" : <elasticsearch가 certificate의 private key에 접근할 수 있는지 여부>,
+      "expiry" : "<aksfy기한>"
+    }
+  ]
+  ```
+
+
+
+- `elasticsearch-certutil` tool
+
+  - TLS에 사용되는 certificate를 보다 쉽게 생성할 수 있게 도와주는 툴이다.
+
+  ```bash
+  $ bin/elasticsearch-certutil
+  (
+  (ca [--ca-dn <name>] [--days <n>] [--pem])
+  
+  | (cert ([--ca <file_path>] | [--ca-cert <file_path> --ca-key <file_path>])
+  [--ca-dn <name>] [--ca-pass <password>] [--days <n>]
+  [--dns <domain_name>] [--in <input_file>] [--ip <ip_addresses>]
+  [--multiple] [--name <file_name>] [--pem] [--self-signed])
+  
+  | (csr [--dns <domain_name>] [--in <input_file>] [--ip <ip_addresses>]
+  [--name <file_name>])
+  
+  [-E <KeyValuePair>] [--keysize <bits>] [--out <file_path>]
+  [--pass <password>]
+  )
+  
+  | http
+  
+  [-h, --help] ([-s, --silent] | [-v, --verbose])
+  ```
+
+  - CA mode
+    - 새로운 CA를 생성할 때 사용한다.
+    - 기본적으로 CA certificate와 private key 정보를 담고 있는 PKCS#12 형식의 하나의 파일을 생성한다.
+    - `--pem` 옵션을 함께 줄 경우 PEM 형식의 certificate와 private key를 압축한 파일을 생성한다.
+  - CERT mode
+    - X.509 certificate와 private key를 생성한다.
+    - `--self-signed` 옵션을 주지 않았다면 `--ca` 옵션이나 `--ca-cert`와 `--ca-key` 옵션을 반드시 줘야 한다.
+    - `--in` 옵션에 YAML 형식의 파일을 주면, 해당 파일에 작성된대로 복수의 certificate와 private key를 생성한다.
+  - CSR mode
+    - 신뢰할 수 있는 CA에 sign요청을 보내는 CSR을 생성한다.
+    - CERT mode와 마찬가지로 `--in` 옵션을 줄 수 있다.
+  - HTTP mode
+    - HTTP(REST) interface를 위한 certificate를 생성한다.
+
+  
+
+
+
+## Transport layer 보안
+
+- 가장 기본적인 보안은 악의적인 노드가 클러스터에 합류하는 것을 막는 것이다.
+
+  - transport 계층(node들 사이의 통신에 사용되는 계층)은 노드들 사이의 암호화와 인증에 모두 TLS(Transport Layer Secuirty)를 사용한다.
+  - 정확히 적용된 TLS는 악의적인 노드가 클러스터에 합류하는 것을 막고, 다른 노드들로부터 데이터를 가져가는 것을 막을 수 있다.
+
+  - username과 password기반 인증이 HTTP 계층에서 local cluster의 보안을 높이는 것에는 도움이 되지만 노드들 사이의 보안을 위해서는 TLS가 필요하다.
+
+
+
+- TLS
+  - Trasnport Layer Security는 산업 표준 protocol의 이름이다.
+    - 이전에는 Secure Socket Layer(SSL)이라 불렸다.
+  - 네트워크 통신에 (암호화 같은)보안 제어를 위해 사용된다.
+  - Transport Protocol
+    - Elasticsearch의 노드들이 cluster 내의 다른 노드들과 통신하기 위해 사용하는 protocol의 이름이다.
+    - Elasticsearch에서만 사용하는 이름이며, Elasticsearch에서는 transport port와 HTTP port를 구분한다.
+    - Node들은 서로 다른 노드와 transport port를 통해 통신하고, REST client들은 HTTP port를 통해 elasticsearch와 통신한다.
+    - transport라는 단어는 TLS와 elasticsearch의 transport protocol에 모두 사용되지만 서로 다른 의미를 가진다.
+    - TLS는 transport port와 HTTP port에 모두 적용될 수 있다.
+  - TLS를 통해 노드들 사이의 통신이 암호화되고, 검증되도록 할 수 있다.
+    - Elasticsearch의 노드들은 다른 노드들과 통신할 때, 자신들의 신원 확인을 위해 certificates를 사용한다.
+    - 새로운 노드가 cluster에 추가되려면 반드시 같은 CA로부터 sign 받은 certificate가 필요하다.
+    - Transport layer에 대해서는, 기존에 이미 존재하는, 공유 가능한 CA대신에 노드들이 보다 엄격하게 통제될 수 있도록 별도의 CA를 사용하는 것이 추천된다.
+  - TLS를 사용하도록 설정된 노드와. 그렇지 않은 노드 사이의 통신은 불가능하다.
+
+
+
+- CA 생성하기
+
+  - Elasticsearch를 시작하기 전에 elasticsearch tool 중 하나인 elasticsearch-certutil을 사용하여 CA를 생성한다.
+    - prompt에 파일명을 입력할 수 있는데 입력하지 않을 경우 기본값은 `elastic-stack-ca.p12`이다.
+    - 그 후 비밀번호를 설정할 수 있는 데, production 환경이 아니라면 공백으로 두는 것도 가능하다.
+  - 결과 파일에는 CA를 위한 public certificate과 certificate을 sign하는데 필요한 private key가 포함되어 있다.
+
+  ```bash
+  $ bin/elasticsearch-certutil ca
+  ```
+
+
+
+- certificate과 private key 생성하기
+
+  - prompt가 뜨면 위에서 설정한 password를 입력하고, 생성할 certificate의 비밀번호와 파일경로를 입력한다.
+  - 아래 명령어로 생성되는 파일은 keystore 파일로, node certificate과 node key, 그리고 CA certificate를 포함하고 있다.
+
+  ```bash
+  $ bin/elasticsearch-certutil cert --ca <위에서 생성한 CA 파일>
+  ```
+
+  - output으로 나온 keystore 파일을 모든 노드의 `$ES_PATH_CONF` 디렉터리에 복사한다.
+
+
+
+- TLS를 사용하여 노드들 사이의 통신을 암호화하기
+
+  - Elasticsearch는 TLS와 관련된 모든 파일들(certificate, key, keystore, truststore 등)을 모니터링한다.
+    - Elasticsearch는 `resource.reload.interval.high`에 설정된 주기로 변경 사항을 폴링한다.
+    - 만일 TLS관련 파일을 업데이트 할 경우 Elasticsearch가 파일을 다시 로드한다.
+  - 설정 변경하기
+    - 하나의 cluster로 묶으려는 모든 node들의 `elasticsearch.yml` 파일을 아래와 같이 변경한다.
+    - 같은 certificate file을 사용하기에, `verification_mode`를 `certificate`로 설정한다.
+
+  ```yaml
+  cluster.name: my-cluster
+  # 각 노드별로 다르게 준다.
+  node.name: node-1
+  xpack.security.transport.ssl.enabled: true
+  xpack.security.transport.ssl.verification_mode: certificate 
+  xpack.security.transport.ssl.client_authentication: required
+  xpack.security.transport.ssl.keystore.path: elastic-certificates.p12
+  xpack.security.transport.ssl.truststore.path: elastic-certificates.p12
+  ```
+
+  - 만일 certificate 파일을 생성할 때 password를 설정했다면, 아래 명령어를 통해 password를 elasticsearch keystore에 저장한다.
+    - 마찬가지로 모든 노드에서 실행해준다.
+
+  ```bash
+  $ bin/elasticsearch-keystore add xpack.security.transport.ssl.keystore.secure_password
+  $ bin/elasticsearch-keystore add xpack.security.transport.ssl.truststore.secure_password
+  ```
+
+
+
+- TLS 관련 설정
+  - `xpack.security.transport.ssl.verification_mode`
+    - certificate의 검증 방식을 설정한다.
+    - `full`: certificate가 믿을 수 있는 CA에 의해 sign 된 것인지와, 서버의 hostname(또는 IP)가 certificate 내부에 있는 값과 일치하는지도 검증한다.
+    - `certificate`: certificate가 믿을 수 있는 CA에의해 sign된 것인지만 검사한다.
+    - `none`: certificate에 대한 검증을 수행하지 않는다. 절대 production 환경에서 사용해선 안된다. 
