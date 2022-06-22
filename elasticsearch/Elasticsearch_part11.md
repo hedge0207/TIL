@@ -114,7 +114,7 @@
 
 - standard analyzer
 
-  - 아무 설정을 하지 않을 경우 디폴터로 적용되는 애널라이저
+  - 아무 설정을 하지 않을 경우 디폴트로 적용되는 애널라이저
   - filter
     - character filter가 정의되어 있지 않다.
     - standard tokenizer가 정의되어 있다.
@@ -781,15 +781,6 @@
 
 
 
-- Elasticsearch가 처음 실행 될 때 아래와 같은 보안과 관련된 기능들이 실행된다.
-  - trasnport(node들 사이의 통신)와 HTTP 계층(client와의 통신)의 TLS를 위한 certificate와 key가 생성된다.
-    - `http_ca.crt`: 
-  - TLS 설정이 `elasticsearch.yml`파일에 작성된다.
-  - `elastic`이라는 user를 위한 password가 생성된다.
-  - kibana와 연결하기 위한 enrollment token이 생성된다.
-
-
-
 - Elasticsearch는 크게 아래 3가지 방식으로 보안 기능을 제공한다.
   - 인가되지 않은 접근을 막는다.
     - role-base로 접근을 통제한다.
@@ -808,6 +799,8 @@
 
 
 
+## security 자동으로 적용하기
+
 - Elasticsearch가 실행되면 아래와 같은 보안 작업들이 실행된다.
   - Transport and HTTP layers에 대해 TLS용 certificate와 key가 생성된다.
   - elasticsearh.yml 파일에 TLS 관련 설정이 작성된다.
@@ -819,7 +812,28 @@
 
 
 
+- 보안 관련 설정이 자동으로 실행되지 않는 경우
+  - Elasticsearch가 처음 실행될 때 아래와 같은 사항들을 체크하는데, 하나라도 fail이 된다면 보안 관련 설정이 자동으로 실행되지 않는다.
+    - node가 처음 실행되는 것인지(처음 실행되는 것이 아니라면 실행되지 않는다).
+    - 보안 관련 설정이 이미 설정되었는지(이미 설정되었다면 실행되지 않는다).
+    - startup process가 node의 설정을 수정하는 것이 가능한지.
+  - node 내부의 환경에 따라 실행되지 않기도 한다.
+    - `/data` 디렉터리가 이미 존재하고, 비어있지 않은 경우.
+    - `elasticsearch.yml` 파일이 존재하지 않거나 `elasticsearch.keystore`파일을 읽을 수 없는 경우
+    - elasticsearch의 configuration 디렉터리가 writable 하지 않은 경우
+  - setting에 따라 실행되지 않기도 한다.
+    - `node.roles`에 해당 node가 master node로 선출될 수 없게 설정되었거나, data를 저장할 수 없게 설정된 경우
+    - `xpack.security.autoconfiguration.enabled`가 false로 설정된 경우
+    - `xpack.security.enabled`을 설정한 경우
+    - `elasticsearch.keystore`또는 `elasticsearch.yml`에 `xpack.security.http.ssl.*` 또는 `xpack.security.transport.ssl.*`을 설정한 경우.
+    - `discovery.type`, `discovery.seed_hosts`, 또는 `cluster.initial_master_nodes`에 값이 설정된 경우.
+    - 단, `discovery.type`이 `single-node`이거나, `cluster.initial_master_nodes`의 값이 현재 노드 하나 뿐인 경우는 예외이다.
+
+
+
 - 클러스터에 새로운 node 합류시키기
+
+  > enrollment token은 security가 자동으로 설정되었을 때만 사용할 수 있다.
 
   - Elasticsearch가 최초로 실행되면 security auto-configuration process는 HTTP layer를 0.0.0.0에 바인드한다.
     - transport layer만 localhost에 바인드한다.
@@ -843,7 +857,8 @@
   $ bin/elasticsearch --enrollment-token <enrollment-token>
   ```
 
-- enrollment token은 security가 자동으로 설정되었을 때만 사용할 수 있다.
+  - 새로 실행된 노드의 `config/certs` 폴더에 certificate와 key가 자동으로 생성된다.
+
 
 
 
@@ -872,25 +887,6 @@
   # transport.p12
   $ bin/elasticsearch-keystore show xpack.security.transport.ssl.keystore.secure_password
   ```
-
-
-
-- 보안 관련 설정이 자동으로 실행되지 않는 경우
-  - Elasticsearch가 처음 실행될 때 아래와 같은 사항들을 체크하는데, 하나라도 fail이 된다면 보안 관련 설정이 자동으로 실행되지 않는다.
-    - node가 처음 실행되는 것인지(처음 실행되는 것이 아니라면 실행되지 않는다).
-    - 보안 관련 설정이 이미 설정되었는지(이미 설정되었다면 실행되지 않는다).
-    - startup process가 node의 설정을 수정하는 것이 가능한지.
-  - node 내부의 환경에 따라 실행되지 않기도 한다.
-    - `/data` 디렉터리가 이미 존재하고, 비어있지 않은 경우.
-    - `elasticsearch.yml` 파일이 존재하지 않거나 `elasticsearch.keystore`파일을 읽을 수 없는 경우
-    - elasticsearch의 configuration 디렉터리가 writable 하지 않은 경우
-  - setting에 따라 실행되지 않기도 한다.
-    - `node.roles`에 해당 node가 master node로 선출될 수 없게 설정되었거나, data를 저장할 수 없게 설정된 경우
-    - `xpack.security.autoconfiguration.enabled`가 false로 설정된 경우
-    - `xpack.security.enabled`을 설정한 경우
-    - `elasticsearch.keystore`또는 `elasticsearch.yml`에 `xpack.security.http.ssl.*` 또는 `xpack.security.transport.ssl.*`을 설정한 경우.
-    - `discovery.type`, `discovery.seed_hosts`, 또는 `cluster.initial_master_nodes`에 값이 설정된 경우.
-    - 단, `discovery.type`이 `single-node`이거나, `cluster.initial_master_nodes`의 값이 현재 노드 하나 뿐인 경우는 예외이다.
 
 
 
@@ -960,11 +956,12 @@
   - HTTP mode
     - HTTP(REST) interface를 위한 certificate를 생성한다.
 
-  
 
 
 
-## Transport layer 보안
+## security 수동으로 적용하기
+
+### Transport layer 보안
 
 - 가장 기본적인 보안은 악의적인 노드가 클러스터에 합류하는 것을 막는 것이다.
 
@@ -1058,9 +1055,7 @@
 
 
 
-
-
-## HTTP layer 보안
+### HTTP layer 보안
 
 - CSR
   - `elasticsearch-certutil` tool을 실행하면 어떻게 certificate을 생성할 것인지에 대한 여러 질문을 던진다. 
@@ -1119,7 +1114,7 @@
 
 
 
-### Kibana HTTP client 암호화하기.
+#### Kibana HTTP client 암호화하기.
 
 - Browser는 kibana로 traffic을 보내고, kibana는 elasticsearch에 trafic을 보낸다.
   - 이 두 개의 채널은 TLS를 사용하기 위해 개별적으로 설정을 해줘야한다.
@@ -1183,7 +1178,7 @@
 
 
 
-## Beats 보안
+#### Beats 보안
 
 > https://www.elastic.co/guide/en/elasticsearch/reference/current/security-basic-setup-https.html#configure-beats-security 참고
 

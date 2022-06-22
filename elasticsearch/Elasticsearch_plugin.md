@@ -34,8 +34,9 @@
   - 아래와 같이 dockerfile을 작성한다.
     - 위에서 작성한 default.policy 파일을 복사한다.
     - plugin을 복사하고, 설치한다.
-    - 기본 사용자인 elasticsearch로는 /usr/share/elasticsearch/modules에 폴더 생성이 불가능하므로 root 사용자로 변경한다.
-
+    - 기본 사용자인 elasticsearch로는 /usr/share/elasticsearch/modules에 폴더 생성이 불가능하므로 root user로 변경한다.
+    - root user로는 elasticsearch 생성이 불가능하므로 다시 elasticsearch user로 변경한다.
+  
   ```dockerfile
   FROM docker.elastic.co/elasticsearch/elasticsearch:8.1.0
   
@@ -59,7 +60,7 @@
     - `configsync` 인덱스는 elasticsearch가 실행되면서 자동으로 생성된다.
 
   ```bash
-  $ curl -XGET -H 'Content-Type:application/json' localhost:9200/_configsync/file?path=<file_path>
+  $ curl -XPOST -H 'Content-Type:application/json' localhost:9200/_configsync/file?path=<file_path> --data-binary @<file_path>
   ```
 
   - 인덱스에 등록된 파일을 각 노드들에 sync시킨다.
@@ -108,8 +109,6 @@
 
   - response가 생성되면 해당 type의 response를 바라보고 있는 `ActionListner`에 의해서 `ActionListner`를 상속 받은 클래스의  `onResponse` 메서드가 실행된다.
   - `transportService.sendRequest`를 통해 다른 node로 요청을 보내면 요청을 받은 노드는 특정 규칙에 따라 `HandledTransportAction` Action class를 선정하고 해당 class가 override한 `doExecute` 함수를 실행시킨다.
-
-
 
 
 
@@ -315,8 +314,4 @@
       }
   }
   ```
-
-  
-
-  
 

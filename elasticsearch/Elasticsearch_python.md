@@ -1,3 +1,22 @@
+# Elasticsearch 8
+
+- client
+
+  - elasticsearch package 8.X 이상을 설치해야 한다.
+  - 기존과 달리 `ca_certs`, `basic_auth parameter`를 넘겨야 한다.
+
+  ```python
+  from elasticsearch import Elasticsearch
+  
+  
+  es_client = Elasticsearch("https://localhost:9210", 
+                          ca_certs="./http_ca.crt", 
+                          basic_auth=("elastic", "oAiWr*CQT37z73U-mr1y"))
+  ```
+
+
+
+
 # elasticsearch-dsl
 
 - elasticsearch-dsl
@@ -10,10 +29,6 @@
   ```bash
   $ pip install elasticsearch-dsl
   ```
-
-
-
-- 
 
 
 
@@ -57,5 +72,4 @@
       reader = csv.DictReader(f) 
       helpers.bulk(es, reader, index="my_index")
   ```
-
 
