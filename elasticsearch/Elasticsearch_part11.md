@@ -1184,3 +1184,59 @@
 
 
 
+
+
+## 비밀번호 설정하기
+
+- Build-in users
+  - Elastic Stack은 built-in user를 제공한다.
+    - 각 user들은 고정된 권한을 가지고 있으며, password가 설정되기 전에는 인증될 수 없다.
+    - `elastic`이라는 build-in user는 build-in user들의 password를 설정하는데 사용할 수 있다.
+  - `elastic` user를 사용해선 안된다.
+    - Cluster에 대한 모든 접근 권한이 필요한 경우를 제외하고는 `elastic` user를 사용해선 안된다.
+    - `elastic` user를 사용하여 최소한의 필수적인 역할과 권한을 지닌 user들을 생성하여 사용하는 것이 좋다.
+  - 아래와 같은 built-in user들이 있다.
+    - `elastic`: built-in super user.
+    - `kibana_system`: Kibana와 Elasticsearch가 통신하기위해 Kibana에서 사용하는 user.
+    - `logstash_system`: monitoring한 정보를 elasticsearch에 저장하기 위해 logstash가 사용하는 user.
+    - `beats_system`: monitoring한 정보를 elasticsearch에 저장하기 위해 beats가 사용하는 user.
+    - `apm_system`: monitoring한 정보를 elasticsearch에 저장하기 위해 APM server가 사용하는 user.
+    - `remote_monitoring_user`: monitoring 정보를 수집하고 elasticsearch에 저장하기위해 metricbeat에서 사용하는 user.
+  - built-in user들은 `.secuity`라는 index에 저장되어 있다.
+    - 만일 built-in user가 비활성화되거나 비밀번호가 변경될 경우, 클러스터 내부의 모든 노드에 변경사항이 자동으로 반영된다.
+    - 만일 `.security`가 삭제되거나 snapshot으로부터 재생성되었을 경우, 변경사항은 유실된다.
+
+
+
+- Bootstrap password
+  - Elasticsearch가 실행될 때, `elastic` user에 password가 설정되어있지 않다면, elasticsearchs는 bootstrap password를 사용한다.
+  - Bootstrap password는 모든 built-in user의 password를 설정할 수 있는 tool을 실행하는 데 사용된다.
+    - 만일 super user인 `elastic`의 password를 설정했다면, bootsrap password는 더 이상 쓸 곳이 없다.
+  - Bootstrap password를 변경하거나 알 필요는 없다.
+    - `bootstrap.password` 세팅을 입력하면 해당 값으로 bootstrap password가 설정된다.
+
+
+
+- Password 설정하기
+
+  - `elasticsearch-reset-password` tool 사용하기
+    - `-u` 옵션으로 사용자명을 입력한다.
+    - `-i` 옵션으로 변경할 password를 입력한다.
+
+  ```bash
+  $ bin/elasticsearch-reset-password -u <user name>
+  ```
+
+  - API로 변경하기
+
+  ```json
+  // POST /_security/user/<user name>/_password
+  {
+      "password":"<변경할 password>"
+  }
+  ```
+
+
+
+
+
