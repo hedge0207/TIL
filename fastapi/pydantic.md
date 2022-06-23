@@ -284,8 +284,6 @@
 
 
 
-
-
 - Enum class 사용하기
 
   - `use_enum_values`를 `True`로 주면, 자동으로 Enum 클래스의 value를 할당한다.
@@ -308,5 +306,48 @@
   student = Student(name="Kim", gender='male')
   print(student.dict())
   ```
+
+
+
+
+- pydantic model의 기본값
+
+  - 만일 아래와 같이 다른 pydantic model을 field의 type으로 갖을 경우, 해당 field의 기본 값을 None으로 설정하면, 기존 field의 기본값은 무시된다.
+    - 만일 기본값이 적용된다면 `foo=Foo(a=1, b='Hello')`가 출력되겠지만 기본값이 무시되므로 `foo=None`가 출력된다.
+
+  ```python
+  from pydantic import BaseModel
+  
+  # Bar model의 foo field의 기본값이 None이므로, Foo model의 기본값들은 무시된다.
+  class Foo(BaseModel):
+      a: int = 1
+      b: str = "Hello"
+  
+  class Bar(BaseModel):
+      foo: Foo = None
+  
+  bar = Bar()
+  print(bar)	# foo=None
+  ```
+
+  - 따라서 기본값을 적용하고 싶다면 아래와 같이 Foo model의 인스턴스를 생성한 뒤 기본값으로 설정해준다.
+
+  ```python
+  from pydantic import BaseModel
+  
+  
+  class Foo(BaseModel):
+      a: int = 1
+      b: str = "Hello"
+  
+  class Bar(BaseModel):
+      foo: Foo = Foo()
+  
+  
+  bar = Bar()
+  print(bar)	# foo=Foo(a=1, b='Hello')
+  ```
+
+  
 
   
