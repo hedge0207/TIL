@@ -658,114 +658,6 @@
 
 
 
-
-
-# Elasticsearch 8
-
-## Upgrade
-
-- 7.17 미만 version에서 8 version으로 바로 업그레이드는 불가능
-  - 7.17 미만일 경우 7.17로 업그레이드 후 8로 업그레이드 해야 한다.
-  - Upgrade Assistant를 통해 issue를 해결하고 기존에 색인된 index들을 재색인하는 과정을 거친다.
-  - Kibana -> Stack Management -> Upgrade Assistant
-
-
-
-- `node.<role>` setting이 deprecate 됐다.
-  - 대신 `node.roles` 옵션을 사용해야한다.
-
-
-
-## Kibana 연동하기
-
-- enrollment token 기반 연동으로 변경되었다.
-
-  - enrollment token
-    - enrollment token은 kibana를 elasticsearch에 **등록**하거나 새로운 node를 cluster에 **등록**할 때 사용한다.
-    - enrollment token에는 cluster에 대한 정보가 담겨 있다.
-
-  - 기존에는 `kibana.yml`파일에 kibana와 연결할 elasticsearch의 host를 아래와 같이 적어주었다.
-
-  ```yaml
-  elasticsearch.hosts:["http:localhost:9200"]
-  ```
-
-  - 그러나 enrollment token 기반 연동에서는 `elasticsearch.hosts`를 설정할 경우 error가 발생한다.
-    - elasticsearch가 생성한 enrollment token을 kibana에 입력하면 알아서 elasticsearch url을 찾아 연결된다.
-
-  ```yaml
-  version: '3.2'
-  
-  services:
-    single-node:
-      image: docker.elastic.co/elasticsearch/elasticsearch:8.1.3
-      container_name: single-node
-      environment:
-        - node.name=single-node
-        - cluster.name=my-cluster
-        - bootstrap.memory_lock=true
-        - discovery.type=single-node
-        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      ulimits:
-        memlock:
-          soft: -1
-          hard: -1
-      restart: always
-      ports:
-        - 9210:9200
-      networks:
-        - elasticsearch_elastic
-    
-    kibana:
-      image: docker.elastic.co/kibana/kibana:8.1.3
-      container_name: single-kibana
-      ports:
-        - "5602:5601"
-      # elasticsearch.hosts를 설정하지 않는다.
-      # environment:
-      #   ELASTICSEARCH_HOSTS: https://192.168.112.10:9200
-      networks:
-        - elasticsearch_elastic
-      depends_on:
-        - single-node
-  
-  
-  networks:
-    elasticsearch_elastic:
-      external:
-        name: elasticsearch_elastic
-  ```
-
-  - enrollment token 생성
-
-    - docker가 아니라면 elasticsearch를 최초로 실행할 때 enrollment token과 username, password가 터미널 창에 출력되지만, docker의 경우 자동으로 생성되지 않으므로 수동으로 초기화해줘야한다.
-    - elasticsearch의 home 디렉토리로 이동하여 아래 명령어를 입력한다.
-    - 터미널 창에 생성된 enrollment token의 정보가 출력되고, 이를 복사하여 입력하면 된다.
-    - enrollment token의 유효기간은 30m이다.
-
-    ```bash
-    $ bin/elasticsearch-create-enrollment-token -s kibana
-    ```
-
-  - enrollment token 입력하기
-
-    - kibana를 실행하면 터미널 창에 `Go to http://0.0.0.0:5601/?code=<code> to get started.`와 같은 메시지가 뜬다.
-    - 위 링크로 접속하면 enrollment token을 입력하는 창이 뜨는데 여기에 enrollment token을 입력하면 된다.
-    - 예시로 든 docker-compose.yml 파일의 경우 kibana의 port를 5602와  bind 했으므로 `<서버의 host>:5602/?code=<code>`로 접속해야한다
-
-  - username과 password 입력하기
-
-    - elasticsearch는 실행과 동시에 `elastic`이라는 user를 자동으로 생성한다.
-    - enrollment token과 마찬가지로 elasticsearch를 최초로 실행할 때 username과 password를 출력하지만, docker의 경우 password를 자동으로 생성하지 않으므로 password를 초기화해야한다.
-
-  ```bash
-  $ bin/elasticsearch-reset-password -u elastic
-  ```
-
-  - kibana에 `elastic`이라는 username과, 위 명령어를 통해 초기화한 password를 입력하면 elasticsearch와의 연동이 완료된다.
-
-
-
 # Security
 
 - 보안 비활성화하기
@@ -955,6 +847,98 @@
     - CERT mode와 마찬가지로 `--in` 옵션을 줄 수 있다.
   - HTTP mode
     - HTTP(REST) interface를 위한 certificate를 생성한다.
+
+
+
+
+
+### Kibana 연동하기
+
+- enrollment token 기반 연동으로 변경되었다.
+
+  - enrollment token
+    - enrollment token은 kibana를 elasticsearch에 **등록**하거나 새로운 node를 cluster에 **등록**할 때 사용한다.
+    - enrollment token에는 cluster에 대한 정보가 담겨 있다.
+
+  - 기존에는 `kibana.yml`파일에 kibana와 연결할 elasticsearch의 host를 아래와 같이 적어주었다.
+
+  ```yaml
+  elasticsearch.hosts:["http:localhost:9200"]
+  ```
+
+  - 그러나 enrollment token 기반 연동에서는 `elasticsearch.hosts`를 설정할 경우 error가 발생한다.
+    - elasticsearch가 생성한 enrollment token을 kibana에 입력하면 알아서 elasticsearch url을 찾아 연결된다.
+
+  ```yaml
+  version: '3.2'
+  
+  services:
+    single-node:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.1.3
+      container_name: single-node
+      environment:
+        - node.name=single-node
+        - cluster.name=my-cluster
+        - bootstrap.memory_lock=true
+        - discovery.type=single-node
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      restart: always
+      ports:
+        - 9210:9200
+      networks:
+        - elasticsearch_elastic
+    
+    kibana:
+      image: docker.elastic.co/kibana/kibana:8.1.3
+      container_name: single-kibana
+      ports:
+        - "5602:5601"
+      # elasticsearch.hosts를 설정하지 않는다.
+      # environment:
+      #   ELASTICSEARCH_HOSTS: https://192.168.112.10:9200
+      networks:
+        - elasticsearch_elastic
+      depends_on:
+        - single-node
+  
+  
+  networks:
+    elasticsearch_elastic:
+      external:
+        name: elasticsearch_elastic
+  ```
+
+  - enrollment token 생성
+
+    - docker가 아니라면 elasticsearch를 최초로 실행할 때 enrollment token과 username, password가 터미널 창에 출력되지만, docker의 경우 자동으로 생성되지 않으므로 수동으로 초기화해줘야한다.
+    - elasticsearch의 home 디렉토리로 이동하여 아래 명령어를 입력한다.
+    - 터미널 창에 생성된 enrollment token의 정보가 출력되고, 이를 복사하여 입력하면 된다.
+    - enrollment token의 유효기간은 30m이다.
+
+    ```bash
+    $ bin/elasticsearch-create-enrollment-token -s kibana
+    ```
+
+  - enrollment token 입력하기
+
+    - kibana를 실행하면 터미널 창에 `Go to http://0.0.0.0:5601/?code=<code> to get started.`와 같은 메시지가 뜬다.
+    - 위 링크로 접속하면 enrollment token을 입력하는 창이 뜨는데 여기에 enrollment token을 입력하면 된다.
+    - 예시로 든 docker-compose.yml 파일의 경우 kibana의 port를 5602와  bind 했으므로 `<서버의 host>:5602/?code=<code>`로 접속해야한다
+
+  - username과 password 입력하기
+
+    - elasticsearch는 실행과 동시에 `elastic`이라는 user를 자동으로 생성한다.
+    - enrollment token과 마찬가지로 elasticsearch를 최초로 실행할 때 username과 password를 출력하지만, docker의 경우 password를 자동으로 생성하지 않으므로 password를 초기화해야한다.
+
+  ```bash
+  $ bin/elasticsearch-reset-password -u elastic
+  ```
+
+  - kibana에 `elastic`이라는 username과, 위 명령어를 통해 초기화한 password를 입력하면 elasticsearch와의 연동이 완료된다.
 
 
 
