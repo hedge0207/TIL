@@ -440,6 +440,43 @@
   }
   ```
 
+
+
+
+- `ignore_above`
+
+  - 설정 값 이상의 character를 가진 field는 색인되지 않도록 해준다.
+    - 이미 존재하는 필드에도 동적으로 설정이 가능하다.
+  - **`keyword`** 필드에만 설정 가능하다.
+
+  - 예시
+
+  ```json
+  PUT my-index-000001
+  {
+    "mappings": {
+      "properties": {
+        "message": {
+          "type": "keyword",
+          "ignore_above": 20	// character의 개수가 20개 이상이면 색인되지 않는다.
+        }
+      }
+    }
+  }
+  
+  PUT my-index-000001/_doc/1 
+  {
+    "message": "Syntax error"		// 색인된다.
+  }
+  
+  PUT my-index-000001/_doc/2 
+  {
+    "message": "Syntax error with some long stacktrace"	// message field는 색인되지 않는다.
+  }
+  ```
+
+  
+
   
 
 
