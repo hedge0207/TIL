@@ -943,6 +943,40 @@
 
 
 
+
+### Cleint를 elasticsearch에 연결하기
+
+- Elasticsearch와 연결되는 모든 클라이언트는 검증 과정을 거친다.
+  - Elasticsearch의 Client에는 대표적으로 아래와 같은 것들이 있다.
+    - Kibana
+    - Logstash
+    - Beats
+    - Python client
+  - Client들은 모두 Elasticsearch가 HTTPS 를 위해 사용하는 certificate를 신뢰할 수 있는지 검증해야 한다.
+
+
+
+- Client와 Elasticsearch를 연동하는 방법은 크게 두 가지가 있다.
+
+  - Certificate를 사용하는 방법.
+    - Security를 자동으로 설정할 경우 elasticsearch는 HTTP 계층 용 certificate(`http_ca.crt`)를 생성한다.
+    - 해당 파일을 연결하고자 하는 client에 복사하여 사용하면 된다.
+  - Fingerprint를 사용하는 방법.
+    - 상기했듯 security를 자동으로 설정할 경우 elasticsearch는 HTTP 계층 용 certificate(`http_ca.crt`)를 생성한다.
+    - 그와 동시에 해당 certificate의 fingerprint도 터미널에 출력되는데, 해당 fingerprint를 복사하여 client의 confiuration에 추가하면 된다.
+    - 만일 terminal에서 fingerprint를 찾기 어렵다면 아래와 같이 얻을 수 있다.
+
+  ```bash
+  $ openssl x509 -fingerprint -sha256 -in config/certs/http_ca.crt
+  ```
+
+  
+
+
+
+
+
+
 ## security 수동으로 적용하기
 
 ### Transport layer 보안
