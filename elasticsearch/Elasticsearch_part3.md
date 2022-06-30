@@ -281,7 +281,8 @@
   $ curl -XGET 'http://localhost:9200/_cat/segments'
   ```
 
-  
+
+
 
 ## stats API로 지표 확인하기
 
@@ -853,7 +854,6 @@
 - Elastic Stack의 이중화
   - Elastic Stack의 어느 한 구성 요소에 장애가 발생하더라도 나머지 요소들이 정상적으로 동작할 수 있도록 이중화하는 작업이 반드시 필요하다.
   - 추후 추가
-
 
 
 

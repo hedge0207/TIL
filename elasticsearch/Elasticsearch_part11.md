@@ -970,7 +970,6 @@
   $ openssl x509 -fingerprint -sha256 -in config/certs/http_ca.crt
   ```
 
-  
 
 
 

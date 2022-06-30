@@ -11,8 +11,25 @@
   
   es_client = Elasticsearch("https://localhost:9210", 
                           ca_certs="./http_ca.crt", 
-                          basic_auth=("elastic", "oAiWr*CQT37z73U-mr1y"))
+                          basic_auth=("elastic", "<password>"))
   ```
+  
+  - Elasticsearch Python client의 버전이 7.x일 경우 `basic_auth`가 아닌 `http_auth` 파라미터를 넣는다.
+  
+  ```python
+  from elasticsearch import Elasticsearch
+  
+  
+  es_client = Elasticsearch("https://localhost:9210", 
+                          ca_certs="./ca.crt", 
+                          http_auth=("elastic", "<password>"))
+  
+  # 혹은 아래와 같이 url에 사용자명과 password를 추가한다.
+  es_client = Elasticsearch("https://elastic:<password>@localhost:9210", 
+                          ca_certs="./ca.crt")
+  ```
+  
+  
 
 
 
