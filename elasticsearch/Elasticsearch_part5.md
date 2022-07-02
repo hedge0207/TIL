@@ -540,6 +540,12 @@
 
 ### Filter Context
 
+- filter context
+  - 단순히 해당 값이 해당 필드에 존재하는지 여부만 확인하고 스코어링은 하지 않는다(score는 1로 고정).
+  - filter context는 검색 결과를 캐싱하지만 Query context는 검색 결과를 캐싱하지 않는다.
+
+
+
 - term 쿼리
 
   - ES에서 term은 검색어를 말한다.
