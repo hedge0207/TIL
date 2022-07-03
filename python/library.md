@@ -827,9 +827,104 @@
   print(bar)	# foo=Foo(a=1, b='Hello')
   ```
 
-  
 
+
+
+- alias를 설정 가능하다.
+
+  - 방법1. `Field`를 사용
+
+  ```python
+  from pydantic import Field, BaseModel
   
+  
+  class Person(BaseModel):
+      name: str =  Field("John", alias="first_name")
+  
+  
+  person = Person(**{"first_name":"Harry"})
+  print(person)	# name='Harry'
+  ```
+
+  - 방법2. `Config.fields`를 사용
+
+  ```python
+  from pydantic import Field, BaseModel
+  
+  
+  class Person(BaseModel):
+      name: str = "John"
+  
+      class Config:
+          fields = {"name":"first_name"}
+  
+  
+  person = Person(**{"first_name":"Harry"})
+  print(person)	# name='Harry'
+  ```
+
+  - 방법3. alias_generator를 사용
+    - snake_case를 PascalCase로 바꿀 때 처럼 일괄적으로 바꿔야 할 때 유용하다.
+
+  ```python
+  from pydantic import Field, BaseModel
+  
+  
+  class Person(BaseModel):
+      first_name: str
+      last_name: str
+  
+      class Config:
+          @classmethod
+          def alias_generator(cls, string: str) -> str:
+              return ''.join(word.capitalize() for word in string.split('_'))
+  
+  
+  person = Person(**{"FirstName":"Harry", "LastName":"Porter"})
+  print(person)	# first_name='Harry' last_name='Porter'
+  ```
+
+  - alias를 적용한 대로 데이터를 보고 싶을 경우 아래와 같이 `by_alias=True`를 준다.
+
+  ```python
+  from pydantic import Field, BaseModel
+  
+  
+  class Person(BaseModel):
+      first_name: str
+      last_name: str
+  
+      class Config:
+          @classmethod
+          def alias_generator(cls, string: str) -> str:
+              return ''.join(word.capitalize() for word in string.split('_'))
+  
+  
+  person = Person(**{"FirstName":"Harry", "LastName":"Porter"})
+  print(person.dict(by_alias=True))	# {'FirstName': 'Harry', 'LastName': 'Porter'}
+  ```
+
+  - alias를 설정하면 기존 field 명은 사용할 수 없게 되는데 `allow_population_by_field_name` 옵션을 `True`로 주면 둘 다 사용이 가능해진다.
+
+  ```python
+  from pydantic import Field, BaseModel
+  
+  
+  class Person(BaseModel):
+      name: str =  Field("John", alias="first_name")
+  
+      class Config:
+          allow_population_by_field_name=True
+  
+  
+  person = Person(**{"name":"Harry"})
+  print(person)	# name='Harry'
+  ```
+
+
+
+
+
 
 
 
