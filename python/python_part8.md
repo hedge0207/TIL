@@ -1223,9 +1223,36 @@
 
 
 
-- 테스트가 끝난 후 fixture 정리하기
+- 테스트 전후에 특정 코드 실행하기
 
-  > https://docs.pytest.org/en/7.0.x/how-to/fixtures.html#teardown-cleanup-aka-fixture-finalization 참고
+  - `yield`를 활용하여 테스트를 실행하기 전과 후에 특정 코드를 실행시킬 수 있다.
+
+  ```python
+  import pytest
+  
+  
+  @pytest.fixture
+  def run_before_and_after_tests(tmpdir):
+      # test 전에 실행할 코드를 작성한다.
+  
+      yield # test가 실행된다.
+  
+      # test가 끝난 후에 실행할 코드를 작성한다.
+  ```
+
+  - 예시
+    - 만일 Elasticsearch test를 위해서 미리 data를 bulk하고, 테스트 종료 후 index를 삭제해야 하다면 아래와 같이 하면 된다.
+
+
+  ```python
+  @pytest.fixture
+  def bulk_data():
+      bulk_data()
+      yield
+      delete_test_index()
+  ```
+
+
 
 
 
