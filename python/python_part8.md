@@ -1242,8 +1242,7 @@
 
   - 예시
     - 만일 Elasticsearch test를 위해서 미리 data를 bulk하고, 테스트 종료 후 index를 삭제해야 하다면 아래와 같이 하면 된다.
-
-
+  
   ```python
   @pytest.fixture
   def bulk_data():
@@ -1251,8 +1250,6 @@
       yield
       delete_test_index()
   ```
-
-
 
 
 
@@ -1329,76 +1326,3 @@
           assert (n * 1) + 1 == expected
   ```
 
-
-
-
-## 참고
-
-- [unittest vs pytest](https://www.bangseongbeom.com/unittest-vs-pytest.html#fn:python-internal-test)
-- [Pytest](https://velog.io/@samnaka/Pytest)
-- [pytest 공식 document](https://docs.pytest.org/en/7.0.x/contents.html)
-
-
-
-
-
-# ETC
-
-- Python에서 리눅스 명령어 실행하기
-
-  - subprocess 모듈을 사용한다.
-    - 실행하려는 명령이 시스템에 설치되어 있어야 한다.
-    - 따라서 이식성이 떨어진다.
-  - 예시
-    - subprocess의 run 메서드를 호출하면 명령이 실행되고, 결과가 PIPE에 저장된다.
-    - result.stdout은 str이 아니고 byte이기 때문에 unicode로 변환을 해줘야 한다.
-
-  ```python
-  import subprocess
-  
-  
-  result = subprocess.run(['ls'], stdout=subprocess.PIPE)
-  result_as_string = result.stdout.decode('utf-8')
-  
-  print(result_as_string)
-  
-  result = subprocess.run(['wc', '-l', 'test.txt'], stdout=subprocess.PIPE)
-  result_as_string = result.stdout.decode('utf-8')
-  
-  print(result_as_string)
-  ```
-
-  
-
-- tqdm
-
-  - python 코드를 실행 했을 때 진행 상황을 볼 수 있는 모듈이다.
-    - 실행에 오랜 시간이 걸리는 코드의 경우 중간에 print나 logging 모듈로 로그를 남기는 방식을 사용하기도 한다.
-    - tqdm은 print나 logging 모듈 없이도 진행 상황을 확인하게 도와준다.
-  - 설치
-
-  ```bash
-  $ pip install tqdm
-  ```
-
-  - 사용
-    - iterable을 tqdm에 넘겨 사용한다.
-
-  ```python
-  import time
-  from tqdm import tqdm
-  
-  
-  def long_time_job():
-      time.sleep(0.1)
-  
-  for i in tqdm(range(100)):
-      long_time_job()
-  ```
-
-  - 결과
-
-  ```bash
-  $ python main.py 
-  74%|████████████████████████████████████████████████████████████████████████████████████████████████▉              | 74/100 [00:07<00:02,  9.49it/s]
-  ```
