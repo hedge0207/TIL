@@ -20,57 +20,41 @@
 
   - static web page: 미리 만들어둔 문서(HTML, CSS, JS 등)를 항상 똑같이 제공하는 서비스
   - dynamic web page: 사용자의 요청에 맞게 그때그때 문서를 만들어서 전달하는 서비스
+  - HTML, CSS, JS 만으로는 Static web(미리 저장된 html,css,js 등의 정적 파일을 제공) 밖에 만들 수 없다.
 
-- HTML, CSS, JS 만으로는 Static web(미리 저장된 html,css,js 등의 정적 파일을 제공) 밖에 만들 수 없다.
+
 
 - 장고는 web framework다.
 
   - web framework는 웹 페이지 개발 과정의 어려움을 줄이는 것이 주 목적이다.
   - 표준 구조를 구현하는 클래스와 라이브러리의 모임이다.
 
-- 장고는 파이썬 기반으로 만들어졌다.
 
-- 서버와 클라이언트
-
-  - 서버와 클라이언트는 요청과 응답을 통해 상호작용이 이루어진다.
-  - 클라이언트의 요청에 따라 서버는 응답(주로 HTML파일)을 보내게 된다.
 
 - 기본적인 명령어
-
-  - 터미널 지우기
-
-    ```bash
-    ctrl+l
-    ```
-
-  - 기본 파이썬 실행
-
-    ```bash
-    $ python ㅏ파일명.pyㅓ
-    ```
 
   - django 설치
 
     ```bash
-    $ pip install django==ㅏ버전ㅓ  #버전을 적지 않을 경우 최신 버전이 설치된다.
+    $ pip install django[==버전]
     ```
 
   - 프로젝트 시작
 
     ```bash
-    $ django-admin startproject ㅏ프로젝트명ㅓ
+    $ django-admin startproject <프로젝트명>
     ```
 
     - 현재 위치에 중간 단계 없이 프로젝트 생성
 
     ```bash
-    $ django-admin startproject ㅏ프로젝트명ㅓ .
+    $ django-admin startproject <프로젝트명> .
     ```
 
   - 앱 생성
 
     ```bash
-    $ python manage.py startapp ㅏ앱이름ㅓ
+    $ python manage.py startapp <앱이름>
     ```
 
   - 서버 실행
@@ -78,7 +62,7 @@
     - 뒤의 8080은 포트 번호로, 로컬에선 쓰지 않아도 된다.
 
     ```bash
-    $ python manage.py runserver 8080
+    $ python manage.py runserver [port]
     ```
 
   - 마이그레이션
@@ -93,13 +77,7 @@
     $ python manage.py migrate
     ```
 
-  - 설치된 pip 패키지 확인
 
-    ```bash
-    $ pip list
-    ```
-
-- django 공식문서에서 [ ]는 필수로 입력해야 하는 것이 아닌 옵션이다.
 
 
 
@@ -124,176 +102,175 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
 
   - 프로잭트 생성(이때 생기는 intro폴더가 모든 프로젝트를 관리하는 폴더다)
 
-    - \_\_init.py\_\_, settings.py, urls.py, wsgi.py등이 있다.
+    - `__init__.py`, `settings.py`, `urls.py`, `wsgi.py`등이 있다.
     - wsgi는 web server gateway interface이다.
 
   - settings.py에서 아래와 같은 코드를 입력한다.
 
-    ```python
-    ALLOWED_HOST = ['*']
-    # 운용 서버에서 사용할 Host이름을 등록해 주는 것으로 IP주소와 도메인 모두 사용할 수 있다.
-    # 등록되지 않은 호스트 명으로 요청이 들어올 경우 400 Bad Request Error를 반환
-    # *는 모든 요청을 수락한다는 것이다.
-    
-    # 특정하고 싶다면 아래와 같이 특정 도메인이나 ip주소를 입력하면 된다.
-     ALLOWED_HOST = ['fathomless-scrubland-30645.herokuapp.com','127.0.0.1']
-    ```
+  ```python
+  ALLOWED_HOST = ['*']
+  # 운용 서버에서 사용할 Host이름을 등록해 주는 것으로 IP주소와 도메인 모두 사용할 수 있다.
+  # 등록되지 않은 호스트 명으로 요청이 들어올 경우 400 Bad Request Error를 반환
+  # *는 모든 요청을 수락한다는 것이다.
+  
+  # 특정하고 싶다면 아래와 같이 특정 도메인이나 ip주소를 입력하면 된다.
+   ALLOWED_HOST = ['fathomless-scrubland-30645.herokuapp.com','127.0.0.1']
+  ```
 
   - 앱 생성
 
     - 앱 이름은 복수로 지정하는 것이 관례다. 
 
+  ```bash
+$ python manage.py startapp <앱이름>
+  ```
+
   - 장고에게 앱이 생성되었다는 것을 알리기
 
     - 즉, 등록을 해야하는데 이는 `settings.py`에서 한다.
-
+  
     - `INSTALLED_APPS`에 추가해줘야 한다.
-
-    ```python
-    # $ python manage.py startapp pages를 통해 pages라는 app을 만들었을 경우 아래와 같이 추가해야 한다.
-    #INSTALLED_APPS는 아래에서 확인 할 수 있듯이 리스트이다.
-        
-    INSTALLED_APPS = [
-          'django.contrib.admin',
-          'django.contrib.auth',
-          'django.contrib.contenttypes',
-          'django.contrib.sessions',
-          'django.contrib.messages',
-          'django.contrib.staticfiles',
-          'pages',  #앱 이름 등록
-    ]
-    ```
-
+  
+  
+  ```python
+  # $ python manage.py startapp pages를 통해 pages라는 app을 만들었을 경우 아래와 같이 추가해야 한다.
+  #INSTALLED_APPS는 아래에서 확인 할 수 있듯이 리스트이다.
+      
+  INSTALLED_APPS = [
+        'django.contrib.admin',
+        'django.contrib.auth',
+        'django.contrib.contenttypes',
+        'django.contrib.sessions',
+      'django.contrib.messages',
+        'django.contrib.staticfiles',
+      'pages',  #앱 이름 등록
+  ]
+  ```
+  
   - settings.py에 있는 각종 옵션들
+  
+  
+  ```python
+  #디버그
+  DEBUG = True  #True로 되어 있으면 개발 모드다. 배포시에는 반드시 False로 바꿔야 한다.
+  # True로 놓으면 오류 페이지가 상세하게 떠서 어떤 오류가 발생했고 어떤 코드에서 발생했는지 알 수 있다.
+  #False로 해놓으면 오류 메세지만 출력된다. 따라서 만일 True로 해놓은 상태에서 오류가 발생하게 되면 다른 사람들이 내가 짠 코드를 전부 볼 수 있게 되므로 보안상의 심각한 문제가 생길 수 있다. 따라서 다른 사람들이 사용하게 할 때에는 반드시 False로 바꿔야 한다.
+  
+  ALLOWED_HOSTS = [] #프로젝트에서 생성한 사이트(경로)로 들어올 권한을 정하는 것이다.
+  #'*'를 대괄호 사이에 넣으면 누구나 입장 가능한 상태가 된다.
+  #프로그래밍에서 *는 일반적으로 "모두"를 뜻한다.
+  
+  
+  TEMPLATES = [
+      {    #DjangoTemplates(DTL)라는 엔진을 쓰고 있다는 의미, jinja2 등으로 변경 가능
+          'BACKEND': 'django.template.backends.django.DjangoTemplates',
+          'DIRS': [],
+          #'APP_DIRS'가 True면 Installed_APPS에 등록된 앱들의 템플릿 폴더를 관리하겠다는 의미
+          'APP_DIRS': True,  
+          'OPTIONS': {
+              'context_processors': [
+                  'django.template.context_processors.debug',
+                  'django.template.context_processors.request',
+                  'django.contrib.auth.context_processors.auth',
+                  'django.contrib.messages.context_processors.messages',
+              ],
+          },
+      },
+  ]
+  
+  # Internationalization관련 설정들
+  LANGUAGE_CODE = 'en-us'  #언어를 설정하는 것으로 "ko-kr"로 바꾸면 한국어가 된다.
+  
+  TIME_ZONE="UTC"  #시간 설정으로 'Asia/Seoul'로 바꾸면 한국 시간이 된다.
+  
+  USE_I18N = True #Internationalization의 약자로 I와 N사이에 18자가 위치해 이렇게 명명
+  
+  USE_L10N = True #Localization의 약자로 L과 N사이에 10자가 위치해 이렇게 명명
+  
+USE_TZ = True
+  ```
 
-    ```python
-    #디버그
-    DEBUG = True  #True로 되어 있으면 개발 모드다. 배포시에는 반드시 False로 바꿔야 한다.
-    # True로 놓으면 오류 페이지가 상세하게 떠서 어떤 오류가 발생했고 어떤 코드에서 발생했는지 알 수 있다.
-    #False로 해놓으면 오류 메세지만 출력된다. 따라서 만일 True로 해놓은 상태에서 오류가 발생하게 되면 다른 사람들이 내가 짠 코드를 전부 볼 수 있게 되므로 보안상의 심각한 문제가 생길 수 있다. 따라서 다른 사람들이 사용하게 할 때에는 반드시 False로 바꿔야 한다.
-    
-    ALLOWED_HOSTS = [] #프로젝트에서 생성한 사이트(경로)로 들어올 권한을 정하는 것이다.
-    #'*'를 대괄호 사이에 넣으면 누구나 입장 가능한 상태가 된다.
-    #프로그래밍에서 *는 일반적으로 "모두"를 뜻한다.
-    
-    
-    TEMPLATES = [
-        {    #DjangoTemplates(DTL)라는 엔진을 쓰고 있다는 의미, jinja2 등으로 변경 가능
-            'BACKEND': 'django.template.backends.django.DjangoTemplates',
-            'DIRS': [],
-            #'APP_DIRS'가 True면 Installed_APPS에 등록된 앱들의 템플릿 폴더를 관리하겠다는 의미
-            'APP_DIRS': True,  
-            'OPTIONS': {
-                'context_processors': [
-                    'django.template.context_processors.debug',
-                    'django.template.context_processors.request',
-                    'django.contrib.auth.context_processors.auth',
-                    'django.contrib.messages.context_processors.messages',
-                ],
-            },
-        },
-    ]
-    
-    # Internationalization관련 설정들
-    LANGUAGE_CODE = 'en-us'  #언어를 설정하는 것으로 "ko-kr"로 바꾸면 한국어가 된다.
-    
-    TIME_ZONE="UTC"  #시간 설정으로 'Asia/Seoul'로 바꾸면 한국 시간이 된다.
-    
-    USE_I18N = True #Internationalization의 약자로 I와 N사이에 18자가 위치해 이렇게 명명
-    
-    USE_L10N = True #Localization의 약자로 L과 N사이에 10자가 위치해 이렇게 명명
-    
-    USE_TZ = True
-    ```
-  
-    
-  
   - url 연결하기
-
+  
     - 다음으로 `urls.py`에서 어떤 url로 들어갔을 때 무엇을 처리할지를 설정해줘야 한다.
-
-      ```python
-    from django.contrib import admin
-      from django.urls import path
-    from pages import views   #pages에서 views를 가져오고 
-      #기본 구조
-      #from app이름 import 함수정의된 파일 이름
-      # 서버를 실행시켰을 때 urlpatterns가 비어 있다고 오류가 발생하지는 않으나(물론 관련 경로로 보내고자 한다면 오류가 발생하겠으나, 서버'만' 실행시켰을 때는 오류가 발생하지 않는다.)urlpatterns라는 리스트 자체를 정의하지 않으면 오류가 발생한다. 따라서 빈 리스트라도 만들어 두어야 한다.
-      urlpatterns = [
-          path('admin/', admin.site.urls),
-          path('index/', views.index),
-      	#index라는 url로 들어가면 views의 index라는 함수를 처리를 하겠다.
-      	#기본 구조
-      	#path('url/', 함수가 정의된 파일 이름.함수 이름)
-      ]
-      
-      #꼭 위처럼 url과 함수명을 맞춰야 하는 것은 아니나 편의를 위해서 위와 같이 한다.
-      #예컨데 아래와 같이 하는 것도 가능하다.
-      urlpatterns = [
-          path('admin/', admin.site.urls),
-          path('bboong/', views.index),
-      ]
-      ```
   
-    
   
-  - 함수 정의하기
-
+  ``` python
+  from django.contrib import admin
+  from django.urls import path
+  from pages import views   #pages에서 views를 가져오고 
+  #기본 구조
+  #from app이름 import 함수정의된 파일 이름
+  # 서버를 실행시켰을 때 urlpatterns가 비어 있다고 오류가 발생하지는 않으나(물론 관련 경로로 보내고자 한다면 오류가 발생하겠으나, 서버'만' 실행시켰을 때는 오류가 발생하지 않는다.)urlpatterns라는 리스트 자체를 정의하지 않으면 오류가 발생한다. 따라서 빈 리스트라도 만들어 두어야 한다.
+  urlpatterns = [
+      path('admin/', admin.site.urls),
+      path('index/', views.index),
+  	#index라는 url로 들어가면 views의 index라는 함수를 처리를 하겠다.
+  	#기본 구조
+  	#path('url/', 함수가 정의된 파일 이름.함수 이름)
+  ]
+  
+  #꼭 위처럼 url과 함수명을 맞춰야 하는 것은 아니나 편의를 위해서 위와 같이 한다.
+  #예컨데 아래와 같이 하는 것도 가능하다.
+  urlpatterns = [
+      path('admin/', admin.site.urls),
+      path('bboong/', views.index),
+  ]
+```
+  
+- 함수 정의하기
+  
     - 위에서 어떤 url에서 어떤 함수가 처리될지 정의했으니 이제 처리될 함수를 정의해야 한다.
-
-      ```python
-    #위에서 views의 index라는 함수를 처리할 것이라고 했으므로 views.py에서 해당 함수를 정의해야 한다.
-      from django.shortcuts import render
-    
-      
-      #해당 함수를 실행시키는 url에 접속해야 실행되기에 request라는 이름을 붙인다.
-      
-      #request가 아닌 다른 것을 넣어도 동작은 하지만 그렇게 하지 않는다.
-      
-      def index(request): #항상 첫번째 인자로 request를 정의한다.
-      	return render(request,'index.html') #항상 render()를 리턴한다.
-      #render는 html이 응답할 수 있게 만드는 작업을 한다. import를 해줘야 사용 가능하다.
-      #역시 마찬가지로 함수명과 리턴될 html파일명을 일치시켜야 하는 것은 아니나 편의를 위해 위와 같이 한다.
-      #예컨데 아래와 같이 하는 것도 가능하다.
-      from django.shortcuts import render
-      
-      def index(request): #항상 첫번째 인자로 request를 정의한다.
-          return render(request,'qwert.html')
-      
-      #단 꼭 request로 적는 것은 아니며 아무거나 적어도 된다. 그러나, 이렇게 쓰지 않는다.
-      def index(re):
-          return render(re,'qwert.html')
-      ```
   
-    - redirect
-  
-      ```python
-    #특정 html파일을 렌더링 하는 것이 아니라 처리가 모두 끝난 후 특정 url로 넘어가고자 할 때에는 redirect를 쓰면 된다. 물론 임폴트를 해야 한다.
-      from django.shortcuts import render,redirect  #import 해주고
-    
-      def index(request):
-          return redirect('가고자 하는 url')
-      
-      #redirect는 경로로 들어가는 것이므로 urls로 갔다가 views를 실행하고 views에 입력한 대로 html파일이 렌더링되는 경로를 거치지만 render는 위의 과정을 거치지 않고 바로 렌더링한다. 따라서 위의 경우처럼 특정 경로로 돌아가야 하는 경우에는 redirect를 써야한다.
-      
-      #bitly, bit.do 등의 사이트는 리다이렉트를 해주는 사이트이다.
-      ```
+  ```python
+  #위에서 views의 index라는 함수를 처리할 것이라고 했으므로 views.py에서 해당 함수를 정의해야 한다.
+  from django.shortcuts import render
   
   
+  #해당 함수를 실행시키는 url에 접속해야 실행되기에 request라는 이름을 붙인다.
   
-  - HTML문서 작성하기
-
-    - 위에서 처리될 함수를 정의했으니 이제 그 함수에 들어있는 `index.html`을 작성해줘야 한다.
-
-    - 함수에서 반환할 `html` 파일은 항상 `templates`폴더 안에 생성해야 한다.
-
-      ```html
-      <h1>Hello!</h1>
-      ```
+  #request가 아닌 다른 것을 넣어도 동작은 하지만 그렇게 하지 않는다.
   
+  def index(request): #항상 첫번째 인자로 request를 정의한다.
+  	return render(request,'index.html') #항상 render()를 리턴한다.
+  #render는 html이 응답할 수 있게 만드는 작업을 한다. import를 해줘야 사용 가능하다.
+  #역시 마찬가지로 함수명과 리턴될 html파일명을 일치시켜야 하는 것은 아니나 편의를 위해 위와 같이 한다.
+  #예컨데 아래와 같이 하는 것도 가능하다.
+  from django.shortcuts import render
   
-
-  - 여기까지가 한 과정이며 이제 누군가 `index/`라는 주소로 접근하게 되면 장고는 `urls.py`에 작성된 대로`view`의  `index`함수를 실행시키게 된다. `index`함수는 `html`파일을 retrun하고 작성한 `html`파일 대로 `index`가 포함된 해당 주소에는  `Hello!`가 출력된다.
+  def index(request): #항상 첫번째 인자로 request를 정의한다.
+      return render(request,'qwert.html')
+  
+  #단 꼭 request로 적는 것은 아니며 아무거나 적어도 된다. 그러나, 이렇게 쓰지 않는다.
+  def index(re):
+      return render(re,'qwert.html')
+  ```
+  
+  - redirect
+    - 특정 html파일을 렌더링 하는 것이 아니라 처리가 모두 끝난 후 특정 url로 넘어가고자 할 때에는 redirect를 쓰면 된다.
+  
+  ```python
+  from django.shortcuts import render,redirect
+  
+  def index(request):
+      return redirect('가고자 하는 url')
+  
+  #redirect는 경로로 들어가는 것이므로 urls로 갔다가 views를 실행하고 views에 입력한 대로 html파일이 렌더링되는 경로를 거치지만 render는 위의 과정을 거치지 않고 바로 렌더링한다. 따라서 위의 경우처럼 특정 경로로 돌아가야 하는 경우에는 redirect를 써야한다.
+  
+  #bitly, bit.do 등의 사이트는 리다이렉트를 해주는 사이트이다.
+  ```
+  
+- HTML문서 작성하기
+  
+  - 위에서 처리될 함수를 정의했으니 이제 그 함수에 들어있는 `index.html`을 작성해줘야 한다.
+  
+  - 함수에서 반환할 `html` 파일은 항상 `templates`폴더 안에 생성해야 한다.
+  
+  ```html
+  <h1>Hello!</h1>
+  ```
+  
+- 여기까지가 한 과정이며 이제 누군가 `index/`라는 주소로 접근하게 되면 장고는 `urls.py`에 작성된 대로`view`의  `index`함수를 실행시키게 된다. `index`함수는 `html`파일을 retrun하고 작성한 `html`파일 대로 `index`가 포함된 해당 주소에는  `Hello!`가 출력된다.
 
 
 
@@ -301,92 +278,90 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
 
   - 기본형
 
-    ```python
-    #기본형
-    from django.shortcuts import render
-    
-    def index(request):
-    	return render(request,'index.html')
-    ```
+  ``` python
+  #기본형
+  from django.shortcuts import render
+  
+  def index(request):
+  	return render(request,'index.html')
+  ```
 
   - HTML파일에 넘겨줄 변수가 있는 경우
 
     - 항상 딕셔너리로 넘겨준다.
+    - 일반적으로 html파일에 넘겨줄 내용들을 context라는 딕셔너리에 담아서 넘기며 꼭 리스트만 넘길 수 있는 것은 아니고 문자열, 빈 리스트도 넘길 수 있다.
 
+  
 
-
-
-- 일반적으로 html파일에 넘겨줄 내용들을 context라는 딕셔너리에 담아서 넘기며 꼭 리스트만 넘길 수 있는 것은 아니고 문자열, 빈 리스트도 넘길 수 있다.
-
-    
 
 - HTML문서 정리
 
   - 함수에서 인자를 받은 경우 중괄호 2개로 해당 인자의 키를 입력하면 된다. 화면에는 key에 해당하는 value가 출력된다.
 
-    ```python
-    #views.py파일
-    from django.shortcuts import render
-    
-    def index(request):
-        import random
-        pick = random.sample(range(1,46),6)
-        context={
-            'picka':pick
-        }
-    	return render(request,'index.html',context) #context를 넘겨준다.
-    #context이외의 변수에도 할당 가능하지만 관례상 context에 담는다.
-    #또한 굳이 딕셔너리를 변수에 담아서 넘기지 않고 딕셔너리를 바로 넘겨도 된다.
-    def index(request):
-        import random
-        pick = random.sample(range(1,46),6)
-    	return render(request,'index.html',{'picka':pick})
-    #그러나 여러개의 딕셔너리를 담아서 넘길 경우 코드가 지나치게 길어지므로 변수에 담아서 넘기는 방식을 사용한다.
-    ```
-
-    ```html
-    <!--lotto.html파일-->
-    <h1>{{picka}}</h1>
-    
-    out
-    [22,17,44,11,38,29]
-    <!--상기했듯 key값을 받아 value를 표시하는 것이므로 key값이 바뀌면 HTML문서도 수정해야 함-->
-    ```
-
+  ```python
+  #views.py파일
+  from django.shortcuts import render
   
+  def index(request):
+      import random
+      pick = random.sample(range(1,46),6)
+      context={
+          'picka':pick
+      }
+  	return render(request,'index.html',context) #context를 넘겨준다.
+  #context이외의 변수에도 할당 가능하지만 관례상 context에 담는다.
+  #또한 굳이 딕셔너리를 변수에 담아서 넘기지 않고 딕셔너리를 바로 넘겨도 된다.
+  def index(request):
+      import random
+      pick = random.sample(range(1,46),6)
+  	return render(request,'index.html',{'picka':pick})
+  #그러나 여러개의 딕셔너리를 담아서 넘길 경우 코드가 지나치게 길어지므로 변수에 담아서 넘기는 방식을 사용한다.
+  ```
+
+  - lotto.html
+
+  ```html
+  <h1>{{picka}}</h1>
+  
+  out
+  [22,17,44,11,38,29]
+  <!--상기했듯 key값을 받아 value를 표시하는 것이므로 key값이 바뀌면 HTML문서도 수정해야 함-->
+  ```
 
   - 배열을 출력하고자 하는 경우
 
     - 파이썬과 달리 인덱스로 접근할 때 대괄호가 아닌 .(dot)을 쓴다. 꼭 이때뿐만 아니라. 장고에서 HTML 작성시 대괄호나 소괄호는 사용하지 못한다.
 
-    ```python
-    #views.py파일
-    from django.shortcuts import render
-    
-    def index(request):
-        menupan=['치킨','피자','햄버거']
-        context={
-            'menu':menupan
-        }
-    	return render(request,'index.html',context)
-    ```
 
-    ```html
-    <h1>{{ menu[0] }}</h1>
-    
-    out
-    에러 발생
-    
-    
-    <h1>{{ menu.0 }}</h1> <!--value인 menupan이 아닌 key인 menu를 가지고 인덱스 접근-->
-    
-    out
-    치킨
-    ```
+  ```python
+  #views.py파일
+  from django.shortcuts import render
+  
+  def index(request):
+      menupan=['치킨','피자','햄버거']
+      context={
+          'menu':menupan
+      }
+  	return render(request,'index.html',context)
+  ```
 
+  - index.html
 
-
-
+  ```html
+  <h1>{{ menu[0] }}</h1>
+  <!--
+  out
+  에러 발생
+  -->
+  
+  
+  <h1>{{ menu.0 }}</h1> <!--value인 menupan이 아닌 key인 menu를 가지고 인덱스 접근-->
+  
+  <!--
+  out
+  치킨
+  -->
+  ```
 
 
 
@@ -395,8 +370,13 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
 
 - DTL(Django Template Language): 장고의 화면을 작성하기 위한 언어, 렌더링을 위한 언어
 
+    - jinja 역시 템플릿 언어 중 하나이다.
 
-  - jinja 역시 템플릿 언어 중 하나이다.
+    - 파이썬에서의 문법과 같이 연산을 위해 사용하는 것이 아니다. 연산이 끝난 자료를 받아 그것을 출력하기 위한 문법들일 뿐이다.
+
+
+
+
 
   - 기본 출력
 
@@ -404,11 +384,16 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     {{ }}
     ```
 
+
+
+
   - 주석: DTL의 내용을 html주석(<!---->)으로 처리하면 오류가 발생한다. 따라서 DTL 주석은 반드시 아래와 같이 해줘야 한다.
 
     ```html
     {# #}
     ```
+
+
 
 
   - 반복문, 조건문 등의 문법
@@ -418,7 +403,7 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     ```
 
 
-  - 아래의 문법들은 파이썬에서의 문법과 같이 연산을 위해 사용하는 것이 아니다. 연산이 끝난 자료를 받아 그것을 출력하기 위한 문법들일 뿐이다.
+
 
   - 반복문
 
@@ -434,24 +419,28 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
         return render(request,'index.html',context)
     ```
 
+    - index.html
+
     ```html
-    <!--index.html-->
-    <!--기본-->
     <ul>
         {% for m in menu %}   <!--for문과-->
           <li>{{m}}</li>
           {% endfor %}          <!--endfor문 사이의 내용을 len(menu)번 반복-->
     </ul>
     
+    <!--
     out
     치킨
     피자
     햄버거
+    -->
     ```
 
-  - `forloop.counter`: 반복 횟수를 출력, 당연히 for문 안에만 쓸 수 있다.
 
-    - `forloop.counter숫자`:입력한 숫자부터 시작한다(지정하지 않으면 1부터 시작).  숫자와 counter 사이에 띄어쓰기 안한다.
+    - `forloop.counter`: 반복 횟수를 출력, 당연히 for문 안에만 쓸 수 있다.
+
+      - `forloop.counter숫자`:입력한 숫자부터 시작한다(지정하지 않으면 1부터 시작).  숫자와 counter 사이에 띄어쓰기 안한다.
+
 
     ```html
     <!--index.html-->
@@ -467,8 +456,6 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     4 : 햄버거
     ```
 
-    
-
     - `empty`: 반복할 것이 없을 경우 설정한 내용을 출력
 
     ```django
@@ -482,10 +469,9 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     out
     댓글이 없어요
     ```
-    
-    
 
-  
+
+
 
   - 조건문
 
@@ -537,8 +523,9 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
   ```
 
     - `|date`: 표현식에 따라 출력
-  - 자세한 표현식은 https://docs.djangoproject.com/en/dev/ref/templates/builtins/?from=olddocs의 date참고
+      - 자세한 표현식은 https://docs.djangoproject.com/en/dev/ref/templates/builtins/?from=olddocs의 date참고
 
+  
   ```html
   <!--{ date자료형|date:"표현식" } 형태-->
   today에 datetime객체가 들어있다고 가정
@@ -549,10 +536,7 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
   
   <!--Y는 4자리로 표기한 년도, m은 숫자만 표기된 월, d는 숫자만 표기된 일, D는 요일, A는 오전, 오후, h는 시간, i는 분-->
   ```
-
   
-
-
 
 
 
@@ -562,7 +546,10 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
 # MTV 확장
 
 
-- variable routing: url을 변수화 해서 변수로 사용하는 것
+- variable routing
+
+  - url을 변수화 해서 변수로 사용하는 것
+
 
 
   - variable routing에서 str이 기본값이라 문자열을 쓸 경우 str을 적지 않아도 된다.
@@ -772,7 +759,7 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     - 이를 막기 위한 방법은 우선 각 APP에 있는  `templates`폴더에 하위 폴더를 하나씩 생성하고(앱의 이름과 동일하게 한다), 그 폴더 내에 html파일들을 넣는 것이다. 그 후`views.py`를 아래와  같이수정한다.
 
       ```python
-  #B어플의 views.py파일
+      #B어플의 views.py파일
       
       #원래 아래와 같았던 것을
           def hello(request):
@@ -803,7 +790,7 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     - `DIRS`에는 어떤 순서로 파일을 찾을 것인지를 입력하는 것이다. 아래에서는 root폴더(프로젝트 폴더)만 입력했으므로 당연히 root폴더 내부에 정의한 base.html파일을 가장 먼저 찾게 된다.
   
       ```python
-    TEMPLATES = [
+      TEMPLATES = [
           {
             'BACKEND': 'django.template.backends.django.DjangoTemplates',
               #본래 비어 있던 아래 []사이에 다음과 같이 입력해준다.

@@ -13,29 +13,32 @@
 
 - django에서 사용자 정보는 다른 정보와는 다르게 특별한 처리를 해줘야 한다.
 
-- django는 사용자 정보중 비빌번호를 저장 할 때 해시함수(input 값을 문자열로 바꿔주는 것)를 통해 암호화 해서 저장한다.
-
-  - 장고에서는 SHA(Secure Hash Algorithm)256이라는 단방향 해시 함수 알고리즘을 사용한다(라이브러리가 내장되어 있다).
+  - django는 사용자 정보중 비빌번호를 저장 할 때 해시함수(input 값을 문자열로 바꿔주는 것)를 통해 암호화 해서 저장한다.
+    - 장고에서는 SHA(Secure Hash Algorithm)256이라는 단방향 해시 함수 알고리즘을 사용한다(라이브러리가 내장되어 있다).
     - 단방향이기에 1234라는 비밀번호를 gweggewg8754egwdg24ggwe라는 다이제스트(암호)로 변환은 할 수 있어도 암호를 다시 1234로 변환할 수는 없다. 
+
   - 또한 같은 비밀번호라도 다른 암호로 변환하는데 이를 솔팅이라 하고 그 값을 솔트라 한다. 솔트 값을 암호 중간중간에 넣어 암호를 더 복잡하게 만든다.
-  - 반복은 혹시라도 brute force로 암호 해독을 시도하는 경우에 대비해서 최대한 반복 횟수를 늘림으로써 해독을 어렵게 하기 위함이다.
+    - 혹시라도 brute force로 암호 해독을 시도하는 경우에 대비해서 최대한 반복 횟수를 늘림으로써 해독을 어렵게 하기 위함이다.
+  - 따라서 django에서 정의한 form이 아닌 직접 작정한 form으로 회원가입을 할 경우 위의 비밀번호 암호화 작업을 추가적으로 해주지 않으면 비밀번호가 그대로 저장되게 된다,
 
-- 따라서 django에서 정의한 form이 아닌 직접 작정한 form으로 회원가입을 할 경우 위의 비밀번호 암호화 작업을 추가적으로 해주지 않으면 비밀번호가 그대로 저장되게 된다,
+  - form과 model을 이미 장고에서 정의해 놓았기에 import해서 쓰기만 하면 된다.
 
-- form과 model을 이미 장고에서 정의해 놓았기에 import해서 쓰기만 하면 된다.
+    - 그러나 migrate는 해야 한다. 
+    - 새로 정의한 모델이 없기에 migrations는 할 필요 없다.
 
-  - 그러나 migrate는 해야 한다. 
-  - 새로 정의한 모델이 없기에 migrations는 할 필요 없다.
+
 
 - 사용자 계정 관리(회원가입)
 
+  - views.py
+
+
   ```python
-  #views.py
   from django.shortcuts import render, redirect, get_object_or_404
   from django.contrib.auth.forms import UserCreationForm  #form을 불러온다. 
-  #UserCreationForm은 공식 문서를 보면 3개를 넘긴다(password1,password2,Meta 클래스로 User 모델의 username 필드).
+  # UserCreationForm은 공식 문서를 보면 3개를 넘긴다(password1,password2,Meta 클래스로 User 모델의 username 필드).
   # 또한 패스워드 검증 관련 함수, 패스워드 암호화 함수가 내부에 존재한다.따라서 만일 개발자가 만든 회원가입 폼(게시글 생성 하듯이 회원 정보를 생성하는 방식으로 회원가입 폼을 만들었다면)에 패스워드 암호화 관련 처리가 되어 있지 않다면 이 폼으로 만든 비밀번호는 암호화 되지 않고 그냥 저장되게 된다.
-  #즉 UserCreationForm이라는 모델 폼은 검증까지도 해준다. 또한 폼 내부에서 패스워드를 추가 설정한 후 저장을 한다. 
+  # 즉 UserCreationForm이라는 모델 폼은 검증까지도 해준다. 또한 폼 내부에서 패스워드를 추가 설정한 후 저장을 한다. 
   
   # Create your views here.
   def signup(request):
@@ -52,8 +55,9 @@
       return render(request, 'accounts/signup.html', context)
   ```
 
+  - settings.py
+
   ```python
-  #settings.py
   #비밀번호 유효성을 검사하는 부분
   
   # Password validation
@@ -73,10 +77,10 @@
           'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
       },
   ]
-  
   ```
 
-  
+
+
 
 - User는 AbstractUser를 상속받고, AbstractUser는 AbstractBaseUser를 상속 받으며, AbstractBaseUser는 models.Model을 상속받는다.
 
@@ -87,13 +91,14 @@
 
   - 위에서 보듯이 username, password 등의 정보들은 전부 User가 상속 받는 것들에 정의가 되어 있다. 결국 User는 이들을 활용하기 위한 껍데기라고도 볼 수 있다.
 
-    ```python
-    #예를 들어 만일 first_name, last_name, email은 필요가 없고 last_login을 담고 싶다면 아래와 같이 last_login속성을 지니는 AbstractBaseUser 클래스를 상속 받으면 된다.
-    class MyUser(AbstractBaseUser):
-    	pass
-    ```
+  ```python
+  #예를 들어 만일 first_name, last_name, email은 필요가 없고 last_login을 담고 싶다면 아래와 같이 last_login속성을 지니는 AbstractBaseUser 클래스를 상속 받으면 된다.
+  class MyUser(AbstractBaseUser):
+  	pass
+  ```
 
-    
+
+
 
 - 쿠키
 
@@ -102,12 +107,12 @@
   - 예를 들어 네이버에 로그인 하면 어떤 네이버 블로그를 가던, 카페를 가던 로그인 상태가 유지가 된다.
 
   - 웹의 기본 규약인 HTTP의 특징 
-  
+
   - 요청과 응답(POST,GET등을 통한). 
     - stateless, connectless: 상태와 연결상황을 알지 못한다. email을 보내는 것과 전화를 하는 것의 차이와 유사하다.  전화는 통화중에는 실시간으로 계속 요청과 응답이 가능하지만 email은 요청을 보내고 답이 오면 연결이 끊어지게 된다. 또한 특정한 요청이 들어왔을 때 요청을 한 사람이 이전에 어떤 요청을 한 사람인지 알 수 없다. 따라서 연결이 끊어짐에도 로그인 상태가 유지되도록 해야 한다. 이를 가능하게 하는 것이 쿠키다.
 
   - 쿠키
-  
+
     - 웹 사이트에서 어떤 행동을 할 때마다 웹은 사용자에게 쿠키를 제공(쿠키는 하드 디스크에 저장)하게 되고 이후부터는 사용자가 가진 쿠키를 웹에서 읽어서 그 상태를 기억하게 된다.
     - 만일 사용자가 쿠키를 임의로 조작하는 경우(예를 들어 일반 회원에서 admin으로 인식되도록 쿠키를 조작하는 경우) 문제가 생길 수 있다. 따라서 django에는 이를 막는 방법이 존재한다.
 
@@ -126,7 +131,7 @@
     - 사용자가 로그인 할 경우 django_session 테이블에 기록된다.
 
   - 캐시는 특정 사이트에 대한 정보를 브라우저에 저장함으로써 다음에 해당 사이트에 접속했을 때 사이트가 더 빨리 로드되게 해준다. 즉 요청을 보냈을 때  매번 모든 정보를 받아오는 것이 아니라 요청한 정보에 대해서만 정보를 받아온다.
-  
+
   - 캐시와 쿠키에 대한 정보는 웹브라우저의 개발자도구에서 application 탭에서 볼 수 있다.
 
 
@@ -142,7 +147,7 @@
   ```python
   from django.shortcuts import render, redirect
   from django.contrib.auth import get_user_model
-  #from django.contrib.auth.models import User 이와 같이 import해도 되지만 get_user_model을 import해서 쓰는 것이 더 낫다.
+  # from django.contrib.auth.models import User 이와 같이 import해도 되지만 get_user_model을 import해서 쓰는 것이 더 낫다.
   from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
   from django.contrib.auth import login as auth_login
   from django.contrib.auth import logout as auth_logout
@@ -181,7 +186,8 @@
       return redirect('accounts:index')
   ```
 
-  
+
+
 
 - 회원가입 후 바로 로그인 해주는 코드
 
@@ -201,7 +207,8 @@
       return render(request, 'accounts/signup.html', context)
   ```
 
-  
+
+
 
 - User와 get_user_model의 차이
 
@@ -358,46 +365,46 @@
 
     - 따라서 이럴 때에는 경로 명을 수정해 주거나 settings.py에서 해당 경로를 변경해 줘야 한다.
 
-      ```python
-      #urls.py 
-      from django.urls import path
-      from . import views
-      
-      app_name = "accounts"
-      
-      urlpatterns = [
-          path('signin/',views.signin, name="signin"),
-          path('logout/',views.logout, name="logout"),
-      ]
-      #만일 이처럼 url 경로가 설정되어 있다면  
-      #/accounts/login/?next=/accounts/logout/가 아닌
-      #/accounts/signin/?next=/accounts/logout/이 되게 하거나
-      
-      #path('signin/',views.signin, name="signin"),가 아닌
-      #path('login/',views.signin, name="signin"),이 되게 해야 한다.
-      
-      #후자는 단순히 이름만 바꿔주면 되지만 전자는 settings.py에 코드를 추가해 줘야 한다.
-      
-      #settings.py
-      #본래 아래의 코드는 settings.py에 존재하지 않지만 'accounts:login'이 기본값으로 설정되어 있다. 따라서 아래 코드를 추가해 줘야 한다. 만일 앱 이름이 accounts가 아니라면 이 역시 accounts가 아닌 다른 것으로 수정해 줘야 한다.
-      LOGIN_URL = '/accounts/signin/'
-      ```
+  ```python
+  #urls.py 
+  from django.urls import path
+  from . import views
+  
+  app_name = "accounts"
+  
+  urlpatterns = [
+      path('signin/',views.signin, name="signin"),
+      path('logout/',views.logout, name="logout"),
+  ]
+  #만일 이처럼 url 경로가 설정되어 있다면  
+  #/accounts/login/?next=/accounts/logout/가 아닌
+  #/accounts/signin/?next=/accounts/logout/이 되게 하거나
+  
+  #path('signin/',views.signin, name="signin"),가 아닌
+  #path('login/',views.signin, name="signin"),이 되게 해야 한다.
+  
+  #후자는 단순히 이름만 바꿔주면 되지만 전자는 settings.py에 코드를 추가해 줘야 한다.
+  
+  #settings.py
+  #본래 아래의 코드는 settings.py에 존재하지 않지만 'accounts:login'이 기본값으로 설정되어 있다. 따라서 아래 코드를 추가해 줘야 한다. 만일 앱 이름이 accounts가 아니라면 이 역시 accounts가 아닌 다른 것으로 수정해 줘야 한다.
+  LOGIN_URL = '/accounts/signin/'
+  ```
 
   - login_required의 next 요청은 GET으로 밖에 가지 않는다(request.GET.get('next')). 따라서 require_POST와 함께 쓸 경우 오류가 발생할 수 있으므로 둘 중 하나는 함수 내부에 조건문으로 구현해야 한다.
 
-    ```python
-    #@require_POST를 조건문으로 처리
-    @login_required
-    #@require_POST
-    def detail(request, article_pk):
-        if request.method=="POST": #만일 POST로 요청이 들어왔다면 아래 과정을 처리하고 return
-            article = get_object_or_404(Article,pk=article_pk)
-        	article.delete()
-        #아니라면 그냥 return
-        return redirect('articles:index')
-    ```
-    
-    
+  ```python
+  #@require_POST를 조건문으로 처리
+  @login_required
+  #@require_POST
+  def detail(request, article_pk):
+      if request.method=="POST": #만일 POST로 요청이 들어왔다면 아래 과정을 처리하고 return
+          article = get_object_or_404(Article,pk=article_pk)
+      	article.delete()
+      #아니라면 그냥 return
+      return redirect('articles:index')
+  ```
+
+
 
 - html 파일에서 로그인 했을 때와 하지 않았을 때 각기 다른 내용을 보여주는 방법
 
@@ -418,125 +425,129 @@
   -->
   ```
 
-  
 
-- 회원탈퇴, 회원 정보 수정
+
+
+- 회원탈퇴
 
   - 게시글 생성의 경우 CRUD중에서 C를 제외한 R,U,D에 모두 variable routing이 필요하지만 사용자 관리에서는 R만 variable routing을 필요로 한다.
-
-  - 회원 탈퇴와 회원 정보 수정은 이전에 했던 게시글 수정, 삭제와 같이 pk를 url로 넘겨받아서 이루어지지 않는다. 만일 위와 같은 방식으로 수정, 탈퇴를 한다면 누군가 악의적으로 이를 이용할 수 있기 때문이다.
-
-  - 따라서 로그인 상태에서 로그인한 유저의 정보를 받아서 수정, 삭제하는 방법을 사용한다.
-
+    - 회원 탈퇴와 회원 정보 수정은 이전에 했던 게시글 수정, 삭제와 같이 pk를 url로 넘겨받아서 이루어지지 않는다. 만일 위와 같은 방식으로 수정, 탈퇴를 한다면 누군가 악의적으로 이를 이용할 수 있기 때문이다.
+    - 따라서 로그인 상태에서 로그인한 유저의 정보를 받아서 수정, 삭제하는 방법을 사용한다.
   - 회원 탈퇴
 
-    ```python
-    #views.py
-    #위에서 import했던 것들은 다시 import하지 않았음
-    from django.views.decorators.http import require_POST
-    
-    @require_POST  #GET으로 접근해서 삭제할 수 없도록 require_POST를 써준다.
-    @login_required  #로그인 해야만 삭제할 수 있도록 한다.
-    def delete(request):
-        #로그인한 유저에 대한 정보가 request에 담겨 있으므로 따로 url로 pk값을 넘길 필요가X
-        request.user.delete() #요청을 보낸 유저의 정보를 삭제
-        return redirect('articles:index')
-    ```
+  ```python
+  #views.py
+  #위에서 import했던 것들은 다시 import하지 않았음
+  from django.views.decorators.http import require_POST
+  
+  @require_POST  #GET으로 접근해서 삭제할 수 없도록 require_POST를 써준다.
+  @login_required  #로그인 해야만 삭제할 수 있도록 한다.
+  def delete(request):
+      #로그인한 유저에 대한 정보가 request에 담겨 있으므로 따로 url로 pk값을 넘길 필요가X
+      request.user.delete() #요청을 보낸 유저의 정보를 삭제
+      return redirect('articles:index')
+  ```
 
-    ```html
-    <!--detail.html(회원 프로필을 보여주는 페이지)-->
-    {% block body %}
-    <h1>{{ user.pk }} : {{ user.username }}</h1>
-    <!--만일 요청을 보낸 유저와 detail 함수에서 context로 받아온 유저가 동일하면-->
-    {% if request.user == user %} 
-    	<!--아래의 회원탈퇴 form을 띄운다.-->
-        <form action="{% url 'accounts:delete' %}" method="POST">
-            {% csrf_token %}
-            <button class="btn btn-secondary">회원 탈퇴</button>
-        </form>
-    {% endif %}
-    <hr>
-    {% endblock %}
-    ```
+  - `detail.html`(회원 프로필을 보여주는 페이지)
 
-  - 회원 정보 수정
+  ```html
+  {% block body %}
+  <h1>{{ user.pk }} : {{ user.username }}</h1>
+  <!--만일 요청을 보낸 유저와 detail 함수에서 context로 받아온 유저가 동일하면-->
+  {% if request.user == user %} 
+  	<!--아래의 회원탈퇴 form을 띄운다.-->
+      <form action="{% url 'accounts:delete' %}" method="POST">
+          {% csrf_token %}
+          <button class="btn btn-secondary">회원 탈퇴</button>
+      </form>
+  {% endif %}
+  <hr>
+  {% endblock %}
+  ```
 
-    - 회원의 프로필을 수정하는 것은 아래와 같은 방법으로 가능하지만 비밀번호 변경은 따로 form과 함수를 사용해야 한다.
 
-    ```python
-    #form
-    PasswordChangeFrom  #내부에 정의되어 있다.
-    
-    #함수
-    .set_passowrd('새 비밀번호')
-    ```
 
-    - `UserChangeForm`이 존재하여 `views.py`에서 아래와 같이 import해서 쓸 수도 있다.
+- 회원 정보 수정
 
-    ```python
-    from django.contrib.auth.forms import UserChangeForm
-    ```
+  - 회원의 프로필을 수정하는 것은 아래와 같은 방법으로 가능하지만 비밀번호 변경은 따로 form과 함수를 사용해야 한다.
 
-    - 그러나 직접 만들어서 쓸 수도 있다.
+  ```python
+  #form
+  PasswordChangeFrom  #내부에 정의되어 있다.
+  
+  #함수
+  .set_passowrd('새 비밀번호')
+  ```
 
-    ```python
-    #forms.py
-    from django.contrib.auth import get_user_model
-    from django.contrib.auth.forms import UserChangeForm
-    
-    # UserChangeForm를 그대로 사용하지 않고 상속받아서 custom한다.
-    class CustomUserChangeForm(UserChangeForm): #UserChangeForm상속
-        class Meta:
-            model = get_user_model()
-            fields = ['username', 'first_name', 'last_name', 'email']
-    ```
+  - `UserChangeForm`이 존재하여 `views.py`에서 아래와 같이 import해서 쓸 수도 있다.
 
-    ```python
-    #views.py
-    from .forms import CustomUserChangeForm #직접 만든 Form을 불러오고
-    
-    # Create your views here.
-    
-    def update(request):
-        if request.method == 'POST':
-            #글을 수정 할 때와 같이 instance=request.user를 통해 확인을 해주고
-            form = CustomUserChangeForm(request.POST, instance=request.user)
-            if form.is_valid():
-                form.save()
-                return redirect('articles:index')
-        else:
-            form = CustomUserChangeForm(instance=request.user)
-        context = {
-            'form': form
-        }
-        return render(request, 'accounts/update.html', context)
-    ```
+  ```python
+  from django.contrib.auth.forms import UserChangeForm
+  ```
 
-    ```html
-    <!--update.html-->
-    {% extends 'base.html' %}
-    
-    {% load bootstrap4 %}
-    {% block body %}
-        <form action="" method="POST">
-            {% csrf_token %}
-            {% bootstrap_form form %}
-            <button class="btn btn-primary">수정</button>
-        </form>
-    {% endblock %}
-    
-    
-    <!--detail.html(회원 프로필을 보여주는 페이지)-->
-    {% block body %}
-    <h1>{{ user.pk }} : {{ user.username }}</h1>
-    <!--만일 요청을 보낸 유저와 context에 담겨 넘어온 유저가 동일하면-->
-    {% if request.user == user %} 
-    	<!--아래의 회원탈퇴 링크를 띄운다.-->
-        <a href="{% url 'accounts:update' %}">회원 수정</a>
-    {% endblock %}
-    ```
+  - 그러나 직접 만들어서 쓸 수도 있다.
 
-    
+  ```python
+  #forms.py
+  from django.contrib.auth import get_user_model
+  from django.contrib.auth.forms import UserChangeForm
+  
+  # UserChangeForm를 그대로 사용하지 않고 상속받아서 custom한다.
+  class CustomUserChangeForm(UserChangeForm): #UserChangeForm상속
+      class Meta:
+          model = get_user_model()
+          fields = ['username', 'first_name', 'last_name', 'email']
+  ```
+
+  - views.py
+
+  ```python
+  from .forms import CustomUserChangeForm #직접 만든 Form을 불러오고
+  
+  # Create your views here.
+  
+  def update(request):
+      if request.method == 'POST':
+          #글을 수정 할 때와 같이 instance=request.user를 통해 확인을 해주고
+          form = CustomUserChangeForm(request.POST, instance=request.user)
+          if form.is_valid():
+              form.save()
+              return redirect('articles:index')
+      else:
+          form = CustomUserChangeForm(instance=request.user)
+      context = {
+          'form': form
+      }
+      return render(request, 'accounts/update.html', context)
+  ```
+
+  - update.html
+
+  ```html
+  {% extends 'base.html' %}
+  
+  {% load bootstrap4 %}
+  {% block body %}
+      <form action="" method="POST">
+          {% csrf_token %}
+          {% bootstrap_form form %}
+          <button class="btn btn-primary">수정</button>
+      </form>
+  {% endblock %}
+  
+  
+  <!--detail.html(회원 프로필을 보여주는 페이지)-->
+  {% block body %}
+  <h1>{{ user.pk }} : {{ user.username }}</h1>
+  <!--만일 요청을 보낸 유저와 context에 담겨 넘어온 유저가 동일하면-->
+  {% if request.user == user %} 
+  	<!--아래의 회원탈퇴 링크를 띄운다.-->
+      <a href="{% url 'accounts:update' %}">회원 수정</a>
+  {% endblock %}
+  ```
+
+
+
 
 - 일반적으로 urls.py에 경로 설정을 하면 처음 서버를 실행시키고 창을 열었을 때 `Page not found (404)`태창 뜨고 뒤에 추가적인 url을 입력해야 해당 페이지가 출력된다. 만일 이게 귀찮다면 다음과 같이 하면 된다.
 
@@ -657,15 +668,16 @@
     user = get_object_or_404(MyUser,pk=pk)
     ```
 
-  
 
 
 
 
 
-# 데이터 베이스
 
-- 데이터 베이스: 여러 사람이 공유하여 사용할 목적으로 체계화해 통합, 관리하는 데이터의 집합
+
+# 데이터베이스
+
+- 데이터베이스: 여러 사람이 공유하여 사용할 목적으로 체계화해 통합, 관리하는 데이터의 집합
 - DBMS: 데이터베이스(DataBase)를 관리(Manage)하는 시스템(System)
 
   - RDBMS: 관계형 모델을 기반으로 하는 데이터베이스 관리 시스템
@@ -798,7 +810,7 @@
       address TEXT
   );
   -- 완료 후 반드시 ;를 입력해야 한다.
-
+  
   
   
   --혹은 sql파일에 작성하고 이를 불러오고 싶으면 아래와 같이 하면 된다.
@@ -2077,7 +2089,7 @@ select * from people_people
     - 두 모델 모두에 정의되지 않은, 정의할 수 없는 필드가 필요할 경우
 
     ```python
-  #예를 들어, 예약 날짜가 필요할 경우 예약 날짜는 Doctor,Patient 중 어느 쪽에 정의하기가 어렵다. 
+    #예를 들어, 예약 날짜가 필요할 경우 예약 날짜는 Doctor,Patient 중 어느 쪽에 정의하기가 어렵다. 
     class Doctor(models.Model):
         name = models.TextField()
     
