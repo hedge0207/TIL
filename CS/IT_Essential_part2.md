@@ -138,6 +138,191 @@
 
 
 
+
+
+
+
+# Session과 JWT
+
+> https://jwt.io/introduction
+
+- 사용자 인증에 사용되는 두 가지 방식이다.
+  - [쿠키, 세션, 웹 스토리지, IndexedDB]에서 본 것과 같이 HTTP는 기본적으로 stateless하다.
+  - 그러나 사용자 정보와 같이 지속적으로 유지되야 하는 정보가 존재한다.
+    - 클라이언트가 서버에 요청을 보낼 때마다 로그인을 할 수는 없다.
+
+
+
+- 기존에는 session 방식을 사용했으나 최근에는 JWT 방식을 많이 사용한다.
+  - 각각의 장단점이 있으므로 서비스에 더 적합한 방식을 택하면 된다.
+
+
+
+## Session 방식
+
+- Session 방식의 인증 과정은 다음과 같다.
+  - Client(browser)가 server로 login 요청을 보낸다.
+  - Server는 username과 password 등을 확인하고 일치하면 Session(DB 혹은 Redis 등 데이터를 저장하고 key값 기반으로 데이터를 조회할 수 있는 저장소)에 key, value, expire_date 등을 저장한다.
+  - Server는 session_id(key)를 client에 반환하고, client는 해당 정보를 cookie에 저장한다.
+  - 이후, 인증이 필요한 요청을 서버로 보낼 때마다,  session_id를 함께 보낸다.
+  - 서버는 session_id가 유효한지 확인하고, session_id로 session에 저장된 data를 조회하여 처리 후 client에 응답을 보낸다.
+
+
+
+- 장점
+  - Client가 가지고 있는 정보는 session_id뿐이므로 중간에 탈취 당해도 정보 유출의 위험이 없다.
+  - 서버단에서 session에 대한 통제가 가능하다(예를 들어 모바일과 데스크탑의 동시 접속을 막으려고 할 경우 이미 한 기기에서 로그인한 사용자라면 해당 기기로 발급된 session을 삭제하고 새로운 기기에 대한 session을 생성하면 된다).
+
+
+
+- 단점
+  - 사용자 수가 증가하면 session도 늘려줘야한다.
+  - 매 요청마다 session을 조회해야 한다.
+
+
+
+## JWT 방식
+
+> https://jwt.io/introduction
+>
+> https://velopert.com/2389
+
+- JWT
+
+  - 안전한 정보 교환을 위한 개방형 규약([RFC 7519](https://tools.ietf.org/html/rfc7519))이다.
+    - 정보를 주고 받을 때, JSON object를 활용한다.
+    - 자가수용적(Self-contained)인 특징을 가지고 있어, JWT 토큰 자체에 전달하고자 하는 데이터, 검증할 수 있는 서명 데이터 등이 모두 포함되어 있다.
+    - 정보가 전자 서명되어 있어 검증이 가능하고 신뢰할 수 있다.
+    - HMAC 알고리즘을 사용하는 비밀키나  RDS 또는 ECDSA와 같은 공개키, 개인키 쌍으로 서명될 수 있다.
+  - 형식
+    - JWT는 Header, Payload, Signature의 세 부분으로 구성된다.
+    - 각 부분은 `.`으로 나뉜다.
+    - 
+
+
+  ```bash
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  ```
+
+  - JWT의 목적은 데이터 자체를 보호하는 것이 아니다.
+    - JWT의 목적은 데이터가 인증된 소스에서 생성되었음을 sign을 통해 증명하는 것이다.
+    - Token에 서명을 하면 변조로부터 보호되지만 누구나 읽을 수 있다. 
+    - 실제로 header, payload는 어떠한 암호화도 거치지 않고 단지 encoding만 된 상태이기에, decoding만 하면 누구나 정보를 볼 수 있다.
+    - 따라서, JWT의 header 또는 payload에 담은 정보가 암호화되지 않은 경우 header 또는 payload에 비밀 정보를 넣어선 안 된다.
+
+
+
+- Header
+
+  - JWT를 어떻게 계산할 것인지에 대한 정보가 담겨 있다.
+  - 일반적으로 token의 type과 sign 알고리즘(e.g. HMAC SHA256 or RSA.)에 대한 정보가 담겨 있다.
+
+  ```json
+  {
+    "alg": "HS256",
+    "typ": "JWT"
+  }
+  ```
+
+  - 위 정보를 base64Url로 encoding한다.
+
+  ```bash
+  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+  ```
+
+
+
+- Payload
+
+  - 실제로 전달하고자 하는 정보가 담겨있는 부분이다.
+  - Claim이 담겨 있는데, claim이란 entitiy와 그에 대한 추가적인 정보를 담고 있는 조각을 의미한다.
+    - 즉 name, value의 한 쌍을 claim이라 부르고, name을 entity라 부른다.
+  - Claim에는 3가지 종류가 있다.
+    - Registered claims: 꼭 토큰에 포함시켜야 하는 것은 아니지만, 토큰에 포함시키는 것을 추천하는 claim들로, JWT 스펙에 정의되어 있는 claim들이다. iss(issuer), exp(expiration time), sub(subject), aud(audience) 등이 이에 속한다.
+    - Public claims: JWT를 사용하는 사람들이 정의하는 claim들이다. 충돌을 피하기 위해서  [IANA JSON Web Token Registry](https://www.iana.org/assignments/jwt/jwt.xhtml)나 URI로 정의한다.
+    - Private claims: JWT를 사용하여 통신을 주고 받는 당사자들이 협의한 claim들이다.
+
+  ```json
+  {
+    "sub": "1234567890",
+    "name": "John Doe",
+    "iat": 1516239022
+  }
+  ```
+
+  - 위 정보를 base64Url로 encoding한다.
+
+  ```bash
+  eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ
+  ```
+
+
+
+- Signature
+
+  - 생성 과정
+    - Header를 base64Url로 encoding한 값과, payload를 base64Url로 encoding한 값을 `.`을 사이에 두고 합한다.
+    - 비밀키와 header에서 `alg`에 지정한 암호화 알고리즘을 사용하여 생성한다.
+
+  ```json
+  // Signature를 생성하는 슈도코드
+  HMACSHA256(
+    base64UrlEncode(header) + "." +
+    base64UrlEncode(payload),
+    your-256-bit-secret
+  )
+  ```
+
+  - 위 정보를 base64Url로 인코딩한다.
+
+  ```bash
+  SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  ```
+
+
+
+- 인증 과정
+  - Client에서 Server로 사용자의 인증 정보를 전송한다.
+  - Server는 인증 정보가 정확한지 확인 후 JWT를 생성하여 client에 전달한다.
+  - Client는 이를 어딘가(client의 플랫폼에 따라 다르다)에 저장한다.
+  - 이후부터 발생하는 모든 인증이 필요한 요청에 JWT를 담아서 Server로 보낸다.
+  - 서버는 JWT를 비밀키를 통해 JWT의 signature를 검증하여 변조 여부를 확인하고, 이상이 없으면  JWT로부터 사용자 정보를 추출한다.
+
+
+
+- 장점
+  - 서버에서 관리하지 않으므로, 사용자가 늘어 JWT를 많이 발급해도 서버의 자원 사용이 증가하지 않는다.
+  - 쿠키가 아닌 다른 곳에 저장(일반적으로 local storage)이 가능하므로 쿠크릴 사용할 수 없는 모바일 애플리케이션 등에서도 사용이 가능하다.
+
+
+
+- 단점
+  - Payload, Header등이 암호화되지 않은 상태로 그대로 노출되므로, 개인정보가 담길 경우 위험할 수 있다.
+  - 서버에서 JWT를 저장하는 것이 아니므로, 서버에서 발급된 순간 서버가 통제할 수 있는 방법이 없다.
+    - 예를 들어, 특정 사용자를 강제로 로그아웃 시킬 경우, 세션 기반 인증에서는 해당 시용자의 세션을 삭제하면 그만이지만, JWT 방식에서는 불가능하다.
+
+
+
+- JWT의 보안 전략
+  - 만료 기한을 최대한 짦게 설정한다.
+    - 토큰이 탈취되더라도 빠르게 만료되기에 피해를 최소화 할 수 있다.
+    - 사용자가 자주 로그인해야 한다는 문제가 있다.
+  - Sliding Session
+    - Client가 JWT를 server로 보낼 때 마다 JWT의 갱신을 요청하는 방법이다.
+    - 매 요청마다 갱신이 이루어지도록 할 수도 있고, 글 쓰기, 결제 등 중간에 인증이 만료되선 안 되는 작업에만 한정적으로 적용할 수도 있다.
+  - Refresh Token
+    - 최초 토큰을 생성할 때, Access Token과 Refresh Token을 발급하는 방법이다.
+    - Client가 만료된 Access Token으로 Server와 통신을 진행하다 Access Token이 만료된다.
+    - Server는 client에 access token이 만료되었다는 응답을 보내고, client는 access token보다 유효기간이 긴 refresh token을 server로 보내 access token의 발급을 요청한다.
+    - Server는 client가 보낸 refresh token이 server에 저장된 refresh token과 비교하여, 유효한 경우 새로운 access token을 발급하고, 유효하지 않은 경우 다시 로그인을 요구한다.
+    - 서버가 refresh token을 관리하므로 refresh token을 만료시켜 access token의 재발급을 막을 수 있다는 장점이 있다.
+    - 그러나 refresh token을 어딘가에 저장하고 조회해야 하기에 I/O가 발생하고, 이는 JWT의 장점을 충분히 활용하지 못하는 것이다.
+    - 또한 client는 refresh token이 탈취되지 않도록 추가적인 처리가 필요하다.
+
+
+
+
+
 # text encoding
 
 - encoding
@@ -206,6 +391,8 @@
     - 문자를 1byte~6bytes까지 가변적으로 인코딩하는 방식.
     - 예를 들어 ASCII 코드상의 문자들은 1bytes로, 아시아 문자는 3bytes로 인코딩한다.
     - 표현 가능한 길이는 최대 66bytes지만 다른 인코딩과의 호환을 위해 46bytes까지만 사용한다.
+
+
 
 
 
