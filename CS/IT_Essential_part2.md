@@ -197,12 +197,12 @@
   - 형식
     - JWT는 Header, Payload, Signature의 세 부분으로 구성된다.
     - 각 부분은 `.`으로 나뉜다.
-    - 
-
-
+  
   ```bash
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
   ```
+
+
 
   - JWT의 목적은 데이터 자체를 보호하는 것이 아니다.
     - JWT의 목적은 데이터가 인증된 소스에서 생성되었음을 sign을 통해 증명하는 것이다.
