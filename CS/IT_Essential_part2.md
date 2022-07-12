@@ -321,6 +321,79 @@
 
 
 
+- Python으로 JWT 생성하기
+
+  - 대부분의 언어에 JWT를 다루는 라이브러리가 개발되어 있다.
+    - python의 경우 PyJWT가 있다.
+  - 그러나 JWT의 생성 과정을 위해서 JWT를 생성하는 스크립트를 간단하게 작성하면 아래와 같다.
+
+  ```python
+  import json
+  import base64
+  import hmac
+  import hashlib
+  
+  
+  class JWTCreator:
+      def __init__(self, header, payload, secret_key):
+          self.header = header
+          self.payload = payload
+          self.secret_key = secret_key
+          self.algorithms = {
+              "HS256":hashlib.sha256,
+              "HS512":hashlib.sha512
+          }
+          self.algorithm = self.algorithms[header["alg"]]
+          self.segments = []
+      
+      def encode_header(self):
+          str_header = json.dumps(self.header, separators=(",", ":")).encode()
+          encoded_header = base64.urlsafe_b64encode(str_header).replace(b"=", b"")
+          self.segments.append(encoded_header)
+      
+      def encode_payload(self):
+          str_payload = json.dumps(self.payload, separators=(",", ":")).encode()
+          encoded_payload = base64.urlsafe_b64encode(str_payload).replace(b"=", b"")
+          self.segments.append(encoded_payload)
+      
+      def sign(self):
+          # header와 payload를 더한 값을 만든다.
+          signing_input = b".".join(self.segments)
+          # header에 담긴 alogrithm으로 sign을 생성한다.
+          signature = hmac.new(self.secret_key.encode("utf-8"), signing_input, self.algorithm).digest()
+          encoded_signature = base64.urlsafe_b64encode(signature).replace(b"=", b"")
+          self.segments.append(encoded_signature)
+          
+      def create_jwt(self):
+          self.encode_header()
+          self.encode_payload()
+          self.sign()
+          
+          encoded_string = b".".join(self.segments)
+  
+          return encoded_string.decode("utf-8")
+  
+  
+  header = {
+      "alg": "HS256",
+      "typ": "JWT"
+  }
+  
+  payload = {
+    "sub": "1234567890",
+    "name": "John Doe",
+    "admin": True,
+    "iat": 1516239022
+  }
+  
+  secret_key = "skansmfqhtlfwpfhqhslRkdhkswjsekzmthdnfahstmxjcjfjatodruTejfkRkaWkrshffkTdj"
+  
+  jwt_creator = JWTCreator(header, payload, secret_key)
+  print(jwt_creator.create_jwt())
+  ```
+
+  
+
 
 
 # text encoding
