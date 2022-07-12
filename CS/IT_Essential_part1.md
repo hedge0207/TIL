@@ -661,15 +661,6 @@
 
 
 
-- DSL(Domain-Specific Language, 도메인 특화 언어)
-  - 특정 분야에 최적화된 프로그래밍 언어.
-    - 특정한 목적이 있고 해당 목적의 달성만을 위해서 사용되는 언어
-    - SQL의 경우 DB를 조작하는 데 사용하지만 그 이외의 목적으로는 사용하지 않는 DSL이다.
-  - 해당 분야 또는 도메인의 개념과 규칙을 사용한다.
-  - Python, Java 등의 범용 언어보다 덜 복잡하다.
-
-
-
 # SSL과 TLS
 
 > https://kanoos-stu.tistory.com/46
