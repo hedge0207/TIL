@@ -298,7 +298,7 @@
     - `pm.request.URL`
     - `pm.request.headers`
     - `pm.request.method`: HTTP method를 반환한다.
-    - `pm.request.body`
+    - `pm.request.body`: script에서 수정할 수 없다.
   - header에 값 추가하기
 
   ```javascript
@@ -380,15 +380,75 @@
   pm.cookies.toObject();
   ```
 
+  - 그 밖의 메서드들
+  
   > https://learning.postman.com/docs/writing-scripts/script-references/postman-sandbox-api-reference/#scripting-with-request-cookies
 
 
 
+- Script로 test request 보내기
+
+  - `pm.sendRequest` 메서드를 활용하여 비동기적 요청을 보낼 수 있다.
+    - 첫 번째 인자로 요청을 보낼 url, 두 번째 인자로 응답을 처리할 callback 함수를 받는다.
+  - 예시
+
+  ```javascript
+  const postRequest = {
+    url: 'https://postman-echo.com/post',
+    method: 'POST',
+    header: {
+      'Content-Type': 'application/json',
+      'X-Foo': 'bar'
+    },
+    body: {
+      mode: 'raw',
+      raw: JSON.stringify({ key: 'this is json' })
+    }
+  };
+  pm.sendRequest(postRequest, (error, response) => {
+    console.log(error ? error : response.json());
+  });
+  ```
 
 
 
+- File import해서 테스트하기
 
+  - 포스트맨 우측 하단의 `runner`를 클릭한다.
 
+  ![image-20220714100859865](Test.assets/image-20220714100859865.png)
+
+  - 테스트 하고자하는 collection을 드레그해서 화면에 놓는다.
+    - `RUN ORDER`부분에 드레그한다.
+
+  ![image-20220714101011854](Test.assets/image-20220714101011854.png)
+
+  - 우측의 `Select File`을 클릭 후 import하려는 파일을 클릭한다.
+    - 반복 횟수(`Iterations`)는 자동으로 조정된다.
+  - 개별 request의 request body의 값들을 `{{}}`로 묶어 파일에서 읽어 온 값임을 표시한다.
+
+  ```javascript
+  /* test.json
+  [
+      {
+          "name":"Theo",
+          "age":29
+      },
+      {
+          "name":"Oeht",
+          "age":28
+      }
+  ]
+  */
+  
+  // request body
+  {
+      "name":"{{name}}",
+      "age":{{age}}
+  }
+  ```
+
+  - `Start run`을 클릭하여 테스트를 시작한다.
 
 
 
