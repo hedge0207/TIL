@@ -485,16 +485,92 @@
   console.log($.html());
   ```
 
-  
-
-  
-
-  
-
-
 
 
 
 - monitor 기능과 연계해서 테스트를 수행하는 것도 가능하다.
 
   > https://learning.postman.com/docs/writing-scripts/test-with-monitors/
+
+
+
+
+
+
+
+## Newman
+
+- Newman
+
+  - Postman의 기능을 CLI로 사용할 수 있게 해주는 패키지다.
+  - 설치
+
+  ```bash
+  # npm
+  $ npm install -g newman
+  
+  # homebrew
+  $ brew install newman
+  ```
+
+  - 실행
+
+  ```bash
+  $ newman run <file_path or url>
+  ```
+
+  - 실행 결과를 JSON, CLI 등 다양한 방식으로 볼 수 있다.
+
+    > 지원하는 전체 reporter 목록
+    >
+    > https://www.npmjs.com/package/newman#reporters
+
+    - `-r`(reporter) 옵션을 통해 설정 가능하다.
+
+  ```bash
+  $ newman run examples/sample-collection.json -r cli,json
+  ```
+
+  - JavaScript에서도 사용할 수 있도록 JavaScript용 모듈도 개발되어 있다.
+
+  ```javascript
+  // import해서 사용한다.
+  const newman = require('newman');
+  
+  newman.run({
+      collection: require('./sample-collection.json'),
+      reporters: 'cli'
+  }, function (err) {
+  	if (err) { throw err; }
+      console.log('collection run complete!');
+  };
+  ```
+
+
+
+- 옵션들
+
+  > 전체 옵션은 아래에서 확인 가능하다.
+  >
+  > https://learning.postman.com/docs/running-collections/using-newman-cli/newman-options/
+
+  - `-e <path or URL>`(`--environment <path or URL>`)
+    - 환경변수 file의 경로나 URL을 인자로 받는다.
+    - Postman에서 환경 변수 설정 후 export한 파일을 사용한다.
+
+  - `-g <path or URL>`(`--globals <path or URL>`)
+    - global 변수 파일이 경로나 URL을 인자로 받는다.
+  - `-d <path or URL>`(`--iteration-data <path or URL>`)
+    - data source 파일의 경로나 URL을 인자로 받는다.
+    - Postman에서 Runner를 통해 실행할 때 넣어주는 data file을 여기에 입력하면 된다.
+  - `-n <number>`(`--iteration-count <number>`)
+    - 테스트를 반복할 횟수를 입력한다.
+  - `--verbose`
+    - 보다 상세한 정보를 출력한다.
+
+
+
+- Docker로도 사용이 가능하다.
+
+  > https://learning.postman.com/docs/running-collections/using-newman-cli/newman-with-docker/
+
