@@ -139,6 +139,28 @@
     - 이 설정을 통해 스왑 영역을 사용하지 않으면 성능을 보장할 수 있지만, 시스템의 메모리가 부족한 경우에는 Out Of Memory 에러를 일으켜 노드의 장애로 이어질 수 있다. 
     - 대부분의 경우에는 큰 문제가 없지만, JVM 힙 메모리의 용량이 시스템 메모리 용량의 절반 이상이 된다면 Out Of Memory 에러를 일으킬 수 있기에 주의해야 한다.
     - 또한 이 설정을 사용하기 위해서는 elasticsearch.yml 뿐만 아니라 OS의 /etc/security/limits.conf 파일도 수정해야 한다.
+  - `/etc/security/limits.conf` 파일 수정
+    - memlock(locked in memory)를 `unlimited`(혹은 `-1`)로 설정해줘야한다.
+    - memlock은 disk로 swap하지 않고 메인 메모리에 가둬 둘 메모리의 크기를 설정해주는 값으로, 이 값을 `unlimited`로 두어 swap이 발생하지 않게 해야 `bootstrap.memory_lock`을 설정할 수 있다.
+  
+  ```txt
+  <elasticsearch를 실행시키는 계정 이름> soft memlock unlimited
+  <elasticsearch를 실행시키는 계정 이름> hard memlock unlimited
+  ```
+  
+  - elasticsearch를 systemd로 띄울 경우
+  
+    - system으로 등록하여 elasticsearch를 실행할 경우 `limits.conf`파일 수정 후 추가적으로 아래와 같은 설정도 해줘야한다.
+  
+    - `/etc/systemd/system/elasticsearch.service.d` 폴더 생성 후 `override.conf`파일을 아래와 같이 작성하여 넣어준다.
+  
+  ```txt
+  LimitMEMLOCK=infinity
+  ```
+  
+  
+  
+  
 
 
 
