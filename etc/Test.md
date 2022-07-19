@@ -252,16 +252,16 @@
 
   - scope마다 지원하는 메서드의 종류가 다르다.
 
-  | method    | global | collection | environment | data | local |
-  | --------- | ------ | ---------- | ----------- | ---- | ----- |
-  | has       | O      | O          | O           | O    | O     |
-  | get       | O      | O          | O           | O    | O     |
-  | set       | O      | O          | O           | X    | O     |
-  | replaceIn | O      | O          | O           | X    | O     |
-  | toObject  | O      | O          | O           | O    | O     |
-  | unset     | X      | O          | O           | O    | X     |
-  | clear     | X      | O          | O           | X    | X     |
-  | toJson    | X      | X          | X           | O    | X     |
+  | method    | globals | collectionVariables | environment | iterationData | variables |
+  | --------- | ------- | ------------------- | ----------- | ------------- | --------- |
+  | has       | O       | O                   | O           | O             | O         |
+  | get       | O       | O                   | O           | O             | O         |
+  | set       | O       | O                   | O           | X             | O         |
+  | replaceIn | O       | O                   | O           | X             | O         |
+  | toObject  | O       | O                   | O           | O             | O         |
+  | unset     | X       | O                   | O           | O             | X         |
+  | clear     | X       | O                   | O           | X             | X         |
+  | toJson    | X       | X                   | X           | O             | X         |
 
   - 상위  scope와 하위 scope에 같은 이름의 변수가 설정 되었을 경우 하위 스코프가 하위 스코프를 덮어씌운다.
 
