@@ -298,7 +298,7 @@
     - `pm.request.URL`
     - `pm.request.headers`
     - `pm.request.method`: HTTP method를 반환한다.
-    - `pm.request.body`: script에서 수정할 수 없다.
+    - `pm.request.body`: **script에서 수정할 수 없다.**
   - header에 값 추가하기
 
   ```javascript
@@ -452,7 +452,7 @@
 
 
 
-- Parse reesponse data
+- Parse response data
 
   - JSON 형식으로 parsing하기
     - `json()` 메서드를 사용한다.
