@@ -171,7 +171,389 @@
     - uses: actions/javascript-action@main
   ```
 
+
+
+
+- Github Actions의 필수적인 기능들
+
+  - 환경 변수 사용하기
+    - Github Action에는 기본적으로 등록되어 있는 환경변수 들이 있다.
+    - 만일 새로운 환경 변수를 등록하고자 한다면 아래와 같이 `env` 필드에 환경변수를 정의하면 된다.
+    - 아래와 같이 정의한 환경변수는 `client.js` 파일에서 사용이 가능하다.
+
+  ```yaml
+  jobs:
+    example-job:
+        steps:
+          - name: Connect to PostgreSQL
+            run: node client.js
+            env:
+              POSTGRES_HOST: postgres
+              POSTGRES_PORT: 5432
+  ```
+
+  - Script 추가하기
+    - 아래와 같이 script 혹은 실행시킬 명령어를 정의할 수 있다.
+
+  ```yaml
+  jobs:
+    example-job:
+      steps:
+        - name: Run build script
+          run: ./.github/scripts/build.sh
+          shell: bash
+  ```
+
+  - Job들 간에 data 공유하기
+    - workflow가 실행되는 과정에서 생성한 파일을 artifact라 부르며, 아래와 같이 공유가 가능하다.
+
+  ```yaml
+  # 업로드하기
+  jobs:
+    example-job:
+      name: Save output
+      steps:
+        - shell: bash
+          run: |
+            expr 1 + 1 > output.log
+        - name: Upload output file
+          uses: actions/upload-artifact@v3
+          with:
+            name: output-log-file
+            path: output.log
   
+  # 다운로드하기
+  jobs:
+    example-job:
+      steps:
+        - name: Download a single artifact
+          uses: actions/download-artifact@v3
+          with:
+            name: output-log-file
+  ```
+
+
+
+## 표현식
+
+- 표현식에 literal을 사용하는 것이 가능하다.
+
+  - boolean, null, number, string
+  - number의 경우 JSON에서 유효한 숫자 형식이어야 한다.
+  - String의 경우 표현식 없이도 표현 가능하다.
+    - 단, 표현식에서 사용할 경우 반드시 작은 따옴표(`'`)로 묶어줘야한다.
+    - 만일 작은 따옴표 자체를 사용하고자 한다면 앞에 작은 따옴표 하나를 더 붙여주면 된다(큰 따옴표로 묶으면 error가 발생한다).
+
+  ```yaml
+  env:
+    myNull: ${{ null }}
+    myBoolean: ${{ false }}
+    myIntegerNumber: ${{ 711 }}
+    myFloatNumber: ${{ -9.2 }}
+    myHexNumber: ${{ 0xff }}
+    myExponentialNumber: ${{ -2.99e-2 }}
+    myString: Mona the Octocat
+    myStringInBraces: ${{ 'It''s open source!' }}
+  ```
+
+
+
+- 연산자
+  - JavaScript에서 사용 가능한 연산자의 대부분을 사용할 수 있다.
+
+
+
+- 비교
+
+  - Github은 loose equality 비교를 택한다.
+    - 만일 두 data의 type이 같지 않으면, 그 둘을 숫자로 변형하여 비교한다.
+
+  | Type    | Result                                                       |
+  | ------- | ------------------------------------------------------------ |
+  | Null    | 0                                                            |
+  | Boolean | true면 1, false면 0                                          |
+  | String  | JSON 형식에 맞는 숫자 형식이면 해당 숫자로 변환, 아니면 NaN으로 변환, 빈 string은 0으로 변환 |
+  | Array   | NaN                                                          |
+  | Object  | NaN                                                          |
+
+  - NaN과 NaN의 동등 비교(==)는 False를 반환한다.
+  - Object는 오직 같은 instance일 때만 같은 것으로 간주된다(Array도 마찬가지).
+  - 대소문자를 구분하지 않는다.
+
+
+
+- 함수
+
+  - Github은 표현식 내부에서 사용할 수 있는 내장 함수들을 제공한다.
+    - 일부 내장 함수들은 비교를 위해 값을 string으로 변환한다.
+
+  | Type    | Result                                                |
+  | ------- | ----------------------------------------------------- |
+  | Null    | ''                                                    |
+  | Booelan | 'true', 'false'                                       |
+  | Number  | 10진수 형식의 문자열, 큰 수의 경우 지수 형식의 문자열 |
+  | Array   | 문자열로 변환하지 않는다.                             |
+  | Object  | 문자열로 변환하지 않는다.                             |
+
+  - `contains(search, item)`
+    - `search`에 `item`이 있으면 true, 없으면 false를 반환한다.
+    - 대소문자를 구분하지 않고 찾는다.
+    - `search`에는 array나 string이 올 수 있다.
+
+  ```yaml
+  # 특정 evnet와 관련된 github issue 중에 bug라는 라벨이 있는지 확인
+  contains(github.event.issue.labels.*.name, 'bug')
+  ```
+
+  - `startsWith(searchString, searchValue)`
+    - `searchString`이 `searchValue`로 시작하면 true, 아니면 false를 반환한다.
+    - `endsWith`도 있다.
+
+  ```yaml
+  startsWith('Hello world', 'He')
+  ```
+
+  - `format(string, replaceValue0, replaceValue1, ..., replaceValueN)`
+    - python의 `format()`메서드와 유사하다.
+
+  ```yaml
+  format('Hello {0} {1} {2}', 'Mona', 'the', 'Octocat') 	# Hello Mona the Octocat
+  ```
+
+  - `join(array, optionalSeparator)`
+    - Array 내부의 모든 값들을 string으로 합한다.
+    - `optionalSeparator`는 string으로 합할 때 각 요소를 어떤 것으로 구분하여 합할지를 설정하는 것이다(기본값은 `,`).
+
+  ```yaml
+  join(github.event.issue.labels.*.name, '| ')	# bug| help wanted
+  ```
+
+  - `toJSON(value)`
+    - value를 pretty-print JSON representation으로 변환하여 반환한다.
+  - `fromJSON(value)`
+    - JSON 형식의 데이터를 읽어서 JSON object로 변환하여 반환한다.
+  - `hashFiles(path)`
+    - file의 hash를 반환한다.
+
+  ```yaml
+  hashFiles('**/package-lock.json', '**/Gemfile.lock')
+  ```
+
+
+
+- Status check 함수들
+
+  - `success()`
+    - 이전의 step들이 fail되거나 cancel되지 않았으면 true를 반환한다.
+
+  ```yaml
+  steps:
+    ...
+    - name: The job has succeeded
+      if: ${{ success() }}
+  ```
+
+  - `always()`
+    - 어떠한 경우에도 step이 실행되도록 하기위해 사용한다.
+
+  ```yaml
+  if: ${{ always() }}
+  ```
+
+  - `failure()`
+    - 이전의 step들 중 하나라도 fail이거나 cancel인 경우 true를 반환한다.
+    - 의존하고 있는 작업이 있는 경우, 해당 작업이 fail되면 true를 반환한다.
+
+  ```yaml
+  steps:
+    ...
+    - name: The job has failed
+      if: ${{ failure() }}
+  ```
+
+
+
+- Context
+
+  - 표현식에 context를 사용할 수 있다.
+  - 지원하는 context 목록은 다음과 같다.
+
+  > https://docs.github.com/en/actions/learn-github-actions/contexts
+
+
+
+## Docker 실행시키기
+
+- 사전 준비
+
+  - Dockerfile 작성하기
+
+  ```dockerfile
+  FROM alpine:3.10
+  
+  COPY entrypoint.sh /entrypoint.sh
+  
+  ENTRYPOINT ["/entrypoint.sh"]
+  ```
+
+  - Action metadata file 작성하기
+    - `image`에는 repository 내의 dockerfile의 경로나 dockerhub의 url을 적어야 한다.
+
+  ```yaml
+  name: 'Hello World'
+  description: 'Greet someone and record the time'
+  inputs:
+    who-to-greet:  # id of input
+      description: 'Who to greet'
+      required: true
+      default: 'World'
+  outputs:
+    time: # id of output
+      description: 'The time we greeted you'
+  runs:
+    using: 'docker'
+    image: 'Dockerfile'
+    args:
+      - ${{ inputs.who-to-greet }}
+  ```
+
+  - Action code 작성하기
+
+  ```bash
+  # entrypoint.sh
+  #!/bin/sh -l
+  
+  echo "Hello $1"
+  time=$(date)
+  echo "::set-output name=time::$time"
+  ```
+
+  - 작성한 파일에 실행 권한 추가하기
+
+  ```bash
+  $ chmod +x entrypoint.sh
+  ```
+
+  - commit하고 tag달고 push하기
+
+  ```bash
+  $ git add action.yml entrypoint.sh Dockerfile README.md
+  $ git commit -m "My first action is ready"
+  $ git tag -a -m "My first action release" v1
+  $ git push --follow-tags
+  ```
+
+
+
+- Action 테스트 하기
+
+  - `.github/workflows/main.yml`에 아래와 같이 workflow를 정의한다.
+
+  ```yaml
+  on: [push]
+  
+  jobs:
+    hello_world_job:
+      runs-on: ubuntu-latest
+      name: A job to say hello
+      steps:
+        - name: Hello world action step
+          id: hello
+          uses: <계정>/<repository명>@v1
+          with:
+            who-to-greet: 'Mona the Octocat'
+        # Use the output from the `hello` step
+        - name: Get the output time
+          run: echo "The time was ${{ steps.hello.outputs.time }}"
+  ```
+
+  - 이제 push가 발생할 때마다 위 workflow가 실행된다.
+
+
+
+
+
+## Self-hosted runner
+
+- Self-hosted runner
+
+  - github은 기본적으로 테스트를 위한 runner를 제공한다.
+  - github이 제공하는 runner가 아닌, 직접 구성한 runner를 self-hosted runner라 한다.
+    - Hardware, OS, software 적으로 github-hosted runner보다 자유도가 높다.
+  - 물리적 hardware, 가상 hardware, 컨테이너, 클라우드 등으로 구성이 가능하다.
+
+  - Github Actions와 30일 동안 연결된 적이 없으면 자동으로 삭제된다.
+
+
+
+- Self-hosted runner의 조건
+  - Self-hosted runner application을 설치하고 실행할 수 있어야한다.
+  - Github Action과 communication이 가능해야한다.
+  - Workflow를 실행할 수 있는 충분한 자원이 있어야한다.
+    - Self-hosted runner application 자체는 약간의 자원만 있으면 된다.
+    - 그러나 이를 통해 실행시킬 Workflow의 종류에 따라 필요한 자원의 양이 달라지게 된다.
+  - Docker를 사용하는 workflow를 실행하고자 한다면 반드시 Linux를 사용해야하며, Docker가 설치되어 있어야 한다.
+
+
+
+- 보안
+  - Self-hosted runner는 private repository에만 사용하는 것을 권장한다.
+  - 만일 누군가가 repository를 fork해서 악의적인 action을 넣은 후 해당 action을 실행하면 self-hosted runner로 사용하는 장치에 문제가 생길 수 있기 때문이다.
+  - 항상 독립적인 가상 머신에서 workflow를 실행하고, workflow가 종료된 후에는 가상머신을 삭제하는 github-hosted runner는 이런 문제가 없다.
+
+
+
+- Self-hosted runner 추가하기
+
+  - 다양한 계층의 runner가 존재한다.
+    - Repository-level runner는 하나의 repository에서 사용되는 runner이다.
+    - Organization-level runner는 organization 내부의 모든 repository에서 사용되는 runner이다.
+    - Enterprise-level runner는 enterprise account의 여러 organization에서 사용되는 runner이다.
+
+  - 각 계층별 runner를 추가하기 위해 필요한 권한.
+    - organization와 enterprise에 runner를 추가하려면 administrator여야 한다.
+    - Repository에 runner를 추가하려면 repository owner여야 한다.
+
+  - Repository-level runner 추가하기
+    - repository의 메인 페이지에서 Settings를 클릭한다.
+    - 왼쪽 sidebar에서 Actions-Runners를 클릭한다.
+    - New self-hosted runner를 클릭한다.
+    - 운영체제를 선택후 적혀 있는 안내를 따른다.
+
+  ```bash
+  # runner application을 설치할 폴더를 생성한다.
+  $ mkdir actions-runner && cd actions-runner
+  
+  # runner application의 installer 다운 받는다.
+  $ curl -o actions-runner-linux-x64-2.294.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.294.0/actions-runner-linux-x64-2.294.0.tar.gz
+  
+  # (선택) hash를 검증한다.
+  $ echo "a19a09f4eda5716e5d48ba86b6b78fc014880c5619b9dba4a059eaf65e131780  actions-runner-linux-x64-2.294.0.tar.gz" | shasum -a 256 -c
+  
+  # 압축을 해제해 installer를 꺼낸다.
+  $ tar xzf ./actions-runner-linux-x64-2.294.0.tar.gz
+  
+  # runner를 생성하고, configuration을 설정한다.
+  $ ./config.sh --url <repository_url> --token <안내문에 나와 있는 token>
+  
+  # 실행한다.
+  $ ./run.sh
+  
+  
+  # 아래와 같은 메시지가 나오면 제대로 연결된 것이다.
+  √ Connected to GitHub
+  
+  2019-10-24 05:45:56Z: Listening for Jobs
+  ```
+
+  - Workflow YAML 파일에 `runs-on`키워드의 값을 `self-hosted`로 변경한다.
+
+  ```yaml
+  jobs:
+    hello_world_job:
+      runs-on: self-hosted
+      # (...)
+  ```
 
   
 
