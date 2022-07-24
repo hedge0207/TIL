@@ -583,6 +583,161 @@
 
 
 
+
+
+# Locust Test Non Http service
+
+- Locust를 사용하여 대부분의 시스템을 테스트할 수 있다.
+  - Locust는 기본적으로 HTTP/HTTPS test만이 내장되어 있다.
+  - 그러나 RPC를 사용하면 어떤 시스템이든 테스트가 가능하다.
+
+
+
+- gRPC를 활용하여 테스트하기
+
+  - `.proto` 파일 작성하기
+
+  ```protobuf
+  syntax = "proto3";
+  
+  package locust.hello;
+  
+  service HelloService {
+    rpc SayHello (HelloRequest) returns (HelloResponse) {}
+  }
+  
+  message HelloRequest {
+    string name = 1;
+  }
+  
+  message HelloResponse {
+    string message = 1;
+  }
+  ```
+
+  - `pb2`파일 생성하기
+
+  ```bash
+  $ python -m grpc_tools.protoc -I<proto file이 있는 폴더의 경로> --python_out=<pb2 파일을 생성할 경로> --grpc_python_out=<pb2_grpc 파일을 생성할 경로> <proto file의 경로>
+  ```
+
+  - gRPC 서버 작성하기
+
+  ```python
+  import hello_pb2_grpc
+  import hello_pb2
+  import grpc
+  from concurrent import futures
+  import logging
+  import time
+  
+  logger = logging.getLogger(__name__)
+  
+  
+  class HelloServiceServicer(hello_pb2_grpc.HelloServiceServicer):
+      def SayHello(self, request, context):
+          name = request.name
+          time.sleep(1)
+          return hello_pb2.HelloResponse(message=f"Hello from Locust, {name}!")
+  
+  
+  def start_server(start_message):
+      server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+      hello_pb2_grpc.add_HelloServiceServicer_to_server(HelloServiceServicer(), server)
+      server.add_insecure_port("localhost:50051")
+      server.start()
+      logger.info(start_message)
+      server.wait_for_termination()
+  ```
+
+  - gRPC 클라이언트 겸 사용자를 생성하는 로직 추가.
+
+  ```python
+  import grpc
+  import hello_pb2_grpc
+  import hello_pb2
+  from locust import events, User, task
+  from locust.exception import LocustError
+  from locust.user.task import LOCUST_STATE_STOPPING
+  from hello_server import start_server
+  import gevent
+  import time
+  
+  # patch grpc so that it uses gevent instead of asyncio
+  import grpc.experimental.gevent as grpc_gevent
+  
+  grpc_gevent.init_gevent()
+  
+  
+  @events.init.add_listener
+  def run_grpc_server(environment, **_kwargs):
+      # gRPC 서버 시작하기
+      # 첫 번째 인자로 spawn할 함수를 받고, 두 번째 인자로 해당 함수의 파라미터를 받는다.
+      gevent.spawn(start_server, "gRPC server started")
+  
+  
+  class GrpcClient:
+      def __init__(self, environment, stub):
+          self.env = environment
+          self._stub_class = stub.__class__
+          self._stub = stub
+  
+      def __getattr__(self, name):
+          func = self._stub_class.__getattribute__(self._stub, name)
+  
+          def wrapper(*args, **kwargs):
+              request_meta = {
+                  "request_type": "grpc",
+                  "name": name,
+                  "start_time": time.time(),
+                  "response_length": 0,
+                  "exception": None,
+                  "context": None,
+                  "response": None,
+              }
+              start_perf_counter = time.perf_counter()
+              try:
+                  request_meta["response"] = func(*args, **kwargs)
+                  request_meta["response_length"] = len(request_meta["response"].message)
+              except grpc.RpcError as e:
+                  request_meta["exception"] = e
+              request_meta["response_time"] = (time.perf_counter() - start_perf_counter) * 1000
+              self.env.events.request.fire(**request_meta)
+              return request_meta["response"]
+  
+          return wrapper
+  
+  
+  class GrpcUser(User):
+      abstract = True
+  
+      stub_class = None
+  
+      def __init__(self, environment):
+          super().__init__(environment)
+          for attr_value, attr_name in ((self.host, "host"), (self.stub_class, "stub_class")):
+              if attr_value is None:
+                  raise LocustError(f"You must specify the {attr_name}.")
+          self._channel = grpc.insecure_channel(self.host)
+          self._channel_closed = False
+          stub = self.stub_class(self._channel)
+          self.client = GrpcClient(environment, stub)
+  
+  
+  class HelloGrpcUser(GrpcUser):
+      # grpc 서버의 host를 설정한다.
+      host = "localhost:50051"
+      stub_class = hello_pb2_grpc.HelloServiceStub
+  
+      @task
+      def sayHello(self):
+          if not self._channel_closed:
+              self.client.SayHello(hello_pb2.HelloRequest(name="Test"))
+          time.sleep(1)
+  ```
+
+
+
 # Worker
 
 - locust는 여러 개의 worker를 생성하여 테스트가 가능하다.
