@@ -384,6 +384,12 @@
 
 ## Docker 실행시키기
 
+- Github actions에서 docker를 실행하고자 한다면 아래 조건을 만족해야 한다.
+  - Github-hosted runner라면 반드시 ubuntu runner를 사용해야 한다.
+  - Self-hosted runner라면 반드시 Docker가 설치된 linux를 사용해야 한다.
+
+
+
 - 사전 준비
 
   - Dockerfile 작성하기
@@ -555,9 +561,192 @@
       # (...)
   ```
 
+
+
+
+
+
+## Workflow
+
+- Workflow에는 아래의 세 가지가 반드시 포함되어야 한다.
+  - Workflow를 trigger 시킬 event.
+  - 하나 이상의 job.
+  - Job의 각 step에서 실행 시킬 스크립트나 action.
+
+
+
+- Workflow command
+
+  - Workflow command로는 대표적으로 아래와 같은 것들을 할 수 있다.
+
+    - 환경변수를 설정하여 action이 runner와 소통할 수 있도록 해준다.
+    - 한 action의 output을 다른 action에서 사용할 수 있게 해준다.
+    - debug message를 output log에 추가한다.
+
+  - actions/toolkit
+
+    > https://github.com/actions/toolkit
+    >
+    > https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#example-setting-a-value
+
+    - Workflow command에서 사용할 수 있는 여러 함수들을 모아놓은 패키지다.
+    - `::` 를 사용하여 workflow command를 사용할 수 있게 해준다.
+
+  ```yaml
+  # 예시 output parmeter 설정하기
+  echo "::set-output name=<키>::<값>"
+  # 실제 사용
+  echo "::set-output name=action_fruit::strawberry"
+  ```
+
+
+
+
+
+## Job
+
+- 개요
+
+  - Job은 기본적으로 병렬적으로 실행된다.
+    - `jobs.<job_id>.needs`를 통해 의존성을 추가함으로써 순차적으로 실행되게 할 수 있다.
+    - 아래 예시에서 job3는 job1, job2가 성공적으로 실행 됐는지 여부와 관계 없이 완료만 되면 실행되고, job2는 job1이 성공적으로 실행이 완료되어야만 실행된다.
+
+  ```yaml
+  jobs:
+    job1:
+    job2:
+      needs: job1
+    job3:
+      if: ${{ always() }}
+      needs: [job1, job2]
+  ```
+
+  - 각 job들은 `runs-on`에 설정된 runner에서 실행된다.
+  - 모든 job은 job_id라 불리는 고유한 식별자로 구별된다.
+    - job_id는 숫자, 영문, `-`, `_`만 사용이 가능하다.
+    - 첫 글자는 반드시 영문 또는 `_`여야한다.
+    - 대소문자를 구분하지 않는다.
+    - `jobs.<job_id>.name`을 통해 설정하는 것은 github UI 상에 보이는 이름이지 job_id가 아니다.
+
+
+
+- matrix
+
+  - 하나의 job에 여러 변수를 줌으로써 여러 개의 job을 생성한 것과 같은 효과를 주는 기능이다.
+  - 예시
+    - 아래와 같이 `version`과 `os`라는 두 개의 metrix를 생성했을 경우 그 둘을 조합하여 총 6개의 조합을 생성한다.
+    - 그 후 github action은 해당 조합을 가지고 각각 job을 실행한다.
+    - 즉 6번이 실행된다.
+
+  ```yaml
+  jobs:
+    example_matrix:
+      strategy:
+        matrix:
+          os: [ubuntu-18.04, ubuntu-20.04]
+          version: [10, 12, 14]
+      runs-on: ${{ matrix.os }}
+      steps:
+        - uses: actions/setup-node@v3
+          with:
+            node-version: ${{ matrix.version }}
+  ```
+
+  - `include`를 통해 matrix 추가하기
+    - 이미 존재하는 matrix를 확장하거나, 새로운 설정을 추가할 때 사용할 수 있다.
+    - `include`를 통해 추가되는 값들은  {key:value} 쌍의 형태며, 아래의 규칙에 따라 추가된다.
+    - 기존 matrix들 중 key와 value가 한 쌍이라도 같은 값이 있다면 해당 matrix에만 추가된다.
+    - 기존 matrix들의  key에 존재하지 않는 key라면 모든 matrix에 추가된다.
+    - 기존 matrix에 key는 있는데 value는 같은 것이 없다면 새로운 조합으로 추가된다.
+    - 기존 matrix의 value는 덮어씌워지지 않지만, `include`로 추가된 value는 덮어씌워진다.
+    - `include`를 통해 새롭게 생성된 matrix는 확장이 불가능하다.
+  - `include` 예시
+
+  ```yaml
+  strategy:
+    matrix:
+      fruit: [apple, pear]
+      animal: [cat, dog]
+      include:
+        - color: green
+        - color: pink
+          animal: cat
+        - fruit: apple
+          shape: circle
+        - fruit: banana
+        - fruit: banana
+          animal: cat
+          
   
+  # fruit와 animal을 조합한 기존 조합은 아래와 같다.
+  {fruit: apple, animal: cat}
+  {fruit: apple, animal: dog}
+  {fruit: pear, animal: cat}
+  {fruit: pear, animal: dog}
+  
+  # 여기에 첫 번째 object({color: green})가 추가되면 다음과 같이 변한다.
+  # color는 기존 조합의 어디에도 존재하지 않는 key이므로 모든 matrix에 추가된다.
+  {fruit: apple, animal: cat, color: green}
+  {fruit: apple, animal: dog, color: green}
+  {fruit: pear, animal: cat, color: green}
+  {fruit: pear, animal: dog, color: green}
+  
+  # 두 번째 object({color:pink, animal: cat})
+  # {animal: cat}이 일치하는 matrix에만 추가되며, color는 include를 통해 추가된 것이므로 덮어씌우는 것이 가능하다.
+  {fruit: apple, animal: cat, color: pink}
+  {fruit: apple, animal: dog, color: green}
+  {fruit: pear, animal: cat, color: pink}
+  {fruit: pear, animal: dog, color: green}
+  
+  # 세 번째 object({fruit:apple, shape:circle})
+  # {fruit:apple}이 일치하는 matrix에만 추가된다.
+  {fruit: apple, animal: cat, color: pink, shape: circle}
+  {fruit: apple, animal: dog, color: green, shape: circle}
+  {fruit: pear, animal: cat, color: pink}
+  {fruit: pear, animal: dog, color: green}
+  
+  # 네 번째 object({fruit: banana})
+  # matrix 중 key:value 쌍이 일치하는 metrix가 없으므로 새로운 matrix를 생성한다.
+  {fruit: apple, animal: cat, color: pink, shape: circle}
+  {fruit: apple, animal: dog, color: green, shape: circle}
+  {fruit: pear, animal: cat, color: pink}
+  {fruit: pear, animal: dog, color: green}
+  {fruit: banana}
+  
+  # 다섯 번 째 object({fruit: banana, animal:cat})
+  # {animal:cat}이 있긴 하지만 기존의 key인 fruit를 덮어쓰지 않고는 추가가 불가능하다.
+  # 또한 {fruit: banana}는 include를 통해 추가된 matrix이므로 확장이 불가능하다.
+  # 따라서 새로운 matrix를 생성한다.
+  {fruit: apple, animal: cat, color: pink, shape: circle}
+  {fruit: apple, animal: dog, color: green, shape: circle}
+  {fruit: pear, animal: cat, color: pink}
+  {fruit: pear, animal: dog, color: green}
+  {fruit: banana}
+  {fruit: banana, animal: cat}
+  ```
 
+  - `exclude`를 통해 특정 조합을 제외하는 것도 가능하다.
+    - `jobs.<job_id>.strategy.matrix.exclude`를 통해 제외할 것들을 설정한다.
+    - 아래의 경우 총 12개의 matrix가 생성되는 데 `os`가 windows-latest이면서 `version`이 16인 matrix 2가지와 `os`가 macos-latest, `version`이 12, `emvironment`가 production인 경우 1가지가 빠져 9번만 실행된다.
 
+  ```yaml
+  strategy:
+    matrix:
+      os: [macos-latest, windows-latest]
+      version: [12, 14, 16]
+      environment: [staging, production]
+      exclude:
+        - os: macos-latest
+          version: 12
+          environment: production
+        - os: windows-latest
+          version: 16
+  runs-on: ${{ matrix.os }}
+  ```
+
+  - 한번에 실행할  job의 개수 제한하기
+    - 기본적으로 `matrix`를 통해 생성된 모든 조합을 병렬적으로 실행한다.
+    - 만일 동시에 실행되는 job의 개수에 제한을 두고자 하면 `jobs.<job_id>.strategy.max-parallel` 값을 설정해주면 된다.
 
 
 
