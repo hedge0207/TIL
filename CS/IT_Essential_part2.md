@@ -469,6 +469,225 @@
 
 
 
+# REST
+
+> https://wonit.tistory.com/454
+>
+> https://meetup.toast.com/posts/92
+>
+> https://shoark7.github.io/programming/knowledge/what-is-rest
+>
+> https://blog.npcode.com/2017/04/03/rest%ec%9d%98-representation%ec%9d%b4%eb%9e%80-%eb%ac%b4%ec%97%87%ec%9d%b8%ea%b0%80/
+
+- REST(REpresentational State Transfer)
+
+  - HTTP 저자 중 하나인 로이 필딩이 자신의 박사 학위 논문에서 처음 소개했다.
+    - HTTP가 설계의 우수성에 비해 제대로 사용되지 못하는 상황이 안타까워 HTTP의 장점을 최대한 활용할 수 있는 아키텍쳐로 REST를 소개했다.
+  - Representational
+    - 같은 데이터라도 표현(represent)하는 방식이 다를 수 있다.
+    - 예를 들어 같은 데이터라도 이를 JSON, XML, HTML 등 다양한 양식으로 표현할 수 있다.
+    - 로이 필딩은 자원(resource)과 자원을 표현하는 양식(representation)을 분리했다.
+    - 서버는 자원을 전송하는 것이 아니라 자원의 표현을 전송해서 소통하는 것이다.
+    - 표현 방식은 서버와 클라이언트 사이의 협상에 의해 결정된다.
+    - 서버에서 전송된 자원의 표현은 원래 자원의 표현 방식과 같을 수도 있고 다를 수도 있지만, 이는 인터페이스 뒤에 가려져 알 수 없다.
+    - 결국 representation이라는 것은 어떤 리소스의 특정 시점의 상태를 반영하고 있는 정보이다.
+    - Representation은 representation data와 representation metadata로 구성된다.
+    - representation data는 해당 representation이 표현하려 한 데이터이고, representation metadata는 Content-Type 등과 같은 값 들이다(HTTP header에 있는 값들이 모두 representation metadata에 속하는 것은 아니다).
+  - State Transfer
+    - State는 웹 애플리케이션의 상태를 의미하며, transfer는 이 상태의 전송을 의미한다.
+    - 사용자가 링크를 클릭하면 현재 페이지에서 다른 페이지로의 이동(즉, 상태의 변화)이 발생한다.
+    - 이 상태의 변경은 representation의 전송(transfer)를 통해 이루어진다.
+    - Transfer는 상태의 전이를 의미하는 것이 아니다. 사용자가 링크를 클릭함으로서 웹 어플리케이션의 상태가 전이된 것은 사실이지만, transfer가 의미하는 것은 network component 사이의 전송을 말한다(일반적으로 서버에서 클라이언트로의 전송).
+    - 리소스의 상태와 애플리케이션의 상태는 둘 다 동일하게 state로 표현되었지만, 당연하게도 그 둘은 같은 것을 가리키는 것이 아니다.
+  - 결론
+    - 위의 내용을 종합하면 REST는 결국 아래와 같은 뜻이다.
+    - 하나의 웹 네트워크는 전이 가능한 여러 상태를 갖는데, 이 때 사용자가 링크를 클릭하면 URI로 매핑된 해당 상태로 전이한다. 이 때 그 상태 정보는 표현에 의해 조작(혹은 전처리)되어 전송된다.
+  - 주의
+    - REST는 URI를 만드는 규칙이 아니다.
+    - 웹 프로토콜이나 어플리케이션의 구조화 스타일이다.
+    - 실제로 로이 필딩의 논문에서는 URI의 작성 규칙에 대한 내용은 존재하지 않는다.
+
+
+
+- REST의 구성 요소
+  - 자원(Resource)
+    - 모든 자원에 고유한 ID(웹의 경우 URI)가 존재한다.
+    - 클라이언트는 ID를 통해 자원을 지정하고 해당 자원의 상태에 대한 조작을 서버에 요청한다.
+    - 즉 ID는 자원 그 자체가 아닌 자원에 대한 참조이다.
+  - 행위(Verb)
+    - HTTP 프로토콜의 method를 사용한다.
+    - GET, POST 등
+  - 표현(Representation of Resource)
+    - 클라이언트가 자원의 상태에 대한 조작을 요청하면, 서버는 이에 적절한 응답(representation)을 보낸다.
+    - JSON, XML 등 다양한 형태의 representation이 있을 수 있다.
+
+
+
+- REST의 제약 조건
+  - 인터페이스 일관성(Uniform interface)
+    - 서버의 리소스에 접근할 때 인터페이스가 일관적이어야한다.
+    - 여기에 또 4가지 제약 조건이 존재한다.
+  - 무상태(Stateless)
+    - 클라이언트의 상태가 서버에 저장되어서는 안 된다.
+  - 캐시처리가능(Cacheable)
+    - 클라이언트는 응답을 캐싱할 수 있어야한다.
+    - 응답 내의 데이터에 해당 요청이 캐시가 가능한지, 불가능한지를 명시해야한다.
+    - 캐시가 가능한 요청이라면, 클라이언트에서 동일한 요청이 왔을 때 응답 데이터를 재사용 할 수 있어야한다.
+    - `cache-control` 헤더에 캐시 가능 여부를 명시해준다.
+  - 계층화(Layered System)
+    - 클라이언트는 단순히 REST 서버에 요청을 보내고 응답만 받으면 그만이다.
+    - 즉 해당 응답이 최종 서버가 보낸 것인지 중개자가 보낸 것인지 알 필요가 없다.
+    - 따라서 서버는 중개 서버(게이트웨이, 프록시 등)나 로드 밸런싱 등의 기능을 활용하여 확장 가능한 시스템을 구성할 수 있다.
+  - 클라이언트/서버 구조
+    - 클라이언트와 서버의 관심사를 명확히 분리해야한다.
+    - 서버는 서버의 관심사(데이터 저장소로부터 필요한 자원을 어떻게 하면 잘 관리할지)에 집중하고, 클라이언트는 클라이언트의 관심사(어떤 방식으로 서버에 정보를 요청하고, 어떻게 보여 줄 지)에만 집중한다.
+    - 이를 통해 각각 개발해야 하는 부분이 명확해지고 서로 간의 의존성이 줄어들게 된다.
+  - Code on demand(optional)
+    - 다른 조건들과 달리 선택사항이다.
+    - 클라이언트는 서버로부터 실행시킬 수 있는 로직(python script 등)을 받아 클라이언트의 기능을 일시적으로 확장하는데 사용할 수 있다.
+
+
+
+- Uniform interface의 4가지 제약 조건
+
+  - 요청 내에서의 자원 식별
+    - 요청에서 개별 자원에 대한 식별이 가능해야한다.
+    - 웹을 예로 들면 URI에서 자원에 대한 식별이 가능해야한다.
+  - 표현을 통한 리소스 조정
+    - 서버는 클라이언트에 리소스를 조정(CRUD)하는 요청을 보낼 때, 해당 자원을 지칭하는 메시지와 메타데이터의 표현(representation)을 함께 보내야 한다.
+    - 서버는 클라이언트에서 받아온 정보를 바탕으로 리소스를 조정한다.
+    - 또한 서버 역시 클라이언트에 조정에 대한 응답을 보낼 때 데이터를 그대로 보내지 않고 JSON, XML등의 표현(representation)으로 변환하여 보낸다.
+  - 자기 서술적 메시지
+    - 각 메시지는 메시지 자신을 어떻게 처리해야 하는지 충분한 정보를 포함해야 한다.
+    - 예시
+
+  ```json
+  // 아래 메시지를 응답으로 받은 클라이언트는 아래 정보를 어떻게 처리해야하는지 알 수 없다.
+  {
+      "id":1,
+      "title":"Elasticsearch Guide"
+  }
+  
+  // 아래와 같이 Content-type을 응답 header에 추가함으로써 해당 메시지가 Json 형식이며, 그에 맞는 처리를 해줘야 한다는 것을 알 수 있도록 한다.
+  Content-type: application/json
+  {
+      "id":1,
+      "title":"Elasticsearch Guide"
+  }
+  
+  // 다만 id, title이 무엇을 지칭하는지는 여전히 알 수 없다. 따라서 명세를 담은 Link를 응답 header에 추가하여 id와 title이 무엇인지 알 수 있게 해준다.
+  Content-type: application/json
+  Link: <https://localhost:8000/docs/books>; rel="profile"
+  {
+      "id":1,
+      "title":"Elasticsearch Guide"
+  }
+  ```
+
+  - Hypermedia As The Engine Of Application State(HATEOAS)
+    - Hypermedia를 통해서 애플리케이션의 상태 전이가 가능해야한다.
+    - 또한 Hypermedia에 자기 자신에 대한 정보가 담겨야한다.
+    - 상태의 전이란 특정 자원을 요청한 후 그와 연계된 요청으로 다시 요청을 보내는 것을 말한다.
+    - 예를 들어 특정 게시글의 조회 요청 이후에는 다음 게시글 조회, 해당 게시글에 대한 댓글 쓰기 등의 연계된 요청이 있을 수 있다.
+    - 이러한 것들을 응답 메시지에 함께 넣어줘야한다.
+
+  ```json
+  {
+    "data": {
+      "id": 100,
+      "name": "article 100",
+      "content": "100번째 게시글입니다.",
+      "self": "http://localhost:8080/api/article/100", // 현재 api 주소
+      "profile": "http://localhost:8080/docs#query-article", // 해당 api의 문서
+      "next": "http://localhost:8080/api/article/101", // 다음 article을 조회하는 URI
+      "comment": "http://localhost:8080/api/article/100/comment", // article의 댓글 달기
+    }
+  }
+  ```
+
+
+
+- HAL(Hypertest Application Lanaguage)
+
+  - JSON, XML 데이터 내에 외부 리소스에 대한 링크를 추가하기 위한 특별 데이터 타입이다.
+    - HATEOAS를 보다 쉽게 충족시킬 수 있게 해준다.
+    - 일반적으로 데이터를 담기 위해 사용하는 resource 필드와, hypermedia를 담기 위한 link 필드가 존재한다.
+  - 아래와 같이 두 가지 데이터 타입을 갖는다.
+    - `application/hal+json`
+    - `application/hal+xml`
+
+  - 예시
+
+  ```json
+  {
+      "data": {
+          "id": 100,
+          "name": "article 100",
+      	"content": "100번째 게시글입니다.",
+      },
+      "_links": {
+          "self": {
+              "href": "http://localhost:8080/api/article/100"
+          },
+          "profile": {
+              "href": "http://localhost:8080/docs#query-article"
+          },
+          "next": {
+              "href": "http://localhost:8080/api/article/101"
+          },
+          "comment":{
+              "href": "http://localhost:8080/api/article/100/comment"
+          }
+      }
+  }
+  ```
+
+
+
+
+
+## REST API
+
+- REST API
+  - REST의 제약조건을 만족하는 API를 구현한 것을 REST API라 부른다.
+  - HTTP API
+    - HTTP를 사용해서 서로 정해둔 스펙으로 데이터를 주고 받는 것.
+    - REST API는 HTTP API에 보다 엄격한 제약 조건을 추가한 것이다.
+    - 대부분의 경우 모든 제약 조건을 만족하는 REST API는 흔치 않다.
+    - 따라서 엄밀히 따지면 REST API가 아닌 HTTP API일 때에도 자원, 행위, 표현이 포함되어 있으면 REST API라고 부르는 경우가 많다.
+
+
+
+- REST API 설계의 기본 규칙
+
+  - 용어
+    - document: 객체의 인스턴스나 DB 레코드와 유사한 개념
+    - collection: 서버에서 관리하는 디렉터리.
+    - store: 클라이언트에서 관리하는 resource 저장소
+
+  ```bash
+  # sports와 players는 collection, soccer는 document이다.
+  http:// restapi.example.com/sports/soccer/players/13
+  ```
+
+  - URI는 resource를 표현해야한다.
+    - 동사보다는 명사를, 대문자보다는 소문자를 사용한다.
+    - document 이름으로는 단수명사를 사용해야한다.
+    - collection과  store 이름으로는 복수명사를 사용해야 한다.
+  - 자원에 대한 행위는 HTTP method로 표현한다.
+    - URI에 HTTP method가 들어가면 안 된다(e.g. `GET /members/get/1` X).
+    - URI에 행위에 대한 동사 표현이 들어가면 안 된다(e.g. `GET /members/find/1` X).
+    - 경로 부분 중 변하는 부분은 고유한 값이어야한다(e.g. `DELETE /members/1`, 에서 변하는 부분인 1은 해당 자원을 나타내는 고유한 값이어야 한다).
+  - `/`는 계층 관계를 나타내는데 사용한다.
+  - URI의 마지막 문자로 `/`를 사용하지 않는다.
+  - `-`은 가독성을 높이는데 사용한다.
+  - `_`은 사용하지 않는다.
+  - 파일의 확장자는 포함하지 않는다.
+
+
+
+
+
 # Memory
 
 ## 기본 개념
