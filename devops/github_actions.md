@@ -750,49 +750,38 @@
 
 
 
+## Checkout
+
+> https://www.daleseo.com/github-actions-checkout/
+
+- Checkout
+  - Git에서의 checkout은 코드 저장소에서 특정 브랜치로 전환하는 작업을 의미한다.
+  - Github actions에서의 chekcout은 github의 코드 저장소에 올려둔 코드를 runner에 내려 받은 후 특정 브랜치로 전환하는 행위를 말한다.
 
 
 
+- git에서 제공하는 checkout action
 
+  > https://github.com/actions/checkout
 
+  - Checkout 작업을 모든 workflow에서 매번 쉘 스크립트로 작성해줘야 한다면, 매우 불편할 것이다.
+  - Github이 제공하는 checkout action은 checkout을 훨씬 간편하게 할 수 있도록 도와준다.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  - 사용하기
+    - Workflow 설정 파일에 아래와 같이 action을 지정해준다.
+    - 실행이 완료되면 working directory에 코드 저장소의 코드가 받아진다.
+  
+  ```yaml
+  on: [push]
+  jobs:
+    production-deploy:
+      runs-on: ubuntu-latest
+      steps:
+        # checkout action을 설정해준다.
+        - uses: actions/checkout@v3
+  ```
+  
+  
 
 
 
@@ -805,8 +794,4 @@
 # 참고
 
 - https://docs.github.com/en/actions
-
-
-
-
 
