@@ -477,6 +477,53 @@
 
 
 
+- Container 내부에서 job 실행하기
+
+  - Job을 container 내부에서 실행하도록 할 수 있다.
+    - `jobs.<job-id>.container`에 job을 실행시킬 container를 지정해준다.
+    - docker hub에 등록된 image만 사용이 가능하다.
+
+  ```yaml
+  name: container test
+  on: push
+  
+  jobs:
+    container-job:
+      runs-on: ubuntu-latest
+      container: python:3.8.0
+  
+      steps:
+        - name: check python version
+          run: python --version
+  ```
+
+  - 위와 같이 단순히 image만 설정하는 것 외에도 세부 설정도 가능하다.
+
+    > https://docs.docker.com/engine/reference/commandline/create/#options
+
+    - 위 링크에 나와 있는 옵션 중 `--network`만 제외하고 모든 옵션을 사용 가능하다.
+
+  ```yaml
+  name: container test
+  on: push
+  
+  jobs:
+    container-job:
+      runs-on: ubuntu-latest
+      container:
+        image: python:3.8.0
+        volumes:
+          - my_docker_volume:/volume_mount
+          - /data/my_data
+          - /source/directory:/destination/directory
+  
+      steps:
+        - name: check python version
+          run: python --version
+  ```
+
+
+
 
 
 ## Self-hosted runner
@@ -781,11 +828,80 @@
         - uses: actions/checkout@v3
   ```
   
+
+
+
+## Containerized services
+
+- 하나의 job에서 여러 개의 docker container를 실행할 수 있도록 도와주는 기능이다.
+
+  - Job이 시작될 때 container를 생성하며, job이 종료되면 container를 삭제한다.
+    - 하나의 Job 내부에 있는 모든 step에서 service container에 접근 가능하다.
+  - `jobs.<job_id>.services` 아래에 실행 시킬 docker container들을 입력한다.
+
+  ```yaml
+  name: services test
+  on: push
   
+  jobs:
+    services-test-job:
+      runs-on: ubuntu-latest
+      container: python:3.8.0
+  
+      services:
+        # elasticsearch라는 label을 설정
+        elasticsearch:
+          # container를 생성할 docker image를 입력한다.
+          image: elasticsearch:8.1.3
+          # 다 띄워질 때 까지 대기하도록 healthcheck를 실행한다.
+          options: >-
+            --health-cmd "curl localhost:9200"
+            --health-interval 10s
+            --health-timeout 5s
+            --health-retries 5
+  
+      steps:
+        - uses: actions/checkout@v3
+        - name: check elasticsearch connection
+          run: curl elasticsearch:9200
+  ```
 
 
 
+- Runner machine과 Docker container
 
+  - Service를 runner machine에서 직접 실행하도록 할 수도 있고, Docker Container에서 실행되도록 할 수 있다.
+    - Service container가 어디서 실행되냐에 따라  network 설정이 달라지게 된다.
+    - 위 예시의 경우 Python container 내부에서 elasticsearch container service를 실행하는 것이다.
+    - 만일 container를 따로 지정해주지 않았다면 runner container에서 실행될 것이다.
+  - Container에서 실행될 경우
+    - Github이 Docker의 bridge network를 사용하여 container와 service container를 연결해준다.
+    - 따라서 위 예시에서와 같이 step에서 접근할 때는 service container의 label을 host로 해서 접근하면 된다.
+    - 기본적으로, 같은 docker network에 속한 모든 컨테이너는 모든 port를 다른 컨테이너들에게 노출하기 때문에, port 설정도 추가적으로 해줄 필요가 없다. 
+  - Runner machine에서 실행할 경우
+    - `localhost:<port>` 혹은 `127.0.0.1:<port>`를 통해 접근 가능하다.
+    - 이 경우 service container는 port를 노출시키지 않기 때문에 직접 port를  mapping해줘야한다.
+
+  ```yaml
+  name: Redis Service Example
+  on: push
+  
+  jobs:
+    runner-job:
+      runs-on: ubuntu-latest
+  
+      services:
+        nginx:
+          image: nginx
+          ports:
+            - 8080:80
+        redis:
+          image: redis
+          ports:
+            - 6379/tcp
+  ```
+
+  
 
 
 
