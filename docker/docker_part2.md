@@ -884,6 +884,108 @@
 
 
 
+# Docker health check
+
+- health check
+  - Docker container를 생성한 후 container가 제대로 실행되었는지 확인할 수 있는 기능이다.
+  - Dockerfile, docker-compose file, `create` 명령어, `run` 명령어 등에서 사용 가능하다.
+
+
+
+- `create`, `run` 명령어와 함께 사용하기
+
+  - 둘 다 동일한 방식으로 사용한다.
+
+  - 옵션들
+
+    - `--health-cmd`: health check에 사용할 명령어를 설정한다.
+
+    - `--health-interval`: 각 check 사이의 기간을 설정한다.
+    - `--health-retries`: 실패했을 경우 재시도할 횟수를 설정한다.
+    - `--health-start-period`: 실패 후 다음 시도까지의 시간을 설정한다.
+    - `--heath-timeout`: 명령어의 실행이 완료될 기한을 설정한다.
+
+  ```bash
+  $ docker <run | create> [options]
+  
+  # e.g.
+  $ docker run --health-cmd curl localhost:9200 --health-retries 3 --health-timeout 10
+  ```
+
+
+
+- dockerfile에서 사용하기
+
+  - 옵션들
+    - `--interval`
+    - `--timeout`
+    - `--start-period`
+    - `--retries`
+
+  ```dockerfile
+  # HEALTHCHECK를 할 경우
+  HEALTHCHECK [options] CMD command
+  
+  # e.g.
+  HEALTHCHECK --interval=5m --timeout=3s CMD curl -f http://localhost/ || exit 1
+  
+  # 하지 않을 경우
+  HEALTHCHECK NONE
+  ```
+
+  - 기본적으로 `HEALTHCHECK`를 작성하지 않으면 실행되지 않는데 굳이 `HEALTHCHECK NONE`과 같이 명시해주는 이유
+    - Base image를 기반으로 새로운 image를 만들었을 때 base image에 health check가 포함되어 있다면 health check가 실행되게 된다.
+    - 따라서 만일 health check가 포함된 base image로 새로운 이미지를 만들었을 때, health check를 원치 않는다면 위와 같이 명시적으로 작성해줘야 한다.
+
+
+
+- docker-compose에서 사용하기
+
+  - 옵션은 다른 방식들과 동일하다.
+
+  ```yaml
+  healthcheck:
+    test: ["CMD", "curl", "-f", "http://localhost"]
+    interval: 1m30s
+    timeout: 10s
+    retries: 3
+    start_period: 40s
+  ```
+
+  - `depends_on`과 함께 사용하기
+    - `depends_on`에는 `condition`이라는 문법을 사용 가능하다.
+    - 의존하는 container가 `condition`에 설정된 상태가 되면 해당 container를 생성하도록 하기 위해 사용한다.
+    - `condition`에 설정 가능한 값은 아래와 같다.
+    - `service_started`: 의존하는 container가 생성만 되면 생성을 시작한다.
+    - `service_healthy`: 의존하는 container의 health check가 성공하면 생성을 시작한다.
+    - `service_compledted_successfully`: 의존하는 container가 완전히 동작하면 생성을 시작한다.
+
+  ```yaml
+  # web container는 elasticsearch container의 health check가 성공하고, db가 온전히 동작하면, 생성이 시작된다.
+  services:
+    web:
+      build: .
+      depends_on:
+        db:
+          condition: service_healthy
+        redis:
+          condition: service_started
+    elasticsearch:
+      image: elasticsearch
+      healthcheck:
+        test: ["CMD", "curl", "localhost:9200"]
+        interval: 1m30s
+        timeout: 10s
+        retries: 3
+        start_period: 40s
+    db:
+      image: postgres
+  ```
+
+
+
+
+
 # etc
 
 ## docker 컨테이너 내부에서 docker 명령어 사용
