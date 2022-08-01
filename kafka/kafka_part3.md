@@ -383,6 +383,13 @@
   --entity-type topics \
   --entity-name hello.kafka
   ```
+  
+  - 토픽 삭제
+  
+  ```bash
+  $ kafka-topics.sh --delete --bootstrap-server 127.0.0.1:9092 --topic <삭제할 topic 이름>
+  ```
+  
 
 
 
@@ -448,7 +455,7 @@
     - `--list` 명령으로 실행한다.
 
   ```bash
-  $ kafka-consumer-groups.sh --list test-group --bootstrap-server 127.0.0.1:9092 
+  $ kafka-consumer-groups.sh --list --bootstrap-server 127.0.0.1:9092 
   ```
 
   - 컨슈머 그룹 상세 정보 확인
@@ -524,6 +531,18 @@
 
 
 
+- Topic 내의 message 개수 가져오기
+
+  - 결과는 `<topic>:<partition_num>:<message_num>` 형태로 출력된다.
+
+  ```bash
+  $ kafka-run-class.sh kafka.tools.GetOffsetShell --broker-list <HOST1:PORT,HOST2:PORT> --topic <topic>
+  ```
+
+  
+
+
+
 ## Python에서 사용하기
 
 - Python에서 Kafka에 접근할 수 있게 해주는 라이브러리에는 아래와 같은 것들이 있다.
@@ -570,9 +589,9 @@
     - `buffer_memory`: 카프카에 데이터를 보내기전 잠시 대기할 수 있는 메모리(byte)
     - `compression_type`: 데이터를 압축해서 보낼 수 있다(None, gzip, snappy, lz4 중 선택).
     - `retries`: 오류로 전송 실패한 데이터를 다시 보낼지 여부
-    - `batch_size`: 어러 데이터를 배치로 보내는 것을 시도한다.
+    - `batch_size`: 여러 데이터를 배치로 보내는 것을 시도한다.
     - `linger_ms`: 배치 형태 작업을 위해 기다리는 시간 조정, 배치 사이즈에 도달하면 옵션과 관계 없이 전송, 배치 사이즈에 도달하지 않아도 제한 시간 도달 시 메시지 전송
-    - `max_request_size`: 한 번에 보낼 수 있는 메시지 바이트 사이즈(기본 값은 1mb)
+    - `max_request_size`: 한 번에 보낼 수 있는 메시지 바이트 사이즈(기본 값은 1MB, 1048576 Bytes)
 
 
 

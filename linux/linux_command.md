@@ -1016,6 +1016,14 @@
 
 
 
+- default shell 변경하기
+
+  ```bash
+  $ usermod --shell <shell 종류> <user명>
+  ```
+
+  
+
 
 
 
