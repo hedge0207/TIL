@@ -297,12 +297,21 @@
   ```
   
   - 객체의 사이즈 구하기
+    - 단, 정확한 사이즈를 반환하지는 않는다.
+    - Nested 형태의 객체일 경우 가장 외부에 있는 객체의 size만을 계산하고, 내부에 있는 객체를 전부 계산하지는 않는다.
+  
   
   ```python
   import sys
   
   foo = []
   print(sys.getsizeof(foo))
+  
+  # my_array에는 빈 문자열, my_array2에는 abcde가 들어있음에도 같은 size를 반환한다.
+  my_array = [1,2,3,""]
+  my_array2 = [1,2,3,"abcde"]
+  print(sys.getsizeof(my_array))		# 88
+  print(sys.getsizeof(my_array2))		# 88
   ```
   
   - 참조된 횟수 구하기
