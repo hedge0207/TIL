@@ -803,3 +803,132 @@
       consumer.commit()
   ```
 
+
+
+- future
+
+  - 모종의 이유로 producer에서 partition으로 message를 전송하지 못하더라도 error가 발생하지는 않는다.
+    - message의 누락은 발생하는데, error는 발생하지 않으므로 누락이 생겨도 모를 수가 있다.
+    - 따라서 누락이 생겼을 경우 이를 캐치해서 예외처리를 해 줄 필요가 있다.
+  - Future는 `KafKaProducer.send` 메서드의 결과 반환되는 값으로 message의 적재가 성공했는지, 실패했는지 알 수 있다.
+    - `Future.succeeded`, `Future.failed`를 통해 성공했는지 실패했는지를 알 수 있다.
+
+  ```python
+  import time
+  
+  from kafka import KafkaProducer
+  from json import dumps
+  
+  
+  
+  producer = KafkaProducer(acks=0, compression_type="gzip", bootstrap_servers=['localhost:9092'], \
+                          value_serializer=lambda x: dumps(x).encode('utf-8'))
+  
+  topic = "foo"
+  
+  future = producer.send(topic,value={"foo":"bar"})
+  
+  time.sleep(0.1)
+  print(future.succeeded())	# True
+  print(future.failed())		# False
+  
+  producer.flush()
+  ```
+
+  - 주의할 점은 적재가 완료될 때까지는 성공/실패 여부를 알 수 없다.
+    - 위 예시에서 `time.sleep`을 통해 잠시 멈춘 것은 적재가 완료되기를 기다리기 위해서다.
+    - 아래는 `Future.succeeded`, `Future.failed` 메서드의 실제 코드로, `self.is_done`이 True여야, 즉 적재가 완료 되어야 True를 반환한다.
+
+  ```python
+  class Future(object):
+      # (...)
+      def succeeded(self):
+          return self.is_done and not bool(self.exception)
+  
+      def failed(self):
+          return self.is_done and bool(self.exception)
+  ```
+
+  - `FutureRecordMetadata.get` 메서드는 성공시 message의 상세 정보를 반환하다.
+    - `FutureRecordMetadata.get` 메서드의 경우, `timeout`으로 설정한 시간 동안 적재가 완료될 때까지 기다리기 때문에,  `time.sleep`을 주지 않아도 된다.
+
+  ```python
+  import time
+  
+  from kafka import KafkaProducer
+  from json import dumps
+  
+  
+  
+  producer = KafkaProducer(acks=0, compression_type="gzip", bootstrap_servers=['localgost:9092'], \
+                          value_serializer=lambda x: dumps(x).encode('utf-8'))
+  
+  topic = "foo"
+  
+  future = producer.send(topic,value={"foo":"bar"})
+  try:
+  	print(future.get(timeout=10))
+  except Exception as e:
+      print(e)
+  print(future.succeeded())		# True
+  print(future.failed())			# False
+  
+  producer.flush()
+  ```
+
+  - `FutureRecordMetadata.get`를 실행했을 때, 적재가 실패한 경우에는 exception을 raise한다.
+    - `max_request_size`를 1로 줬으므로 적재에 실패하게 되고, exception을 raise한다.
+
+  ```python
+  import time
+  
+  from kafka import KafkaProducer
+  from json import dumps
+  
+  
+  
+  producer = KafkaProducer(acks=0, compression_type="gzip", bootstrap_servers=['localgost:9092'], \
+                          value_serializer=lambda x: dumps(x).encode('utf-8'), \
+                          max_request_size=1)
+  
+  topic = "foo"
+  
+  future = producer.send(topic,value={"foo":"bar"})
+  try:
+  	print(future.get(timeout=10))
+  except Exception as e:
+      print(e)
+  print(future.succeeded())		# False
+  print(future.failed())			# True
+  
+  producer.flush()
+  ```
+
+  - 아래와 같이 callback 형식으로도 사용이 가능하다.
+
+  ```python
+  import time
+  
+  from kafka import KafkaProducer
+  from json import dumps
+  
+  
+  def on_send_success(record_metadata):
+      print(record_metadata.topic)
+      print(record_metadata.partition)
+      print(record_metadata.offset)
+  
+  def on_send_error(excp):
+      print(excp)
+      # handle exception
+  
+  producer = KafkaProducer(acks=0, compression_type="gzip", bootstrap_servers=['localhost:9092'], \
+                          value_serializer=lambda x: dumps(x).encode('utf-8'))
+  
+  topic = "foo"
+  
+  producer.send(topic,value={"foo":"bar"}).add_callback(on_send_success).add_errback(on_send_error)
+  producer.flush()
+  ```
+
+  
