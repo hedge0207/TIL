@@ -183,6 +183,62 @@
 
 
 
+## Logstash와 Kafka 연동
+
+- docker-compose.yml 파일에 아래와 같이 작성한다.
+
+  - Kafka와 연동에 필요한 설정들을 환경변수로 등록한다.
+
+  ```yaml
+  version: '3.2'
+  
+  services:
+    logstash:
+      image: logstash:7.16.2
+      container_name: theo_logstash
+      ports:
+        - 9710:9600
+      volumes:
+        - ./config:/usr/share/logstash/pipeline
+      environment:
+        KAFKA_HOST: "<kafka host>:<kafka port>"
+        KAFKA_GROUP_ID: tmp
+        KAFKA_SEARCH_LOG_TOPIC: foo
+      restart: always
+  ```
+
+
+
+- Logstash Configuration 파일을 작성한다.
+
+  - 위에서 등록한 환경변수를 사용하여 input을 작성한다.
+
+  ```json
+  input {
+      kafka {
+              bootstrap_servers => "${KAFKA_HOST}"
+              codec => "${KAFKA_SEARCH_CODEC:json}"
+              topics => "${KAFKA_SEARCH_LOG_TOPIC}"
+              group_id => "${KAFKA_GROUP_ID}"
+              consumer_threads => 1
+              auto_offset_reset => "${KAFKA_AUTO_OFFSET_RESET:earliest}"
+      }
+  }
+  
+  output {
+      stdout {
+          codec => rubydebug
+      }
+  }
+  ```
+
+
+
+
+
+
+
+
 # output
 
 - elasticsearch output 사용시 template을 미리 정의할 수 있다.
