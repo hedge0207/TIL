@@ -327,7 +327,7 @@
   ssh <name@ssh 주소>
   ```
   
-  
+  - 만일 sudo 사용자로 등록 후 logout(혹은 exit)까지 했는데 sudo group에 추가가 안됐다면 `~/.vscode`를 삭제 후 재접속하면 된다.
 
 <br/>
 
