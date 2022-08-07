@@ -539,7 +539,8 @@
   $ kafka-run-class.sh kafka.tools.GetOffsetShell --broker-list <HOST1:PORT,HOST2:PORT> --topic <topic>
   ```
 
-  
+
+
 
 
 
