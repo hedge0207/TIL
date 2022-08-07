@@ -454,7 +454,23 @@
 
 <br/>
 
-## [install_python]()
+## [Install Python](https://github.com/hedge0207/TIL/blob/master/python/install_python.md)
+
+- 오프라인 환경에서 설치하기
+
+<br/>
+
+<br/>
+
+## [Library](https://github.com/hedge0207/TIL/blob/master/python/library.md)
+
+- click
+- Python gRPC
+- Pydantic
+
+<br/>
+
+<br/>
 
 ## [Python_part1](https://github.com/hedge0207/TIL/blob/master/python/python_part1.md)
 
