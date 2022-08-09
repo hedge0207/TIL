@@ -749,7 +749,7 @@
     - Load Time은 프로그램 내부 주소를 메모리상의 실제 주소로 변경하는데 시간이 오래 걸린다는 문제가 있다.
     - 얼핏 Excution Time에 binding하는 것도 같은 문제가 있다고 볼 수 있으나, 두 방식에는 분명한 차이가 존재한다.
     - Load Time은 한 번에 변경하는데 반해 Excution Time은 매 코드가 실행될 때마다 MMU를 통해 변환이 일어난다.
-    - 얼핏 보면 한 번에 해놓는 Load Time이 더 효율적으로 보일 수 있으나 하드웨어의 발달로 매 코드가 실행될 때마다 변환을 해줘도 문제가 되지 않을 정도가 되었고, Load Time의 경우 메모리에 적재할 때 overhead가 너무 크다는 문제가 있다.
+    - 한 번에 해놓는 Load Time이 더 효율적으로 보일 수 있으나 하드웨어의 발달로 매 코드가 실행될 때마다 변환을 해줘도 문제가 되지 않을 정도가 되었고, Load Time의 경우 메모리에 적재할 때 overhead가 너무 크다는 문제가 있다.
     - 따라서 현재 대부분의 운영체제에서는 Excution Time에 address binding을 실행한다.
 
 
@@ -1118,3 +1118,23 @@
   - 한 번의 인증 과정으로 여러 컴퓨터 혹은 애플리케이션 상의 자원을 이용 가능하게 하는 인증
   - 애플리케이션의 대형화, 통합화 추세에 따라 필요성이 증가하게 되었다.
 
+
+
+- ETL(Extract, Transform, Load)과 ELT(Extract, Load, Transform)
+
+  - Data를 처리하는 process들이다.
+  - ETL
+    - 필요한 raw data를 추출한다.
+    - 용도에 맞는 포맷으로 변환 한다. 
+    - 변환된 data를 data warehouse에 적재한다.
+  - ELT
+    - 필요한 raw data를 추출한다.
+    - 추출한 raw data를 data lake에 load한다.
+    - Load 된 data를 필요할 때 data lake에서 꺼내서 transform 한다.
+
+  - ELT의 등장 배경
+    - Data가 방대해지기 시작해 transform에 소요되는 시간이 증가하게 되었다.
+    - 리소스의 가격 인하 및 클라우드 서비스의 성장으로 raw data를 저장하는데 소요되는 비용이 기존에 비해 인하되었다.
+  - Data Warehouse와 Data Lake
+    - Data Warehouse는 어느 정도 구조화 된 data들이 모여 있는 곳을 의미한다.
+    - Data Lake는 구조화된 data 뿐 아니라 비구조화된 data들도 존재하는 곳이다.
