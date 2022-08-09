@@ -923,7 +923,43 @@
 
 
 
+# pyinstaller
 
+> https://pyinstaller.org/en/stable/
+
+- pyinstaller
+
+  - Python script를 실행할 수 있는 파일로 변환해주는 패키지다.
+  - 설치
+
+  ```bash
+  $ pip install pyinstaller
+  ```
+
+
+
+- 명령어
+
+  ```bash
+  $ pyinstaller [options] <변환할 Python script 경로>
+  ```
+
+
+
+- 옵션
+
+  > https://pyinstaller.org/en/stable/usage.html#options 모든 옵션은 여기서 확인하면 된다.
+
+  - `--dispath`
+    - output을 생성할 경로를 지정한다.
+    - 기본값은 `./dist`
+  - `-F`, `--onefile`
+    - 하나의 파일만 생성한다.
+  - `-n`, `--name`
+    - 실행 파일의 이름을 지정한다.
+    - 기본 값은 script이름으로 설정된다.
+  - `-w`, `--windowed`, `--noconsole`
+    - console 창을 띄우지 않고 실행한다.
 
 
 
