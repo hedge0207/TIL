@@ -1034,6 +1034,179 @@
 
 
 
+## Python property
+
+> https://blog.naver.com/PostView.naver?blogId=codeitofficial&logNo=221701646124&parentCategoryNo=&categoryNo=7&viewDate=&isShowPopularPosts=false&from=postView
+
+- getter와 setter
+
+  - 객체의 필드에 직접 접근하는 대신 메서드를 통해 접근하는 방식이다.
+  - 필드의 값을 가져오는 메서드를 getter, 필드에 값을 설정하는 메서드를 setter라 부른다.
+
+  - 왜 사용해야 하는가?
+    - Python은 type의 변환이 자유롭기 때문에 본래 의도한 값이 아닌 다른 값으로 수정해도 알 수 있는 방법이 없다.
+    - 아래 예시에서 본래 `name` 필드에는 str이 오도록 설계됐지만, int type의 data가 와도 예외가 발생하지 않는다.
+    - 따라서 getter와 setter를 사용하여 값에 대한 유효성을 검증하는데 사용한다.
+
+  ```python
+  class Employee:
+      def __init__(self, name):
+          self.name = name
+      
+  employee = Employee("Kim")
+  employee.name=28
+  ```
+
+  - 유효성 검증
+
+  ```python
+  class Employee:
+      def __init__(self, name):
+          self._name = name
+      
+      def get_name(self):
+          return self._name
+  
+      def set_name(self, name):
+          if type(name) != str:
+              raise ValueError("name must be str type")
+          self._name = name
+      
+  employee = Employee("Kim")
+  employee.set_name(28)
+  ```
+
+
+
+- Descriptor
+
+  - Python에서 하나의 객체는 다른 객체를 속성으로 가질 수 있다.
+  - 이 때 속성이 되는 객체의 값을 읽거나, 쓰거나, 삭제하려고 할 때 이루어질 동작이 미리 정의된 객체를 디스크립터라 한다.
+    - `__get__`, `__set__`, `__delete__` 메서드를 사용하여 구현할 수 있다.
+    - 셋 중 하나만 정의되어 있어도 디스크립터라 할 수 있다.
+    - 각 메서드가 받는 파라미터들의 의미는  `obj`는 디스크립터를 속성으로 갖고 있는 인스턴스, `objtype`은 `obj`의 class, `val`는 새로 설정되는 인스턴스이다.
+
+  ```py
+  # desciptor
+  class Company:
+      def __init__(self, name, location):
+          self.name = name
+          self.location = location
+      
+      def __get__(self, obj, objtype):
+          return "name: {}, location: {}".format(self.name, self.location)
+      
+      def __set__(self, obj, val):
+          self.name = val.name
+          self.location = val.location
+  
+      def __delete__(self, obj):
+          self.name = ""
+          self.location = ""
+  
+  # 다른 객체를 속성으로 가지는 객체
+  class Person:
+      company = Company("Kim", "CompanyCompany")
+  
+  property
+  
+  person = Person()
+  person.company     # __get__ 실행
+  changed_company = Company("Kim", "AnotherCompany")
+  person.company = changed_company    # __set__ 실행
+  del person.company    # __delelte__ 실행
+  ```
+
+  - Descriptor에는 2가지 종류가 있다.
+    - Data descriptor: `__set__`, `__delete__` 중 하나라도 정의되어 있는  descriptor.
+    - Non-data descriptor: `__get__`만 정의되어 있는 descriptor.
+
+
+
+- Property
+
+  - Descriptor를 보다 간결하게 생성하도록 도와주는 Python 객체이다.
+    - 초기화시 getter, setter, deleter 메서드를 인자로 받는다.
+    - `property`클래스의 인스턴스는 descriptor이다.
+
+  ```python
+  # property class의 코드
+  class property:
+      fget: Callable[[Any], Any] | None
+      fset: Callable[[Any, Any], None] | None
+      fdel: Callable[[Any], None] | None
+      __isabstractmethod__: bool
+      def __init__(
+          self,
+          fget: Callable[[Any], Any] | None = ...,
+          fset: Callable[[Any, Any], None] | None = ...,
+          fdel: Callable[[Any], None] | None = ...,
+          doc: str | None = ...,
+      ) -> None: ...
+      def getter(self, __fget: Callable[[Any], Any]) -> property: ...
+      def setter(self, __fset: Callable[[Any, Any], None]) -> property: ...
+      def deleter(self, __fdel: Callable[[Any], None]) -> property: ...
+      def __get__(self, __obj: Any, __type: type | None = ...) -> Any: ...
+      def __set__(self, __obj: Any, __value: Any) -> None: ...
+      def __delete__(self, __obj: Any) -> None: ...
+  ```
+
+  - 주로 decorator로 사용하지만 아래와 같이 사용하는 것도 가능하다.
+    - 아래와 같이 사용하는 것이 property의 동작 원리를 이해하는데는 더 도움이 된다.
+    - 실제 사용할 때는 decorator로 활용하는 것이 낫다.
+
+  ```python
+  class Company:
+      def __init__(self, name):
+          self._name = name
+      
+      def _get_name(self):
+          return "name: {}".format(self._name)
+      
+      def _set_name(self, name):
+          self._name = name
+  
+      def _delete_name(self):
+          self._name = ""
+      
+      # property를 생성할 때 getter, setter, deleter 순으로 넘긴다.
+      name = property(_get_name, _set_name, _delete_name)
+  
+  
+  company = Company("Foo")
+  company.name = "Bar"
+  ```
+
+  - decorator로 사용하기
+
+  ```python
+  class Company:
+      def __init__(self, name):
+          self._name = name
+      
+      @property
+      def name(self):
+          return "name: {}".format(self._name)
+      
+      @name.setter
+      def name(self, name):
+          self._name = name
+  
+      @name.deleter
+      def name(self):
+          self._name = ""
+  
+  
+  company = Company("Foo")
+  company.name = "Bar"
+  ```
+
+
+
+
+
+
+
 
 
 
