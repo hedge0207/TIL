@@ -322,6 +322,29 @@
 
 
 
+
+
+## 주요 옵션
+
+### server.properties
+
+- `message.max.bytes`
+  - 단일 요청의 최대 크기
+    - `max.request.size`가 producer와 관련된 설정이라면, 이는 broker와 관련된 설정이다.
+  - 기본값은 1048576 bytes(1MB).
+
+
+
+### producer.properties
+
+- `max.request.size`
+  - Producer가 broker로 한 번 요청을 보낼 때 요청의 최대 크기
+  - 기본값은 1048576 bytes(1MB).
+
+
+
+
+
 ## 카프카 커맨드 라인 툴
 
 - 카프카 커맨드 라인 툴
