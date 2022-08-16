@@ -1437,3 +1437,27 @@
   ```
 
 
+
+- try, execpt, else
+
+  - else는 except 절이 실행되지 않았을 경우 실행되는 절이다.
+
+  ```python
+  try:
+      print("hello world")
+  except:
+      print("error!")
+  else:
+      print("no error!")	# 실행된다.
+  
+      
+  try:
+      1//0
+  except:
+      print("error!")
+  else:	
+      print("no error!")	# 실행되지 않는다.
+  ```
+
+  
+
