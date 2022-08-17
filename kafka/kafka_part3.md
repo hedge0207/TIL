@@ -354,7 +354,22 @@
 
 
 
-- Kafka-topics.sh
+- kafka-configs.sh
+
+  - Kafka의 각종 설정을 확인 및 수정할 수 있다.
+    - 다양한 옵션이 있으므로 `--help` 옵션을 통해 확인해보고 사용하면 된다.
+  - 예시
+    - broker들의 설정을 확인하는 명령어이다.
+
+  ```bash
+  $ kafka-configs.sh --bootstrap-server 127.0.0.1:9092 --describe --entity-type brokers --all
+  ```
+
+  
+
+
+
+- kafka-topics.sh
   - 토픽과 관련된 명령을 수행하는 커맨드라인.
   - 토픽 생성
     - `--create` 명령을 사용한다.
@@ -485,7 +500,7 @@
     -  특정 컨슈머 그룹의 상세 정보를 확인하기 위해 쓰인다.
 
   ```bash
-  $ kafka-consumer-groups.sh --describe --group test-group --bootstrap-server 127.0.0.1:9092
+  $ kafka-consumer-groups.sh --describe --bootstrap-server 127.0.0.1:9092 --group test-group
   ```
 
   - 응답
