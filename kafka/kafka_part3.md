@@ -1015,6 +1015,271 @@
 
 
 
+## Kafka Burrow
+
+> https://github.com/linkedin/Burrow
+
+- Consumer lag을 모니터링하는 애플리케이션이다.
+  - Linkedin에서 개발했다.
+  - Go로 개발되었다.
+
+
+
+- 왜 필요한가?
+  - Consumer lag은 Kafka의 주요 성능 지표 중 하나다.
+  - Kafka의 command line tool로도 각 consumer group 별 lag을 조회가 가능하다.
+    - 그러나 클러스터 내의 모든 broker들의 lag을 통합적으로 확인할 수 있는 방법이 없다.
+    - 또한 단순히 consumer lag 수치만 확인할 수 있을 뿐 이에 대한 판단은 직접 내려야한다.
+    - 또한 consumer lag 수치 만으로는 정확한 판단을 내리기 힘들 수도 있다.
+  - Kafka Burrow는 클러스터 내의 모든 consumer group에 대한 lag monitoring이 가능하다.
+  - Kafka Burrow는 consumer lag의 수치만 보고 상태를 판단하지 않고 일정한 rule에 따라 상태를 판단한다.
+
+
+
+- Status
+  - `NOTFOUND`: Cluster 내에서 consumer group을 찾을 수 없음
+  - `OK`: Group 또는 partition이 정상적인 상태
+  - `WARN`: Group 또는 partition에 주의를 기울여야 하는 상태.
+  - `ERR`: Group에 문제가 생긴 상태
+  - `STOP`: Partition이 멈춘 상태
+  - `STALL`: Partition이 감속중인 상태.
+
+
+
+- Consumer lag evaluation rules
+
+  - Burrow는 sliding window algorithm을 통해 lag를 평가한다.
+    - sliding window란 고정된 크기의 윈도우가 이동하면서 윈도우 내에 있는 데이터를 사용하는 알고리즘이다.
+    - 예를 들어 [1,2,3,4,5] 라는 배열이 있고 size가 3이라면, [1,2,3], [2,3,4], [3,4,5]와 같이 윈도우를 이동시켜 해당 윈도우 내에 있는 값만을 사용하는 방식이다.
+  - Evaluation rules
+    - 만일 window 내의 어떤 lag 값이 0이라면, `OK`라고 판단한다.
+    - 만일 consumer의 committed offset이 window의 변화에 따라 변하지 않고, lag가 고정되어 있거나 증가한다면, `ERR`이라고 판단하고, partition은 `STALLED` 상태가 된다.
+    - 만일 consumer의 committed offset이 window의 변화에 따라 증가하지만, lag에 변화가 없거나 증가한다면, `WARN`이라고 판단한다.
+    - 만일 consumer offset의 가장 최근 시간과 현재시간 차이가 가장 최근 시간과 가장 오래된 오프셋 시간보다  크다면, consumer를 `ERR` 상태로 판단하고, partition은 `STOPPED` 상태로 판단한다. 그러나 consumer의 offset과 broker의 현재 offset이 동일하다면, `ERR`로 판단하지 않는다.
+    - lag가 -1이라면 `OK`로 판단한다. 이는 Burrow가 이제 막 실행되어, broker의 offset을 아직 받아오지 못한 상태이다.
+  - 예시1
+    - offset은 commit 된 offset을 뜻한다.
+    - timestamp는 임의의 시점 부터 경과한 시간을 의미한다.
+    - Window 중 lag가 0인 값을 가지는 window가 있으므로 첫 번째 rule에 따라 아래는 `OK`로 판단한다.
+
+  |           | W1   | W2   | W3    | W4    | W5    | W6    | W7    | W8    | W9    | W10   |
+  | --------- | ---- | ---- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+  | offset    | 10   | 20   | 30    | 40    | 50    | 60    | 70    | 80    | 90    | 100   |
+  | lag       | 0    | 0    | 0     | 0     | 0     | 0     | 1     | 3     | 5     | 5     |
+  | timestamp | T    | T+60 | T+120 | T+180 | T+240 | T+300 | T+360 | T+420 | T+480 | T+540 |
+
+  - 예시2
+    - consumer의 committed offset이 시간이 지나도 변화하지 않고, lag은 증가하고 있으므로, 두 번째 rule에 따라 partition은 `STALLED` 상태가 되고, consumer의 status는 `ERR`이라고 판단한다. 
+
+  |           | W1   | W2   | W3    | W4    | W5    | W6    | W7    | W8    | W9    | W10   |
+  | --------- | ---- | ---- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+  | offset    | 10   | 10   | 10    | 10    | 10    | 10    | 10    | 10    | 10    | 10    |
+  | lag       | 1    | 1    | 1     | 1     | 1     | 2     | 2     | 2     | 3     | 3     |
+  | timestamp | T    | T+60 | T+120 | T+180 | T+240 | T+300 | T+360 | T+420 | T+480 | T+540 |
+
+  - 예시3
+    - committed offset은 시간이 흐름에 따라 증가하지만, lag 역시 증가하므로 세 번째 rule에 따라 `WARN`으로 판단한다.
+
+  |           | W1   | W2   | W3    | W4    | W5    | W6    | W7    | W8    | W9    | W10   |
+  | --------- | ---- | ---- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+  | offset    | 10   | 20   | 30    | 40    | 50    | 60    | 70    | 80    | 90    | 100   |
+  | lag       | 1    | 1    | 1     | 1     | 1     | 2     | 2     | 2     | 3     | 3     |
+  | timestamp | T    | T+60 | T+120 | T+180 | T+240 | T+300 | T+360 | T+420 | T+480 | T+540 |
+
+  - 예시4
+    - 만일 아래와 같은 window가 존재하고 status evaluation을 하는 시점이 T+1200이라면, 네 번째 rule에 따라 partition은 `STOPPED`, consumer는 `ERR` 상태가 된다.
+    - 첫 offset(W1)과 마지막 offset(W10)의 시간 차이가 540이고, 현재와 마지막 offset의 시간 차이는 660이다.
+
+  |           | W1   | W2   | W3    | W4    | W5    | W6    | W7    | W8    | W9    | W10   |
+  | --------- | ---- | ---- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+  | offset    | 10   | 20   | 30    | 40    | 50    | 60    | 70    | 80    | 90    | 100   |
+  | lag       | 5    | 3    | 5     | 2     | 1     | 1     | 2     | 1     | 4     | 6     |
+  | timestamp | T    | T+60 | T+120 | T+180 | T+240 | T+300 | T+360 | T+420 | T+480 | T+540 |
+
+
+
+- 설치하기
+
+  - 공식 github에서 repo를 clone 받는다.
+
+  ```bash
+  $ git clone https://github.com/linkedin/Burrow.git
+  ```
+
+  - `./docker-config/burrow.toml`파일을 상황에 맞게 수정한다.
+
+  ```toml
+  [zookeeper]
+  servers=[ "<zookeeper_host>:<zookeeper_port>" ]
+  timeout=6
+  root-path="/burrow"
+  
+  [client-profile.profile]
+  kafka-version="2.0.0"
+  client-id="docker-client"
+  
+  [cluster.local]
+  client-profile="profile"
+  class-name="kafka"
+  servers=[ "<kafka_host>:<kafka_port>" ]
+  topic-refresh=60
+  offset-refresh=30
+  groups-reaper-refresh=30
+  
+  [consumer.local]
+  class-name="kafka"
+  cluster="local"
+  servers=[ "<kafka_host>:<kafka_port>" ]
+  group-denylist="^(console-consumer-|python-kafka-consumer-).*$"
+  group-allowlist=""
+  
+  [consumer.local_zk]
+  class-name="kafka_zk"
+  cluster="local"
+  servers=[ "<zookeeper_host>:<zookeeper_port>" ]
+  zookeeper-path="/local"
+  zookeeper-timeout=30
+  group-denylist="^(console-consumer-|python-kafka-consumer-).*$"
+  group-allowlist=""
+  
+  [httpserver.default]
+  address=":8000"
+  ```
+
+  - `./dockerfile`을 빌드한다.
+
+  ```bash
+  $ docker build -t <image_name>:<tag> .
+  ```
+
+  - docker-compose.yml을 작성하고 실행한다.
+
+  ```yaml
+  version: '3'
+  
+  services:
+    zookeeper:
+      container_name: my-zookeeper
+      image: wurstmeister/zookeeper
+      ports:
+        - "2188:2181"
+  
+    kafka:
+      image: wurstmeister/kafka
+      container_name: my-kafka
+      ports:
+        - "9092:9092"
+      environment:
+        KAFKA_ADVERTISED_HOST_NAME: <kafka_host>
+        KAFKA_ZOOKEEPER_CONNECT: <zookeeper_host>:<zookeeper_port>
+        KAFKA_LOG_DIRS: "/kafka/kafka-logs"
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+  
+    burrow:
+      image: <위에서 빌드한 이미지>
+      container_name: my-burrow
+      volumes:
+        - <burrow.toml 파일이 있는 폴더의 경로>:/etc/burrow/
+      ports:
+        - 8000:8000
+      depends_on:
+        - zookeeper
+        - kafka
+      restart: always
+  ```
+
+
+
+- http endpoint
+
+  > https://github.com/linkedin/Burrow/wiki/HTTP-Endpoint#request-endpoints
+
+  - consumer lag 확인하기
+    - `<cluster>`에는 `burrow.toml`에서 작성한 cluster name(위 예시의 경우 local)을 입력한다.
+
+  ```bash
+  $ curl <burrow_host>:<burrow_port>/v3/kafka/<cluster>/consumer/<consumer_group_name>/lag
+  ```
+
+  - 응답
+
+  ```json
+  {
+          "error": false,
+          "message": "consumer status returned",
+          "status": {
+                  "cluster": "local",
+                  "group": "MyConsumerGroup",
+                  "status": "OK",
+                  "complete": 1,
+                  "partitions": [
+                          {
+                                  "topic": "test",
+                                  "partition": 0,
+                                  "owner": "/<kafka_host>",
+                                  "client_id": "aiokafka-0.7.2",
+                                  "status": "OK",
+                                  "start": {
+                                          "offset": 343122,
+                                          "timestamp": 1660809543330,
+                                          "observedAt": 1660809543000,
+                                          "lag": 57026
+                                  },
+                                  "end": {
+                                          "offset": 345657,
+                                          "timestamp": 1660809588336,
+                                          "observedAt": 1660809588000,
+                                          "lag": 87957
+                                  },
+                                  "current_lag": 87957,
+                                  "complete": 1
+                          },
+                          // ...
+                  ],
+                  "partition_count": 3,
+                  "maxlag": {
+                          "topic": "test",
+                          "partition": 0,
+                          "owner": "/<kafka_host>",
+                          "client_id": "aiokafka-0.7.2",
+                          "status": "OK",
+                          "start": {
+                                  "offset": 343122,
+                                  "timestamp": 1660809543330,
+                                  "observedAt": 1660809543000,
+                                  "lag": 57026
+                          },
+                          "end": {
+                                  "offset": 345657,
+                                  "timestamp": 1660809588336,
+                                  "observedAt": 1660809588000,
+                                  "lag": 87957
+                          },
+                          "current_lag": 87957,
+                          "complete": 1
+                  },
+                  "totallag": 262813
+          },
+          "request": {
+                  "url": "/v3/kafka/local/consumer/MyConsumerGroup/lag",
+                  "host": "2r34235325"
+          }
+  }
+  ```
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## etc
 
 - 카프카 커넥트
