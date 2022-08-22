@@ -590,6 +590,9 @@
   - kafka-python
     - pure python이기에 confluent-kafka-python에 비해 속도는 느리다.
     - 사용법이 직관적이고 간결하다.
+  - aiokafka
+    - Benchmark 상으로 성능이 가장 좋다.
+    - kafka-python 기반으로 만들어졌다.
 
 
 

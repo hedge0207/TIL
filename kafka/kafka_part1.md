@@ -357,7 +357,14 @@
   - acks
     - 프로듀서가 전송한 데이터가 브로커에 정상적으로 저장되었는지 여부를 확인하는 데 사용한다.
   - buffer.memory
-    - 브로커로 전송할 데이터를 배치로 모으기 위해 설정할 버퍼 메모리양을 지정한다.
+    - 브로커로 전송할 데이터를 배치로 모아둘 버퍼 메모리양을 지정한다.
+    - `batch.size` 옵션과 혼동하기 쉬운데, `batch.size` 옵션은 broker로 request를 보낼 때의 용량이고, `buffer.memory`는 request와 상관 없이 buffer에 쌓아둘 수 있는 용량이다.
+    - Kafka producer는 server로 요청을 보내기 전에 buffer memory에 데이터를 모아둔다.
+    - 만일 모종의 이유로  producer가 broker로 요청을 보내는 데 실패한다면, producer는 해당 데이터를 삭제하는 것이 아니라 그대로 buffer 영역에 저장해둔다.
+    - 만일 server로의 요청이 지속적으로 실패하여  `buffer.memory`에 설정 한 값보다 저장된 값이 커지게 되면 `max.block.ms`에 설정한 값 만큼 대기하다가, 대기 시간이 `max.block.ms`에 설정한 값을 초과하면 예외를 발생시킨다.
+  - max.block.ms
+    - `KafkaProducer.send()`, `KafkaProducer.partitionsFor()` 메서드가 block 될 기간을 설정한다.
+    - buffer memory가 `buffer.memory`에 설정한 값 만큼 커지거나, metadata 정보가 사용 불가할 때 적용된다.
   - retries
     - 프로듀서가 브로커로부터 에러를 받고 난 뒤 재전송을 시도할 횟수를 지정한다.
   - batch.size

@@ -171,6 +171,98 @@
 
 ## 카프카 프로듀서
 
+### Producer architecture
+
+> https://kafka.apache.org/31/javadoc/
+>
+> https://d2.naver.com/helloworld/6560422
+>
+> https://developer.ibm.com/articles/benefits-compression-kafka-messaging/
+
+- Producer가 Broker로 메시지를 전송하는 과정.
+
+  > KafkaProducer send()가 호출되면 무슨일이 발생하는가.
+
+  - 직렬화
+    - Serializer가 전달을 요청 받은 메시지를 직렬화하여 메시지의 키와 값을 byte array 형태로 변환한다.
+    - Kafka에 내장되어 있는 serializer를 사용해도 되고, 직접 작성한 serializer를 사용할 수도 있다.
+  - 파티셔닝
+    - Partitioner가 topic의 어느 partition에 메시지를 보낼지 지정한다.
+    - 전송할 partiton을 지정할 수 있다.
+    - 전송할 partition을 지정해주지 않을 경우 DefaultPartitoner는 다음과 같이 동작한다.
+    - key값이 있을 경우 key 값의 hash 값을 이용해서 parittion을 할당한다.
+    - key 값이 없는 경우 round-robin 방식으로 parititon을 할당한다.
+  - 압축
+    - 설정된 포맷에 맞춰 메시지를 압축한다.
+    - 압축을 함으로써 메시지를 borker로 보다 빠르게 전달 할 수 있게 되고, 브로커 내부에서 빠른 복제가 가능해지며, 저장 비용도 줄일 수 있다.
+
+  | Type   | Compression ratio | CPU usage | compression speed | Network bandwidth usage |
+  | ------ | ----------------- | --------- | ----------------- | ----------------------- |
+  | gzip   | highest           | highest   | slowest           | lowest                  |
+  | snappy | medium            | moderate  | moderate          | medium                  |
+  | lz4    | low               | lowest    | fastest           | highest                 |
+  | zstd   | medium            | moderate  | moderate          | medium                  |
+
+  - 메시지 배치
+    - Record Accumulator(RA)가 메시지를 buffer memory에 저장하는 역할을 맡는다.
+    - `send()` 메서드가 호출된다고 바로 broker로 메시지가 전송되는 것은 아니다.
+    - 모든 메시지를 하나씩 broker에 보내는 것은 네트워크 비용 측면에서 비효율적이므로, buffer memory에 메시지를 저장한 후, Sender가 batch로 전송한다.
+    - 즉, 정확히는 `send()` 메서드가 호출됐을 때 실행되는 과정은 여기까지다.
+  - 전달
+    - Producer에서 Broker로 메시지를 전달하는 역할은 Sender가 맡는다.
+    - Sender는 TCP 프로토콜을 통해 메시지를 broker의 reader partition으로 전송한다.
+
+
+
+- Record Accumulator
+
+  - 사용자가 전송하려는 메시지는 먼저 `RecordAccumulator`에 저장된다.
+  - `RecordAccumulator`는 `batches`라는 map을 가지고 있다.
+    - key는 `TopicPartition`이고, value는 `Deque<RecoredBatch>`이다.
+  - `RecordAccumulator`에 저장하기 전에 record의 serialized size를 검사한다.
+    - 해당 size가 `max.request.size`의 설정값 또는 `buffer.memory`의 설정값보다 크면 `RecordTooLargeException`이 발생한다.
+    - 크기가 문제가 없으면 `RecordAccumulator`의 `append()` 메서드를 통해 저장한다.
+  - 성공적으로 `append()`메서드가 호출되면 `TopicPartition`(key)을 통해 deque(value)를 찾는다.
+    - Deque의 last에서 RecordBatch 하나를 꺼내서 recored를 저장할 공간이 있는지 확인한다.
+    - Queue가 아닌 deque를 사용하는 이유는 `append()`할 때 가장 나중에 들어간 RecordBatch를 꺼내서 봐야 하기 때문이다.
+    - 여유 공간이 있으면 해당 RecordBatch에 record를 추가하고, 없으면 새로운 RecordBatch를 생성해서 last쪽으로 저장한다.
+
+  ![image](kafka_part2.assets/62686a80-b576-11ea-8839-3eb52b31945d.png)
+
+  - 새로운 RecordBatch를 생성할 때는 BufferPool에서 RecordBatch가 사용할 ByteBuffer를 받아온다.
+    - BufferPool의 전체 size는 `buffer.memory` 설정에 의해 정해진다.
+    - RecordBatch 생성에 필요한 buffer size 만큼의 여유가 없으면 할당이 blocking되고, Buffer Pool에서 용량에 확보될 때까지 `max.block.ms`에 설정한 시간만큼 기다린다.
+    - `max.block.ms`에 설정한 시간이 초과해도 공간이 확보되지 않으면 TimeoutException이 발생한다.
+  - RecordBatch 생성시 사용하는 buffer size는 `batch.size` 설정값과 저장할 record size 중 큰 값으로 결정된다.
+    - 즉, record가 `batch.size`보다 작으면 하나의 RecordBatch에 여러 개의 record가 저장된다.
+    - Record가 `batch.size`보다 크면 하나의 RecordBatch에 하나의 record만 저장된다.
+  - `compression.type` 설정값에 압축 코덱이 지정되어 있는 경우 RecordBatch에 저장될 때 압축된다.
+
+
+
+- Sendor Thread
+  - `RecordAccumulator`에 저장된 record를 꺼내서 broker로 전송하고 broker의 응답을 처리하는 역할을 한다.
+  - `RecordAccumulator`의 `drain()`메서드를 통해  각 broker별로 전송할 RecordBatch list를 얻을 수 있다.
+    - `drain()`은 먼저 각 borker node에 속하는 TopicPartiton 목록을 받아온다.
+    - 그리고 각 node에 속한 TopicPartition을 보면서 deque의 first쪽의 RecordBatch 하나를 꺼내서 RecordBatch list에 추가한다
+    - 이렇게 node 단위로 RecordBatch list가 `max.request.size`를 넘지 않을 때까지 모은다.
+    - 모든 node에 이 동작을 반복하면 node별로 전송할 RecordBatch list가 모인다.
+    - 이렇게 모은 RecordBatch list는 하니의 ProducerRequest로 만들어져 broker node로 전송된다.
+  - ProducerRequest는 InFlightRequets에 저장된다.
+    - InFlightRequets는 key를 node로 가지고, value를 ProducerRequest의 deque로 가지는 map이다.
+    - 그리고 저장된 순서대로 broker node로 전송이 이루어진다.
+    - InFlightRequets deque의 size는 `max.in.flight.requests.per.connection` 설정값에 의해 정해진다.
+    - 이 값은 KafkaProducer Client가 하나의 Broker로 동시에 전송할 수 있는 요청 수를 의미한다.
+    - 요청이 실패할 경우 `retires`의 설정값이 1 이상이라면 재시도하는데, 이 때 `max.in.flight.requests.per.connection` 값이 1보다 크다면 순서가 바뀔 수 있다.
+    - 따라서 순서가 중요한 경우에 `retires` 옵션을 1 이상으로 준다면, `max.in.flight.requests.per.connection`의 값은 반드시 1로 설정해야한다.
+    - 이 경우 동시에 1개의 요청만 처리가 가능해지므로 어느 정도의 전송 성능 감소는 감수해야한다.
+  - Broker는 하나의 connection에 대해서 요청이 들어온 순서대로 처리해서 응답한다.
+    - 응답의 순서가 보장되기에 KafkaProducer client는 broker로부터 응답이 오면 항상 InFlightRequets deque의 가장 오래된 요청을 완료 처리한다.
+    - ProducerRequest가 완료되면 요청에 포함되었던 모든 RecordBatch의 콜백을 실행하고, broker로부터의 응답을 Future를 통해 사용자에게 전달한다.
+    - RecordBatch에서 사용한 ByteBuffer를 BufferPool로 반환하면서 Record의 전송 처리가 모두 마무리된다.
+
+
+
 ### acks
 
 - acks 옵션
