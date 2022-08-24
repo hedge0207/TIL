@@ -408,6 +408,144 @@
 
 ## 카프카 컨슈머
 
+
+
+# Kafka Consumer architecture
+
+> https://d2.naver.com/helloworld/0974525
+
+- Kafka Consumer의 구성
+  - Kafka Consumer는 아래 component들로 구성되어 있다.
+    - ConsumerNetworkClient
+    - SubscriptionState
+    - ConsumerCoordinator
+    - Fetcher
+    - HeartBeatThread
+  - HeartBeatThread를 제외한 모든 component는 Consumer의 생성과 함께 위 순서로 생성된다.
+    - HeartBeatThread는 `poll()`메서드가 최초로 호출 됐을 때 ConsumerCoordinator에 의해 생성된다.
+    - HeartBeatThread는 KafkaConsumer와는 별개의 스레드로 동작한다.
+
+
+
+- ConsumerNetworkClient
+
+  - Kafka Consumer의 모든 네트워크 통신을 담당한다.
+    - 모든 요청은 비동기로 동작한다.
+    - 따라서 ConsumerNetworkClient의 응답값은 RequestFuture 클래스로 확인한다.
+  - ConsumerNetworkClient로 전달된 요청의 실제 처리는 NetworkClient를 통해 이루어진다.
+    - NetworkClient는 비동기 네트워크 I/O를 담당하는 class이다.
+    - 즉 ConsumerNetworkClient는 자신에게 전달된 모든 요청을 ClientRequest로 만들어 NetworkClient로 보낸다.
+    - NetworkClient는 해당 request를 broker로 보내고 broker에서 받아온 응답을 ConsumerNetworkClient로 다시 보낸다.
+
+  - ConsumerNetworkClient가 broker로 요청을 보내는 과정은 다음과 같다.
+    - ConsumerNetworkClient의 `send()`메서드를 호출한다.
+    - `send()`메서드는 broker로 보낼 모든 요청을 ClientRequest로 변환한다.
+    - ClientRequest에는 요청이 완료되었을 때 호출될 RequestFuture가 포함되어 있다.
+    - ConsumerNetworkClient는 ClientRequest를 NetworkClient에게 바로 보내지 않고, 내부 버퍼인 Unsent Map에 먼저 저장한다.
+    - Unsent Map의 key는 요청을 보낼 broker이고, value는 ClientRequest의 리스트이다.
+    - ConsumerNetworkClient의 `poll()`메서드가 호출되면 Unsent Map에 있는 ClientRequest들을 NetworkClient로 보내고, NetworkClient는 해당 요청을 broker로 전송한다.
+
+  - ConsumerNetworkClient가 broker로부터 온 응답을 처리하는 과정은 다음과 같다.
+    - Broker로부터 응답을 받은 NetworkClient는 ConsumerNetworkClient의 내부 queue인 pedingCompletion에  RequestFuture를 추가한다.
+    - pedingCompletion에 추가된 RequestFuture는 ConsumerNetworkClient의 `poll()` 메서드가 호출될 때 `complete()` 메서드가 호출되어 완료 처리가 된다.
+
+
+
+- SubscriptionState
+  - Consumer가 소비하는 topic, partition, offset 정보를 추적 및 관리하는 역할을 한다.
+  - 컨슈머의 그룹 관리 기능을 사용하기 위해서는 특정 토픽에 대해 구독 요청을 해야한다.
+    - KafkaConsumer의 `subscribe()` 메서드를 통해 구독 요청을 할 수 있다.
+    - 구독을 요청한 토픽 정보는 SubscriptionState의 subscription에 저장된다.
+    - subscription에 저장된 토픽 정보는 리밸런스 과정에서 사용된다.
+  - `assign()` 메서드를 통해 KafkaConsumer에 토픽 및 파티션을 할당할 수 있다.
+    - `subscribe()` 메서드와 달리 `assign()` 메서드를 통해 토픽 및 파티션을 할당할 경우 컨슈머의 그룹 관리 기능을 사용하지 않는다.
+    - 따라서 `assign()` 메서드를 직접 호출하여 수동으로 토픽, 파티션을 지정할 경우 **리밸런싱이 일어나지 않는다.**
+  - `assign()`메서드를 통해 할당된 파티션은 초기 오프셋 값을 설정해줘야한다.
+    - `seek()` 메서드를 통해 초기 오프셋값을 설정할 수 있다.
+    - 초기 오프셋 값이 없으면 Fetch가 불가능한 파티션으로 분류된다.
+
+
+
+- ConsumerCoordinator
+  - 리밸런싱, 오프셋 초기화, 오프셋 커밋을 담당한다.
+  - 모두 개별 주제로 다룰만한 분량이므로 따로 분리한다.
+
+
+
+- Fetcher
+  - Broker로부터 데이터를 가져오는 역할을 한다.
+  - Consumer의 리밸런싱과 오프셋 초기화 과정이 끝나면 KafkaConsumer의 `poll()` 메서드를 통해 broker로부터 데이터를 가져올 수 있다.
+  - Broker로부터 데이터를 가져오는 과정
+    - `poll()` 메서드가 호출되면  Fetcher의 `fetchRecords()` 메서드가 호출된다. 
+    - `fetchRecords()` 메서드는 내부 캐시인 nextInLineRecords와 completedFetches를 확인하여 브로커로부터 이미 가져온 데이터가 있는지 확인한다.
+    - 데이터가 있는 경우에는 `max.poll.records` 값 만큼 레코드를 반환한다.
+    - 없는 경우에는 Fetcher의 `sendFetches()` 메서드를 호출하고, Fetch API를 통해 파티션 리더를 가지고 있는 각 브로커에게 데이터를 요청한다.
+    - KafkaConsumer는 Fetcher가 broker로부터 응답을 받을 때 까지 대기한다.
+    - Fetcher가 브로커로부터 응답을 받으면 KafkaConsumer는 Fetcher의 `fetchRecords()` 메서드를 다시 호출하여 사용자에게 반환할 레코드를 가져온다.
+    - KafkaConsumer는 레코드를 사용자에게 반환하기 전에 다음 poll 메서드 호출 시에 브로커로부터 응답을 대기하는 시간을 없애기 위해 Fetcher의 `sendFetches` 메서드를 호출한 후 레코드를 반환한다.
+  - 관련 설정
+    - `fetch.min.bytes`: Broker가 반환할 데이터의 최소값을 설정한다. 만일 당장 브로커에 이 만큼의 데이터가 없다면, 데이터가 누적되길 기다렸다 데이터를 반환한다.
+    - `fetch.max.wait.ms`: `fetch.min.bytes`만큼 데이터가 없을 경우 데이터의 누적을 기다릴 시간이다. 만일 데이터가 `fetch.min.bytes` 만큼 누적되지 않았어도 여기에 설정해 준 값 만큼의 시간이 지나면 데이터를 반환한다.
+    - `fetch.max.bytes`: Broker가 반환할 수 있는 데이터의 최대 크기이다. 만일 첫 번째 메시지가 이 값보다 크다면 이 설정은 무시되고 그냥 데이터를 보낸다.
+    - `max.partition.fetch.bytes`: 각 partition 당 브로커가 반환할 수 있는 최대 데이터 크기이다. `fetch.max.bytes`와 마찬가지로 첫 번째 메시지가 이 값보다 크다면 이 설정은 무시되고 그냥 데이터를 보낸다.
+
+
+
+- HeatBeatThread
+  - 사전지식
+    - `poll()`메서드는 `max.poll.intervals.ms` 이내에 호출되어야하며, 시간 내에 호출되지 않을 경우 해당 컨슈머는 정상이 아닌 것으로 판단하여 컨슈머 그룹에서 제외시킨다.
+    - `session.timeout.ms` 내에 heartbeat이 도착하지 않으면 브로커는 해당 컨슈머를 그룹에서 제거한다.
+    - Heatbeat 시간: Consumer의 중단 여부를 GroupCoodinator가 체크하는 시간.
+    - Polling 간격: 이전 `poll()` 메서드의 호출로부터 다음 호출까지의 시간.
+  - Kafka 0.10.0 이전에는 HeatBeat를 Consumer와 동일한 thread에 실행했다.
+    - 이로 인해 아래와 같은 문제가 있었다.
+    - [`poll()` + 가져온 message의 처리 시간]이  session timeout을 초과하면 컨슈머가 컨슈머 그룹에서 제외되는 문제
+    - session timeout 내에 `poll()`을 호출하고, 이를 통해 받아온 message를 처리하고, heartbeat까지 보내야 하는데, [`poll()` + 가져온 message의 처리 시간]이 session timeout을 초과하면 heartbeat을 보낼 수 없다.
+  - 위와 같은 문제를 해결하기 위해 백그라운드에서 동작하는 HeartBeatThread를 추가했다.
+    - HearthBeatThread는 `heartbeat.interval.ms`에 설정된 간격으로 heartbeat를 전송한다.
+    - `heartbeat.interval.ms`의 값은 항상 `session.timeout.ms`보다 작아야 하며, 일반적으로 1/3 이하로 설정한다.
+
+
+
+- 오프셋 초기화
+
+  - SubscriptionState의 `assign()` 메서드를 통해 할당된 파티션은 초기 오프셋 값이 없다.
+  - 따라서 KafkaConsumer는 오프셋 초기화 과정(아래 과정)을 통해 초기 오프셋 값을 설정한다.
+
+  - 초기 오프셋 값이 없는 경우 KafkaConsumer는 ConsumerCoordinator를 통해 커밋된 오프셋 값을 확인한다.
+  - 커밋된 오프셋의 확인 요청을 받은 ConsumerCoordinator는 OffsetFetchResponseHandler를 생성한다.
+  - ConsumerCoordinator는 OffsetFetch API를 통해 GroupCoordinator 역할을 하는 broker에게 커밋된 오프셋 정보를 요청한다.
+  - 커밋된 오프셋 정보가 있는 경우
+    - GroupCoordinator 역할을 하는 broker는 OffsetFetch API의 응답으로 ConsumerCoordinator의 OffsetFetchResponseHandler에 커밋된 오프셋 정보를 알려준다.
+    - OffsetFetchResponseHandler는 해당 정보를 처리하여 ConsumerCoordinator로 넘긴다.
+    - ConsumerCoordinator는 해당 정보를 SubscriptionState에 업데이트한다.
+    - SubscriptionState에 업데이트된 오프셋 값은 Fetcher에 의해 파티션의 오프셋 초기값으로 설정된다.
+
+  - 커밋된 오프셋 정보가 없는 경우
+
+    - KafkaConsumer는 `auto.offset.reset` 설정에 따라 오프셋을 초기화한다.
+    - ` earliest`, `latest`, `none` 중 하나의 값을 설정 가능하며 각기 파티션의 가장 처음 오프셋, 가장 마지막 오프셋, 오프셋 초기화하지 않음을 의미한다.
+    - Fetcher는 파티션의 가장 처음 오프셋과 가장 마지막 오프셋을 알아내기 위해 특정 시간(timestamp)에 해당하는 오프셋을 조회하는 ListOffsets API를 활용한다.
+    - ListOffsets API 요청에 timestamp를 -2로 설정하면 가장 처음 오프셋을 알 수 있고 timestamp를 -1로 설정하면 가장 마지막 오프셋을 알 수 있다. 
+    - 따라서  `auto.offset.reset`가 `earliest`인 경우에는 ListOffsets API 요청에 timestamp를 -2로 설정하고 `latest`인 경우에는 timestamp를 -1로 설정한다.
+
+    - Fetcher는 파티션의 가장 처음/마지막 오프셋을 알아내기 위해 파티션 리더 브로커로 ListOffsets API 요청을 보낸다.
+    - 파티션 리더 브로커는 ListOffsets API 응답으로 timestamp에 해당하는 오프셋 정보를 알려준다.
+    - 응답으로 받은 오프셋 값은 SubscriptionState의 `seek()` 메서드를 통해 파티션의 초기 오프셋으로 설정된다.
+
+
+
+- 오프셋 커밋
+  - `enable.auto.commit`이 true인 경우 KafkaConsuemr가 `auto.commit.interval.ms`마다 오프셋을 자동으로 commit한다.
+  - 오프셋이 커밋되는 과정
+    - KafkaConsumer의 `commitSync()` 메서드가 호출된다.
+    - 내부적으로 `commitOffsetsSync(offset)` 메서드가 실행되어 ConsumerCoordinator로 요청을 보낸다.
+    - ConsumerCoordinator는 OffsetCommitResponseHandler 를 생성하고, OffsetCommit API를 사용하여 GroupCoordinator에게 offset commit을 요청한다.
+    - OffsetCommitResponseHandler는 GroupCoordinator로부터 받은 응답을 ConsumerCoordinator에게 전달한다.
+    - ConsumerCoordinator는 KafkaConsumer에게 전달하면 offset commit이 완료된다.
+
+
+
 ### 멀티 스레드 컨슈머
 
 - 컨슈머 개수
