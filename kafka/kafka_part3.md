@@ -978,6 +978,215 @@
 
 # 카프카 확장
 
+## Kafka Connect
+
+- Kafka Connect
+  - 프로듀서, 컨슈머 애플리케이션을 만드는 것은 좋은 방법이지만 반복적인 파이프라인 생성 작업이 있을 때는 매번 프로듀서, 컨슈머 애플리케이션을 개발하고 배포, 운영하는 것이 비효율적일 수 있다.
+  - 커넥트는 특정 작업 형태를 템플릿으로 만들어 놓은 connector를 실행함으로써 반복 작업을 줄일 수 있다.
+  - Connector
+    - Pipeline 생성시 자주 반복되는 값들을 파라미터로 받는 connector를 코드로 작성하면 이후에 pipeline을 실행할 때는 코드를 작성할 필요가 없다.
+    - Connector에는 프로듀서 역할을 하는 source connector와 컨슈머 역할을 하는 sink connector가 있다.
+    - [컨플루언트 허브](https://www.confluent.io/hub)에서 다른 사람이 제작한 connector를 가져와서 사용할 수도 있고, 직접 제작하여 사용할 수도 있다.
+
+
+
+- Docker로 설치하기
+
+  - Python script로 producer를 생성하여 broker로 메시지를 전송하고,  elasticsearch sink plugin를 사용하여 메시지를 elasticsearch에 색인하는 connect를 만들어보기
+  - Docker hub에서 image 받기
+    - Docker Hub에 kafka connect 이미지가 올라가 있지만 elasticsearch sink plugin을 설치한 custom connect를 사용할 것이므로 아래와 같이 base image를 받는다.
+  
+  ```bash
+  $ docker pull confluentinc/cp-server-connect-base
+  ```
+  
+    - Elasticsearch sink connector 받기
+  
+      > https://www.confluent.io/hub/confluentinc/kafka-connect-elasticsearch
+  
+      - 위 링크에서 zip 파일을 다운 받을 수 있다.
+      - 혹은 지금 다운 받지 않고 dockerfile을 build할 때 설치하는 것도 가능하다.
+  
+  
+    - docker image 생성하기
+  
+      - 아래와 같이 dockerfile을 작성하고 image를 build한다.
+  
+  ```dockerfile
+  # 위에서 zip 파일을 다운 받은 경우
+  FROM confluentinc/cp-server-connect-base:latest
+  COPY /<zip 파일 경로>/confluentinc-kafka-connect-elasticsearch-14.0.0.zip /tmp/confluentinc-kafka-connect-elasticsearch-14.0.0.zip
+  RUN confluent-hub install --no-prompt /tmp/confluentinc-kafka-connect-elasticsearch-14.0.0.zip
+  
+  
+  # 다운 받지 않은 경우
+  FROM confluentinc/cp-server-connect-base:latest
+  RUN confluent-hub install confluentinc/kafka-connect-elasticsearch:latest
+  ```
+  
+    - docker-compose.yml 파일 작성하기
+  
+      > 전체 설정은 https://github.com/confluentinc/cp-demo의 docker-compose.yml 파일에서 확인 가능하다.
+  
+  ```yaml
+  connect:
+      image: <위에서 build한 image명>
+      container_name: connect
+      restart: always
+      ports:
+        - 8083:8083
+      environment:
+        CONNECT_BOOTSTRAP_SERVERS: <kafka broker의 url list>
+        CONNECT_GROUP_ID: "connect-cluster"
+  
+        CONNECT_CONFIG_STORAGE_TOPIC: connect-configs
+        CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets
+        CONNECT_STATUS_STORAGE_TOPIC: connect-statuses
+  
+        CONNECT_REPLICATION_FACTOR: 1
+        CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+        CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+        CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+  
+        CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+        CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+        CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+        CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+        CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
+        CONNECT_value_CONVERTER_SCHEMAS_ENABLE: "true"
+        CONNECT_REST_ADVERTISED_HOST_NAME: "localhost"
+        CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
+  ```
+
+
+
+  - Sink connect 생성하기
+
+    - Connect container 실행 후 connect API를 이용하여 elasticsearch sink connector를 생성한다.
+      - Connector가 생성되면 `connect-<connector-name>` 형식으로 consumer group이 생성된다.
+      - `topic.index.map` 옵션은 11 버전부터 삭제 됐다.
+
+
+    ```bash
+    curl -XPOST <kafka connect url>/connectors -H "Content-Type:application/json" -d '{
+    "name":"elasticsearch-sink",
+    "config":{
+        "connector.class":"io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+        # 실행할 task(consumer)의 개수를 입력한다.
+        "tasks.max":"1",
+        # message를 받아올 topic을 입력한다.
+        "topics":"<topic 명>",
+        "connection.url":"<elasticsearch url>",
+        "type.name":"log",
+        "key.ignore":"true",
+        "schema.ignore":"false",
+        "value.converter.schemas.enable": "false"
+    }
+    }
+    '
+    ```
+
+      - 잘 생성 되었는지 확인한다.
+
+    ```bash
+    $ curl <kafka connect url>/connectors/elasticsearch-sink/status
+    ```
+
+      - 요청 format
+        - 위에서 `JsonConverter`를 사용한다고 명시했으므로 반드시 아래의 형식으로 보내야한다.
+        - 최상단에 `schema`와 `payload` 필드가 위치해야하며, `schema`에는 이름 그대로 schema에 대한 정보가, `payload`에는 색인하고자 하는 문서를 입력하면 된다.
+        
+
+    ```json
+    // 예시
+    {
+        "schema":{
+            "type":"struct",
+            "fields":[
+                {
+                    "type":"string",
+                    "optional":"false",
+                    "field":"name"
+                },
+                {
+                    "type":"int64",
+                    "optional":"false",
+                    "field":"age"
+                }
+            ]
+        },
+        "payload":{"name":"John", "age":22}
+    }
+    ```
+
+      - Python script 작성하기
+        - 아래 script를 실행하면 message가 broker로 전송되고, elasticsearch sink connector가 해당 메시지를 가져가서 es에 적재한다.
+
+    ```python
+    from kafka import KafkaProducer
+    from json import dumps
+     
+     
+    TOPIC = "test"
+    producer = KafkaProducer(acks=0, compression_type="gzip", bootstrap_servers=["kafka_broker_url"], \
+                            value_serializer=lambda x: dumps(x).encode('utf-8'))
+    try:
+        msg = {
+            "schema":{
+                "type":"struct",
+                "fields":[
+                    {
+                        "type":"string",
+                        "optional":"false",
+                        "field":"name"
+                    },
+                    {
+                        "type":"int64",
+                        "optional":"false",
+                        "field":"age"
+                    }
+                ]
+            },
+            "payload":{"name":"John", "age":22}
+        }
+        producer.send(TOPIC, value=msg)
+        producer.flush()
+    except Exception as e:
+        print(e)
+    ```
+
+    
+
+    
+
+
+
+- Kafka Connect API
+
+  | method   | endpoint                                              | description                                     |
+  | -------- | ----------------------------------------------------- | ----------------------------------------------- |
+  | `GET`    | /                                                     | 실행 중인 connect 정보 확인                     |
+  | `GET`    | /connectors                                           | 실행 중인 connector 목록 확인                   |
+  | `POST`   | /connectors                                           | 새로운 connector 생성                           |
+  | `GET`    | /connectors/<connector 이름>                          | 실행 중인 connector 정보 확인                   |
+  | `GET`    | /connectors/<connector 이름>/config                   | 실행 중인 connector 설정값 확인                 |
+  | `PUT`    | /connectors/<connector 이름>/config                   | 실행 중인 connector의 설정값 변경               |
+  | `GET`    | /connectors/<connector 이름>/status                   | 실행 중인 connector 상태 확인                   |
+  | `POST`   | /connectors/<connector 이름>/restart                  | 실행 중인 connector 재시작                      |
+  | `PUT`    | /connectors/<connector 이름>/pause                    | 실행 중인 connector 중지                        |
+  | `PUT`    | /connectors/<connector 이름>/resume                   | 중지 된 connector 재실행                        |
+  | `DELETE` | /connectors/<connector 이름>                          | 실행 중인 connector 종료                        |
+  | `GET`    | /connectors/<connector 이름>/tasks                    | 실행 중인 connector의 task 정보 확인            |
+  | `GET`    | /connectors/<connector 이름>/tasks/\<task id>/status  | 실행 중인 connector의 task 상태 확인            |
+  | `POST`   | /connectors/<connector 이름>/tasks/\<task id>/restart | 실행 중인 connector의 task 재시작               |
+  | `GET`    | /connectors/<connector 이름>/topics                   | Connector별 연동된 토픽 정보 확인               |
+  | `GET`    | /connector-plugins                                    | Connect에 존재하는 connector 플러그인 목록 확인 |
+  | `PUT`    | /connector-plugins/<플러그인 이름>/validate           | Connector 생성 시 설정값 유효성 확인            |
+
+  
+
+
+
 ## Kafka Streams
 
 - 토픽에 적재된 데이터를 실시간으로 변환하여 다른 토픽에 적재하는 라이브러리.
