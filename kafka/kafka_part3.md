@@ -320,7 +320,8 @@
 
 
 
-
+- cluster 구성하기
+  - `KAFKA_ZOOKEEPER_CONNECT` 정보만 동일하게 주면 cluster가 구성된다.
 
 
 
@@ -1085,17 +1086,17 @@
     }
     '
     ```
-
+    
       - 잘 생성 되었는지 확인한다.
-
+    
     ```bash
     $ curl <kafka connect url>/connectors/elasticsearch-sink/status
     ```
-
+    
       - 요청 format
         - 위에서 `JsonConverter`를 사용한다고 명시했으므로 반드시 아래의 형식으로 보내야한다.
         - 최상단에 `schema`와 `payload` 필드가 위치해야하며, `schema`에는 이름 그대로 schema에 대한 정보가, `payload`에는 색인하고자 하는 문서를 입력하면 된다.
-        
+
 
     ```json
     // 예시
@@ -1118,15 +1119,16 @@
         "payload":{"name":"John", "age":22}
     }
     ```
-
+    
       - Python script 작성하기
         - 아래 script를 실행하면 message가 broker로 전송되고, elasticsearch sink connector가 해당 메시지를 가져가서 es에 적재한다.
-
+    
     ```python
     from kafka import KafkaProducer
     from json import dumps
-     
-     
+
+
+​     
     TOPIC = "test"
     producer = KafkaProducer(acks=0, compression_type="gzip", bootstrap_servers=["kafka_broker_url"], \
                             value_serializer=lambda x: dumps(x).encode('utf-8'))
@@ -1155,9 +1157,10 @@
         print(e)
     ```
 
-    
 
-    
+​    
+
+​    
 
 
 
