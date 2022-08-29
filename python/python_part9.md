@@ -81,8 +81,7 @@
   - CPU bound 예시
     - multi thread를 사용했을 때 오히려 속도가 더 느려진다.
     - GIL로 인해 single thread로 동작할 뿐 아니라, lock을 걸고 해제하는 과정을 반복하면서 overhead가 발생하기 때문이다.
-
-
+  
   ```python
   import time
   from threading import Thread
@@ -111,11 +110,10 @@
   t2.join()
   print(time.time()-start)	# 0.852366...
   ```
-
-  - I/O bound 예시
-    - multi thread가 single thread에 비해 훨씬 빠르다.
-
-
+  
+    - I/O bound 예시
+      - multi thread가 single thread에 비해 훨씬 빠르다.
+  
   ```python
   import time
   from threading import Thread
@@ -148,155 +146,105 @@
   print(time.time()-start)	# 5.85471...
   ```
 
+
+
   - Python에서 multi thread 자체가 불가능한 것은 아니다.
     - 여러 개의 thread를 실행시키는 것 자체는 가능하다.
     - 단지, 여러 개의 스레드가 병렬적으로 실행되는 것이 막혀있는 것이다.
     - 즉 동시성에는 열려있지만 병렬성에는 닫혀있다고 볼 수 있다.
     - 그러나 Python에서 multi thread는 성능상의 이점이 거의 존재하지 않기에(lock을 걸고(aquire) lock을 풀 때(release) overhead가 발생) multi process를 사용하거나 비동기 코드를 작성하는 것이 낫다.
     - 단, 위에서 봤듯 Python runtime과 상호작용하지 않는 작업들은 multi thread로 구현했을 때 성능상의 이득이 있을 수 있다.
-  - 왜 다른 언어에는 GIL이 존재하지 않는가?
-    - 다른 언어는 Python처럼 refcnt로 GC를 실행하지 않기 때문이다.
-  - 왜 이렇게 설계 했으며, 왜 바꾸지 않는가?
-    - Python이 공개됐던 1991년만 하더라도 하드웨어적인 한계로 인해 multi thread는 크게 고려할 사항이 아니었다.
-    - 이전에 몇 번 GIL을 없애려는 시도가 있었으나 모두 실패로 돌아갔다.
-    - 귀도 반 로섬은 GIL을 없앨 경우 기존에 개발된 라이브러리들과 제품들의 코드를 모두 수정해야 하므로 없애기 쉽지 않다고 밝혔고, 실제로 이전에 있었던 몇 번의 시도들도 위와 같은 이유 때문에 실패했다.
-    - 그러나 없애고 싶지 않은 것은 아니며, 부작용을 최소화하면서 없앨 방법을 찾는 중이다.
-  - race condition을 막는 방법1
-    - 하나의 스레드가 작업을 종료하고 다른 스레드가 작업을 시작하도록 한다.
-
-  ```python
-  from threading import Thread
-  
-  x = 0
-  N = 1000000
-  mutex = Lock()
-  
-  def add():
-  	global x
-  	for i in range(N):
-  		x += 1
-  	
-  def subtract():
-  	global x
-  	for i in range(N):
-  		x -= 1
-  	
-  
-  add_thread = Thread(target=add)
-  subtract_thread = Thread(target=subtract)
-  
-  # 스레드가 시작하고
-  add_thread.start()
-  # 끝날때 까지 대기한다.
-  add_thread.join()
-  
-  subtract_thread.start()
-  subtract_thread.join()
-  
-  print(x)
-  ```
-
-  - 방법2. mutex를 설정한다.
-    - 스레드에서 공유 객체에 접근하는 부분(임계영역)을 지정하고 lock을 설정한다.
-
-  ```python
-  from threading import Thread, Lock
-  
-  x = 0
-  N = 1000000
-  mutex = Lock()
-  
-  def add():
-  	global x
-      # lock을 걸고
-  	mutex.acquire()
-  	for i in range(N):
-  		x += 1
-      # 작업이 완료되면 lock을 푼다.
-  	mutex.release()
-  
-  def subtract():
-  	global x
-  	mutex.acquire()
-  	for i in range(N):
-  		x -= 1
-  	mutex.release()
-  
-  
-  add_thread = Thread(target=add)
-  subtract_thread = Thread(target=subtract)
-  
-  add_thread.start()
-  subtract_thread.start()
-  
-  add_thread.join()
-  subtract_thread.join()
-  
-  print(x)
-  ```
 
 
 
+- 의문들
+
+    - 왜 다른 언어에는 GIL이 존재하지 않는가?
+      - 다른 언어는 Python처럼 refcnt로 GC를 실행하지 않기 때문이다.
+
+    - 왜 이렇게 설계 했으며, 왜 바꾸지 않는가?
+      - Python이 공개됐던 1991년만 하더라도 하드웨어적인 한계로 인해 multi thread는 크게 고려할 사항이 아니었다.
+      - 이전에 몇 번 GIL을 없애려는 시도가 있었으나 모두 실패로 돌아갔다.
+      - 귀도 반 로섬은 GIL을 없앨 경우 기존에 개발된 라이브러리들과 제품들의 코드를 모두 수정해야 하므로 없애기 쉽지 않다고 밝혔고, 실제로 이전에 있었던 몇 번의 시도들도 위와 같은 이유 때문에 실패했다.
+      - 그러나 없애고 싶지 않은 것은 아니며, 부작용을 최소화하면서 없앨 방법을 찾는 중이다.
 
 
-# ETC
 
-- Python에서 리눅스 명령어 실행하기
+  - race condition을 막는 방법
 
-  - subprocess 모듈을 사용한다.
-    - 실행하려는 명령이 시스템에 설치되어 있어야 한다.
-    - 따라서 이식성이 떨어진다.
-  - 예시
-    - subprocess의 run 메서드를 호출하면 명령이 실행되고, 결과가 PIPE에 저장된다.
-    - result.stdout은 str이 아니고 byte이기 때문에 unicode로 변환을 해줘야 한다.
+    - 방법1
+      - 하나의 스레드가 작업을 종료하고 다른 스레드가 작업을 시작하도록 한다.
 
-  ```python
-  import subprocess
-  
-  
-  result = subprocess.run(['ls'], stdout=subprocess.PIPE)
-  result_as_string = result.stdout.decode('utf-8')
-  
-  print(result_as_string)
-  
-  result = subprocess.run(['wc', '-l', 'test.txt'], stdout=subprocess.PIPE)
-  result_as_string = result.stdout.decode('utf-8')
-  
-  print(result_as_string)
-  ```
+    ```python
+    from threading import Thread
+    
+    x = 0
+    N = 1000000
+    mutex = Lock()
+    
+    def add():
+    	global x
+    	for i in range(N):
+    		x += 1
+    	
+    def subtract():
+    	global x
+    	for i in range(N):
+    		x -= 1
+    	
+    
+    add_thread = Thread(target=add)
+    subtract_thread = Thread(target=subtract)
+    
+    # 스레드가 시작하고
+    add_thread.start()
+    # 끝날때 까지 대기한다.
+    add_thread.join()
+    
+    subtract_thread.start()
+    subtract_thread.join()
+    
+    print(x)
+    ```
 
-  
+      - 방법2. mutex를 설정한다.
+        - 스레드에서 공유 객체에 접근하는 부분(임계영역)을 지정하고 lock을 설정한다.
 
-- tqdm
+    ```python
+    from threading import Thread, Lock
+    
+    x = 0
+    N = 1000000
+    mutex = Lock()
+    
+    def add():
+    	global x
+        # lock을 걸고
+    	mutex.acquire()
+    	for i in range(N):
+    		x += 1
+        # 작업이 완료되면 lock을 푼다.
+    	mutex.release()
+    
+    def subtract():
+    	global x
+    	mutex.acquire()
+    	for i in range(N):
+    		x -= 1
+    	mutex.release()
+    
+    
+    add_thread = Thread(target=add)
+    subtract_thread = Thread(target=subtract)
+    
+    add_thread.start()
+    subtract_thread.start()
+    
+    add_thread.join()
+    subtract_thread.join()
+    
+    print(x)
+    ```
 
-  - python 코드를 실행 했을 때 진행 상황을 볼 수 있는 모듈이다.
-    - 실행에 오랜 시간이 걸리는 코드의 경우 중간에 print나 logging 모듈로 로그를 남기는 방식을 사용하기도 한다.
-    - tqdm은 print나 logging 모듈 없이도 진행 상황을 확인하게 도와준다.
-  - 설치
 
-  ```bash
-  $ pip install tqdm
-  ```
-
-  - 사용
-    - iterable을 tqdm에 넘겨 사용한다.
-
-  ```python
-  import time
-  from tqdm import tqdm
-  
-  
-  def long_time_job():
-      time.sleep(0.1)
-  
-  for i in tqdm(range(100)):
-      long_time_job()
-  ```
-
-  - 결과
-
-  ```bash
-  $ python main.py 
-  74%|████████████████████████████████████████████████████████████████████████████████████████████████▉              | 74/100 [00:07<00:02,  9.49it/s]
-  ```
 

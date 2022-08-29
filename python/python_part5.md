@@ -229,6 +229,32 @@
 
 # 패키지
 
+- Python에서 리눅스 명령어 실행하기
+
+  - subprocess 모듈을 사용한다.
+    - 실행하려는 명령이 시스템에 설치되어 있어야 한다.
+    - 따라서 이식성이 떨어진다.
+  - 예시
+    - subprocess의 run 메서드를 호출하면 명령이 실행되고, 결과가 PIPE에 저장된다.
+    - result.stdout은 str이 아니고 byte이기 때문에 unicode로 변환을 해줘야 한다.
+
+  ```python
+  import subprocess
+  
+  
+  result = subprocess.run(['ls'], stdout=subprocess.PIPE)
+  result_as_string = result.stdout.decode('utf-8')
+  
+  print(result_as_string)
+  
+  result = subprocess.run(['wc', '-l', 'test.txt'], stdout=subprocess.PIPE)
+  result_as_string = result.stdout.decode('utf-8')
+  
+  print(result_as_string)
+  ```
+
+
+
 - inspect
 
   - 내장 라이브러리로 별도의 설치가 필요 없다.
