@@ -248,3 +248,287 @@
 
 
 
+
+
+# Multi processing
+
+- Python에서의 multi processing
+  - Python은 GIL로 인해 thread 기반의 병렬 처리가 까다롭다.
+  - 따라서 multi-thread 방식 보다는 multi-processing 방식으로 병렬 처리를 해야한다.
+  - Python 내장 패키지 중 multiprocessing을 사용하면 간단하게 구현이 가능하다.
+
+
+
+- Process 생성하기
+
+  - Process를 생성하는 것을 spawning이라 한다.
+  - `Process` class의 인스턴스를 생성하는 방식으로 process를 생성할 수 있다.
+    - `Process`의 인스턴스를 생성할 때는 첫 번째 인자로 실행 시킬 함수를, 두 번째 인자로 해당 함수에 넘길 인자를 입력한다.
+  - `start()`메서드를 사용하여 spawn된 process를 실행시킬 수 있다.
+
+  ```python
+  from multiprocessing import Process
+  
+  def f(name):
+      print('hello', name)
+  
+  if __name__ == '__main__':
+      p = Process(target=f, args=('bob',))
+  ```
+
+
+
+- multiprocessing은 platform(OS)에 따라 세 가지 다른 방식의 Process 실행 방식을 지원한다.
+
+  - spawn
+    - 자식 process는 부모 process로부터 `run()` 메서드를 실행시키는 데 필요한 자원만을 상속 받는다.
+    - 불필요한 file descriptor와 handle은 상속받지 않는다.
+    - fork나 forkserver에 비해 느리다.
+    - Unix와 Windows에서 사용 가능하며, Windows와 macOS의 기본값이다.
+  - fork
+    - 부모 process는 `os.fork()`메서드를 사용하여 Python interpreter를 fork한다.
+    - 자식 process는 부모 process로부터 모든 자원을 상속받는다.
+    - 자식 process는 부모 process와 사실상 동일한 상태로 시작된다.
+    - Unix에서만 사용 가능하며, Unix의 기본 값이다.
+  - forkserver
+    - 프로그램이 실행되고, forkserver start method를 선택하면, server process가 시작된다.
+    - 이후 새로운 프로세스가 필요할 때마다 부모 프로세스는 server에 새로운 process를 fork하도록 요청한다.
+    - 불필요한 자원은 상속되지 않는다.
+    - Unix pipe를 통한 file descriptor를 지원하는 Unix에서만 사용 가능하다.
+  - multiprocessing의 `set_start_method`를 통해 어떤 method로 실행시킬지 지정이 가능하다.
+
+  ```python
+  from multiprocessing import Process
+  
+  def f(name):
+      print('hello', name)
+  
+  if __name__ == '__main__':
+      multiprocessing.set_start_method('spawn')
+      p = Process(target=f, args=('bob',))
+  ```
+
+  - 혹은 아래와 같이 `get_context()`메서드를 사용하는 방법도 있다.
+
+  ```python
+  from multiprocessing
+  
+  def f(name):
+      print('hello', name)
+  
+  if __name__ == '__main__':
+      ctx = multiprocessing.get_context('spawn')
+      p = ctx.Process(target=f, args=('bob',))
+  ```
+
+
+
+- Process 사이의 communication channel 사용하기
+
+  - `multiprocessing`은 두 가지 communication channel을 지원한다.
+  - `Queue`
+    - `queue.Queue`의 clone이다.
+    - thread, process safe하다.
+
+  ```python
+  from multiprocessing import Process, Queue
+  
+  def f(q):
+      q.put([42, None, 'hello'])
+  
+  if __name__ == '__main__':
+      q = Queue()
+      p = Process(target=f, args=(q,))
+      p.start()
+      print(q.get())    # prints "[42, None, 'hello']"
+      p.join()
+  ```
+
+  - `Pipe`
+    - `Pipe()` 함수는 `Pipe`로 연결된 한 쌍의 connection object를 반환한다.
+    - 반환된 connection object들은 `send()`와 `recv()` 메서드를 가진다.
+
+  ```python
+  from multiprocessing import Process, Pipe
+  
+  def f(conn):
+      conn.send([42, None, 'hello'])
+      conn.close()
+  
+  if __name__ == '__main__':
+      parent_conn, child_conn = Pipe()
+      p = Process(target=f, args=(child_conn,))
+      p.start()
+      print(parent_conn.recv())   # prints "[42, None, 'hello']"
+      p.join()
+  ```
+
+
+
+- Process 사이의 동기화
+
+  - `multiprocessing`은 `threading`의 동기화 관련 요소들을 모두 포함하고 있다.
+  - 예시
+    - Lock을 사용하여 한 번에 하나의 proecess에서만 print를 출력하도록 하는 예시이다.
+
+  ```python
+  from multiprocessing import Process, Lock
+  
+  def f(l, i):
+      l.acquire()
+      try:
+          print('hello world', i)
+      finally:
+          l.release()
+  
+  if __name__ == '__main__':
+      lock = Lock()
+  
+      for num in range(10):
+          Process(target=f, args=(lock, num)).start()
+  ```
+
+
+
+- Process간의 상태 공유
+
+  - 동시성 프로그래밍을 할 때에는 왠만하면 상태의 공유를 피하는 것이 좋다.
+    - 특히 multi process를 사용할 때는 더욱 그렇다.
+  - 그럼에도 `multiprocessing`에서는 상태 공유를 위한 몇 가지 방법을 제공한다.
+  - Shared memory
+    - `Value`와 `Array`를 사용하여 data를 shared memory map에 저장할 수 있다.
+    - `'d'`와 `'i'`는 typecode를 나타낸다. `d`는 double precision float type을 나타내고, `i`는 signed integer를 나타낸다. 
+
+  ```python
+  from multiprocessing import Process, Value, Array
+  
+  def f(n, a):
+      n.value = 3.1415927
+      for i in range(len(a)):
+          a[i] = -a[i]
+  
+  if __name__ == '__main__':
+      num = Value('d', 0.0)
+      arr = Array('i', range(10))
+  
+      p = Process(target=f, args=(num, arr))
+      p.start()
+      p.join()
+  
+      print(num.value)
+      print(arr[:])
+  ```
+
+  - Server process
+    - `Manager()`가 반환한 manager 객체는 Python 객체를 가지고 있는 server process를 통제하고, 다른 process들이 proxy를 사용하여 이를 조정할 수 있도록 해주는 역할을 한다.
+    - `Manager()`가 반환한 manager는 list, dict, Namespace, Lock, RLock, Semaphore, Boundedsemaphore, Condition, Event, Barrier, Queue, Value, Array type을 지원한다.
+
+  ```python
+  from multiprocessing import Process, Manager
+  
+  def f(d, l):
+      d[1] = '1'
+      d['2'] = 2
+      d[0.25] = None
+      l.reverse()
+  
+  if __name__ == '__main__':
+      with Manager() as manager:
+          d = manager.dict()
+          l = manager.list(range(10))
+  
+          p = Process(target=f, args=(d, l))
+          p.start()
+          p.join()
+  
+          print(d)
+          print(l)
+  ```
+
+
+
+- Pool 사용하기
+
+  - `Pool` class는 worker process들의 pool을 생성한다.
+  - `Pool` class는 task들을 process로 넘길 수 있는 몇 가지 method를 제공한다.
+    - `apply()`: process에게 특정 작업을 실행시키고 해당 작업의 종료까지 기다린다.
+    - `apply_async()`: process에게 특정 작업을 시키고 종료는 기다리지 않고 `AsyncResult`를 반환 받는다.  작업이 완료되었을 때 `AsyncResult`의  `get()` 메서드를 통해 작업의 반환값을 얻을 수 있다.
+    - `map()`: process에게 iterable한 작업을 실행시킨다. 단, 사용하고자 하는 함수는 단일 인자를 받아야 한다. ` apply()`와 마찬가지로 작업의 종료까지 기다린다.
+    - `async_map()`: process에게 iterable한 작업을 실행시킨다. 단, 사용하고자 하는 함수는 단일 인자를 받아야 한다. `apply_async()`와 마찬가지로 종료는 기다리지 않고 `AsyncResult`를 반환 받는다.
+  - 예시
+
+  ```python
+  from multiprocessing import Pool, TimeoutError
+  import time
+  import os
+  
+  def f(x):
+      return x*x
+  
+  if __name__ == '__main__':
+      # 4개의 worker process를 시작한다.
+      with Pool(processes=4) as pool:
+  
+          print(pool.map(f, range(10)))
+  
+          for i in pool.imap_unordered(f, range(10)):
+              print(i)
+  
+          # evaluate "f(20)" asynchronously
+          res = pool.apply_async(f, (20,))      # runs in *only* one process
+          print(res.get(timeout=1))             # prints "400"
+  
+          # evaluate "os.getpid()" asynchronously
+          res = pool.apply_async(os.getpid, ()) # runs in *only* one process
+          print(res.get(timeout=1))             # prints the PID of that process
+  
+          # launching multiple evaluations asynchronously *may* use more processes
+          multiple_results = [pool.apply_async(os.getpid, ()) for i in range(4)]
+          print([res.get(timeout=1) for res in multiple_results])
+  
+          # make a single worker sleep for 10 secs
+          res = pool.apply_async(time.sleep, (10,))
+          try:
+              print(res.get(timeout=1))
+          except TimeoutError:
+              print("We lacked patience and got a multiprocessing.TimeoutError")
+  
+          print("For the moment, the pool remains available for more work")
+  
+      # exiting the 'with'-block has stopped the pool
+      print("Now the pool is closed and no longer available")
+  ```
+
+  - `Pool`과 `Process`의 차이
+    - `Pool`은 처리할 일을 쌓아두고 process들이 알아서 분산 처리를 하게 만드는 방식이다.
+    - `Process`는 각 process마다 할당량을 지정해주고 분산 처리를 하게 만드는 방식이다.
+
+
+
+- Daemon process 생성하기
+
+  - 특정 작업을 백그라운드에서 실행하기 위하여 daemon process를 실행할 수 있다.
+    - `Process`의 인스턴스의 `daemon` 속성을 True로 주면 된다.
+
+  ```python
+  import os
+  import time
+  from multiprocessing import Process
+  
+  
+  def foo(num):
+      time.sleep(10)
+      print(os.getpid())
+      print(num)
+      print("-"*100)
+  
+  
+  if __name__ == "__main__":
+  
+      p = Process(target=foo, args=[0])
+      p.daemon = True
+      p.start()
+  ```
+
+  - Daemon proecess는 main process가 종료되면 함께 종료된다.
+
