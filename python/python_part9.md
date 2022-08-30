@@ -532,3 +532,119 @@
 
   - Daemon proecess는 main process가 종료되면 함께 종료된다.
 
+
+
+- `join()` 메서드
+
+  - `join()`메서드는 자식 process의 작업이 완료될 때 까지 부모 process가 기다리게 한다.
+
+  ```python
+  import os
+  import time
+  from multiprocessing import Process
+  
+  
+  def foo():
+      print(os.getpid())
+      print("Child process")
+  
+  
+  if __name__ == "__main__":
+      p = Process(target=foo)
+      p.daemon = True
+      p.start()
+      p.join()
+      print("Parent process")
+  ```
+
+  - `join()`이 없을 경우
+
+  ```python
+  import os
+  import time
+  from multiprocessing import Process
+  
+  
+  def foo():
+      print(os.getpid())
+      print("Child process")
+  
+  
+  if __name__ == "__main__":
+      p = Process(target=foo)
+      p.daemon = True
+      p.start()
+      print("Parent process")
+  ```
+
+  - 자식 process는 join 없이 종료되고, 부모 process는 아직 실행중이라면 자식 process는 zombie process가 된다.
+    - 아래 코드에서 자식 process가 join 없이 부모 프로세스보다 먼저 종료가 되는데, 이 상태에서 자식 프로세스의 pid로 process 상태를 확인해보면 `[python] <defunct>`와 같이 뜨게 된다.
+    - 만일 부모 process가 종료되지 않고 계속 실행되는 코드였을 경우 자식 process는 zombie process인 상태로 계속 남아있게 되므로 반드시 join을 해줘야한다.
+
+  ```python
+  import os
+  import time
+  from multiprocessing import Process
+  
+  
+  def foo():
+      print(os.getpid())
+      print("Child process")
+  
+  
+  if __name__ == "__main__":
+      p = Process(target=foo)
+      p.daemon = True
+      p.start()
+      time.sleep(300)
+      print("Parent process")
+  ```
+
+  - 명시적으로 `join()` 메서드를 호출하지 않아도, 부모 프로세스가 종료될 때가 되면 암묵적으로 `join()` 메서드가 호출된다.
+    - 아래 코드를 보면 `join()`을 호출하지 않았음에도, 부모 process가 다 실행된 이후에도 종료되지 않고 자식 process의 실행이 완료되기를 기다린다.
+
+  ```python
+  import os
+  import time
+  from multiprocessing import Process
+  
+  
+  def foo():
+      print(os.getpid())
+      time.sleep(20)
+      print("Child process")
+  
+  
+  if __name__ == "__main__":
+      p = Process(target=foo)
+      p.start()
+      print("Parent process")
+  ```
+
+  - 단 `join()` 메서드의 암묵적인 호출은 non-daemonic process일 때 만이고 daemon process의 경우 부모 프로세스의 종료와 함께 종료된다.
+
+  ```python
+  import os
+  import time
+  from multiprocessing import Process
+  
+  
+  def foo():
+      print(os.getpid())
+      print("Child process")
+      time.sleep(20)
+  
+  
+  if __name__ == "__main__":
+      p = Process(target=foo)
+      p.daemon = True
+      p.start()
+      print("Parent process")
+  ```
+
+  
+
+
+
+
+
