@@ -522,6 +522,8 @@
 
 
 
+
+
 - kafka-verifiable-producer/consumer.sh
 
   - 카프카 클러스터 설치가 완료된 이후에 토픽에 데이터를 전송하여 간단한 네트워크 통신 테스트를 할 때 유용하게 사용이 가능하다.
@@ -1129,33 +1131,33 @@
 
 
 ​     
-    TOPIC = "test"
-    producer = KafkaProducer(acks=0, compression_type="gzip", bootstrap_servers=["kafka_broker_url"], \
-                            value_serializer=lambda x: dumps(x).encode('utf-8'))
-    try:
-        msg = {
-            "schema":{
-                "type":"struct",
-                "fields":[
-                    {
-                        "type":"string",
-                        "optional":"false",
-                        "field":"name"
-                    },
-                    {
-                        "type":"int64",
-                        "optional":"false",
-                        "field":"age"
-                    }
-                ]
-            },
-            "payload":{"name":"John", "age":22}
-        }
-        producer.send(TOPIC, value=msg)
-        producer.flush()
-    except Exception as e:
-        print(e)
-    ```
+​    TOPIC = "test"
+​    producer = KafkaProducer(acks=0, compression_type="gzip", bootstrap_servers=["kafka_broker_url"], \
+​                            value_serializer=lambda x: dumps(x).encode('utf-8'))
+​    try:
+​        msg = {
+​            "schema":{
+​                "type":"struct",
+​                "fields":[
+​                    {
+​                        "type":"string",
+​                        "optional":"false",
+​                        "field":"name"
+​                    },
+​                    {
+​                        "type":"int64",
+​                        "optional":"false",
+​                        "field":"age"
+​                    }
+​                ]
+​            },
+​            "payload":{"name":"John", "age":22}
+​        }
+​        producer.send(TOPIC, value=msg)
+​        producer.flush()
+​    except Exception as e:
+​        print(e)
+​    ```
 
 
 ​    
