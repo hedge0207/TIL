@@ -7,7 +7,7 @@
 - 이터레이터
   - 값을 차례대로 꺼낼 수 있는 객체를 의미한다.
     - 반복자라고도 부른다.
-    - 단순하게 말해서, `__iter__` , `__next__` 메서드를 지닌 객체를 말한다. 
+    - 단순하게 말해서, `__iter__`() , `__next__` 메서드를 지닌 객체를 말한다. 
   - `range`는 이터레이터를 생성하는 함수로, `range(10)`은 실제로 10개의 숫자를 생성하는 것이 아니라 이터레이터를 생성하는 것이다.
     - 이터레이터만 미리 생성하고 값이 필요한 시점이 되었을 때 값을 만든다.
     - 이처럼 데이터 생성을 뒤로 만드는 방식을 **지연평가**(lazy evaluation)라 한다.
@@ -24,7 +24,7 @@
 
 - 이터레이터인지 확인하기
 
-  - 객체에 `__iter__` 메서드가 있는지 확인하면 된다.
+  - 먼저 객체에 `__iter__` 메서드가 있는지 확인한다.
     - `__iter__` 메서드는 이터레이터를 반환하는 메서드이다.
   
   
@@ -40,7 +40,7 @@
   print(my_list.__iter__())	# <list_iterator object at 0x7fcd468eb580>
   ```
   
-  - `__next__` 메서드를 호출하여 요소를 차례로 꺼낼 수 있다.
+  - 다음으로 `__next__` 메서드가 있는지 확인한다. 
     - `__next__` 메서드는 호출할 때 마다 다음 값을 리턴하는 메서드이다.
     - 더 이상 꺼낼 요소가 없다면 `StopIteration` 예외를 발생시킨다.
   
@@ -379,11 +379,17 @@
       print(i)
   ```
   
-  - `yield from`의 sudo code 단순화
+  - `yield from`의 pseudo code(단순화 한 버전)
     - PEP 380에서 제안된 `yield from`이 사용된 대표 제너레이터의 내부 sudo code를 더 단순화 시킨 것이다.
     - 실제로는 호출자가 호출하는 `throw()`와 `close()`를 처리해서 하위 제너레이터에 전달해야 하므로 실제 논리는 더 복잡하다.
   
   ```python
+  """
+  RESULT = yield from EXPR
+  위와 같은 yield from 구문은 아래 과정을 거치게 된다.
+  """
+  
+  
   # 하위 제너레이터를 가져온다.
   _i = iter(EXPR)
   try:
@@ -395,17 +401,17 @@
       while 1:
           _s = yield _y	# 하위 제너레이터에서 생성한 값을 그대로 생성하고, 호출자가 보낼 _s를 기다린다.
           try:
-              _y = _i.send(_S)	# 호출자가 보낸 _s를 하위 제너레이터에 전달한다.
+              _y = _i.send(_s)	# 호출자가 보낸 _s를 하위 제너레이터에 전달하고, 하위 제네레이터의 실행이 재개된다.
           # 하위 제너레이터가 StopIteraion 예외를 발생시키면, 예외 객체 안의 value 속성을 가져와 _r에 할당한다.
           # 그 후 루프를 빠져나오고 대표 제너레이터의 실행을 재개한다.
           except StopIteration as _e:	
               _r = e.value
               break
-  # _r이 전체 yield from의 표현식 값이 디어 RESULT에 저장된다.
+  # _r이 전체 yield from의 표현식 값이 되어 RESULT에 저장된다.
   RESULT = _r
   ```
   
-  - `yield from`의 sudo code 전체
+  - `yield from`의 pseudo code 전체
     - 전체 코드에서 yield는 단 한 번밖에 사용되지 않는다.
   
   ```python
@@ -419,7 +425,7 @@
   else:
       while 1:
           try:
-              _S = yield _y
+              _s = yield _y
           # 대표 제너레이터와 하위 제너레이터의 종료를 처리한다.
           except GenerationExit as _e:
               try:
@@ -526,6 +532,7 @@
           num = yield	# 코루틴 바깥에서 받은 값을 받아서 사용.
           print(num)
   
+  # 코루틴 생성
   co = my_coroutine()
   # 코루틴 내부의 yield까지 함수 실행(최초)
   next(co)
@@ -538,7 +545,7 @@
   - 실행 과정
     - 메인 루틴에서 코루틴을 생성하고 `next()`를 통해 코루틴을 실행한다.
     - while문이 실행되고 `yield` 키워드를 만나면서 메인루틴에 실행을 넘겨준다.
-    - `send()`를 통해 코루틴에 값을 보내고, num이 print된후 다시 반복문을 돌아 yield키워드를 만나면서 메인루틴에 실행을 넘겨준다.
+    - `send()`를 통해 코루틴에 값을 보내고, num이 print된후 다시 반복문을 돌아 `yield` 키워드를 만나면서 메인루틴에 실행을 넘겨준다.
 
 
 
@@ -739,7 +746,7 @@
       while True:
           # accumulate에 실행을 양보하고 accumulate이 실행이 종료되는 시점에 반환값을 받아온다.
           total = yield from accumulate()    
-          print("Hello!")
+          print(total)
    
   co = sum_coroutine()
   next(co)
@@ -749,6 +756,7 @@
       print(co.send(i), end=" ")	# 1 3 6 10 15 21 28 36 45 55
   
   # 코루틴 accumulate에 None을 보내서 합산을 끝낸다.
+  print("\n")
   co.send(None)	# 55
   ```
   
@@ -814,8 +822,10 @@
 
 - 코루틴 사용 예시
 
-  - 코루틴이 반복적으로 핵심 루프에 제어권을 넘겨 주어 핵심 루프가 다른 코루틴을 활성화하고 실행할 수 있게 해줌으로써 작업을 동시에 실행한다.
+  > https://github.com/fluentpython/example-code/blob/master/16-coroutine/taxi_sim.py
 
+  - 코루틴이 반복적으로 핵심 루프에 제어권을 넘겨 주어 핵심 루프가 다른 코루틴을 활성화하고 실행할 수 있게 해줌으로써 작업을 동시에 실행한다.
+  
   ```python
   import random
   import collections
@@ -1059,7 +1069,6 @@
   - 동기 처리
 
   ```python
-  from os import stat_result
   import time
   
   def count_number_sync(n):
@@ -1087,8 +1096,8 @@
   async def process_async():
       start = time.time()
       await asyncio.wait([
-          count_number_sync(5),
-          count_number_sync(5)
+          asyncio.create_task(count_number_sync(5)),
+          asyncio.create_task(count_number_sync(5))
       ])
       print(time.time() - start)	# 2.5044925212860107
   
