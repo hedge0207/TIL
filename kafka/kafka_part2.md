@@ -214,6 +214,22 @@
 
 
 
+- Sticky partitioner
+  - Kafka 2.4 버전부터 기본 partitioner로 설정됐다.
+    - [KIP-480](https://cwiki.apache.org/confluence/display/KAFKA/KIP-480%3A+Sticky+Partitioner)에서 제안된 방식이다.
+    - [Netflix](https://netflixtechblog.com/kafka-inside-keystone-pipeline-dd5aeabaf6bb)에서 custom partitioner로 사용하던 방식이다.
+  - 더 적은 수의 요청(더 적은 수의 batch)에 더 많은 message를 담아서 보낼수록 효율적이다.
+    - 그러나 기존의 default partitioner였던 round-robin 방식의 경우 batch에 메시지가 충분히 차지 않았는데도 요청을 보내 결과적으로 요청의 횟수가 많아지게 된다는 문제가 있었다.
+  - Sticky partitioner의 경우, batch가 완료되기 전 까지 topic 내의 하나의 partition에만 할당되도록 한다.
+    - 예를 들어 Topic A에 a, b, c 세 개의 partition이 있고, message가 3개라면 round-robin의 경우 a, b, c가 하나씩 메시지를 가져가게 되고, sendor는 3개의 batch(Aa, Ab, Ac)를 가져와 broker에 3번의 요청을 보낸다.
+    - 또 3개의 message가 들어오면 다시 a, b, c가 하나씩 메시지를 가져가게 되고, sendor는 3개의 batch(Aa, Ab, Ac)를 가져와 broker에 3번의 요청을 보낸다.
+    - 반면에 Sticky partitioner의 경우 세 개의 메시지를 Aa partition에 담는다.
+    - Sendor는 해당 Aa batch를 가져와 broker에 한 번의 요청만 보낸다.
+    - 또 3개의 message가 들어오면 이제 Ab partition에 담고, Sendor는 해당 Ab batch를 가져와 broker에 한 번의 요청만 보낸다.
+    - 동일하게 6개의 message를 보냈지만, sticky는 단 두 번의 요청으로 가능했지만 round-robin은 6번의 요청을 보내야 했다.
+
+
+
 - Record Accumulator
 
   - 사용자가 전송하려는 메시지는 먼저 `RecordAccumulator`에 저장된다.
