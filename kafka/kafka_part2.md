@@ -340,6 +340,27 @@
 
 
 
+- `acks`를 all로 줄 경우 원칙적으로는 replica partition에 복제까지 완료 되어야 적재를 성공한 것으로 판단한다.
+  - 그러나 여기에는 함정이 있다.
+    - 그것은 바로 몇 개의 replica partition에 복제를 완료해야 적재를 성공한 것으로 판단할지를 설정하지 않는다는 것이다.
+  - `acks`를 all로 줬을 때의 이상적인 상황은 다음과 같다(broker가 3개이고, 1개의 leader partition과 2개의 follower partition이 있을 때).
+    - leader partition에 message가 적재된다.
+    - 두 개의 follower partition에 message가 복제된다.
+    - 두 개의 follower partition이 적재가 완료되었다는 신호를 leader partition에 보낸다.
+    - leader partition은 모든 follower partition으로부터 위 신호를 받으면 producer에 적재에 성공했다는 응답을 보낸다.
+  - 그러나 `acks`를 all로 줬을 때 어떤 이유로 follower partition이 있는 broker들이 모두 내려갔다고 가정해보자.
+    - leader partition에 메시지가 적재된다.
+    - follower partition이 위치한 broker 두 대가 모두 내려갔으므로 leader partition은 복제할 필요가 없다고 보고 producer로 적재가 성공했다는 응답을 보낸다.
+    - 결국 `acks`를 all로 설정한 목적인 data의 durability 보장은 달성되지 못한다.
+  - `min.insync.replicas`
+    - 위와 같은 상황을 방지하려면 `acks`를 all로 줬을 때 몇 개의 follower partition에 적재가 완료 되어야 성공으로 판단할지를 설정해줘야한다.
+    - 이 값을 설정해주는 것이 바로 `min.insync.replicas` 옵션이다.
+    - 이 옵션은 broker나 topic에서 설정해주는 값으로, producer 쪽 설정은 아니다.
+    - 만일 이 옵션에 설정해준 값 만큼 복제를 성공하지 못할 경우 leader partition은 `NotEnoughReplicasException`나 `NotEnoughReplicasAfterAppendException`를 throw한다.
+  - 따라서 `acks`를 all로 설정할 경우 반드시 `min.insync.replicas` 옵션도 고려해야한다.
+
+
+
 ### 멱등성 프로듀서
 
 - 멱등성 프로듀서란
