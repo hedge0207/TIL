@@ -200,10 +200,111 @@
 
 
 - 조건식
+  
+  - 예시 데이터(fruit table)
+  
+  | id   | NAME        | PRICE |
+  | ---- | ----------- | ----- |
+  | 1    | apple       | 1000  |
+  | 2    | apple mango | 3000  |
+  | 3    | banana      | 3000  |
+  | 4    | water melon | 18000 |
+  | 5    | melon       | 20000 |
+  
   - `=`: 값이 같은 경우 조회한다.
+  
+  ```sql
+  SELECT * FROM fruit WHERE NAME="apple";
+  
+  # 1번 row가 조회된다.
+  ```
+  
   - `!=`, `<>`: 값이 다른 경우 조회한다.
+  
+  ```sql
+  SELECT * FROM fruit WHERE NAME<>"apple";
+  
+  # 2,3,4,5 번 row가 조회된다.
+  ```
+  
   - `<`, `<=`, `>`, `>=`: 대소비교에 사용한다.
-  - `BETWEEN`: 
+  
+  ```sql
+  SELECT * FROM fruit WHERE price>=18000;
+  
+  # 4,5번 row가 조회된다.
+  ```
+  
+  - `BETWEEN`: gte, lte 값 사이의 값들을 구하기 위해 사용한다.
+  
+  ```sql
+  SELECT * FROM fruit WHERE price BETWEEN 18000 AND 20000;
+  
+  # 4,5번 row가 조회된다.
+  ```
+  
+  - `IN`: 컬럼이 `IN` 안에 포함된 경우의 데이터를 조회한다.
+  
+  ```sql
+  SELECT * FROM fruit WHERE name IN ('apple', 'melon');
+  
+  # 1,5번 row가 조회된다.
+  ```
+  
+  - `NOT IN`: 컬럼이 `IN` 안에 포함되어 있지 않은 경우의 데이터를 조회한다.
+  
+  ```sql
+  SELECT * FROM fruit WHERE name NOT IN ('apple', 'melon');
+  
+  # 2,3,4번 row가 조회된다.
+  ```
+  
+  - `LIKE`: 특정 패턴과 일치하는 데이터를 조회하기 위해 사용한다.
+  
+  ```sql
+  SELECT * FROM fruit WHERE name LIKE '%melon'
+  
+  # 4,5번 row가 조회된다.
+  ```
+  
+  - `IS NULL`: 컬럼이 NULL인 데이터를 조회한다.
+  
+  ```sql
+  SELECT * FROM fruit WHERE name IS NULL;
+  
+  # 아무 row도 조회되지 않는다.
+  ```
+  
+  - `IS NOT NULL`: 컬럼이 NULL이 아닌 데이터를 조회한다.
+  
+  ```sql
+  SELECT * FROM fruit WHERE name IS not NULL;
+  
+  # 모든 row가 조회된다.
+  ```
+  
+  - `AND`: 두 조건을 모두 만족하는 데이터를 조회한다.
+  
+  ```sql
+  SELECT * FROM fruit WHERE NAME='banana' AND price<=3000;
+  
+  # 3번 row만 조회된다.
+  ```
+  
+  - `OR`: 두 조건 중 하나라도 만족하는 데이터를 조회한다.
+  
+  ```sql
+  SELECT * FROM fruit WHERE NAME='banana' OR price<=3000;
+  
+  # 1,2,3 번 row가 조회된다.
+  ```
+  
+  - `NOT`(==`!`): 조건에 해당하지 않는 데이터를 조회한다.
+  
+  ```sql
+  SELECT * FROM fruit WHERE not NAME='banana';
+  
+  # 1,2,4,5 번 row가 조회된다.
 
 
 
