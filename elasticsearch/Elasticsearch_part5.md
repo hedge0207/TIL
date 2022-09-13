@@ -1667,6 +1667,76 @@
 
 
 
+## Fuzzy query
+
+- term과 유사한 token을 포함하고 있는 documents를 반환하는 query
+
+  -  두 단어 사이의 Levenshtein distance를 통해 두 term이 유사한지 아닌지 판단한다.
+  -  오타 교정 기능, 혹은 자동 완성 기능을 구현하기 위해 사용한다.
+  -  옵션들
+     - `field`(required): 검색 하고자 하는 field를 입력한다.
+     - `value`(required): 검색하고자 하는 term을 입력한다.
+     - `fuzziness`: Levenshtein distance 값을 입력한다. 0, 1, 2, AUTO 중 하나의 값을 받는다. 3 이상을 줘도 error는 나지 않으나, 제대로 동작하지는 않는다. AUTO로 줄 경우 term의 길이에 따라 Levenshtein distance가 동적으로 결정된다. 0~2 글자 까지는 0, 3~5까지는 1, 5글자 이상은 2로 설정된다.
+     - `max_expansions`: 생성할 후보군의 최대 개수를 설정한다.
+     - `prefix_length`: 후보군을 생성할 때, term의 첫 번째 문자부터 몇 번째 글자까지 변경 없이 fix 시킬 것인지를 설정한다.
+     - `transpositions`: Levenshtein distance를 계산할 때, 인접한 두 문자의 교환(ab -> ba)도 거리로 계산할 것인지 설정한다.
+     - `rewrite`: [링크](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-term-rewrite.html) 참조
+  -  예시
+
+  ```json
+  // GET /_search
+  {
+    "query": {
+      "fuzzy": {
+        "user.id": {
+          "value": "ki",
+          "fuzziness": "AUTO",
+          "max_expansions": 50,
+          "prefix_length": 0,
+          "transpositions": true,
+          "rewrite": "constant_score"
+        }
+      }
+    }
+  }
+  ```
+
+  - `match_phrase_prefix` query와 함께 사용하여 자동완성에 사용하기도 한다.
+
+  ```json
+  // GET /_search
+  {
+    "query": {
+      "bool": {
+        "should": [
+          {
+            "multi_match": {
+              "query": "worl",
+              "fields": ["title"],
+              "fuzziness": 1
+            }
+          },
+          {
+            "multi_match": {
+              "type": "phrase_prefix", 
+              "query": "worl",
+              "fields": ["title"]
+            }
+          }
+        ]
+      }
+    }
+  }
+  ```
+
+  
+
+
+
+
+
+
+
 
 ## 검색 관련 옵션
 
