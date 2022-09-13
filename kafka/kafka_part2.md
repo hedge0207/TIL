@@ -445,9 +445,7 @@
 
 ## 카프카 컨슈머
 
-
-
-# Kafka Consumer architecture
+### Kafka Consumer architecture
 
 > https://d2.naver.com/helloworld/0974525
 

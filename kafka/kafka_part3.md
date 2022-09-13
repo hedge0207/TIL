@@ -636,6 +636,34 @@
     - `batch_size`: 여러 데이터를 배치로 보내는 것을 시도한다.
     - `linger_ms`: 배치 형태 작업을 위해 기다리는 시간 조정, 배치 사이즈에 도달하면 옵션과 관계 없이 전송, 배치 사이즈에 도달하지 않아도 제한 시간 도달 시 메시지 전송
     - `max_request_size`: 한 번에 보낼 수 있는 메시지 바이트 사이즈(기본 값은 1MB, 1048576 Bytes)
+  
+  - Partitioner
+  
+    - kafka-python과, kafka-python 기반의 aiokafka 패키지의 기본 partitioner는 round-robin, sticky partitioner가 아닌 random이다.
+    - key가 있을 경우 kafka의 murmur2를 python으로 포팅하여 사용한다.
+  
+  ```python
+  @classmethod
+      def __call__(cls, key, all_partitions, available):
+          """
+          Get the partition corresponding to key
+          :param key: partitioning key
+          :param all_partitions: list of all partitions sorted by partition ID
+          :param available: list of available partitions in no particular order
+          :return: one of the values from all_partitions or available
+          """
+          if key is None:
+              if available:
+                  return random.choice(available)
+              return random.choice(all_partitions)
+  
+          idx = murmur2(key)
+          idx &= 0x7fffffff
+          idx %= len(all_partitions)
+          return all_partitions[idx]
+  ```
+
+
 
 
 
