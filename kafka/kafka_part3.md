@@ -519,6 +519,19 @@
   test-group      kafka.test      2          1               1               0       -               -               -
   test-group      kafka.test      3          4               4               0       -               -               -
   ```
+  
+  - Consumer group의  offset  초기화
+  
+    - `--dry-run`: offset reset시에 예쌍 결과를 보여준다.
+    - `--execute`: offset을 초기화한다.
+  
+    ``` bash
+    # 예상 결과 출력
+    $ kafka-consumer-groups.sh --bootstrap-server <host:port> --group <group> --topic <topic> --reset-offsets --to-earliest --dry-run
+    
+    # offset 초기화
+    $ kafka-consumer-groups.sh --bootstrap-server <host:port> --group <group> --topic <topic> --reset-offsets --to-earliest --execute
+    ```
 
 
 
