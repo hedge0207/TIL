@@ -44,6 +44,21 @@
 
 
 
+- Query profile
+
+  - query의 parameter로 `profile`을 `true`로 주면 query의 profiling이 가능하다.
+
+  ```json
+  {
+      "query":{
+          "profile":true,
+          "match_all":{}
+      }
+  }
+  ```
+
+
+
 - 검색 요청의 기본 구성 요소
 
   - 구성 요소는 반환할 도큐먼트 개수를 제어하고, 최적의 도큐먼트를 선택하기 하며, 원치 않는 도큐먼트는 결과에서 걸러내도록 한다.
