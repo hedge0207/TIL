@@ -972,13 +972,19 @@
     - 인덱스의 analyzer 변경이나 클러스터의 마이그레이션 등 인덱스를 마이그레이션해야 할 경우 사용한다.
     - 클러스터 내부가 아닌 클러스터 사이에 데이터 마이그레이션에도 사용할 수 있다.
     - 목적지 클러스터의 elasticsearch.yml 파일에서 `reindex.remote.whitelist:"호스트:9200,127.0.0.*:9200`과 같이 원본 클러스터의 주소를 whitelist에 설정해주면 되는데, 도메인이나 IP를 기준으로 예시처럼 와일드카드 패턴 매칭도 지원한다.
-
+    - 데이터만 복제하는 것이기에 미리 settings와  mappings를 동일하게 맞춰줘야 한다.
+  
   ```bash
   # 클러스태 내 reindex
   $ curl -XPOST "localhost:9200/_reindex?pretty" -H 'Content-type:application/json' -d'
   {
   	"source":{
-  		"index":"test"	# 원본 인덱스
+  		"index":"test",	# 원본 인덱스
+  		"query": {
+              "match": {
+              "test": "data"
+              }
+          }
   	},
   	"dest":{
   		"index":"new_index"	# 목적지 인덱스
@@ -990,16 +996,23 @@
   {
   	"source":{
   		"remote":{
-  			"host":"http://example/com:9200"
+  			"host":"http://example/com:9200",
+  			"username": "user",
+        		"password": "pass"
   		},
-  		"index":"test"
+  		"index":"test",
+  		"query": {
+              "match": {
+              "test": "data"
+              }
+          }
   	},
   	"dest":{
   		"index":"dest_test"	# 목적지 인덱스
   	}
   }
   ```
-
+  
   
 
 ## 템플릿 활용하기
