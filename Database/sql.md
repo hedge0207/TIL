@@ -312,11 +312,432 @@
 
 
 
+- `GROUP BY`
+
+  - 속성값을 그룹으로 분류할 때 사용한다.
+
+  - 예시 데이터(employee table)
+
+  | name | position | department | age  |
+  | ---- | -------- | ---------- | ---- |
+  | John | Backend  | ML         | 29   |
+  | Choi | Backend  | DB         | 27   |
+  | Mike | Frontend | ML         | 27   |
+  | Jane | Frontend | ML         | 28   |
+
+  - department별 age 합계
+
+  ```sql
+  SELECT department, SUM(age) FROM employee GROUP BY department;
+  ```
+
+  - position별 인원
+
+  ```sql
+  SELECT position, COUNT(*) FROM employee GROUP BY position;
+  ```
+
+  - position, department 별 나이 합계
+
+  ```sql
+  SELECT POSITION, department, sum(age) FROM employee GROUP BY POSITION, department;
+  ```
+
+
+
+- `HAVING`
+
+  - `group by`로 그룹화 된 그룹에 대한 조건을 지정한다.
+  - 예시
+    - 구성원들의 연령 합계가 60 이상인 department 구하기
+
+  ```sql
+  SELECT department, sum(age) as total_age FROM employee GROUP BY department HAVING total_age >= 60;
+  ```
+
+
+
+- `ORDER BY`
+
+  - 조회 결과를 정렬하기 위해 사용한다.
+
+  - 형식
+    - 기본값은 ASC(오름차순)이다.
+    - 둘 이상의 정렬 기준을 설정할 경우 먼저 설정한 기준의 정렬 결과 중 같은 값이 있는 경우 다음 기준으로 정렬한다.
+
+  ```sql
+  order by <필드1> [ASC|DESC] [, <필드2> [ASC|DESC]]
+  ```
+
+  - 예시1
+    - age가 큰 순으로 정렬된다.
+
+  ```sql
+  SELECT * FROM employee ORDER BY age DESC;
+  ```
+
+  - 예시2. 복수의 정렬 기준을 설정한 경우
+    - 먼저 age를 기준으로 내림차순으로 정렬 후, 나이가 같을 경우, name을 기준으로 알파벳 순으로 정렬한다.
+
+  ```sql
+  SELECT * FROM employee ORDER BY age DESC, name;
+  ```
+
+
+
+
+- 서브 쿼리
+
+  - SQL문 안에 포함된 또 다른 SQL문이다.
+
+  - 서브 쿼리에서는 메인 쿼리의 컬럼 정보를 사용할 수 있으나, 메인 쿼리에서는 서브 쿼리의 컬럼 정보를 사용할 수 없다.
+
+  - 서브 쿼리 유형
+
+    - `FROM`  절 서브쿼리(인라인 뷰): 서브쿼리가 `FROM` 절 안에 들어있는 형태.
+    - `WHERE` 절 서브쿼리(중첩 서브쿼리) 서브쿼리가 `WHERE` 절 안에 들어있는 형태.
+
+  - 예시 데이터
+
+    - employee, employee_salary 두 개의 table이다.
+
+
+| employee_id | name |      | employee_id | salary |
+| ----------- | ---- | ---- | ----------- | ------ |
+| 1           | John |      | 1           | 400    |
+| 2           | Jane |      | 2           | 300    |
+| 5           | Tom  |      | 3           | 200    |
+|             |      |      | 4           | 100    |
+
+  - `FROM`절 서브쿼리 예시
+
+  ```sql
+select * from employee e, (select * from employee_salary) es where e.employee_id=es.employee_id;
+  ```
+
+  - 결과
+
+| e.employee_id | e.name | es.employee_id | es.salary |
+| ------------- | ------ | -------------- | --------- |
+| 1             | John   | 1              | 400       |
+| 2             | Jane   | 2              | 300       |
+
+  - `WHERE`절 서브쿼리 예시
+
+  ```sql
+SELECT * FROM employee where employee_id in (select employee_id from employee_salary);
+  ```
+
+  - 결과
+
+| employee_id | name |
+| ----------- | ---- |
+| 1           | John |
+| 2           | Jane |
+
+
+
+# DXX
+
+- `GROUP BY`
+
+  - 속성값을 그룹으로 분류할 때 사용한다.
+
+  - 예시 데이터(employee table)
+
+  | name | position | department | age  |
+  | ---- | -------- | ---------- | ---- |
+  | John | Backend  | ML         | 29   |
+  | Choi | Backend  | DB         | 27   |
+  | Mike | Frontend | ML         | 27   |
+  | Jane | Frontend | ML         | 28   |
+
+  - department별 age 합계
+
+  ```sql
+  SELECT department, SUM(age) FROM employee GROUP BY department;
+  ```
+
+  - position별 인원
+
+  ```sql
+  SELECT position, COUNT(*) FROM employee GROUP BY position;
+  ```
+
+  - position, department 별 나이 합계
+
+  ```sql
+  SELECT POSITION, department, sum(age) FROM employee GROUP BY POSITION, department;
+  ```
+
+
+
+- `HAVING`
+
+  - `group by`로 그룹화 된 그룹에 대한 조건을 지정한다.
+  - 예시
+    - 구성원들의 연령 합계가 60 이상인 department 구하기
+
+  ```sql
+  SELECT department, sum(age) as total_age FROM employee GROUP BY department HAVING total_age >= 60;
+  ```
+
+
+
+- `ORDER BY`
+
+  - 조회 결과를 정렬하기 위해 사용한다.
+
+  - 형식
+    - 기본값은 ASC(오름차순)이다.
+    - 둘 이상의 정렬 기준을 설정할 경우 먼저 설정한 기준의 정렬 결과 중 같은 값이 있는 경우 다음 기준으로 정렬한다.
+
+  ```sql
+  order by <필드1> [ASC|DESC] [, <필드2> [ASC|DESC]]
+  ```
+
+  - 예시1
+    - age가 큰 순으로 정렬된다.
+
+  ```sql
+  SELECT * FROM employee ORDER BY age DESC;
+  ```
+
+  - 예시2. 복수의 정렬 기준을 설정한 경우
+    - 먼저 age를 기준으로 내림차순으로 정렬 후, 나이가 같을 경우, name을 기준으로 알파벳 순으로 정렬한다.
+
+  ```sql
+  SELECT * FROM employee ORDER BY age DESC, name;
+  ```
+
+
+
+
+- 서브 쿼리
+
+  - SQL문 안에 포함된 또 다른 SQL문이다.
+
+  - 서브 쿼리에서는 메인 쿼리의 컬럼 정보를 사용할 수 있으나, 메인 쿼리에서는 서브 쿼리의 컬럼 정보를 사용할 수 없다.
+
+  - 서브 쿼리 유형
+
+    - `FROM`  절 서브쿼리(인라인 뷰): 서브쿼리가 `FROM` 절 안에 들어있는 형태.
+    - `WHERE` 절 서브쿼리(중첩 서브쿼리) 서브쿼리가 `WHERE` 절 안에 들어있는 형태.
+
+  - 예시 데이터
+
+    - employee, employee_salary 두 개의 table이다.
+  
+  | employee_id | name |      | employee_id | salary |
+  | ----------- | ---- | ---- | ----------- | ------ |
+  | 1           | John |      | 1           | 400    |
+  | 2           | Jane |      | 2           | 300    |
+  | 5           | Tom  |      | 3           | 200    |
+  |             |      |      | 4           | 100    |
+  
+    - `FROM`절 서브쿼리 예시
+  
+  ```sql
+  select * from employee e, (select * from employee_salary) es where e.employee_id=es.employee_id;
+  ```
+  
+    - 결과
+  
+  | e.employee_id | e.name | es.employee_id | es.salary |
+  | ------------- | ------ | -------------- | --------- |
+  | 1             | John   | 1              | 400       |
+  | 2             | Jane   | 2              | 300       |
+  
+    - `WHERE`절 서브쿼리 예시
+  
+  ```sql
+  SELECT * FROM employee where employee_id in (select employee_id from employee_salary);
+  ```
+  
+    - 결과
+  
+  | employee_id | name |
+  | ----------- | ---- |
+  | 1           | John |
+  | 2           | Jane |
 
 
 
 
 
+
+
+
+
+## JOIN
+
+- `JOIN`
+
+  - 둘 이상의 테이블을 연결하여 데이터를 검색하기 위해 사용한다.
+  - 형식
+    - 조인 조건에는 `ON`을 사용한다.
+    - 같은 이름의 컬럼명이 여러 테이블에 있을 경우 구분을 위해 `별칭.컬럼명` 형태로 표현한다.
+
+  ```sql
+  select * from <table_1> [별칭] [join_type] JOIN <table_2> [별칭] [ON 조인조건];
+  ```
+
+
+
+- 예시 데이터
+
+  - employee, employee_salary 두 개의 table이다.
+
+  | employee_id | name |      | employee_id | salary |
+  | ----------- | ---- | ---- | ----------- | ------ |
+  | 1           | John |      | 1           | 400    |
+  | 2           | Jane |      | 2           | 300    |
+  | 5           | Tom  |      | 3           | 200    |
+  |             |      |      | 4           | 100    |
+
+
+
+- 내부 조인
+
+  - 공통으로 존재하는 컬럼의 값이 같은 경우에만 추출
+    - `INNER`는 생략 가능
+  - 예시
+
+  ```sql
+  SELECT e.employee_id, e.name, es.salary FROM employee e INNTER JOIN employee_salary es ON e.employee_id=es.employee_id 
+  ```
+
+  - 결과
+
+  | e.employee_id | e.name | es.salary |
+  | ------------- | ------ | --------- |
+  | 1             | John   | 400       |
+  | 2             | Jane   | 300       |
+
+
+
+- 왼쪽 외부 조인
+
+  - 왼쪽 테이블의 모든 데이터와 오른쪽 테이블의 동일 데이터를 추출.
+    - `LEFT`를 사용한다.
+    - `OUTER`는 생략 가능하다.
+  - 예시
+
+  ```sql
+  SELECT e.employee_id, e.name, es.employee_id, es.salary FROM employee e LEFT OUTER JOIN employee_salary es ON e.employee_id=es.employee_id
+  ```
+
+  - 결과
+
+  | e.employee_id | e.name | es.employee_id | es.salary |
+  | ------------- | ------ | -------------- | --------- |
+  | 1             | John   | 1              | 400       |
+  | 2             | Jane   | 2              | 300       |
+  | 5             | Tom    | NULL           | NULL      |
+
+
+
+- 오른쪽 외부 조인
+
+  - 오른쪽 테이블의 모든 데이터와 왼쪽 테이블의 동일 데이터를 추출.
+    - `RIGHT`를 사용한다.
+    - `OUTER`는 생략 가능하다.
+  - 예시
+
+  ```sql
+  SELECT e.employee_id, e.name, es.employee_id, es.salary FROM employee e RIGHT OUTER JOIN employee_salary es ON e.employee_id=es.employee_id 
+  ```
+
+  - 결과
+
+  | e.employee_id | e.name | es.employee_id | es.salary |
+  | ------------- | ------ | -------------- | --------- |
+  | 1             | John   | 1              | 400       |
+  | 2             | Jane   | 2              | 300       |
+  | NULL          | NULL   | 3              | 200       |
+  | NULL          | NULL   | 4              | 100       |
+
+
+
+- 완전 외부 조인
+
+  - 양쪽의 모든 데이터를 추출
+    - `FULL`을 사용한다.
+    - `OUTER`는 생략 가능하다.
+    - MySQL 에서는 지원하지 않는다.
+  - 예시
+
+  ```sql
+  SELECT e.employee_id, e.name, es.employee_id, es.salary FROM employee e FULL OUTER JOIN employee_salary es ON e.employee_id=es.employee_id 
+  ```
+
+  - 결과
+
+  | e.employee_id | e.name | es.employee_id | es.salary |
+  | ------------- | ------ | -------------- | --------- |
+  | 1             | John   | 1              | 400       |
+  | 2             | Jane   | 2              | 300       |
+  | NULL          | NULL   | 3              | 200       |
+  | NULL          | NULL   | 4              | 100       |
+  | 5             | Tom    | NULL           | NULL      |
+
+
+
+- 교차 조인
+
+  - 조인 조건이 없는 모든 데이터 조합을 추출
+
+  - 예시
+
+  ```sql
+  SELECT e.employee_id, e.name, es.employee_id, es.salary FROM employee e CROSS JOIN employee_salary es;
+  ```
+
+  - 결과
+
+  | e.employee_id | e.name | es.employee_id | es.salary |
+  | ------------- | ------ | -------------- | --------- |
+  | 1             | John   | 1              | 400       |
+  | 2             | Jane   | 1              | 400       |
+  | 5             | Tom    | 1              | 400       |
+  | 1             | John   | 2              | 300       |
+  | 2             | Jane   | 2              | 300       |
+  | 5             | Tom    | 2              | 300       |
+  | 1             | John   | 3              | 200       |
+  | 2             | Jane   | 3              | 200       |
+  | 5             | Tom    | 3              | 200       |
+  | 1             | John   | 4              | 100       |
+  | 2             | Jane   | 4              | 100       |
+  | 5             | Tom    | 4              | 100       |
+
+
+
+- 셀프 조인
+
+  - 자기 자신에게 별칭을 지정하고 다시 조인.
+  - 예시 데이터
+
+  | employee_id | name | nickname |
+  | ----------- | ---- | -------- |
+  | 1           | John | Tom      |
+  | 2           | Jane | Book     |
+  | 5           | Tom  | Air      |
+
+  - 예시
+
+  ```sql
+  SELECT a.employee_id, a.name, b.employee_id, b.nickname FROM employee a JOIN employee b ON a.name=b.nickname
+  ```
+
+  - 결과
+
+  | a.employee_id | a.name | b.employee_id | b.nickname |
+  | ------------- | ------ | ------------- | ---------- |
+  | 3             | Tom    | 1             | Tom        |
+
+  
+
+  
 
 
 
