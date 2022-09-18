@@ -146,6 +146,49 @@
 
 
 
+- INSERT
+
+  - 데이터를 삽입하는 명령어
+
+  - 형태
+
+  ```sql
+  # column을 지정하는 경우
+  INSERT INTO <table_name>(column1, column2, ...) VALUES (value1, value2, ...)
+  
+  # column 지정 없이도 가능하다.
+  INSERT INTO <table_name> VALUES (value1, value2, ...)
+  ```
+
+
+
+- UPDATE
+
+  - 데이터를 변경하는 명령어
+  - 형태
+
+  ```sql
+  UPDATE <table_name> SET <column> = <data> WHERE <조건>
+  ```
+
+
+
+- DELETE
+
+  - 데이터를 제거하는 명령어
+
+  - 형태
+
+  ```sql
+  DELETE FROM <table_name> WHERE <조건>
+  ```
+
+
+
+
+
+### SELECT
+
 - SELECT
 
   - 형식
@@ -437,8 +480,6 @@ SELECT * FROM employee where employee_id in (select employee_id from employee_sa
 
 
 
-# DXX
-
 - `GROUP BY`
 
   - 속성값을 그룹으로 분류할 때 사용한다.
@@ -565,11 +606,7 @@ SELECT * FROM employee where employee_id in (select employee_id from employee_sa
 
 
 
-
-
-
-
-## JOIN
+#### JOIN
 
 - `JOIN`
 
@@ -735,9 +772,184 @@ SELECT * FROM employee where employee_id in (select employee_id from employee_sa
   | ------------- | ------ | ------------- | ---------- |
   | 3             | Tom    | 1             | Tom        |
 
-  
+
+
+
+
+
+
+
+#### UNION
+
+- UNION
+  - 집합 연산자
+  - 하나의 query의 결과를 하나의 집합으로 보고, 두 개의 query 결과를 하나로 결합하여 보여준다.
+  - 집합 연산자 사용시 두 쿼리의 조회 대상 column이 같아야 한다.
+
+
+
+- 예시 데이터
+
+  | NAME   | PART     | AGE  |
+  | ------ | -------- | ---- |
+  | John   | Backend  | 22   |
+  | Jane   | Frontend | 24   |
+  | Albert | Devops   | 26   |
+  | Sam    | UI/UX    | 28   |
 
   
+
+
+
+- UNION
+
+  - 중복 행된 행 중 하나만 남기고 나머지는 제거하여 보여준다.
+    - 교집합을 제거하는 것은 아니다.
+    - 교집합을 제거하는 것은 중복 행 자체를 보여주지 않는 것이지만 UNION은 중복 된 행 중 하나를 제거하여 보여주는 것이다.
+  - 형태
+
+  ```sql
+  SELECT * FROM <table_name> [WHERE 조건] UNION SELECT * FROM <table_name> [WHERE 조건]
+  ```
+
+  - 예시
+
+  ```sql
+  SELECT NAME FROM emp WHERE age>22 UNION SELECT * FROM emp WHERE age>24
+  ```
+
+  - 결과
+    - Albert와 Sam은 두 query에서 중복되기에 중복된 행 중 하나만 보여준다.
+
+  | NAME   | PART     | AGE  |
+  | ------ | -------- | ---- |
+  | Jane   | Frontend | 24   |
+  | Albert | Devops   | 26   |
+  | Sam    | UI/UX    | 28   |
+
+
+
+- UNION ALL
+
+  - 중복된 행도 전부 보여준다.
+  - 형태
+
+  ```sql
+  SELECT <columns> FROM <table_name> [options] UNION ALL SELECT <columns> FROM <table_name> [options]
+  ```
+
+  - 예시
+
+  ```sql
+  SELECT NAME FROM emp WHERE age>22 UNION ALL SELECT * FROM emp WHERE age>24
+  ```
+
+  - 결과
+
+  | NAME   | PART     | AGE  |
+  | ------ | -------- | ---- |
+  | Jane   | Frontend | 24   |
+  | Albert | Devops   | 26   |
+  | Sam    | UI/UX    | 28   |
+  | Albert | Devops   | 26   |
+  | Sam    | UI/UX    | 28   |
+
+
+
+- INTERSECT
+
+  - 두 query에 공통적으로 포함되는 행만 보여준다.
+    - 중복 행된 행 중 하나만 남기고 나머지는 제거하여 보여준다.
+    - 교집합
+  - 형태
+
+  ```sql
+  SELECT <columns> FROM <table_name> [options] INTERSECT SELECT <columns> FROM <table_name> [options]
+  ```
+
+  - 예시
+
+  ```sql
+  SELECT * FROM emp WHERE age > 22 INTERSECT SELECT * FROM emp WHERE age > 24;
+  ```
+
+  - 결과
+
+  | NAME   | PART   | AGE  |
+  | ------ | ------ | ---- |
+  | Albert | Devops | 26   |
+  | Sam    | UI/UX  | 28   |
+
+
+
+- MINUS
+
+  - 첫 query에는 있고, 두 번째 쿼리에는 없는 결과를 보여준다.
+    - 차집합
+
+  - 형태
+
+  ```sql
+  SELECT <columns> FROM <table_name> [options] MINUS SELECT <columns> FROM <table_name> [options]
+  ```
+
+  - 예시
+
+  ```sql
+  SELECT * FROM emp WHERE age > 22 MINUS SELECT * FROM emp WHERE age > 24;
+  ```
+
+  - 결과
+
+  | NAME | PART     | AGE  |
+  | ---- | -------- | ---- |
+  | Jane | Frontend | 24   |
+
+
+
+
+
+## DCL
+
+- 데이터 제어어(Data Control Language)
+  - 데이터 베이스에 대한 권한을 설정하는 명령어이다.
+
+
+
+- GRANT
+
+  - 권한 부여 명령어
+
+  - 형태
+
+  ```sql
+  GRANT <권한> ON <table> TO <사용자>;
+  ```
+
+
+
+- REVOKE
+
+  - 권한 회수 명령어
+  - 형태
+
+  ```sql
+  REVOKE <권한> ON <table> FROM <사용자>
+  ```
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
