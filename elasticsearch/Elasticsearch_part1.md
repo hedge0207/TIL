@@ -193,7 +193,7 @@
     - Position은 0부터 시작해서 1씩 증가하는 구조를 가진다.
     - Offset은 Token의 start와 end에 대한 정보를 가지고 있다.
     - End offset은 실제보다 1 크게 추출되는데, 이는 lucene 내부에서 `substring()`을 사용하기 때문이다.
-  - 추출된 Token, Position, Offset 정보를 포함하여 Term이라 하고, 이를 사용하여 강조와 동의어에 활용한다.
+  - 추출된 Token, Position, Offset 정보를 포함하여 Term이라 하고, 이를 사용하여 highlight와 동의어에 활용한다.
 
 
 

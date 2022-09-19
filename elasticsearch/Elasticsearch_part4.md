@@ -346,7 +346,45 @@
   }
   ```
 
+  - `_source` field에 통으로 저장하지 않고 개별 field를 저장하는 것도 가능하다.
+    - `store: true`로 주면 개별 필드를 저장할 수 있다.
+    - 아래에서 title field는 field를 저장하고, content filed는 저장하지 않았다.
   
+  ```json
+  PUT my-index-000001
+  {
+    "mappings": {
+      "properties": {
+        "title": {
+          "type": "text",
+          "store": true 
+        },
+        "content": {
+          "type": "text"
+        }
+      }
+    }
+  }
+  
+  // data 색인
+  PUT my-index-000001/_doc/1
+  {
+    "title":   "Some short title",
+    "content": "A very long content field..."
+  }
+  ```
+  
+  - 저장된 data를 보고자 하면 아래와 같이 하면 된다.
+    - 결과를 보면 `store: true`로 준 title은 정보가 나오지만, content는 나오지 않는다.
+  
+  ```json
+  GET my-index-000001/_search
+  {
+    "stored_fields": [ "title", "content" ] 
+  }
+  ```
+
+
 
 
 
