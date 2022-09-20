@@ -346,12 +346,13 @@
 
 
 
-- 색인된 문서의 역 인덱스 내용 확인하기
+- terms vector 확인하기
 
+  - inverted index를 보여주는 것은 아니지만, token이 어떤 형태로 생성됐는지 확인할 수 있다.
   - `_termvectors ` API를 사용한다.
-
+    - Mapping에서 `terms_vector` 옵션을 `no`로 했어도 API로 요청을 보내면 동적으로 term vectors를 생성한다.
   - `<인덱스명>/_termvectors/<doc_id>?fields=<확인할 필드>`
-
+  
   ```bash
   $ curl "localhost:9200/test-index/_termvectors/1?fields=title"
   ```

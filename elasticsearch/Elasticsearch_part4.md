@@ -386,6 +386,46 @@
 
 
 
+- `term_vector`
+
+  - Analysis를 거치면 term vector가 생성되는데, 이를 저장할지 말지를 결정하는 옵션이다.
+    - 필드 단위로 설정해준다.
+    - test 필드에만 설정이 가능하다.
+  - term vector에는 아래와 같은 정보들이 포함되어 있다.
+    - term들의 list
+    - 각 term들의 positin(혹은 order)
+    - 각 term들의 start & end offset
+    - payload
+  - 설정 가능한 값들은 다음과 같다.
+    - `no`: Term vectors를 저장하지 않는다.
+    - `yes`: Term만 저장한다.
+    - `with_positions`: Term과 position만 저장한다.
+    - `with_positions_offsets`: Term, postion, offset을 저장한다.
+    - `with_positions_payload`: Term, position, payload를 저장한다.
+    - `with_positions_offsets_payloads`: Term, postion, offset, payload를 저장한다.
+
+  ```json
+  PUT my-index-000001
+  {
+    "mappings": {
+      "properties": {
+        "foo": {
+          "type":"text",
+          "term_vector": "with_positions_offsets"
+        }
+      }
+    }
+  }
+  ```
+
+  - 기본값이 `no`이므로 inverted index에 term vector가 전부 포함되어 있지는 않다.
+    - inverted index에 어떤 정보까지 저장할지는 `index_options`에 따라 정해지는데, 기본값은 `positions`이다.
+    - `postitions`는 doc number, frequency, term position까지 색인한다.
+    - 따라서 `term_vector`값이 기본 값인 `no`로 설정되어 있어도 `match_phrase`와 같은 position 기반의 검색이 가능하다.
+  - 주의사항
+    - `with_positions_offsets`는 해당 필드의 size를 두 배로 늘린다.
+    - Fast vector highlighter를 사용하려면 설정을  `with_positions_offsets`로 변경해야 한다.
+
 
 
 - `copy_to`
