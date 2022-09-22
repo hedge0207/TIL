@@ -525,13 +525,14 @@
     - `--dry-run`: offset reset시에 예쌍 결과를 보여준다.
     - `--execute`: offset을 초기화한다.
   
-    ``` bash
-    # 예상 결과 출력
-    $ kafka-consumer-groups.sh --bootstrap-server <host:port> --group <group> --topic <topic> --reset-offsets --to-earliest --dry-run
-    
-    # offset 초기화
-    $ kafka-consumer-groups.sh --bootstrap-server <host:port> --group <group> --topic <topic> --reset-offsets --to-earliest --execute
-    ```
+  
+  ```bash
+  # 예상 결과 출력
+  $ kafka-consumer-groups.sh --bootstrap-server <host:port> --group <group> --topic <topic> --reset-offsets --to-earliest --dry-run
+  
+  # offset 초기화
+  $ kafka-consumer-groups.sh --bootstrap-server <host:port> --group <group> --topic <topic> --reset-offsets --to-earliest --execute
+  ```
 
 
 
@@ -1109,38 +1110,35 @@
     - Connect container 실행 후 connect API를 이용하여 elasticsearch sink connector를 생성한다.
       - Connector가 생성되면 `connect-<connector-name>` 형식으로 consumer group이 생성된다.
       - `topic.index.map` 옵션은 11 버전부터 삭제 됐다.
-
-
+    
     ```bash
     curl -XPOST <kafka connect url>/connectors -H "Content-Type:application/json" -d '{
-    "name":"elasticsearch-sink",
-    "config":{
-        "connector.class":"io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
-        # 실행할 task(consumer)의 개수를 입력한다.
-        "tasks.max":"1",
-        # message를 받아올 topic을 입력한다.
-        "topics":"<topic 명>",
-        "connection.url":"<elasticsearch url>",
-        "type.name":"log",
-        "key.ignore":"true",
-        "schema.ignore":"false",
-        "value.converter.schemas.enable": "false"
-    }
-    }
-    '
+        "name":"elasticsearch-sink",
+        "config":{
+            "connector.class":"io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+            # 실행할 task(consumer)의 개수를 입력한다.
+            "tasks.max":"1",
+            # message를 받아올 topic을 입력한다.
+            "topics":"<topic 명>",
+            "connection.url":"<elasticsearch url>",
+            "type.name":"log",
+            "key.ignore":"true",
+            "schema.ignore":"false",
+            "value.converter.schemas.enable": "false"
+        }
+    }'
     ```
     
-      - 잘 생성 되었는지 확인한다.
+    - 잘 생성 되었는지 확인한다.
     
     ```bash
     $ curl <kafka connect url>/connectors/elasticsearch-sink/status
     ```
     
-      - 요청 format
+    - 요청 format
         - 위에서 `JsonConverter`를 사용한다고 명시했으므로 반드시 아래의 형식으로 보내야한다.
         - 최상단에 `schema`와 `payload` 필드가 위치해야하며, `schema`에는 이름 그대로 schema에 대한 정보가, `payload`에는 색인하고자 하는 문서를 입력하면 된다.
-
-
+    
     ```json
     // 예시
     {
@@ -1169,41 +1167,36 @@
     ```python
     from kafka import KafkaProducer
     from json import dumps
+    
+    TOPIC = "test"
+    producer = KafkaProducer(acks=0, compression_type="gzip", bootstrap_servers=["kafka_broker_url"], \
+                            value_serializer=lambda x: dumps(x).encode('utf-8'))
+    try:
+    	msg = {
+    		"schema":{
+                    "type":"struct",
+                    "fields":[
+                        {
+                            "type":"string",
+                            "optional":"false",
+                            "field":"name"
+                        },
+                        {
+                            "type":"int64",
+                            "optional":"false",
+                            "field":"age"
+                        }
+                    ]
+                },
+                "payload":{"name":"John", "age":22}
+            }
+        producer.send(TOPIC, value=msg)
+        producer.flush()
+    except Exception as e:
+        print(e)
+    ```
 
 
-​     
-​    TOPIC = "test"
-​    producer = KafkaProducer(acks=0, compression_type="gzip", bootstrap_servers=["kafka_broker_url"], \
-​                            value_serializer=lambda x: dumps(x).encode('utf-8'))
-​    try:
-​        msg = {
-​            "schema":{
-​                "type":"struct",
-​                "fields":[
-​                    {
-​                        "type":"string",
-​                        "optional":"false",
-​                        "field":"name"
-​                    },
-​                    {
-​                        "type":"int64",
-​                        "optional":"false",
-​                        "field":"age"
-​                    }
-​                ]
-​            },
-​            "payload":{"name":"John", "age":22}
-​        }
-​        producer.send(TOPIC, value=msg)
-​        producer.flush()
-​    except Exception as e:
-​        print(e)
-​    ```
-
-
-​    
-
-​    
 
 
 
