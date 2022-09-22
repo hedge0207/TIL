@@ -1105,6 +1105,8 @@
 
 
 
+---
+
   - Sink connect 생성하기
 
     - Connect container 실행 후 connect API를 이용하여 elasticsearch sink connector를 생성한다.
