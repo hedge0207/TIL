@@ -1744,9 +1744,181 @@
   }
   ```
 
-  
 
 
+
+
+
+# function_score
+
+- function_score
+  - query를 통해 검색된 document들의 score를 조작하기 위해 사용하는 query이다.
+  - 검색 결과 중 특정 검색어가 포함된 문서에 가중치를 주는 등의 조작이 가능하다.
+
+
+
+- Score functions
+
+  - `script_score`
+    - script expression을 사용하여가중치를 줄 수 있다.
+
+  ```json
+  GET /_search
+  {
+    "query": {
+      "function_score": {
+        "query": {
+          "match": { "message": "elasticsearch" }
+        },
+        "script_score": {
+          "script": {
+            "source": "Math.log(2 + doc['my-int'].value)"
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  - `weight`
+    - score에 `weight`로 준 값을 곱한다.
+
+  ```json
+  "weight" : number
+  ```
+
+  - `random`
+    - 0이상, 1미만의 임의의 수를 생성한다.
+    - `seed` 값과 `field` 값을 동일하게 주면 항상 동일한 값을 얻을 수 있다.
+
+  ```json
+  GET /_search
+  {
+    "query": {
+      "function_score": {
+        "random_score": {
+          "seed": 10,
+          "field": "_seq_no"
+        }
+      }
+    }
+  }
+  ```
+
+  - `field_value_factor`
+    - 점수에 가중치를 주기 위해 document에 있는 field를 사용하는 방식이다.
+    - 만일 여러 값을 가진 filed를 사용할 경우, 첫 번째 값만 가중치 계산에 사용된다.
+    - 상세 옵션은 [공식 문서](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html#function-field-value-factor) 참고
+
+  ```json
+  GET /_search
+  {
+    "query": {
+      "function_score": {
+        "field_value_factor": {
+          "field": "my-int",
+          "factor": 1.2,
+          "modifier": "sqrt",
+          "missing": 1
+        }
+      }
+    }
+  }
+  ```
+
+  - Decay function
+
+    > [공식문서](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html#function-field-value-factor) 참고
+
+
+
+- Options
+
+  - `boost`
+    - query의 검색 결과에 `boost`의 설정 값 만큼을 곱한다.
+
+  ```json
+  // GET test/_search
+  {
+    "query": {
+      "function_score": {
+        "query": {
+          "match": {
+            "foo": "bar"
+          }
+        },
+        "boost": 10
+      }
+    }
+  }
+  ```
+
+  - `score_mode`
+    - 최종 score를 어떻게 계산할지를 설정하는 값이다.
+    - 예를 들어 `sum`으로 주면 function A로 계산된 점수와 function B로 계산된 점수를 더한다.
+    - `multiply`, `sum`, `avg`, `max`, `min`, `fisrt`를 사용 가능하며, `first`는 matching filter를 가지고 있는 첫 번째 function을 적용하는 옵션이다.
+
+  ```json
+  GET test/_search
+  {
+    "query": {
+      "function_score": {
+        "query": {
+          "match": {
+            "foo": "dog"
+          }
+        },
+        "score_mode": "sum",
+        "functions": [
+          // function A
+          {
+            "filter": { "match": { "foo": "cat" } },
+            "weight": 100
+          },
+          // function B
+          {
+            "filter": { "match": { "foo": "cute" } },
+            "weight": 10
+          }
+        ]
+      }
+    }
+  }
+  ```
+
+  - `boost_mode`
+    - 기존 점수와 function score로 새롭게 계산된 점수로 어떻게 최종 score를 계산할지를 설정하는 옵션이다.
+    - 예를 들어 sum으로 주면, 기존 점수와, 새롭게 계산된 점수를 합한다.
+    - `multiply`, `sum`, `avg`, `max`, `min`, `replace`를 사용 가능하며, `replace`는 기존 점수는 사용하지 않고, function score만 사용하겠다는 의미이다.
+
+  ```json
+  GET test/_search
+  {
+    "query": {
+      "function_score": {
+        "query": {
+          "match": {
+            "foo": "dog"
+          }
+        },
+        "boost_mode": "sum",
+        "functions": [
+          {
+            "filter": { "match": { "foo": "cat" } },
+            "weight": 100
+          },
+          {
+            "filter": { "match": { "foo": "cute" } },
+            "weight": 10
+          }
+        ]
+      }
+    }
+  }
+  ```
+
+  - `min_score`
+    - 이 점수 이상인 문서들만 검색 대상에 포함시킨다.
 
 
 
