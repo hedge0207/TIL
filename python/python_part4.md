@@ -829,8 +829,9 @@
 
 
 
-
 ## 메타클래스
+
+> https://stackoverflow.com/questions/100003/what-are-metaclasses-in-python?rq=1
 
 - Python의 class
 
