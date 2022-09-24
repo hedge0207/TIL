@@ -55,3 +55,53 @@
 | input이 안정적                                               | input이 유동적                                               |
 | Data 처리가 모두 끝난 후 응답이 제공된다.                    | 응답이 바로 제공된다.                                        |
 | 대량의 batch data 처리를 위해 storage와 processing resource가 필요하다 | Batch에 비해 storage는 덜 필요하지만 processing resources는 필요하다. |
+
+
+
+
+
+# Monorepo Vs Polyrepo
+
+> https://medium.com/hcleedev/dev-monorepo-%EA%B0%9C%EB%85%90-%EC%95%8C%EC%95%84%EB%B3%B4%EA%B8%B0-33fd3ce2b767
+
+- Monorepo
+  - 하나의 project를 하나의 repository에서 관리하는 것을 의미한다.
+    - 예로 Front-end 코드와 Back-end 코드를 한 repo에서 관리하는 것을 들 수 있다.
+  - one-repo, uni-repo라고도 부른다.
+
+
+
+- Polyrepo
+  - 하나의 project를 하나의 repository에서 관리하는 것을 말한다.
+    - 예로 Front-end 코드와 Back-end 코드를 각기 다른 repo에서 관리하는 것을 들 수 있다.
+  - many-repo, multi-repo라고도 부른다.
+
+
+
+- Monorepo의 장점
+  - Project의 version을 일괄적으로 관리하기가 쉽다.
+    - 여러 모듈의 버전을 일일이 맞춰주지 않아도 된다.
+  - 코드의 재사용성이 증가한다.
+    - 만일 하나의 project를 구성하는 2개의 각기 다른 repo에서 공통된 code를 사용해야 할 경우, 공유가 불가능하므로 중복된 code가 들어갈 수 밖에 없다.
+    - 그러나 Monorepo의 경우 여러 모듈을 하나의 repo에서 관리하므로 코드의 재사용이 가능하다.
+  - 의존성 관리가 쉬워진다.
+    - 의존성을 하나의 repo에서만 관리하면 되므로 의존성 관리가 간편해진다.
+  - 변경 사항을 보다 원자적으로 관리할 수 있다.
+    - 만일 여러 repo에서 공통적으로 쓰이는 코드가 변경되었을 경우, 모든 repo를 돌면서 변경 사항을 적용해줘야한다.
+    - 그러나 monorepo의 경우 한번의 변경으로 적용이 가능하다.
+  - Team 간의 경계와 code ownership이 유연해진다.
+    - 이를 통해 보다 원활한 협업이 가능해진다.
+
+
+
+- Monorepo의 단점
+
+  - Project가 거대해질 수록 monorepo를 관리하는데 소요되는 비용이 증가한다.
+  - 의존성을 추가하는 데 부담이 없어, 불필요한 의존성이 증가한다.
+
+  - Code Ownership에 위배된다.
+    - Code의 소유권은 단일 팀에 속해야 한다고 생각하는 개발자들도 있다.
+    - Code에 대한 책임이 모호해져 코드 관리가 더 힘들어질 수 있다.
+
+
+
