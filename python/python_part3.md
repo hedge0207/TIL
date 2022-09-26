@@ -1026,3 +1026,552 @@
 
 
 
+# 모듈
+
+- 모듈
+  - 함수나 변수 또는 클래스를 모아 놓은 파일
+  - 다른 파이썬 프로그램에서 불러와 사용할 수 있게끔 만든 파이썬 파일이라고도 할 수 있다.
+
+
+
+- 모듈 사용하기
+
+  - 모듈 생성하기
+
+  ```python
+  # module1.py
+  def hello():
+      return "Hello!"
+  
+  def plus(a,b):
+      return a+b
+  ```
+
+  - 모듈 불러오기
+    - `import`를 통해 불러온 후 사용한다.
+    - 특정한 함수, 클래스, 변수만 불러오고 싶으면 `from`을 사용한다.
+    - 모든 것을 불러오고 싶다면 `from 모듈명 import *`와 같이 적으면 된다.
+    - `as`를 사용하여 이름을 직접 정하는 것도 가능하다.
+
+  ```python
+  # pract.py
+  import module1
+  
+  print(module1.hello())		# Hello!
+  print(module1.plus(4,5))	# 9
+  ```
+
+  ```python
+  from module1 import hello, plus
+  # from module1 import * 와 위 문장은 같다.
+  
+  print(hello())	# Hello!
+  ```
+
+
+
+- `if__name__=="__main__"`
+
+  - `module1.py`를 아래와 같이 수정하면
+
+  ```python
+  # module1.py
+  def hello():
+      return "Hello!"
+  
+  def plus(a,b):
+      return a+b
+  
+  print(hello())
+  print(plus(4,2))
+  ```
+
+  -  `import`할 때 print문이 실행되는 문제가 생긴다.
+
+  ```python
+  from module1 import hello
+  
+  # Hello!
+  # 6
+  ```
+
+  - `if__name__=="__main__"`을 사용하면 위와 같은 문제를 해결할 수 있다.
+    - 이제 `module1.py`를 직접 실행해야 `if__name__=="__main__"` 아래의 문장이 실행되고
+    - import 만으로는 실행되지 않는다.
+
+  ```python
+  # module1.py
+  def hello():
+      return "Hello!"
+  
+  def plus(a,b):
+      return a+b
+  
+  if __name__=="__main__":
+      print(hello())
+      print(plus(4,2))
+  ```
+
+  - `__name__`
+    - 모듈의 이름이 저장되는 변수이다.
+    - Python 내부적으로 사용하는 특별한 변수 이름이다.
+    - 만일 직접 `module1.py` 파일을 실행할 경우, `module1.py`의 `__name__`에는 `__main__` 이라는 문자열이 저장된다.
+    - 하지만 다른 파이썬 셸이나 다른 Python 모듈에서 `module1.py`을 `import` 할 때에는 `__name__` 변수에는 `module1.py`의 모듈 이름 값 `module1`가 저장된다.
+
+
+
+- 모듈을 불러오는 또 다른 방법
+
+  - 모듈이 있는 폴더로 실행 파일을 옮기지 않고 `sys`를 사용해 모듈을 불러올 수 있다.
+  - `sys.path`는 python 라이브러리가 설치되어 있는 라이브러리를 보여 준다. 만약 파이썬 모듈이 위 디렉토리에 들어 있다면 모듈이 저장된 디럭토리로 이동할 필요 없이 바로 불러서 사용할 수 있다.
+
+  ```python
+  import sys
+  
+  print(sys.path)
+  """
+  ['', 'C:\\Windows\\SYSTEM32\\python37.zip', 'c:\\Python37\\DLLs', 
+  'c:\\Python37\\lib', 'c:\\Python37', 'c:\\Python37\\lib\\site-packages', 
+  'C:/doit/mymod']
+  """
+  ```
+
+  - 모듈이 위치한 경로가 `D:\`일 경우
+    - 명령 프롬프트에서는 `/`, `\` 둘 다 사용가능하다.
+    - 소스코드에서는 반드시 `/` 또는 `\\`를 사용해야 한다.
+
+  ```python
+  import sys
+  sys.path.append("D:/")
+  
+  import module1
+  print(module1.hello())  # Hello!
+  ```
+
+  - 혹은 `	PYTHONPATH`환경 변수를 사용하는 방법도 있다.
+
+  ```bash
+  $ set PYTHON=D:/
+  ```
+
+
+
+
+- `-m` 옵션
+
+  - `-m`
+    - `python <실행시킬 python file>`은 스크립트를 실행시키는 명령어이다.
+    - 여기에 `-m` 옵션을 추가하면 모듈을 sys.path에서 찾아서 실행시킨다.
+  - 문제
+    - 아래 예시에서 main.py를 실행하면 error가 발생하는데 그 이유는 다음과 같다.
+    - import는 기본적으로 불러온 코드 전체를 실행한다.
+    - 그런데 `script.py`에는 sys.argv로 인자를 받아오는 코드가 있는데, 인자를 넣어준 적이 없으니 error가 발생하는 것이다.
+
+  ```python
+  # script.py
+  import sys
+  
+  def say_hello(name):
+      print("Hello", name)
+  
+  say_hello(sys.argv[1])
+  
+  
+  # main.py
+  import say_hello
+  
+  say_hello('Theo')
+  ```
+
+  - 모듈화
+    - 위와 같은 문제를 해결하기 위해 모듈화를 한다.
+    - 이제 main.py를 실행시키든, script.py에 인자를 넘겨서 실행시키든 잘 동작한다.
+
+  ```python
+  # my_module.py
+  def say_hello(name):
+      print("Hello", name)
+  
+  
+  # script.py
+  import sys
+  import my_module
+  
+  my_module.say_hello(sys.argv[1])
+  
+  
+  # main.py
+  import say_hello
+  
+  say_hello('Theo')
+  ```
+
+  - `__name__`의 활용
+    - 위에서는 모듈과 해당 모듈을 사용하는 스크립트를 따로 작성했는데, `__name__`을 활용하면 이 코드를 합칠 수 있다.
+
+  ```python
+  # my_module.py
+  import sys
+  
+  def say_hello(name):
+      print("Hello", name)
+  
+  if __name__=="__main__":
+      say_hello(sys.argv[1])
+  ```
+
+  - `-m` 옵션으로 실행
+    - python 스크립트가 아닌 모듈을 실행하기에, 파일명이 아닌, 확장자를 떼고 입력한다.
+
+  ```bash
+  $ python -m my_module 'Theo'
+  ```
+
+
+
+
+
+
+
+# 패키지
+
+- 패키지
+
+  - python 모듈을 계층적(디렉토리 구조)으로 관리할 수 있게 해주는 것
+  - 아래 구조에서 
+    - person은 패키지 이름
+    - person, family, school, company는 디렉터리 이름
+    - 확장자가 .py 인 파일은 파이썬 모듈이다.
+
+  ```python
+  person/
+  	__init__.py
+      family/
+      	__init__.py
+          father.py
+          husband.py
+      school/
+      	__init__.py
+      	student.py
+      company/
+      	__init__.py
+          employee.py
+  ```
+
+
+
+- 생성하기
+
+  - 위 구조를 바탕으로 아래 파일들을 생성한다.
+
+  ```python
+  D:/test/person/__init__.py
+  D:/test/person/company/__init__.py
+  D:/test/person/company/employee.py
+  D:/test/person/family/__init__.py
+  D:/test/person/family/husband.py
+  ```
+
+  - employee.py 
+
+  ```python
+  def work():
+      print("working")
+  ```
+
+  - husband.py
+
+  ```python
+  def clean():
+      print("cleaning")
+  ```
+
+  - 환경 변수에 경로 추가하기
+
+  ```bash
+  set PYTHONPATH=D:/test
+  ```
+
+  
+
+- 사용하기
+
+  - 반드시 명령 프롬프트에서  파이썬 인터프리터를 실행하여 진행해야 한다. IDLE 셸이나 VSCode의 파이썬 셸에서는 에러가 발생한다.
+
+  ```bash
+  # 환경 변수를 추가 하고
+  set PYTHONPATH=D:/test
+  # python 인터프리터를 실행한다.
+  python
+  ```
+
+  - 패키지 안의 함수 실행하기
+
+  ```python
+  # 첫 번째 방법
+  >>> import person.company.employee
+  >>> person.company.employee.work()
+  working
+  
+  # 두 번째 방법
+  >>> from person.company import employee
+  >>> employee.work()
+  working
+  
+  # 세 번째 방법
+  >>> from person.company.employee import work
+  >>> work()
+  working
+  
+  # 아래 방법은 불가능하다.
+  # 아래 방법은 game 디렉토리의 모듈 또는 game 디렉토리의 __init__.py에 정의한 것만 참조할 수 있다.
+  >>> import person
+  >>> person.company.employee.work()
+  
+  # 아래 방법도 불가능하다.
+  # 도트 연산자(.)를 사용해서 import a.b.c처럼 import할 때 가장 마지막 항목인 c는 반드시 모듈 또는 패키지여야만 한다.
+  >>> import person.company.employee.work  # import 자체가 안된다.
+  ```
+
+  
+
+- `__init__.py`
+
+  - 해당 디렉터리가 패키지의 일부임을 알려주는 역할.
+  - 패키지에 포함된 디렉터리에 `__init__.py` 파일이 없다면 패키지로 인식되지 않는다.
+    - python3.3 버전부터는 `__init__.py` 파일이 없어도 패키지로 인식한다.
+  - 아래 예시에서 `*`를 사용하여 모든 것을 import했음에도 `work`가 정의되지 않았다는 에러가 뜬다.
+
+  ```python
+  >>> from person.company import *
+  >>> employee.work()  # NameError: name 'employee' is not defined
+  ```
+
+  - 특정 디렉터리의 모듈을 `*`를 사용하여 import할 때에는 다음과 같이 해당 디렉터리의 `__init__.py` 파일에 `__all__` 변수를 설정하고 import할 수 있는 모듈을 정의해 주어야 한다.
+    - `from person.company.employee import *`는 `__all__`과 상관 없이 모두 import 된다.
+    - `from a.b.c import *`에서 c가 모듈인 경우에는 `__all__`과 무관하게 모두 import 된다.
+
+  ```python
+  # D:/test/person/company/__init__.py
+  __all__ = ['employee']
+  ```
+
+  - 이제 다시 실행하면 이상 없이 실행되는 것을 확인할 수 있다.
+
+  ```python
+  >>> from person.company import *
+  >>> employee.work()
+  working
+  ```
+
+
+
+- relative 패키지
+
+  - 만약 한 디렉토리의 모듈이 다른 디렉토리의 모듈을 사용하고 싶다면 다음과 같이 수정하면 된다.
+  - `D:/test/person/company/employee.py` 모듈이 `D:/test/person/family/husband.py`의 모듈을 사용하고 싶다면
+
+  ```python
+  # employee.py
+  from person.family.husband import clean
+  
+  def work():
+      print("working")
+      clean()
+  ```
+
+  - 이제 실행해보면 잘 실행되는 것을 확인 가능하다.
+
+  ```python
+  >>> from person.company.employee import work
+  >>> work()
+  working
+  cleaning
+  ```
+
+  - 위 예시처럼 전체 경로를 사용하여 import 할 수도 있지만 다음과 같이 relative하게 import 하는 것도 가능하다.
+    - relative 접근자는 모듈 안에서만 사용해야 한다. 인터프리터에서는 사용이 불가능하다.
+    - `..`: 부모 디렉토리
+    - `.`: 현재 디럭토리
+
+  ```python
+  from ..family.husband import clean
+  
+  def work():
+      print("working")
+      clean()
+  ```
+
+
+
+
+# import
+
+- from과 import
+
+  - from은 모듈을 불러올 경로를, import는 불러올 모듈 혹은 모듈 내의 불러올 것들(함수, class, 변수 등)를 지정한다.
+  - 경로의 기준은 최초에 실행되는 파일이다.
+    - 즉 아래와 같은 구조로 되어 있을 때 main.py를 실행한다고 하면 모든 경로는 main.py의 위치를 기준으로 설정해야 한다.
+    - say_hello 함수를 직접 import하는 test.py 입장에서 보면 `from hello.hello import say_hello`와 같이 import 해야 하겠지만 모든 경로는 최초 실행 파일인 main.py를 기준으로 작성해야 한다.
+    - 만일 test.py를 직접 실행한다면 `from hello.hello import say_hello`와 같이 import하는 것이 맞다.
+
+
+  ```python
+  '''
+  module/
+    - test.py
+    - hello/
+      - hello.py
+  main.py
+  '''
+  
+  # main.py
+  from module.test import excute_say_hello
+  
+  
+  excute_say_hello()
+  
+  
+  # test.py
+  from module.hello.hello import say_hello
+  
+  
+  def excute_say_hello():
+      say_hello()
+      
+      
+  # hello.py
+  def say_hello():
+      print("Hello World!")
+  ```
+
+
+
+- import할 때 정확히 무슨 일이 일어나는가?
+  - `import test`라는 명령어가 있을 때, python은 다음의 3가지 장소를 순서대로 돌아다니며 test를 찾는다.
+    - 아래의 세 군데에서 모두 찾을 수 없으면 `ModuleNotFoundError`를 반환한다.
+  - sys.modules
+    - 이미 import 된 모듈과 패키지들이 딕셔너리 형태로 저장되어 있는 곳이다.
+    - 이미 import 된 것들을 다시 찾을 필요가 없어지게 된다.
+  - built-in modules
+    - python이 제공하는 공식 라이브러리들이다.
+  - sys.path
+    - python 라이브러리들이 설치되어 있는 경로를 보여주며, string을 요소로 갖는 리스트로 이루어져 있다.
+    - 실행시킨 Python 스크립트의 경로는 default로 sys.path에 포함되어 있다.
+    - 따라서 절대경로는 현재 디렉토리부터 시작하게 된다.
+
+
+
+- sys.path
+
+  - 생성 과정
+    - 최초 시행된 Python 스크립트의 디렉터리의 위치를 리스트에 추가한다.
+    - 환경변수 중 `PYTHONPATH`의 값을 가져온다.
+    - OS나 Python 배포판이 설정한 값들을 더한다.
+
+  - `sys` module을 통해 list에 어떤 값들이 있는지 확인 가능하다.
+
+  ```python
+  import sys
+  
+  print(sys.path)
+  ```
+
+
+
+- 절대경로와 상대경로
+
+  - 절대경로
+    - import하는 파일이나 경로에 상관 없이 항상 동일한 경로를 작성한다.
+    - 경로가 지나치게 길어질 수 있다는 문제가 존재한다.
+  - 상대경로
+    - import하는 위치를 기준으로 경로를 정의한다.
+    - 상대 경로의 기준이 되는 현재 디렉터리는 `__name__`에 의해서 정해지게 된다.
+    - 스크립트를 직접 실행시킨 경우 `__name__`에는 `__main__`이 저장되고, import한 경우 `__name__`에는 import 된 모듈의 경로가 저장된다.
+    - 따라서 직접 실행시킬 파일에는 상대경로를 적용하면 안된다.
+  - 상대경로 error 예시
+    - 예를 들어 아래와 같이 test.py에서 import를 상대경로로 작성했을 시에, main.py를 실행하면 아무런 error도 발생하지 않는다.
+    - main.py를 실행할 경우 test.py `__name__`에는 module.test가 들어가기 때문에 `module.test.py` 파일이 상대경로의 기준 경로가 된다.
+    - 반면에, test.py를 실행할 경우 `__name__`에는 `__main__`이 들어가게 되고, python은 `__main__`이라는 경로를 찾을 수 없으므로 error를 반환한다.
+
+  ```python
+  '''
+  module/
+    - test.py
+    - hello/
+      - hello.py
+  main.py
+  '''
+  
+  # main.py
+  from module.test import excute_say_hello
+  
+  
+  excute_say_hello()
+  
+  
+  # test.py
+  from .hello.hello import say_hello
+  
+  
+  def excute_say_hello():
+      print(__name__)
+      say_hello()
+      
+      
+  # hello.py
+  def say_hello():
+      print("Hello World!")
+  ```
+
+
+
+- sys.path에 경로 추가하여 import하기
+
+  - 다른 사람이 만든 패키지를 사용하거나, 직접 만든 패키지라도 경로를 일일이 지정해주기 힘들 경우 sys.path에 경로를 추가하여 사용하면 된다.
+  - sys.path는 list형이므로 append를 통해, 문자열로 된 경로를 추가해주면 된다.
+
+  ```python
+  '''
+  module/
+    - test.py
+  main.py
+  '''
+  
+  # main.py
+  import sys
+  sys.path.append('D:/test/module')	# 추가해주고
+  from my_module import say_hello		# 불러온다.
+  
+  
+  say_hello()
+  
+  
+  # test.py
+  def say_hello():
+      print(__name__)			# my_module
+      print('Hello World!')
+  ```
+
+  - 절대경로로 import했을 때와의 차이점
+    - 위와 디렉터리 구조는 동일하지만 아래와 같이 절대경로로 import하면 `__name__`이 달라지게 된다.
+
+  ```python
+  # main.py
+  from module.my_module import say_hello	# 절대경로로 import
+  
+  say_hello()
+  
+  
+  # test.py
+  def say_hello():
+      print(__name__)			# module.my_module
+      print('Hello World!')
+  ```
+
+  - 주의점
+    - 당연하게도 이미 존재하는 경로를 추가하거나, sys.modules, built-in modules에 존재하는 모듈 명을 추가할 경우, 문제가 생길 수 있다.
+    - 또한 해당 파일의 sys.path에만 추가되는 것이지 해당 파일이 import하는 파일에는 추가되지 않는다.
+    - 예를 들어 위에서 `main.py`파일 내의 sys.path에는 추가되었지만 `test.py` 파일 내의 sys.path에는 추가되어 있지 않다.
+    - python 전역에 추가하는 방법도 있지만 권장되지는 않는다.
+
