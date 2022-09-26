@@ -244,6 +244,24 @@
 
 <br/>
 
+
+
+- VScode extension 중 `remote-ssh`가 `downloading vs code server locally...`에서 막힌 경우 해결 방법
+
+  - `remote-ssh` extension은 원격 서버의 `~/.vscode-server/bin/<commit_id>` 폴더에 원격 연결에 필요한 파일들을 다운 받는다.
+  - 만일 원격 서버의 network가 막혀 있다면 다운 받을 수 없어 지속적으로 error가 발생하게 된다.
+  - 따라서 이 경우 network 연결이 가능한 환경에서 필요한 파일을 download 후 해당 파일을 위 경로에 옮겨줘야 한다.
+  - 아래 명령어로 다운 받는다.
+
+  ```bash
+  $ curl -sSL "https://update.code.visualstudio.com/latest/server-linux-x64/stable" -o vscode-server-linux-x64.tar.gz
+  ```
+
+  - 다운 받은 후 위 파일을 원격 서버의 `~/.vscode-server/bin/<commit_id>` 폴더로 옮긴 후 압축을 푼다.
+    - 압축 폴더는 제외하고 압축 폴더 내부의 파일이 `~/.vscode-server/bin/<commit_id>` 경로에 위치해야 한다.
+
+<br/>
+
 <br/>
 
 ### PyCham 설치
