@@ -658,7 +658,7 @@
   - pydantic에서 제공하는 `@validator` 데코레이터를 사용한다.
     - 첫 번째 인자로는 class 자체를 받는다.
     - 두 번째 인자는 검증 대상 필드를 받는다.
-    - 세 번째 인자는 검증 대상 필드를 제외한 다른 필드들의 정보를 받는다.
+    - 그 밖에 field 정보와 config 정보를 받는다.
 
   ```python
   from pydantic import BaseModel, ValidationError, validator
