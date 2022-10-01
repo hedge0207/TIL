@@ -573,7 +573,52 @@
 
 
 
+# elasticsearch의 색인 처리 과정
 
+- Lucene의 색인 처리 과정
+  -  In-memory buffer에 데이터 적재
+     - 문서의 색인을 요청해도, Lucene은 바로 segment를 생성하지 않는다.
+     - segment 생성이란 곧 데이터를 디스크에 쓰는 것을 의미하는데, 이는 비용이 많이 드는 작업이기 때문이다.
+     - 따라서 Lucene은 먼저 작업 속도가 더 빠른 in-memory buffer에 data를 쌓는다.
+     - 아직 segment를 생성하지는 않았으므로, 검색은 불가능하다.
+  -  Flush
+     - 물리 디스크가 아닌 시스템 캐시에 segment를 생성하고 data를 저장한다.
+     - segment가 생성되었으므로 검색이 가능해진다.
+     - 그러나, cache에 저장한 것이므로 데이터가 유실 될 위험이 있다.
+  -  Commit
+     - 물리 디스크에 segment를 생성하고 data를 저장한다.
+     - 리소스가 많이 필요하지만 물리 디스크에 저장이 되었으므로 data의 유실로부터 보다 안전한 상태가 된다.
+
+
+
+- Elasticsearch와 Lucene의 차이점
+
+  - 유사한 동작을 두고 서로 지칭하는 용어가 다르다.
+
+  | Lucene | Elasticsearch |
+  | ------ | ------------- |
+  | flush  | refresh       |
+  | commit | flush         |
+
+  - Lucene에는 존재하지 않는 translog(transactional log)를 사용한다.
+
+
+
+- Elasticsearch의 색인 처리 과정
+  - Elasticsearch는 Lucene 기반으로 만들어져 색인 방식도 유사하다.
+  - In-memory buffer와 translog에 data를 적재한다.
+    - translog는 memory가 아닌 disk에 저장된다.
+    - Lucene의 경우 flush와 commit 사이에 뭔가 문제가 생겨 memory에서 disk로 data를 옮기지 못하면, 해당 data는 유실되게 된다.
+    - Elasticsearch는 이러한 문제를 해결하기 위해 요청 정보와 data가 담긴 translog를 작성하고, 문제가 생겼을 경우 이를 복구에 사용한다.
+  - Refresh
+    - Lucene의 Flush와 마찬가지로 memory에 segment를 생성하고, data를 저장한다.
+    - segment에 저장되었으므로 검색이 가능해진다.
+  - Flush
+    - in-memory로 저장된 segment를 disk에 쓰는 작업을 한다.
+    - 동시에 translog의 작성을 멈추고, 새로운 blank translog를 생성한다.
+    - Flush가 발생하는 주기가 따로 있는 것은 아니다.
+    - 아직 flush 되지 않은 translog와 각 flush를 수행하는 비용의 trade off를 고려하는 heuristic으로 flush 실행 여부를 결정한다.
+    - 이러한 결정에는 translog에 얼마나 많은 transaction log가 적재되었는지, data의 크기, 마지막 flush 시점 등이 영향을 미친다.
 
 
 
