@@ -306,6 +306,62 @@
   email.read_email()
   ```
 
+  - class method는 주로 아래 두 용도로 사용된다.
+    - 생성자를 호출하기 전, 전처리를 하기 위한 factory method로 사용.
+    - static method를 호출할 때, class 명을 hard-coding하지 않기 위해 사용.
+
+  ```python
+  # 용도1
+  class Pizza(object):
+      def __init__(self, ingredients):
+          self.ingredients = ingredients
+  
+      @classmethod
+      def from_fridge(cls, fridge):
+          # Pizza의 instance를 생성하기 전에 전처리를 한다.
+          return cls(fridge.get_cheese() + fridge.get_vegetables())
+  
+  
+  # 용도2
+  class Pizza(object):
+      def __init__(self, radius, height):
+          self.radius = radius
+          self.height = height
+  
+      @staticmethod
+      def compute_area(radius):
+           return math.pi * (radius ** 2)
+  
+      @classmethod
+      def compute_volume(cls, height, radius):
+           return height * cls.compute_area(radius)
+  
+          
+  # 만일 위 코드를 @staticmethod로 선언했다면 아래와 같이 cls대신 class name인 Pizza를 적어야 한다.
+  class Pizza(object):
+      def __init__(self, radius, height):
+          self.radius = radius
+          self.height = height
+  
+      @staticmethod
+      def compute_area(radius):
+           return math.pi * (radius ** 2)
+  
+      @staticmethod
+      def compute_volume(height, radius):
+           return height * Pizza.compute_area(radius)
+  
+  # Pizza를 상속하는 Peperoni class가 있다면, 그 때마다 오버라이딩을 해줘야하는데 cls를 사용하면 오버로딩 없이 가능하다.
+  class Peperoni(Pizza):
+      @staticmethod
+      def compute_volume(height, radius):
+           return height * Peperoni.compute_area(radius)
+  ```
+
+  - [Fluent Python]의 저자인 루시아누 하말류의 주장
+    - `@classmethod`는 용도가 명확한데 비해 `@staticmethod`는 그렇지 않은 것 같다.
+    - 만일 `@staticmethod`를 써야 하는 상황이라면 class 선언부 앞, 뒤에 일반 함수로 선언하는 것이 더 나은 것 같다.
+
 
 
 - `__new__`, `__init__`, `__call__`
