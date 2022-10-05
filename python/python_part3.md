@@ -1162,10 +1162,25 @@
   - `-m`
     - `python <실행시킬 python file>`은 스크립트를 실행시키는 명령어이다.
     - 여기에 `-m` 옵션을 추가하면 모듈을 sys.path에서 찾아서 실행시킨다.
-  - 문제
-    - 아래 예시에서 main.py를 실행하면 error가 발생하는데 그 이유는 다음과 같다.
-    - import는 기본적으로 불러온 코드 전체를 실행한다.
-    - 그런데 `script.py`에는 sys.argv로 인자를 받아오는 코드가 있는데, 인자를 넣어준 적이 없으니 error가 발생하는 것이다.
+    - 따라서, 실제 해당 파일의 경로를 찾아서 실행할 필요 없이, 해당 모듈이 `sys.path`에 등록되어 있다면 `-m` 옵션으로 바로 실행할 수 있다.
+  - `-m` 옵션으로 실행하면, 현재 디렉토리가 `sys.path`에 추가되어 별도의 추가 없이도 현재 디렉터리의 모듈들을 사용할 수 있다.
+    - `-m` 옵션 없이 실행하면, 최초로 실행시킨 script가 위치한 directorty가 `sys.path`에 추가된다.
+
+  ```bash
+  # 만일 -m 없이 pip를 실행하려면 아래와 같이 pip의 실제 위치를 찾아서 실행시켜야 한다.
+  $ python path/to/my/python/lib/site-packages/pip/__main__.py
+  
+  # 그러나 -m을 사용하면 sys.path에 등록된 pip 모듈을 바로 실행시킬 수 있다.
+  $ python -m pip
+  ```
+
+
+
+
+- 문제
+  - 아래 예시에서 main.py를 실행하면 error가 발생하는데 그 이유는 다음과 같다.
+  - import는 기본적으로 불러온 코드 전체를 실행한다.
+  - 그런데 `script.py`에는 sys.argv로 인자를 받아오는 코드가 있는데, 인자를 넣어준 적이 없으니 error가 발생하는 것이다.
 
   ```python
   # script.py
