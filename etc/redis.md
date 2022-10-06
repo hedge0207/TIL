@@ -289,7 +289,9 @@
 
 
 
-# redis 사용해보기
+# Redis 사용해보기
+
+## 설치
 
 - Docker로 redis 설치하기
 
@@ -397,9 +399,11 @@
 
 
 
-- redis-cli에서 사용하기
 
-  - redis-cli 접속
+
+## cli
+
+- redis-cli 접속
 
   ```bash
   $ redis-cli [-h 호스트 주소] [-p 포트] [-n db 번호] [-s 소켓] [-a 비밀번호] [-u 서버 url]
@@ -407,56 +411,59 @@
 
   - 비밀번호 입력
     - redis-cli를 실행할 때 `-a`를 입력하지 않았으면 아래 명령어를 통해 인증이 가능하다.
-  
+
   ```bash
   > auth <password>
   ```
-  
-  - redis 정보 확인
-  
+
+
+
+
+- redis 정보 확인
+
   ```bash
   > info
   ```
-  
+
   - config 정보 확인
-  
+
   ```bash
   > config get <확인할 정보>
   ```
-  
+
   - grep 사용하기
     - redis-cli 내부가 아닌 외부에서 아래 명령어 실행
-  
+
   ```bash
   $ redis-cli [-h 호스트 주소] [-p 포트] [-n db 번호] [-s 소켓] [-a 비밀번호] [-u 서버 url] | grep <찾을 내용>
   ```
-  
+
   - 도움말
-  
+
   ```bash
   > help
   ```
-  
+
   - 모니터링
-  
+
   ```bash
   > monitor
   ```
-  
+
   - 모든 key 확인
     - redis는 single thread이다.
     - 이 명령을 처리하기 위해 뒤의 작업들은 멈춰버리므로 가급적 사용을 자제하는 것이 좋다.
     - scan을 사용하는 것이 좋다.
-  
+
   ```bash
   > keys *
   ```
-  
+
   - scan
     - cursor 기반으로 key들을 출력한다.
     - 첫 번째 응답(`1)`)으로 다음번 cursor가 오는데 다시 이 것을 cursor애 넣고 명령어를 입력하는 것을 반복하다 0이 나오면 모든 key를 조회했다는 뜻이 된다.
     - 첫 scan에서 아무것도 안 나온다고 결과가 없는 것이 아닐 수도 있다.
-  
+
   ```bash
   > scan <cursor> [Match pattern] [Count]
   
@@ -477,58 +484,64 @@
      10) "key21"
      11) "key2"
   ```
-  
-  - 데이터 삽입
-    - 옵션으로ttl(초)을 줄 수 있다.
-  
+
+
+
+
+- 데이터 삽입
+  - 옵션으로ttl(초)을 줄 수 있다.
+
   ```bash
   > set <key> <value> [ex seconds]
   ```
-  
+
   - 데이터 여러 개 삽입
-  
+
   ```bash
   > mset <key1> <value1> <key2> <value2> ...
   ```
-  
+
   - list 자료형의 맨 앞 부터 삽입 삽입
     - 문자열이라도 `"`는 붙이지 않아도 된다.
     - space 로 구분한다.
-  
+
   ```bash
   > lpush my_list Hello
   > lpush my_list World
   > lpush my_list Hello World
   > lpush my_list HelloWorld
   ```
-  
+
   - list 자료형의 맨 뒤 부터 삽입
     - `rpush` 사용
     - 나머지는 `lpush`와 동일
-  
+
   - 소멸 시간 지정해서 삽입
     - 단위는 초
-  
+
   ```bash
   > setex <key> <시간> <value>
   ```
-  
-  - 데이터 조회
-    - 찾으려는 키가 없는 경우 `(nil)`을 반환한다.
-  
+
+
+
+
+- 데이터 조회
+  - 찾으려는 키가 없는 경우 `(nil)`을 반환한다.
+
   ```bash
   > get <key>
   ```
-  
+
   - 데이터 여러 개 조회
-  
+
   ```bash
   > mget <key1> <key2> ...
   ```
-  
+
   - 리스트 데이터 앞에서부터 조회
     - 뒤의 숫자는 몇 번째 부터 몇 번째 까지를 조회할지를 선택하는 것이다.
-  
+
   ```bash
   lrange my_list 0 -1
   
@@ -539,67 +552,78 @@
   4) "World"
   5) "Hello"
   ```
-  
-  - 데이터 삭제
-    - `(integer) 1`은 삭제 성공, `(integer) 0`은 삭제하려는 데이터가 없을 경우 반환된다.
-  
+
+
+
+
+- 데이터 삭제
+  - `(integer) 1`은 삭제 성공, `(integer) 0`은 삭제하려는 데이터가 없을 경우 반환된다.
+
   ```bash
   > del <key>
   ```
-  
+
   - 모든 데이터 삭제
-  
+
   ```bash
   > flushall
   ```
-  
+
   - 리스트형 데이터에서 맨 뒤의 데이터 삭제
     - 맨 앞의 데이터 삭제는 `lpop`
-  
+
   ```bash
   > rpop my_list
   ```
-  
+
   - 리스트형 데이터에서 맨 뒤의 데이터 삭제 후, 삭제한 값을 다른 list에 삽입(deprecated)
-  
+
   ```bash
   > rpop my_list other_list
   ```
-  
+
   - 리스트형 데이터에서 head나 tail을 삭제하고 이를 다른 list의 head나 tail에 삽입
-  
+
   ```bash
   # my_list의 tail(right)을 빼서 other_list의 head(left)에 삽입
   > lmove my_list other_list rigth left
   ```
-  
+
   - 리스트형 데이터에서 일정 범위 제외하고 삭제
     - 삭제할 범위가 아닌 삭제하지 않을 범위를 지정한다.
-  
+
   ```bash
   > ltrim my_list <시작> <끝>
   ```
-  
-  - key 이름 변경
-    - rename의 경우 변경하려는 이름의 key가 이미 존재할 경우 덮어 쓴다.
-    - renamenx의 경우 변경하려는 이름의 key가 있을 경우 `(integer) 0`을 반환한다.
-  
+
+
+
+
+- key 이름 변경
+  - rename의 경우 변경하려는 이름의 key가 이미 존재할 경우 덮어 쓴다.
+  - renamenx의 경우 변경하려는 이름의 key가 있을 경우 `(integer) 0`을 반환한다.
+
   ```bash
   > rename <key>
   
   > renamenx <key>
   ```
-  
+
   - 리스트형 데이터 변경
-  
+
   ```bash
   # my_list의 value인 리스트에서, 첫 번째 인자를 Bye로 변경
   LSET my_list 0 "Bye"
   ```
-  
+
+
+
+
+- 기타
+
   - 타임 아웃까지 남은 시간 확인
     - `(integer) -1`은 기한이 없는 경우, `(integer) -2`는 키 값이 없거나 소멸된 경우 반환된다.
-  
+
   ```bash
   # 초 단위로 반환
   > ttl <key>
@@ -607,28 +631,30 @@
   # 밀리 초 단위로 반환
   > pttl <key>
   ```
-  
+
   - 리스트 길이 확인
-  
+
   ```bash
   > llen my_list
   ```
-  
+
   - ttl(time to live) 제거하기
     - 특정 키를 삭제하지 않고 redis에 계속 저장하고 싶을 때 사용한다.
-  
+
   ```python
   > persist <key>
   ```
-  
+
   - ttl(time to live) 설정하기
     - 기본적으로 expire 명령을 통해 타임아웃을 설정해주지 않으면 -1(무기한)로 설정된다.
-  
+
   ```bash
   > expire <key> <seconds>
   ```
 
 
+
+## python
 
 - python에서 사용하기
 
