@@ -658,23 +658,23 @@
   
   ```python
   @classmethod
-      def __call__(cls, key, all_partitions, available):
-          """
-          Get the partition corresponding to key
-          :param key: partitioning key
-          :param all_partitions: list of all partitions sorted by partition ID
-          :param available: list of available partitions in no particular order
-          :return: one of the values from all_partitions or available
-          """
-          if key is None:
-              if available:
-                  return random.choice(available)
-              return random.choice(all_partitions)
+  def __call__(cls, key, all_partitions, available):
+      """
+      Get the partition corresponding to key
+      :param key: partitioning key
+      :param all_partitions: list of all partitions sorted by partition ID
+      :param available: list of available partitions in no particular order
+      :return: one of the values from all_partitions or available
+      """
+      if key is None:
+          if available:
+              return random.choice(available)
+          return random.choice(all_partitions)
   
-          idx = murmur2(key)
-          idx &= 0x7fffffff
-          idx %= len(all_partitions)
-          return all_partitions[idx]
+      idx = murmur2(key)
+      idx &= 0x7fffffff
+      idx %= len(all_partitions)
+      return all_partitions[idx]
   ```
 
 
@@ -874,6 +874,7 @@
   bootstrap_servers='127.0.0.1:9092',
   topic = 'test'
   
+  # enable_auto_commit(default True) 값을 아래와 같이 False로 주면, 수동으로 커밋을 해줘야 한다.
   consumer = KafkaConsumer(bootstrap_servers=bootstrap_servers,
                           group_id='test-group', 
                           value_deserializer=deserializer_value, 
@@ -886,6 +887,7 @@
       print(msg.value.get('message'))
       partitions = consumer.assignment()
       print(partitions)
+      # enable_auto_commit을 False로 줬기에 아래와 같이 수동으로 commit을 해준다.
       consumer.commit()
   ```
 
