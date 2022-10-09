@@ -1,5 +1,11 @@
 # Design Pattern
 
+> https://github.com/faif/python-patterns
+>
+> https://refactoring.guru/design-patterns
+
+
+
 - Design pattern
 
   - 소프트웨어를 개발하면서 공통으로 발생하는 문제를 해결하기 위해 자주 사용되는 방법들을 정리한 패턴이다.
