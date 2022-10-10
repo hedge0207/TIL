@@ -679,8 +679,6 @@
 
 
 
-
-
 - Consumer 구현
 
   ```python
@@ -889,6 +887,20 @@
       print(partitions)
       # enable_auto_commit을 False로 줬기에 아래와 같이 수동으로 commit을 해준다.
       consumer.commit()
+  ```
+
+
+
+- Kafka python topic 생성하기
+
+  ```python
+  from kafka import KafkaAdminClient
+  from kafka.admin import NewTopic
+  
+  
+  kafka_admin_client = KafkaAdminClient(bootstrap_servers="127.0.0.1:9092")
+  topic = NewTopic("my-topic", 3, 1)
+  kafka_admin_client.create_topics([topic])
   ```
 
 
