@@ -7,7 +7,7 @@
     -  `Pre-request Script`에는 server로 reqeust를 보내기 전에 필요한 작업을 정의한다.
     - `Tests`에는 sever에서 response가 온 이후에 해야 하는 작업을 정의한다.
 
-  ![image-20220713095013155](Test.assets/image-20220713095013155.png)
+  ![image-20220713095013155](postman.assets/image-20220713095013155.png)
 
   - Script의 실행 순서는 다음과 같다.
     - Pre-request script  →  Reqeust  →  Response  →  Test script
@@ -416,12 +416,12 @@
 
   - 포스트맨 우측 하단의 `runner`를 클릭한다.
 
-  ![image-20220714100859865](Test.assets/image-20220714100859865.png)
+  ![image-20220714100859865](postman.assets/image-20220714100859865.png)
 
   - 테스트 하고자하는 collection을 드레그해서 화면에 놓는다.
     - `RUN ORDER`부분에 드레그한다.
 
-  ![image-20220714101011854](Test.assets/image-20220714101011854.png)
+  ![image-20220714101011854](postman.assets/image-20220714101011854.png)
 
   - 우측의 `Select File`을 클릭 후 import하려는 파일을 클릭한다.
     - 반복 횟수(`Iterations`)는 자동으로 조정된다.
