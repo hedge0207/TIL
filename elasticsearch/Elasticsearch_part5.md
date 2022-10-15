@@ -593,7 +593,7 @@
   ```bash
   $ curl 'localhost:9200/인덱스명/_doc/_search' -H 'Content-Type: application/json' -d '{
   "query":{
-    "term":{
+    "terms":{
       "필드": ["텀1","텀2"]
     }
   },
@@ -606,7 +606,7 @@
   ```bash
   $ curl 'localhost:9200/인덱스명/_doc/_search' -H 'Content-Type: application/json' -d '{
   "query":{
-    "term":{
+    "terms":{
       "필드": ["텀1","텀2"],
       "minimum_should_match":2
     }
