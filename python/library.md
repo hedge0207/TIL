@@ -1,3 +1,76 @@
+# argparse
+
+- argparse
+  - CLI로 Python에 옵션을 추가할 수 있게 해주는 library
+  - Python 내장 library로 별도의 설치가 필요 없다.
+
+
+
+- 실행해보기
+
+  - argument 추가하기
+
+  ```python
+  import argparse
+  
+  parser = argparse.ArgumentParser()
+  parser.add_argument("-p", "--port", dest="api_port", action="store")
+  parser.add_argument("-b", "--boolean", dest="boolean", action="store_true")
+  args = parser.parse_args()
+  
+  print(args.api_port)
+  print(args.boolean)
+  ```
+
+  - 실행하기
+
+  ```bash
+  $ python test.py -p 8000 -b
+  ```
+
+
+
+- 옵션
+  - `dest` 옵션은 해당 argument를 어떤 이름으로 저장할 것인지를 선택한다.
+    - 위 예시에서 `-p`로 받은 값을 `api_port`라는 이름으로 저장했다.
+  - `action` 옵션은 argument에 어떤 action을 취할지를 지정한다.
+    - `store`: argument 뒤에 반드시 값이 와야 한다.
+    - `store_field`: argument 뒤에 값이 와선 안되며, argument의 유무만 판단한다.
+    - 이 밖에도 [다양한 옵션](https://docs.python.org/ko/3/library/argparse.html#action)이 있다.
+  - `type`
+    - argument의 타입을 지정할 수 있다.
+  - `required`
+    - 필수 argument로 만들 수 있다.
+  - `default`
+    - argument가 입력되지 않았을 경우 기본 값을 지정할 수 있다.
+
+
+
+- help
+
+  - 기본적으로 `--help` 혹은 `-h` 옵션을 통해 arguments에 대한 정보를 볼 수 있다.
+    - 이 경우 script는 실행하지 않고 arguments의 정보만 출력한다.
+
+  ```bash
+  $ python test.py -h
+  ```
+
+  - 각 argument에 대한 설명을 추가하는 것도 가능하다.
+    - `add_argument` 메서드에 `help` 파라미터를 추가한다.
+
+  ```python
+  import argparse
+  
+  parser = argparse.ArgumentParser()
+  parser.add_argument("-p", "--port", dest="api_port", action="store", help="Port for API URI")
+  
+  args = parser.parse_args()
+  ```
+
+
+
+
+
 # click
 
 > https://click.palletsprojects.com/en/8.0.x/
