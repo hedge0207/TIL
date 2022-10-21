@@ -1,3 +1,103 @@
+# CORS
+
+> https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+>
+> https://evan-moon.github.io/2020/05/21/about-cors/
+>
+> https://ko.javascript.info/fetch-crossorigin
+
+- CORS(Cross-Origin Resource Sharing, 교차 출처 리소스 공유)
+
+  - Origin
+    - scheme(protocol), domain(hostname), port을 묶어서 origin이라 부른다.
+    - 예를 들어 `http://example.com:80/foo`라는 URL이 있다고 할 때 `http://example.com:80`까지가 origin이다.
+
+  - 의미
+    - 서로 다른 origin들 사이의 자원을 공유하는 것을 의미한다.
+    - 예를 들어 `http://domain-a.com`이라는 front-end origin에서 `http://domain-b.com`이라는 back-end origin에 정보를 요청하는 것이 CORS다.
+  - SOP(Same Origin Policy)
+    - 같은 origin에서만 리소스를 공유할 수 있게 하는 정책.
+    - 현실적으로 웹에서 같은 origin에 있는 리소스만을 가져오는 것은 불가능했다.
+    - 따라서 예외 조항을 두었는데, 그 중 하나가 CORS 정책을 지킨 리소스 요청이다.
+    - 이와 같은 제약을 둔 것은 XSS(Cross Site Script)나 CSRF(Cross Site Request Forgery) 같은 공격을 막기 위해서이다.
+  - CORS는 브라우저의 정책이다.
+    - 즉, 브라우저가 자신이 보낸 요청 및 서버로부터 받은 응답이 CORS 정책을 지키는지 검사한다.
+    - 따라서 이를 지키지 않은 요청은 보내지 않고, 이를 지키지 않은 응답은 받아서 버린다.
+
+
+
+- 안전한 요청
+
+  - 크로스 오리진 요청은 크게 안전한 요청과 그 외의 요청의 두 가지 종류로 구분된다.
+  - 안전한 요청은 아래의 두 가지 조건을 모두 충족하는 요청을 말한다.
+    - 안전한 메서드 사용(GET, POST, HEAD).
+    - 안전한 헤더를 사용(`Accept`, `Accept-Language`, `Content-Language`, 값이 `multipart/form-data`, `test/plain`, `application/x-www-from-urlencoded` 중 하나인 `Content-type`)
+
+  - 그 외의 요청은 당연히 둘 중 하나라도 충족하지 못한 요청을 말한다.
+
+
+
+- CORS와 안전한 요청(MDN 문서에서는 Simple Request라고 표현)
+
+  - 크로스 오리진 요청을 보낼 경우 브라우저는 항상 `Origin`이라는 헤더를 요청에 추가한다.
+  - 예시
+    - `http://A.com/product`에서 `httpL//B.com/request`로 요청을 보낸다고 가정했을 때 헤더는 다음과 같다.
+    - `Origin`에는 요청이 이루어지는 페이지 경로(`/product`)가 아닌 origin 정보가 담기게 된다.
+
+  ```text
+  GET /request
+  Host: B.com
+  Origin: http://B.com
+  ```
+
+  - 서버는 요청 헤더에 있는 `Origin`을 검사하고, 이 origin에서 요청을 받기로 설정이 되어 있다면, 헤더에 `Access-Control-Allow-Origin`을 추가해 응답을 보낸다.
+    - 이 헤더에는 허가된 origin(예시의 경우 `http://A.com`)에 대한 정보나 `*`가 명시된다.
+
+
+
+- 응답 헤더
+  - 크로스 오리진 요청이 이루어진 경우, JavaScript는 기본적으로 안전한 응답 헤더로 분류되는 헤더에만 접근할 수 있다.
+    - 그 외의 헤더에 접근하면 에러가 발생한다.
+  - 안전한 응답 헤더는 다음과 같다.
+    - `Cache-Control`
+    - `Content-Language`
+    - `Content-Type`
+    - `Expires`
+    - `Last-Modified`
+    - `Pragma`
+  - 만일 안전하지 않은 헤더에 에러 없이 접근하려면 서버에서 `Access-Control-Expose-Headers`라는 헤더를 보내줘야 한다.
+    - 이 헤더에는 JavaScript에 접근을 허용하지만 안전하지는 않은 header들의 콤마로 구분된 목록이 담겨 있다.
+
+
+
+- CORS와 안전하지 않은 요청
+  - 안전하지 않은 요청이 이루어지는 경우, 서버에 바로 요청을 보내지 않고 preflight 요청이라는 사전 요청을 서버에 보내 권한이 있는지를 확인한다.
+    - 클라이언트에서 preflight 요청을 보내는 로직을 추가해야 되는 것은 아니고, 브라우저가 알아서 보낸다.
+  - preflight 요청은 `OPTIONS` 메서드를 사용하고 아래의 두 헤더가 함께 들어가며, body는 비어 있다.
+    - `Access-Control-Request-Method`: 안전하지 않은 요청에서 사용하는 메서드 정보가 담겨 있다.
+    - `Access-Control-Request-Headers`: 안전하지 않은 요청에서 사용하는 헤더 목록이 담겨있다.
+  - 서버가 안전하지 않은 요청을 받는 것을 허용했다면 빈 body와 아래 헤더들을 status code 200으로 브라우저로 보낸다.
+    - `Access-Control-Allow-Origin`
+    - `Access-Control-Allow-Methods`: 허용된 메서드 정보가 담겨 있다.
+    - `Access-Control-Allow-Headers`: 허용된 헤더 정보가 담겨 있다.
+    - `Access-Control-Max-Age`: 퍼미션 체크 여부를 몇 초간 캐싱해 놓을지가 담겨 있다. 이 기간 동안은 브라우저가 preflight를 보내지 않고 바로 본 요청을 보낸다.
+
+
+
+- Credentialed Request
+  - 쿠키 정보나 인증과 관련된 정보를 담을 수 있게 해주는 옵션이다.
+  - 요청시에 아래와 같은 3가지 옵션이 있다.
+    - `omit`: cookie(혹은 cookie를 비롯한 사용자 credentials)를 보내거나 받지 않는다.
+    - `same-origin`(기본값): origin이 같을 경우에만 cookie를 받는다.
+    - `include`: origin이 다르더라도 cookie를 보낸다.
+  - Credentialed Request를 사용할 때는 서버의 응답 헤더에 두 가지 헤더가 추가되어야 한다.
+    - `Access-Control-Allow-Credentials`의 값이 true여야 한다.
+    - `Access-Control-Allow-Origin`의 값이 `*`여선 안 된다.
+
+
+
+
+
 # 왜 숫자는 0부터 세는가?
 
 > https://www.cs.utexas.edu/users/EWD/transcriptions/EWD08xx/EWD831.html
