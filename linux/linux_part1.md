@@ -315,6 +315,13 @@
 
 
 
+- 리눅스에서는 directory로 file이다.
+  - directory 역시 다른 파일들을 담고 있는 file로 본다.
+  - directory뿐 아니라 device(마우스, 키보드 등)도 파일이다.
+  - 정확히는 여러 type의 파일이 존재하며, directory type의 파일, device type의 파일이 있는 것이다.
+
+
+
 ## 리눅스 에디터
 
 - 리눅스 에디터
