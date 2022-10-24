@@ -76,7 +76,7 @@
   - preflight 요청은 `OPTIONS` 메서드를 사용하고 아래의 두 헤더가 함께 들어가며, body는 비어 있다.
     - `Access-Control-Request-Method`: 안전하지 않은 요청에서 사용하는 메서드 정보가 담겨 있다.
     - `Access-Control-Request-Headers`: 안전하지 않은 요청에서 사용하는 헤더 목록이 담겨있다.
-  - 서버가 안전하지 않은 요청을 받는 것을 허용했다면 빈 body와 아래 헤더들을 status code 200으로 브라우저로 보낸다.
+  - 서버가 preflight 요청을 받으면 빈 body와 아래 헤더들을 status code 200으로 브라우저로 보낸다.
     - `Access-Control-Allow-Origin`
     - `Access-Control-Allow-Methods`: 허용된 메서드 정보가 담겨 있다.
     - `Access-Control-Allow-Headers`: 허용된 헤더 정보가 담겨 있다.
@@ -93,6 +93,90 @@
   - Credentialed Request를 사용할 때는 서버의 응답 헤더에 두 가지 헤더가 추가되어야 한다.
     - `Access-Control-Allow-Credentials`의 값이 true여야 한다.
     - `Access-Control-Allow-Origin`의 값이 `*`여선 안 된다.
+
+
+
+- nginx 등의 web server와 함께 사용할 경우
+
+  - web server와 backend server 중 한 곳에만 설정하면 되는 듯 하다(확인 필요)
+    - 아래 예시에서 fastapi에 `allow_origins` 옵션을 추가하거나 nginx에 `add_header 'Access-Control-Allow-Origin' '*'`를 추가하면 정상적으로 동작한다.
+  - `SendReq.vue`
+
+  ```vue
+  <template>
+    <div class="hello">
+      <h1>{{ msg }}</h1>
+      <p>
+        <button v-on:click="sendReq">send_req</button>
+      </p>
+    </div>
+  </template>
+  
+  <script>
+  import axios from 'axios'
+  export default {
+    name: 'HelloWorld',
+    props: {
+      msg: String
+    },
+    methods:{
+      sendReq(){
+        axios.delete("http://<nginx_host>:<nginx_port>/user", null, {withCredentials: true}).then((res)=>{
+          console.log(res.headers)
+        }).catch((err) => {console.log(err)})
+      }
+    }
+  }
+  </script>
+  ```
+
+  - `fastapi`
+
+  ```python
+  import uvicorn
+  from fastapi import FastAPI, Request
+  from fastapi.middleware.cors import CORSMiddleware
+  
+  app = FastAPI()
+  
+  origins = [
+      "*",
+  ]
+  
+  app.add_middleware(
+      CORSMiddleware,
+      allow_origins=origins,
+      allow_credentials=True,
+      allow_methods=["*"],
+      allow_headers=["*"],
+      expose_headers=["*"]
+  )
+  
+  @app.delete("/user")
+  async def qux(request: Request):
+      print(request.headers)
+      return "User Deleted!"
+  
+  if __name__ == '__main__':
+      uvicorn.run(app, host='0.0.0.0', port=8002)
+  ```
+
+  - `nginx.conf`
+
+  ```nginx
+  ...
+  http {
+      include       /etc/nginx/mime.types;
+      server {
+        server_name <fastapi_host>;
+        location / {
+              proxy_pass http://<fastapi_host>:<fastapi_port>;
+              # add_header 'Access-Control-Allow-Origin' '*';
+          }
+      }
+      ...
+  }
+  ```
 
 
 
