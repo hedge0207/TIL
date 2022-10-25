@@ -13,7 +13,7 @@
 
 > https://kr.vuejs.org/v2/guide/index.html
 
-- What
+- Vue 개요
   - Front-end Framework
   - SPA(Single Page Application):
     - 단일 페이지로 구성된 웹 어플리케이션, 화면이동 시에 필요한 데이터를 서버사이드에서 HTML으로 전달받지 않고(서버사이드 렌더링 X), 필요한 데이터만 서버로부터 JSON으로 전달 받아 동적으로 렌더링하는 것이다.
@@ -29,24 +29,10 @@
 
 
 
-- Why
-  - 배우기 쉽다.
-  - UX 향상: 분절 없이 부드럽게 이어지는 웹 사이트
-  - 프레임 워크의 장점(DX 향상)
-    - 선택과 집중이 가능
-    - 유지/보수 용이
-    - 커뮤니티와 라이브러리
-
-
-
-- FaceBook에서 개발한 `React`도 동일한 작업을 해주는 프로그램이다.
-
-
-
 - 시작 전 준비 사항
 
   - VS code에서 `Vetur` 설치, 코드 작성에 도움을 준다.
-  - Chrome에서 `Vue.js devtools` 설치-확장프로그램 관리-파일 URL에 대한 엑세스 허용 체크, 브라우저에서 볼 때 도움
+  - Chrome에서 `Vue.js devtools` 설치-확장프로그램 관리-파일 URL에 대한 엑세스 허용 체크, 브라우저에서 볼 때 도움을 준다.
   - 아래 코드를 추가
 
   > https://kr.vuejs.org/v2/guide/installation.html
@@ -56,27 +42,6 @@
   ```html
   <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
   ```
-
-
-
-- Vue js의 코드 작성시 생각할 것들
-
-  - 화면 구성
-  - 스토리 라인 짜기
-
-  - 순수 HTML 코드 작성
-
-  - data 파악
-
-    - 변할 수 있는 데이터
-
-    - 반복이 필요한 데이터
-
-    - 시간에 따라 변하지 않거나 반복이 필요하지 않은 데이터는 그냥 템플릿에 써도 된다.
-
-  - data에 따라 html에 디렉티브 작성
-
-  - 동작이 필요한 경우, methods 작성
 
 
 
@@ -166,7 +131,8 @@
   </script>
   ```
 
-  
+
+
 
 - interpolation(보간법): `v-text`와 동일한 기능을 한다.
 
@@ -392,7 +358,7 @@
 
   - `v-for`를 쓸 때 `v-bind:key`를 함께 줘야 하는 경우
     - 반복을 수행하다가 출력되는 순서가 바뀔 경우 화면이 렌더링될 때 부자연스럽게 렌더링 되는 경우가 있다.
-  - 순서가 바뀔 경우 배열의 인자들의 순서를 다시 파악해야 하기에, 어떤 인자가 이전에 몇 번째로 출력되던 인자였는지 파악하는데 시간이 걸린다(예를 들어 모양이 유사한 공 3개를 일렬로 배치한 후 다시 공을 섞어서 이전에 배치했던 자리를 피해서 배치하려고 하면 이전에 어떤 공이 어떤 자리에 놓였었는지를 알고 있어야 한다. 만일 공에 번호(고유한 값)가 붙어 있다면 금방 하겠지만 그렇지 않다면 공을 유심히 관찰하고 놓아야 할 것이다). 
+    - 순서가 바뀔 경우 배열의 인자들의 순서를 다시 파악해야 하기에, 어떤 인자가 이전에 몇 번째로 출력되던 인자였는지 파악하는데 시간이 걸린다(예를 들어 모양이 유사한 공 3개를 일렬로 배치한 후 다시 공을 섞어서 이전에 배치했던 자리를 피해서 배치하려고 하면 이전에 어떤 공이 어떤 자리에 놓였었는지를 알고 있어야 한다. 만일 공에 번호(고유한 값)가 붙어 있다면 금방 하겠지만 그렇지 않다면 공을 유심히 관찰하고 놓아야 할 것이다). 
     - 고유한 값을 줄 경우 보다 자연스럽게 렌더링 할 수 있다.
 
   ```html
@@ -422,8 +388,6 @@
     },
   ```
 
-  
-
   - `v-bind`: 표준 HTML 속성과 Vue 인스턴스를 연동할 때 사용한다. 줄여서 `:`만 쓰는 것이 가능하다.
 
   ```html
@@ -451,10 +415,10 @@
     })
   </script>
   ```
-
+  
   - 클래스 바인딩
       - `v-bind:class="{클래스명:조건}"`
-
+  
   ```html
   <!DOCTYPE html>
   <html lang="en">
@@ -495,7 +459,7 @@
   </body>
   </html>
   ```
-
+  
   - `v-on`: event와 관련된 작업에 사용되는 디렉티브,  줄여서 `@`로 쓰는 것이 가능하다.
 
   ```html
@@ -545,9 +509,11 @@
   </script>
   ```
 
+
+
 - `v-model`: 사용자 입력과 data를 완전히 동기화(양방향 동기화) 시키기 위해 사용한다.
-    - 사용자 입력과 data를 동기화 시키는 것이므로 사용자가 입력할 수 있는 `input`,`select`,`textarea`에서만 사용 가능하다.
-    
+  - 사용자 입력과 data를 동기화 시키는 것이므로 사용자가 입력할 수 있는 `input`,`select`,`textarea`에서만 사용 가능하다.
+
   ```html
   <div id="app">
     {{message}}
@@ -591,11 +557,11 @@
   <!--
   input태그에서 type="checkbox"일때 v-model="t/f값을 가지는 데이터"를 입력하면
   체크 여부에 따라 자동으로 t/f가 바뀐다.
--->
+  -->
   ```
 
   - `v-show`
-  
+
   ```html
   <!--if는 false일 때 아예 렌더링 자체를 하지 않지만 show는 false라도 렌더링은 하고 보이지 않도록 설정을 한다.-->
   <!--style="display: none;"으로 설정되어 있다.-->
@@ -641,9 +607,9 @@
         }
       }
     })
-</script>
+  </script>
   ```
-  
+
   - `v-for`,`v-if`는 한 태그에 같이 쓰면 안된다.
     - 공식문서에서도 둘을 같은 태그에 쓰지 않을 것을 강하게 권고
     - `v-for`가 우선 순위를 가진다.
@@ -759,7 +725,9 @@
   </html>
   ```
 
-  - //Vue에서 form 태그를 쓸 경우 아래와 같이 methods에  event.preventDefault()을 실행시키는 메소드를 넣어줘야 한다. preventDefault()는 Vue에서 제공하는 기능이다.
+  - Vue에서 form 태그를 쓸 경우 아래와 같이 methods에  `event.preventDefault()`을 실행시키는 메소드를 넣어줘야 한다. 
+    - `preventDefault()`는 Vue에서 제공하는 기능이다.
+
 
   ```js
   methods:{
@@ -769,6 +737,8 @@
         },
       },
   ```
+
+
 
 - Lodash: JS 유틸리티 라이브러리
 
@@ -828,23 +798,21 @@
   </html>
   ```
 
-  
 
-  ​    
 
-  
+
+
 
 # Vue 라이프 사이클
 
 > 공식문서-Vue인스턴스 탭에 문서가 존재
 
 - Life Cycle Hook
-
-- 빨간 박스 안에 있는 내용이 개발자가 개입하는 부분이다.
   - 많은 부분이 있지만 지금은 생성(created), 부착(mounted), 반응(updated)만 기억하면 된다.
   - 각기 Vue가 생성될 때, mount될 때 , 데이터가 변경될 때를 말한다.
-- 이들 라이프 사이클 훅은 우리 마음대로 이름을 정할 수 있는 것이 아니라 정해진 대로 작성해야 하며, 우리가 실행시키는 것이 아니라 자동으로 실행되는 것이다.
-- 일반적으로 초기화 이후(새로고침 혹은 페이지 첫 생성 시) ajax 요청을 보내기 가장 적합한 시점은 created다.
+  - 이들 라이프 사이클 훅은 우리 마음대로 이름을 정할 수 있는 것이 아니라 정해진 대로 작성해야 하며, 우리가 실행시키는 것이 아니라 자동으로 실행되는 것이다.
+  - 일반적으로 초기화 이후(새로고침 혹은 페이지 첫 생성 시) ajax 요청을 보내기 가장 적합한 시점은 created다.
+
 
 
 
@@ -855,152 +823,152 @@
   >https://cdnjs.com/libraries/scrollmonitor
   >
   >https://github.com/stutrek/scrollMonitor
-
-```html
-<!--무한 스크롤로 본 Vue의 라이프 사이클-->
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    .button-bottom {
-      position: fixed;
-      right: 20vw;  
-      bottom: 20vh;
-    }
-  </style>
-  <!--vw(viewport width),vh(viewport height)는 각기 화면 비율에 따라 높이와 너비를 조정하는 단위이다.-->
-  <title>Scroller</title>
-</head>
-
-<body>
-  <div id="app">
-    <div v-for="photo in photos">
-      <h5>{{ photo.title }}</h5>
-      <img :src="photo.thumbnailUrl" :alt="photo.title">  <!--thumbnailUrl은 사진을 받아온 사이트에서 제공된 object이다.-->
+  
+  ```vue
+  <!--무한 스크롤로 본 Vue의 라이프 사이클-->
+  <!DOCTYPE html>
+  <html lang="en">
+  
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      .button-bottom {
+        position: fixed;
+        right: 20vw;  
+        bottom: 20vh;
+      }
+    </style>
+    <!--vw(viewport width),vh(viewport height)는 각기 화면 비율에 따라 높이와 너비를 조정하는 단위이다.-->
+    <title>Scroller</title>
+  </head>
+  
+  <body>
+    <div id="app">
+      <div v-for="photo in photos">
+        <h5>{{ photo.title }}</h5>
+        <img :src="photo.thumbnailUrl" :alt="photo.title">  <!--thumbnailUrl은 사진을 받아온 사이트에서 제공된 object이다.-->
+      </div>
+        
+      <!--버튼을 클릭하면 최상단으로 이동-->
+      <button @click="scrollToTop" class="button-bottom">^</button>
+      
+      <!-- 
+        HTML 이 Vue 인스턴스와 연결된 순간부터(div#app 에 포함된 순간부터), 
+        Life cycle hook 의 영향을 받는다. 
+      -->
+      <!--이 태그에 도착하면 바닥에 도착했다는 것을 감지-->
+      <div id="bottomSensor"></div>
     </div>
-      
-    <!--버튼을 클릭하면 최상단으로 이동-->
-    <button @click="scrollToTop" class="button-bottom">^</button>
-    
-    <!-- 
-      HTML 이 Vue 인스턴스와 연결된 순간부터(div#app 에 포함된 순간부터), 
-      Life cycle hook 의 영향을 받는다. 
-    -->
-    <!--이 태그에 도착하면 바닥에 도착했다는 것을 감지-->
-    <div id="bottomSensor"></div>
-  </div>
-
-
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <!--무한 스크롤 구현을 위한 cdn-->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/scrollmonitor/1.2.0/scrollMonitor.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-  <script>
-    const app = new Vue({
-      el: '#app',
-      data: {
-        photos: [],
-        page: 1,
-      },
-
-      methods: {
-        //사진을 불러오기 위한 메소드
-        getPhotos: function () {
-          //요청을 보낼 때 본래 쿼리스트링으로 넘기던 값을 아래와 같이 변수에 담아서 넘긴다.
-          const options = {
-            params: {
-              _page: this.page++, //x++는 일단 기존 x값을 쓰고, 그 후에 올린다는 뜻이다.
-              _limit: 3,
+  
+  
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!--무한 스크롤 구현을 위한 cdn-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/scrollmonitor/1.2.0/scrollMonitor.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script>
+      const app = new Vue({
+        el: '#app',
+        data: {
+          photos: [],
+          page: 1,
+        },
+  
+        methods: {
+          //사진을 불러오기 위한 메소드
+          getPhotos: function () {
+            //요청을 보낼 때 본래 쿼리스트링으로 넘기던 값을 아래와 같이 변수에 담아서 넘긴다.
+            const options = {
+              params: {
+                _page: this.page++, //x++는 일단 기존 x값을 쓰고, 그 후에 올린다는 뜻이다.
+                _limit: 3,
+              }
             }
-          }
-          axios.get('https://jsonplaceholder.typicode.com/photos', options)
-            .then(res => {
-              console.log("사진을 가져 온다")
-       		  //JS에서는 배열을 특이하게 합친다.
-              //먼저 응답으로 받은 사진 배열(this.photos)과 후에 응답으로 받은 사진 배열(res.data)을 합치기
-              this.photos = [...this.photos, ...res.data]
-            })
-            //.catch((err) =>  { console.error(err) } ) 아래와 같은 코드
-            .catch(err => console.error(err))
-        },
-        
-        addScrollWatcher: function () {
-          const bottomSensor = document.querySelector('#bottomSensor')
-          const watcher = scrollMonitor.create(bottomSensor)
-          // watcher 가 화면에 들어오면 실행할 내용을 .enterVieport 내부에 적는다.
-          watcher.enterViewport(() => {
-              console.log('바닥에 도달')
-            /*
-            요청이 왔을 때 약간의 딜레이를 주는 코드
-            요청이 계속 오면 서버가 과부화 될 수 있으므로 천천히 응답을 보낼 수 있도록 약간의 딜레이를 줄 필요가 있다.
-            기다리는 것이므로 non-blocking하게 처리 된다.
-            setTimeout은 callback 함수를 사용하므로 화살표 함수로 정의
-            setTimeout(()=>{실행할 내용},숫자) - 숫자는 100에 0.1초다.
-            */
-            setTimeout(() => {
-              this.getPhotos()
-            }, 500)
-          })
-        },
-        
-        //버튼을 클릭했을 때 최 상단으로 이동하게 해주는 함수
-        scrollToTop: function () {
-          scroll(0, 0)
-        },
-        
-        //스크롤을 내려야 새 사진을 받아오는데 표시하고 있는 사진이 화면을 다 채우지 못하면 스크롤이 생기지 않는다. 
-        //따라서 스크롤이 생길 정도로 사진을 받아오도록 하는 코드를 작성해야 한다.
-        loadUntilViewportIsFull: function () {
-          const bottomSensor = document.querySelector('#bottomSensor')
-          //아래 한 줄의 코드는 scrollmonitor에서 지정한 양식에 따라 쓴 것이다.
-          const watcher = scrollMonitor.create(bottomSensor)
+            axios.get('https://jsonplaceholder.typicode.com/photos', options)
+              .then(res => {
+                console.log("사진을 가져 온다")
+         		  //JS에서는 배열을 특이하게 합친다.
+                //먼저 응답으로 받은 사진 배열(this.photos)과 후에 응답으로 받은 사진 배열(res.data)을 합치기
+                this.photos = [...this.photos, ...res.data]
+              })
+              //.catch((err) =>  { console.error(err) } ) 아래와 같은 코드
+              .catch(err => console.error(err))
+          },
           
-          //isFullyInViewport는 scrollMonitor에 작성된 프로퍼티로 watcher가 화면 안에 있는지 확인하는 프로퍼티다.
-          //만일 화면 내부에 있을 경우 true를 반환하고 화면 내부에 없을 경우 false를 반환한다.
-          if (watcher.isFullyInViewport) {  
-            this.getPhotos()
-          }
+          addScrollWatcher: function () {
+            const bottomSensor = document.querySelector('#bottomSensor')
+            const watcher = scrollMonitor.create(bottomSensor)
+            // watcher 가 화면에 들어오면 실행할 내용을 .enterVieport 내부에 적는다.
+            watcher.enterViewport(() => {
+                console.log('바닥에 도달')
+              /*
+              요청이 왔을 때 약간의 딜레이를 주는 코드
+              요청이 계속 오면 서버가 과부화 될 수 있으므로 천천히 응답을 보낼 수 있도록 약간의 딜레이를 줄 필요가 있다.
+              기다리는 것이므로 non-blocking하게 처리 된다.
+              setTimeout은 callback 함수를 사용하므로 화살표 함수로 정의
+              setTimeout(()=>{실행할 내용},숫자) - 숫자는 100에 0.1초다.
+              */
+              setTimeout(() => {
+                this.getPhotos()
+              }, 500)
+            })
+          },
+          
+          //버튼을 클릭했을 때 최 상단으로 이동하게 해주는 함수
+          scrollToTop: function () {
+            scroll(0, 0)
+          },
+          
+          //스크롤을 내려야 새 사진을 받아오는데 표시하고 있는 사진이 화면을 다 채우지 못하면 스크롤이 생기지 않는다. 
+          //따라서 스크롤이 생길 정도로 사진을 받아오도록 하는 코드를 작성해야 한다.
+          loadUntilViewportIsFull: function () {
+            const bottomSensor = document.querySelector('#bottomSensor')
+            //아래 한 줄의 코드는 scrollmonitor에서 지정한 양식에 따라 쓴 것이다.
+            const watcher = scrollMonitor.create(bottomSensor)
+            
+            //isFullyInViewport는 scrollMonitor에 작성된 프로퍼티로 watcher가 화면 안에 있는지 확인하는 프로퍼티다.
+            //만일 화면 내부에 있을 경우 true를 반환하고 화면 내부에 없을 경우 false를 반환한다.
+            if (watcher.isFullyInViewport) {  
+              this.getPhotos()
+            }
+          },
         },
-      },
-	
+  	
+          
+        //아래 created, mounted, updated에 함수를 정의하지 않고 굳이 methods에 정의하고 아래에서 실행시키는 이유는 
+        //함수를 각 함수가 실행되는 사이클 훅 아래에 작성하면 나중에 특정 함수를 수정할 일이 있을 때, 
+        //해당 함수가 어디에 작성됐는지 찾기 힘들기 때문이다. 따라서 methods에 몰아서 작성하고 아래에서는 실행만 시킨다. 
+          
+        // created: 초기화 이후 AJAX 요청을 보내기 좋은 시점(Data, Methods 에 접근 가능.)
+        //Vue 생성시에 개입해서 할 일(실행시킬 함수)을 정하는 것
+        //이 코드의 경우 페이지를 처음 띄울 때 부터 사진을 출력하고자 하는 것이다.
+        created: function () {
+          console.log("생성됨")
+          this.getPhotos()
+        },
+  
+        // mounted: DOM 과 Vue 인스턴스가 연동이 완료되고 난 이후에 실행할 일들.
+        mounted: function() {
+          console.log("부착됨")
+          this.addScrollWatcher()
+        },
+          /*
+          만일 addScrollWatcher()를 created에서 실행시키면 제대로 작동하지 않을 것이다.
+          created가 실행될 때는 아직 Dom과 Vue 인스턴스가 연동이 되지 못했을 때(mount 되지 못했을 때)이므로 
+          아직 연동도 되지 않았는데 감지를 하려 하니 잘 작동하지 않는 것이다.
+          mounted가 된 이후부터 정상적으로 작동한다.
+          */
         
-      //아래 created, mounted, updated에 함수를 정의하지 않고 굳이 methods에 정의하고 아래에서 실행시키는 이유는 
-      //함수를 각 함수가 실행되는 사이클 훅 아래에 작성하면 나중에 특정 함수를 수정할 일이 있을 때, 
-      //해당 함수가 어디에 작성됐는지 찾기 힘들기 때문이다. 따라서 methods에 몰아서 작성하고 아래에서는 실행만 시킨다. 
-        
-      // created: 초기화 이후 AJAX 요청을 보내기 좋은 시점(Data, Methods 에 접근 가능.)
-      //Vue 생성시에 개입해서 할 일(실행시킬 함수)을 정하는 것
-      //이 코드의 경우 페이지를 처음 띄울 때 부터 사진을 출력하고자 하는 것이다.
-      created: function () {
-        console.log("생성됨")
-        this.getPhotos()
-      },
-
-      // mounted: DOM 과 Vue 인스턴스가 연동이 완료되고 난 이후에 실행할 일들.
-      mounted: function() {
-        console.log("부착됨")
-        this.addScrollWatcher()
-      },
-        /*
-        만일 addScrollWatcher()를 created에서 실행시키면 제대로 작동하지 않을 것이다.
-        created가 실행될 때는 아직 Dom과 Vue 인스턴스가 연동이 되지 못했을 때(mount 되지 못했을 때)이므로 
-        아직 연동도 되지 않았는데 감지를 하려 하니 잘 작동하지 않는 것이다.
-        mounted가 된 이후부터 정상적으로 작동한다.
-        */
-      
-      // updated: data({}) 가 바뀌고 나서, 화면이 다시 렌더된 이후,
-      updated: function() {
-        this.loadUntilViewportIsFull()
-      },
-    })
-  </script>
-</body>
-
-</html>
-```
+        // updated: data({}) 가 바뀌고 나서, 화면이 다시 렌더된 이후,
+        updated: function() {
+          this.loadUntilViewportIsFull()
+        },
+      })
+    </script>
+  </body>
+  
+  </html>
+  ```
 
 
 
@@ -1052,11 +1020,9 @@
   methods 함수 실행  <!--methods에 정의된 함수는 3번 다 실행이 되지만-->
   methods 함수 실행
   methods 함수 실행
-computed 함수 실행 <!--computed에 정의된 함수는 1번만 실행이 된다.-->
+  computed 함수 실행 <!--computed에 정의된 함수는 1번만 실행이 된다.-->
   ```
 
-  
-  
   - watch
     - data 옵션의 key값들의 변경을  관찰하고 이에 반응한다.
     - 어떤 return을 바라지 않는다.
@@ -1223,11 +1189,12 @@ computed 함수 실행 <!--computed에 정의된 함수는 1번만 실행이 된
   $ npm run serve
   ```
 
-  
+
+
 
 - 구성
 
-  - src(실제 사용하는 건 이 폴더 뿐)
+  - src
 
     - `main.js`가 분리해서 개발한 모든 파일을 관리하는 최상위 파일이다. mount를 담담
     - `App.vue`: component들의 관리자, 최종 component
@@ -1275,62 +1242,64 @@ computed 함수 실행 <!--computed에 정의된 함수는 1번만 실행이 된
   - VScode에서 `Vetur` 확장 프로그램을 설치했다면 폴더를 열고 `<`를 입력하고 탭을 누르면 html에서 `!`를 입력하고 탭을 누르는 것 처럼 기본 구조를 잡아준다.
   - 기본 구조는 html에 해당하는 `<template>`,  js에 해당하는 `<script>`,  css에 해당하는 `<style>`의 세 부분이다.
     - 셋 중 하나가 없다고 동작하지 않는 것은 아니다.
+  
+  ```vue
+  <!--template 태그 안에는 하나의 root element만 존재해야 한다. 하나의 태그 안에 자식 태그가 있는 것은 괜찮지만 root에는 오직 하나의 태그만 존재해야 한다.-->
+  <template>
+    <div>{{message}}</div>
+  </template>
+  
+  <script>
+  export default {
+      name:'First',  //name은 default로 넘어가므로 아무렇게나 지정해도 된다.
+      /*
+      Vue에서 데이터는 함수로 넘긴다.
+      data를 객체가 아닌 함수로 넘기는 이유는 component를 재사용하므로 component는 계속 새로고침 없이 재사용되는데,
+      data를 객체로 선언하면 계속 같은 값이 변하게 된다. 
+      예를 들어 데이터를 a=1이라는 데이터가 있고 component가 사용될 때 마다 a+=1씩 해주는 함수를 작성했을 때,
+      a를 객체로 만들었을 경우 매번 component가 재사용 될 때 마다 계속 +1씩 증가한다.
+      반면에 a를 함수로 선언하면 component가 재사용 될 때 마다 a를 선언하는 함수도 다시 실행되면서 a의 복사본이 생기므로 
+      몇 번을 재사용해도 a=2가 된다.
+      */
+      data: function(){ 
+          return {
+              message: '안녕하세요'
+          }
+      }
+  }
+  </script>
+  
+  <style>
+  
+  </style>
+  
+  
+  <!--export default 내보내고 싶은 대상-->
+  <!--default는 옵션이다. default로 내보내면 다른 곳에서 import할 때 이름을 마음대로 붙여서 사용할 수 있다. default는 내보낼 것이 하나일 때만 사용할 수 있다.-->
+  
+  <template>
+    <div>
+      <h1>Hello World</h1>
+  
+      </div>
+  </template>
+  
+  <script>
+  const arr1 = [1,2,3]
+  const arr2 = [4,5,6]
+  //export default는 내보낼 것을 지정하는 것이다.
+  //아래에 작성하지 않은 것은 다른 파일에서 이 파일을 import해도 사용할 수 없다.
+  //arr1은 내보냈으므로 다른 곳에서 import해서 사용이 가능하지만 arr2는 불가능하다.
+  export default arr1  //객체를 내보내는 것이 아니므로 {}는 쓰지 않아도 된다.
+  
+  </script>
+  
+  <style>
+  
+  </style>
+  ```
 
-```html
-<!--template 태그 안에는 하나의 root element만 존재해야 한다. 하나의 태그 안에 자식 태그가 있는 것은 괜찮지만 root에는 오직 하나의 태그만 존재해야 한다.-->
-<template>
-  <div>{{message}}</div>
-</template>
 
-<script>
-export default {
-    name:'First',  //name은 default로 넘어가므로 아무렇게나 지정해도 된다.
-    /*
-    Vue에서 데이터는 함수로 넘긴다.
-    data를 객체가 아닌 함수로 넘기는 이유는 component를 재사용하므로 component는 계속 새로고침 없이 재사용되는데,
-    data를 객체로 선언하면 계속 같은 값이 변하게 된다. 
-    예를 들어 데이터를 a=1이라는 데이터가 있고 component가 사용될 때 마다 a+=1씩 해주는 함수를 작성했을 때,
-    a를 객체로 만들었을 경우 매번 component가 재사용 될 때 마다 계속 +1씩 증가한다.
-    반면에 a를 함수로 선언하면 component가 재사용 될 때 마다 a를 선언하는 함수도 다시 실행되면서 a의 복사본이 생기므로 
-    몇 번을 재사용해도 a=2가 된다.
-    */
-    data: function(){ 
-        return {
-            message: '안녕하세요'
-        }
-    }
-}
-</script>
-
-<style>
-
-</style>
-
-
-<!--export default 내보내고 싶은 대상-->
-<!--default는 옵션이다. default로 내보내면 다른 곳에서 import할 때 이름을 마음대로 붙여서 사용할 수 있다. default는 내보낼 것이 하나일 때만 사용할 수 있다.-->
-
-<template>
-  <div>
-    <h1>Hello World</h1>
-
-    </div>
-</template>
-
-<script>
-const arr1 = [1,2,3]
-const arr2 = [4,5,6]
-//export default는 내보낼 것을 지정하는 것이다.
-//아래에 작성하지 않은 것은 다른 파일에서 이 파일을 import해도 사용할 수 없다.
-//arr1은 내보냈으므로 다른 곳에서 import해서 사용이 가능하지만 arr2는 불가능하다.
-export default arr1  //객체를 내보내는 것이 아니므로 {}는 쓰지 않아도 된다.
-
-</script>
-
-<style>
-
-</style>
-```
 
 
 
@@ -1346,66 +1315,69 @@ export default arr1  //객체를 내보내는 것이 아니므로 {}는 쓰지 �
 
 - `App.vue`파일은 `root`바로 아래의 component로 직접 작성한 component는 이곳을 통해 출력한다.
 
-```html
-<template>
-  <div id="app">
-    <!--3.사용하기-->
-    <First />
-	<!--
-	  태그 안에 /가 있으면 닫힘태그를 쓰지 않아도 된다
-	  혹은 아래와 같이 써도 동작은 한다.
-	  <First></First>
-	  그러나 컨벤션에 어긋나므로 하지 않는다.
-	-->
-  </div>
-</template>
-
-<script>
-//1. import하기
-// import 변수이름 from 경로
-// 만일 import한 파일에서 export할 때 default 설정을 줬다면 설정하고 싶은 대로 설정하면 된다.
-// 그러나 일반적으로 import한 파일명과 동일하게 설정하는 것이 관례다.
-import First from './components/FirstComponent.vue'
-
-export default {
-  name: 'App',
-  components: {
-    HelloWorld,
-    //2. 등록하기
-    //본래 object이므로 'key':value(e.g. 'First':first)형태로 적어야 하지만
-    //JS의 object에서 key는 ''를 생략 가능하고, key와 value가 같으면 value는 안 적어도 된다.
-    First,
+  ```vue
+  <template>
+    <div id="app">
+      <!--3.사용하기-->
+      <First />
+  	<!--
+  	  태그 안에 /가 있으면 닫힘태그를 쓰지 않아도 된다
+  	  혹은 아래와 같이 써도 동작은 한다.
+  	  <First></First>
+  	  그러나 컨벤션에 어긋나므로 하지 않는다.
+  	-->
+    </div>
+  </template>
+  
+  <script>
+  //1. import하기
+  // import 변수이름 from 경로
+  // 만일 import한 파일에서 export할 때 default 설정을 줬다면 설정하고 싶은 대로 설정하면 된다.
+  // 그러나 일반적으로 import한 파일명과 동일하게 설정하는 것이 관례다.
+  import First from './components/FirstComponent.vue'
+  
+  export default {
+    name: 'App',
+    components: {
+      HelloWorld,
+      //2. 등록하기
+      //본래 object이므로 'key':value(e.g. 'First':first)형태로 적어야 하지만
+      //JS의 object에서 key는 ''를 생략 가능하고, key와 value가 같으면 value는 안 적어도 된다.
+      First,
+    }
   }
-}
-</script>
-
-<!--후략-->
-```
+  </script>
+  
+  <!--후략-->
+  ```
 
 
 
 - axios 사용
 
-```bash
-#i는 install의 약자로 Vue에서는 아래와 같이 설치가 가능하다.
-$ npm i axios
-```
+  - 설치
 
-```html
-<!--.vue파일-->
-<!--전략-->
+  ```bash
+  $ npm i axios
+  ```
 
-<script>
-import axios from 'axios'   //import해서 사용한다.
-import A from './components/A' //직접 작성한 컴포넌트보다 위에 import하는 것이 컨벤션이다.
-import B from './components/B'
+  - 사용
 
-
-export default {
-  name: 'App',
-</script>
-<!--후략-->
-```
+  ```vue
+  <!--.vue파일-->
+  <!--전략-->
+  
+  <script>
+  import axios from 'axios'   //import해서 사용한다.
+  import A from './components/A' //직접 작성한 컴포넌트보다 위에 import하는 것이 컨벤션이다.
+  import B from './components/B'
+  
+  
+  export default {
+    name: 'App',
+  </script>
+  <!--후략-->
+  ```
 
 
 
