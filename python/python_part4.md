@@ -187,6 +187,32 @@
   - 클래스 변수 사용시 주의사항
     - 클래스 변수에 접근할 때는 특별히 이유가 없다면 `인스턴스.클래스변수` 나 `self.클래스변수`와 같이 접근하는 것은 피해야한다. 
     - python에는 인스턴스 변수를 인스턴스 객체로부터 생성하는 것이 가능하므로 의도치 않게 클래스 변수를 인스턴스 변수로 은폐해버리는 경우가 있다.
+  - class 변수와 같은 이름의 instance 변수를 선언할 경우
+  
+    - Class 변수와 같은 이름의 instance 변수를 선언할 경우 속성을 덮어쓰지 않고 완전히 새로 생성한다.
+  
+  
+  ```python
+  class Foo:
+      name = "foo"
+  
+  foo = Foo()
+  foo.name = "bar"
+  print(foo.name)	# bar
+  print(Foo.name)	# foo
+  
+  del foo.name
+  # 삭제한 뒤에도 여전히 남아있다.
+  print(dir(foo))	# [..., 'name']
+  print(foo.name)	# foo
+  
+  # class변수와 이름이 다른 변수의 경우 아예 삭제된다.
+  foo.age = 28
+  print(dir(age))	# [..., 'age']
+  del foo.name
+  print(dir(age))	# [...]
+  ```
+  
   - `self`를 통해 변수를 찾는 과정은 다음과 같다.
     - 인스턴스 변수를 먼저 찾는다.
     - 만일 인스턴스 변수가 존재하지 않는다면 클래스 변수를 찾는다.
