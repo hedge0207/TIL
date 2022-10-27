@@ -17,6 +17,12 @@
 
 
 
+- concrete class
+  - abstract class가 아닌 모든 class를 concrete class라 부른다.
+  - 구상 클래스, 구현 클래스, 구체 클래스 등으로 번역한다.
+
+
+
 ## 생성
 
 - Builder
@@ -193,7 +199,7 @@
 
 
 - 해결
-  - 모든 Builder에 공통으로 들어가는 로직을 로직을 선언할 Builder interface를 생성한다(optional).
+  - 모든 Builder에 공통으로 들어가는 로직을 선언할 Builder interface를 생성한다(optional).
     - 이 interface를 Builder라 부르고, 이를 구체화 한 class를 Concrete Builder라 부르기도 한다.
   - Builder interface를 구체화 한 Concrete Builder class를 생성한다.
     - Builder interface를 생성하지 않았다면 그냥 Builder class를 생성한다.
@@ -348,10 +354,9 @@
 
 - 한계
   - 결국 생성하려는 객체에 맞춰 builder를 계속 늘어나게 된다.
-
-
-
-
+  - Python에서도 유용한 패턴인지 의문
+    - Python의 경우 parameter에 기본값을 설정 가능하다.
+    - Keyword argument를 통해 어떤 값을 넘기는지 명시적으로 표현이 가능하다.
 
 
 
@@ -421,6 +426,7 @@
 
 - 개요
   - 객체의 틀을 잡은인터페이스를 정의하고, 해당 인터페이스를 implement하는 Factory를 통해 객체를 생성한다.
+    - 결국 다른 object를 생성하는 object이다.
   - 즉, 객체의 생성을 하위 클래스에 위임한다.
 
 
@@ -431,7 +437,7 @@
     - 사업이 성잠함에 따라, 육로가 아닌 해상으로 제품을 운송하는 방식에 대한 수요가 생겼다.
     - 기존에 작성된 대부분의 코드는 truck으로 운송하는 상황만을 생각하고 작성했기에, 모든 코드는 Truck class에 묶여있다.
     - 따라서 Ship class를 추가하려면, 전체 코드를 바꿔야하며, 항공 운송 등의 수요가 생기면 또 전체 코드를 수정해야 한다.
-  - 이러한 상황이 거듭될수록 코드는 점점 복잡해지게 된다.
+  - 위와 같은 상황이 거듭될수록 코드는 점점 복잡해지게 된다.
 
 
 
