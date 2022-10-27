@@ -1468,5 +1468,15 @@
       print("no error!")	# 실행되지 않는다.
   ```
 
-  
 
+
+
+- Python의 모든 Exception class는 `BaseException` class를 상속받은 것이다.
+
+  - pydoc을 통해 확인이 가능하다.
+
+  ```bash
+  $ pydoc builtins
+  ```
+
+  
