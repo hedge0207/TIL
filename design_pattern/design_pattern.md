@@ -445,3 +445,107 @@
   - 객체의 틀을 잡은 인터페이스를 정의한다.
   - 인터페이스에 따라 객체를 생성하기 위한 factory를 정의한다.
 
+
+
+- 구성
+  - Product
+    - factory method에 의해 생성되는 객체들의 인터페이스를 정의한다.
+    - 모든 Concrete Product에 공통으로 들어가는 logic을 선언한다.
+  - Concrete Product
+    - Product 인터페이스를 implement한다.
+  - Creator
+    - Product 객체를 반환하는 factory method를 선언한다.
+    - Creator라 이름붙여졌지만, creator의 주 목표는 product의 생성은 아니며, product와 관련된 business logic을 정의하는 것이 주 목표다.
+    - 예컨데 개발 회사에서 신입 개발자를 위한 트레이닝을 해 줄 수는 있지만, 그렇다고 해도 그 회사의 주 목표는 제품 개발이지 새로운 개발자를 배출하는 것은 아닌 것과 같다.
+  - Concrete Creator
+    - factory method를 implements 혹은 override하여 각기 다른 type의 Concrete Product를 반환한다.
+    - factory method가 항상 새로운 인스턴스를 생성해야 하는 것은 아니다.
+    - 이미 생성된 객체를 캐시, object pool, 혹은 다른 곳에서 가져와서 반환해도 된다.
+
+
+
+- 구현 방법
+  - 생성하고자 하는 객체의 인터페이스(Product)를 구현한다.
+  - Creator에 빈 factory method를 추가한다.
+    - factory method의 반환 타입은 Product여야 한다.
+  - Creator에 모든 Concrete Product의 생성과 관련된 logic을 작성한다.
+  - Concrete Creator를 작성하고, Creator에 정의된 factory method를 오버라이드하여 각 Concrete Creator별로 생성하고자 하는 Concrete Product를 지정한다.
+  - 위 과정이 끝나면 Creator에 작성된 Concrete Product의 생성과 관련된 logic은 모두 Concrete Creator로 빠져 나가고, Creator의 factory method는 비게 된다.
+    - 만일 남아있는게 있다면, default factory method로 사용하면 된다.
+
+
+
+- 예시
+
+  - 위 과정을 거치면 아래와 같은 모습이 된다.
+
+  ```python
+  from __future__ import annotations
+  from abc import ABC, abstractmethod
+  
+  
+  class Creator(ABC):
+  
+      @abstractmethod
+      def factory_method(self):
+          pass
+      
+      # Product 객체와 관련된 business logic을 작성
+      def some_operation(self) -> str:
+          product = self.factory_method()
+  
+          result = f"Creator: The same creator's code has just worked with {product.operation()}"
+  
+          return result
+  
+  
+  class ConcreteCreator1(Creator):
+      """
+      ConcreteCreator가 ConcreteProduct를 반환하기는 하지만, 반환 type은 interface인 Product로 작성한다.
+      이를 통해 Creator가 개별 ConcreteProduct과 독립적으로 존재할 수 있게 된다.
+      """
+  
+      def factory_method(self) -> Product:
+          return ConcreteProduct1()
+  
+  
+  class ConcreteCreator2(Creator):
+      def factory_method(self) -> Product:
+          return ConcreteProduct2()
+  
+  
+  class Product(ABC):
+      """
+      모든 ConcreteProduct가 반드시 구현해야하는 동작을 선언한다.
+      """
+  
+      @abstractmethod
+      def operation(self) -> str:
+          pass
+  
+  
+  class ConcreteProduct1(Product):
+      def operation(self) -> str:
+          return "{Result of the ConcreteProduct1}"
+  
+  
+  class ConcreteProduct2(Product):
+      def operation(self) -> str:
+          return "{Result of the ConcreteProduct2}"
+  
+  
+  def client_code(creator: Creator) -> None:
+      print(f"Client: I'm not aware of the creator's class, but it still works.\n"
+            f"{creator.some_operation()}", end="")
+  
+  
+  if __name__ == "__main__":
+      print("App: Launched with the ConcreteCreator1.")
+      client_code(ConcreteCreator1())
+      print("\n")
+  
+      print("App: Launched with the ConcreteCreator2.")
+      client_code(ConcreteCreator2())
+  ```
+
+  
