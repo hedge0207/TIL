@@ -1,3 +1,40 @@
+# Highlight
+
+- 검색시에 어떤 query가 match되었는지를 확인할 수 있게 해주는 기능이다.
+  - 복잡한 boolean query의 경우에는 정확히 highlight되지 않을 수도 있다.
+  - Elasticsearch는 아래 3가지 종류의 highlighter를 제공한다.
+    - unified(default highlighter)
+    - plain
+    - fvh(fast vector highlighter)
+
+
+
+- offset strategy
+  - highlighting을 위해서 highlighter는 text에 포함된 각 단어들의 start offset과 end offset을 알아야 한다.
+  - Postings list
+    - Posting list는 정렬된 skip list 구조로 query와 관련된 document id들을 저장하고 있는 Lucene의 자료구조이다.
+    - Posting list는 inverted index와 matching되어 검색시에 사용된다.
+    - Lucene 기준으로 `Document Ordinal(doc_id 등) : term frequency : [matching된 term들의 position 정보] : [matching된 term들의 offset 정보]` 형태이다.
+    - `index_options`가 `offsets`로 설정된 경우, unified highlighter는 text의 re-analyzing 없이 posting list의 정보를 가지고 highlight를 실행한다.
+    - re-analyzing을 수행하지 않기에 `terms_vector`에 비해 더 적은 디스크 공간을 필요로한다.
+  - Terms vectors
+    - `term_vector` 옵션이 `with_positions_offsets`으로 설정되었을 경우, unified highlighter는 term vector를 highlighting에 사용한다.
+    - 1MB 이상의 크기가 큰 필드거나 prefix나 wildcard같은 multi-term query 에서 특히 빠른 highlighting이 가능하다.
+    - fvh highlighter는 항상 term vector를 highlighting에 사용한다.
+  - Plain highlighting
+    - 다른 대안이 없을 경우 unified highlighter가 사용한다.
+    - plain highlighter는 항상 Plain highlighting를 highlighting에 사용한다.
+
+
+
+
+
+
+
+
+
+
+
 # 엘라스틱서치 모니터링
 
 ## Head
