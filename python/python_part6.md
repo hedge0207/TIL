@@ -1,3 +1,163 @@
+# Python Context Manager
+
+> https://sjquant.tistory.com/12
+
+- 리소스의 종료
+
+  - 컴퓨터에서 사용할 수 있는 리소스의 양은 제한적이므로, 사용한(aquired) 리소스는 사용이 완료되면 종료해줘야(released)한다.
+    - 만일 종료해주지 않을 경우 사용한 리소스가 계속 열려있는 resource leak 현상이 발생한다.
+  - 예를 들어 file을 연다고 할 때 아래와 같이 파일을 연 후 사용이 끝나면 다시 닫아줘야 한다.
+
+  ```python
+  f = open('test.txt', 'r')
+  print(f.read())
+  f.close()
+  ```
+
+  - 그러나 만일 `open`과 `close` 사이에 error가 발생할 경우 file이 닫히지 않을 수 도 있다.
+    - try, finally를 사용하여, error가 발생 하더라도 `close`를 호출하도록 할 수 있지만 보다 효율적인 방법이 존재한다.
+
+
+
+- Context Manager
+
+  - Context Manager 객체는 with문을 제어하기 위한 프로토콜이다.
+  - Class에 `__enter__` 메직 메서드와 `__exit__` 메직 메서드를 구현하면 context manager로 사용할 수 있다.
+    - with문이 시작될 때 `__enter__` 메서드가 호출된다.
+    - with문이 종료될 때 `__exit__` 메서드가 호출된다.
+  - 예시
+
+  ```python
+  class MyContextManager:
+      def __enter__(self):
+          print("enter!")
+      
+      def __exit__(self, type_, value, traceback):
+          print("exit!")
+  
+  my_context_manager = MyContextManager()
+  with my_context_manager:
+      pass
+  ```
+
+  - `__exit__` 메직 메서드는 error type, error value, tracback의 세 가지 parameter를 받는다.
+    - 위 3가지 parameter는 with문이 종료되기 전에 error가 발생했을 경우에 argument로 넘어가게 된다.
+
+  ```python
+  class MyContextManager:
+      def __enter__(self):
+          print("enter!")
+      
+      def __exit__(self, type_, value, traceback):
+          print(type_)		# <class 'ValueError'>
+          print(value)		# Error Occured!
+          print(traceback)	# <traceback object at 0x1c12fc7c2fc0>
+          print("exit!")
+  
+  my_context_manager = MyContextManager()
+  with my_context_manager:
+      raise ValueError("Error Occured!")
+  ```
+
+
+
+- `as`
+
+  - `as`를 통해 `__enter__` 메직 메서드가 반환한 객체를 받아올 수 있다.
+
+  - 예시
+
+  ```python
+  class MyContextManager:
+      def __enter__(self):
+          print("enter!")
+          return {"foo":"bar"}
+      
+      def __exit__(self, type_, value, traceback):
+          print("exit!")
+  
+  my_context_manager = MyContextManager()
+  with my_context_manager as obj:
+      print(obj["foo"])	# bar
+  ```
+
+
+
+- `contextlib` 모듈의`@contextmanager`를 사용하여 구현하기
+
+  - 클래스를 생성하고, 프로토콜(`__enter__`, `__exit__`)을 구현하는 대신 제너레이터 함수로부터 컨텍스트 매니저를 생성할 수 있다.
+  - 내부적으로는 `@contextmanager` 데코레이터가 붙은 함수를 `__enter__`와 `__exit__`이 구현되어 있는 클래스 안에 넣는 방식으로 동작한다.
+
+  - 예시
+
+  ```python
+  from contextlib import contextmanager
+  
+  
+  @contextmanager
+  def context_namager():
+      yield {"foo":"bar"}
+      print("complete!")
+  
+  
+  with context_namager() as obj:
+      print(obj["foo"])
+  ```
+
+  - 문제
+    - `with`문 내에서 error가 발생할 경우 yield문 이후의 코드가 동작하지 않게 된다.
+
+  ```python
+  from contextlib import contextmanager
+  
+  
+  @contextmanager
+  def context_namager():
+      yield {"foo":"bar"}
+      print("complete!")
+  
+  
+  with context_namager() as obj:
+      raise ValueError("Error Occured!")
+  ```
+
+  - 해결
+    - yield문을 예외처리 해준다.
+
+  ```python
+  from contextlib import contextmanager
+  
+  
+  @contextmanager
+  def context_namager():
+      try:
+          yield {"foo":"bar"}
+      finally:
+          print("complete!")
+  
+  
+  with context_namager() as obj:
+      raise ValueError("Error Occured!")
+  ```
+
+
+
+- `contextlib.AbstractContextManager`
+  - Context Manager로의 사용을 강제하는 abstract class
+  - `AbstractContextManager`를 상속 받은 class는 `__enter__`와 `__exit__`의 구현이 강제된다.
+
+
+
+- Async Context Manager
+  - Python 3.7부터 Context Manager를 비동기적으로 사용할 수 있다.
+  - `__enter__` 대신 `__aenter__`, `__exit__` 대신 `__aexit__`을 사용하면 된다.
+
+
+
+
+
+
+
 # 클로저
 
 - 변수의 사용 범위

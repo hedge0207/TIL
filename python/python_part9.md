@@ -1,6 +1,4 @@
-
-
-## Python은 왜 느린가?
+# Python은 왜 느린가?
 
 > http://jakevdp.github.io/blog/2014/05/09/why-python-is-slow/
 
