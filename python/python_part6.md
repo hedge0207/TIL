@@ -1,4 +1,4 @@
-# Python Context Manager
+# Context Manager
 
 > https://sjquant.tistory.com/12
 
@@ -156,6 +156,100 @@
 
 
 
+# Namespace
+
+> https://soooprmx.com/python-namespace-and-variable-scope/
+
+- namespace란 변수명과 해당 변수명이 가리키는 객체를 연결하는 것을 의미한다.
+  - Python에서는 함수를 포함한 모든 것이 객체이므로, 모든 것은 namespace를 갖는다고 할 수 있다.
+  - 대부분의 namespace는 Python의 dictionary로 구현되어 있다.
+  - namespace가 필요한 이유
+    - 프로그램을 작성하다 보면 모든 변수 이름과 함수 이름을 겹치지 않게 작성하기는 어렵다.
+    - 따라서 namespace라는 개념을 통해 하나의 이름이 통용될 수 있는 범위를 제한하여, 이름이 겹치더라도 서로 다른 객체를 가리키도록 했다.
+
+
+
+- Python의 namespace
+
+  - Python에는 4개의 namespace가 존재한다.
+
+    - Built-in namespace
+    - Global namespace
+    - Enclosing namespace
+    - Local namespace
+    - Python은 LEGB의 순서로 namespace에서 변수명을 찾는다.
+
+  - Built-in namespace
+
+    - Python의 built-in 객체들을 위한 namespace이다.
+
+    - Python이 실행되는 중에는 언제든 사용이 가능하다.
+    - Python interpreter는 Python 코드가 실핼될 때 built-in namespace를 생성하고, interpreter가 종료될 때 까지 유지된다.
+
+  ```python
+  print(dir(__builtins__))
+  ```
+
+  - Global namespace
+    - main program level에 선언된 모든 객체를 위한 namespace이다.
+    - main program의 실행과 함께 생성되어, interpreter가 종료될 때 까지 유지된다.
+  - Local namespace
+    - 함수 내에서 선언된 객체를 위한 namespace이다.
+    - 함수의 실행과 함께 생성되어, 함수가 종료될 때 까지 유지된다.
+  - Enclosing namespace
+    - 내부 함수를 감싸고 있는 외부 함수에서 선언된 객체를 위한 namespace이다.
+    - 아래 예시에서 `enclosing_func` 내부에 선언된 객체들이 저장되는 공간이 enclosing namespace이고, `enclosed_func` 내부에 선언된 객체들이 저장되는 공간이 local namespace이다.
+
+  ```python
+  def enclosing_func():
+      def enclosed_func():
+          return
+      enclosed_func()
+      return
+  
+  enclosing_func()
+  ```
+
+
+
+- 하위 namespace에서 상위 namespace의 값을 참조하는 것은 가능하지만, 수정하는 것은 불가능하다.
+
+  - 예를 들어 아래 code는 error가 발생하지 않지만
+
+  ```python
+  global_val = 3
+  
+  def local():
+      print(global_val)	# 3
+  
+  local()
+  ```
+
+  - 아래 code는 error가 발생한다.
+    - 아래의 경우 `print(global_val)`도 실행되지 않는다.
+
+  ```python
+  global_val = 3
+  
+  def local():
+      print(global_val)
+  	global_val += 1
+  
+  local()
+  ```
+
+  - 2번째 경우에 `print(global_val)`도 실행이 안 되는 이유
+    - Python은 실행 전에 전체 source code를 compile한다.
+    - `local` 함수에서 `global_val`을 수정했으므로, compiler는 `global_val`을 local namespace로 간주한다.
+    - Complie이후, interpreter가 해석하면서 `print(global_val)` 라인을 만나게 되고, local namespace에서 `global_val`을 찾는다.
+    - 그러나 `global_val`는 `local`함수 내부에서 선언된 적이 없으므로 local namespace에서 찾을 수 없어, error가 발생한다.
+  
+  - 일면 일관성이 없어 보이지만, 이렇게 설계된 데에는 이유가 있다.
+    - 만일 함수, 혹은 내부 함수에서 전역 변수, 혹은 외부 함수의 값을 무분별하게 수정할 경우, 예상치 못 한 결과가 발생할 수 있다.
+    - 따라서, 각 계층별로 권한을 제한함으로써 예상치 못한 결과의 발생을 방지하고자 하는 것이다.
+
+
+
 
 
 # 클로저
@@ -247,9 +341,11 @@
   ```
 
   - `nonlocal`
+    - outer의 안에 있되, inner의 밖에 있는 영역(enclosing namespace)을 nonlocal 스코프라 한다.
     - 내부 함수에서 외부 함수에 선언된 변수의 값을 변경할 수 있게 해준다.
     - 현재 함수의 바깥 쪽에 있는 지역 변수 중 가장 가까운 함수부터 찾는다.
-
+    
+  
   ```python
   def outer():
       my_num = 1
