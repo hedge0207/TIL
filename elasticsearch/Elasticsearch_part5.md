@@ -1923,8 +1923,6 @@
 
 
 
-
-
 ## 검색 관련 옵션
 
 - track_total_hits
@@ -1933,3 +1931,202 @@
     - 따라서 ES에서는 검색 속도를 높이기 위해서 전부 count하는 대신 10000개만 count하는 방식을 사용한다.
   - 검색시에 request body에 `track_total_hits` 값을 true로 주면 실제 일치하는 모든 문서를 count한다.
   - boolean 값이 아닌 integer도 줄 수 있는데, 해당 숫자 만큼만 count한다.
+
+
+
+
+
+# Nested query
+
+- Nested field를 검색하기 위한 query이다.
+
+  - nested field는 object field와는 다른 검색 식으로 검색해야한다.
+    - 예를 들어 아래와 같이 검색할 수 없다.
+
+  ```json
+  PUT nested_test
+  {
+    "mappings": {
+      "properties": {
+        "human": {
+          "type": "nested",
+          "properties": {
+            "name": {
+              "type": "text"
+            },
+            "age": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  PUT nested_test/_doc/1
+  {
+    "human":{
+      "name":"Park",
+      "age":28
+    }
+  }
+  
+  // 검색 결과가 나오지 않는다.
+  GET nested_test/_search
+  {
+    "query": {
+      "match": {
+        "human.name": "park"
+      }
+    }
+  }
+  ```
+
+  - `nested` query는 root parent document를 반환한다.
+    - nested query는 기본적으로 중첩되어 있는 모든 필드가 개별 문서로 색인된다.
+    - 따라서 match 등의 일반적인 query로는 검색과 nested field를 포함하고 있는 root parent document의 반환이 불가능하다.
+
+  - Nested field에 script query를 사용할 경우 nested document의 doc value에만 접근이 가능하며, parent 또는 root document에는 접근이 불가능하다.
+
+
+
+- nested query 사용하기
+
+  - nested filed를 가진 index를 생성하고 data를 색인한다.
+
+  ```json
+  PUT nested_test
+  {
+    "mappings": {
+      "properties": {
+        "human": {
+          "type": "nested",
+          "properties": {
+            "name": {
+              "type": "text"
+            },
+            "age": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  PUT nested_test/_doc/1
+  {
+    "human":{
+      "name":"Park",
+      "age":28
+    }
+  }
+  ```
+
+  - nested query로 검색한다.
+
+  ```json
+  GET nested_test/_search
+  {
+    "query": {
+      "nested": {
+        "path": "human",
+        "query": {
+          "match": {
+            "human.name": "park"
+          }
+        }
+      }
+    }
+  }
+  ```
+
+
+
+- Options
+  - path(required)
+    - Nested object의 path를 입력한다.
+  - query(required)
+    - path에서 실행할 query로 실행할 실제 query를 입력한다.
+  - score_mode
+    - nested query가 반환할 root parent document의 점수 계산 방식을 설정한다.
+    - avg(default), max, min, none, sum 등으로 설정이 가능하다.
+  - ignore_unmapped
+    - mapping되지 않은 path를 무시할지 여부를 설정한다.
+    - 기본 값은 false이며, true로 줄 경우 mapping에 없는 filed를 path에 입력해도 error를 발생시키지 않는다.
+
+
+
+- must_not query를 사용할 때 주의할 점
+
+  - 아래와 같은 데이터가 있다고 할 때
+
+  ```json
+  PUT my-index
+  {
+    "mappings": {
+      "properties": {
+        "comments": {
+          "type": "nested"
+        }
+      }
+    }
+  }
+  
+  PUT my-index/_doc/1?refresh
+  {
+    "comments": [
+      {
+        "author": "kimchy"
+      }
+    ]
+  }
+  
+  PUT my-index/_doc/2?refresh
+  {
+    "comments": [
+      {
+        "author": "kimchy"
+      },
+      {
+        "author": "nik9000"
+      }
+    ]
+  }
+  
+  PUT my-index/_doc/3?refresh
+  {
+    "comments": [
+      {
+        "author": "nik9000"
+      }
+    ]
+  }
+  ```
+
+  - 아래의 쿼리는 1, 2번 document를 반환한다.
+    - 2번에 `"author": "nik9000"`가 있음에도 2번 document가 반환되는 이유는, 또 다른 nested object인 `"author": "kimchy"`가 match 되었기 때문이다.
+    - 즉, `"author": "nik9000"`는 match되지 않았지만, `"author": "kimchy"`가 match 되었기에 root parent document가 반환된 것이다.
+
+  ```json
+  POST my-index/_search
+  {
+    "query": {
+      "nested": {
+        "path": "comments",
+        "query": {
+          "bool": {
+            "must_not": [
+              {
+                "term": {
+                  "comments.author": "nik9000"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+  ```
+
