@@ -1109,7 +1109,8 @@
     }
     ```
 
-    
+
+
 
 - 증감연산
 
@@ -1150,7 +1151,27 @@
   }
   ```
 
+  - 주의 사항
+    - 후위 연산자의 경우 값을 1 증가(감소) 시킨 후 증가(감소) 전의 값을 반환한다.
+    - 전위 연산자의 경우 값을 1 증가(감소) 시킨 후 증가(감소)된 값을 반환한다.
+
+  ```java
+  public class MyClass {
+      public static void main(String args[]) {
+          int a = 0;
+          a = a++;
+          System.out.println(a);	// 0
+          
+          int b = 0;
+          b = ++b;
+          System.out.println(b);	// 1  
+      }
+  }
+  ```
+
   
+
+
 
 - 비교연산
   - `==`: 주소값이 같은지를 판별, 값이 같아도 주소값이 다르면 false를 반환
