@@ -562,7 +562,7 @@
   - 매개 변수를 위 처럼 순서대로 넘기지 않고 지정해서 넘기는 방법도 존재한다.
 
   ```python
-  def hello(name,age,city):
+  def hello(name, age, city):
       return "안녕하세요! "+name+"입니다. "+"저는 "+age+"살이고, "+city+"에 삽니다."
   
   # 매개 변수를 순서대로 넘길 경우
@@ -654,6 +654,43 @@
   # 아래와 같이 하면 리스트 내부의 값들이 순서대로 인자로 들어가게 된다.
   sum_four_nums(*num_list)
   ```
+
+
+
+- argument에 기본값을 설정하는 것이 가능하다.
+
+  - argument 뒤에 `=`를 사용하여 기본값을 설정한다.
+
+  ```python
+  def plus(num1, num2=5):
+      return num1+num2
+  
+  print(plus(1))	# 6
+  ```
+
+  - 기본값을 설정한 argument는, 기본값을 설정하지 않은 argument보다 뒤에 와야 한다.
+
+  ```python
+  def plus(num2=5, num1):		# SyntaxError
+      return num1+num2
+  
+  print(plus(1))
+  ```
+
+  - 기본값으로 설정해준 argument는 함수가 정의될 때 딱 1번 평가된다.
+    - 즉, 함수가 호출될 때마다 평가되지 않는다.
+    - 따라서 mutable한 값을 기본값으로 설정하고, 함수에서 해당 값을 수정할 경우, 예상치 못한 결과가 나올 수 있다.
+
+  ```python
+  def foo(num, numbers=[]):
+      numbers.append(num)
+      print(numbers)
+  
+  for i in range(1,4):
+      foo(i)
+  ```
+
+
 
 
 
