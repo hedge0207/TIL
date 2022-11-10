@@ -1,5 +1,3 @@
-
-
 # kNN search
 
 - query로 들어온 vector값과 가장 가까운 k개의 문서를 찾아준다.
