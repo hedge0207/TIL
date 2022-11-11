@@ -996,6 +996,54 @@
 
 
 
+- Basemodel로 선언한 field들의 기본값은 최초 1회만 초기화된다.
+
+  - 이로 인해 예상치 못 한 결과가 나올 수 있다.
+    - 아래 예시와 같이, 객체가 생성된 시간을 default 값으로 가져야 하는 class를 선언한 경우 예상치 못한 결과가 나올 수 있다.
+
+  ```python
+  import time
+  from datetime import datetime
+  
+  from pydantic import BaseModel
+  
+  
+  class Foo(BaseModel):
+      my_time: datetime = datetime.now()
+  
+  
+  
+  foo1 = Foo()
+  time.sleep(3)
+  foo2 = Foo()
+  print(foo1.my_time == foo2.my_time)		# True
+  ```
+
+  - `default_factory`를 사용하면 해결이 가능하다.
+    - `Field` class의 `default_factory` argument에 객체를 생성하는 함수를 넘기면, pydantic 객체가 생성될 때 마다 default 값을 새로 생성한다.
+
+  ```python
+  import time
+  from datetime import datetime
+  
+  from pydantic import BaseModel, Field
+  
+  
+  class Foo(BaseModel):
+      my_time: datetime = Field(default_factory=datetime.now)
+  
+  
+  
+  foo1 = Foo()
+  time.sleep(3)
+  foo2 = Foo()
+  print(foo1.my_time == foo2.my_time)		# False
+  ```
+
+
+
+
+
 # pyinstaller
 
 > https://pyinstaller.org/en/stable/
