@@ -1138,3 +1138,10 @@
   - Data Warehouse와 Data Lake
     - Data Warehouse는 어느 정도 구조화 된 data들이 모여 있는 곳을 의미한다.
     - Data Lake는 구조화된 data 뿐 아니라 비구조화된 data들도 존재하는 곳이다.
+
+
+
+- Programming language
+  - Programming language는 규칙과 specification들의 집합이다.
+  - 우리가 일반적으로 사용하는 programming language는 사실 규칙과 spec을 구현한 것이다.
+    - 예를 들어 Python의 경우 우리가 일반적으로 사용하는 Python은 CPython이라는 Python의 구현체이다.
