@@ -2130,3 +2130,136 @@
   }
   ```
 
+
+
+## inner hits
+
+- `nested` query, `has_child` query, `has_parent` 쿼리 등 중첩된 검색할 때 활용할 수 있는 옵션이다.
+
+  - 기본적으로 `nested` query는 match된 nested document를 반환하는 것이 아니라, 해당 document의 root parent document를 반환한다.
+  - 따라서 어떤 nested document가 match된 것인지는 확인할 수 있는 방법이 없는데, `inner_hits`를 사용하면 어떤 nested document들이 match된 것인지 확인이 가능하다.
+  - 예를 들어 위에서 살펴본 [must_not query를 사용할 때 주의할 점]의 query에 `inner_hits`를 추가하여 아래와 같이 검색이 가능하다.
+    - `inner_hits`를 통해 어떤 nested document가 match된 것인지를 확인할 수 있다.
+
+  ```json
+  POST my-index/_search
+  {
+    "query": {
+      "nested": {
+        "inner_hits": {}
+        "path": "comments",
+        "query": {
+          "bool": {
+            "must_not": [
+              {
+                "term": {
+                  "comments.author": "nik9000"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  - 그 결과는 다음과 같다.
+
+  ```json
+  // ...
+  "hits" : {
+      // ...
+      "hits" : [
+        {
+          "_index" : "my-index",
+          "_type" : "_doc",
+          "_id" : "1",
+          "_score" : 0.0,
+          "_source" : {
+            "comments" : [
+              {
+                "author" : "kimchy"
+              }
+            ]
+          },
+          "inner_hits" : {
+            "comments" : {
+              "hits" : {
+                "total" : {
+                  "value" : 1,
+                  "relation" : "eq"
+                },
+                "max_score" : 0.0,
+                "hits" : [
+                  {
+                    "_index" : "my-index",
+                    "_type" : "_doc",
+                    "_id" : "1",
+                    "_nested" : {
+                      "field" : "comments",
+                      "offset" : 0
+                    },
+                    "_score" : 0.0,
+                    "_source" : {
+                      "author" : "kimchy"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "_index" : "my-index",
+          "_type" : "_doc",
+          "_id" : "2",
+          "_score" : 0.0,
+          "_source" : {
+            "comments" : [
+              {
+                "author" : "kimchy"
+              },
+              {
+                "author" : "nik9000"
+              }
+            ]
+          },
+          "inner_hits" : {
+            "comments" : {
+              "hits" : {
+                "total" : {
+                  "value" : 1,
+                  "relation" : "eq"
+                },
+                "max_score" : 0.0,
+                "hits" : [
+                  {
+                    "_index" : "my-index",
+                    "_type" : "_doc",
+                    "_id" : "2",
+                    "_nested" : {
+                      "field" : "comments",
+                      "offset" : 0
+                    },
+                    "_score" : 0.0,
+                    "_source" : {
+                      "author" : "kimchy"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  ```
+
+
+
+- Options
+  - `from`, `size`, `sort` 등의 옵션을 사용 가능하다.
+  - `name` 옵션으로 반환 받을 `inner_hits`의 이름을 설정 가능하다.
+  - 그 밖의 옵션은 [링크](https://www.elastic.co/guide/en/elasticsearch/reference/current/inner-hits.html#inner-hits-options)참조
+
