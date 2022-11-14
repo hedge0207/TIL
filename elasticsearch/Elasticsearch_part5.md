@@ -588,8 +588,10 @@
 - terms 쿼리
 
   - 둘 이상의 term을 검색할 때 사용하는 쿼리.
-  - 예제
+    - 여러 개의 term 중 하나라도 일치하면 검색 된다.
 
+  - 예제
+  
   ```bash
   $ curl 'localhost:9200/인덱스명/_doc/_search' -H 'Content-Type: application/json' -d '{
   "query":{
@@ -601,18 +603,55 @@
   }'
   ```
 
-  - 도큐먼트에서 최소 개수의 텀 일치를 강제하려면 `minimum_should_match` 파라미터를 설정한다.
+  - 만열 하나 이상의 term이 일치할 경우에만 검색되게 하려면 `terms_set` query를 사용해야 한다.
 
-  ```bash
-  $ curl 'localhost:9200/인덱스명/_doc/_search' -H 'Content-Type: application/json' -d '{
-  "query":{
-    "terms":{
-      "필드": ["텀1","텀2"],
-      "minimum_should_match":2
+
+
+- `terms_set`
+
+  - 여러 term 중 하나만 일치하면 검색 되는 `terms` 쿼리와 달리, 몇 개의 term이 일치해야 검색될지를 설정 가능하다.
+  - 옵션
+    - `minimum_should_match_field`: 몇 개가 일치해야 검색 결과로 반환할지를 저장하고 있는 Numeric field를 받는다.
+    - `minimum_should_match_script`: 몇 개가 일치해야 검색 결과로 반환할지를 결정하는 script를 받는다.
+
+  - 예시
+
+  ```json
+  // 아래와 같은 data가 있을 때
+  PUT /job-candidates/_doc/2?refresh
+  {
+    "name": "Jason Response",
+    "programming_languages": [ "java", "php" ],
+    "required_matches": 2
+  }
+  
+  // 아래와 같이 검색하면, "c++", "java", "php" 중 둘 이상이 포함된 문서만 검색된다.
+  GET /job-candidates/_search
+  {
+    "query": {
+      "terms_set": {
+        "programming_languages": {
+          "terms": [ "c++", "java", "php" ],
+          "minimum_should_match_field": "required_matches"
+        }
+      }
     }
-  },
-  "_source":["name","tags"]
-  }'
+  }
+  
+  // 아래와 같이 검색하면 "c++", "java", "php" 중 하나 이상이 포함된 문서만 검색된다.
+  GET /job-candidates/_search
+  {
+    "query": {
+      "terms_set": {
+        "programming_languages": {
+          "terms": [ "c++", "java", "php" ],
+          "minimum_should_match_script":{
+            "source": "1"
+          }
+        }
+      }
+    }
+  }
   ```
 
 
