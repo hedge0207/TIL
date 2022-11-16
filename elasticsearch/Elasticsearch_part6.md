@@ -1,3 +1,74 @@
+# Profile API
+
+- 검색 요청이 row level에서 어떻게 처리되는지를 보여준다.
+
+  - 요청 보내기
+    - 검색 API를 보낼 때 `profile` 옵션을 true로 주면 된다.
+
+  ```json
+  GET /my-index-000001/_search
+  {
+    "profile": true,
+    "query" : {
+      "match" : { "message" : "GET /search" }
+    }
+  }
+  ```
+
+  - Kibana의 `Management`- `Dev Tools` - `Search Profiler`에서도 확인 가능하다.
+
+
+
+- query string syntax
+
+  > https://www.elastic.co/guide/en/elasticsearch/reference/8.5/query-dsl-query-string-query.html#query-string-syntax
+  >
+  > Lucene의 query syntax를 기반으로 한다.
+
+  - Profile API의 결과값에는 description이 포함되어 있는데, 이는 검색 API에 사용된 query를 query string syntax로 변환한 것이다.
+
+  - 기본
+
+    - `<field>:<term>`: field에 term이 포함되어 있다.
+    - `<field>:(<term1> OR <term2>)`: term1 또는 term2가 field에 포함되어 있다.
+
+    - `<field>:"term1 term2"`: term1, term2가 정확히 주어진 순서대로 field에 포함되어 있다.
+
+    - `<field>.\*:term`: `*`는 와일드 카드, `\`는 escape를 위해 사용된 것이고, field의 모든 sub 필드중 하나에 term이 포함되어 있다는 뜻이다.
+    - `_exists_:<field>`: field에 값이 존재하는 문서만 검색하겠다는 뜻이다.
+
+    
+
+  - `~`
+
+    - fuzzy query에 사용한다.
+    - `<term>~[숫자]` 형태로 사용한다. 
+    - `[숫자]`에는 edit distance를 입력하며, 입력하지 않을 경우 기본값은 2이다.
+
+  - `TO`
+
+    - 범위를 구하기 위해 사용한다.
+    - `[<range1> TO <range2>]`: range1과 range2를 포함하여, 둘 사이에 있는 값들을 검색한다.
+    - `{<range1> TO <range2>}`: range1과 range2를 제외하고, 둘 사이에 있는 값들을 검색한다.
+    - `{<range1> TO <range2>]`: range1이상, range2 미만의 값을 검색한다.
+    - `[ TO *]`: range 이상인 값을 검색
+    - `[* TO <range>]`: range 이하인 값을 검색
+    - `>`, `>=`, `<`, `<=`도 사용 가능하다.
+
+  - `^`
+
+    - boosting에 사용한다.
+    - `^[양수]`: 0이상의 값을 주는 것이 가능하며, 주지 않을 경우 기본 값은 1이다.
+    - 0~1 사이의 값을 줄 경우 관련성을 감소시킨다.
+
+  - `+`, `-`
+
+    - `+`:는 해당 term이 반드시 포함되어야 함을 의미한다.
+    - `-`는 해당 term이 포함되어선 안 된다는 것을 의미한다.
+    - 예를 들어 `quick brown +fox -news`는, quick과 brown은 포함 되든 안되는 상관 없고, fox는 반드시 포함되어야 하며, news는 포함되어선 안 된다.
+
+
+
 # kNN search
 
 - query로 들어온 vector값과 가장 가까운 k개의 문서를 찾아준다.
@@ -115,14 +186,6 @@
   - Plain highlighting
     - 다른 대안이 없을 경우 unified highlighter가 사용한다.
     - plain highlighter는 항상 Plain highlighting를 highlighting에 사용한다.
-
-
-
-
-
-
-
-
 
 
 

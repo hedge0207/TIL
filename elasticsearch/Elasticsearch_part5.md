@@ -1961,20 +1961,6 @@
 
 
 
-
-## 검색 관련 옵션
-
-- track_total_hits
-  - 실제 문서 수가 1만건을 넘더라도 search request의 응답으로 온 `total.value`의 값은 최대 10000이다.
-    - 이는 검색 순간에 일치한 모든 문서를 전부 count하지 않고는 정확한 계산이 불가능하기 때문이다.
-    - 따라서 ES에서는 검색 속도를 높이기 위해서 전부 count하는 대신 10000개만 count하는 방식을 사용한다.
-  - 검색시에 request body에 `track_total_hits` 값을 true로 주면 실제 일치하는 모든 문서를 count한다.
-  - boolean 값이 아닌 integer도 줄 수 있는데, 해당 숫자 만큼만 count한다.
-
-
-
-
-
 # Nested query
 
 - Nested field를 검색하기 위한 query이다.
@@ -2302,3 +2288,13 @@
   - `name` 옵션으로 반환 받을 `inner_hits`의 이름을 설정 가능하다.
   - 그 밖의 옵션은 [링크](https://www.elastic.co/guide/en/elasticsearch/reference/current/inner-hits.html#inner-hits-options)참조
 
+
+
+# 검색 관련 옵션
+
+- track_total_hits
+  - 실제 문서 수가 1만건을 넘더라도 search request의 응답으로 온 `total.value`의 값은 최대 10000이다.
+    - 이는 검색 순간에 일치한 모든 문서를 전부 count하지 않고는 정확한 계산이 불가능하기 때문이다.
+    - 따라서 ES에서는 검색 속도를 높이기 위해서 전부 count하는 대신 10000개만 count하는 방식을 사용한다.
+  - 검색시에 request body에 `track_total_hits` 값을 true로 주면 실제 일치하는 모든 문서를 count한다.
+  - boolean 값이 아닌 integer도 줄 수 있는데, 해당 숫자 만큼만 count한다.

@@ -697,10 +697,6 @@
 
 
 
-- https://www.elastic.co/guide/en/elasticsearch/reference/current/common-script-uses.html 부터 아래 문서들 추가
-
-
-
 
 
 # Aggregations
