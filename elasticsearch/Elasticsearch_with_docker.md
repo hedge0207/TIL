@@ -251,7 +251,7 @@
   - `network.host`는 내부 및 클라이언트의 요청 처리에 사용할 `network.bind_host`와 `network.pulbish_host`를 동시에 설정한다.
   - 따라서 다른 node와 통신할 때 사용하는  `network.pulbish_host` 값은 docker container의 IP(정확히는 IP의 host)값이 설정된다.
   - 그런데 docker container의 IP는 같은 docker network에 속한 것이 아니면 접근이 불가능하다.
-  - 한 서버에서, 다른 서버에 있는 docker network에 접근하는 것은 불가능하므로, 다른 서버에 있는 node가 접근할 수 있도록 docker network의 host가 아닌,서버의 host를 설정하고 port를 열어줘야한다.
+  - 한 서버에서, 다른 서버에 있는 docker network에 접근하는 것은 불가능하므로, 다른 서버에 있는 node가 접근할 수 있도록 docker network의 host가 아닌, 서버의 host를 설정하고 port를 열어줘야한다.
 
 
 
@@ -328,15 +328,19 @@
   > 아래 내용은 docker로 띄울 때 국한된 것이다.
 
   - 만일 기본 포트인 9300이 아닌 다른 포트를 사용할 경우 `transport.port` 값을 반드시 설정해줘야한다.
+    - `transport.port` 값은 `transport.publish_port`와 `transport.bind_port`에 동시에 적용된다.
+    -  `transport.publish_port`와 `transport.bind_port`를 개별적으로 적용하는 것도 가능하다.
+    - 외부 port(`:` 왼쪽의 port)를 9300이 아닌 port로 했을 경우, `transport.publish_port`를, 내부 port(`:` 오른쪽의 port)를 변경했을 경우 `transport.bind_port`를 수정한다.
+  
   - Docker로 생성한 두 개의 노드가 통신하는 과정은 다음과 같다.
     - `discovery.seed_hosts`에 설정된 ip(아래의 경우 `192.168.0.242:9301`)로 handshake 요청을 보낸다.
     - `handshake`이 완료 되면 `network.publish_host`에 설정된 host + `transport.port`에 설정된 port를 응답으로 보낸다.
     - 응답으로 받은 ip로 클러스터 구성을 위한 요청을 보낸다.
     - 따라서 만일 `transport.port` 값을 설정해주지 않아 기본값인 9300으로 설정되었다면 `discovery.seed_hosts`에 다른 port를 입력했더라도 handshake 이후의 통신이 불가능해진다.
-
+  
   - 노드 A
     - 아래와 같이 기본 port가 아닌 port를 사용한다면 `transport.port`를 반드시 설정해줘야한다.
-
+  
   ```yaml
   version: '3.2'
   
@@ -363,9 +367,9 @@
       networks:
         - elasticsearch_elastic
   ```
-
+  
   - 노드 B
-
+  
   ```yaml
   version: '3.2'
   

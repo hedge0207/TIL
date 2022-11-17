@@ -54,7 +54,7 @@
   #
   # Use a descriptive name for your cluster:
   #
-  #cluster.name: my-application
+  # cluster.name: my-application
   ```
 
   - 클러스터 전체에 적용 되는 설정
@@ -75,11 +75,11 @@
   #
   # Use a descriptive name for the node:
   #
-  #node.name: node-1
+  # node.name: node-1
   #
   # Add custom attributes to the node:
   #
-  #node.attr.rack: r1
+  # node.attr.rack: r1
   ```
 
   - 해당 노드에만 적용되는 설정.
@@ -125,7 +125,7 @@
   #
   # Lock the memory on startup:
   #
-  #bootstrap.memory_lock: true
+  # bootstrap.memory_lock: true
   #
   # Make sure that the heap size is set to about half the memory available
   # on the system and that the owner of the process is allowed to use this
@@ -158,9 +158,6 @@
   LimitMEMLOCK=infinity
   ```
   
-  
-  
-  
 
 
 
@@ -173,11 +170,11 @@
   #
   # Set the bind address to a specific IP (IPv4 or IPv6):
   #
-  #network.host: 192.168.0.1
+  # network.host: 192.168.0.1
   #
   # Set a custom port for HTTP:
   #
-  #http.port: 9200
+  # http.port: 9200
   #
   # For more information, consult the network module documentation.
   ```
