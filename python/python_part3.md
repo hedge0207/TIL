@@ -271,6 +271,110 @@
 
 
 
+- match문
+
+  > 3.10 부터 사용이 가능하다.
+
+  - 다른 언어들에 있는 switch case문과 유사하다.
+    - 일반적으로 쓰이는 패턴 대조 외에도 다양한 용도로 활용이 가능하다.
+  - 기본형
+    - 맨 마지막 case에 있는 `_`는 다른 언어의 switch case문에서 default와 유사하다.
+    - 또한, case문 내에 break가 없으면 아래 case들을 전부 수행하는 다른 언어와 달리 match case는 매칭된 case만 실행되고 종료된다.
+
+  ```python
+  match <subject>:
+      case <pattern_1>:
+          <action_1>
+      case <pattern_1>:
+          <action_1>
+      case <pattern_1>:
+          <action_1>
+      case _:
+          <action_wildcard>
+  ```
+
+  - 패턴 대조
+    - 가장 일반적으로 쓰이는 용도이다.
+    - `|`를 or 연산자로 사용이 가능하다.
+
+  ```python
+  status = 501
+  
+  match status:
+      case 400:
+          print("Bad request")
+      case 404:
+          print("Not found")
+      case 418:
+          print("I'm a teapot")
+      case 500 | 501:
+          print("Somthing wrong in sever") 
+      case _:
+          print("Something's wrong with the internet")
+  ```
+
+  - unpacking
+    - 아래 코드가 실행되면, `case (x, y)`에 걸리게 되고, x와 y에는 각각 3, 4 가 할당되게 된다.
+
+  ```python
+  point = [3, 4]
+  
+  match point:
+      case (0, 0):
+          print("Origin")
+      case (0, y):
+          print(f"Y={y}")
+      case (x, 0):
+          print(f"X={x}")
+      case (x, y):
+          print(f"X={x}, Y={y}")
+      case _:
+          raise ValueError("Not a point")
+  ```
+
+  - class와 함께 사용
+
+  ```python
+  class Point:
+      x: int
+      y: int
+  
+  def location(point):
+      match point:
+          case Point(x=0, y=0):
+              print("Origin is the point's location.")
+          case Point(x=0, y=y):
+              print(f"Y={y} and the point is on the y-axis.")
+          case Point(x=x, y=0):
+              print(f"X={x} and the point is on the x-axis.")
+          case Point():
+              print("The point is located somewhere else on the plane.")
+          case _:
+              print("Not a point")
+  ```
+
+  - if문과 함께 사용
+    - case 뒤에 오는 if문을 guard라 부른다.
+    - 만일 guard가 false면 다음에 매칭되는 case 블록을 실행한다.
+
+  ```python
+  status = 400
+  
+  match status:
+      case 400 if False:
+          print("Bad request")
+      case 404:
+          print("Not found")
+      case 418:
+          print("I'm a teapot")
+      case _:
+          print("Something's wrong with the internet")
+  ```
+
+
+
+
+
 
 
 ## 반복문
