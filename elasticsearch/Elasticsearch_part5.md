@@ -545,11 +545,67 @@
   }'
   ```
 
-
-
   - 이 밖에 다양한 쿼리 스트링 문법이 존재하는데 자세한 내용은 아래 링크 참조
 
-  > https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html
+      > https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html
+
+
+
+- Elasticsearch는 mapping되어 있는 field에 값을 넣지 않는 것이 가능하다.
+
+  - Elasticsearch를 사용하다 보면 특정 필드에 값이 있는 문서의 개수가 몇 개인지 알아야 할 때가 있음에도 불구하고, 이러한 특성 때문에 특정 필드의 값을 가진 문서의 개수를 정확히 알 수 업는 경우가 많다.
+
+  ```json
+  PUT test-index
+  {
+      "mappings":{
+          "properties":{
+              "foo":{
+                "type": "text"
+              },
+              "bar":{
+                "type": "text"
+              },
+              "baz":{
+                "type":"integer"
+              }
+          }
+      }
+  }
+  
+  PUT test-index/_doc/1
+  {
+    "foo":"hello world!"
+  }
+  
+  PUT test-index/_doc/2
+  {
+    "bar":"goodbye world!"
+  }
+  
+  PUT test-index/_doc/3
+  {
+    "baz":0
+  }
+  ```
+
+  - 이 때 query string query를 사용하면 쉽게 구할 수 있다.
+    - query string syntax 중 `_exists_`를 사용한다.
+
+  ```json
+  GET test-index/_search
+  {
+    "query": {
+      "query_string": {
+        // foo 필드에 값이 있는 문서만 반환한다.
+        "query": "_exists_:foo"
+      }
+    }
+  }
+  ```
+
+
+
 
 
 
