@@ -640,3 +640,30 @@
   - Programming language는 규칙과 specification들의 집합이다.
   - 우리가 일반적으로 사용하는 programming language는 사실 규칙과 spec을 구현한 것이다.
     - 예를 들어 Python의 경우 우리가 일반적으로 사용하는 Python은 CPython이라는 Python의 구현체이다.
+
+
+
+- magic number
+
+  - 프로그래밍을 할 때 숫자를 변수에 저장하지 않고 바로 입력하는 것을 말한다.
+  - 예시
+    - 아래 예시에서 140을 magic number라 부른다.
+
+  ```python
+  def validate(num):
+      if num >= 140:
+          return True
+  ```
+
+  - 위 코드만 보고서는 140이 뭘 뜻하는지 알 방법이 없다.
+    - 함수 이름이 구체적이지 않은 것도 한 몫한다.
+  - 만일 아래와 같이 magic number를 사용하지 않는다면, 함수명의 변경 없이도 함수가 하는 일이 보다 분명해진다.
+
+  ```python
+  def validate(num):
+      MIN_HEIGHT = 140
+      if num >= MIN_HEIGHT:
+          return True
+  ```
+
+  
