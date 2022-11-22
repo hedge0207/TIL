@@ -988,6 +988,67 @@
 
 # etc
 
+## sudo 없이 docker 명령어 실행
+
+- docker 명령어는 기본적으로 root 권한으로 실행해야 한다.
+
+  - 따라서 root가 아닌 user로 명령어를 실행하려면 항상 명령어 앞에 sudo를 입력해야한다.
+
+  - 아래 과정을 거치면 sudo를 입력하지 않고도 docker 명령어 실행이 가능하다.
+
+
+
+- sudo 없이 docker 명령어 실행
+
+  - docker group이 있는지 확인
+
+  ```bash
+  $ cat /etc/group | grep docker
+  ```
+
+  - 만일 docker group이 없다면 docker group 생성
+
+  ```bash
+  $ sudo groupadd docker
+  ```
+
+  - docker group에 사용자 추가
+    - `-a`는 그룹에 사용자를 추가하는 옵션이다.
+    - `-G`는 그룹을 지정하는 옵션이다.
+
+  ```bash
+  $ sudo usermod -aG docker <사용자 id>
+  ```
+
+  - 사용자에서 로그아웃 한 후 다시 로그인한다.
+    - ubuntu의 경우 `exit`
+
+  ```bash
+  $ logout
+  ```
+
+  - group에 추가됐는지 확인한다.
+
+  ```bash
+  $ groups
+  ```
+
+  - 만일 추가되지 않았다면 아래 명령어를 통해 재로그인 한다.
+
+  ```bash
+  $ su <사용자 id>
+  ```
+
+  
+
+  
+
+  
+
+  
+
+
+
 ## docker 컨테이너 내부에서 docker 명령어 사용
 
 - `/var/run/docker.sock`파일을 볼륨을 잡아 컨테이너 내부의 동일 경로에 생성해 주면 된다.
