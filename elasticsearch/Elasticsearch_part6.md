@@ -1,3 +1,240 @@
+# minimum_should_match
+
+- multi_match의 type이 `best_field`거나 `most_field`일 경우 `operator`와 `minimum_should_match` 옵션이 각 filed마다 개별적으로 적용된다.
+
+  - 예를 들어 아래와 같은 문서가 있다고 가정한다.
+
+  ```json
+  {
+    "foo":"hungry brown fox",
+    "bar":"quick brown fox",
+  }
+  ```
+
+  - 아래와 같은 query에 `cross_field`일 때와 `best_field`일 때 검색 결과가 달라지게 된다.
+    - `type`이 `cross_fields`일 때는 검색이 되지만, `best_fields`일 때는 검색이 되지 않는다.
+
+  ```json
+  {
+    "query": {
+      "multi_match" : {
+        "query":      "hungry quick",
+        "type":       "best_fields",		// cross_fields
+        "fields":     [ "foo", "bar" ],
+        "operator":   "and" 
+      }
+    }
+  }
+  ```
+
+  - `profile`을 통해 쿼리 식을 확인해보면 다음과 같다.
+
+  ```json
+  // best_fields일 경우
+  "((+bar:hungry +bar:quick) | (+foo:hungry +foo:quick))"
+  
+  // cross_fields일 경우
+  "+(bar:hungry | foo:hungry) +(bar:quick | foo:quick)"
+  ```
+
+  - 둘의 차이
+    - `best_fields`일 경우 field 단위로 and가 적용되어 `foo`  **field**에 `hungry`와 `quick`이 포함되어있거나, `bar` **field**에 `hungry`와 `quick`이 포함되어야 한다.
+    - 두 field 중 하나라도 두 term을 전부 포함하는 field가 있으면 해당 문서가 검색된다.
+    - 반면에 `cross_field`의 경우 `hungry`와 `quick`이라는 **term**이 두 field중 어디에라도 모두 포함되어 있기만 하면 된다.
+  - `minimum_should_match`도 마찬가지다.
+    - `type`이  `cross_fields`일 때는 검색이 되지만, `best_fields`일 때는 검색이 되지 않는다.
+
+  ```json
+  {
+    "query": {
+      "multi_match" : {
+        "query":      "hungry quick pretty",
+        "type":       "best_fields",		// cross_fields
+        "fields":     [ "foo", "bar" ],
+        "minimum_should_match": "2" 
+      }
+    }
+  }
+  ```
+
+  - `profile`을 통해 쿼리 식을 확인해보면 다음과 같다.
+
+  ```json
+  // best_fields일 경우
+  "(((bar:hungry bar:quick bar:pretty)~2) | ((foo:hungry foo:quick foo:pretty)~2))"
+  
+  // cross_fields일 경우
+  "((bar:hungry | foo:hungry) (bar:quick | foo:quick) (bar:pretty | foo:pretty))~2"
+  ```
+
+  - 둘의 차이
+    - `best_fields`일 경우 field 단위로 `minimum_should_match`가 적용되어 `foo`  **field**에 `hungry`와 `quick`, `pretty` 중 둘 이상이 포함되어 있거나 , `bar` **field**에 세 term 중 둘 이상이 포함되어야 한다.
+    - 두 field 중 하나라도 둘 이상의 term을 포함하는 field가 있으면 해당 문서가 검색된다.
+    - 반면에 `cross_field`의 경우 `hungry`와 `quick`, `pretty`의 세 개의 **term** 중 두 개의 term이 field중 어디에라도 포함되어 있기만 하면 된다.
+
+
+
+- match query
+
+  - match 되어야 하는 최소 token의 개수를 설정한다.
+
+  ```json
+  // title에 a, b, c 중 최소 2개 이상의 토큰이 있는 문서를 검색한다.
+  {
+    "query": {
+      "match": {
+        "title": {
+          "query": "a b c",
+          "minimum_should_match": "2"
+        }
+      }
+    }
+  }
+  ```
+
+
+
+- bool query
+
+  - `should` clauses들 중 반드시 match해야 하는 clauses의 수를 설정한다.
+    - 예를 들어 아래 query를 통해 검색하려는 문서는 must, filter, must_not을 만족 하면서 should가 생성하는 2개의 clauses 중 최소 하나는 만족해야 한다.
+
+  ```json
+  {
+    "query": {
+      "bool" : {
+        "must" : {
+          "term" : { "user.id" : "kimchy" }
+        },
+        "filter": {
+          "term" : { "tags" : "production" }
+        },
+        "must_not" : {
+          "range" : {
+            "age" : { "gte" : 10, "lte" : 20 }
+          }
+        },
+        "should" : [
+          { "term" : { "tags" : "env1" } },
+          { "term" : { "tags" : "deployed" } }
+        ],
+        "minimum_should_match" : 1,
+        "boost" : 1.0
+      }
+    }
+  }
+  ```
+
+
+
+
+- `minimum_should_match`의 type
+
+  - `N < M[%]`
+    - 만일 전체 clauses의 개수가 N보다 작거나 같으면 전체 clauses의 개수 만큼 match되야 한다.
+    - 만일 전체 clauses의 개수가 N보다 크면 M만큼이 match 되야 한다.
+    - 만일 `3<3`과 같이 동일한 값을 줄 경우 clause의 개수가 3 이하면 전체 clause의 개수 만큼 match되어야 하고, cluase의 개수가 4 이상이면 3만큼 match되어야 한다.
+    - 만일 그냥 3으로 줄 경우, clause의 개수가 3개 미만일 아예 검색이 되지 않게 된다는 문제가 있는데, `3<3`으로 설정하면 이러한 문제를 해결할 수 있다.
+
+  ```json
+  // 아래 query는 minimum_should_match를 3<9로 설정했고, clauses의 개수는 2이다. 
+  // clauses의 개수인 2는 3보다 작으므로 최대 2개가 match되야 한다.
+  {
+    "profile": true,
+    "query": {
+      "bool": {
+        "minimum_should_match": "3<9", 
+        "should": [
+          {
+            "match": {
+              "foo": "a"
+            }
+          },
+          {
+            "match": {
+              "foo": "b"
+            }
+          }
+        ]
+      }
+    }
+  }
+  
+  // 검색식은 아래와 같다.
+  (foo:a foo:b)~2
+  
+  
+  // 아래 query는 위 query에서 clauses의 개수만 10개로 변경했다.
+  // clauses의 개수인 10은 3보다 크기에 최대 9개가 match되야 한다.
+  {
+    "profile": true,
+    "query": {
+      "bool": {
+        "minimum_should_match": "3<9", 
+        "should": [
+          {
+            "match": {
+              "foo": "a"
+            }
+          },
+          {
+            "match": {
+              "foo": "b"
+            }
+          },
+          {
+            "match": {
+              "foo": "c"
+            }
+          },
+          {
+            "match": {
+              "foo": "d"
+            }
+          },
+          {
+            "match": {
+              "foo": "e"
+            }
+          },
+          {
+            "match": {
+              "foo": "f"
+            }
+          },
+          {
+            "match": {
+              "foo": "g"
+            }
+          },
+          {
+            "match": {
+              "foo": "h"
+            }
+          },
+          {
+            "match": {
+              "foo": "i"
+            }
+          },
+          {
+            "match": {
+              "foo": "j"
+            }
+          }
+        ]
+      }
+    }
+  }
+  
+  // 검색식은 아래와 같다.
+  (foo:a foo:b foo:c foo:d foo:e foo:f foo:g foo:h foo:i foo:j)~9
+  ```
+
+
+
+
+
 # Profile API
 
 - 검색 요청이 row level에서 어떻게 처리되는지를 보여준다.
