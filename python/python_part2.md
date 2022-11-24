@@ -927,5 +927,22 @@
 
 
 
+# immutable 
+
+- Python에서 어떤 값이 immutable하다는 것은 해당 값이 변경될 수 없을 뿐만 아니라, 변경사항이 있을 경우 새로운 객체를 생성한다는 의미이다.
+
+  - 예를 들어 integer는 immutable한 type이다.
+    - 아래와 같이 immutable한 type인 integer type의 값을 변경하면, 새로운 객체를 생성한다.
+
+
+  ```python
+  num = 1
+  num_copy = num
+  print(id(num)==id(num_copy))	# True
+  
+  num += 1
+  print(id(num)==id(num_copy))	# False
+  ```
+
 
 
