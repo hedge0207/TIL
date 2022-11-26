@@ -1,3 +1,252 @@
+# Python의 memory 관리 방식
+
+> https://realpython.com/python-memory-management/#garbage-collection
+>
+> https://www.honeybadger.io/blog/memory-management-in-python/#authorDetails
+
+> 아래 내용은 모두 CPython 기준이다.
+
+- Python의 모든 것은 객체이다.
+  - Python에 원시타입은 존재하지 않으며 모든 것은 객체로 존재한다.
+  - Python의 모든 객체는 C로 구현된 `PyObject`라는 struct를 기반으로 한다.
+    - Struct는 객체지향에서의 class 같은 개념으로, 메서드가 존재하지 않고 attribute만 존재하는 class라 생각하면 된다.
+  - `PyObject`는 단 두가지 attribute만 가지고 있다.
+    - `ob_refcnt`: 객체가 reference된 횟수
+    - `ob_Type`: 실제 type에 대한 pointer(pointer 역시 C에 존재하는 개념이다)
+  - `ob_refcnt`는 garbage collection에 사용된다.
+
+
+
+- Memory management
+  - Memory management는 어떤 애플리케이션이 data를 읽고 쓸지를 결정하는 절차이다.
+    - Memory manager가 어떤 애플리케이션의 데이터를 언제, 어디에, 어떻게 넣을지를 결정한다.
+    - Memory의 할당과 할당 받은 memory에 data를 저장하는 것은 별개의 과정이다.
+  - Python code상의 객체가 hardware(memory 혹은 hard drive)에 도달하기 까지 많은 추상 계층이 존재한다.
+    - 주요 계층 중 하나는 OS이다.
+    - OS는 물리 메모리를 추상화하고, 가상 메모리 계층을 생성한다.
+    - OS Virtual Memory Manager(VMM)은 가상 메모리 계층에 애플리케이션을 위한 공간을 할당한다.
+    - 애플리케이션은 OS가 할당해준 가상 메모리 계층에 접근한다.
+
+
+
+- Private heap
+  - Python은 OS로부터 Python process가 독점점으로 점유하는 private heap 영역을 할당받는다.
+  - Private heap은 아래 4개의 영역으로 나뉜다.
+    - Python Core Non-object memory: Python core에 있는 non-object data들을 위한 영역
+    - Internal Buffers: internal buffer를 위한 영역
+    - Object-specific memory: object-specific memory allocator를 지닌 object들을 위한 영역
+    - Object memory: objects들을 위한 영역
+  - 각 영역은 필요에 따라 동적으로 더 커지거나 줄어들 수 있다.
+
+
+
+- Memory Allocator
+  - Python memory를 관리하기 위해 CPython에 정의된 memory 관리자이다.
+  - `malloc`과 `free` 메서드가 너무 자주 호출되는 것을 방지하기 위해 allocator의 계층을 두었다.
+    - `malloc`은 메모리를 할당, `free`는 메모리를 반환하는 메서드이다.
+  - General Purpose Allcator
+    - CPython의 `malloc`  메서드이다.
+    - OS의 virtual memory manager와 상호작용하여, memory를 할당받는 역할을 한다.
+    - OS의 virtual memory manager와 상호작용하는 유일한 allocator이다.
+  - Raw memory Allocator
+    - 512bytes 보다 큰 object를 위한 allocator.
+    - General purpose allocator의 추상화를 제공한다(즉, malloc 메서드의 추상화를 제공한다).
+    - Python process가 memory를 필요로하면, general purpose allocator와 상호작용하여, memory를 할당받는다.
+    - Python process 전체에서 필요로하는 만큼의 충분한 memory가 있는지 확인하는 역할을 한다.
+  - Object Allocator
+    - 512bytes 이하의 object를 위한 allocator.
+    - `pymalloc`이라고도 불린다.
+  - Object-specific Allocatiors
+    - 특정 data type을 위한 allocator.
+    - integer, float, string, list 등의 data type은 각기 저마다의 allocator를 가지고 있다.
+    - type별로 allocator가 다르게 구현되어 있다.
+  - Object allocator와 object-specific allocatiors는 raw memory allocator가 할당 받은 memory 위에서 동작한다.
+    - 이 두 개의 allocator는 절대 OS에 memory의 할당을 요청하지 않는다.
+    - 만일 두 개의 allocator가 보다 많은 memory를 필요로 할 경우, raw memory allocator가 general-purpose allocator와 상호작용하여 memory를 요청하고, general-purpose allocator는 OS와 상호작용하여 memory를 받아온다.
+  - Allocator가 선택되는 과정
+    - Memory가 필요해진다.
+    - object specific allocator가 존재하면, object specific allocator를 사용한다.
+    - 존재하지 않을 경우 요구되는 memory가 512bytes 보다 큰지 확인한다.
+    - 512bytes 보다 클 경우 raw memory allocator를 사용한다.
+    - 512bytes 이하일 경우 object allocator를 사용한다.
+
+
+
+## Object Allocator
+
+- Object Allocator
+
+  - 상기했듯 512bytes 미만의 object에 memory를 할당하는 allocator이다.
+  - 만일 작은 크기의 object가 memory를 요청하면 해당 객체를 위한 memory를 할당하는 대신, 큰 크기의 memory chunk를 할당하고, 해당 block에 작은 객체를 저장한다.
+    - 이를 통해 매번 객체가 생성될 때마다 memory 할당을 위해 `malloc`이 호출되는 것을 피할 수 있다.
+  - Arena
+    - Object Allocator가 할당 받은 큰 크기의 memory chunk를 **Arena**라 부른다.
+    - 하나의 Arena는 256kb이다.
+  - Pool
+    - Arena를 효율적으로 사용하기 위해서 CPython은 Arena를 여러 개의 **Pool**로 분할한다.
+    - 하나의 Pool의 크기는 [virtual memory page](https://en.wikipedia.org/wiki/Page_(computer_memory))의 크기와 같다.
+    - 대부분의 경우 virtual memory page의 크기는 4kb이므로, 대부분의 Pool 역시 4kb이다.
+
+  - Block
+    - Pool은 다시 여러 개의 **Block**으로 나뉜다.
+    - Object allocator가 object에 할당할 수 있는 가장 작은 크기의 memory 단위이다.
+
+
+
+- Block
+
+  - 하나의 object는 여러 block에 걸쳐서는 할당될 수 없고, 하나의 block에만 할당된다.
+    - 하나의 Block의 크기는 가변적(최소 크기는 8kb, 최대 크기는 512kb)이며, 동일한 Pool 내에 있는 Block의 크기는 모두 동일하다.
+  - 각 block의 크기는 **Size Class**라고도 불린다.
+    - 예를 들어 아래 보이는 것과 같이 size class가 0인 block은 8bytes의 크기를 가지고, size class가 4인 block은 40의 크기를 가진다.
+    - 하나의 block에는 object 전체가 할당되거나, 할당되지 않거나 둘 중 하나이다. 따라서 예를들어, 41 bytes의 memory가 필요하다면, 7bytes가 남더라도 48bytes짜리 block에 저장해야 한다.
+
+  ```c
+   // CPython의 source code에서 발췌
+   /*
+   * For small requests we have the following table:
+   *
+   * Request in bytes     Size of allocated block      Size class idx
+   * ----------------------------------------------------------------
+   *        1-8                     8                       0
+   *        9-16                   16                       1
+   *       17-24                   24                       2
+   *       25-32                   32                       3
+   *       33-40                   40                       4
+   *       41-48                   48                       5
+   *       49-56                   56                       6
+   *       57-64                   64                       7
+   *       65-72                   72                       8
+   *        ...                   ...                     ...
+   *      497-504                 504                      62
+   *      505-512                 512                      63
+   *
+   *      0, SMALL_REQUEST_THRESHOLD + 1 and up: routed to the underlying
+   *      allocator.
+   */
+  
+  /*==========================================================================*/
+  ```
+
+  - Block은 3가지 상태를 가진다.
+    - untouched는 아직 data가 할당된 적 없으며, memory를 할당 받은 적도 없는 상태이다.
+    - free는 data가 할당된 적이 있으나, 현재는 할당이 해제되어 아무런 data도 저장하고 있지 않은 상태이다.
+    - allocated는 data가 저장되어 있는 상태이다.
+  - free 상태의 경우, data는 담고있지 않지만, OS로 부터 할당 받은 memory는 계속 가지고 있다.
+    - 즉, block에서 data가 지워졌다고 해서 해당 block이 할당 받은 memory까지 반환하는 것은 아니다.
+    - memory는 반환하지 않고 할당 받은 채로 유지하고 있다가, 새로운 데이터가 들어오면 새로 할당을 요청하지 않고, 바로 data를 저장한다.
+  - `freeblock` pointer는 free 상태인 memory block들의 linked list를 가리킨다.
+    - 즉, data를 저장할 수 있는 block들이 저장된 list를 가리키고 있다.
+  - 가용한 free block 보다 많은 양의 memory가 필요해질 경우에만, allocator는 untouched 상태인 block에 memory를 할당한다.
+    - 즉, allocator는 memory가 실제로 필요해지기 전에는 memory를 할당하지 않도록 디자인 되어 있다.
+
+
+
+- Pool
+
+  - Pool은 현재 Arena에 가용한 Block을 가진 Pool이 없을 때, 새로 생성된다.
+  - Pool의 생성과 함께 Block도 생성된다.
+    - 단, 모든 Block이 한 번에 생성되는 것은 아니다.
+    - 처음에는 단 2개의 Block만이 생성되며, 이후 필요(memory)에 따라 하나씩 더 생성된다.
+
+  - Pool은 Used, Full, Empty 세 가지 상태중 하나의 상태를 가진다.
+    - Used는 할당에 사용할 수 있는 block을 가지고 있는 상태이다.
+    - Full은 pool 내의 모든 block이 모두 할당되어 더 이상 여유 공간이 없는 상태이다.
+    - Empty는 pool 내의 모든 block이 사용 가능한 상태이다. 아직 size class도 정해져 있지 않아, 어떤 size class의 block도 할당할 수 있다.
+  - Pool의 source code
+
+  ```c
+  struct pool_header {
+      union { block *_padding;
+              uint count; } ref;          /* number of allocated blocks    */
+      block *freeblock;                   /* pool's free list head         */
+      struct pool_header *nextpool;       /* next pool of this size class  */
+      struct pool_header *prevpool;       /* previous pool       ""        */
+      uint arenaindex;                    /* index into arenas of base adr */
+      uint szidx;                         /* block size class index        */
+      uint nextoffset;                    /* bytes to virgin block         */
+      uint maxnextoffset;                 /* largest valid nextoffset      */
+  };
+  ```
+
+  - 같은 size class를 가진 다른 pool들과 doubly linked list로 연결되어 있다.
+    - 이를 통해 서로 다른 pool 사이에서도 block size에 맞는 pool을 쉽게 찾을 수 있게 된다.
+    - 위 코드에서 `nextpool` pointer가 같은 size class를 가진 다음 pool을 가리키고, `prevpool` pointer가 이전 pool을 가리킨다.
+  - `freeblock` pointer
+    - `freeblock` pointer는 pool 내의 가용한 block들의 정보가 저장된 linked list를 가키리고 있다.
+  - `usedpools` list에는 사용 가능한 공간을 가지고 있는 pool들의 정보가 저장되어 있다.
+    - `usedpools` list의 각 index는 class size와 동일하다.
+    - 예를 들어 `usedpool[0]`에는 size class가 0인 pool들이 저장되어 있다.
+    - 만일 특정 block size의 data를 저장해야 할 경우  `usedpools`를 확인하여 해당 block size와 일치하는 pool을 찾아낸다.
+
+  - `freepools` list는 empty 상태인 pool들에 대한 정보를 저장하고 있다.
+    - empty pool이 최초로 memory를 할당 받는 과정은 다음과 같다.
+    - 8byte 짜리 block이 필요한 데이터가 들어온다.
+    - `usedpools`에서 8bytes짜리 block을 가진 pool을 찾는다. 
+    - 만일 8bytes짜리 block을 가진 pool이 존재하면 해당 pool에 저장한다.
+    - 만일 존재하지 않는다면, `freepools`에 있는 pool들 중 하나를 선택하여 block size를 8 bytes로 설정하여 memory를 할당 받는다. 
+    - 해당 block에 data를 저장 후, `freepools`에서 `usedpools`로 옮겨진다.
+
+  - full 상태였던 pool에서 일부 block이 가용한 상태가 되면 다시 `usedpools` list에 추가된다.
+
+
+
+- Arena
+
+  - 작은 크기의 object가 memory를 요청했을 때, 해당 memory만큼의 가용 공간을 가진 arena가 없다면, raw memory allocator는 OS에 256kb의 memory를 요구한다.
+  - source code
+
+  ```c
+  struct arena_object {
+      /* The address of the arena, as returned by malloc */ 
+      uintptr_t address;
+  
+      /* Pool-aligned pointer to the next pool to be carved off. */
+      block* pool_address;
+  
+      /* The number of available pools in the arena:  free pools + never-
+       * allocated pools.
+       */
+      uint nfreepools;
+  
+      /* The total number of pools in the arena, whether or not available. */
+      uint ntotalpools;
+  
+      /* Singly-linked list of available pools. */
+      struct pool_header* freepools;
+  
+      struct arena_object* nextarena;
+      struct arena_object* prevarena;
+  };
+  ```
+
+  - `freepools` pointer는 가용한 상태(empty or used 상태인 pool들)인 pool들에 대한 정보가 담긴 list를 가리킨다.
+    - `nfreepools`은 arena에 있는 가용한 상태인 pool들의 숫자이다.
+
+  - Arena는 `usable_arenas`라는 doubly linked list에 의해 관리된다.
+    - `usable_arenas`에는 arena들에 대한 정보가 가용한 pool들의 정보와 함께 저장되어 있다.
+  - `usable_arenas`는 arena별로 `nfreepools`에 따라 오름차순으로 정렬된다.
+    - 즉, 가용한 상태인 pool의 개수가 적을 수록 list의 앞에 오게 된다.
+    - 이는 가용한 상태인 pool의 개수가 적은 arena에 새로운 data가 먼저 저장된다는 것을 의미한다.
+  - free 상태인 pool의 개수가 적은 arena에 새로운 data가 먼저 저장되는 이유
+    - Arena는 pool, block과 달리 memory에 저장된 data가 삭제될 경우(즉 arena의 경우 모든 pool이 empty 상태가 될 경우), 실제로 OS로부터 할당받은 memory를 다시 OS에 반환한다(pool과 block의 경우 data가 삭제된다고 memory를 반환하지는 않는다).
+    - 이를 통해 뒤에 있는 pool 들에는 memory를 할당하지 않게 되어, 전체 메모리를 감소시킬 수 있게 된다.
+
+
+
+- Python Process는 Memory를 반환하는가?
+  - Object를 저장하고 있던 Block이 free 상태가 되어도, CPython은 OS에 memory를 반환하지 않는다.
+    - 심지어 Pool 내의 모든 Block이 free 상태가 되어도, CPython은 OS에 memory를 반환하지 않는다.
+
+  - CPython은 Arena 단위로 메모리를 반환한다.
+    - 따라서 CPython은 되도록 기존에 할당받았으나 반환하지 않은 메모리에 Object를 할당하며, 정말 필요할 때만 새로운 메모리를 요구한다.
+    - 이것이 `usable_arenas`가 `nfreepools`에 따라 오름차순으로 정렬되는 이유이다.
+    - 최대한 앞에서부터(가용한 메모리가 적은 Arena부터) Object가 할당되므로, 뒤에 있는 Arena일수록 할당은 적어지게 된다.
+    - 결국, 뒤에 있는 Arena일 수록 Arena가 가지고 있는 모든 Pool이 비워질 가능성이 높아지게 된다.
+    - Arena 내에 있는 모든 Object가 삭제되면 OS에 해당 Arena가 점유하고 있던 memory를 반환한다.
+
+
+
 # Python은 왜 느린가?
 
 > http://jakevdp.github.io/blog/2014/05/09/why-python-is-slow/
