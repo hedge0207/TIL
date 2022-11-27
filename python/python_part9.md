@@ -247,6 +247,233 @@
 
 
 
+# Python의 Garbage Collection
+
+> https://www.honeybadger.io/blog/memory-management-in-python/#garbage-collection-in-python
+
+- Garbage Collection(GC)
+  - Garbage Collection은 더 이상 사용되지 않는 메모리를 반환하거나 회수하는 process이다.
+    - 할당 되었으나 더 이상 사용되지 않는 메모리를 garbage라 부른다.
+  - Python은 자동으로 GC를 수행한다.
+    - C와 같은 언어에서는 더 이상 사용되지 않는 메모리(Object)를 수동으로 할당 해제해야한다.
+  - Python은 아래 2가지 방식으로 자동으로 GC를 수행한다.
+    - reference counting 기반의 GC
+    - Generational GC
+
+
+
+- Reference Count
+
+  - CPython의 객체에는 `type`과 `ref_count`가 있다.
+    - `type`은 객체의 type을 의미한다.
+    - `ref_count`는 object가 참조된 횟수를 의미한다.
+
+  ```python
+  var = "memory"
+  
+  """
+  위와 같이 변수를 선언하면 Cpython은 아래 구조와 같은 object를 생성한다.
+  type: string
+  value: memory
+  ref_count: 1
+  """
+  ```
+
+  - `sys` 모듈의 `getrefcount` 메서드로 object의 참조 횟수를 확인할 수 있다.
+    - 1이 아닌 4가 나오는 이유는 아래 번외 참고
+
+  ```python
+  import sys
+  
+  
+  var = 'memory'
+  ref_count = sys.getrefcount(var)
+  print(ref_count)	# 4
+  ```
+
+  - ref_count 감소시키기
+    - bar가 foo를 참조하게 하여 foo의 ref_count를 1 증가시킨 후, bar에 None을 할당하면, bar가 더 이상 foo를 참조하지 않게 되면서 foo의 ref_count가 다시 감소하게 된다.
+    - 혹은 `del bar`를 통해 bar 객체를 삭제하여도 foo의 ref_count가 1 감소하게 된다.
+
+  ```python
+  import sys
+  
+  
+  foo = 'memory'
+  bar = foo
+  
+  ref_count = sys.getrefcount(foo)
+  print(ref_count)	# 5
+  
+  bar = None
+  ref_count = sys.getrefcount(foo)
+  print(ref_count)    # 4
+  ```
+
+  - Reference count를 활용한 GC
+    - Reference count를 활용한 GC의 원리는 단순하다.
+    - 어떤 객체의 ref_count가 0이 되면, GC는 해당 객체를 memory에서 삭제한다.
+    - Reference count를 활용한 GC는 real-time으로 진행되며, 비활성화 하는 것이 불가능하다.
+
+  ```python
+  # 아래와 같이 foo를 삭제하더라도, foo가 가리키는 객체를 참조하는 bar가 존재하므로, foo가 가리키던 객체는 memory에서 삭제되지 않는다.
+  foo = "memory"
+  bar = [foo]
+  del foo
+  print(bar[0])	# memory
+  ```
+
+
+
+- Generational Garbage Collection
+
+  - Reference count 기반의 GC는 cyclic references에는 작동하지 않는다.
+    - Cyclic references를 가지는 객체의 GC를 위해 Generational Garbage Collection가 필요하다.
+
+  - Cyclic references(Circular reference)
+    - Object가 스스로를 참조하거나 두 개의 서로 다른 object가 서로를 참조하는 상황을 의미한다.
+    - List나 dictionary, 사용자 정의 object등의 container object에서만 가능한 상황이다.
+    - integer, float, string 등의 immutable한 type에서는 불가능하다.
+
+  ```python
+  """
+  예시1.
+  아래와 같이 lst가 lst를 참조하는 상황에서 lst를 제거한다고 해도 lst가 가리키는 객체는 여전히 lst를 참조하고 있으므로, memory에서 삭제되지 않는다.
+  """
+  import sys
+  
+  lst = list()
+  print(sys.getrefcount(lst))		# 2
+  lst.append(lst)
+  print(sys.getrefcount(lst))		# 3
+  del lst
+  
+  
+  """
+  예시2
+  foo 객체는 bar 객체를 참조하고, bar 객체 역시 foo 객체를 참조하는 상황에서 foo와 bar 객체를 삭제한다고 해도, 서로를 참조하고 있기에 memory에서 완전히 삭제되지 않는다.
+  """
+  class Foo:
+      pass
+  class Bar:
+      pass
+  foo = Foo()
+  bar = Bar()
+  foo.ref_bar = bar
+  bar.ref_foo = foo
+  del foo
+  del bar
+  ```
+
+  - Generational Garbage Collection의 동작 방식
+    - Cyclic references는 오직 container 객체에서만 가능한 상황이므로, 모든 container 객체를 scan하여 circular references 상태인 객체를 찾고, 삭제가 가능하다면 삭제한다.
+    - Scan해야 할 객체의 개수를 줄이기 위해서 generational GC는 immutable type만을 담고 있는 tuple은 무시한다.
+    - 또한 모든 container 객체를 scan하는 것은 시간이 오래 걸리는 작업이기 때문에 reference count GC와는 달리 real-time으로 동작하지는 않고, 일정 기간마다 실행된다.
+    - reference count GC와는 달리 비활성화가 가능하다.
+    - generational GC가 실행되면, 다른 모든 작업은 정지된다.
+    - 또한 generational GC가 수행되는 횟수를 줄이기 위해서, CPython은 객체를 여러 generation으로 구분하여 각 generation별로 threshold를 설정한다.
+    - 만일 특정 generation에 있는 객체들의 수가 threshold를 초과하면, generational GC가 실행된다.
+  - Generation
+    - CPython은 object를 세 개의 generation(0, 1, 2)으로 분류한다.
+    - 새로운 객체가 생성되면, 첫 generation에 속하기 된다.
+    - 만일 generational garbage collection가 실행된 후에도 남아있다면, 해당 객체는 두 번째 generation으로 넘어가게 된다.
+    - 만일 generational garbage collection이 한 번 더 실행된 후에도 남아있다면, 해당 객체는 마지막 generation으로 넘어가게 된다.
+    - 일반적으로 대부분의 객체는 첫 generational garbage collection 때 사라지게 된다.
+    - Generational garbage collection은 항상 주어진 generation이하의 generation들을 대상으로 GC를 수행한다.
+    - 예를 들어 두 번째 generation에 general GC가 수행되면, 첫 번째 generation에도 general GC가 수행된다.
+  - `gc` module
+    - Python에는 Generational garbage collection을 조작하기 위한 `gc` 모듈이 있다.
+    - 각 generation 별 threshold 확인 및 변경, 각 generation에 저장된 객체의 개수 확인, generational garbage collection 비활성화 등이 가능하다.
+
+  ```python
+  import gc
+  
+  
+  print(gc.get_threshold())
+  print(gc.get_count())
+  ```
+
+
+
+- 번외. 위 예시에서 ref_count가 1이 아닌 4가 나오는 이유
+
+  > https://stackoverflow.com/questions/45021901/why-does-a-newly-created-variable-in-python-have-a-ref-count-of-four
+
+  - 위와 같이 script가 아닌 REPL console로 작성하면 다음과 같은 결과가 나온다.
+    - var가 선언되면서 1번, `getrefcount`의 인자로 넘어가면서 1번
+
+  ```bash
+  >>> import sys
+  >>> var = "memory"
+  >>> print(sys.getrefcount(var))	# 2
+  ```
+
+  - 이와 같은 차이가 나는 이유
+    - `gc` 모듈의 `get_referrers` 메서드를 사용하면 객체를 어디서 참조하고 있는지를 확인 가능하다(결과는 Python version에 따라 달라질 수 있다).
+    - string type의 경우 byte code로 complie 과정에서 객체를 2번 더 참조하게 되어, ref_count가 2 증가하게 된다.
+    - 그러나 REPL console의 경우 context를 분리하여 수행하므로, ref_count가 2 증가하지 않는다.
+
+  ```python
+  import sys
+  import gc
+  from pprint import pprint
+  
+  
+  var = 'memory'
+  ref_count = sys.getrefcount(var)
+  print(ref_count)
+  pprint(gc.get_referrers(var))
+  
+  """
+  4
+  [{'__annotations__': {},
+    '__builtins__': <module 'builtins' (built-in)>,
+    '__cached__': None,
+    '__doc__': None,
+    '__file__': 'test.py',
+    '__loader__': <_frozen_importlib_external.SourceFileLoader object at 0x7f462bc90160>,
+    '__name__': '__main__',
+    '__package__': None,
+    '__spec__': None,
+    'gc': <module 'gc' (built-in)>,
+    'pprint': <function pprint at 0x7f462bb990d0>,
+    'ref_count': 4,
+    'sys': <module 'sys' (built-in)>,
+    'var': 'memory'},
+   ['sys',
+    'gc',
+    'pprint',
+    'pprint',
+    'var',
+    'memory',
+    'ref_count',
+    'sys',
+    'getrefcount',
+    'var',
+    'print',
+    'ref_count',
+    'pprint',
+    'gc',
+    'get_referrers',
+    'var']]
+  """
+  ```
+
+  - 따라서 직접 compile후에 ref_count를 확인하면 결과가 달라지게 된다.
+
+  ```python
+  import sys
+  
+  exec(compile("var = 'memory'", "<string>", "exec"))
+  print(sys.getrefcount(var))	# 2
+  ```
+
+
+
+
+
+
+
 # Python은 왜 느린가?
 
 > http://jakevdp.github.io/blog/2014/05/09/why-python-is-slow/
