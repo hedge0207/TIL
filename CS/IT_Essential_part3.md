@@ -666,4 +666,13 @@
           return True
   ```
 
-  
+
+
+
+- fine-grained와 coarse-grained
+  - 프로세스를 어떻게 나눌지에 대한 용어이다.
+  - fine-grained
+    - 하나의 작업을 여러개의 작은 프로세스를 쪼개어 처리하는 것을 의미한다.
+  - coarse-grained
+    - 하나의 작업을 큰 단위의 프로세스로 나누어 처리하는 것을 의미한다.
+
