@@ -426,6 +426,301 @@
 
 
 
+
+
+# Collapse
+
+- 검색 결과에서 중복되는 문서를 하나로 묶고 싶을 때 사용하는 parameter이다.
+  - 중복 여부는 특정 필드를 기준으로 판단한다.
+    - 대상 필드는 `doc_values`가 활성화 된 keyword 필드나 numeric 필드여야 한다.
+    - 여러 개의 필드를 기준으로 묶는 것은 불가능하다.
+    - 그러나 묶인 필드 내에서 또 다른 필드로 다시 묶는 것은 가능하다.
+  - 정렬 결과 가장 최상단에 있는 것이 대표 문서가 된다.
+
+
+
+- 예시
+
+  - 예시 데이터 색인
+
+  ```json
+  // POST collapse-test/_bulk
+  { "index": { "_id": "1" } }
+  { "name":"John", "age":28}
+  { "index": { "_id": "2" } }
+  { "name":"John", "age":28}
+  { "index": { "_id": "3" } }
+  { "name":"John", "age":27}
+  { "index": { "_id": "4" } }
+  { "name":"John", "age":26}
+  { "index": { "_id": "5" } }
+  { "name":"Tom", "age":55}
+  { "index": { "_id": "6" } }
+  { "name":"Tom", "age":37}
+  { "index": { "_id": "7" } }
+  { "name":"Henry","age":22}
+  ```
+
+  - 검색
+    - 이름을 검색으로 중복 여부를 판단하며, 나이를 기준으로 오름차순 정렬하여, 나이가 가장 어린 사람의 문서가 대표 문서가 되도록 한다.
+
+  ```json
+  // GET collapse-test/_search
+  {
+    "collapse": {
+      "field": "name.keyword"
+    },
+    "sort": [
+      {
+        "age": {
+          "order": "asc"
+        }
+      }
+    ]
+  }
+  ```
+
+  - 결과
+    - name 필드의 값이 John인 문서들 중, age 값이 가장 낮은 4번 문서가 대표 문서가 된다.
+
+  ```json
+  {
+      "hits": [
+          {
+              "_index": "collapse-test",
+              "_type": "_doc",
+              "_id": "7",
+              "_score": null,
+              "_source": {
+                  "name": "Henry",
+                  "age": 22
+              },
+              "fields": {
+                  "name.keyword": [
+                      "Henry"
+                  ]
+              },
+              "sort": [
+                  22
+              ]
+          },
+          {
+              "_index": "collapse-test",
+              "_type": "_doc",
+              "_id": "4",
+              "_score": null,
+              "_source": {
+                  "name": "John",
+                  "age": 26
+              },
+              "fields": {
+                  "name.keyword": [
+                      "John"
+                  ]
+              },
+              "sort": [
+                  26
+              ]
+          },
+          {
+              "_index": "collapse-test",
+              "_type": "_doc",
+              "_id": "6",
+              "_score": null,
+              "_source": {
+                  "name": "Tom",
+                  "age": 37
+              },
+              "fields": {
+                  "name.keyword": [
+                      "Tom"
+                  ]
+              },
+              "sort": [
+                  37
+              ]
+          }
+      ]
+  }
+  ```
+
+
+
+- `inner_hits`를 통해 어떤 문서들이 묶였는지 확인이 가능하다.
+
+  - query
+
+  ```json
+  // GET collapse-test/_search
+  {
+    "collapse": {
+      "field": "name.keyword",
+      "inner_hits":{
+        "name": "test-inner-hits"
+      }
+    },
+    "sort": [
+      {
+        "age": {
+          "order": "asc"
+        }
+      }
+    ]
+  }
+  ```
+
+  - 결과
+
+  ```json
+  // 생략
+  {
+      "_index": "collapse-test",
+      "_type": "_doc",
+      "_id": "6",
+      "_score": null,
+      "_source": {
+          "name": "Tom",
+          "age": 37
+      },
+      "fields": {
+          "name.keyword": [
+              "Tom"
+          ]
+      },
+      "sort": [
+          37
+      ],
+      "inner_hits": {
+          "test-inner-hits": {
+              "hits": {
+                  "total": {
+                      "value": 2,
+                      "relation": "eq"
+                  },
+                  "max_score": 0.0,
+                  "hits": [
+                      {
+                          "_index": "collapse-test",
+                          "_type": "_doc",
+                          "_id": "5",
+                          "_score": 0.0,
+                          "_source": {
+                              "name": "Tom",
+                              "age": 55
+                          }
+                      },
+                      {
+                          "_index": "collapse-test",
+                          "_type": "_doc",
+                          "_id": "6",
+                          "_score": 0.0,
+                          "_source": {
+                              "name": "Tom",
+                              "age": 37
+                          }
+                      }
+                  ]
+              }
+          }
+      }
+  }
+  ```
+
+
+
+- 중첩해서 사용하는 것도 가능하다.
+
+  - 예시
+    - `inner_hits` 내부에 `collapse` parameter를 추가한다.
+
+  ```json
+  GET collapse-test/_search
+  {
+    "collapse": {
+      "field": "name.keyword",
+      "inner_hits":{
+        "name": "test-inner-hits",
+        "collapse": { 
+          "field": "age" 
+        }
+      }
+    },
+    "sort": [
+      {
+        "age": {
+          "order": "asc"
+        }
+      }
+    ]
+  }
+  ```
+
+  - 결과
+    - name과 age가 같은 2번 문서가 그룹핑 됐다.
+
+  ```json
+  {
+      "_index": "collapse-test",
+      "_type": "_doc",
+      "_id": "4",
+      "_score": null,
+      "_source": {
+          "name": "John",
+          "age": 26
+      },
+      "fields": {
+          "name.keyword": [
+              "John"
+          ]
+      },
+      "sort": [
+          26
+      ],
+      "inner_hits": {
+          "test-inner-hits": {
+              "hits": {
+                  "total": {
+                      "value": 4,
+                      "relation": "eq"
+                  },
+                  "max_score": null,
+                  "hits": [
+                      {
+                          "_index": "collapse-test",
+                          "_type": "_doc",
+                          "_id": "1",
+                          "_score": 0.0,
+                          "_source": {
+                              "name": "John",
+                              "age": 28
+                          },
+                          "fields": {
+                              "age": [
+                                  28
+                              ]
+                          }
+                      },
+                      // 후략
+                  ]
+              }
+          }
+      }
+  }
+  ```
+
+
+
+- 둘 이상의 field로 중복 문서를 grouping하는 것은 불가능하다.
+  - 둘 이상의 field로 중복 문서를 그룹핑하는 방법에는 아래와 같은 방법들이 있다.
+    - aggregation 사용
+    - collpase 내의 inner_hits를 받아서 수동으로 grouping
+    - 중복 여부를 판단하려는 두 필드의 값을 결합한 필드를 생성하여 색인
+  - aggregation의 경우 문서의 크기에 따라 자원을 많이 사용할 수 있다는 문제가 있다.
+  - inner_hits 를 받아서 수동으로 grouping하는 것도 검색 이후에 모든 문서를 수동으로 확인해야 하므로 비효율적이다.
+  - 따라서 그나마 효율적인 방법은 중복 여부를 판단하려는 필드들을 조합하여 hash 값을 만들고, 그 hash 값을 색인하여 hash값 기반으로 중복 여부를 판단하는 것이다.
+
+
+
 # 엘라스틱서치 모니터링
 
 ## Head
