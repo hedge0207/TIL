@@ -393,7 +393,15 @@
 
 
 
-
+- Approximate kNN
+  - `dense_vector` 필드를 대상으로 kNN search를 수행한다.
+    - 색인시에 `dense_vector` 필드의  `index` prameter를 true로 줘야 한다(ES 8부터 지원).
+    - 또한 `similarity` parameter에도 값을 설정해야 한다.
+  - `similarity` parameter
+    - 유사도 판별의 기준을 설정하는 것으로, `l2_norm`, `dot_product`, `cosine` 중 하나를 선택해야한다.
+    - 공식문서에서는 `cosine` 보다 `dot_product`를 사용하는 것을 권장한다.
+    - `dot_product`를 사용하려면, 모든 vector의 길이가 1로 정규화되어야 한다.
+    - 따라서 `dot_product`를 사용할 경우 vector의 길이를 계산하는 연산을 수행할 필요가 없기에, 성능상 `cosine` 보다 낫다.
 
 
 
@@ -425,6 +433,10 @@
     - plain highlighter는 항상 Plain highlighting를 highlighting에 사용한다.
 
 
+
+# Stopword
+
+- stopword 파일을 수정한 후 적용하려면 index를 close, open해줘야 한다.
 
 
 
