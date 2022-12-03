@@ -173,5 +173,451 @@
 
 
 
+# Data type
+
+- 변수의 type
+
+  - 모든 변수는 type을 가진다.
+  - 변수의 type은 변수가 선언될 때 정해진다.
+  - Kotlin에는 두 가지 type 지정 방식이 존재한다.
+    - 변수에 할당된 값에 따라서 kotlin이 자동적으로 변수의 타입을 정하는 방식(type inference).
+    - 변수를 선언할 때 변수의 type을 지정하는 방식.
+
+  ```kotlin
+  // type inference
+  var text = "text"
+  
+  // 직접 지정
+  var text: String = "text"
+  ```
+
+  - 만일 변수의 선언을 먼저 하고, 초기화(값의 할당)은 나중에 해야 할 경우, type inference방식은 사용할 수 없다.
+
+  ```kotlin
+  val greeting 		// error 발생
+  greeting = "hello"
+  ```
+
+  - Data type의 가장 중요한 기능 중 하나는 변수에 적절하지 않은 값이 할당되는 것을 막아주는 것이다.
+
+  ```kotlin
+  val n: Int = "abc"	// Type mismatch error 발생
+  ```
+
+
+
+- Character
+
+  - 작은 따옴표로 문자(혹은 숫자, 기호) 하나를 표현하면 Char type이 된다.
+    - 크기는 16bit이다.
+
+  ```kotlin
+  val lowerCase = 'a'
+  val number = '1'
+  val space = ' '
+  ```
+
+  - 모든 char type의 값은 그에 해당하는 unicode 값을 지니고 있다.
+    - Char type인 값에 숫자를 더하거나 빼면 unicode상에서 해당 숫자만큼 더한 char 값이 나온다.
+    - 또한 이 값에 따라 대소, 동등 비교 등이 가능하다. 
+    - `.code`를 통해 code 값을 확인 가능하다.
+
+  ```kotlin
+  val ch1 = 'b'
+  val ch2 = ch1 + 1 // 'c'
+  val ch3 = ch2 - 2 // 'a'
+  
+  var ch = 'A'
+  
+  ch += 10
+  println(ch)   // 'K'
+  println(++ch) // 'L'
+  println(++ch) // 'M'
+  println(--ch) // 'L'
+  
+  println('a' < 'c')  // true
+  
+  print('a'.code)		// 97(ascii code 97, 16진수로는 0x61)
+  ```
+
+  - escape sequences
+    - `\`로 시작하는 특수한 character들이다.
+    - `'\n'`: newline
+    - `'\t'`: tab
+    - `'\r'`: 커서를 행의 앞으로 이동
+    - `'\''`: single quote
+    - `'\"'` : double quote
+
+  - `isDigit()`
+    - 주어진 char 값이 숫자형이면 하면 true, 아니면 false를 반환한다.
+
+  ```kotlin
+  val one = '1'
+  
+  val isDigit = one.isDigit()	// true
+  ```
+
+  - `isLtter()`
+    - 주어진 char 값이 문자면 true, 아니면 false를 반환한다.
+
+  ```kotlin
+  val one = '1'
+  
+  val isLetter = one.isLetter() // false
+  ```
+
+  - `isLetterOrDigit()`
+    - 주어진 char 값이 문자거나 숫자면 true, 아니면 false를 반환한다.
+
+  ```kotlin
+  val one = '1'
+  
+  val isLetter = one.isLetterOrDigit() // true
+  ```
+
+  - `isUpperCase()`, `isLowerCase()`
+    - 주어진 char 값이 각각 대문자, 소문자면 true, 아니면 false를 반환한다.
+
+  ```kotlin
+  val capital = 'A'
+  
+  val isUpperCase = capital.isUpperCase() // true
+  val isLowerCase = capital.isLowerCase() // false
+  ```
+
+  - `uppercase()`, `lowercase()`
+    - 주어진 char 값을 각기 대문자, 소문자로 변환한 값을 **string** type으로 반환 한다.
+    - Kotlin 1.5 이전까지는 `toUpperCase`, `toLowerCase`를 사용했다.
+    - char type으로 반환하려면 `uppercaseChar`, `lowercaseChar`를 사용하면 된다.
+
+
+
+- String
+
+  - 큰 따옴표로 값을 표현한다.
+    - 따라서 `"A"`는 character가 아닌 string이다.
+
+  ```kotlin
+  val message = "Hello World!"
+  ```
+
+  - String의 길이 구하기
+    - character의 개수와 동일하다.
+    - `length` 메서드를 사용한다.
+
+  ```kotlin
+  val language = "kotlin"
+  println(language.length)	// 6
+  ```
+
+  - String 합치기
+    - `+` 연산자를 사용한다.
+    - text type이 아닌 다른 type과 합치는 것도 가능하다.
+
+  ```kotlin
+  val hello = "hello"
+  val name = "Tom"
+  println(hello + " " + name)		// hello Tom
+  
+  val age = 47
+  println(name + ":" + age)		// Tom:47
+  ```
+
+  - String 반복하기
+    - `repeat` 메서드를 활용하여 string을 반복할 수 있다.
+
+  ```kotlin
+  print("Hello".repeat(4))	// HelloHelloHelloHello
+  ```
+
+  - Raw string
+    - 쌍 따옴표 3개로 감싼 문자열.
+    - escape sequence를 사용하지 않아도 문자열을 있는 그대로 저장한다.
+
+  ```kotlin
+  val largeString = """
+      This is the house that Jack built.
+        
+      This is the malt that lay in the house that Jack built.
+         
+      This is the rat that ate the malt
+      That lay in the house that Jack built.
+         
+      This is the cat
+      That killed the rat that ate the malt
+      That lay in the house that Jack built.
+  """.trimIndent()	// 첫 줄과 마지막 줄을 삭제하고, 들여쓰기를 정리한다.
+  print(largeString)
+  ```
+
+  - String template
+    - 문자열 내에서 `$변수명` 형태로 변수명을 넣으면, 해당 변수의 값이 출력되게 된다.
+    - 단순 변수명 뿐 아니라 `{}`로 묶어 표현식을 사용하는 것도 가능하다.
+    - `+` 연산자를 통해 문자열을 합치는 것 보다 string template을 사용하는 것을 권장한다.
+
+  ```kotlin
+  val city = "Paris"
+  val temp = "24"
+  
+  println("Now, the temperature in $city is $temp degrees Celsius.")
+  
+  // 표현식 사용
+  val language = "Kotlin"
+  println("$language has ${language.length} letters in the name")
+  
+  // 권장사항
+  val language = "Kotlin"
+  println("Have a nice $language!")        // nice code
+  println("Have a nice " + language + "!") // bad practice
+  ```
+
+
+
+- Number
+
+  - Kotlin에는 4가지 integer이 type 있다(큰 수부터 작은 수 순으로).
+    - Long: 64bit, -(2<sup>63</sup>) ~ (2<sup>63</sup>)-1
+    - Int: 32bit, -(2<sup>31</sup>) ~ (2<sup>31</sup>)-1
+    - Short: 16bit, -(2<sup>15</sup>) ~ (2<sup>15</sup>)-1
+    - Byte: 8bit, -(2<sup>7</sup>) ~ (2<sup>7</sup>)-1
+  - Long type변수를 type inference를 통해 선언 할 경우 수자 뒤에 `L`을 붙인다.
+    - 명시적으로 Long type으로 지정한 경우 붙이지 않아도 된다.
+    - 혹은 Int type이 표현할 수 있는 수 보다 더 큰 값을 할당하면 자동으로 Long type이 된다.
+
+  ```kotlin
+  val twoMillion = 2_000_000L
+  val twoMillion: :Long = 2_000_000
+  ```
+
+  - Interger type의 값에 `_`를 포함시키는 것이 가능하다.
+    - 숫자가 너무 클 경우 숫자의 단위를 보다 쉽게 확인하기 위해 사용한다.
+
+  ```kotlin
+  var num = 100_000_000
+  ```
+
+  - Kotlin에는 2가지 Floating-point type이 있다.
+    - Double: 64bits
+    - Float: 32bits
+    - Double을 Float보다 많이 사용한다.
+  - Float type변수를 type inference를 통해 선언 할 경우 수자 뒤에 `f`을 붙인다.
+    - 명시적으로 Float type이라고 지정한 경우 붙이지 않아도 된다.
+
+  ```kotlin
+  val pi = 3.1415              // Double
+  val e = 2.71828f             // Float because it is tagged with f
+  val fraction: Float = 1.51f
+  ```
+
+  - 각 숫자 type별 최대값과 최소값을 보고 싶을 경우 `MAX_VALUE`와 `MIN_VALUE`를 사용한다.
+
+  ```kotlin
+  println(Int.MIN_VALUE)  // -2147483648
+  println(Int.MAX_VALUE)  // 2147483647
+  println(Long.MIN_VALUE) // -9223372036854775808
+  println(Long.MAX_VALUE) // 9223372036854775807
+  ```
+
+  - 각 type별 bit 또는 byte 크기를 보는 것도 가능하다.
+
+  ```kotlin
+  println(Int.SIZE_BYTES) // 4
+  println(Int.SIZE_BITS)  // 32
+  ```
+
+  - Unsigned integer
+    - Int, Long, Byte, Short와 같은 integer type에는 양수뿐 아니라 음수도 저장 가능하다.
+    - Kotlin은 음수가 아닌 수(0, 양수)만을 저장하기 위한 자료형도 지원한다.
+    - UByte: 0~255까지의 8 bit integer
+    - Ushort: 0~65535까지의 16 bit interger
+    - UInt: 4,294,967,295까지의 32 bit integer
+    - ULong: 18,446,744,073,709,551,615까지의 64 bit interger
+    - type을 명시하고, 값 뒤에 `u`를 붙인다.
+    - type 명시 없이 값 뒤에 `u`를 붙이면 자동으로 UInt type이 된다.
+    - Long type의 경우 `uL` 혹은 `UL`을 붙여준다.
+
+  ```kotlin
+  val uByte: UByte = 5u
+  val uShort: UShort = 10U
+  
+  val smallSize = 100u	 // UInt type
+  val smallLong = 10uL
+  ```
+
+  - Data type overflow
+    - 만일 값이 data type이 담을 수 있는 값 보다 커질 경우 예상치 못 한 결과가 나올 수 있다.
+    - 아래 예시에서 Int type의 최대값인 2147483647는 이진수로 변환하면 01111111111111111111111111111111<sub>2</sub>이다.
+    - 여기에 1을 더하면 10000000000000000000000000000000<sub>2</sub>가 된다.
+    - 10000000000000000000000000000000<sub>2</sub>는 01111111111111111111111111111111<sub>2</sub>의 보수로, 음수가 된다.
+
+  ```kotlin
+  // MAX_VALUE: Int = 2147483647
+  var d: Int = 2147483647
+  d += 1
+  println(d) // -2147483648
+  ```
+
+
+
+- Boolean
+
+  - `true` 또는 `false` 값만 저장이 가능하다.
+    - 크기는 1bit이다.
+
+
+  ```kotlin
+  val enabled = true
+  ```
+
+  - kotlin에서는 0과 false가 다르다.
+
+
+
+
+
+## Type 변환
+
+- 숫자 type들 사이의 type 변환
+
+  - type 변환하기
+    - `toDouble()` method를 통해 다른 숫자 type을 Double type으로 변경할 수 있다.
+    - 주의할 점은 `toDouble()`는 값 자체를 변경시키는 것이 아니라 변경된 값을 반환한다는 점이다.
+    - 마찬가지로 다른 자료형으로의 변환도 `to<자료형>` 메서드를 사용하면 된다.
+
+  ```kotlin
+  val num: Int = 100
+  num = num.toDouble()
+  println(num)
+  ```
+
+  - 만일 특정 type이 표현할 수 있는 이상의 값을 변환하려고 할 경우, type이 표현할 수 있는 값으로 변환된다.
+    - 이를 type overflow라 부른다.
+
+  ```kotlin
+  val bigNum: Long = 100_000_000_000_000
+  
+  val n: Int = bigNum.toInt() // 276447232
+  ```
+
+  - target type이 source type보다 클 경우에도 변환이 가능하다.
+    - Java, C# 등에서는 불가능하다.
+    - 예를 들어 아래 예시에서 처럼 target type인 Long은 source type인 Int보다 큰데도 변환이 가능하다.
+
+  ```kotlin
+  val num: Int = 100
+  val bigNum: Long = num.toLong() // 100
+  ```
+
+  - Char type의 경우 숫자형 type이 아님에도 불구하고 unicode 값 기반으로 변환이 가능하다.
+
+  ```kotlin
+  val n1: Int = 125
+  val ch: Char = n1.toChar() // '}'
+  val n2: Int = ch.code      // 125
+  ```
+
+
+
+- Short와 Byte type으로 변환
+
+  - Short와 Byte type은 매우 작기 때문에 거의 사용되지 않는다.
+    - 그럼에도 변환 메서드를 지원하긴 한다.
+    - 각기 `toShort`, `toByte` 메서드를 사용하여 변환한다.
+    - 그러나 Short와 Byte type으로 변환하는 것을 최대한 지양해야한다.
+    - 이후 버전에서는 변환하는 기능 자체가 삭제될 예정이다.
+
+  - Short와 Byte type으로 변환하는 것을 최대한 지양해야하는 이유
+    - 두 type의 size가 너무 작기 때문에, 예상치 못한 결과가 나올 수 있다.
+    - 따라서 우선 Int type으로 변경하고, 그 값을 다시 Short와 Byte type으로 변환하는 것을 권장한다.
+
+  ```kotlin
+  val floatNumber = 10f
+  val doubleNumber = 1.0
+  
+  val shortNumber = floatNumber.toShort() // avoid this
+  val byteNumber = doubleNumber.toByte()  // avoid this
+  
+  val shortNumber = floatNumber.toInt().toShort() // correct way
+  val byteNumber = doubleNumber.toInt().toByte()  // correct way
+  ```
+
+
+
+- Type coercion
+
+  - 만일 서로 type이 다른 두 숫자 사이에 연산을 할 경우 결과 값의 type은 아래 순서로 결정된다.
+    - Byte, Short -> Int -> Long -> Float -> Double
+    - 예를 들어 Int type과 Long type을 더할 경우 결과 값은 Long type이 된다.
+
+  ```kotlin
+  val num: Int = 100
+  val longNum: Long = 1000
+  val result = num + longNum // 1100, Long
+  ```
+
+  - 그러나 short type과 byte type의 경우 약간 다르다.
+    - 이들 type은 같은 type끼리 연산하더라도 결과값은 무조건 Int type이 된다.
+
+  ```kotlin
+  val one: Byte = 1
+  val two: Byte = 2
+  val three = one + two // 3, Int
+  
+  val fourteen: Short = 14
+  val ten: Short = 10
+  val four = fourteen - ten // 4, Int
+  
+  val hundred: Short = 100
+  val five: Byte = 5
+  val zero = hundred % five // 0, Int
+  ```
+
+  - 만일 byte(혹은 short) type 간의 연산 결과를 원래 type으로 얻고싶다면 아래와 같이 수동으로 변환해줘야한다.
+
+  ```kotlin
+  val one: Byte = 1
+  val five: Byte = 5
+  val six = (one + five).toByte() // 6, Byte
+  ```
+
+
+
+- String type의 변환
+
+  - `toString` 메서드를 사용하여 모든 type을 string type으로 변환 가능하다.
+
+  ```kotlin
+  val num = 42
+  val double = 4.2
+  val char = 'a'
+  val bool = true
+  
+  println(num.toString())			// "42"
+  println(double.toString())		// "4.2"
+  println(char.toString())		// "a"
+  println(bool.toString())		// "true"
+  ```
+
+  - 또한 string type의 값이 숫자 형태일 경우 숫자형으로 변환이 가능하다.
+
+  ```kotlin
+  val num = "42".toInt()
+  val double = "4.2".toDouble()
+  ```
+
+  - boolean도 마찬가지다.
+    - `toBoolean()` 메서드는 대소문자를 구분하지 않는다.
+    - 대소문자를 구분하고자 한다면 `toBooleanStrict` 메서드를 사용해야한다.
+    - `toBooleanStrictOrNull` 메서드는 값이 true나 false가 아닐 경우 null을 반환한다.
+
+
+  ```kotlin
+  val bool = "true".toBoolean()
+  ```
+
+
+
+
+
 
 
