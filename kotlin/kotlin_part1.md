@@ -818,3 +818,206 @@
     - `a <= b <= c`
     - 위와 같은 비교를 하려면 논리연산자를 사용하여 `a<=b && b<=c`와 같이 작성해야 한다.
 
+
+
+# If expression
+
+- 조건에 따라 다른 연산을 할 수 있게 해주는 표현식이다.
+  - true 혹은 false를 반환하는 boolean 표현식에 따라 다른 연산을 수행한다.
+  - 다른 프로그래밍 언어와 달리, Kotlin에서 if는 문(statemnet)이 아니라 표현식(expression)이다.
+    - 따라서 value를 반환할 수 있다.
+
+
+
+- if expression
+
+  - `if` keyword를 사용한다.
+    - 표현식이 true를 반환하면, block 내의 코드가 실행된다.
+
+  ```kotlin
+  if (표현식) {
+      // 표현식이 true일 경우 수행할 연산
+  }
+  ```
+
+  - `else` 키워드를 사용하면 if문에 걸리지 않았을 경우의 연산을 지정할 수 있다.
+
+  ```kotlin
+  if (표현식) {
+      // 표현식이 true일 경우 수행할 연산
+  } else {
+      // 표현식이 false일 경우 수행할 연산
+  }
+  ```
+
+  - `else if` 키워드를 사용하여 조건을 추가하는 것이 가능하다.
+
+  ```kotlin
+  if (표현식) {
+      // 표현식이 true일 경우 수행할 연산
+  } else if (표현식2) {
+      // 표현식2가 true일 경우 수행할 연산
+  }
+  ```
+
+  - 값을 반환하기
+    - 상기했듯, if는 문이 아니라 표현식이기에 값을 반환할 수 있다.
+    - 조건 내에 가장 마지막 값을 반환한다.
+    - 또한 if를 값을 반환하기위해 사용할 경우 반드시 else도 함께 사용해야 한다.
+
+  ```kotlin
+  // 아래 연산의 결과 max에는 a 또는 b가 할당된다.
+  val max = if (a > b) {
+      println("Choose a")
+      a
+  } else {
+      println("Choose b")
+      b
+  }
+  
+  // 혹은 아래와 같이 사용하는 것도 가능하다.
+  fun main() {
+      val a = readln().toInt()
+      val b = readln().toInt()
+  
+      println(if (a == b) {
+          "a equal b"
+      } else if (a > b) {
+          "a is greater than b"
+      } else {
+          "a is less than b"
+      })
+  }
+  ```
+
+
+
+
+
+# 반복문
+
+- 일련의 statement들을 반복해서 실행할 수 있게 해준다.
+
+
+
+- repaet
+
+  - `repeat` keyword를 사용하여 repeat block 내의 문을 여러번 반복할 수 있다.
+    - n에는 반복할 횟수를 설정한다.
+    - 만일 0이하의 값이 올 경우 repeat문 자체가 무시된다.
+
+  ```kotlin
+  repeat(n) {
+      // 반복할 statemnet
+  }
+  ```
+
+  - `it`
+    - repeat block 내에서 `it` 변수를 사용하여 몇 번째 반복인지 확인이 가능하다.
+
+  ```kotlin
+  fun main() {
+      repeat(3) {
+          println(it)
+      }
+  }
+  ```
+
+
+
+
+- while
+
+  - 조건이 true인 동안 반복을 지속한다.
+    - 조건의 true/false 판단은 다음 반복이 시작되기 전에 이루어진다.
+
+  ```kotlin
+  while (condition) {
+      // 반복할 statement
+  }
+  ```
+
+  - `do...while`
+    - 그냥 `while`문과 달리 실행 후에 조건의 true/false를 판단한다.
+    - 무조건 한 번은 실행되기에 block 내에 조건에 사용할 변수를 선언해도 된다.
+
+  ```kotlin
+  do {
+      // 반복할 statement
+  } while (condition)
+  ```
+
+
+
+- range
+
+  - Kotlin에서는 `..`를 활용하여 range를 표시한다.
+
+  ```kotlin
+  val range = 1..100
+  ```
+
+  - `in` keyword는 좌측의 값이 우측 안에 포함되는지를 판단한다.
+    - `in` 앞에 `!`를 붙이면 포함하지 않는지를 판단한다.
+
+  ```kotlin
+  println(5 in 5..15)  // true
+  println(20 in 5..15) // false
+  println(20 !in 5..15) // true
+  ```
+
+  - 숫자뿐 아니라 Char(unicode 순), String(사전 순) type에도 적용이 가능하다. 
+
+
+
+- for
+
+  - range, 배열, 그리고 요소들의 집합을 순회할 수 있게 해준다.
+
+  ```kotlin
+  for (element in source) {
+      // 반복할 내용
+  }
+  ```
+
+  - 문자열로 이루어진 range를 순회하는 것은 불가능하다.
+    - 아래 예시에서 `aa`와 `ae`라는 문자열 사이에는 무수히 많은 값들("ab", "aba", "abb"."aaab" 등)이 존재할 수 있다.
+    - 따라서 문자열로 이루어진 range를 순회하는 것은 불가능하다.
+
+  ```kotlin
+  for (i in "aa".."ae") {
+      print(i)
+  }
+  ```
+
+  - 역순으로 순회하기
+    - `downTo`를 사용한다.
+    - b부터 a까지 내려가면서 순회한다.
+
+  ```kotlin
+  for (element in b downTo a) {
+      // 반복할 내용
+  }
+  ```
+
+  - 마지막 수 제외하고 순회하기
+    - `until`을 사용한다.
+    - a부터 b 이전까지 순회한다.
+
+  ```kotlin
+  for (element in a until b) {
+      // 반복할 내용
+  }
+  ```
+
+  - step 설정하기
+    - `step`을 사용한다.
+
+  ```kotlin
+  for (i in 1..10 step 3) {
+      println(i)
+  }
+  ```
+
+
+
