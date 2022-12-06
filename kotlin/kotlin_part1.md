@@ -820,7 +820,7 @@
 
 
 
-# If expression
+# if expression
 
 - 조건에 따라 다른 연산을 할 수 있게 해주는 표현식이다.
   - true 혹은 false를 반환하는 boolean 표현식에 따라 다른 연산을 수행한다.
@@ -889,6 +889,109 @@
       })
   }
   ```
+
+
+
+
+
+# when expression
+
+- 여러 조건에 따라 각기 다른 코드가 실행되도록 해주는 표현식이다.
+
+  - 다른 프로그래밍 언어의 switch문과 유사하다.
+  - `when` 키워드를 사용한다.
+    - `else`는 아무 조건에도 해당하지 않을 때 실행된다(굳이 정의하지 않아도 된다).
+
+  ```kotlin
+  fun main(){
+      val (var1, op, var2) = readln().split(" ")
+  
+      val a = var1.toInt()
+      val b = var2.toInt()
+  
+      when (op) {
+          "+" -> println(a + b)
+          "-" -> println(a - b)
+          "*" -> println(a * b)
+          else -> println("Unknown operator")
+      }
+  }
+  ```
+
+  - 아래와 같이 comma로 구분하여 하나의 branch에 여러 조건을 주는 것도 가능하다.
+
+  ```kotlin
+  when (op) {
+      "+", "plus" -> println(a + b)
+      "-", "minus", -> println(a - b)
+      "*", "times" -> println(a * b)
+      else -> println("Unknown operator")
+  }
+  ```
+
+  - 각 branch 별 실행할 block을 작성하는 것도 가능하다.
+
+  ```kotlin
+  when (op) {
+      "+", "plus" -> {
+          val sum = a + b
+          println(sum)
+      }
+      "-", "minus" -> {
+          val diff = a - b
+          println(diff)
+      }
+      "*", "times" -> {
+          val product = a * b
+          println(product)
+      }
+      else -> println("Unknown operator")
+  }
+  ```
+
+
+
+- 표현식으로서의 when
+
+  - `when`은 표현식이기에 값을 반환할 수 있다.
+
+    - 이 경우 모든 branch는 반환 값이 있어야 하며, `else` branch를 반드시 작성해야한다.
+
+    - 또한 block으로 작성했다면 block의 마지막 줄이 반환되므로, block의 마지막줄은 단일 값이어야한다.
+
+  ```kotlin
+  when (op) {
+      "+", "plus" -> {		// block으로 작성
+          val sum = a + b
+          sum					// 마지막 줄에 단일 값을 준다.
+      }
+      else -> println("Unknown operator")
+  }
+  ```
+
+
+
+- argument 없이 `when` 사용하기
+
+  - 이 경우 모든 branch의 조건이 boolean 표현식이어야한다.
+
+  ```kotlin
+  fun main(){
+      val n = readln().toInt()
+      
+      when {
+          n == 0 -> println("n is zero")
+          n in 100..200 -> println("n is between 100 and 200")
+          n > 300 -> println("n is greater than 300")
+          n < 0 -> println("n is negative")
+          // else-branch is optional here
+      }
+  }
+  ```
+
+  
+
+
 
 
 
