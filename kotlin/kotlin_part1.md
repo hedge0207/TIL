@@ -1207,3 +1207,470 @@
   fun sum(a: Int, b: Int) = a + b
   ```
 
+
+
+# 객체
+
+- 객체(Object)란 property와 method를 가질 수 있는 복합 구조체이다.
+  - Kotlin에서는 모든 것이 객체이다.
+    - 변수와 값은 단지 객체의 메모리상의 주소를 가리키고 있는 것 뿐이다.
+    - 따라서 다른 언어들에 있는 primitive type이 존재하지 않는다.
+  - property와 method
+    - property란 객체의 상태에 접근할 수 있도록 해주는 것을 의미한다.
+    - method란 객체의 행동을 정의한 것으로, 객체 내부에 정의된 함수를 의미한다.
+    - method는 memeber function이라고도 불린다.
+    - property와 method 모두 `.`을 통해 접근한다.
+
+
+
+- 참조를 통한 복사
+
+  - 아래와 같이 하나의 변수를 다른 변수에 할당할 때 새로운 객체가 생성되지는 않는다.
+    - msg2에 msg1을 할당하면, Hi라는 String 객체를 하나 더 생성하는 것이 아니라, msg1이 가리키고 있던 Hi를 msg2도 가리키게 된다.
+
+  ```kotlin
+  val msg1 = "Hi"
+  val msg2 = msg1
+  ```
+
+  - 즉, `=`를 통한 복사는 실제 객체를 복사하는 것이 아니라, 참조를 복사하는 것이다.
+
+
+
+- Mutability
+
+  - 만일 한 변수에 값을 할당하고, 다른 변수에 해당 변수를 할당한 뒤, 한 변수의 값을 변경하면 어떻게 될까?
+    - 이는 객체의 type에 따라 달라지게 된다.
+    - 예를 들어 Kotlin에서 Int는 immutable한 type이다.
+    - 따라서 아래 예시에서와 같이 값을 변경하려 하면, 새로운 객체를 생성하여 재할당한다.
+
+  ```kotlin
+  var a: Int = 100
+  val anotherA: Int = a
+  println(a == anotherA)  // true
+  println(a === anotherA) // true
+  a = 200		// 즉, a가 가리키고 있는 Int 객체의 값을 변경하는 것이 아니라, 새로운 Int 객체가 생성되고, 새로 생성된 객체의 주소를 a에 할당한다.
+  println(a == anotherA)  // false
+  println(a === anotherA) // false
+  ```
+
+  - 다른 언어들에서 primitive type은 일반적으로 immutable한 값이다.
+    - 모든 것이 객체인 Kotlin에서도, 다른 언어의 primitive type의 특성을 가져와 일부 type을 immutable하게 만들었다.
+    - 즉, number, character, boolean, string 등의 기본 type은 immutable한 객체이다.
+    - 이렇게 만든 이유는 위와 같은 type들을 mutable하게 만들었을 때 다양한 문제가 생길 수 있기 때문이다.
+
+  ```kotlin
+  // 예를 들어 아래와 같은 상황은 프로그래밍에서 매우 흔한 상황이다.
+  // 아래와 같은 상황에서 num이 변경됐을 때 initalNum도 함께 변경된다면 예상치 못 한 결과가 나오게 된다.
+  var initalNum = 0
+  var num = inital_num
+  
+  num++
+  println(initalNum)      // 0
+  println(num) 			// 1
+  ```
+
+
+
+- 동일성
+
+  - structural equality
+    - 아래 예시와 같이 서로 같은 상태인 것을 structural equality라 부른다.
+
+  ```kotlin
+  var text1 = "Hi"
+  var text2 = "Hi"
+  println(text1==text2)	// true
+  ```
+
+  - referential equality
+    - 서로가 가리키고 있는 객체가 동일한 것을 referential equality라 부른다.
+  - `===`, `!==`
+    - `===`는 서로 같은 객체를 가리키고 있으면 true, 아니면 false를 반환하는 연산자이다(`!==`는 그 반대).
+    - 즉 referential equality를 확인할 때 사용하는 연산자이다.
+
+
+
+# MutableList
+
+- Kotlin의 standard library는 배열을 다룰 수 있게 해주는 다양한 방식을 제공한다.
+  - MutableList도 그 중 하나로, 같은 type의 data들을 저장할 수 있는 순서가 있는 배열이다.
+
+
+
+- MutableList의 객체 생성하기
+
+  - `mutableListOf`를 사용하여 MutableList 객체를 생성할 수 있다.
+
+  ```kotlin
+  val myMutableList = mutableListOf<Int>(1, 2, 3, 4)
+  ```
+
+  - type을 명시적으로 지정하지 않는 것도 가능하다.
+
+  ```kotlin
+  val myMutableList = mutableListOf(1, 2, 3, 4)
+  ```
+
+  - 빈 MutableList 객체를 생성하는 것도 가능하다.
+    - 이 때는 type을 반드시 지정해줘야 한다.
+
+
+  ```kotlin
+  val myMutableList = mutableListOf<type>()
+  
+  // 혹은 아래와 같이 선언한다.
+  val myMutableList: MutableList<Int> = mutableListOf()
+  ```
+
+  - `.size`를 통해 list의 size를 확인 가능하다.
+
+
+
+- 특정 크기의 MutableList 객체 생성하기
+
+  - `MutableList`를 사용하여 특정 크기의 MutableList 객체를 생성할 수 있다.
+    - 중괄호 안에는 list 내부를 채울 값을 지정한다.
+
+  ```kotlin
+  al list = MutableList(5) { 0 }
+  
+  println(list) // [0, 0, 0, 0, 0]
+  ```
+
+
+
+- 요소에 접근하기
+
+  - list의 index를 통해 접근 가능하다.
+    - index는 0부터 시작한다.
+
+  ```kotlin
+  val nums = mutableListOf<Int>(1, 2, 3, 4)
+  nums[0] = 5
+  println(nums[0])	//5
+  ```
+
+  - 마지막 요소에 접근하기
+    - Python과 같이 -1로는 접근할 수 없다.
+    - 마지막 index는 `list의 크기-1 `이므로 아래와 같이 접근 가능하다.
+
+  ```kotlin
+  val nums = mutableListOf<Int>(1, 2, 3, 4)
+  println(nums[nums.size-1])
+  ```
+
+  - 관련 메서드들
+    - `fisrt()`: list의 첫 번째 요소를 반환한다.
+    - `last()`: list의 마지막 요소를 반환한다.
+    - `lastIndex()`: list의 마지막 index를 반환한다.
+
+  ```kotlin
+  val nums = mutableListOf<Int>(1, 2, 3, 4)
+  println(nums.first())		// 1
+  println(nums.last())		// 4
+  println(nums.lastIndex())	// 3
+  ```
+
+
+
+
+- 메서드
+
+  - `joinToString()`
+    - list를 comma로 분리된 string으로 변환하여 반환한다.
+    - comma가 아닌 다른 문자를 줄 수도 있다.
+
+  ```kotlin
+  val myList = mutableListOf("foo", "bar", "baz", "qux")
+  println(myList.joinToString())   // foo, bar, baz, qux
+  println(myList.joinToString("-"))   // foo-bar-baz-qux
+  ```
+
+  - 두 개의 list 합치기
+    - `addAll()` 메서드를 사용하여 두 list를 합칠 수 있다.
+    - `+` 연산자를 사용한다.
+    - `addAll()`의 경우 list를 반환하지 않고 list에 다른 리스트를 추가하지만, `+` 연산자는 두 리스트를 합친 결과를 반환한다.
+
+  ```kotlin
+  val lst1 = mutableListOf("foo", "bar")
+  val lst2 = mutableListOf("baz", "qux")
+  val newList = lst1 + lst2
+  
+  val lst3 = mutableListOf("foo", "bar")
+  val lst4 = mutableListOf("baz", "qux")
+  lst1.addAll(lst2)
+  ```
+
+  - 두 개의 list 비교하기
+    - `==`, `!=` 연산자를 사용한다.
+    - `==`는 두 list의 요소들이 완전히 같고, 동일한 순서로 정렬되어 있을 경우에만 true를 반환한다.
+
+  ```kotlin
+  val lst1 = mutableListOf("foo", "bar")
+  val lst2 = mutableListOf("foo", "bar")
+  val lst3 = mutableListOf("baz", "qux")
+  val lst4 = mutableListOf("bar", "foo")
+  
+  println(lst1 == lst2) 	// true
+  println(lst1 == lst3)	// false
+  println(lst1 == lst4)	// false
+  ```
+
+  - list의 element 변경하기
+    - `var` keyword로 선언하든, `val` 키워드로 선언하든 상관 없이 list의 element를 변경할 수 있다.
+    - 이는 list 내부의 element를 변경하는 것이지, 아예 새로운 list를 선언하여 재할당하는 것이 아니기 때문에 가능하다.
+
+  ```kotlin
+  val lst = mutableListOf("foo", "bar")
+  lst[0] = "baz"
+  println(lst[0])		// baz
+  ```
+
+  - list의 element 추가하기
+    - `add([index,] element)` 메서드를 사용하여 추가가 가능하다.
+    - 혹은 `+` 연산자를 사용해도 된다.
+
+  ```kotlin
+  val lst = mutableListOf("foo")
+  lst.add("baz")
+  lst.add(1, "bar")
+  lst += "qux"
+  ```
+
+  - list의 element 삭제하기
+    - `remove()`를 사용하여 특정 element를 삭제할 수 있다.
+    - `removeAt()`을 사용하여 특정 index에 있는 element를 삭제할 수 있다.
+    - `remove`의 경우 삭제에 성공하면 true, 실패하면 false를 반환하며, `removeAt()`은 삭제 후 삭제한 element를 반환한다.
+    - `clear()`는 list의 모든 element를 삭제한다.
+
+  ```kotlin
+  val lst = mutableListOf("foo", "bar", "baz", "qux")
+  lst.remove("foo")
+  lst.remove(0)
+  lst.clear()
+  ```
+
+  - list 복사하기
+    - `toMutableList()`를 사용하여 복제가 가능하다.
+    - 이는 객체 자체를 복제하는 것이 아니라, 새 MutableList 객체를 생성하고, 해당 객체에 기존 list의 모든 요소를 추가하는 것이다.
+
+  ```kotlin
+  val origList = mutableListOf(1, 2, 3)
+  val copyList = origList.toMutalbleList()
+  ```
+
+  - list가 비었는지 확인하기
+    - `isEmpty()`, `isNotEmpty()` 메서드를 사용하여 list가 비었는지 확인이 가능하다.
+
+  - element의 index 확인하기
+    - `indexOf(element)`를 사용하여 element가 list의 몇 번째 index에 있는지 확인 할 수 있다.
+  - sub list 생성하기
+    - `subList(from, to)`를 사용하여 list의 sub list를 생성한다.
+    - from부터 to-1까지의 index에 해당하는 element들로 sub list를 생성한다.
+
+  ```kotlin
+  val lst = mutableListOf("foo", "bar", "baz", "qux")
+  println(lst.subList(1,3))	// ["bar", "baz"]
+  ```
+
+  - 최대, 최소값 찾기
+    - `minOrNull()`, `maxOrNull()` 메서드를 사용하여 최소, 최대값을 찾을 수 있다.
+  - list의 값들 합산하기
+    - `sum()` 메서드를 사용하여 list의 모든 값을 합한 값을 구할 수 있다.
+  - 정렬하기
+    - `sorted()`, `sortedDescending()`을 사용하여 오름차순, 내림차순으로 정렬할 수 있다.
+
+
+
+- for문으로 순회하기
+
+  - 요소들을 순회하기
+
+  ```kotlin
+  val members = mutableListOf("John", "Mike", "Martin", "Lucia", "Jack")
+  
+  for (member in members) {
+      println(member)
+  }
+  ```
+
+  - index로 순회하기
+    - `mutableList.indices`를 사용하여 인덱스로 순회가 가능하다.
+
+  ```kotlin
+  for (index in members.indices) {
+      println(members[index])
+  }
+  ```
+
+  - list의 길이만큼 순회하기
+
+  ```kotlin
+  for (index in 0..members.lastIndex) {
+      println(members[index])
+  }
+  ```
+
+
+
+- 다차원 list
+
+  - 다차원 list란 list들의 list를 의미한다.
+  - 2차원 list 만들기
+    - 다른 list들을 품고 있는 list를 main list, list 내부의 list를 nested list라 부른다.
+    - nested list들이 꼭 같은 size를 가져야 하는 것은 아니다.
+
+  ```kotlin
+  val mutList2D = mutableListOf(
+      mutableListOf<Int>(1, 2, 3, 4),
+      mutableListOf<Int>(5, 6, 7, 8),
+      mutableListOf<Int>(9, 10, 11, 12)
+  )
+  ```
+
+  - 요소에 접근하기
+    - 아래와 같이 각 배열의 index를 통해 접근 가능하다.
+
+  ```kotlin
+  print(mutList2D[0][0]) 	// 1
+  print(mutList2D[2][3])	// 12
+  ```
+
+
+
+
+
+#  Error
+
+- Compile-time error와 run-time error
+  - Compile-time error
+    - compile 중에 검출되어 컴파일이 중단되는 error 들이다.
+    - syntax error, import 관련 error 등이 이에 속한다.
+    - IDE를 사용하면 대부분의 compile error를 예방할 수 있다.
+  - Run-time error(bug)
+    - 프로그램이 실행되는 중에 발생하는 error이다.
+    - 프로그램이 예상치 못하게 동작하게 하거나, 프로그램의 실행을 중단시킨다.
+  - Run-time error가 compile error에 비해 훨씬 까다롭다.
+    - 프로그램이 성공적으로 compile 되었다고해서, bug가 존재하지 않는 다고 할 수 없다.
+
+
+
+- Exception
+
+  - 프로그래밍 문법적으로 정확하고, 아무 문제 없이 compile 됐더라도, error가 발생할 수 있는데, 이를 exception이라 부른다.
+  - Exception text에는 여러 정보가 담겨 있다.
+    - 예를 들어 아래 예시에서 `Exception in thread "main"` 부분은 예외가 발생한 thread의 이름을 알려준다.
+    - `java.lang.NumberFormatException` 부분은 예외의 이름이며, `For input string: "> Hi :)"`는 message이다.
+    - `at`으로 시작하는 여러 문장을 stack trace라 부르며, 어디서 예외가 발생했는지를 알려준다.
+    - `at`으로 시작하는 각각의 문장을 stack trace element라 부른다.
+    - stack trace element는 canonical name이라 불리는 각 class(아래 예시에서는  `java.lang.Integer`, `TmpKt`, `java.lang.NumberFormatException`)에서 예외가 발생한 위치를 알려주는 부분이 있다.
+
+  ```
+  Exception in thread "main" java.lang.NumberFormatException: For input string: "> Hi :)"
+  	at java.lang.NumberFormatException.forInputString(NumberFormatException.java:65)
+  	at java.lang.Integer.parseInt(Integer.java:580)
+  	at java.lang.Integer.parseInt(Integer.java:615)
+  	at TmpKt.readNextInt(tmp.kt:2)
+  	at TmpKt.runIncrementer(tmp.kt:6)
+  	at TmpKt.main(tmp.kt:11)
+  	at TmpKt.main(tmp.kt)
+  ```
+
+  - Kotlin에서는 Exception도 객체다.
+    - 따라서 변수에 할당이 가능하다.
+
+
+
+- Exception의 계층
+  - `Throwable`
+    - Exception의 최상단에는 `Throwable`이라는 type이 존재한다.
+    - Kotlin의 모든 `Error`와 `Exception`은 `Throwable`의 subtype이다.
+    - `Error`는 일반적인 애플리케이션이 실행해선 안 되는 심각한 문제들을 다루기 위한 type이다.
+    - `Throwable`은 예외 처리에 유용하게 사용할 수 있는 여러 메서드를 지원한다.
+  - `Exception`
+    - `Exception` type은 `IOException`, `RuntimeException` 등의 subtype을 지닌다.
+    - `RuntimeException`은 다시 `ArithmeticException`, `IndexOutOfBoundsException` 등을 subtype으로 지닌다.
+  - 이 처럼 모든 예외는 `Throwable`- `Exception`이라는 공통된 super type을 지닌다.
+
+
+
+- Throw
+
+  - `throw`를 사용하여 예외를 발생시킬 수 있다.
+
+  ```kotlin
+  fun main() {
+      throw Exception("Exeption!")
+  }
+  ```
+
+  - 위와 같이 최상위 `Exception` 뿐 아니라 `IndexOutOfBoundsException` 등 구체적인 exception을 발생시켜 구체적으로 어떤 예외인지를 나타내는 것이 좋다.
+
+
+
+- `try`-`catch`
+
+  - Kotlin에서 예외처리를 할 수 있도록 해주는 keyword들이다.
+    - `try` 블록으로 예외를 발생시킬 가능성이 있는 code들을 감싼다.
+    - `catch` 블록은 `try` 블록에서 특정 예외가 발생했을 때, 해당 예외에 대한 처리를 정의한다.
+
+  ```kotlin
+  try {
+      // 예외를 발생시킬 수 있는 code
+  } catch (e: Exception) {
+      // 예외 처리를 하는 code
+  }
+  ```
+
+  - 예외에 대한 정보 확인하기
+    - exception 객체에 담겨 있는 `message`를 통해 예외에 대한 정보를 확인 가능하다.
+
+  ```kotlin
+  try {
+      // 예외를 발생시킬 수 있는 code
+  } catch (e: Exception) {
+      println(e.message)
+  }
+  ```
+
+  - 여러 개의 예외 처리하기
+    - `catch` 블록을 추가해주면 된다.
+    - 주의할 점은 아래와 같이 여러 개의 예외를 처리할 때, 예외의 계층에 대해 고려해야 한다는 점이다.
+    - 예를 들어 아래 예시에서 `Exception`은 모든 예외의 super type이기 때문에 `ArithmeticException` 를 catch하는 블록보다 `Exception`을 catch하는 블록이 위에 있을 경우, 모든 예외가 `Exception` 블록에서 catch되어 `ArithmeticException`이 발생하더라도, `ArithmeticException` 블록이 실행되지 않을 수 있다.
+
+  ```kotlin
+  try {
+      // 예외를 발생시킬 수 있는 code
+  } catch (e: ArithmeticException) {
+      print(e.message)
+  } catch (e: Exception) {
+      println(e.message)
+  }
+  ```
+
+  - `finally`
+    - `try` 블록에서 예외 발생 여부와 상관없이 무조건 실행되는 블록이다.
+    - `finally` 블록은 `catch` 블록에서 예외가 발생하더라도 실행된다.
+
+  ```kotlin
+  try {
+      // 예외를 발생시킬 수 있는 code
+  } catch (e: Exception) {
+      // 예외 처리를 하는 code
+  } finally {
+      // 항상 실행되는 code
+  }
+  ```
+
+  - `try`는 표현식이다.
+    - 다른 언어들과 달리 kotlin에서 `try`는 표현식이다.
+    - 따라서 반환값을 가질 수 있다.
+    - 아래 코드에서 예외가 발생할 경우 `catch` 블록의 마지막 표현식(0)이 number의 값이 되며, 발생하지 않을 경우 try의 마지막 표현식(`"hello".toInt()`)이 number의 값이 된다.
+    - `finally` block은 반환되지 않는다.
+
+  ```kotlin
+  val number: Int = try { "hello".toInt() } catch (e: NumberFormatException) { 0 }
+  
+  // number에는 0이 담기게 된다.
+  ```
