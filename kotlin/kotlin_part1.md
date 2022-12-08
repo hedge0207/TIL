@@ -40,6 +40,48 @@
 
 
 
+- 주석
+
+  - Compiler에 의해 compile 되지 않는 문장이다.
+    - 주로 코드를 더 명확히 하기 위해 사용한다.
+
+  - End-of-line comment
+
+    - `//`를 사용하여 주석을 생성할 수 있다.
+
+
+  ```kotlin
+  // This is line will be ignored by compiler
+  ```
+
+  - 여러 줄 comment
+
+    - `/* */`를 사용하여 여러 줄 주석을 작성할 수 있다.
+
+
+  ```kotlin
+  /* multi
+     line
+     comment*/
+  ```
+
+  - Documentation comments(doc comments)
+
+    - `/** */`를 사용하여 작성한 주석을 특별히 doc comments라고 부른다.
+    - 주로 코드에 대한 설명을 위해 사용한다.
+
+
+  ```kotlin
+  /**
+   * Documentation comments for main function
+  */
+  fun main() {
+      // body
+  }
+  ```
+
+
+
 - 변수
 
   - 변수란
@@ -463,12 +505,11 @@
 
   - `true` 또는 `false` 값만 저장이 가능하다.
     - 크기는 1bit이다.
-
-
+  
   ```kotlin
   val enabled = true
   ```
-
+  
   - kotlin에서는 0과 false가 다르다.
 
 
@@ -1123,4 +1164,46 @@
   ```
 
 
+
+# 함수
+
+- 함수 선언하기
+
+  - `fun` keyword를 사용하여 함수를 선언할 수 있다.
+    - 함수명, parameters, return type, return 값이 기본 구성 요소이다.
+    - parameters와 return type, return 값은 optional 한 값이다.
+    - 그러나 만일 return 값이 있다면, 반드시 return 값에 맞는 return type을 지정해줘야 한다.
+    - 함수명은 변수명과 convention이 동일하다.
+
+  ```kotlin
+  fun myFunction(p1: type, p2: type2, ...): ReturnType {
+      return
+  }
+  ```
+
+  - 모든 함수는 반환값을 가진다.
+
+    - 반환값을 명시적으로 지정해주지 않더라도 Kotlin에서는 `Unit`이라는 특별한 값이 반환된다.
+
+    - 이는 함수에 반환값이 없다는 것을 의미한다.
+  - Java의 `void`와 유사하다.
+
+
+
+
+- Single-expression functions
+
+  - 아래와 같이 보다 간단하게 함수를 정의하는 것도 가능하다.
+
+  ```kotlin
+  fun sum(a: Int, b: Int): Int = a + b
+  
+  fun sayHello(): Unit = println("Hello")
+  ```
+
+  - return type을 정의하지 않는 것도 가능하다.
+
+  ```kotlin
+  fun sum(a: Int, b: Int) = a + b
+  ```
 
