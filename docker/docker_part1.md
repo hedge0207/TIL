@@ -195,6 +195,90 @@
 
 
 
+# docker 설치하기
+
+> ubuntu 기준
+
+- HTTP 패키지 설치
+
+  - update apt
+
+  ```bash
+  $ sudo apt update
+  ```
+
+  - HTTP 패키지 설치
+
+  ```bash
+  $ sudo apt-get install -y ca-certificates \ 
+    curl \
+    gnupg \
+    lsb-release
+  ```
+
+
+
+- GPG key 추가 및 repository setup
+
+  - GPG key 추가
+
+  ```bash
+  $ sudo mkdir -p /etc/apt/keyrings
+  $ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  ```
+
+  - repository setup
+
+  ```bash
+  $ echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  ```
+
+
+
+- docker 설치
+
+  - apt-get update
+
+  ```bash
+  $ apt-get update
+  ```
+
+  - docker 설치
+
+  ```bash
+  $ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+  ```
+
+  - test
+    - test image를 다운 받아, 해당 이미지로 container를 실행한다.
+    - 실행이 완료되면 메시지를 출력하고 종료된다.
+
+  ```bash
+  $ sudo docker run hello-world
+  ```
+
+
+
+- 권한 관리
+
+  - docker group에 사용자 추가
+
+  ```bash
+  $ sudo usermod -a -G docker <사용자명>
+  ```
+
+  
+
+
+
+
+
+
+
+
+
 
 
 # 도커 명령어
