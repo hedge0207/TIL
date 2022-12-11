@@ -377,6 +377,93 @@
 
 
 
+- List의 내부 구조
+
+  - 다른 언어들의 일반적인 array type의 특징
+    - 다른 언어들에서 사용하는 array type에는 일반적으로 동일한 type만 저장할 수 있다.
+    - 이는 array type의 저장 방식 때문으로, array 내부의 elements들을 memory 상의 연속된 공간에 저장한다.
+  - 다른 언어들의 array와 구별되는 Python list의 특징
+    - Python의  list는 다양한 type의 값을 하나의 list에 담는 것이 가능하다.
+  - CPython에서 list는 아래와 같이 구현되어 있다.
+    - List는 요소들 자체를 저장하고 있지는 않다.
+    - `**ob_item`에는 list 내의 각 elements의 memory 상의 주소 값들이 저장되어 있다.
+    - 따라서, elements들을 메모리 상의 연속된 공간에 저장해 둘 필요가 없으므로, Python의 list는 서로 다른 type의 값을 저장할 수 있다.
+
+  ```c++
+  // cpython/include/cpython/listobject.h
+  typedef struct {
+      PyObject_VAR_HEAD
+      PyObject **ob_item;
+      Py_ssize_t allocated;
+  } PyListObject;
+  ```
+
+
+
+- Growth pattern
+
+  - List의 size
+    - 빈 list의 size는 40byte이다.
+    - list내에 하나의 element는 8 byte의 size를 차지한다.
+
+  ```python
+  # 빈 list의 size는 40byte이다.
+  lst = []
+  print(lst.__sizeof__())		# 40
+  
+  # list내에 하나의 element는 8 byte의 size를 차지한다.
+  lst = [1, 'String']
+  print(lst.__sizeof__())		# 56(40+8+8)
+  ```
+
+  - 그러나 항상 size만큼의 element가 존재하는 것은 아니다.
+
+  ```python
+  # lst 내에는 1이라는 element 하나 뿐임에도 size는 72가 됐다.
+  lst = []
+  lst.append(1)
+  print(lst.__sizeof__())		# 72
+  ```
+
+  - 위와 같은 현상이 발생한 이유는 Over-allocation이라는 CPython의 구현 방식 때문이다.
+    - Python은 빈 list에 하나의 값을 추가하더라도 4개의 공간을 추가한다(즉, 메모리를 미리 할당한다).
+    - 즉 4*8byte로 32byte가 추가된다(위 예시에서 40+32=72가 나온 이유이다).
+    - 추가한 4개의 공간도 전부 차게 되면 또 다시 새로운 공간을 추가하는데, 추가되는 공간의 크기가 점점 커지게 된다(정확히는 0, 4, 8, 16, 25, 35, 46, 58, 72, 88, ... 과 같이 증가한다).
+    - 이를 growth pattern이라 부른다.
+    - append뿐 아니라 insert, extend, `+` 등 list를 확장하는 모든 방식에서 위와 같은 과정을 거친다.
+
+  ```python
+  # 언제 list의 resize가 발생하는지 확인하는 code.
+  import sys
+  
+  lst = []
+  
+  size = 0
+  cnt = 72
+  list_size = 0
+  for _ in range(1000):
+      lst.append(1)
+      if size != sys.getsizeof(lst):
+          cnt+=1
+          print((len(lst)-1)-list_size)
+          print("-"*100)
+          size = sys.getsizeof(lst)
+  ```
+
+  - 만일 위와 같이 하지 않으면?
+    - list에 값이 추가 될 때마다 memory를 재할당하고 값을 복제해야 한다.
+    - 예를 들어 빈 list가 있을 때, `append(1)`을 호출한다고 가정해보자.
+    - `[1]`을 저장하기 위한 memory를 할당 받고, 그 공간에 `[1]`을 복제하여 저장한다.
+    - 이 상태에서 `append(2)`를 하면, `[1, 2]`를 저장하기 위한 memory를 할당 받고, 그 공간에 `[1, 2]`를 복제하여 저장한다.
+    - 이 과정이 `append`가 호출 될 때마다 반복되면 시간 복잡도는 O(n)이 된다.
+    - 그러나, 위와 같이 list의 resize에 groth pattern을 적용하면 선형 시간에 `append`가 가능해진다.
+    - 즉 Python의 list는 공간을 약간 더 비효율적으로 사용하는 대신, 시간을 더 효율적으로 사용하도록 설계되었다.
+
+
+
+
+
+
 ### Dictionary
 
 - 생성
