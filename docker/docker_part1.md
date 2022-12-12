@@ -210,10 +210,7 @@
   - HTTP 패키지 설치
 
   ```bash
-  $ sudo apt-get install -y ca-certificates \ 
-    curl \
-    gnupg \
-    lsb-release
+  $ sudo apt-get install -y ca-certificates curl gnupg lsb-release
   ```
 
 
@@ -242,7 +239,7 @@
   - apt-get update
 
   ```bash
-  $ apt-get update
+  $ sudo apt-get update
   ```
 
   - docker 설치

@@ -48,20 +48,6 @@
 
 
 
-- elasticsearch container network
-
-  - elasticsearch 공식 이미지로 컨테이너를 생성하면 elasticsearch.yml의 network는 아래와 같이 설정된다.
-    - 0.0.0.0으로 설정하면, 클라이언트의 요청, 클러스터 내부의 다른 노드와의 통신에는 elasticsearch docker container에 할당된 IP를 사용하고, 내부에서는 localhost(127.0.0.1)로 통신이 가능해진다.
-
-  ```yaml
-  network.host: 0.0.0.0
-  ```
-  
-  - 만일 한 서버에 여러 대의 node로 cluster를 구성하고자 하면 반드시 같은 network로 묶어줘야한다.
-    - 위에서 말한 것 처럼 클러스터 내부의 다른 노드와의 통신에는 elasticsearch docker container에 할당된 IP를 사용하는데, 같은 네트워크에 속하지 않을 경우 해당 IP에 접근이 불가능하기 때문이다.
-
-
-
 ## Docker-compose로 설치하기
 
 - docker-compose.yml 파일에 아래와 같이 작성
@@ -247,7 +233,8 @@
 ## 각기 다른 서버에 설치된 node들로 클러스터 구성하기
 
 - 가장 중요한 설정은 `network.publish_host`이다.
-  - 만일 이 값을 따로 설정해주지 않을 경우 `network.host`의 기본 값은 0.0.0.0으로 설정된다.
+  - 따로 설정해주지 않을 경우 `network.host`의 기본 값은 `_local_`으로 설정된다.
+    - `_local_`일 경우 루프백(127.0.0.1)으로 설정된다.
   - `network.host`는 내부 및 클라이언트의 요청 처리에 사용할 `network.bind_host`와 `network.pulbish_host`를 동시에 설정한다.
   - 따라서 다른 node와 통신할 때 사용하는  `network.pulbish_host` 값은 docker container의 IP(정확히는 IP의 host)값이 설정된다.
   - 그런데 docker container의 IP는 같은 docker network에 속한 것이 아니면 접근이 불가능하다.
@@ -258,7 +245,7 @@
 - 클러스터 구성하기
 
   - `network.host`가 아닌 `network.publish_host`로 설정해줘야 한다.
-    - 그러나 docker container 내부에서는 docker network의 ip를 host로 사용하므로, `network.bind_host` 값에 서버의 host는 할당할 수 없다.
+    - docker container 내부에서는 docker network의 ip를 host로 사용하므로, `network.bind_host` 값에 서버의 host는 할당할 수 없다.
     - 따라서 `network.publish_host`만 따로 설정해줘야한다.
 
   - 마스터 노드 생성하기
@@ -333,7 +320,7 @@
     - 외부 port(`:` 왼쪽의 port)를 9300이 아닌 port로 했을 경우, `transport.publish_port`를, 내부 port(`:` 오른쪽의 port)를 변경했을 경우 `transport.bind_port`를 수정한다.
   
   - Docker로 생성한 두 개의 노드가 통신하는 과정은 다음과 같다.
-    - `discovery.seed_hosts`에 설정된 ip(아래의 경우 `192.168.0.242:9301`)로 handshake 요청을 보낸다.
+    - `discovery.seed_hosts`에 설정된 ip(아래의 경우 `<master node의 ip>:9301`)로 handshake 요청을 보낸다.
     - `handshake`이 완료 되면 `network.publish_host`에 설정된 host + `transport.port`에 설정된 port를 응답으로 보낸다.
     - 응답으로 받은 ip로 클러스터 구성을 위한 요청을 보낸다.
     - 따라서 만일 `transport.port` 값을 설정해주지 않아 기본값인 9300으로 설정되었다면 `discovery.seed_hosts`에 다른 port를 입력했더라도 handshake 이후의 통신이 불가능해진다.
