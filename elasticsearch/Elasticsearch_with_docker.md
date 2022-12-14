@@ -48,6 +48,47 @@
 
 
 
+
+
+
+# elasticsearch single node
+
+- single-node로 띄우기
+
+  - 아래와 같이 주면 `discovery.type=single-node`를 주지 않고도 single-node로 띄울 수 있다.
+
+  ```yaml
+  version: "3.2"
+  
+  services:
+    es:
+      image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+      environment:
+        - node.name=test-node
+        - cluster.name=test
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+        - cluster.initial_master_nodes=test-node
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      ports:
+        - 9200:9200
+        - 9300:9300
+  ```
+
+  - `discovery.type=single-node`를 명시적으로 주는 것 과의 차이
+    - `discovery.type=single-node`를 명시적으로 주면 다른 node와 cluster를 구성할 수 없다.
+    - 그러나 위와 같이 node를 생성하면, 추후에 다른 node와 cluster를 구성할 수 있다.
+    - 즉, 둘의 차이는 오직 single-node로만 cluster를 구성할 것인지, 일단 single node로 구성하되, 추후에 다른 node와 clustering을 할 가능성을 남겨 두는지이다.
+    - 얼핏 보면 추후에 다른 node와 clustering도 할 수 있는 위 방식이 더 효율적으로 보이지만, 사실 두 방식은 용도가 다르다.
+    - `discovery.type=single-node`를 명시적으로 주는 방식은 주로 test용으로 사용된다.
+    - 설정에 따라서 각기 독립적인 cluster를 구성해야 하는 두 node가 하나의 cluster로 묶이는 상황이 발생할 수 있다.
+    - 그런데 이 때 한 노드에 `discovery.type=single-node` 설정을 줬다면, 두 노드는 절대 하나의 cluster에 묶일 수 없게 되어, 보다 간단한 설정으로 test가 가능해진다.
+
+
+
 ## Docker-compose로 설치하기
 
 - docker-compose.yml 파일에 아래와 같이 작성
