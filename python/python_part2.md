@@ -377,6 +377,74 @@
 
 
 
+- `sort` 메서드의 key에는 함수를 넣을 수 있다.
+
+  - 아래 code는 lst의 nested list를 첫 번째 요소로 정렬하되, 첫 번째 요소가 동일할 경우에는 두 번째 요소로 정렬하는 코드이다.
+
+  ```python
+  def func(nested_lst):
+      return nested_lst[0], nested_lst[1]
+  
+  lst = [[3, "c"], [3, "a"], [2, "b"], [1, "z"]]
+  lst.sort(key=func)
+  print(lst)		# [[1, 'z'], [2, 'b'], [3, 'a'], [3, 'c']]
+  ```
+
+  - 당연히 lambda 식을 사용하는 것도 가능하다.
+    - 위 코드와 완전히 동일하게 동작하는 코드이다.
+
+  ```python
+  lst = [[3, "c"], [3, "a"], [2, "b"], [1, "z"]]
+  lst.sort(key=lambda x:(x[0], x[1]))
+  ```
+
+  - 보다 복잡한 정렬
+    - lambda로 표현하기에도 복잡한 방식으로 정렬해야 한다면 아래와 같이 `functools` 패키지에서 제공하는 `cmp_to_key`를 사용하면 된다.
+    - `cmp`는 compare의 약어이다.
+    - `cmp_to_key`의 인자로는 대소비교를 할 함수를 넘기는데, 이 때 양수를 반환하면 첫 번째 인자가 두 번째 인자보다 크다는 것을 의미하고, 음수를 반환하면 첫 번째 인자가 두 번째 인자보다 작다는 것을 의미하며, 0을 반환하면 두 인자의 값이 같다는 것을 의미한다.
+
+  ```py
+  import functools
+  
+  
+  def compare(a, b):
+      if a > b:
+          return 1
+      elif a == b:
+          return 0
+      else:
+          return -1
+  
+  
+  data = [5, 3, 1, 2, 4]
+  data.sort(key=functools.cmp_to_key(compare))
+  print(data)
+  ```
+
+
+
+
+
+- Python List의 주요 연산의 시간복잡도
+
+  | 연산           | 시간 복잡도 | 설명                                                         |
+  | -------------- | ----------- | ------------------------------------------------------------ |
+  | len(a)         | O(1)        | 전체 요소의 개수를 반환                                      |
+  | a[i]           | O(1)        | 인덱스 i의 요소를 반환                                       |
+  | a[i:j]         | O(k)        | 인덱스 i부터 j-1까지 k개의 요소를 가져온다, k 개의 객체에 대한 조회가 필요하므로 O(k)이다. |
+  | elem in a      | O(n)        | elem 요소가 존재하는지 확인한다. 처음부터 순차탐색하므로 n만큼의 시간이 소요된다. |
+  | a.count(elem)  | O(n)        | elem 요소의 개수를 반환한다.                                 |
+  | a.index(elem)  | O(n)        | elem 요소의 index를 반환한다.                                |
+  | a.append(elem) | O(1)        | 리스트의 마지막에 elem을 추가한다.                           |
+  | a.pop()        | O(1)        | 리스트의 마지막 요소를 추출한다.                             |
+  | a.pop(0)       | O(n)        | 리스트의 첫 번째 요소를 추출한다. 그 후, 뒤의 요소들을 앞으로 한 칸씩 땡긴다(메모리 상의 주소를 한 칸씩 땡긴다). |
+  | del a[i]       | O(n)        | i에 따라 다르지만, 최악의 경우 O(n).                         |
+  | a.sort()       | O(n log n)  | Timsort를 사용하여, 최선의 경우 O(n)에도 가능하다.           |
+  | min, max       | O(n)        | 전체를 선형탐색해야한다.                                     |
+  | a.reverse()    | O(n)        | 리스트 전체를 뒤집는다.                                      |
+
+
+
 - List의 내부 구조
 
   - 다른 언어들의 일반적인 array type의 특징
@@ -639,6 +707,70 @@
 
 - 할당과 복사
   - List와 동일하다.
+
+
+
+- Dictionary의 주요 연산의 시간 복잡도
+
+  - Python 3.6부터는 dict의 메모리 사용량이 20% 정도 줄어드는 성능 개선이 이루어졌다.
+  - Python 3.7부터는 인덱스를 이용해 입력 순서를 유지하도록 변경되었다.
+
+  | 연산           | 시간 복잡도 | 설명                                 |
+  | -------------- | ----------- | ------------------------------------ |
+  | len(a)         | O(1)        | 요소의 개수를 반환한다.              |
+  | a[key]         | O(1)        | 키를 조회하여 값을 반환한다.         |
+  | a[key] = value | O(1)        | 키/값을 삽입한다.                    |
+  | key in a       | O(1)        | 딕셔너리에 키가 존재하는지 확인한다. |
+
+
+
+
+- Dictionart의 파생 자료형
+
+  - defaultdict
+    - dictionary에 기본값을 주는 것이 가능하다.
+
+  ```python
+  # 일반적으로 dictionary는 아래와 같이 key의 존재 여부를 검사한 후 사용해야 한다.
+  num_animals = {}
+  animals = ["rabbit", "cat", "dog", "dog", "cat", "dog"]
+  
+  for animal in animals:
+      if num_animals.get(animal):
+          num_animals[animal] += 1
+      else:
+          num_animals[animal] = 1
+          
+  # defaultduct를 사용하면, 해당 key가 아직 dictionary에 없어도 접근이 가능하다.
+  from collections import defaultdict
+  
+  # 기본값의 type을 지정해준다.
+  num_animals = defaultdict(int)
+  for animal in animals:
+      num_animals[animal] += 1
+  
+  print(num_animals)		# defaultdict(<class 'int'>, {'rabbit': 1, 'cat': 2, 'dog': 3})
+  
+  # 주의 사항은 존재하지 않는 key로 조회만 해도 해당 key가 추가된다는 점이다.
+  num_animals["lion"]
+  print(num_animals)	# defaultdict(<class 'int'>, {'rabbit': 1, 'cat': 2, 'dog': 3, 'lion': 0})
+  ```
+
+  - counter
+    - `key:개수` 형태의 dictionary가 필요할 때 유용하게 사용할 수 있다.
+    - 생성자에 문자열을 인자로 넘기면 각 문자가 몇 번씩 사용됐는지 알수 있다.
+
+  ```python
+  from collections import Counter
+  
+  
+  animals = ["rabbit", "cat", "dog", "dog", "cat", "dog"]
+  num_animals = Counter(animals)
+  print(num_animals)		# Counter({'dog': 3, 'cat': 2, 'rabbit': 1})
+  ```
+
+  - orderedDict
+    - python 3.7부터는 Dictionart의 순서가 보장되면서 사용할 필요가 없어졌다.
 
 
 
