@@ -51,19 +51,6 @@
 
 
 
-- 보통 10억번 처리에 1초가 걸린다고 보면 된다. 알고리즘 문제 풀 때 참고할 것.
-
-
-
-- 윈도우키+방향키:창 이동
-
-
-
-- visual studio code
-  - ctrl+d: 다중선택, 키워드에 커서를 두고 한번 누를 때 마다 인접한 동일 키워드가 선택됨.
-
-
-
 - gtthub-pages: repositroy명을 유저명.github.io로 생성하면 된다.
   - jekyll 참고할만한 사이트
   - gatsby 참고할만한 사이트
@@ -74,34 +61,11 @@
 
 
 
-- gitignore.io: 일반적으로 git에 올리지 않는 파일들을 알려주는 사이트
-
-
-
 - gravatar
 
 
 
 - 복사 금지된 글을 복사하는 방법:  F12-우측 상단 .3개 수직으로 있는 버튼 클릭-settings-Enable JavaScript source maps 체크 해제
-
-
-
-- vscode 단축키
-  - alt+shift+f:정렬
-  - alt+shif+아래,위 화살표: 아래, 윗 줄에 복사
-
-
-
-- bash창 단축키
-  - ctrl+w: 단어 삭제(chrome의 탭 닫기 단축키와 같으므로 크롬에서 쓸 경우 주의)
-
-
-
-- rainbow brackets: vscode 확장 프로그램, 괄호들을 색깔 별로 묶어준다.
-
-
-
-- open in browser: vscode 사용시 open in browser를 사용 가능하게 해준다.
 
 
 
@@ -226,7 +190,7 @@
 
 ## IDE 설치하기
 
-### VS Code 설치
+### VSCode 설치
 
 > https://code.visualstudio.com/
 
@@ -356,52 +320,6 @@
     - SSH configuration에 서버 Host, 사용자명, 인증 방식을 선택 후 OK를 클릭한다.
   - 이후 Tools-Start SSH session을 통해 접속이 가능하다.
   - 만일 vscode와 같이 디렉토리를 GUI로 보고자 한다면 Tools-Deployment-Configuration에서 Mappings탭에서 설정해주면 된다.
-
-<br/>
-
-<br/>
-
-<br/>
-
-<br/>
-
-## Util 설치하기
-
-- 반디집
-
-  > https://kr.bandisoft.com/bandizip/
-
-<br/>
-
-- Postman
-
-  > https://www.postman.com/downloads/
-
-<br/>
-
-- Typora
-
-  > https://typora.io/#windows
-
-<br/>
-
-- DB
-
-  - heidi
-
-  > https://www.heidisql.com/
-
-  - sqldeveloper
-
-  > https://www.oracle.com/tools/downloads/sqldev-downloads.html
-  >
-  > hedge0207@gmail.com
-
-<br/>
-
-- workbanch
-
-  > https://dev.mysql.com/downloads/workbench/
 
 <br/>
 
