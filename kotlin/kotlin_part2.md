@@ -1,3 +1,75 @@
+# class
+
+- Kotlin에서 class를 선언하는 방법
+
+  - 다른 언어와 동일하게 `class` keyword를 사용한다.
+
+  ```kotlin
+  class Foo {
+      
+  }
+  ```
+
+  - Kotlin의 경우 위와 같이 body가 없는 class를 생성할 경우, 중괄호를 생략 가능하다.
+
+  ```kotlin
+  class Foo
+  ```
+
+
+
+- Instance 생성하기
+
+  - 위에서 작성한 `Foo` class의 instance를 생성하기
+
+  ```kotlin
+  val foo: Foo = Foo()
+  ```
+
+  - Type을 지정하지 않아도 된다.
+
+  ```kotlin
+  val foo = Foo()
+  ```
+
+
+
+- Class member
+
+  - Class member는 method와 property(혹은 field)를 모두 일컷는 말이다.
+  - Property 작성하기
+    - 반드시 기본값을 지정해줘야한다.
+    - 주지 않을 경우 instance가 생성 될 때 값이 null이 되게 되는데 Kotlin에서는 non-nullable한 값에 null을 할당하는 것을 허용하지 않기 때문이다.
+
+  ```kotlin
+  Class Car {
+      var model: String = "Unknown"
+      var brand: String = "Unknown"
+      var capacity: Int = 2
+  }
+  ```
+
+  - Property에 접근하기
+
+  ```kotlin
+  var myCar = Car()
+  println(myCar.model)		// Unknown
+  println(myCar.capacity)		// 2
+  ```
+
+  - Property 변경하기
+
+  ```kotlin
+  var myCar = Car()
+  myCar.model = "spark"
+  myCar.brand = "KIA"
+  myCar.capacity = 4
+  ```
+
+  
+
+
+
 
 
 #  Error
