@@ -66,6 +66,90 @@
   myCar.capacity = 4
   ```
 
+
+
+
+- Constructor
+
+  - 새로운 object를 생성할 때 자동으로 호출되는 class memeber이다.
+    - 새로 생성되는 object의 property들을 설정해주는 역할을 한다.
+  - 모든 클래스는 constructor를 필요로 한다.
+    - 아래와 같이 object를 생성하는 과정은 사실은 constructor를 호출하는 것이다.
+    - 만일 따로 constructor를 정의해주지 않았을 경우, compiler는 기본 constructor를 생성된다.
+
+  ```kotlin
+  class Size {
+      val width: Int = 1
+      val height: Int = 1
+  }
+  
+  // constructor 호출
+  val size = Size()
+  ```
+
+  - Primary constructor
+    - class와 property들을 initialize하는 데 사용하는 constructor이다.
+    - 오직 property의 값을 설정하는 데만 사용할 수 있으며, 다른 code는 포함할 수 없다.
+    - 아래와 같이 class 명 뒤에 괄호를 통해 초기화 하고자 하는 값을 받는다.
+    - 일반적으로 constructor를 정의할 때, `constructor`라는 keyword를 class명과 괄호 사이에 넣어야 하지만, primary constructor의 경우 생략 가능하다.
+
+  ```kotlin
+  class Size(width: Int, height: Int) {
+      val width: Int = width
+      val height: Int = height
+  }
+  
+  // constructor 키워드를 생략하지 않은 경우
+  class Size constructor(width: Int, height: Int) {
+      val width: Int = width
+      val height: Int = height
+  }
+  ```
+
+  - Property 선언
+    - 괄호 안에 `var` 혹은 `val` 키워드를 넣어, property를 선언할 수 있다.
+    - 기본값을 지정해주는 것도 가능하다.
+
+  ````kotlin
+  class Size(val width: Int = 1, height: Int) {
+      val height: Int = height
+      val area: Int = width * height
+  }
+  ````
+
+  - Single line class
+    - primary constructor에 선언된 property를 제외하고, 다른 class memeber가 없다면, 괄호를 생략 가능하다.
+    - 이를 이용하여, primary constructor로 single line class를 작성하는 것이 가능하다.
+    - 주로 data class를 선언하기위해 사용한다.
+
+  ```kotlin
+  // primary constructor에 선언된 width, height를 제외하면 다른 class member가 없다.
+  class Size(val width: Int, val height: Int)
+  ```
+
+  - `init`
+    - property의 값을 설정하는데에만 사용할 수 있는 primary constructor와는 달리, 추가적인 code를 작성할 수 있는 initializer block을 작성하는 것이 가능하다.
+    - Initializer block을 생성할 때 `init` 키워드를 사용한다.
+    - 하나의 class 내에 여러 개의  initializer block을 생성할 수 있다.
+
+  ```kotlin
+  class Size(_width: Int, _height: Int) {
+      var width: Int = 0
+      var height: Int = 0
+  
+      init {
+          width = if (_width >= 0) _width else {
+              println("Error, the width should be a non-negative value")
+              0
+          }
+          height = if (_height >= 0) _height else {
+              println("Error, the height should be a non-negative value")
+              0
+          }
+      }
+  }
+  ```
+
   
 
 
