@@ -1,4 +1,4 @@
-# class
+# Class
 
 - Kotlin에서 class를 선언하는 방법
 
@@ -150,9 +150,87 @@
   }
   ```
 
+
+
+
+- Member function
+
+  - class 내부에 있는 함수를 member function이라 부른다.
+    - 일반적으로는 method라 불리지만 kotlin에서는 member function이라 부른다.
+    - member function은 아래와 같이 property에 접근이 가능하다.
+    - `this`는 class의 instance 그 자체를 의미하며, optional한 keyword로 빼도 된다.
+
+  ```kotlin
+  class MyClass(var property: Int) {
+      fun printProperty() {
+          println(this.property)
+      }
+  }
+  ```
+
+  - Member function을 호출하기 위해서는 member function이 정의된 class의 instance를 생성해야 한다.
+
+  ```kotlin
+  val myObject = MyClass(10)
+  myObject.printProperty()
+  ```
+
+  - 만일 같은 이름의 member function이 정의될 경우 compile에 실패한다.
+
+
+
+- Extension function
+
+  - 이미 존재하는 class를 확장하여 사용할 수 있게 해주는 기능이다.
+    - Programmning을 하다보면 다른 사람이 작성한 class를 사용해야 할 때가 있다.
+    - 문제는 만일 해당 class에 원하는 기능이 없다면, 해당 기능을 추가해야 한다는 점이다.
+    - Kotlin은 이런 상황을 위한 syntactic sugar를 가지고 있다.
+
+  ```kotlin
+  fun <className>.<methodName>()[: returnType] {
+      // body
+  }
+  ```
+
+  - 예시
+    - 예를 들어 String class에는 `repeated`이라는 member function이 존재하지 않는다.
+    - 만일 우리가 String class에 `repeated` 메서드를 추가하고 싶다면 아래와 같이 하면 된다.
+
+  ```kotlin
+  fun String.repeated(): String = this + this
   
+  "ha".repeated()
+  ```
+
+  - 확장할 class를 receiver type이라 부르고, 확장 한 class로 생성한 instance를 receiver object라 부른다.
+
+  ```kotlin
+  class Client(val name: String, val age: Int)
+  
+  fun Client.getInfo() = "$name $age" // Client는 receiver type
+  
+  
+  val client = Client("John", 32)
+  print(client.getInfo()) // client는 receiver object이다.
+  ```
+
+  - Member function과의 차이
+    - 만일 class에 숨겨진 member가 있다면, extension function은 해당 member에 까지는 접근할 수 없다.
+    - 그러나, member function은 모든 member에 제한 없이 접근 가능하다.
+    - 또한, 만일 member function과 동일한 이름을 가진 extension function을 정의하여 호출하더라도, member function이 실행되고, extension function은 무시된다.
+    - 그러나, 만일 이름이 동일하더라도, parameter가 다르다면, 다른 argument에 따라 각기 다른 함수를 호출할 수 있다.
 
 
+
+- Encapsulation
+  - Data와 해당 data를 처리하는 method를 하나로 묶어, 외부에서 data를 직접 수정하지 못하게 하는 기법을 말한다.
+    - 이를 통해 data가 예상치 못한 방법으로 변경되는 것을 막을 수 있다.
+  - Object 내부의 data를 method를 통하지 않고, 직접 수정하는 것은 지양해야 한다.
+    - 이는 시계의 시간(data)을 변경하기위해 다이얼(method)을 돌리는 대신 시계 내부의 기어를 직접 돌리는 것과 같다.
+    - 시계를 만든 사람이 시간을 변경하라고 만든 다이얼을 조작하지 않고, 직접 뒷 판을 열어 기어를 조작할 경우, 시계 전체가 고장날 수도 있다.
+  - Getter와 setter
+    - Object 내의 data를 가져오거나, data를 설정하는 데 사용되는 메서드를 getter, setter라 부른다.
+    - 이를 사용하여 보다 안전하게 data의 조회 및 수정이 가능하다.
 
 
 

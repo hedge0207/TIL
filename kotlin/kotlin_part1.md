@@ -650,13 +650,10 @@
     - `toBoolean()` 메서드는 대소문자를 구분하지 않는다.
     - 대소문자를 구분하고자 한다면 `toBooleanStrict` 메서드를 사용해야한다.
     - `toBooleanStrictOrNull` 메서드는 값이 true나 false가 아닐 경우 null을 반환한다.
-
-
+  
   ```kotlin
   val bool = "true".toBoolean()
   ```
-
-
 
 
 
@@ -1595,7 +1592,6 @@
   print(mutList2D[0][0]) 	// 1
   print(mutList2D[2][3])	// 12
   ```
-
 
 
 
