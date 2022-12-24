@@ -1204,5 +1204,204 @@
 
 
 
+# Streamlit
+
+> https://github.com/streamlit/streamlit
+
+- Python을 활용하여 web UI를 생성하게 해주는 library, cloud service
+
+
+
+- 설치 및 실행
+
+  - Python 3.7 이상이 필요하다.
+    - numpy, pandas 등도 함께 설치된다.
+
+  ```bash
+  $ pip install streamlit
+  ```
+
+  - 설치 확인
+
+  ```bash
+  $ streamlit hello
+  ```
+
+  - 실행
+    - streamlit script를 실행시키려면 아래와 같이 입력하면 된다.
+
+  ```bash
+  $ streamlit run <script>
+  
+  # 혹은 아래와 같이 해도 된다.
+  $ python -m streamlit run <script>
+  ```
+
+
+
+- Streamlit의 특징
+  - Script의 수정사항을 app에 적용하려면, 전체 script를 재실행해야한다.
+    - 자동으로 재실행 되도록 할 수도 있고, 사용자가 수동으로 재실행 할 수도 있다.
+  - 자동으로 재실행 되도록 할 경우, 사용자가 script를 수정하고 저장하면, app이 자동으로 script 전체를 재실행하여 변경 사항을 app에 반영한다.
+  - 만일 대량의 data를 받아와야 하는 등 리소스를 많이 필요로하는 logic이 있을 경우, 이는 문제가 될 수 있다.
+    - script의 수정이 생길 때 마다 대량의 data를 다시 받아와야하기 때문이다.
+    - Streamlit은 이를 위해 cache 기능을 제공한다.
+
+
+
+- Streamlit cache의 동작 방식
+
+  - `cache` annotation을 추가한 함수가 호출 될 때 아래 3가지를 체크하게 된다.
+    - 함수의 bytecode(함수의 변경 여부 확인).
+    - 함수가 의존하고 있는 code, 변수, 파일(함수가 의존하고 있는 것들의 변경 여부 확인).
+    - 함수를 호출할 때 넘긴 parameter.
+  - 함수를 호출할 경우
+    - 만일 위 세 가지 중 하나로도 이전과 달라졌거나, 함수가 처음 호출되는 것이라면, 함수는 정의된 logic을 수행하고, data를 local cache에 저장한다.
+    - 만일 함수가 처음 호출 된 것이 아니고, 위 세 가지가 이전과 정확히 동일하다면, 함수의 실행을 하지 않고, local cache에 저장된 data를 가져온다.
+  - 한계
+    - Streamlit은 오직 working directory의 변경 사항만을 파악한다. 따라서, 만일 working directory 외부의 변경 사항이 있다면, 이를 알아채지 못한다. 예를 들어 사용중인 library를 upgrade 했는데, 해당 library가 저장된 위치가 실행 중인 streamlit app의 working directory가 아니라면, 변경사항이 있음에도 cache가 그대로 적용된다.
+    - 만일 cache annotation이 붙은 함수가 반환하는 값이 무선적인 값이거나, 외부에서 받아오는 값이 변경되어도, 위 세 가지가 변경되지 않았으므로, cache된 값을 그대로 반환한다.
+    - cache된 함수가 반환한 값은 참조에 의해 저장되기 전 까지는 수정되선 안된다(성능상의 문제와 다른 library와의 호환성 문제로 막아뒀다).
+
+  
+
+
+
+- App 생성해보기
+
+  - 필요한 package들을 import 해준다.
+
+  ```python
+  import streamlit as st
+  import pandas as pd
+  import numpy as np
+  ```
+
+  - app의 제목을 추가한다.
+    	`st.title` method를 사용한다.
+
+  ```python
+  st.title("My first Streamlit app")
+  ```
+
+  - App에 띄워줄 data를 받아온다.
+    - AWS S3에 저장되어 있는 Uber의 정보를 받아오는 code이다.
+    - Data를 받아와서 pandas의 dataframe에 넣고, string type인 date column의 값을 datetime으로 변환한다.
+
+  ```python
+  DATE_COLUMN = 'date/time'
+  DATA_URL = ('https://s3-us-west-2.amazonaws.com/'
+           'streamlit-demo-data/uber-raw-data-sep14.csv.gz')
+  
+  def load_data(nrows):
+      data = pd.read_csv(DATA_URL, nrows=nrows)
+      lowercase = lambda x: str(x).lower()
+      data.rename(lowercase, axis='columns', inplace=True)
+      data[DATE_COLUMN] = pd.to_datetime(data[DATE_COLUMN])
+      return data
+  
+  # data가 로딩 중이라는 text를 띄운다.
+  data_load_state = st.text('Loading data...')
+  # 10000 줄의 data를 받아온다.
+  data = load_data(10000)
+  # data를 받아오면, data 로딩이 끝났다는 것을 알려주는 text를 띄운다.
+  data_load_state.text('Loading data...done!')
+  ```
+
+  - Cache 적용하기
+    - Streamlit의 특성상, script에 수정사항이 있을 때 마다 전체 script를 재실행한다.
+    - 따라서 위 script의 경우, 수정사항이 생길 때 마다 data를 계속 받아오게 된다.
+    - 이를 막기 위해 cache를 추가해준다.
+
+  ```python
+  # cache decorator를 추가해주기만 하면 된다.
+  @st.cache
+  def load_data(nrows):
+  ```
+
+  - 받아온 data 확인하기
+    - `subheader`를 통해 소제목을 설정하고 `text`를 통해 data를  rendering한다.
+    - `write` 메서드는 data type에 가장 적합한 방식을 선택하여 data를 보여준다.
+
+  ```python
+  st.subheader('Raw data')
+  st.write(data)
+  ```
+
+  - histogram 생성하기
+    - `bar_chart` 메서드를 사용한다.
+
+  ```python
+  # 소제목을 추가하고
+  st.subheader('Number of pickups by hour')
+  
+  # 시간별로 분류된 histogram을 생성한다.
+  hist_values = np.histogram(data[DATE_COLUMN].dt.hour, bins=24, range=(0,24))[0]
+  
+  # histogram을 rendering한다.
+  st.bar_chart(hist_values)
+  ```
+
+  - 지도에서 data 확인하기
+    - `map` 메서드를 사용한다.
+
+  ```python
+  st.subheader('Map of all pickups')
+  
+  st.map(data)
+  ```
+
+  - filter 추가하기
+    - filter를 추가하여 시간대 별로 filtering 된 결과를 보고 싶다면 아래와 같이 수정하면 된다.
+
+  ```python
+  hour_to_filter = st.slider('hour', 0, 23, 17)
+  filtered_data = data[data[DATE_COLUMN].dt.hour == hour_to_filter]
+  st.subheader('Map of all pickups at %s:00' % hour_to_filter)
+  st.map(filtered_data)
+  ```
+
+  - checkbox 추가하기
+    - 만일 checkbox에 따라 특정 내용이 보이게 하고 싶으면 아래와 같이 하면 된다.
+
+  ```python
+  if st.checkbox('Show raw data'):
+      st.subheader('Raw data')
+      st.write(data)
+  ```
+
+
+
+- 예시1. elasticsearch를 활용한 검색 demo page 만들기
+
+  ```python
+  import streamlit as st
+  import pandas as pd
+  from elasticsearch import Elasticsearch
+  
+  
+  es_client = Elasticsearch("localhost:9200")
+  
+  def search(title):
+      body = {
+          "query":{
+              "match_all":{}
+          },
+          "size":5
+      }
+      res = es_client.search(index="my_index", body=body)["hits"]["hits"]
+      return [doc["_source"] for doc in res]
+  
+  
+  st.title("Search Demo Page")
+  
+  title = st.text_input('검색어를 입력하세요.')
+  
+  if title:
+      st.write(search(title))
+  ```
+
+  
+
 
 
