@@ -1286,6 +1286,151 @@
 
 
 
+# Python slot
+
+- slot
+
+  - class의 attribute를 보다 엄격하게 정의할 수 있게 해주는 class 변수이다.
+    - 일반적인 class와 달리 `__slots__`을 정의한 class는 미리 정해둔 attribute 이외의 attribute를 runtime에 추가할 수 없다.
+
+  ```python
+  class Foo:
+      def __init__(self, a, b):
+          self.a = a
+          self.b = b
+          
+  class Bar:
+      __slots__ = ('a', 'b')
+      
+      def __init__(self, a, b):
+          self.a = a
+          self.b = b
+  
+  
+  foo = Foo('a', 'b')
+  foo.c = 'c'
+  bar = Bar('a', 'b')
+  bar.c = 'c'			# AttributeError
+  ```
+
+  - 왜 사용해야 하는가
+    - 일반적인 class에 비해 메모리를 효율적으로 사용하고, 약간 더 빠르기 때문이다.
+    - Python에서 class의 attribute들은 `__dict__`라는  class 변수에 저장되어 있다.
+    - dictionary는 메모리를 많이 잡아먹는 자료형이기에, runtime에 attribute를 추가 할 일이 없다면, 사용하지 않는 것이 효율적이다.
+    - class 내부에 `__slots__`을 선언하면, `__dict__` 변수를 생성하지 않아 메모리를 절약할 수 있다.
+
+  ```python
+  class Foo:
+      __slots__ = ('a', 'b')
+      
+      def __init__(self, a, b):
+          self.a = a
+          self.b = b
+  
+  foo = Foo('a', 'b')
+  print(dir(foo))		# 일반적인 class에는 있는 __dict__와 __weakref__ class가 없는 것을 확인할 수 있다.
+  ```
+
+  - 조회 속도 비교
+    - 아래에서 확인할 수 있듯이 memory를 더 적게 차지하고, 데이터를 조회하는 속도가 약간 더 빠르다.
+
+  ```python
+  import timeit
+  
+  class Foo:
+      def __init__(self, a, b):
+          self.a = a
+          self.b = b
+          
+  class Bar:
+      __slots__ = ("a", "b")
+      
+      def __init__(self, a, b):
+          self.a = a
+          self.b = b
+  
+  def time_check(obj):
+      obj.a
+  
+  foo = Foo("a", "b")
+  bar = Bar("a", "b")
+  
+  foo_time = timeit.timeit("time_check(foo)", "from __main__ import time_check, foo, bar", number=1_000_000)
+  bar_time = timeit.timeit("time_check(bar)", "from __main__ import time_check, foo, bar", number=1_000_000)
+  
+  print(foo_time)		// 0.10122731141746044
+  print(bar_time)		// 0.08111729100346565
+  ```
+
+  - memory size 비교
+    - `__slots__`을 추가한 쪽이, 일반적인 class에 비해 메모리를 훨씬 덜 차지한다.
+    - attribute가 증가할수록 차이는 점점 더 커지게 된다.
+
+  ```python
+  import sys
+  
+  class Foo:
+      pass
+  
+  class Bar:
+      __slots__ = ()
+  
+  
+  print(sys.getsizeof(Foo()))		# 48
+  print(sys.getsizeof(Bar()))		# 16
+  ```
+
+  - 만일 `__slots__`을 사용하면서 `__dict__`도 함께 사용해야 한다면, 아래와 같이 주면 된다.
+
+  ```python
+  class Foo:
+      __slots__ = ("__dict__")
+  
+  foo = Foo()
+  foo.a = 'a'
+  ```
+
+  - 당연하게도 `__slots__`도 상속된다.
+    - 그러나 `__slots__`을 명시적으로 줬을 때와, 주지 않았을 때 차이가 존재한다.
+    - `Child2`처럼 명시적으로 준 경우 `__dict__`가 생성되지 않지만, 명시적으로 주지 않았을 경우, `__dict__`가 생성된다.
+
+  ```python
+  class Parent:
+      __slots__ = ("a")
+  
+  class Child1(Parent):
+      pass
+  
+  class Child2(Parent):
+      __slots__ = ("b")
+  
+  child1 = Child1()
+  child2 = Child2()
+  
+  print(child1.__slots__)
+  print(child2.__slots__)
+  
+  print(child1.__dict__)
+  print(child2.__dict__)      # AttributeError
+  ```
+
+  - 다중 상속 시 주의할 점
+    - 아래와 같이 상속하는 부모 class가 모두 `__slots__`을 가지고 있을 경우 `TypeError`가 발생한다.
+    - 둘 중 하나라도 비어 있는  `__slots__`을 가지고 있는 경우에는 문제가 되지 않지만, 둘 다 비어 있지 않은 `__slots__`을 가지고 있으면(심지어 둘의 `__slots__`값이 동일하더라도) 문제가 된다.
+
+  ```python
+  class Foo:
+      __slots__ = ('a')
+  
+  class Bar:
+      __slots__ = ('b')
+  
+  class Baz(Foo, Bar):
+      pass
+  
+  baz = Baz()
+  ```
+
 
 
 # 참고
