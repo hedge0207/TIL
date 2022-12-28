@@ -75,8 +75,9 @@
     - 새로 생성되는 object의 property들을 설정해주는 역할을 한다.
   - 모든 클래스는 constructor를 필요로 한다.
     - 아래와 같이 object를 생성하는 과정은 사실은 constructor를 호출하는 것이다.
-    - 만일 따로 constructor를 정의해주지 않았을 경우, compiler는 기본 constructor를 생성된다.
-
+    - 만일 따로 constructor를 정의해주지 않았을 경우, compiler는 기본 constructor를 생성한다.
+    - 기본 compiler를 사용하려 할 경우, 반드시 property에 기본값을 설정해줘야한다.
+  
   ```kotlin
   class Size {
       val width: Int = 1
@@ -86,13 +87,13 @@
   // constructor 호출
   val size = Size()
   ```
-
+  
   - Primary constructor
     - class와 property들을 initialize하는 데 사용하는 constructor이다.
     - 오직 property의 값을 설정하는 데만 사용할 수 있으며, 다른 code는 포함할 수 없다.
     - 아래와 같이 class 명 뒤에 괄호를 통해 초기화 하고자 하는 값을 받는다.
     - 일반적으로 constructor를 정의할 때, `constructor`라는 keyword를 class명과 괄호 사이에 넣어야 하지만, primary constructor의 경우 생략 가능하다.
-
+  
   ```kotlin
   class Size(width: Int, height: Int) {
       val width: Int = width
@@ -105,33 +106,33 @@
       val height: Int = height
   }
   ```
-
+  
   - Property 선언
     - 괄호 안에 `var` 혹은 `val` 키워드를 넣어, property를 선언할 수 있다.
     - 기본값을 지정해주는 것도 가능하다.
-
+  
   ````kotlin
   class Size(val width: Int = 1, height: Int) {
       val height: Int = height
       val area: Int = width * height
   }
   ````
-
+  
   - Single line class
     - primary constructor에 선언된 property를 제외하고, 다른 class memeber가 없다면, 괄호를 생략 가능하다.
     - 이를 이용하여, primary constructor로 single line class를 작성하는 것이 가능하다.
     - 주로 data class를 선언하기위해 사용한다.
-
+  
   ```kotlin
   // primary constructor에 선언된 width, height를 제외하면 다른 class member가 없다.
   class Size(val width: Int, val height: Int)
   ```
-
+  
   - `init`
     - property의 값을 설정하는데에만 사용할 수 있는 primary constructor와는 달리, 추가적인 code를 작성할 수 있는 initializer block을 작성하는 것이 가능하다.
     - Initializer block을 생성할 때 `init` 키워드를 사용한다.
     - 하나의 class 내에 여러 개의  initializer block을 생성할 수 있다.
-
+  
   ```kotlin
   class Size(_width: Int, _height: Int) {
       var width: Int = 0
@@ -149,6 +150,185 @@
       }
   }
   ```
+
+
+
+- Custom constructor(Secondary constructor)
+
+  - 하나의 class에 여러 개의 constructor를 사용할 수 있게 해준다.
+    - Primary constructor와 별개로 custom constructor를 선언할 수 있다.
+  - Class 내부에 `constructor` keyword를 사용하여 선언한다.
+
+  ```kotlin
+  class Size {
+      var width: Int = 0
+      var height: Int = 0
+  
+      constructor(_width: Int, _height: Int) {
+          width = _width
+          height = _height
+      }
+  }
+  
+  val size = Size(3, 4)
+  ```
+
+  - 만일 secondary constructor를 선언했을 경우, 암묵적 constructor(기본 constructor)를 호출할 수는 없다.
+  
+  ```kotlin
+  class Size {
+      var width: Int = 0
+      var height: Int = 0
+  
+      constructor(_width: Int, _height: Int) {
+          width = _width
+          height = _height
+      }
+  }
+  
+  // 이렇게 암묵적 construcotor를 호출할 수는 없다.
+  val size = Size()
+  
+  
+  // 만일 위와 같이 사용해야 한다면, 아래와 같이 빈 constructor를 선언해야 한다.
+  // 아래와 같이 primary constructor를 선언하거나
+  class Size() { 
+      var width: Int = 0
+      var height: Int = 0
+  }
+  
+  // 또 다른 secondary constructor를 선언한다.
+  class Size {
+      var width: Int = 0
+      var height: Int = 0
+  
+      constructor() {
+      }
+  }
+  ```
+  
+  - 여러 개의 constructor 선언하기
+    - 어떤 constructor가 선언될지는 parameter에 따라 달라지게 된다.
+
+  ```kotlin
+  class Size {
+      var width: Int = 0
+      var height: Int = 0
+  
+      constructor(_height: Int) {
+          height = _height
+      }
+  
+      constructor(_width: Int, _height: Int) {
+          width = _width
+          height = _height
+      }
+  
+      constructor(_width: Int, _height: Double) {
+          width = _width
+          height = _height.toInt()
+      }
+  
+      constructor(_height: Double, _width: Int) {
+          width = _width
+          height = _height.toInt()
+      }
+  }
+  ```
+  
+  - 여러개의 constructor가 선언됐을 경우, compiler는 각 constructor들의 argument name이 아니라 argument의 type으로 어떤 constructor가 실행될지를 판단한다.
+    - 즉, 아래 두 개의 constructor는, 비록 argument의 이름이 다를지라도, compiler가 보기에는 동일한 constructor이며, error가 발생하게 된다.
+  
+  ```kotlin
+  constructor(width: Int, height: Int) {}
+  constructor(x: Int, y: Int) {}
+  ```
+
+  - `this` keyword를 반드시 사용해야 하는 경우
+    - 현재 object를 가리키는 `this` keyword는 생략이 가능하다.
+    - 그럼에도 반드시 사용해야 하는 경우가 있는데, 아래와 같이 constructor의 parameter의 값과 property의 이름이 동일한 경우에는 property에 반드시 `this`를 붙여줘야 한다.
+  
+  ```kotlin
+  class Size {
+      var width: Int = 0
+      var height: Int = 0
+  
+      constructor(width: Int, height: Int) {
+          this.width = width
+          this.height = height
+      }
+  }
+  ```
+  
+  - Constructor의 역할은 초기화지 재할당이 아니다.
+    - 아래 예시에서 `val` keyword로 선언된 property들은 재할당이 불가능하다.
+    - 그러나 constructor를 통해 값을 할당할 수 있는데, 이는 변수의 초기화지 재할당이 아니기 때문이다.
+  
+  ```kotlin
+  class Size {
+      val width: Int
+      val height: Int
+      val area: Int
+  
+      constructor(width: Int, height: Int) {
+          this.width = width
+          this.height = height
+          this.area = width * height
+      }
+  }
+  ```
+  
+  - Custom constructor의 parameter에 `val`, `var`를 붙이는 방식으로 property를 선언할 수는 없다.
+  
+  ```kotlin
+  class Size {
+      // 아래와 같이 하는 것은 불가능하다.
+      constructor(val width: Int, val height: Int) {
+      }
+  }
+  ```
+  
+  - Constructor delegation
+    - 만일 primary constructor가 존재할 경우, secondary constructor는 반드시 primary constructor를 호출해야한다.
+    - 이를 delegation이라 한다.
+    - `this`를 사용하여 primary constructor를 호출할 수 있다.
+    - Secondary constructor의 가장 첫 번째 문이 되므로, secondary constructor가 실행되기 전에 delegation이 먼저 실행된다.
+    - 만일 primary constructor가 없을 경우, delegation은 암묵적으로 발생한다.
+  
+  ```kotlin
+  class Size(val width: Int, val height: Int) {
+      var area: Int = width * height
+  	// secondary construcotr에서 primary constructor를 호출하려면, 아래와 같이 this를 사용한다.
+      constructor(width: Int, height: Int, outerSize: Size) : this(width, height) {
+          outerSize.area -= this.area
+          println("Updated outer object's area is equal to ${outerSize.area}")
+      }
+  }
+  ```
+  
+  - Secondary constructor의 실행 순서
+    - 아래와 같은 code가 있을 경우, Primary constructor가 가장 먼저 실행 되고, `init` block이 실행된 후, secondary constructor가 실행된다.
+  
+  ```kotlin
+  class Size(val width: Int, val height: Int) {
+      var area: Int = width * height
+  
+      init {
+          println("Object with area equal to $area is created")
+      }
+  
+      constructor(width: Int, height: Int, outerSize: Size) : this(width, height) {
+          outerSize.area -= this.area
+          println("Updated outer object's area is equal to ${outerSize.area}")
+      }
+  }
+  
+  fun main() {
+      val obj = Size(2, 3, outerObject)
+  }
+  ```
+
+
 
 
 
@@ -228,9 +408,156 @@
   - Object 내부의 data를 method를 통하지 않고, 직접 수정하는 것은 지양해야 한다.
     - 이는 시계의 시간(data)을 변경하기위해 다이얼(method)을 돌리는 대신 시계 내부의 기어를 직접 돌리는 것과 같다.
     - 시계를 만든 사람이 시간을 변경하라고 만든 다이얼을 조작하지 않고, 직접 뒷 판을 열어 기어를 조작할 경우, 시계 전체가 고장날 수도 있다.
-  - Getter와 setter
-    - Object 내의 data를 가져오거나, data를 설정하는 데 사용되는 메서드를 getter, setter라 부른다.
+
+
+
+- Getter와 setter
+  - Object 내의 data를 가져오거나, data를 설정하는 데 사용되는 메서드를 getter, setter라 부른다.
     - 이를 사용하여 보다 안전하게 data의 조회 및 수정이 가능하다.
+  - Property getter
+    - Kotlin에서는 getter라 불리는 특별 함수를 정의할 수 있다.
+    - `get`이라는 이름으로 함수를 선언하면 되는데, `get`함수는 인자로 아무 것도 받지 않고, `field`라는 keyword를 반환한다.
+    - `field`는 Kotlin의 모든 property가 가지는 backing field로, property의 값을 담고 있다.
+    - 만일 따로 정의해주지 않을 경우, Kotlin에서 자동으로 아래와 같이 생성해주며, 추가해야 할 code가 있을 경우에만 직접 선언해서 사용하면 된다.
+
+  ```kotlin
+  class Client {
+      val name = "Unknown"
+          get() {
+              return field
+          }
+  }
+  
+  // 아래와 같이 괄호를 생략하는 것도 가능하다.
+  class Client {
+      val name = "Unknown"
+          get() = field
+  }
+  
+  
+  println(client.name)	// Unknown
+  ```
+
+  - Custom getter
+    - 만일 추가해야 할 code가 있을 경우 아래와 같이 `get` 함수 내부에 추가해주면 된다.
+    - `field`는 read-only로, 변경이 불가능하다.
+
+  ```kotlin
+  class Client {
+      val name = "Unknown"
+          get() {
+              if (field == "Unknown") {
+                  return "Foo"
+              } else {
+                  return field
+              }
+          }
+  }
+  
+  val client = Client()
+  println(client.name)	// foo
+  ```
+
+  - Property setter
+    - `get` 함수와 마찬가지로, setter라 불리는 `set` 함수를 선언하여 property를 명시적으로 수정하도록 할 수 있다.
+    - `get`과 달리 하나의 arguement를 받으며, 반환값은 없다. argument의 이름은 `value`로 하는 것이 관례다.
+    - 이 역시 따로 선언하지 않을 경우, Kotlin이 자동으로 선언해주며, 추가해야 할 code가 있을 경우에만 직접 선언해서 사용하면 된다.
+
+  ```kotlin
+  class Client {
+      var name = "Unknown"
+          set(value) {
+              field = value
+          }
+  }
+  ```
+
+  - Custom setter
+    - 만일 추가해야 할 code가 있을 경우 아래와 같이 `set` 함수 내부에 추가해주면 된다.
+
+  ```kotlin
+  class Client {
+      var name = "Unknown"
+      var age = 18
+          set(value) {                      
+              field = if (value < 0) {
+                  println("Age cannot be negative. Set to $defaultAge")
+                  defaultAge
+              } else
+                  value
+          }
+      val defaultAge = 18
+  }
+  
+  val client = Client()
+  client.age = -1      // Age cannot be negative. Set to 18.
+  println(client.age)  // 18
+  ```
+
+  - Constructor와 함께 사용할 경우 아래와 같이 사용하면 된다.
+    - Property를 다른 property에 할당한 후 해당 property에 `get` 또는 `set` 함수를 선언한다.
+
+  ```kotlin
+  class Client(name: String, age: Int) {
+      var fullName: String = name
+          set(value) {
+              println("The name is changing. Old value is $field. New value is $value.")
+              field = value
+          }
+      // 아래 age는 위 age와 다른 새로운 property다.
+      var age: Int = age
+          set(value) {
+              println("The age is changing. Old value is $field. New value is $value.")
+              field = value
+          }
+  }
+  ```
+
+  - Instance가 initializing 될 때는 setter가 실행되지 않는다.
+
+  ```kotlin
+  class Client(name: String) {
+      var name: String = name
+          set(value) {
+              println("The name is changing. Old value is $field. New value is $value.")
+              field = value
+          }
+  }
+  
+  val client = Client("Annie")  // set 함수는 실행되지 않는다.
+  client.name = "Ann"           // The name is changing. Old value is Annie. New value is Ann.
+  ```
+
+  - `val`로 선언한 변수에는 setter를 사용할 수 없다.
+    - 단, val property 내부의 property는 수정이 가능하다.
+
+  ```kotlin
+  class Passport(number: String) {
+      var number = number
+      set(value) {
+          println("Passport number has changed.")
+          field = value
+      }
+  }
+  
+  class Client {
+      val passport = Passport("1234567")
+  }
+  
+  val client = Client()
+  println(client.passport.number)       // 1234567
+  /*
+  client.passport = Passport("2345678") // 수정할 수 없다.
+  */
+  client.passport.number = "2345678"    // val property 내부의 property는 수정이 가능하다.
+  println(client.passport.number)       // 2345678
+  ```
+
+
+
+
+
+
 
 
 

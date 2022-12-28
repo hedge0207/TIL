@@ -858,6 +858,11 @@
 
 
 
+- `in` 연산자
+  - 좌항이 우항에 존재하는지를 판별한다.
+
+
+
 # if expression
 
 - 조건에 따라 다른 연산을 할 수 있게 해주는 표현식이다.
@@ -1370,15 +1375,14 @@
 
   - 빈 MutableList 객체를 생성하는 것도 가능하다.
     - 이 때는 type을 반드시 지정해줘야 한다.
-
-
+  
   ```kotlin
   val myMutableList = mutableListOf<type>()
   
   // 혹은 아래와 같이 선언한다.
   val myMutableList: MutableList<Int> = mutableListOf()
   ```
-
+  
   - `.size`를 통해 list의 size를 확인 가능하다.
 
 
