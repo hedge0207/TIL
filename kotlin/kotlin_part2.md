@@ -555,7 +555,74 @@
 
 
 
+- Enum
 
+  - 상수들의 논리적 집합이다.
+    - 상수들을 관리하기 위해 사용한다.
+  - 기본 Enum
+    - `enum` keyword를 사용하여 enum class를 생성할 수 있다.
+    - Naming convention은 undersocre로 구분된 대분자를 사용하거나(`MY_CONSTANT`), 파스칼 케이스를 사용하는 것이다(`MyConstant`).
+
+  ```kotlin
+  enum class Animal {
+      DOG, CAT, TIGER, LION, ELEPHANT
+  }
+  ```
+
+  - 값 부여하기
+    - enum class 내부의 각 요소들은 enum class의 인스턴스이기에, constructor에 값을 줌으로써 초기화가 가능하다.
+    - 마지막 요소 뒤에는 `;`을 붙여야한다.
+
+  ```kotlin
+  enum class Animal(val age: Int) {
+      DOG(3), CAT(2), TIGER(6), LION(3), ELEPHANT(5);
+  }
+  ```
+
+  - 값에 접근하기
+    - 아래와 같이 접근이 가능하다.
+
+  ```kotlin
+  val animalAge = Animal.DOG.age
+  ```
+
+  - 메서드 추가하기
+
+  ```kotlin
+  enum class Animal(val age: Int) {
+      DOG(3), CAT(2), TIGER(6), LION(3), ELEPHANT(5);
+      
+      fun printAge() {
+          println(age)
+      }
+  }
+  
+  dog = Animal.DOG
+  dog.printAge()		// 3
+  ```
+
+  - 인스턴스의 이름에 접근하기
+
+  ```kotlin
+  val cat: Animal = Animal.CAT
+  println(cat.name)		// CAT
+  ```
+
+  - 몇 번째 인스턴스인지 확인하기
+
+  ```kotlin
+  val tiger: Animal = Animal.TIGER
+  println(tiger.ordinal)		// 2
+  ```
+
+  - Instance들을 순회하기
+    - `values()` 메서드는 enum class의 instance들의 배열을 반환한다.
+
+  ```kotlin
+  for (enum in Animal.values()) {
+      println(enum.age)
+  }
+  ```
 
 
 
