@@ -1117,6 +1117,233 @@
 
 
 
+
+
+## dataclass
+
+> https://www.daleseo.com/python-dataclasses/
+
+- dataclass module
+  - 사용자 정의 class에 각종 special method를 자동으로 추가해주는 decorator와 함수들을 제공하는 모듈이다.
+  - Python 3.7부터 사용이 가능하다.
+
+
+
+- 왜 사용해야 하는가?
+
+  - 예를 들어 아래와 같이 많은 parameter를 받는 class가 있다고 가정해보자.
+    - 아래에서 각 변수는 argument로 한 번, self.를 붙여 선언할 때 한 번, 할당 할 때 한 번 총 세번씩 사용된다.
+    - 이는 필요는 하지만 반복적인 코드로, 비효율적이다.
+
+  ```python
+  class People:
+      def __init__(self, name, age, height, weight, gender, contry, 
+                  address, birthday, email_address, phone_number):
+          self.name = name
+          self.age = age
+          self.height = height
+          self.weight = weight
+          self.gender = gender
+          self.contry = contry
+          self.address = address
+          self.birthday = birthday
+          self.email_address = email_address
+          self.phone_number = phone_number
+  ```
+
+  - 이를 출력하려 한다고 가정해보자
+    - 객체의 attribute들이 출력되는 것이 아니라, 객체의 메모리상의 주소값이 나와 보기가 불편하다.
+    - 이를 해결하려면 `__repr__` magic method를 추가해야 한다.
+
+  ```python
+  people = People("John", 27, 170, 72, "male", "USA", "SomeWhere", date(1994, 1, 7), "john@gmail.com", "123-456-789")
+  print(people)	# <__main__.People object at 0x7fd71a71ebe0>
+  
+  from datetime import date
+  
+  class People:
+      def __init__(self, name, age, height, weight, gender, contry, 
+                  address, birthday, email_address, phone_number):
+          self.name = name
+          self.age = age
+          self.height = height
+          self.weight = weight
+          self.gender = gender
+          self.contry = contry
+          self.address = address
+          self.birthday = birthday
+          self.email_address = email_address
+          self.phone_number = phone_number
+      
+      def __repr__(self):
+          return (
+              self.__class__.__qualname__ + f"(name={self.name!r}, age={self.age!r}, "
+              f"height={self.height!r}, weight={self.weight!r}, gender={self.gender!r}"
+              f"contry={self.contry!r}, address={self.address!r}, birthday={self.birthday!r}"
+              f"email_address={self.email_address!r}, phone_number={self.phone_number!r})"
+          )
+  
+  people = People("John", 27, 170, 72, "male", "USA", "SomeWhere", date(1994, 1, 7), "john@gmail.com", "123-456-789")
+  print(people)	# People(name='John', age=27, height=170, weight=72, gender='male'contry='USA', address='SomeWhere', birthday=datetime.date(1994, 1, 7)email_address='john@gmail.com', phone_number='123-456-789')
+  ```
+
+  - 또한 두 개의 instance들의 attribute들이 모두 같은 값을 가지는지 비교하려 한다고 가정해보자.
+    - 이 역시 `__eq__` magic method를 직접 구현해야 한다.
+
+  ```python
+  people1 = People("John", 27, 170, 72, "male", "USA", "SomeWhere", date(1994, 1, 7), "john@gmail.com", "123-456-789")
+  people2 = People("John", 27, 170, 72, "male", "USA", "SomeWhere", date(1994, 1, 7), "john@gmail.com", "123-456-789")
+  print(people1 == people2)	# false
+  
+  
+  from datetime import date
+  
+  class People:
+      def __init__(self, name, age, height, weight, gender, contry, 
+                  address, birthday, email_address, phone_number):
+          self.name = name
+          self.age = age
+          self.height = height
+          self.weight = weight
+          self.gender = gender
+          self.contry = contry
+          self.address = address
+          self.birthday = birthday
+          self.email_address = email_address
+          self.phone_number = phone_number
+      
+      def __repr__(self):
+          return (
+              self.__class__.__qualname__ + f"(name={self.name!r}, age={self.age!r}, "
+              f"height={self.height!r}, weight={self.weight!r}, gender={self.gender!r}"
+              f"contry={self.contry!r}, address={self.address!r}, birthday={self.birthday!r}"
+              f"email_address={self.email_address!r}, phone_number={self.phone_number!r})"
+          )
+      
+      def __eq__(self, other_obj):
+          if self.__class__ is other_obj.__class__:
+              self_attr_values = [self.name, self.age, self.height, self.weight, self.gender, self.contry,
+                                  self.address, self.birthday, self.email_address, self.phone_number]
+              other_attr_values = [other_obj.name, other_obj.age, other_obj.height, other_obj.weight, 
+                                  other_obj.gender, other_obj.contry, other_obj.address, other_obj.birthday, 
+                                  other_obj.email_address, other_obj.phone_number] 
+              return self_attr_values == other_attr_values
+  
+  people1 = People("John", 27, 170, 72, "male", "USA", "SomeWhere", date(1994, 1, 7), "john@gmail.com", "123-456-789")
+  people2 = People("John", 27, 170, 72, "male", "USA", "SomeWhere", date(1994, 1, 7), "john@gmail.com", "123-456-789")
+  print(people1 == people2)	# True
+  ```
+
+  - dataclass는 위와 같은 code들을 자동으로 생성해준다.
+    - 위와 같이 data를 저장하고, 조회하고, 비교하기 위한 class를 생성하려면, 부가적으로 작성해야하는 코드가 굉장히 많아진다.
+    - dataclass를 사용하면 위와 같은 code를 자동으로 생성해주어 생산성을 높일 수 있다.
+
+
+
+- dataclass 사용하기
+
+  - `dataclasses` 모듈에서 `dataclass` decorator를 import하여 사용한다.
+    - 아래와 같이 attribute를 정의하고 `:` 뒤에 각 attribute의 type을 정의한다.
+    - type 뒤에 `=`를 사용하여 기본 값을 줄 수 있다.
+    - 아래 코드는 위에서 장황하게 작성한 class가 지원하는 기능을 모두 지원한다.
+
+  ```python
+  from datetime import date
+  from dataclasses import dataclass
+  
+  @dataclass
+  class People:
+      name: str = "John Doe"
+      age: int
+      height: float
+      weight: float
+      gender: str
+      contry: str
+      address: str
+      birthday: date
+      email_address: str
+      phone_number: str
+  ```
+
+  - `frozen`
+    - 기본적으로 dataclass로 생성한 인스턴스의 값은 변경이 가능하다.
+    - 만일 변경하지 못하게 막고 싶다면 `frozen` 옵션을 True로 주면 된다.
+
+  ```python
+  from dataclasses import dataclass
+  
+  @dataclass(frozen=True)
+  class Name:
+      first_name: str
+      last_name: str
+  
+  name = Name("John", "Doe")
+  name.last_name = "Oed"		# dataclasses.FrozenInstanceError
+  ```
+
+  - `slots`
+    - 만일 `slots`을 True로 주면 `__slots__`을 준 것과 동일하게 사용할 수 있다.
+    - Python 3.10부터 사용이 가능하다.
+
+  ```python
+  from dataclasses import dataclass
+  
+  @dataclass(slots=True)
+  class Name:
+      first_name: str
+      last_name: str
+  ```
+
+
+
+- validation하기
+
+  - `__post_init__` 메서드를 통해 dataclass 내부의 `__ini__`메서드가  호출된 이후에 특정 코드가 실행되도록 할 수 있다.
+
+  ```python
+  @dataclass
+  class C:
+      a: float
+      b: float
+      c: float = field(init=False)
+  
+      def __post_init__(self):
+          self.c = self.a + self.b
+  ```
+
+
+
+- 주의사항
+
+  - 아래와 같이 기본값을 가변 데이터 타입 값으로 줄 수 없다.
+    - 이는 기본값이 모든 instance 들 간에 공유되기 때문으로, 예상치 못 한 결과를 발생시킬 수 있어 막혀있다.
+    - 이럴 경우 `field`의 `default_factory` 옵션을 사용하여, 인스턴스가 생성될 때 마다 새로운 값이 생성되도록 해줘야 한다.
+
+  ```python
+  from dataclasses import dataclass, field
+  from typing import List
+  
+  # error 발생
+  @dataclass
+  class Person:
+      first_name: str
+      last_name: str
+      hobbies: List[str] = []
+  
+  # 대신 field(default_factory=list)를 사용
+  @dataclass
+  class Person:
+      first_name: str
+      last_name: str
+      hobbies: List[str] = field(default_factory=list)
+  ```
+
+
+
+
+
+
+
 ## Python property
 
 > https://blog.naver.com/PostView.naver?blogId=codeitofficial&logNo=221701646124&parentCategoryNo=&categoryNo=7&viewDate=&isShowPopularPosts=false&from=postView
