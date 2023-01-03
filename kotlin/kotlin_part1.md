@@ -1043,6 +1043,8 @@
 # 반복문
 
 - 일련의 statement들을 반복해서 실행할 수 있게 해준다.
+  - `continue`, `break` 등 다른 언어에서 사용되는 keyword들을 사용 가능하다.
+
 
 
 
@@ -1129,41 +1131,64 @@
   - 문자열로 이루어진 range를 순회하는 것은 불가능하다.
     - 아래 예시에서 `aa`와 `ae`라는 문자열 사이에는 무수히 많은 값들("ab", "aba", "abb"."aaab" 등)이 존재할 수 있다.
     - 따라서 문자열로 이루어진 range를 순회하는 것은 불가능하다.
-
+    - 그러나 char type은 가능하다.
+  
   ```kotlin
   for (i in "aa".."ae") {
       print(i)
   }
   ```
-
+  
   - 역순으로 순회하기
     - `downTo`를 사용한다.
     - b부터 a까지 내려가면서 순회한다.
-
+  
   ```kotlin
   for (element in b downTo a) {
       // 반복할 내용
   }
   ```
-
+  
   - 마지막 수 제외하고 순회하기
     - `until`을 사용한다.
     - a부터 b 이전까지 순회한다.
-
+  
   ```kotlin
   for (element in a until b) {
       // 반복할 내용
   }
   ```
-
+  
   - step 설정하기
     - `step`을 사용한다.
-
+  
   ```kotlin
   for (i in 1..10 step 3) {
       println(i)
   }
   ```
+
+
+
+- label 사용하기
+
+  - label은 `@`로 끝나는 식별자를 의미한다.
+    - `kotlin@`, `abc@`와 같이 Kotlin 예약어를 제외한 어떠한 문자로든 만들 수 있다.
+  - `continue`, `break`문과 함께 사용하여, 반복문의 흐름을 변경할 때 사용한다.
+    - 아래와 같이 외부 for문에 `loop@`라는 label을 달아주고, `break`뒤에 label을 입력하면, `loop@` label이 달린 외부 for문이 종료된다.
+    - 즉, label을 달아둔 반복문의 흐름을 제어할 수 있다.
+    - `for`문 뿐 아니라 `while`문에도 사용 가능하다.
+
+  ```kotlin
+  loop@ for (i in 1..3) { 
+      for (j in 1..3) {
+          println("i = $i, j = $j")   
+          if (j == 3) break@loop  
+      }  
+  }
+  ```
+
+
 
 
 
