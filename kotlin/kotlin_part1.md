@@ -48,29 +48,26 @@
   - End-of-line comment
 
     - `//`를 사용하여 주석을 생성할 수 있다.
-
-
+  
   ```kotlin
   // This is line will be ignored by compiler
   ```
-
-  - 여러 줄 comment
-
-    - `/* */`를 사용하여 여러 줄 주석을 작성할 수 있다.
-
-
+  
+    - 여러 줄 comment
+  
+      - `/* */`를 사용하여 여러 줄 주석을 작성할 수 있다.
+  
   ```kotlin
   /* multi
      line
      comment*/
   ```
-
-  - Documentation comments(doc comments)
-
-    - `/** */`를 사용하여 작성한 주석을 특별히 doc comments라고 부른다.
-    - 주로 코드에 대한 설명을 위해 사용한다.
-
-
+  
+    - Documentation comments(doc comments)
+  
+      - `/** */`를 사용하여 작성한 주석을 특별히 doc comments라고 부른다.
+      - 주로 코드에 대한 설명을 위해 사용한다.
+  
   ```kotlin
   /**
    * Documentation comments for main function
@@ -343,19 +340,43 @@
   val message = "Hello World!"
   ```
 
+  - index로 string의 각 character에 접근하는 것이 가능하다.
+  
+  ```kotlin
+  val greeting = "Hello"
+  
+  val first = greeting[0]  // 'H'
+  ```
+  
+  - Immutable하다.
+  
+  ```kotlin
+  val valString = "string"
+  valString[3] = 'o' // error
+  ```
+  
   - String의 길이 구하기
     - character의 개수와 동일하다.
-    - `length` 메서드를 사용한다.
-
+    - `length`를 사용한다.
+  
   ```kotlin
   val language = "kotlin"
   println(language.length)	// 6
+  ```
+  
+  - 빈 string인지 확인하기
+    - `isEmpty()` 메서드를 사용하거나, 길이가 0인지를 확인한다.
+  
+  ```kotlin
+  val emptyString = ""
+  println(emptyString.length == 0) //true
+  println(emptyString.isEmpty()) //true
   ```
 
   - String 합치기
     - `+` 연산자를 사용한다.
     - text type이 아닌 다른 type과 합치는 것도 가능하다.
-
+  
   ```kotlin
   val hello = "hello"
   val name = "Tom"
@@ -364,18 +385,74 @@
   val age = 47
   println(name + ":" + age)		// Tom:47
   ```
+  
+  - 대소문자 변경하기
+    - `lowercase()`, `uppercase()`  메서드를 사용한다.
 
+  ```kotlin
+  val example = "UPPERCASE String"
+  println(example.lowercase())
+  
+  val example = "Lowercase String"
+  println(example.uppercase())
+  ```
+  
   - String 반복하기
     - `repeat` 메서드를 활용하여 string을 반복할 수 있다.
-
+    - `*` 연산자는 사용 할 수 없다.
+  
   ```kotlin
   print("Hello".repeat(4))	// HelloHelloHelloHello
   ```
-
+  
+  - `substring`
+    - `substring` 메서드를 사용하여 substring을 얻을 수 있다.
+    - 만일 두 번째 인자를 주지 않을 경우 첫 번째 인덱스부터 끝 까지 substring을 생성한다.
+  
+  ```kotlin
+  val greeting = "Hello"
+  println(greeting.substring(0, 3)) // "Hel"
+  println(greeting.substring(2))    // "llo"
+  ```
+  
+  - `substringAfter`, `substringBefore`
+    - 각기 인자로 받은 delimiter의 이후, 이전까지의 substring을 생성한다.
+    - String에서 가장 앞에 위치한 delimiter를 기준으로 한다.
+    - 만일 delimiter가 존재하지 않을 경우 string 전체를 반환한다.
+    - 두 번째 인자로 delimiter가 존재하지 않을 때 반환할 string을 넘길 수 있다.
+  
+  ```kotlin
+  println(greeting.substringAfter('l'))  // "lo"
+  println(greeting.substringBefore('o')) // "Hell"
+  println(greeting.substringBefore('z')) // "Hello"
+  println(greeting.substringBefore('z', "can't find a character"))
+  ```
+  
+  - `substringAfterLast`, `substringBeforeLast`
+    - `substringAfter`, `substringBefore`와 유사하지만 차이는 string에서 가장 앞에 위치한 delimiter를 기준으로 한다는 점이다.
+  - `replace`
+    - Substring을 다른 substring으로 교체할 수 있다.
+    - `replaceFirst`를 사용하면 가장 처음 매칭된 substring 하나만 교체한다.
+  
+  ```kotlin
+  val example = "Good morning..."
+  println(example.replace("morning", "bye")) // "Good bye..."
+  println(example.replace('.', '!'))         // "Good morning!!!"
+  ```
+  
+  - `split`
+    - String을 separator로 분리하여 List type으로 반환한다.
+  
+  ```kotlin
+  val sentence = "a long text"
+  val wordsList: List<String> = sentence.split(" ")
+  val mutableWordList = sentence.split(" ").toMutableList()
+  ```
+  
   - Raw string
     - 쌍 따옴표 3개로 감싼 문자열.
     - escape sequence를 사용하지 않아도 문자열을 있는 그대로 저장한다.
-
+  
   ```kotlin
   val largeString = """
       This is the house that Jack built.
@@ -391,12 +468,12 @@
   """.trimIndent()	// 첫 줄과 마지막 줄을 삭제하고, 들여쓰기를 정리한다.
   print(largeString)
   ```
-
+  
   - String template
     - 문자열 내에서 `$변수명` 형태로 변수명을 넣으면, 해당 변수의 값이 출력되게 된다.
     - 단순 변수명 뿐 아니라 `{}`로 묶어 표현식을 사용하는 것도 가능하다.
     - `+` 연산자를 통해 문자열을 합치는 것 보다 string template을 사용하는 것을 권장한다.
-
+  
   ```kotlin
   val city = "Paris"
   val temp = "24"
@@ -412,6 +489,8 @@
   println("Have a nice $language!")        // nice code
   println("Have a nice " + language + "!") // bad practice
   ```
+  
+  
 
 
 
@@ -1167,6 +1246,19 @@
       println(i)
   }
   ```
+  
+  - String 순회하기
+    - String의 `indices`를 사용하여 보다 간편하게 순회가 가능하다.
+  
+  ```kotlin
+  val rainbow = "ROYGCBV"
+  
+  for (index in rainbow.indices){
+      println("${index+1}: ${rainbow[index]}")
+  }
+  ```
+  
+  
 
 
 
@@ -1187,193 +1279,6 @@
       }  
   }
   ```
-
-
-
-
-
-# 함수
-
-- 함수 선언하기
-
-  - `fun` keyword를 사용하여 함수를 선언할 수 있다.
-    - 함수명, parameters, return type, return 값이 기본 구성 요소이다.
-    - parameters와 return type, return 값은 optional 한 값이다.
-    - 그러나 만일 return 값이 있다면, 반드시 return 값에 맞는 return type을 지정해줘야 한다.
-    - 함수명은 변수명과 convention이 동일하다.
-
-  ```kotlin
-  fun myFunction(p1: type, p2: type2, ...): ReturnType {
-      return
-  }
-  ```
-
-  - 모든 함수는 반환값을 가진다.
-
-    - 반환값을 명시적으로 지정해주지 않더라도 Kotlin에서는 `Unit`이라는 특별한 값이 반환된다.
-
-    - 이는 함수에 반환값이 없다는 것을 의미한다.
-  - Java의 `void`와 유사하다.
-
-
-
-
-- Single-expression functions
-
-  - 아래와 같이 보다 간단하게 함수를 정의하는 것도 가능하다.
-
-  ```kotlin
-  fun sum(a: Int, b: Int): Int = a + b
-  
-  fun sayHello(): Unit = println("Hello")
-  ```
-
-  - return type을 정의하지 않는 것도 가능하다.
-
-  ```kotlin
-  fun sum(a: Int, b: Int) = a + b
-  ```
-  
-  - if 표현식이나 when 표현식을 사용하는 것도 가능하다.
-  
-  ```kotlin
-  fun max(a: Int, b: Int) = if (a > b) a else b
-  ```
-
-
-
-- 함수의 parmeter
-
-  - `=` 연산자를 사용하여 함수의 parameter에 기본값을 줄 수 있다.
-    - 기본값을 주지 않은 parameter보다 뒤에 와야 한다.
-
-  ```kotlin
-  fun sum(num1: Int = 0, num2: Int = 0): Int = num1 + num2
-  ```
-
-  -  Named argument
-    - 함수 호출시에 argument를 입력할 때, 단순히 parmeter에 정의된 순서대로 넣는 것이 아니라, parameter의 이름으로 넣는 것이 가능하다.
-    - 이를 통해 code의 가독성을 높일 수 있다.
-    - positional argument와 함께 사용할 경우, positional argument보다 뒤에 사용하거나 순서를 지켜 사용해야 한다.
-
-  ```kotlin
-  fun calcEndDayAmount(startAmount: Int, ticketPrice: Int, soldTickets: Int) =
-          startAmount + ticketPrice * soldTickets
-  
-  // 이렇게 호출 가능하다.
-  val amount = calcEndDayAmount(
-      ticketPrice = 10,
-      soldTickets = 500,
-      startAmount = 1000
-  )
-  
-  // positional argument와 함께 사용할 경우
-  // 아래와 같이 순서를 지켜 사용하거나
-  calcEndDayAmount(startAmount = 1000, 10, 500)
-  // positional argument보다 뒤에 사용해야한다.
-  calcEndDayAmount(1000, ticketPrice=10, soldTickets=500)
-  ```
-
-  - 아래와 같이 한 parameter를 다른 parameter의 기본 값으로 주는 것도 가능하다.
-    - 그러나, 기본값으로 주려는 parameter가 기본값을 주려는 parameter보다 앞에 있어야 한다.
-
-  ```kotlin
-  fun sum2(a: Int, b: Int = a) = a + b
-   
-  sum2(1)    // 1 + 1
-  sum2(2, 3) // 2 + 3
-  
-  // 아래와 같이 쓸 수는 없다.
-  fun sum2(a: Int = b, b: Int = 1) = a + b
-  ```
-
-  
-
-  
-
-
-
-
-
-# 객체
-
-- 객체(Object)란 property와 method를 가질 수 있는 복합 구조체이다.
-  - Kotlin에서는 모든 것이 객체이다.
-    - 변수와 값은 단지 객체의 메모리상의 주소를 가리키고 있는 것 뿐이다.
-    - 따라서 다른 언어들에 있는 primitive type이 존재하지 않는다.
-  - property와 method
-    - property란 객체의 상태에 접근할 수 있도록 해주는 것을 의미한다.
-    - method란 객체의 행동을 정의한 것으로, 객체 내부에 정의된 함수를 의미한다.
-    - method는 memeber function이라고도 불린다.
-    - property와 method 모두 `.`을 통해 접근한다.
-
-
-
-- 참조를 통한 복사
-
-  - 아래와 같이 하나의 변수를 다른 변수에 할당할 때 새로운 객체가 생성되지는 않는다.
-    - msg2에 msg1을 할당하면, Hi라는 String 객체를 하나 더 생성하는 것이 아니라, msg1이 가리키고 있던 Hi를 msg2도 가리키게 된다.
-
-  ```kotlin
-  val msg1 = "Hi"
-  val msg2 = msg1
-  ```
-
-  - 즉, `=`를 통한 복사는 실제 객체를 복사하는 것이 아니라, 참조를 복사하는 것이다.
-
-
-
-- Mutability
-
-  - 만일 한 변수에 값을 할당하고, 다른 변수에 해당 변수를 할당한 뒤, 한 변수의 값을 변경하면 어떻게 될까?
-    - 이는 객체의 type에 따라 달라지게 된다.
-    - 예를 들어 Kotlin에서 Int는 immutable한 type이다.
-    - 따라서 아래 예시에서와 같이 값을 변경하려 하면, 새로운 객체를 생성하여 재할당한다.
-
-  ```kotlin
-  var a: Int = 100
-  val anotherA: Int = a
-  println(a == anotherA)  // true
-  println(a === anotherA) // true
-  a = 200		// 즉, a가 가리키고 있는 Int 객체의 값을 변경하는 것이 아니라, 새로운 Int 객체가 생성되고, 새로 생성된 객체의 주소를 a에 할당한다.
-  println(a == anotherA)  // false
-  println(a === anotherA) // false
-  ```
-
-  - 다른 언어들에서 primitive type은 일반적으로 immutable한 값이다.
-    - 모든 것이 객체인 Kotlin에서도, 다른 언어의 primitive type의 특성을 가져와 일부 type을 immutable하게 만들었다.
-    - 즉, number, character, boolean, string 등의 기본 type은 immutable한 객체이다.
-    - 이렇게 만든 이유는 위와 같은 type들을 mutable하게 만들었을 때 다양한 문제가 생길 수 있기 때문이다.
-
-  ```kotlin
-  // 예를 들어 아래와 같은 상황은 프로그래밍에서 매우 흔한 상황이다.
-  // 아래와 같은 상황에서 num이 변경됐을 때 initalNum도 함께 변경된다면 예상치 못 한 결과가 나오게 된다.
-  var initalNum = 0
-  var num = inital_num
-  
-  num++
-  println(initalNum)      // 0
-  println(num) 			// 1
-  ```
-
-
-
-- 동일성
-
-  - structural equality
-    - 아래 예시와 같이 서로 같은 상태인 것을 structural equality라 부른다.
-
-  ```kotlin
-  var text1 = "Hi"
-  var text2 = "Hi"
-  println(text1==text2)	// true
-  ```
-
-  - referential equality
-    - 서로가 가리키고 있는 객체가 동일한 것을 referential equality라 부른다.
-  - `===`, `!==`
-    - `===`는 서로 같은 객체를 가리키고 있으면 true, 아니면 false를 반환하는 연산자이다(`!==`는 그 반대).
-    - 즉 referential equality를 확인할 때 사용하는 연산자이다.
 
 
 

@@ -1,3 +1,190 @@
+# 함수
+
+- 함수 선언하기
+
+  - `fun` keyword를 사용하여 함수를 선언할 수 있다.
+    - 함수명, parameters, return type, return 값이 기본 구성 요소이다.
+    - parameters와 return type, return 값은 optional 한 값이다.
+    - 그러나 만일 return 값이 있다면, 반드시 return 값에 맞는 return type을 지정해줘야 한다.
+    - 함수명은 변수명과 convention이 동일하다.
+
+  ```kotlin
+  fun myFunction(p1: type, p2: type2, ...): ReturnType {
+      return
+  }
+  ```
+
+  - 모든 함수는 반환값을 가진다.
+
+    - 반환값을 명시적으로 지정해주지 않더라도 Kotlin에서는 `Unit`이라는 특별한 값이 반환된다.
+
+    - 이는 함수에 반환값이 없다는 것을 의미한다.
+  - Java의 `void`와 유사하다.
+
+
+
+
+- Single-expression functions
+
+  - 아래와 같이 보다 간단하게 함수를 정의하는 것도 가능하다.
+
+  ```kotlin
+  fun sum(a: Int, b: Int): Int = a + b
+  
+  fun sayHello(): Unit = println("Hello")
+  ```
+
+  - return type을 정의하지 않는 것도 가능하다.
+
+  ```kotlin
+  fun sum(a: Int, b: Int) = a + b
+  ```
+
+  - if 표현식이나 when 표현식을 사용하는 것도 가능하다.
+
+  ```kotlin
+  fun max(a: Int, b: Int) = if (a > b) a else b
+  ```
+
+
+
+- 함수의 parmeter
+
+  - `=` 연산자를 사용하여 함수의 parameter에 기본값을 줄 수 있다.
+    - 기본값을 주지 않은 parameter보다 뒤에 와야 한다.
+
+  ```kotlin
+  fun sum(num1: Int = 0, num2: Int = 0): Int = num1 + num2
+  ```
+
+  -  Named argument
+     - 함수 호출시에 argument를 입력할 때, 단순히 parmeter에 정의된 순서대로 넣는 것이 아니라, parameter의 이름으로 넣는 것이 가능하다.
+     - 이를 통해 code의 가독성을 높일 수 있다.
+     - positional argument와 함께 사용할 경우, positional argument보다 뒤에 사용하거나 순서를 지켜 사용해야 한다.
+
+  ```kotlin
+  fun calcEndDayAmount(startAmount: Int, ticketPrice: Int, soldTickets: Int) =
+          startAmount + ticketPrice * soldTickets
+  
+  // 이렇게 호출 가능하다.
+  val amount = calcEndDayAmount(
+      ticketPrice = 10,
+      soldTickets = 500,
+      startAmount = 1000
+  )
+  
+  // positional argument와 함께 사용할 경우
+  // 아래와 같이 순서를 지켜 사용하거나
+  calcEndDayAmount(startAmount = 1000, 10, 500)
+  // positional argument보다 뒤에 사용해야한다.
+  calcEndDayAmount(1000, ticketPrice=10, soldTickets=500)
+  ```
+
+  - 아래와 같이 한 parameter를 다른 parameter의 기본 값으로 주는 것도 가능하다.
+    - 그러나, 기본값으로 주려는 parameter가 기본값을 주려는 parameter보다 앞에 있어야 한다.
+
+  ```kotlin
+  fun sum2(a: Int, b: Int = a) = a + b
+   
+  sum2(1)    // 1 + 1
+  sum2(2, 3) // 2 + 3
+  
+  // 아래와 같이 쓸 수는 없다.
+  fun sum2(a: Int = b, b: Int = 1) = a + b
+  ```
+
+  
+
+  
+
+
+
+
+
+# 객체
+
+- 객체(Object)란 property와 method를 가질 수 있는 복합 구조체이다.
+  - Kotlin에서는 모든 것이 객체이다.
+    - 변수와 값은 단지 객체의 메모리상의 주소를 가리키고 있는 것 뿐이다.
+    - 따라서 다른 언어들에 있는 primitive type이 존재하지 않는다.
+  - property와 method
+    - property란 객체의 상태에 접근할 수 있도록 해주는 것을 의미한다.
+    - method란 객체의 행동을 정의한 것으로, 객체 내부에 정의된 함수를 의미한다.
+    - method는 memeber function이라고도 불린다.
+    - property와 method 모두 `.`을 통해 접근한다.
+
+
+
+- 참조를 통한 복사
+
+  - 아래와 같이 하나의 변수를 다른 변수에 할당할 때 새로운 객체가 생성되지는 않는다.
+    - msg2에 msg1을 할당하면, Hi라는 String 객체를 하나 더 생성하는 것이 아니라, msg1이 가리키고 있던 Hi를 msg2도 가리키게 된다.
+
+  ```kotlin
+  val msg1 = "Hi"
+  val msg2 = msg1
+  ```
+
+  - 즉, `=`를 통한 복사는 실제 객체를 복사하는 것이 아니라, 참조를 복사하는 것이다.
+
+
+
+- Mutability
+
+  - 만일 한 변수에 값을 할당하고, 다른 변수에 해당 변수를 할당한 뒤, 한 변수의 값을 변경하면 어떻게 될까?
+    - 이는 객체의 type에 따라 달라지게 된다.
+    - 예를 들어 Kotlin에서 Int는 immutable한 type이다.
+    - 따라서 아래 예시에서와 같이 값을 변경하려 하면, 새로운 객체를 생성하여 재할당한다.
+
+  ```kotlin
+  var a: Int = 100
+  val anotherA: Int = a
+  println(a == anotherA)  // true
+  println(a === anotherA) // true
+  a = 200		// 즉, a가 가리키고 있는 Int 객체의 값을 변경하는 것이 아니라, 새로운 Int 객체가 생성되고, 새로 생성된 객체의 주소를 a에 할당한다.
+  println(a == anotherA)  // false
+  println(a === anotherA) // false
+  ```
+
+  - 다른 언어들에서 primitive type은 일반적으로 immutable한 값이다.
+    - 모든 것이 객체인 Kotlin에서도, 다른 언어의 primitive type의 특성을 가져와 일부 type을 immutable하게 만들었다.
+    - 즉, number, character, boolean, string 등의 기본 type은 immutable한 객체이다.
+    - 이렇게 만든 이유는 위와 같은 type들을 mutable하게 만들었을 때 다양한 문제가 생길 수 있기 때문이다.
+
+  ```kotlin
+  // 예를 들어 아래와 같은 상황은 프로그래밍에서 매우 흔한 상황이다.
+  // 아래와 같은 상황에서 num이 변경됐을 때 initalNum도 함께 변경된다면 예상치 못 한 결과가 나오게 된다.
+  var initalNum = 0
+  var num = inital_num
+  
+  num++
+  println(initalNum)      // 0
+  println(num) 			// 1
+  ```
+
+
+
+- 동일성
+
+  - structural equality
+    - 아래 예시와 같이 서로 같은 상태인 것을 structural equality라 부른다.
+
+  ```kotlin
+  var text1 = "Hi"
+  var text2 = "Hi"
+  println(text1==text2)	// true
+  ```
+
+  - referential equality
+    - 서로가 가리키고 있는 객체가 동일한 것을 referential equality라 부른다.
+  - `===`, `!==`
+    - `===`는 서로 같은 객체를 가리키고 있으면 true, 아니면 false를 반환하는 연산자이다(`!==`는 그 반대).
+    - 즉 referential equality를 확인할 때 사용하는 연산자이다.
+
+
+
+
+
 # Class
 
 - Kotlin에서 class를 선언하는 방법
