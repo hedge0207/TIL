@@ -562,13 +562,14 @@
     - Python은 thread-safe하지 않기에 GIL이라는 mutex로 lock을 걸어놓은 것이다.
     - 즉, Python에서는 둘 이상의 thread가 동시에 실행될 수 없다.
     - 둘 이상의 thread가 동시에 실행되는 것 처럼 보인다면 각 thread가 빠른 속도로 번갈아가며 실행되고 있는 것이다.
+    - 즉, multi threading이 자체가 불가능한 것이 아니다. 여러 개의 thread가 생성되고 실행될 수는 있지만, 병렬적으로 실행될 수는 없어 결과적으로 싱글 스레드처럼 동작하는 것이다.
   - Python은 thread-safe하지 않다.
     - thtead-safeness란 thread들이 race condition을 발생시키지 않으면서 각자의 일을 수행한다는 뜻이다.
     - race condition이란 하나의 값에 여러 스레드가 동시에 접근하여 값이 올바르지 않게 읽히거나 쓰이는 문제를 의미한다.
     - 예를 들어 아래 코드의 결과 x는 0이 될 것 같지만 그렇지 않다(0이 나올 수도 있지만, 여러 번 수행해보면 0이 아닌 값들도 나온다).
     - 이는 x라는 값에 2개의 스레스가 동시에 접근하여 race condition가 발생했기 때문이다.
     - GIL이 걸려 있어도 아래와 같이 race condition이 발생하게 된다.
-
+  
   ```python
   import threading 
   
@@ -593,13 +594,13 @@
   
   print(x)
   ```
-
+  
   - Python의 GC 방식
     - Python에서 모든 것은 객체다.
     - 모든 객체는 해당 객체를 가리키는 참조가 몇 개 존재하는지를 나타내는 참조 횟수(reference count) 필드를 지니고 있다.
     - 참조 될 때마다 1씩 증가하며, 0이 될 경우 GC에 의해 메모리에서 삭제된다.
     - `sys` 모듈의 `getrefcount` 메서드로 확인 가능하다.
-
+  
   ```python
   import sys
   
@@ -608,7 +609,7 @@
   bar = foo
   print(sys.getrefcount(foo))		# 3(foo가 선언될 때 1번, bar에 할당될 때 1번, getrefcount 함수에 매개변수로 넘어가면서 1번)
   ```
-
+  
   - 왜 Python은 thread-safe하지 않은가?
     - 참조 횟수를 기반으로 GC가 이루어지는 Python의 특성상 여러 스레드가 하나의 객체를 참조할 경우 참조 횟수가 제대로 count되지 않을 수 있다.
     - 따라서 삭제되어선 안 되는 객체가 삭제될 수도 있고, 삭제되어야 할 객체가 삭제되지 않을 수도 있다.

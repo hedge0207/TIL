@@ -791,7 +791,8 @@
   ```
 
   - orderedDict
-    - python 3.7부터는 Dictionart의 순서가 보장되면서 사용할 필요가 없어졌다.
+    - python 3.7부터는 dictionary의 순서가 보장되면서 사용할 필요가 없어졌다.
+    - 단, 동등비교에서 dictionary는 순서가 달라도 내용이 같다면 동등하다고 판단하는 반면, orderedDict는 순서도 동일해야 동등하다고 판단한다는 차이가 있다.
 
 
 
