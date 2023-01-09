@@ -30,7 +30,9 @@
 
 
 
-### Concrete Syntax
+
+
+## Concrete Syntax
 
 - Concrete Syntax
   - Concrete syntax는 개발자가 문자열로 작성한 코드의 문법 자체를 의미한다.
@@ -111,7 +113,7 @@
 
 
 
-### Abstract Syntax
+## Abstract Syntax
 
 - Concrete syntax와의 차이
   - Concrete syntax의 경우 언어마다 다양한 차이가 존재한다.
@@ -221,7 +223,9 @@
 
 
 
-### Semantic
+
+
+## Semantic
 
 - Semantic
 
@@ -437,6 +441,154 @@
     - Syntatic sugar를 제거하는 절차를 의미한다.
 
 
+
+
+
+
+
+# Immutability
+
+- Immutability
+  - 변하지 않는 것을 의미한다.
+    - Immutable한 변수는 한 번 초기화 된 이후에는 절대 변경되지 않는다.
+    - Immutable한 data structure는 한 번 생성된 이후에는 절대 element가 변경되지 않는다.
+  - 함수형 프로그래밍에서 특히 중요한 개념이다.
+
+
+
+- 장점
+
+  > [Programming in Scala]라는 책에서는 Immutability의 장점으로 4가지를 꼽는다.
+  >
+  > 다만, 그렇다고 Immutability가 silver bullet은 아니다. 상황에 따라, 목적에 따라 immutable한 값을 사용할지, mutable한 값을 사용할지 선택해야 한다.
+
+  - 변경되지 않기에 code를 쉽게 이해할 수 있게 해준다.
+    - 아래와 같은 code가 있을 때, x는 immutable한 값이므로 `f(x)`를 거쳐도 처음 값인 1을 담고있을 것이라는 것을 바로 알 수 있다.
+    - 반면에, 만일 mutable한 값이었다면, x가 사용되는 code를 모두 찾아 값의 변경 여부를 확인해야 할 것이다.
+
+  ```scala
+  val x = 1
+  ...
+  f(x)
+  ```
+
+  - mutable object를 사용할 때 필요한 defensive copy가 불필요해진다.
+    - 아래 예시와 같은 code가 있을 때, ListBuffer는 mutable한 type이므로, `f(x)` 를 거쳤을 때, x가 변경되지 않았으리라 보장할 수 없다.
+    - 따라서 x가 변경되지 않는다는 것을 보장하기 위해서, x의 복제본을 만들고, 그 복제본을 `f()`의 인자로 넘기는 과정이 필요한데, 이를 defensive copy라 한다.
+    - 그러나, immutable한 값이라면 애초에 변경이 불가능하므로, 이런 과정이 필요 없다.
+
+  ```scala
+  // 아래 code에서는 x가 바뀔 위험이 있다.
+  val x = ListBuffer(1, 2)
+  ...
+  f(x)
+  ...
+  x
+  
+  // defensive copy
+  val x = ListBuffer(1, 2)
+  val y = x.clone
+  ...
+  // 복제된 값인 y를 넘긴다.
+  f(y)
+  ...
+  x
+  ```
+
+  - 애초에 변경이 불가능하므로, 여러 스레드에서 동시에 변경할 위험이 없다.
+  - 변경이 불가능하므로, 식별자의 역할을 할 수 있다.
+    - 예를 들어 Python의 dictionary에서 key는 immutable한 값만 가능하다.
+
+
+
+- 재귀
+
+  - Immutability와 반복
+    - 동일한 계산을 여러 번 반복하는 것은 프로그래밍에서 흔히 볼 수 있는 패턴이다.
+    - 그러나, 만일 계산 대상이 되는 값이 immutable하다면, 아무리 반복해도 의미가 없다.
+    - 따라서, immutable한 값을 여러 번 반복해서 계산하기 위하여 재귀를 사용한다.
+
+  - Mutable한 값을 반복하려 할 경우
+    - Factorial을 계산하는 예시이다.
+    - mutable한 값인 i, res를 사용하여 factorial을 계산한다.
+    - 선언형으로 반복문을 통해 factorial을 계산한다.
+
+  ```scala
+  def factorial(n: Int) = {
+      var i = 1, res = 1
+      while (i <= n) {
+          res *= i
+          i += 1
+      }
+      res
+  }
+  ```
+
+  - Immutable한 값을 반복하려 할 경우
+    - 마찬가지로 factorial을 구하지만, 반복이 아닌 재귀로 구한다.
+    - immutable한 값의 변경 없이, 함수에 넘기는 인자를 변경하는 방식을 사용한다.
+
+  ```scala
+  def factorial(n: Int): Int =
+      if (n <= 0)
+        1
+      else
+        n * factorial(n - 1)
+  ```
+
+  - 선언형의 경우, 위 code가 타당하다는 것을 증명하기 위해 다음 과정을 거쳐야한다.
+    - 위 code의 loop invariant는 `((i-1)! = res) && (i <= n+1)`이다.
+    - 결국 반복문의 마지막에 `i = n+1`이 되고, 따라서  `res=(i-1)!=n!`이 된다.
+    - 이렇게, 위 code는 타당하다는 것이 증명된다.
+
+  - 반면 재귀의 경우 보다 분명하게 타당성을 증명할 수 있다.
+    - 아래와 같은 factorial의 수학적 정의와  factorial을 구하는 함수의 형태를 비교했을때, 형태가 동일한 것을 확인 가능하다.
+    - 즉, 재귀를 사용하여 반복을 실행하는 것이 보다 분명하게 검증이 가능하다.
+
+  $$
+  n!=
+  \begin{cases}
+  1\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ if\;n=0\\
+  n * (n-1)!\ \ \ \ otherwise\end{cases}
+  $$
+
+
+
+- Tail Call 최적화
+
+  - Tail call
+    - 한 함수의 마지막 행동이 함수를 호출하는 것일 때, 이를 tail call이라 한다.
+    - 이 중 함수 자신을 호출할 때를 tail-recursive라 한다.
+  - Tail call optimization
+    - Tail call이 발생하면 모든 작업이 callee에서 수행되므로 caller에서 사용하던 지역 변수들은 남아있을 필요가 없다(caller의 마지막 행동이 callee의 호출이므로, 더 이상 사용하지 않는다는 것이 보장된다).
+    - 따라서 caller의 stack frame은 비워도 상관 없게 된다.
+    - 이러한 특성을 이용하는 tail call을 최적화하는데, 이를 tail call optimization이라 부른다.
+    - 모든 함수 호출이 tail call이라면 stack은 절대 쌓이지 않을 것이고, stack overflow가 발생할 걱정을 하지 않아도 된다.
+  - 최적화 과정
+    - Compile time에 compiler는 함수 호출이 tail call인지를 확인한다.
+    - 만일 tail call이라면 compiler는 caller의 stack frame을 제거하기위한 코드를 생성한다.
+    - Tail call이 실행되기 직전에 stack frame에서 caller의 data를 제거한다.
+    - Non-tail call이라면 최적화하지 않는다.
+  - 예시
+    - tail-recursive optimization을 지원하는 언어인 Scala로 작성했다(단순 tail call을 최적화하는 기능은 제공하지 않는다).
+    - 위의 함수는 마지막 행동이 함수 호출이 아니라 n을 곱하는 것(`n * factorial(n - 1)`)이므로, tail call을 사용하지 않는다.
+    - 아래 함수는 마지막 행동이 함수 호출이므로 tail call(자기 자신을 호출하므로 tail-recursive)을 사용한다.
+
+  ```scala
+  // non-tail call
+  def factorial(n: Int): Int =
+      if (n <= 0)
+        1
+      else
+        n * factorial(n - 1)
+  
+  // tail call
+  def factorial(n: Int, inter: Int): Int =
+      if ( n<=0 )
+          inter
+      else
+          factorial(n-1, inter*n)
+  ```
 
 
 
