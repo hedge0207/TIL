@@ -592,6 +592,435 @@
 
 
 
+
+
+# Pattern Matching
+
+- Algebraic Data Type(ADT, 대수 타입)
+
+  - 대수학(代數學,  algebra)
+    - 수 대신에 문자를 사용하여 방정식의 풀이 방법이나 대수적 구조를 연구하는 학문
+  - Algebraic Data Type이란 부분으로 전체를 나타내는 type을 의미한다.
+    - 단일 type도 종종 여러 형태의 값들을 포함하는데, ADT는 이런 type들을 표현하는 type이다.
+    - 보다 단순하게 말해서, 다른 여러 type들로 구성된 type이다.
+    - Sum type(합 타입)과 product type(곱 타입)이 존재한다.
+    - 이 용어들이 대수학에서 사용되는 용어이며, 대수학의 개념을 많이 포함하고 있기에 Algebraic Data Type이라 부른다.
+    - 다른 형태의 값과 구별되는 고유한 형태의 값을 variant라 부른다.
+  - Sum type(Tagged union type)
+    - 둘 이상의 type을 OR로 결합한 형태(합연산)
+    - 여러 type 중 하나의 type만을 가진다.
+    - 예를 들어 아래 예시에서 foo 변수는 `Union[RGB, bool]` type이다.
+    - `Union[RGB, bool]` type이 가질 수 있는 값은 `RGB의 3개의 값 + boolean의 2개의 값`으로 총 5개이다(물론 python의 경우 다른 type의 값을 넣는다고 해도 error가 발생하지는 않는다).
+    - 이름이 있는 합집합 타입(tagged union type)이라고도 불리는데, 그 이유는 일반적인 합집합 타입과 같이 여러 타입의 값 중 하나를 가지지만, 단순한 합집합 타입과 달리 어떤 종류인지 표시하기 위해 이름을 붙이기 때문이다.
+
+  ```python
+  from enum import Enum
+  from typing import Union
+  
+  class RGB(Enum):
+      RED = "red"
+      GREEN = "green"
+      BLUE = "blue"
+  
+  
+  foo: Union[RGB, bool] = False # foo에는 red, blue, green, true, false 중 하나의 값이 올 수 있다.
+  ```
+
+  - Product type
+    - 둘 이상의 type을 AND로 결합한 형태(곱연산).
+    - 대표적인 예시로 class가 있다.
+    - 아래 예시에서 처럼 어떤 class는 여러 속성들의 집합이며, 각 속성들은 각기 다른 다양한 type을 가질 수 있다.
+    - `Foo` type의 값이 가질 수 있는 값의 개수는 `RGB의 3개의 값 * boolean의 2개의 값`으로 6개이다.
+
+  ```python
+  from enum import Enum
+  from pydantic import BaseModel
+  
+  
+  class RGB(Enum):
+      RED = "red"
+      GREEN = "green"
+      BLUE = "blue"
+  
+  
+  class Foo(BaseModel):
+      rgb: RGB
+      is_true: bool
+  
+  """
+  아래와 같이 6개의 값이 올 수 있다.
+  foo = Foo(**{"rgb":"blue", "is_true":True})
+  foo = Foo(**{"rgb":"blue", "is_true":True})
+  foo = Foo(**{"rgb":"red", "is_true":True})
+  foo = Foo(**{"rgb":"red", "is_true":False})
+  foo = Foo(**{"rgb":"green", "is_true":False})
+  foo = Foo(**{"rgb":"green", "is_true":False})
+  """
+  ```
+
+  - ADT에서 type은 product type의 sum type이다.
+    - 예를 들어 variant가 3인 산술식 type `AE`를 다음과 같이 정의할 수 있다.
+    - 숫자, 두 산술식의 합, 두 산술식의 차
+    - 따라서 AE type의 값은 숫자, 두 산술식의 합, 두 산술식의 차 들 중 하나가 된다(sum type).
+    - 이 중 두 산술식의 합과 차는 두 산술식의 product type이다.
+    - 예를 들어 `3 + 4`라는 산술식이 있다고 가정할 때, `3`, `4`는 숫자로 그 자체로 산술식이다.
+    - 결국 `Add`에 올 수 있는 값의 개수는  `+의 왼쪽에 올수 있는 값 * 오른쪽에 올수 있는 값`(product)이 된다(`Sub`도 마찬가지).
+
+  ```ocaml
+  (*Num, Add, Sub은 tag 이다.*)
+  type ae = 
+  | Num of int
+  | Add of ae * ae	(*ae type과 ae type의 product type*)
+  | Sub of ae * ae	(*ae type과 ae type의 product type*)
+  ```
+
+
+
+- Pattern matching
+
+  - 일반적으로 함수형 프로그래밍에서 pattern matching이란 type을 동적으로 검사하는 것을 말한다.
+  - Pattenr matching을 사용하면 ADT를 다룰 때, code가 보다 간결해진다.
+    - 예를 들어 아래 예시는 ADT인 AE type의 값인 e가 어떤 값을 갖는지에 따라 다른 코드가 실행되도록 짠 코드이다.
+    - 기능은 간단하지만, 코드가 길고 복잡한데, type check가 대부분을 차지한다.
+    - 또한 실수하기도 쉬운 구조이다.
+
+  ```scala
+  def eval(e: AE): Int =
+  	if (e.isInstanceOf[Num])
+  		e.asInstanceOf[Num].value
+      else if (e.isInstanceOf[Add]) {
+          val e0 = e.asInstanceOf[Add]
+          eval(e0.left) + eval(e0.right)
+      } else {
+          val e0 = e.asInstanceOf[Sub]
+          eval(e0.left) - eval(e0.right)
+      }
+  
+  // 위 코드를 pattern matching으로 변경하면 아래와 같이 간결해진다.
+  def eval(e: AE): Int = e match {
+      case Num(n) => n
+      case Add(l, r) => eval(l) + eval(r)
+      case Sub(l, r) => eval(l) - eval(r)
+  }
+  ```
+
+  - Exhaustivity checking
+    - 만일 아래와 같이 `Num`인 `case`가 빠져 있다고 가정했을 때, `Num`이 input으로 들어오면 error가 발생하게 된다.
+    - 문제는 위와 같은 error는 compile time에는 알 수 없고, runtime에 `Num`이 input으로 들어가야 발생한다는 것이다.
+    - Pattern matching을 지원하는 대부분의 언어에서 이를 막기 위해 모든 case를 검사(exhaustivity checking)하도록 하는 장치들을 마련해 놨다.
+    - scala의 `sealed` 키워드도 그 중 하나이다.
+
+  ```scala
+  // compiler가 보기에는 문제가 없으므로, compile시에는 error가 발생하지 않는다.
+  def eval(e: AE): Int = e match {
+      case Add(l, r) => eval(l) + eval(r)
+      case Sub(l, r) => eval(l) - eval(r)
+  }
+  
+  eval(Num(3))	// case중 Num이 없으므로 Num이 input으로 들어온다면 error가 발생한다.
+  ```
+
+
+
+# Identifiers
+
+- Identifiers
+
+  - Program의 특정 개체(entity)와 이름을 연결시켜주는 것이다.
+    - 아래 예시에 등장하는 f, x, y, z 등이 모두 식별자이다.
+
+  ```scala
+  f(0)
+  def f(x: Int): Int = {
+      val y = 2
+      x + y
+  }
+  f(1)
+  x - z
+  ```
+
+  - Identifiers는 세 그룹으로 나눌 수 있다.
+    - Binding occurrences
+    - Bound occurrences
+    - Free identifiers
+
+
+
+- Binding occurrence
+
+  - Indentifier가 어떤 대상과 연결 시키기 위해 등장할 때, 이를 binding occurrence라 부른다.
+    - Binding occurrence는 identifier를 특정 entity와 연결시킨다.
+    - 예를 들어 위 예시에서 두번 째 줄의 `f`와 `x`, 세 번째 줄의 `y` 등이 binding occurrence이다.
+  - 모든 binding occurrence는 자신만의 scope를 지닌다.
+    - 여기서 scope는 binding occurrence에 의해 정의된 identifier를 사용할 수 있는 code의 범위를 의미한다.
+    - 위 예시에서 `f`의 경우 3~7번째 줄 까지(함수의 body와 함수가 선언된 후의 line들까지), `x`는 3~4번째 줄 까지(오직 함수의 body에서만), `y`는 오직 4번째 줄(함수의 body 내에서 `y`가 선언된 후부터 함수의 body 끝 까지)만을 scope로 지닌다.
+  - Shadowing
+    - 가장 안쪽에 있는 binding occurrence가 바깥쪽의 binding occurrence를 가리는(즉, 일시적으로 사용 할 수 없게하는) 것을 의미한다.
+    - 예를 들어 아래 code에서 세 번째 줄의 x는 두 개의 binding occurrence의 scope에 속해있다.
+    - 두 번째 줄(내부)의 x는 첫 번째 줄(외부)의 x를 가리게되고(shadow), 세 번째 줄의 x는 두 번째 줄의 x를 가리키게 된다.
+
+  ```scala
+  def f(x: Int): Int = {
+      def g(x: Int): Int =
+      	x
+      g(x)
+  }
+  ```
+
+
+
+- Bound occurrence
+  - Indentifier가 자기 자신과 관련된 entity를 사용하기 위해 등장할 때, 이를 bound occurrence라 부른다.
+    - 예를 들어 위 예시에서 6번째 줄의 `f`는 자신과 관련된 entity인 함수를 실행시키기 위해 등장했고, 4번째 줄의 `x`와 `y`는 자신이 가리키고 있는 entity인 값을 사용하기 위해 등장기에 모두 bound occurrence이다.
+  - Identifier는 binding occurrence에 의해 entity와 연결되었기에, 모든 bound occurrence는 반드시 binding occurrence의 scope에 존재해야한다. 
+
+
+
+- Free identifier
+  - Binding occurrence도 아니고 bound occurrence도 아닌 identifier의 등장을 free identifer라 한다.
+    - 예를 들어 첫 번째 줄의 `f`, 7번째 줄의 `x`와 `z` 등이 free identifier이다.
+  - scope가 존재하지 않는다.
+  - 만일 free indetifier가 변수의 이름일 경우 해당 free indentifier를 특별히 free variable라 부른다.
+
+
+
+
+
+## Programming language에 variable 추가하기
+
+- 지금까지 예시로 사용한 AE에 변수를 선언할 수 있는 기능을 추가한 VAE를 만든다고 가정해보자.
+  - 지금부터는 concrete syntax는 고려하지 않을 것이므로 앞으로 모든 syntax는 abstract syntax를 의미한다.
+  - 또한 program이라는 용어 대신 expression이라는 용어를 사용할 것이다.
+
+
+
+- Syntax의 관점에서 봤을 때, AE에 변수를 추가하기 위해서 두 종류의 expression이 필요하다.
+  - 하나는 변수를 정의하기 위한(indentifer와 bindling하기 위한) expression이다.
+    - `val x= 3`, `println(x)` 등이 이에 속한다.
+    - 변수 x를 정의하고, x의 scope를 정의하여 x가 `println(x)`와 같이 사용될 수 있도록 한다.
+    - 따라서 변수를 정의하기 위한 exression은 아래와 같은 3가지로 구성된다.
+    - 변수의 이름(`x`), 변수의 값을 결정하는 exression(`3`), 변수를 사용할 수 있게 해주는 expression(`println(x)`에서 `println()`)
+  - 다른 하나는 변수를 사용(bound occurrence)하는 expression이다.
+    - 예를 들어 `println(x)`에서 `x`가 이에 해당한다.
+
+
+
+- VAE의 syntax를 정의하기
+
+  - Indentifier라는 새로운 syntatic element를 추가해야한다.
+
+  - VAE의 sytax 정의하기
+
+    - x는 메타변수이며, Id가 모든 indentifier의 집합일 때, `x ∈ Id`이다.
+    - `n | e + e | e - e |`는 기존 AE에 있던 것들이다.
+
+    $$
+    e ::= n\  |\  e + e\  |\  e - e \ |\ val\ \  x=e\ in\ e \ |\  x
+    $$
+
+  - `val x=e1 in e2`
+
+    - `x`라는 새로운 지역 변수를 선언할 때의 syntax를 정의한다. 여기서 x는 binding occurrence이다.
+    - 변수 x가 가리키는 대상은 `e1`을 계산했을 때 나오는 값이다.
+    - 변수 scope는 `e2`를 포함하지만, `e1`은 포함하지 않는다.
+    - 예를 들어 `val x=2 in x+x`와 같은 식에서 x의 scope는 `e1`(예시의 경우 `2`)는 포함하지 않지만,  `e2`(`x+x`)는 포함하므로, `e2`에서 x의 사용이 가능해진다.
+
+  - `x`
+
+    - `x`의 bound occurrence이거나 free indentifier다.
+    - 만일 같은 이름의 binding occurrence의 scope에 속해있다면 bound occurrence일 것이고, indentifier와 관련된 값을 가리킬 것이다.
+    - 만일 아니라면 free indentifier일 것이고, 아무것도 가리키지 않을 것이다.
+
+
+
+- syntax 중 `x`의 semantic 정의하기
+
+  - Environment
+
+    - bound occurrence, 즉 변수를 사용할 때의 semantic을 정의한다.
+    - VAE의 semantic을 정의하기위해서는 변수가 가리키는 값을 저장하기 위한 추가적인 semantic element가 필요하다.
+    - 만일 그런 element가 없다면, 각 변수의 값을 알 수 없게된다.
+    - 이러한 element를 environment라고 한다.
+    - environment는 유한 부분 함수(finite partial function)이다.
+    - 유한 부분 함수란 domain이 유한 집합인 부분 합수를 의미한다.
+    - VAE는 오직 interger만을 다루므로, 모든 식별자의 값은 interger이다. 따라서 ℤ로 표기한다.
+    - 메타변수 `σ`는 ENV에 속한다(따라서, `σ`는 유한 부분 함수이다).
+    - 즉, 아래 식은 Env의 원소인 유한 부분 함수  `σ`에 input으로 들어간 `Id`의 원소 중 (유한한)일부만이 ouput으로 ℤ의 원소를 산출한다는 것을 의미한다.
+
+    $$
+    Env = Id \xrightarrow{fin} ℤ \\
+    \sigma ∈ Env
+    $$
+
+  - 예시
+
+    - 예를 들어 environment `σ`가 있다고 가정해보자.
+    - 만일 `σ(x) = 1`이면, x라고 이름 붙인 변수 x의 값은 1이다.
+    - 만일 변수명 y가 `σ`에 존재하지 않는다면, `σ(y)`의 값은 undefined이고 y는 free indentifier이다.
+    - 즉, environment는 y와 같은 free indentifiers와는 연결할 값을 가지고 있지 않기에, 부분 함수이다.
+    - 또한, 모든 program이 유한한 수의 identifier만 정의하므로 유한한 부분 함수이다.
+
+  - VAE의 모든 exression들은 environment 하에서만 integer로 평가될 수 있다.
+
+    - Environment가 없다면, 변수의 값을 알 수 있는 방법이 없기 때문이다.
+    - 따라서, environment는 평가에 필수적이다.
+
+  - `x`의 semantic 정의하기
+
+    - 규칙: 만일 x가 σ의 domain에 존재한다면, x는 σ 하에서 σ(x)로 평가된다.
+    - 만일 x가 σ의 domain의 원소라면, x는 bound occurrence이다.
+    - environment는 x가 가리키는 값인 σ(x)를 제공한다.
+    - 만일 x가 domain에 속하지 않는다면 free identifier이므로, x를 평가할 수 없다. 
+    - 이 경우 evaluation이 즉시 종료되고, run-time error가 발생할 수 있다.
+
+  - Environment를 반드시 계산에 넣어야하므로 VAE의 semantic은 Env, E(xpression), ℤ의 삼항관계이다.
+    $$
+    ⇒⊆ Env × E × ℤ
+    $$
+
+    - `(σ, e, n) ∈⇒`는 환경 σ 아래에서 표현식 e를 표현한 결과가 v라는 것을 의미한다.
+    - `(σ, e, n) ∈⇒` 대신 ` σ ├ e ⇒ n`와 같이 쓸 수도 있는데, 이렇게 쓰는 것이 σ과 e가 input이고 n이 output이라는 것을 더 직관적으로 알 수 있다.
+
+    - 위에서 정한 규칙을 추론 규칙 형태로 표현하면 다음과 같다(`Domain(σ)`은 σ의 domain을 뜻한다).
+
+    - 즉, x가 σ의 domain일 경우에만  `σ ├ x ⇒ σ(x)`가 참일 수 있다.
+
+    $$
+    x ∈ Domain(σ)\over σ \vdash x⇒σ(x)
+    $$
+
+
+
+- Syntax중 `val x=e1 in e2`의 semantic 정의하기
+
+  - binding occurrence, 즉 변수를 선언할 때의 semantic을 정의한다.
+
+    - 변수를 정의하면, 변수의 값이 environment에 추가된다는 semantic(binding occurrence의 semantic)을 아래와 같이정의한다.
+
+    - x가 n을 가리킨다는 사실을 σ에 추가함으로써 새롭게 얻어진 environment를 나타내기 위해서 `σ[x ↦ n]`과 같이 쓸 수 있다.
+    - 이 새로운 environment는 아래와 같은 특성을 지닌다.
+    - x가 n을 가리킨다는 사실을 σ에 추가함으로써 새롭게 얻어진 environment(`σ[x ↦ n]`)에서 어떤 식별자 x'가 environment에 등록된 식별자 x와 같을 경우 x가 가리키는 값 n이 output이 되고, 아닐 경우 x'가 가리키는 값을 environment 내에서 찾는다.
+
+    $$
+    σ[x\mapsto n](x') = \begin{cases}
+    n & \mbox{if }x\ =\ x' \\
+    σ(x'), & \mbox{if }x\ \neq x'
+    \end{cases}
+    $$
+
+  - `val x=e1 in e2`의 semantic 정의하기
+
+    - 만약 e1이 σ아래에서  n1으로 평가되고, e2가 `σ[x ↦ n1]` 아래에서 n2로 평가되면, `val x=e1 in e2`는 σ하에서 n2로 평가된다.
+    - `val x=e1 in e2`를 정의하기 위해서, 먼저 `x`의 값을 정해야한다.
+    - `x` 의 값은 `e1`을 평가함으로서 얻을 수 있다.
+    - `x`의 scope가 `e1`을 포함하지 않기에, 주어진 environment인 σ하에서 평가가 이루어진다.
+    - `e1`의 결과는 `x`의 값이며, x가 n1을 가리킨다는 정보를 environment에 추가하여 `σ[x ↦ n1]`을 얻을 수 있다.
+    - `e2`는 `x`의 scope에 포함되기에, `e2`는  `σ[x ↦ n1]` 하에서 평가된다.
+    - `e2`의 결과값이 식 `val x=e1 in e2`의 최종 결과값이다.
+    - 결국 `val x=e1 in e2`의 semantic은 아래와 같이 정의된다.
+
+    $$
+    σ \vdash e_1 ⇒ n_1\ \ \ \ \ \ σ[x ↦ n_1] \vdash e_2 ⇒ n_2 \over σ \vdash val\ x=e_1\  in\  e_2 ⇒ n_2
+    $$
+
+  - 위 semantic은 shadowing을 자연스럽게 설명한다.
+
+    - 만일 x가 σ의 domain에 포함되고, `σ(x)=n`이라고 가정하자.
+    - e2는 `σ[x ↦ n1]`하에서 평가되고, `σ[x ↦ n1](x)=n1`이다.
+    - 즉, 만일 x가 e2에서 사용된다면, x의 값은 n이 아닌 n1이 된다.
+    - 그러므로 가장 내부에 있는 x가 e2의 평가에 사용된다고 할 수 있다.
+    - 예를 들어 `val x=1 in x=3 in x=4 in x+x`와 같은 표현식이 있다고 했을 때, 가장 내부에 있는 표현식 `x=4 in x+x`에서 `x+x`의 값은 `4+4`로 계산된다.
+
+
+
+- 기존 semantic(`n`, `e1+e2`, `e1-e2`의 semantic) 수정하기
+
+  - 기본적으로는 AE에서 정의한 것과 유사하지만, environment를 추가적으로 고려해야한다.
+  - `n`의 semantic 정의하기
+    - n은 σ하에서 n으로 평가된다.
+
+  $$
+  σ \vdash n ⇒ n
+  $$
+
+  
+
+  - `e1+e2`의 semantic 정의하기
+
+    - σ하에서 e1이 n1으로 평가되고, e2가 n2로 평가되면, e1+e2는 σ하에서 n1+n2로 평가된다.
+
+    $$
+    σ \vdash e_1 ⇒ n_1\ \ \ \ \ \ \ \ \ σ \vdash e_1 ⇒ n_2 \over σ \vdash e_1 + e_2 ⇒ n_1+n_2
+    $$
+
+    
+
+  - `e1-e2`의 semantic 정의하기
+
+    - σ하에서 e1이 n1으로 평가되고, e2가 n2로 평가되면, e1-e2는 σ하에서 n1-n2로 평가된다.
+
+    $$
+    σ \vdash e_1 ⇒ n_1\ \ \ \ \ \ \ \ \ σ \vdash e_1 ⇒ n_2 \over σ \vdash e_1 - e_2 ⇒ n_1-n_2
+    $$
+
+  - 예시
+
+    - 지금까지의 정의를 바탕으로 `val x=1 in x + x`가 2로 평가된다는 것을 증명하는 proof tree는 다음과 같다.
+    - `∅`는 빈 environment를 뜻한다.
+    - ` [x1↦n1, · · · ,xm↦nm]`은 x1부터 xm까지를 domain에 포함하면서, 각각의 xi가 ni에 매핑된 environment를 뜻한다(즉 아래 예시에서 사용된 `[x↦1]`은 x는 environment의 domain에 속하며 1에 mapping된 environment라는 의미다).
+
+    $$
+    ∅\vdash1⇒1\ \ \ \ \ \ \ \ {{x ∈ Domain([x↦1]) \over 
+    [x↦1] \vdash x ⇒ 1}\ \ \ \ {x ∈ Domain([x↦1]) \over
+    [x↦1] \vdash x ⇒ 1}\over σ [x↦1]\vdash x+x⇒2} \over
+    σ\vdash∅\vdash val\ x = 1 \ in \ x+x⇒2
+    $$
+
+
+
+- Interpreter
+
+  - VAE의 interpreter를 구현한다.
+  - 먼저 VAE의 abstract syntax를 구현한다.
+    - `Val(x, e1, e2)`는 `val x=e1 in e2`에 대응한다.
+    - `Id(x)`는 x에 대응한다.
+
+  ```scala
+  sealed trait Expr
+  case class Num(n: Int) extends Expr
+  case class Add(l: Expr, r: Expr) extends Expr
+  case class Sub(l: Expr, r: Expr) extends Expr
+  case class Val(x: String, i: Expr, b: Expr) extends Expr
+  case class Id(x: String) extends Expr
+  ```
+
+  - Environment를 표현하기위해 map을 사용한다.
+    - Scala에서 map에는 `+` 연산자를 사용 가능하다.
+    - 예를 들어 `Map(1 -> "one")`이 `m`일 때, `m + (2 -> "two")`는 `Map(1 -> "one", 2-> "two")`와 같다.
+
+  ```scala
+  type Env = Map[String, Int]
+  ```
+
+  - Interpreter 구현
+    - 위에서 작성한 semantic과 형태가 거의 유사하다.
+
+  ```scala
+  def interp(e: Expr, env: Env): Int = e match {
+      case Num(n) => n
+      case Add(l, r) => interp(l, env) + interp(r, env)
+      case Sub(l, r) => interp(l, env) - interp(r, env)
+      case Val(x, i, b) => interp(b, env + (x -> interp(i, env)))
+      case Id(x) => env(x)
+  }
+  ```
+
+
+
+
+
+
+
 # 출처
 
 - https://hjaem.info/pdfs/itpl-2022-09-16.pdf
