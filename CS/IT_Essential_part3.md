@@ -923,3 +923,62 @@
   - coarse-grained
     - 하나의 작업을 큰 단위의 프로세스로 나누어 처리하는 것을 의미한다.
 
+
+
+
+
+- 루프 불변성(Loop invariant)
+
+  > https://www.geeksforgeeks.org/loop-invariant-condition-examples-sorting-algorithms/
+
+  - 각 iteration의 직전, 직후에 반드시 참이어야 하는 조건 혹은 가정이다.
+    - 알고리즘의 타당성, 정확성을 입증하기 위해 사용한다.
+
+  - 루프 불변성의 조건
+    - 초기 조건: 첫 순회가 시작하기 전에 참이어야한다.
+    - 유지 조건: 각 iteration이 시작되기 전에 참이어야 한다.
+    - 종료 조건: 마지막 순회가 종료된 후에도 참이어야 한다.
+
+  - 주의사항
+    - 반복 조건과 혼동하기 쉬운데, 반복 조건과는 다르다.
+    - 예를 들어 `for(i=0;i<10;i++)`와 같은 코드에서 `i<10`는 이 조건이 참인 동안 반복이 수행되는 반복 조건이지 loop invariant는 아니다.
+  - 예시
+    - List의 요소들 중 최댓값을 찾는 아래와 같은 code가 있다.
+    - 아래 code로 list 내의 최댓값을 찾을 수 있다는 것이 증명되는 이유는, loop invariant가 있기 때문이다.
+    - 아래 code의 loop invariant는 `max_num`에는 항상 `lst`의 `i`번째 element까지의 값 중에 최댓값이 담기게 된다는 것이다.
+    - 예를 들어, 세 번째 iteration이 끝났을 때, `max_num`에는 7이 담기게 된다.
+    - 7이 가장 큰 수라는 것은 list의 3번째 element까지만 고려했을 때 참이다.
+    - 만일 이 조건이 거짓이라면, 최댓값을 찾을 수 없다.
+
+  ```python
+  lst = [7, 2, 5, 11, 8, 9]
+  max_num = -1
+  for i in range(len(lst)):
+      if lst[i] > max_num:
+          max_num = lst[i]
+      print("num: {}".format(lst[i]))
+      print("max: {}".format(max_num))
+      print("-"*8)
+  
+  """
+  num: 7
+  max: 7		[7] 중에 7이 최댓값인 것은 True이며, 이는 다음 iteration이 시작되기 직전에도 True이다.
+  --------
+  num: 2
+  max: 7		[7, 2] 중에 7이 최댓값인 것은 True이며, 이는 다음 iteration이 시작되기 직전에도 True이다.
+  --------
+  num: 5
+  max: 7		[7, 2, 5] 중에 7이 최댓값인 것은 True이며, 이는 다음 iteration이 시작되기 직전에도 True이다.
+  --------
+  num: 11
+  max: 11		...
+  --------
+  num: 8
+  max: 11
+  --------
+  num: 9
+  max: 11		[7, 2, 5, 11, 8, 9] 중에 11이 최댓값인 것은 True이며, 이는 반복이 끝난 이후에도 True이다.
+  --------
+  """
+  ```
+
