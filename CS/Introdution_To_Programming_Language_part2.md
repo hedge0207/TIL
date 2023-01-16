@@ -587,6 +587,206 @@
 
 
 
+## Recursion
+
+- FAE를 확장한 RFAE를 다룰 것이다.
+
+  - 이전 chapter에서 syntatic sugar로 변수 선언이 가능함을 확인하여, FVAE를 FAE로 부르기로 했다.
+  - 여기에 recursion fucntion을 추가한 RFAE를 만들어 볼 것이다.
+  - 또한 recursion function도 마찬가지로 syntatic sugar로 선언이 가능함을 확인할 것이다.
+  - 아래와 같은 Scala code가 있다고 가정해보자.
+    - `sum`은 n을 arugment로 받고, 0에서 n사이(n을 포함하여)의 integer를 반환한다.
+    - `sum(10)`은 55를 반환한다.
+
+  ```scala
+  def sum(x: Int): Int =
+      if (x == 0)
+      	0
+      else
+      	x + sum(x - 1)
+  println(sum(10))
+  ```
+
+  - 위 code를 FAE로 표현하기
+    - `val sum λ.xif0 x 0 (x+sum(x-1)) in sum 10`와 같이 표현할 수도 있다.
+    - 그러나, `sum`의 scope가 `sum 10`은 포함하지만, `λ.xif0 x 0 (x+sum(x-1))`는 포함하지 않기에 틀렸다.
+    - 즉, function body 내의 `sum`은 free identifier다.
+
+
+
+- Syntax 정의하기
+
+  - 기존 FAE의 syntax에 recursion function을 위한 syntax를 추가한다.
+
+  $$
+  e ::= \cdots\ |\ if0\ e\ e\ e\ |\ def\ x(x)=e\ in\ e
+  $$
+
+  - `if0 e1 e2 e3`
+    - 조건 expression이다.
+    - `e1`은 조건을 나타내고, `e2`는 조건이 true일 경우 실행할 expression, `e3`는 false일 경우 실행할 expression이다.
+    - 위 syntax 상으로 0만이 true가 되고, 0이 아닌 integer나 closure는 false가 된다.
+  - `def x1(x2)=e1 in e2`
+    - 이름이 `x1`, parameter가 `x2`m body가 `e1`인 recursive function을 정의한다.
+    - `x1`과 `x2`는 binding occurrence이다.
+    - `x1`의 scope는 `e1`과 `e2`이며, `x2`의 scope는 `e1`이다.
+    - 만약 `x1`이 `e1`에 등장한다면, 이는 bound occurrence이며, function이 recursive 할 수 있다는 것을 암시한다.
+  - 따라서 RFAE에서는 연속된 숫자들의 합을 계산하는 함수를 아래와 같이 정의할 수 있다.
+    - `def sum(x)=if0 x 0 (x+sum(x-1)) in sum 10`
+
+
+
+- Semantic 정의하기
+
+  - `if0 e1 e2 e3`의 semantic은 상당히 간단하다.
+
+    - Semantic은 두 가지 규칙으로 구성된다.
+    - 하나는 condition이 true일 경우, 다른 하나는 condition이 false일 경우.
+
+  - Condition이 true일 경우
+
+    - `e1`이 `σ`하에서 0으로 평가되고, `e2`가 `σ`하에서 v로 평가되면, `if0 e1 e2 e3`는 `σ`하에서 `v`로 평가된다.
+    - `e1`이 0으로 평가되면, 조건은 참이되고, `e2`가 평가되며, `e2`의 결과가 전체 표현식의 결과가 된다.
+
+    $$
+    σ├e_1⇒0\ \ \ \ \ σ├e_2⇒v\over σ├if0\ e_1\ e_2\ e_3⇒v
+    $$
+
+  - Condition이 false일 경우
+
+    - `e1`이 `σ`하에서 `v'`으로 평가되고, `v'`가 0이 아니면서, `e3`가 `σ`하에서 v로 평가되면, `if0 e1 e2 e3`는 `σ`하에서 `v`로 평가된다.
+    - `e1`이 0이 아닌 값으로 평가되면, 조건은 false가 되며, `e3`가 평가되며, `e3`의 결과가 전체 표현식의 결과가 된다.
+
+    $$
+    σ├e_1⇒v'\ \ \ \ \ v'\neq0\ \ \ \ \  σ├e_3⇒v\over σ├if0\ e_1\ e_2\ e_3⇒v
+    $$
+
+  - `def x1(x2)=e1 in e2`의 semantic 정의하기 위한 접근법
+
+    - `e2`가 `x1`의 scope 안에 있고, `x1`은 function을 가리킨다.
+    - 그러므로 `σ'=[x1↦<λx2.e1, σ>]`와 같이 정의하고, `e2`를 `σ'`하에서 평가할 수도 있을 것이다.
+    - 그러나 이런 접근은 잘못됐다.
+    - Closure의 body인 `e1`이 평가될 때의 environment는 어떤 v에 대해 `σ=[x2↦v]`이다.
+    - Environment는 `x1`을 포함하고있지 않으며, 따라서 `x1`을 `e1`에서 사용하는 것은 free identifier error를 발생시킬 수 있다.
+    - Closure의 환경은 반드시  `x1`과 `x1`의 값(즉, closure 자신)을 포함해야한다.
+    - 이러한 관찰을 기반으로 아래와 같은 규칙을 정의할 수 있다.
+
+  - `def x1(x2)=e1 in e2`의 semantic 정의하기
+
+    - Closure의 environment는 `σ'`이며 meta-level에서 재귀적으로 정의된다.
+    - Closure의 body인 `e1`이 평가될 때의 환경은 어떤 v에 대해 `σ'[x2↦v]`이며, x1를 포함하고 있다.
+    - `x1`은 자신의 body에서 사용될 수 있으므로, recursive하다.
+
+    $$
+    σ'=σ[x_1↦<λx_2.e_1, σ'>]\ \ \ \ \ σ'├e_2⇒v\over σ├\ def\ x_1(x_2)=e_1\ in\ e_2⇒v
+    $$
+
+    - Closure에 현재 환경(`σ`)을 저장하는 것이 아니라(즉, `<λx2.e1, σ>`가 아니라), 현재 환경에 `x1`이 closure를 가리킨다는 정보를 추가한 환경(`σ[x1↦<λx2.e1, σ'>]`, `σ'`)을 저장한다(`<λx2.e1, σ'>`).
+    - 이 때, `x1`이 closure를 가리킨다는 정보를 추가한 환경은 재귀적으로 정의된다.
+
+  - 다른 expression들의 semantic은 재사용하면 된다.
+
+
+
+- 아래 proof tree는empty environment 하에서 `def f(x)=if0 x 0 (x+f(x-1)) in f 1`이 1로 평가된다는 것을 증명한다.
+
+  - 가독성을 위해 세 부분으로 나눴다.
+    - `if0 x 0 (x+f(x-1))`에서 `x`가 0이 아닐 때의 expression은 `(x+f(x-1))`이고, `x`가 0일 때의 expression은 `0`이다.
+
+
+  ![image-20230113172300281](Introdution_To_Programming_Language_part2.assets/image-20230113172300281.png)
+
+  - ⓐ 증명
+
+    - 만약 `f`가 `σ_2`의 domain이면, `σ_2`하에서 `f`는 `v_f`로 평가된다.
+
+  - ⓑ 증명
+
+    - 만약 x가 `σ_2`의 domain이면, `σ_2`하에서 `x`는 `1`로 평가된다.
+
+  - ⓒ 증명
+
+    - `σ_2`하에서 1은 1로 평가된다.
+
+  - ⓓ 증명
+
+    - 전제가 모두 참이므로, 결론도 참이다.
+    - 즉, `σ_2`하에서 x는 1로 평가되고, 1은 1로 평가되므로 `σ_2` 하에서 `x-1`은 0으로 평가된다.
+
+  - ⓔ 증명
+
+    - 만약 x가 `σ_3`의 domain이면, `σ_3`하에서 `x`는 `0`으로 평가된다.
+
+  - ⓕ 증명
+
+    - `σ_3`하에서 0은 0으로 평가된다.
+
+  - ⓖ 증명
+
+    - ⓖ를 증명하는 것은 결국 condition이 true일 경우(x가 0일 경우)의 `if0 e1 e2 e3`를 증명하는 것이다.
+    - 더 정확히는 condition이 true일 경우의 expression인 `0`을 증명하는 것이다.
+    - 전제가 모두 참이므로, 결론도 참이다.
+    - 즉, `σ_3`(즉, `σ_1[x↦0]`)하에서 x는 0으로 평가되고, 0은 0으로 평가되므로 `σ_3`하에서 `e_f`(`if0 x 0 (x+f(x-1))`)는 0으로 평가된다.
+
+  - ⓗ 증명
+
+    - ⓗ를 증명하는 것은 condition이 false일 경우(`x`가 0이 아닐 경우)의 `if0 e1 e2 e3`를 증명하는 것이다. 
+    - 더 정확히는 condition이 false일 경우의 expression인 `(x+f(x-1))`를 증명하는 것이다.
+    - 전제가 모두 참이므로 결론도 참이다.
+
+    - `σ_2`하에서 `f`는 `v_f`로 평가된다(ⓐ). 
+
+    $$
+    <λx.if0\ x\ 0\ (x+f(x-1)),\ σ_1>
+    $$
+
+    - 따라서 ⓗ는 아래와 같이 평가된다.
+
+    $$
+    σ_2 ├ <λx.if0\ x\ 0\ (x+f(x-1)),\ σ_1>(x-1)⇒0
+    $$
+
+    - `σ_2` 하에서 `x-1`은 0으로 평가된다(ⓓ). 
+    - 따라서 ⓗ는 아래와 같이 평가된다.
+
+    $$
+    σ_2 ├ \left\langle λx.if0\ x\ 0\ (x+f(0)),\ σ_1 \right\rangle(0)⇒0
+    $$
+
+    
+
+    - `σ_3` 하에서 `e_f`(`if0 x 0 (x+f(x-1))`)는 0으로 평가된다(ⓖ). 
+
+    - 따라서 ⓗ는 아래와 같이 평가된다.
+
+    $$
+    σ_2 ├ \left\langle λx.0,\ σ_1 \right\rangle(0)⇒0
+    $$
+
+    
+
+  - ⓘ 증명
+
+  - ⓙ 증명
+
+  - ⓚ 증명
+
+  - ⓛ 증명
+
+  - ⓜ 증명
+
+  - ⓝ 증명
+
+  - ⓞ 증명
+
+  - ⓟ 증명
+
+  - ⓠ 증명
+
+  
+
+
+
 # 출처
 
 - https://hjaem.info/pdfs/itpl-2022-09-16.pdf
