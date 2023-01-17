@@ -86,7 +86,7 @@
     - Metavariable `Λ`는 *FEnv*의 원소이다.
 
     $$
-    FEnv = Id\nrightarrow{fin}FunDef \\
+    FEnv = Id \overset{\text{fin}} \nrightarrow FunDef \\
     Λ ∈ FEnv
     $$
 
@@ -133,17 +133,13 @@
   σ,Λ\ ├\ n⇒ n
   $$
 
-  
-
   - `e1+e2`
     - `σ`과 `Λ` 아래에서 e1이 n1으로 평가되고, e2가 n2로 평가되면, e1+e2는 `σ`과 `Λ` 아래에서에서 n1+n2로 평가된다.
-
+  
   $$
   σ,Λ\ ├\ e_1⇒ n_1\ \ \ \ \ σ,Λ\ ├\ e_2⇒ n_2\over σ,Λ\ ├\ e_1+e_2⇒ n_1+n_2
   $$
-
   
-
   - `e1-e2`
 
     - `σ`과 `Λ` 아래에서 e1이 n1으로 평가되고, e2가 n2로 평가되면, e1-e2는 `σ`과 `Λ` 아래에서에서 n1-n2로 평가된다.
@@ -152,22 +148,18 @@
     σ,Λ\ ├\ e_1⇒ n_1\ \ \ \ \ σ,Λ\ ├\ e_2⇒ n_2\over σ,Λ\ ├\ e_1-e_2⇒ n_1-n_2
     $$
 
-    
-
   - `val x=e1 in e2`(변수 선언)
-
+  
     - `σ`과 `Λ` 아래에서 e1이 n1으로 평가되고,  ` σ[x↦n1]`와 Λ 아래에서 e2가 n2로 평가되면, `val x=e1 in e2`는 `σ`과 `Λ` 아래에서 n2로 평가된다.
 
     $$
     σ,Λ\ ├\ e_1⇒ n_1\ \ \ \ \  σ[x↦n_1] ├\ e_2⇒ n_2\over σ,Λ\ ├\ val\ x=e_1\ in\ e_2⇒ n_2
     $$
 
-    
-
   - `x`(변수 사용)
 
     - x가 `σ`의 domain이면, x는 `σ`과 `Λ` 아래에서 `σ(x)`로 평가된다.
-
+  
     $$
     x∈Domain(σ)\over σ,Λ\ ├\ x ⇒σ(x)
     $$
@@ -308,8 +300,8 @@
     - 그러므로, 우리는 반환된 함수를 다시 호출할 수 있다.
     - `makeAdder(3)(5)`은 `makeAdder(3)`를 호출하는 표현식이다.
     - `makeAdder(3)(5)`는 호출할 함수(`(y: Int) => x + y`)를 함수 이름이 아닌 표현식으로 호출한다.
-  - 그러나 anonymous function에 syntatic sugar를 적용하여 이름을 추가할 수 있다.
-    - 뿐만 아니라 변수의 선언도 syntatic sugar를 적용할 수 있다.
+  - 그러나 anonymous function에 syntactic sugar를 적용하여 이름을 추가할 수 있다.
+    - 뿐만 아니라 변수의 선언도 syntactic sugar를 적용할 수 있다.
   - 또한 closure가 정확히 무엇인지, 왜 필요한지도 살펴볼 것이다.
 
 
@@ -414,7 +406,7 @@
     - Environment는 유한 부분 함수이다. 즉, Identifier의 유한한 일부만이 output으로 Value를 산출한다.
 
     $$
-    Env = Id \nrightarrow {fin} V
+    Env = Id \overset{\text{fin}} \nrightarrow V
     $$
 
     - FVAE의 semantic은 Env, E, V의 삼항 관계이다.
@@ -564,36 +556,13 @@
 
 
 
-- Syntatic sugar
-
-  - Syntax를 아래와 같이 수정하여 FVAE에 이름이 있는 local function을 추가할 수 있다.
-    - `def x1(x2)=e1 in e2`는 `x1`을 이름으로 가지고, `e2`를 parameter로 가지며, `e1`이 body인 function을 정의한다.
-    - `x1`의 scope는 e2이므로, 재귀를 사용할 수는 없다.
-
-  $$
-  e ::= \cdots\ |\ def\ \ x(x)=e\ in\ e
-  $$
-
-  - Semantic을 수정하는 대신 syntatic sugar로 추가하기 위해서는 parser를 수정해야한다.
-    - `s`가 FVAE의 parser에 의해 `def x1(x2)=e1 in e2` 형태로 변환된 string이라고 해보자. 
-    - 이름이 있는 local function을 syntatic sugar로 처리하기 위해서 parser는  `s`를 다시  `val x1=λx2.e1 in e2` 형태로 변경해야한다.
-    - 그 후  `val x1=λx2.e1 in e2` 에 semantic을 적용한다.
-  - 변수 선언의 경우도 마찬가지 방법을 적용할 수 있다.
-    - `s`가 `val x=e1 in e2`의 형태로 parsing된 string이라고 해보자.
-    - parser는 `s1`을  `(λx.e2)e1` 형태로 다시 변환시킨다.
-    - `(λx.e2)e1`의 평가는 `e1`이 먼저 평가되고, `e2`는 `x`가 `e1`의 결과를 가리킨다는 환경 하에서 평가된다.
-    - 이 semantic은 `val x=e1 in e2`의 semantic과 정확히 동일하므로, 변수 선언은 FVAE에서 syntatic sugar로만 사용이 가능하다.
-  - 따라서 아래에서부터는 FVAE가 아닌 FAE로 부를 것이다.
-
-
-
 ## Recursion
 
 - FAE를 확장한 RFAE를 다룰 것이다.
 
-  - 이전 chapter에서 syntatic sugar로 변수 선언이 가능함을 확인하여, FVAE를 FAE로 부르기로 했다.
+  - 이전 chapter에서 syntactic sugar로 변수 선언이 가능함을 확인하여, FVAE를 FAE로 부르기로 했다.
   - 여기에 recursion fucntion을 추가한 RFAE를 만들어 볼 것이다.
-  - 또한 recursion function도 마찬가지로 syntatic sugar로 선언이 가능함을 확인할 것이다.
+  - 또한 recursion function도 마찬가지로 syntactic sugar로 선언이 가능함을 확인할 것이다.
   - 아래와 같은 Scala code가 있다고 가정해보자.
     - `sum`은 n을 arugment로 받고, 0에서 n사이(n을 포함하여)의 integer를 반환한다.
     - `sum(10)`은 55를 반환한다.
@@ -688,6 +657,156 @@
 
 
 
+- Interpreter 수정하기
+
+  - RFAE의 syntax를 정의한다.
+    - FAE와 공통된 부분은 제외한다.
+    - `If0(c: Expr, t: Expr, f: Expr)`가 `if0 e1 e2 e3`를 표현한 것이다.
+    - `Rec(f: String, x: String, b: Expr, e: Expr)`가 `def x1(x2)=e1 in e2`를 표현한 것이다.
+    - `value`는 FAE와 유사하게 정의되었지만, 캡쳐된 envorionment를 가리키는 `CloV`의 `e` field가 mutable하게 바뀌었다는 점이 다르다.
+
+  ```scala
+  sealed trait Expr
+  ...
+  case class If0(c: Expr, t: Expr, f: Expr) extends Expr
+  case class Rec(f: String, x: String, b: Expr, e: Expr) extends Expr
+  
+  sealed trait Value
+  case class NumV(n: Int) extends Value
+  case class CloV(p: String, b: Expr, var e: Env) extends Value
+  ```
+
+  - `interp` 함수를 수정한다.
+    - `Rec` case의 경우 closure를 먼저 생성하고, 그 후에 environment에 closure를 더한 new environment를 생성한다.
+    - closure는 반드시 new environment를 캡쳐해야하는데, 이를 위해서 closure의 environment를 new environment로 변경한다.
+
+  ```scala
+  def interp(e: Expr, env: Env): Value = e match {
+  	...
+      case If0(c, t, f) =>
+          interp(if (interp(c, env) == NumV(0)) t else f, env)
+      case Rec(f, x, b, e) =>
+      	// closure를 먼저 생성
+          val cloV = CloV(x, b, env)
+      	// new environment 생성
+          val nenv = env + (f -> cloV)
+      	// closure의 environment를 new environment로 변경
+          cloV.e = nenv
+          interp(e, nenv)
+  }
+  ```
+
+
+
+- Syntactic sugar
+
+  - Syntax를 아래와 같이 수정하여 FVAE에 이름이 있는 local function을 추가할 수 있다.
+    - `def x1(x2)=e1 in e2`는 `x1`을 이름으로 가지고, `e2`를 parameter로 가지며, `e1`이 body인 function을 정의한다.
+    - `x1`의 scope는 e2이므로, 재귀를 사용할 수는 없다.
+
+  $$
+  e ::= \cdots\ |\ def\ \ x(x)=e\ in\ e
+  $$
+
+  - Semantic을 수정하는 대신 syntactic sugar로 추가하기 위해서는 parser를 수정해야한다.
+    - `s`가 FVAE의 parser에 의해 `def x1(x2)=e1 in e2` 형태로 변환된 string이라고 해보자. 
+    - 이름이 있는 local function을 syntactic sugar로 처리하기 위해서 parser는  `s`를 다시  `val x1=λx2.e1 in e2` 형태로 변경해야한다.
+    - 그 후  `val x1=λx2.e1 in e2` 에 semantic을 적용한다.
+  - 변수 선언의 경우도 마찬가지 방법을 적용할 수 있다.
+    - `s`가 `val x=e1 in e2`의 형태로 parsing된 string이라고 해보자.
+    - parser는 `s1`을  `(λx.e2)e1` 형태로 다시 변환시킨다.
+    - `(λx.e2)e1`의 평가는 `e1`이 먼저 평가되고, `e2`는 `x`가 `e1`의 결과를 가리킨다는 환경 하에서 평가된다.
+    - 이 semantic은 `val x=e1 in e2`의 semantic과 정확히 동일하므로, 변수 선언은 FVAE에서 syntactic sugar로만 사용이 가능하다.
+  - 따라서 아래에서부터는 FVAE가 아닌 FAE로 부를 것이다.
+
+
+
+- Syntactic sugar로서의 recursion
+
+  - 만일 language에서 recursive function을 지원하지 않더라도, first-class function으로 recursive function을 구현할 수 있다.
+
+  - Recursive funnction을 desugaring하는 key는 아래 함수이다.
+    - Z는 fixed point combinator(고정점 조합자)이다.
+    - 수학에서 어떤 함수의 fixed point라 함은 해당 함수에 인자로 들어왔을 때 인자와 같은 값이 함수의 결과값이 되는 값이다(`f(x)=x`에서 `f`의 fixed point는 `x`이다).
+    - Fixed point combinator는 주어진 함수의 fixed point를 계산하는 함수이다.
+    - Recursive function역시 특정 함수의 fixed point라고 볼 수 있다.
+
+  $$
+  Z = λf.(λx.f\ (λv.x\ x\ v))(λx.f\ (λv.x\ x\ v))
+  $$
+
+  - 아래 함수를 `a`라고 해보자.
+    $$
+    λf.λv.if0\ v\ 0(v+f(v-1))
+    $$
+
+    - `a`에서 parameter인 `f`가 `sum`이라는 함수로 주어진다고 가정해보자. 
+    - `sum`은 자연수 `n`을 인자로 받아 n에서 0까지의 모든 자연수의 합을 반환하는 함수이다.
+    - 그럼 위 함수는 아래와 같이 작성된다.
+
+    $$
+    λv.if0\ v\ 0(v+sum(v-1))
+    $$
+
+    - 만일 0이 parameter로 주어지면, 결과는 0이 된다.
+    - 만일 양의 정수인 `n`이 주어지면, 결과는 `n+sum(n-1)`이 되고, 이는 `sum n`과 같다.
+    - 그러므로, `a sum`은 `sum`과 같다.
+    - 따라서 우리는 `sum`이 `a`의 fixed point라고 할 수 있다.
+
+  - Fixed point combinator인 Z는 argument로 function을 받고, 해당 function의 fixed point를 반환한다.
+
+    - 그러므로, `Z a`는 `sum`을 반환해야한다.
+    - `e_f`가 `if0 v 0(v+f(v-1))`의 약어라고 하면, `a`는 `λf.λv.e_f`이고,  `Z a`는 `Z(λf.λv.e_f)`이다.
+    - 이는 `λx.(λf.λv.e_f)(λv.x x v) λx.(λf.λv.e_f)(λv.x x v)`로 평가되는 데, 이때 `λx.(λf.λv.e_f)(λv.x x v)`를 `F`라하면 결국 `F F`(즉, `F`를 인자로 받는 `F`)가 된다.
+    - `F F`에서 첫 번째 F만 확장하면 `(λx.(λf.λv.e_f)(λv.x x v)) F`가 된다.
+    - 이는 `(λf.λv.e_f)(λv.F F v)`로 평가된다.
+    - 이 때 `e_f`를 다시 확장하면 아래와 같은 식을 얻을 수 있는데, 이를 `g`라 부른다.
+
+    $$
+    (λf.λv.if0\ v\ 0\ (v+f(v-1)))(λv.F\ F\ v)
+    \\
+    \\
+    λf.λv.if0\ v\ 0\ (v+f(v-1))의\ 인자로\ (λv.F\ F\ v)를\ 넘기면\ 아래와 같다.
+    \\
+    \\
+    λv.if0\ v\ 0\ (v+λv.F\ F\ v(v-1)))
+    $$
+
+    - 결국 `F F`는 `g`로 평가되며, 만약 `g`에 0을 넘기면 0이 결과로 나오고, 자연수 `n`을 인자로 넘기면 아래와 같은 결과가 나온다.
+
+    $$
+    n+(λv.F\ F\ v)\ (n-1)
+    \\ 이는\ 아래와\ 같이\ 평가된다.
+    \\
+    n+F\ F\ (n-1)
+    \\
+    \\결국\ F\ F는\ g로\ 평가되므로,
+    \\
+    n+g(n-1)이\ 된다.
+    $$
+
+    - 따라서 `g`의 semantic은 아래와 같다.
+
+    $$
+    g\ n=\begin{cases}
+    0\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ if\;n=0\\
+    n + g(n-1)\ \ \ \ otherwise\end{cases}
+    $$
+
+    - 이는 `g`가 `sum`과 같음을 나타낸다.
+    - 그리고 `g`는 `Z a`와 같으므로, 결국 `Z a`와 `sum`은 같다.
+
+  - 결국 syntactic sugar를 사용하여 `def x_1(x_2)=e_1 in e_2`를 정의하는 방법은 다음과 같다.
+    - `val x_1 = Z(λx_1.λx_2.e1) in e2`
+    - 만약 `x_1`이 function `h`를 가리킨다면, `h`는 `λx_1.λx_2.e1`의 fixed point이다.
+    - 그러므로, `Z(λx_1.λx_2.e1)`는 `h`와 같다.
+    - `def x_1(x_2)=e_1 in e_2`와 `val x_1 = Z(λx_1.λx_2.e1) in e2` 모두 `e_2`를 `x_1`이 `h`를 가리킨다는 environment 하에서 평가한다.
+    - 그러므로, 둘은 같은 semantic을 가지고 있다고 할 수 있으며, desugaring이 끝난다.
+
+
+
+### 예시
+
 - 아래 proof tree는empty environment 하에서 `def f(x)=if0 x 0 (x+f(x-1)) in f 1`이 1로 평가된다는 것을 증명한다.
 
   - 가독성을 위해 세 부분으로 나눴다.
@@ -696,94 +815,76 @@
 
   ![image-20230113172300281](Introdution_To_Programming_Language_part2.assets/image-20230113172300281.png)
 
+
+
+
+- ⓗ 증명
+  - ⓗ를 증명하는 것은 condition이 false일 경우의 expression인 `(x+f(x-1))` 중 `f(x-1)`을 증명하는 것이다.
+  - `f(x-1)`의 증명은 세 부분으로 나뉜다.
+    - `f`가 무엇을 의미하는지(ⓐ).
+    - `f`의 인자인 `(x-1)`이 어떤 값으로 평가되는지(ⓓ).
+    - `f`가 `(x-1)`의 평가 결과에 따라 어떤 값을 반환하는지(ⓖ).
   - ⓐ 증명
-
     - 만약 `f`가 `σ_2`의 domain이면, `σ_2`하에서 `f`는 `v_f`로 평가된다.
-
-  - ⓑ 증명
-
-    - 만약 x가 `σ_2`의 domain이면, `σ_2`하에서 `x`는 `1`로 평가된다.
-
-  - ⓒ 증명
-
-    - `σ_2`하에서 1은 1로 평가된다.
-
+    - `σ_2`는 `σ_1`에 x가 1을 가리킨다는 사실이 포함된 environment이다.
+    - `σ_1`에서 `f`는 `v_f`를 가리킨다.
+    - 따라서 `σ_2`하에서 `f`는 `vf`를 가리킨다.
   - ⓓ 증명
+    - ⓑ 증명: 만약 x가 `σ_2`의 domain이면, `σ_2`하에서 `x`는 `1`로 평가된다.
 
-    - 전제가 모두 참이므로, 결론도 참이다.
+    - ⓒ 증명: `σ_2`하에서 1은 1로 평가된다.
+
+    - 전제가 모두 참이므로, ⓓ도 참이다.
     - 즉, `σ_2`하에서 x는 1로 평가되고, 1은 1로 평가되므로 `σ_2` 하에서 `x-1`은 0으로 평가된다.
-
-  - ⓔ 증명
-
-    - 만약 x가 `σ_3`의 domain이면, `σ_3`하에서 `x`는 `0`으로 평가된다.
-
-  - ⓕ 증명
-
-    - `σ_3`하에서 0은 0으로 평가된다.
-
   - ⓖ 증명
 
-    - ⓖ를 증명하는 것은 결국 condition이 true일 경우(x가 0일 경우)의 `if0 e1 e2 e3`를 증명하는 것이다.
-    - 더 정확히는 condition이 true일 경우의 expression인 `0`을 증명하는 것이다.
+    - ⓖ를 증명하는 것은  condition이 true일 경우의 `if0 e_1 e_2 e_3⇒v`를 증명하는 것이다.
+    - ⓔ 증명: 만약 x가 `σ_3`의 domain이면, `σ_3`하에서 `x`는 `0`으로 평가된다.
+
+    - ⓕ 증명: `σ_3`하에서 0은 0으로 평가된다.
+
     - 전제가 모두 참이므로, 결론도 참이다.
-    - 즉, `σ_3`(즉, `σ_1[x↦0]`)하에서 x는 0으로 평가되고, 0은 0으로 평가되므로 `σ_3`하에서 `e_f`(`if0 x 0 (x+f(x-1))`)는 0으로 평가된다.
-
+    - 즉, `σ_3`(==`σ_1[x↦0]`)하에서 x는 0으로 평가되고, 0은 0으로 평가되므로 `σ_3`하에서 `e_f`(==`if0 x 0 (x+f(x-1))`)는 0으로 평가된다.
   - ⓗ 증명
+    - 전제가 모두 참이므로 결론도 참이다.
+    - 따라서 `σ_2`하에서 `f(x-1)`은 0으로 평가된다.
 
-    - ⓗ를 증명하는 것은 condition이 false일 경우(`x`가 0이 아닐 경우)의 `if0 e1 e2 e3`를 증명하는 것이다. 
-    - 더 정확히는 condition이 false일 경우의 expression인 `(x+f(x-1))`를 증명하는 것이다.
+
+
+- `σ_2 ├ e_f ⇒ 1` 증명
+  - Condition이 false일 경우의 `if0 e_1 e_2 e_3⇒v`를 증명하는 것이다.
+  - ⓛ 증명
+    - ⓑ와 동일하다.
+    - `x`가 `σ_2`의 domain이면 `x`는 1을 가리킨다.
+  - ⓚ 증명
+    - 1은 0과 같지 않다.
+  - ⓙ 증명
+    - ⓘ 증명: ⓛ, ⓑ와 동일하다. `x`가 `σ_2`의 domain이면 `x`는 1을 가리킨다.
+    - `σ_2`하에서 `f(x-1)`은 0을 가리킨다.
+    - 따라서 `σ_2` 하에서 `x+f(x-1)`은 `1+0`이므로 1을 가리킨다.
+  - `σ_2 ├ e_f ⇒ 1` 증명
+    - 전제가 모두 참이므로 결론도 참이다.
+    - 따라서 `σ_2`하에서 `e_f`는 1을 가리킨다.
+
+
+
+- ⓞ 증명
+  - ⓝ 증명
+    - 만약 `f`가 `σ_1`의 domain이면 `f`는 `σ_1`하에서 `v_f`다.
+  - ⓜ 증명
+    - `σ_1`하에서 1은 1이다.
+  - ⓞ 증명
+    - ⓝ, ⓜ, 전제인 `σ_2 ├ e_f ⇒ 1`이 모두 참이므로 결론도 참이다.
+
+
+
+- ⓠ 증명
+  - ⓟ 증명
+    - `σ_1`은 `f`가 `v_f`를 가리킨다는 environment이다.
+  - ⓠ 증명
     - 전제가 모두 참이므로 결론도 참이다.
 
-    - `σ_2`하에서 `f`는 `v_f`로 평가된다(ⓐ). 
 
-    $$
-    <λx.if0\ x\ 0\ (x+f(x-1)),\ σ_1>
-    $$
-
-    - 따라서 ⓗ는 아래와 같이 평가된다.
-
-    $$
-    σ_2 ├ <λx.if0\ x\ 0\ (x+f(x-1)),\ σ_1>(x-1)⇒0
-    $$
-
-    - `σ_2` 하에서 `x-1`은 0으로 평가된다(ⓓ). 
-    - 따라서 ⓗ는 아래와 같이 평가된다.
-
-    $$
-    σ_2 ├ \left\langle λx.if0\ x\ 0\ (x+f(0)),\ σ_1 \right\rangle(0)⇒0
-    $$
-
-    
-
-    - `σ_3` 하에서 `e_f`(`if0 x 0 (x+f(x-1))`)는 0으로 평가된다(ⓖ). 
-
-    - 따라서 ⓗ는 아래와 같이 평가된다.
-
-    $$
-    σ_2 ├ \left\langle λx.0,\ σ_1 \right\rangle(0)⇒0
-    $$
-
-    
-
-  - ⓘ 증명
-
-  - ⓙ 증명
-
-  - ⓚ 증명
-
-  - ⓛ 증명
-
-  - ⓜ 증명
-
-  - ⓝ 증명
-
-  - ⓞ 증명
-
-  - ⓟ 증명
-
-  - ⓠ 증명
-
-  
 
 
 

@@ -6,7 +6,7 @@
 
     - Syntax
     - Semantic
-    - Standard library
+    - Standard libraryd
     - Ecosystem
   - Syntax와 semantic
 
@@ -414,7 +414,7 @@
 
 
 
-- Syntatic Sugar
+- Syntactic Sugar
 
   - semantic을 변경하는 대신 문법적 변형을 정의하여 programming language에 새로운 기능을 추가하는 것이다.
 
@@ -430,7 +430,7 @@
     e ⇒ n \over -e ⇒ -_zn
     $$
 
-  - 그러나 syntatic sugar를 사용하면 큰 부담 없이 새로운 기능을 추가할  수 있기에 많은 언어에서 널리 사용한다.
+  - 그러나 syntactic sugar를 사용하면 큰 부담 없이 새로운 기능을 추가할  수 있기에 많은 언어에서 널리 사용한다.
 
     - 위와는 달리 concrete syntax와 parser만 수정하면 된다.
     - concrete syntax는 위와 동일하게 수정한다.
@@ -439,6 +439,7 @@
   - Desugaring
 
     - Syntatic sugar를 제거하는 절차를 의미한다.
+    - 일반적으로 상위 버전에 추가된 syntactic sugar가 포함된 code를 syntactic sugar가 포함되지 않은 하위 버전에서 실행하는 방법을 말한다.
 
 
 
@@ -848,7 +849,7 @@
     - 즉, 아래 식은 Env의 원소인 유한 부분 함수  `σ`에 input으로 들어간 `Id`의 원소 중 (유한한)일부만이 ouput으로 ℤ의 원소를 산출한다는 것을 의미한다.
 
     $$
-    Env = Id \xrightarrow{fin} ℤ \\
+    Env = Id \overset{\text{fin}} \nrightarrow ℤ \\
     \sigma ∈ Env
     $$
 
