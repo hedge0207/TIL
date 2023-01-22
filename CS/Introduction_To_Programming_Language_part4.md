@@ -472,26 +472,26 @@
   - `var a = C(0)`가 실행되면 memory는 아래와 같은 상태가 된다.
     - `a`가 `C(0)`를 가리키는 pointer이므로, reference count가 1 증가한다.
 
-  ![image-20230118113051088](../../../Desktop/Garbage_Collection.assets/image-20230118113051088.png)
+  ![image-20230118113051088](Introduction_To_Programming_Language_part4.assets/image-20230118113051088.png)
 
   - `val v = C(a)`가 실행되고 난 후, memory는 아래와 같은 상태가 된다.
     - `C(0)`의 reference count는 1에서 2로 증가하게 된다.
 
-  ![image-20230118113258677](../../../Desktop/Garbage_Collection.assets/image-20230118113258677.png)
+  ![image-20230118113258677](Introduction_To_Programming_Language_part4.assets/image-20230118113258677.png)
 
   - `a = C(1)`이 실행되고 난 후, memory는 다음과 같은 상태가 된다.
     - `C(0)`을 가리키는 pointer `a`가 더 이상 `C(0)`를 가리키지 않으므로, `C(0)`의 reference count는 2에서1로 감소하고, `a`는 `C(1)`을 가리키게 되어 `C(1)`의 reference count는 1 증가하게 된다.
 
-  ![image-20230118113506372](../../../Desktop/Garbage_Collection.assets/image-20230118113506372.png)
+  ![image-20230118113506372](Introduction_To_Programming_Language_part4.assets/image-20230118113506372.png)
 
   - `b.x = a`가 실행되고 난 후 memory 상태는 아래와 같다.
     - `C(0)`를 가리키는 pointer `C(a)`가 더 이상 `C(0)`를 가리키지 않으므로, `C(0)` reference count는 1에서 0으로 감소한다.
 
-  ![image-20230118113720845](../../../Desktop/Garbage_Collection.assets/image-20230118113720845.png)
+  ![image-20230118113720845](Introduction_To_Programming_Language_part4.assets/image-20230118113720845.png)
 
   - `C(0)`의 reference count가 감소한 후에 0이 되었으므로, unreachable한 것으로 간주되어 할당 해제된다.
 
-  ![image-20230118113933883](../../../Desktop/Garbage_Collection.assets/image-20230118113933883.png)
+  ![image-20230118113933883](Introduction_To_Programming_Language_part4.assets/image-20230118113933883.png)
 
 
 
@@ -585,21 +585,21 @@
 
   - Marking 단계가 시작되면, 모든 object는 Unreached 상태(그림의 흰색 box)에 놓이게 된다.
 
-  ![image-20230118142822277](../../../Desktop/Garbage_Collection.assets/image-20230118142822277.png)
+  ![image-20230118142822277](Introduction_To_Programming_Language_part4.assets/image-20230118142822277.png)
 
   - 첫 단계로, stack에 있는 pointer가 가리키는 object가 Unreached 상태에서 Unscanned 상태(아래 그림에서 회색)로 변경된다.
 
-  ![image-20230118143052023](../../../Desktop/Garbage_Collection.assets/image-20230118143052023.png)
+  ![image-20230118143052023](Introduction_To_Programming_Language_part4.assets/image-20230118143052023.png)
 
   - Memory manager는 Unscanned 상태인 object를 선택하여 해당 object와 해당 object가 가지고 있는 pointer를 따라가며 scan해 나간다.
   - Pointer가 가리키고 있는 모든 Unreached 상태인 object는 Unscanned 상태로 변경된다.
   - Scan 이후에 선택된 object는 Scanned(아래 그림의 검은 box) 상태가 된다.
 
-  ![image-20230118144534520](../../../Desktop/Garbage_Collection.assets/image-20230118144534520.png)
+  ![image-20230118144534520](Introduction_To_Programming_Language_part4.assets/image-20230118144534520.png)
 
   - 위 Unscanned 상태인 object가 없을 때 까지 위 과정을 반복한다.
 
-  ![image-20230118145217035](../../../Desktop/Garbage_Collection.assets/image-20230118145217035.png)
+  ![image-20230118145217035](Introduction_To_Programming_Language_part4.assets/image-20230118145217035.png)
 
   - 만약 더 이상 Unscanned 상태인 object가 없다면, marking phase는 종료된다.
   - Sweeping phase에서는 각 object는 Scanned나 Unreached 중 하나의 상태에 놓이게된다.
@@ -640,7 +640,7 @@
   - 모든 할당은 from-case에서 발생한다.
     - 그러므로 GC가 trigger될 때,  모든 object들은 from-space에 있고, to-space는 빈 상태이다.
 
-  ![image-20230118152328326](../../../Desktop/Garbage_Collection.assets/image-20230118152328326.png)
+  ![image-20230118152328326](Introduction_To_Programming_Language_part4.assets/image-20230118152328326.png)
 
   - Copying GC의 연산은 mark-and-sweep GC의 marking 단계와 상당히 유사하다.
     - Stack에서 시작하여 pointer가 가리키는 object를 marking한다.
@@ -650,26 +650,26 @@
     - 또한 from-space에 있는 object에는 to-space에 있는 자신의 복제 object를 가리키는 forwarding pointer(아래 그림에서 점선으로 표시된 화살표)가 저장된다.
     - Forwarding pointer는 추후에 memory manager가 추후에 발견될 pointer들을 정확히 갱신하도록 정보를 제공하는 역할을 한다.
 
-  ![image-20230118152822428](../../../Desktop/Garbage_Collection.assets/image-20230118152822428.png)
+  ![image-20230118152822428](Introduction_To_Programming_Language_part4.assets/image-20230118152822428.png)
 
   - Memory manager는 to-space에서 Unscanned object 하나를 선택하고, 가리키는 pointer가 있는 Unreached object들을 to-space로 복제한 후 Unscanned 상태로 만든다.
     - 선택된 object는 Scanned 상태가 된다.
 
-  ![image-20230118153548311](../../../Desktop/Garbage_Collection.assets/image-20230118153548311.png)
+  ![image-20230118153548311](Introduction_To_Programming_Language_part4.assets/image-20230118153548311.png)
 
   - 이 과정을 Unscanned 상태인 object가 없을 때 까지 반복한다.
 
-  ![image-20230118153900268](../../../Desktop/Garbage_Collection.assets/image-20230118153900268.png)
+  ![image-20230118153900268](Introduction_To_Programming_Language_part4.assets/image-20230118153900268.png)
 
   - 만약 pointer가 가리키는 object가 이미 to-space에 복제가 되었다면, memory manager는 다시 copy하지 않고, forwarding pointer를 체크하여 pointer를 update한다.
 
-  ![image-20230118154112337](../../../Desktop/Garbage_Collection.assets/image-20230118154112337.png)
+  ![image-20230118154112337](Introduction_To_Programming_Language_part4.assets/image-20230118154112337.png)
 
   - 만일 더 이상 Unscanned 상태인 object가 없다면, GC는 종료된다.
     - From-space와 to-space가 교환된다.
     - From-space에 할당이 발생하고, to-space는 빈 것으로 간주된다.
 
-  ![image-20230118154630173](../../../Desktop/Garbage_Collection.assets/image-20230118154630173.png)
+  ![image-20230118154630173](Introduction_To_Programming_Language_part4.assets/image-20230118154630173.png)
 
 
 
@@ -688,7 +688,7 @@
   case class E(x: Int)
   ```
 
-  ![image-20230118154947465](../../../Desktop/Garbage_Collection.assets/image-20230118154947465.png)
+  ![image-20230118154947465](Introduction_To_Programming_Language_part4.assets/image-20230118154947465.png)
 
   - Memory 상의 모든 object들이 type tag를 가지고 있다고 가정해보자.
 
@@ -704,7 +704,7 @@
     - 마지막 행은 scan과 free의 위치를 보여준다.
     - 시작시에 free와 scan 모두 to-space의 시작 부분을 가리키고 있다. 
 
-  ![image-20230118155531174](../../../Desktop/Garbage_Collection.assets/image-20230118155531174.png)
+  ![image-20230118155531174](Introduction_To_Programming_Language_part4.assets/image-20230118155531174.png)
 
   - 첫 단계로, stakc에 유일하게 연결되어 있는 object가 to-space로 복제된다. 
     - `F`는 이미 복제된 object의 type tag를 의미한다.
@@ -712,7 +712,7 @@
     - To-space에 object가 생겼으므로, free pointer는 해당 object의 size에 맞춰 이동한다.
     - 반면에, to-space에 있는 object가 아직 scan은 되지 않았으므로, scan pointer는 이동하지 않는다.
 
-  ![image-20230118155835947](../../../Desktop/Garbage_Collection.assets/image-20230118155835947.png)
+  ![image-20230118155835947](Introduction_To_Programming_Language_part4.assets/image-20230118155835947.png)
 
   - 다음 단계로, scan이 가리키고 있는 object가 scan된다.
     - Scan된 object가 가리키고 있던 모든 object들은 to-space로 복제된다.
@@ -720,13 +720,13 @@
     - 또한 scan pointer도 아직 scan되지 않은 object까지 이동한다.
     - scan pointer가 이동할 때, 기존의 address인 0x05와 0x0d가 각각 0x13, 0x15로 갱신된다.
 
-  ![image-20230118160610006](../../../Desktop/Garbage_Collection.assets/image-20230118160610006.png)
+  ![image-20230118160610006](Introduction_To_Programming_Language_part4.assets/image-20230118160610006.png)
 
   - 이 과정을 scan이 free를 따라잡을 때 까지(즉, 더 이상 Unscanned 상태인 object가 없을 때 까지) 반복한다.
 
-  ![image-20230118161419548](../../../Desktop/Garbage_Collection.assets/image-20230118161419548.png)
+  ![image-20230118161419548](Introduction_To_Programming_Language_part4.assets/image-20230118161419548.png)
 
-  ![image-20230118161431678](../../../Desktop/Garbage_Collection.assets/image-20230118161431678.png)
+  ![image-20230118161431678](Introduction_To_Programming_Language_part4.assets/image-20230118161431678.png)
 
 
 
