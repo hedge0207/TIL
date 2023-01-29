@@ -1,6 +1,0 @@
-https://www.elastic.co/guide/en/elasticsearch/reference/current/runtime.html
-https://www.elastic.co/guide/en/elasticsearch/reference/current/runtime-examples.html
-https://www.elastic.co/guide/en/elasticsearch/reference/current/runtime-mapping-fields.html
-https://www.elastic.co/guide/en/elasticsearch/reference/current/runtime-search-request.html
-https://www.elastic.co/guide/en/elasticsearch/reference/current/runtime-override-values.html
-https://www.elastic.co/guide/en/elasticsearch/reference/current/runtime-retrieving-fields.html
