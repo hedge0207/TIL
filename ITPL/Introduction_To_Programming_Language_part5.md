@@ -376,3 +376,490 @@
       interp(b, fEnv + (x -> ExprV(a, env, None)))
   ```
 
+
+
+
+
+# Continuations
+
+- 많은 실제 lnaguage들은 제어 흐름(control flows)을 수정하는 control diverters를 지원한다.
+
+  - Control diverter는 복잡한 제어 흐름을 가진 program을 작성할 때 유용하다.
+  - 예시
+    - 예를들어 scala에서 return keyword를 사용 가능하다.
+    - `return x`가 평가되면, x가 가리키는 value가 즉각적으로 반환되기에, 아래 code의 결과는 6이 아닌 3이다.
+    - 아래 예시는 `return`이 다른 expression들과 어떻게 다른지 보여준다.
+    - 대부분의 expression들은 결과로 값을 생성한다.
+    - 그러나, `return`은 함수가 즉각적으로 결과를 반환하도록 함으로써, 제어 흐름을 변경시킨다.
+
+  ```scala
+  def foo(x: Int): Int = {
+      val y = return x
+      x + x
+  }
+  
+  foo(3)
+  ```
+
+  - 실제 언어에서 `return`뿐 아니라 다양한 control diverter들을 찾을 수 있다.
+
+    - `break`, `continue`, `goto`, `throw`(또는 `raise`)등이 있다.
+
+  - 다만, mutation과 마찬가지로 control diverter또한 language를 impure하게 만든다.
+
+    - Pure language에서 평가의 순서는 중요하지 않다. 각 expression은 오직 결과만 생산할 뿐이고, 다른 side effect는 없다.
+    - 반면에 impure language들에서 평가 순서는 중요하다. Expression은 값의 변경(mutation)이나 제어 흐름을 변경시키는 것 같은 side effect들을 수행할 수 있다.
+
+    - 특정 expression을 평가함으로써 다른 expression의 결과가 변경되거나, 다른 expression이 평가되지 않을 수도 있다.
+    - 그러므로, impure language로 작성된 program은 전역적인 추론(global reasoning)이 필요하다.
+    - 반면에, pure language로 작성된 program은 지역적이고 modular한 추론(local and modular reasoning)이 필요하다.
+    - Mutation과 control diverter는 그 유용성에도 불구하고 program을 추론하기 어렵게 만든다.
+    - 따라서 controld diverter를 사용할 때 programmer는 각별한 주의를 기울여야한다.
+
+
+
+- Redexes와 Continuations
+
+  > Continuation은 남은 것을 계속 처리하는 것을 의미하므로, "계속"이라고 번역하는 것이 적절할 수 있다.
+
+  - expression을 평가하는 것은 여러 단계의 연산을 필요로한다.
+    - `(1+2)+(3+4)`라는 expression의 평가는 아래 아래 7단계의 과정을 거친다.
+    - interger 값 1을 얻기 위해 `1`을 평가한다.
+    - interger 값 2을 얻기 위해 `2`을 평가한다.
+    - integer 값 3을 얻기 위해 integer 값 1을 integer 값 2에 더한다.
+    - interger 값 3을 얻기 위해 `3`을 평가한다.
+    - interger 값 4을 얻기 위해 `4`을 평가한다.
+    - interger 값 7을 얻기 위해 integer 값 3을 integer 값 4에 더한다.
+    - interger 값 10을 얻기 위해 integer 값 3을 integer 값 7에 더한다.
+  - 우리는 N개의 단계를 앞의 n개의 단계와 나머지 N-n개의 단계로, 두 분으로 나눌 수 있다.
+    - 우리는 앞의 n개의 단계로 평가되는 expression을 redex라 부르고, 나머지 N-n개의 단계로 표현되는 나머지 연산을 continuation이라 부른다.
+    - Redex는 reducible expression의 약어이다(reduction 혹은 reducible에 대한 개념 없이도 redex에 대해 이해할 수 있으므로 reduction 혹은 reducible이 무엇인지는 다루지 않는다).
+    - redex는 먼저 평가될 수 있는 expression이다.
+    - 예를 들어 위 과정은 1단계와 2~7단계로 나눌 수 있다.
+    - 이 경우 첫 단계가 redex, 2~7단계가 continuation이 된다.
+    - 중요한 점은 continuation의 평가를 완성하기 위해서는 redex의 결과가 필요하다는 점이다.
+    - 1단계의 결과인 1 없이는 continuation은 3단계부터는 진행할 수 없다.
+  - Continuation은 redex의 결과로 빈 곳을 채워야하는 구멍난 expression이라고 볼 수 있다.
+    - 직관적으로 위 식에서 1의 continuation은, □가 redex의 결과가 사용되어야 하는 공간이라고 했을 때, `(□ + 2) + (3 + 4)`라고 볼 수 있다.
+    - Continuation은 redex의 결과를 input으로 받아 남은 연산을 완성하기에, continuation은 function으로 해석될 수도 있다.
+    - 이러한 해석에 따르면, 1의 continuation은 `λ.x(x+2)+(3+4)`로 표현될 수 있다.
+  - 단계를 나누는 다양한 방식이 있다.
+    - 아래 표는 `(1+2)+(3+4)`의 평가 단계를 나누는 모든 방식을 보여준다(왼쪽에서 오른쪽으로 계산이 이루어져야한다고 가정한다).
+    - redex는 먼저 평가될 수 있는 exrpession이므로 2, 3, 4, 3+4 등은 redex가 될 수 없다.
+    - 예를 들어 2의 경우 1보다 먼저 평가될 수 없으므로 redux가 될 수 없으며, 3, 4, 3+4는 1+2가 평가되기 전에 평가될 수는 없으므로 redex가 될 수 없다.
+    - 반면에 1+2는 가장 먼저 평가될 수 있으므로 redex이다.
+
+  | redex |             | continuation |             |                       |
+  | ----- | ----------- | ------------ | ----------- | --------------------- |
+  | steps | expression  | steps        | hole        | function              |
+  | 1     | 1           | 2-7          | (□+2)+(3+4) | λ.x.(x + 2) + (3 + 4) |
+  | 1-3   | 1+2         | 4-7          | □+(3+4)     | λ.x.x + (3 + 4)       |
+  | 1-7   | (1+2)+(3+4) | .            | □           | λ.x.x                 |
+
+  - Continuation은 다시 redex와 continuation으로 분리될 수 있다.
+    - 예를 들어 1의 continuation은 2-7 단계로 구성된다.
+    - 이를 2 단계와 3-7단계로 분리하면 redex는 expression 2가 되며 continuation은 `(1 + □) + (3 + 4)`가 된다(여기서의 1은 expression이 아니라 integer 값 1을 의미하므로, 2는 redex가 될 수 있다).
+    - 따라서 expression의 평가는 redex의 평가와 continuation의 호출(application)의 반복이다.
+    - Expression이 redex와 continuation으로 분리됐을 때, redex는 값으로 평가되고, continuation은 redex가 평가된 값에 apply된다.
+    - 그 후 continuation이 다시 redex와 continuation으로 분리되고, redex가 평가된다.
+    - 더 이상 남은 continuation이 없을 때 까지 이 과정이 반복된다.
+    - 즉 continuation은 항등 함수(identity function)가 된다.
+
+
+
+- Store-passing style
+
+  - Box에 대해서 다룰 때, mutation 없이 mutation을 어떻게 구현할 수 있는지 확인하기 위하여 store를 전달받는 것(store passing)을 선택했었다.
+    - 아래 code는 BFAE의 interpreter에서 구현한 code의 일부이다.
+    - Store-passing interpreter인 아래 function은 현재의 store를 각 function call마다 넘기고, 각 function call은 처리된 store를 반환했다.
+    - 만약 mutable map을 사용했다면, BFAE와 MFAE의 interpreter를 store-passing style 없이 구현할 수 있었을 것이다.
+
+  ```scala
+  def interp(e: Expr, env: Env, sto: Sto): (Value, Sto) =
+      e match {
+          ...
+          case Add(l, r) =>
+              val (NumV(n), ls) = interp(l, env, sto)
+              val (NumV(m), rs) = interp(r, env, ls)
+              (NumV(n + m), rs)
+          case NewBox(e) =>
+              val (v, s) = interp(e, env, sto)
+              val a = s.keys.maxOption.getOrElse(0) + 1
+              (BoxV(a), s + (a -> v))
+  }
+  ```
+
+  - Mutable map을 사용한 BFAE interpreter
+    - `sto` variable은 mutable map을 나타내며, `interp` function은 store를 argument와 return value로 전달하는 대신, sto에 의존한다.
+    - `Add` case는 더 이상 store를 `l`의 평가에서 r의 평가로 넘기지 않는다.
+    - `NewBox` case는 새로운 box를 생성하기 위해 단순히 `sto`를 수정하기만 하면 된다.
+    - Global하고 수정 가능하며, 모든 수정 사항을 기록하는 map이 있다면 store passing은 불필요하다.
+
+  ```scala
+  def interp(e: Expr, env: Env): Value =
+  e match {
+      ...
+      case Add(l, r) =>
+          val NumV(n) = interp(l, env)
+          val NumV(m) = interp(r, env)
+          NumV(n + m)
+      case NewBox(e) =>
+          val v = interp(e, env)
+          val a = sto.keys.maxOption.getOrElse(0) + 1
+          sto += (a -> v)
+          BoxV(a)
+  }
+  ```
+
+  - 두 코드는 store passing을 사용하는 interpreter와 사용하지 않는 interpreter의 차이를 분명하게 보여준다.
+    - Store passing을 사용하는 경우, 각 실행 시점마다 현재 store가 명시된다.
+    - `Add` case의 경우 더욱 분명해지는데, `sto`는 store르 변경시킬 가능성이 있는 `l`의 평가에 사용되고, `l`의 결과로 나온 store는 다시 `r`의 평가에 사용된다.
+    - 반면에, store passing을 사용하지 않는 경우, 각 실행 시점의 현재 store는 명시되지 않고 암시된다.
+    - `interp(l, env)`가 store의 상태를 변경시킬 수 있다는 것을 드러내지 않은채로 `interp(r, env)`의 결과에 영향을 미친다.
+    - Store-passing style을 사용한 구현은 store를 function에서 function으로 전달함으로써 store의 흐름을 명시적으로 보여준다.
+    - 반면에, store-passing style을 사용하지 않은 구현은 store의 사용과 흐름을 숨기고, code를 더 짧게 만든다.
+
+
+
+- Continuation-Passing Style(CPS)
+  - CPS는 할 수 있는 계산이 모두 끝났으면 결과를 계속에 인자로 넘기고, 아직 할 계산이 남았으면 적절한 계속을 만들어 함수 호출시에 넘기는 programming style이다.
+    - CPS에서 program은 절대 반환된 값을 사용하지 않는다.
+    - 대신, argument로 continuation을 넘긴다.
+    - CPS로 program을 작성함으로써, continuation은 program의 source code에서 더 명확해진다.
+  - CPS는 store-passing style과 유사하다.
+    - 차이점은 CPS는 continiuation을 넘기고, store-passing style은 store를 넘긴다는 것이다.
+    - Store-passing style이 각 function application마다 store를 노출하는 것 처럼, CPS 역시 각 function application마다 continiation을 노출한다.
+
+
+
+- CPS를 어떻게 구현할 수 있는지 factorial을 계산하는 program을 통해 살펴보자
+
+  - 아래 code는 CPS를 사용하지 않은 code이다.
+    - CPS를 사용하지 않기에, CPS는 암시적이다.
+    - 예를 들어 `factorial(5)+1`에서 `factorial(5)`의 continuation은 결과에 1을 더하는 것(`factorial(5)+1`에서 `+1` 부분)이다(즉, `x => x+1`).
+    - 비록 `factorial(5)`의 continiation이 존재하고, `factorial(5)+1`의 평가 중에 작용한다 할지라도, 코드만으로는 `x => x+1`를 찾을 수 없다.
+    - `factorial`은 continuation을 사용하고 있지 않기 때문이다.
+
+  ```scala
+  def factorial(n: Int): Int = 
+  	if (n<=1)
+  		1
+  	else
+  		n*factorial(n-1)
+  ```
+
+  - CPS를 사용하는 code로 변경하기 위해 필요한 것
+    - CPS의 각 function은 argument로 continuation을 받는다.
+    - 첫 번째로 할 일은 function에 parameter를 추가하는 것이다.
+    - Function application의 continuation은 특정 계산의 반환값을 사용한다.
+    - 그러므로, continuation은 반환 값을 input으로 받는 함수로 해석할 수 있다.
+    - `factorial`의 경우 continuation은 interger를 input으로 받는다.
+    - 반면에, continuation이 무엇을 계산하는지에는 제약이 없으므로, 원하는 무엇이든 할 수 있다.
+    - `factorial(5)+1`에서 `factorial(5)`의 continuation의 결과는 integer type이며, 전체 expression인 `factorial(5)+1`의 결과 역시 interge type이다.
+    - `120==factorial(5)`에서 `factorial(5)`의 continuation인  `x => 120 == x`의 결과는 boolean 값이며, 전체 expression인 `120==factorial(5)`의 결과도 boolean 값이다.
+    - 위에서 redex는 먼저 계산될 수 있어야 한다고 했는데, `factorial(5)`가 redex가 될 수 있는 이유는, `120`이라는 expression을 계산하여 `120`의 값은 이미 얻었다고 가정한 것이다. 따라서 이 시점에서 `factorial(5)`는 redex가 되는 것이 가능하다.
+    - 그러므로, continuation의 결과값은 어떤 type이든 될 수 있다(단, 전체 expression의 type과 같아야한다).
+
+
+
+- CPS를 사용하는 code로 변경하기
+
+  - 위의 관찰에 기초해서 `factorial`의 type을, parameter로 int type을 받으며, 어떤 type이든 반환값이 될 수 있는 function type으로 정의할 수 있다.
+    - 그러나 간략화하기해서, 반환값의 type은 int로 고정할 것이다.
+
+  ```scala
+  type Cont = Int => Int
+  ```
+
+  - Continuation을 가리키는 parameter를 `factorial`에 추가한다.
+    - `k`는 function의 continuation을 의미한다.
+    - 그러므로 `factorailCps(n, k)`는 continuation이 k인 `factorial(n)`을 평가하는 것이다.
+    - Continuation의 정의에 따라, `k(factorial(n))`은 `factorialCps(n, k)`와 같아야한다.
+    - `factorialCps`의 반환 type과 `k`의 반환 type은 반드시 같아야하는데, 여기서는 `k`의 type이 int로 고정했으므로,  `factorialCps`의 반환 type도 int여야한다.
+
+  ```scala
+  def factorialCps(n:Int, k:Cont): Int = ...
+  ```
+
+  - 가장 단순한 `factorialCps`의 구현은 아래와 같다.
+    - 이는 여전히 `factorial`에 의존하기에 `factorialCps`의 정확한 구현은 아니다.
+    - 이는 구현이라기 보다 명세라고 볼 수 있다.
+
+  ```scala
+  def factorialCps(n: Int, k: Cont): Int =
+  	k(factorial(n))
+  ```
+
+  - 이제 `factorial`을 풀어서 쓰면 아래와 같다.
+
+  ```scala
+  def factorialCps(n: Int, k: Cont): Int =
+  k(
+      if (n <= 1)
+      	1
+      else
+      	n * factorial(n - 1)
+  )
+  ```
+
+  - 이 때, `f(if (e1) e2 else e3)`는 `if (e1) f(e2) else f(e3)`와 같다.
+    - 그러므로, 위 코드는 아래 코드와 같다.
+    - `k(n * factorial(n - 1))`는 `factorial(n - 1)`를 `n`에 곱하고 그 결과를 k에 인자로 넘기는 것이다.
+    - 즉, 할 수 있는 계산을 모두 끝내고 그 결과를 continuation에 결과로 넘기는 것이다.
+    - 이전보다 나아졌지만, 여전히 `factorial`에 의존하고 있다.
+
+  ```scala
+  def factorialCps(n: Int, k: Cont): Int =
+      if (n <= 1)
+      	k(1)
+      else
+      	k(n * factorial(n - 1))
+  ```
+
+  - `factorial`을 사용하지 않기 위해서는 `k(factorial(n))`이 `factorialCps(n, k)`와 같다는 사실을 이용해야한다.
+    - `k(n*factorial(n-1))` = `(x=> k(n*x))(factorial(n-1))` = `factorialCps(n-1, x=>k(n*x))`
+    - `k(n*factorial(n-1))`는 `n*factorial(n-1)`을 인자로 받는 continuation `k`를 표현한 것이다.
+    - 이를 익명 함수로 표현하면 `(x=> k(n*x))(factorial(n-1))`가 되고, 여기에  `k(factorial(n))`이 `factorialCps(n, k)`와 같다는 사실을 이용하면 `factorialCps(n-1, x=>k(n*x))`가 된다.
+    - 이를 code에 적용하면 아래와 같다.
+
+  ```scala
+  def factorialCps(n: Int, k: Cont): Int =
+      if (n <= 1)
+      	k(1)
+      else
+      	factorialCps(n - 1, x => k(n * x))
+  ```
+
+  - Python version
+
+  ```python
+  def factoria_cps(n, k):
+      if n<=1:
+          return k(1)
+      else:
+          return factoria_cps(n-1, lambda x:k(n*x))
+  
+  
+  print(factoria_cps(5, lambda x:x))
+  
+  # 사용 예시1
+  def factoria_cps(n, k):
+      if n<=1:
+          return k(1)
+      else:
+          return factoria_cps(n-1, lambda x:k(n*x))
+  
+  
+  print(factoria_cps(5, lambda x:x+1))
+  
+  # 사용 예시2
+  def factoria_cps(n, k):
+      if n<=1:
+          return k(1)
+      else:
+          return factoria_cps(n-1, lambda x:k(n*x))
+  
+  
+  factoria_cps(5, print)
+  ```
+
+  - `factorialCps`의 동작 과정
+    - `n`이 1보다 클 경우 `factorialCps(n, k)`는 `(n-1)!`를 계산한다.
+    - `(n-1)!`을 계산하는 첫 단계는 `factorialCps` 스스로를 호출함으로써 수행된다.
+    - 이어지는 두 개의 단계는 재귀 호출의 연속이다.
+    - 위 code에서 continuation은 `x=>k(n*x)`인데, 이는 앞에서 언급한 단계(result에 n을 곱하고, 이 값을 인자로하여 k를 호출한다)와 정확히 동시에 일어난다.
+  - 예시
+    - `factorialCps`로 5!를 계산한다고 할때 `factorialCps(5, x=>x)`라고 쓰면 된다.
+    - 5! 이외에 더 계산할 것이 없기에 continuation은 `x=>x`가 된다.
+    - 만약 `5!+1`을 계산하려고 한다면, continuation은 `x=>x+1`이 될 것이다.
+
+
+
+- CPS로 작성된 code의 특징
+  -  아래와 같은 특징을 지닌다.
+     - 각 function은 arugment로 continuation을 받며, 각 function application은 argument로 continuation을 넘긴다.
+     - 호출되거나 다른 function에 넘겨진 continuation은 function body에서 단 한 번만 사용된다.
+     - 모든 function application의 반환 값은 절대 사용되지 않는다.
+     - 모든 function call은 tail call이다.
+     - 모든 function은 항상 마지막에 function call이 발생한다.
+  -  위 특징들은 모두 "함수에서 함수로 계속이 전달된다"는 동일한 idea를 표현한다.
+     - Continuation은 남은 계산 전부를 의미한다.
+     - Continuation이 argument로 주어지기에, 연산을 완료하기 위한 유일한 방법은 continuation(남은 계산 전부)을 호출하는 것이다.
+     - 그러므로, continuation은 function body에서 단 한번만 사용되게 된다(남은 계산을 여러 번 계산하면 결과가 이상해진다).
+     - 또한, 반환 값으로 추가적인 연산을 수행하지 않는데, 반환 값으로 추가적인 연산을 해야 한다면 그 추가적인 연산을 continuation으로 전달할 뿐이다.
+     - 또한, 반환 값을 사용하지 않기에, 모든 function call은 tail call이다.
+     - Function이 다른 function을 호출하면, 호출된 function의 반환 값은 호출 한 function의 반환값이 된다.
+     - 만약 function이 computation의 마지막 단계라면, 반드시 자신의 continuation을 호출해야한며, 그렇지 않다면, 연산을 계속 진행하기 위해 다른 function을 호출해야한다.
+     - 그러므로, 모든 function은 function call과 함께 끝난다.
+
+
+
+- CPS가 불필요하게 복잡해보일지라도, 여러 경우에 유용하게 사용된다.
+  - CPS를 사용하여 정확하게 program을 구현하는 것은 어려운 일이다.
+    -  `factorial`과 `factorialCps`를 비교해보면, `factorial`이 보다 간결해보인다.
+  - CPS의 장점 중 하나는 모든 function call이 tail call이 되게 한다는 점이다.
+    - 만약 language가 tail-call optimization을 지원한다면 CPS는 stack overflow가 발생하는 것을 피하는데 사용될 수 있다.
+
+
+
+- Interpreter에 CPS 추가하기
+
+  - FAE의 `interp` function에 CPS를 추가할 것이다.
+    - FAE의 interpreter에 굳이 CPS를 구현할 필요는 없다.
+    - 그러나, CPS는 다음 장의 interpreter에 대한 적절한 구현 전략이므로, 다음 장을 위한 준비로 생각하면 된다.
+
+  - CPS 추가를 위한 type 추가하기
+    - Continuation은 `Value`의 값을 input으로 받는데, 이는 `interp`의 반환 값이 `Value` type이기 때문이다.
+    - Continuation의 반환 type은 무엇이든 될 수 있지만, 여기서는 편의를 위해 `Value` type으로 정의한다.
+
+  ```scala
+  type Cont = Value => Value
+  ```
+
+  - CPS를 추가하기 전의 `interp` function은 다음과 같다.
+
+  ```scala
+  def interp(e: Expr, env: Env): Value = e match {
+      case Num(n) => NumV(n)
+      case Add(l, r) =>
+          val v1 = interp(l, env)
+          val v2 = interp(r, env)
+          val NumV(n) = v1
+          val NumV(m) = v2
+          NumV(n + m)
+      case Sub(l, r) =>
+          val v1 = interp(l, env)
+          val v2 = interp(r, env)
+          val NumV(n) = v1
+          val NumV(m) = v2
+          NumV(n - m)
+      case Id(x) => env(x)
+      case Fun(x, b) => CloV(x, b, env)
+      case App(f, a) =>
+          val fv = interp(f, env)
+          val av = interp(a, env)
+          val CloV(x, b, fEnv) = fv
+          interp(b, fEnv + (x -> av))
+  }
+  ```
+
+  - `interCps`는 `interp` function의 CPS version이다.
+    - 어떤 `e`, `env`, `k`에 대하여 `interpCps(e, env, k)`는 `k(interp(e,env))`와 같아야한다.
+
+  ```scala
+  def interpCps(e: Expr, env: Env, k: Cont): Value = e match {
+  	...
+  }
+  ```
+
+  - `Num` case 구현하기
+    - `interp(Num(n), env)`는 `NumV(n)`과 같다.
+    - 따라서, `k(interp(Num(n), env))`는 `k(NumV(n))`과 같다.
+    - 이는 `factorialCps`의 `k(1)`과 유사하다.
+    - 재귀 호출이 필요하지는 않기에, 단순히 `NumV(n)`을 continuation에 넘기면 된다.
+
+  ```scala
+  case Num(n) => k(NumV(n))
+  ```
+
+  - `Id`, `Fun` case 구현하기
+    - `Num` case와 유사하다.
+
+  ```scala
+  case Id(x) => k(env(x))
+  case Fun(x, b) => k(Clov(x, b, env))
+  ```
+
+  - 이제 남은 case는 `Add`, `Sub`, `App`이다.
+    - 세 case는 모두 두 개의 subexpression으로 구성된 expression이라는 점에서 유사하다.
+    - 따라서 셋 중 하나만 이해한다면, 나머지는 자연스럽게 이해될 것이다.
+
+
+
+- `Add` case 구현하기(내용이 길어져 따로 분리)
+
+  - 기존 구현은 아래와 같다.
+    - `add(v1, v2)`는 `val NumV(n) = v1; val NumV(m) = v2; NumV(n+m)`를 가리킨다.
+
+  ```scala
+  val v1 = interp(l, env)
+  val v2 = interp(r, env)
+  add(v1, v2)
+  ```
+
+  - `interpCps(e, env, k)`는 `k(interp(e, env))`와 같아야하므로, `add`는 아래와 같이 작성할 수 있다.
+
+  ```scala
+  val v1 = interp(l, env)
+  val v2 = interp(r, env)
+  k(add(v1, v2))
+  ```
+
+  - 변수 선언을 anonymous function과 function application으로 desugaring함으로써, `interp(l, env)`의 continuation을 찾을 수 있다.
+    - `val x = e1; e2`는 `(x => e2)(e1)`과 같다는 것을 떠올려보라(First-Class Function 부분).
+    - Desugaring하면 아래와 같은 code가 된다.
+    - `interp(l, env)`에 apply되는 function(`(v1 => {val v2 = interp(r, env) k(add(v1, v2))})`)은 `interp(l, env)`의 continuation이다.
+    - `k(interp(e,env))`는 `interpCPS(e, env, k)`와 같기에, `interp`는 `interpCps`로 대체될 수 있다.
+
+  ```scala
+  (v1 => {
+      val v2 = interp(r, env) 
+      k(add(v1, v2))
+  })(interp(l, env))
+  
+  
+  // interp를 interCps로 대체
+  interpCps(l, env, v1 => {
+      val v2 = interp(r, env)
+      k(add(v1, v2))
+  })
+  ```
+
+  - 위에서 continuation은 `{val v2 = interp(r, env)k(add(v1, v2))}`이다.
+    - Continuation의 body를 위와 유사한 방법으로 desugaring하면 `interp(r, env)`의 continuation을 찾을 수 있다.
+    - 또한 위와 마찬가지로, `interp`를 `interpCps`로 대체 할 수 있다.
+
+  ```scala
+  // 아래와 같은 continuation의 body를 desugaring하면
+  val v2 = interp(r, env)
+  k(add(v1, v2))
+  
+  // 아래와 같이 된다.
+  (v2 =>
+  	k(add(v1, v2))
+  )(interp(r, env))
+  
+  // interp를 interCps로 대체
+  interCps(r, env, v2 =>
+       k(add(v1, v2))
+  )
+  ```
+
+  - 마지막으로 `add`를 위에서 정의한 `add`로 변경하면, `Add` Case의 구현이 끝나게 된다.
+
+  ```scala
+  case Add(l, r) =>
+      interpCps(l, env, v1 =>
+          interpCps(r, env, v2 => {
+              val NumV(n) = v1
+              val NumV(m) = v2
+              k(NumV(n + m))
+      })
+  )
+  ```
+
+  - 설명
+    - 위 code는 각 function application의 continuation을 명확하게 보여준다.
+    - 첫 function application(`interpCps(l,env,v1=>...)`)은 `l`을 `env`하에서 평가한다. 
+    - 첫 function application의 continuation은 `v1=>interpCps(r,env,v2 => k(add(v1, v2)))`이다.
+    - 그러므로, 우리는 `r`은 `l`의 평가 후에 평가된다고 말 할 수 있다.
+    - 두 번째 function application(`interpCps(r, env, v2 =>...)`)은 `r`을 `env`하에서 평가한다.
+    - 두 번째 function application의 continuation은 `v2=>k(add(v1, v2))`이며, `k(add(v1, v2))`에서 `v2`는 `r`의 결과를 가리킨다.
+    - `k(add(v1,v2))`는 v1과 v2로부터 `NumV(n+m)`를 만들고, `NumV(n+m)`을 `Add(l,r)`을 평가하는 continuation인 k에게 넘긴다. 
+
+
+
+
+
+
+

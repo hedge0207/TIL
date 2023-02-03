@@ -612,7 +612,7 @@
     - 여러 type 중 하나의 type만을 가진다.
     - 예를 들어 아래 예시에서 foo 변수는 `Union[RGB, bool]` type이다.
     - `Union[RGB, bool]` type이 가질 수 있는 값은 `RGB의 3개의 값 + boolean의 2개의 값`으로 총 5개이다(물론 python의 경우 다른 type의 값을 넣는다고 해도 error가 발생하지는 않는다).
-    - 이름이 있는 합집합 타입(tagged union type)이라고도 불리는데, 그 이유는 일반적인 합집합 타입과 같이 여러 타입의 값 중 하나를 가지지만, 단순한 합집합 타입과 달리 어떤 종류인지 표시하기 위해 이름을 붙이기 때문이다.
+    - 이름이 있는 합집합 타입(tagged union type)이라고도 불린다.
 
   ```python
   from enum import Enum
