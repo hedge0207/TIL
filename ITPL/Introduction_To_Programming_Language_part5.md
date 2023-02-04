@@ -859,6 +859,113 @@
 
 
 
+- 다른 case들
+
+  - Sub case도 Add case와 유사하다.
+
+  ```scala
+  case Sub(l, r) =>
+      interpCps(l, env, v1 =>
+          interpCps(r, env, v2 => {
+              val NumV(n) = v1
+              val NumV(m) = v2
+              k(NumV(n - m))
+      })
+  )
+  ```
+
+  - App case도 유사하지만 차이가 존재하는데, 기존의 code는 아래와 같았다.
+
+  ```scala
+  val fv = interp(f, env)
+  val av = interp(a, env)
+  val CloV(x, b, fEnv) = fv
+  k(interp(b, fEnv + (x -> av)))
+  ```
+
+  - 위 코드에 Add에 적용한 것과 같은 전략을 적용하면 아래와 같은 code가 된다.
+    - Add case와 달리 `interp` 함수가 여전히 존재한다.
+    - `interp`의 function call의 결과가 `k`의 argument로 넘겨져서 사용되므로, CPS가 아니다.
+
+  ```scala
+  interpCps(f, env, fv =>
+      interpCps(a, env, av => {
+          val CloV(x, b, fEnv) = fv
+          k(interp(b, fEnv + (x -> av)))
+      })
+  )
+  ```
+
+  - `interp`를 `interpCps`로 대체해야한다.
+    - 아래 code는 `k`를 직접적으로 호출하지 않고, `k`를 argument로 넘긴다.
+
+  ```scala
+  case App(f, a) =>
+      interpCps(f, env, fv =>
+          interpCps(a, env, av => {
+              val CloV(x, b, fEnv) = fv
+              interpCps(b, fEnv + (x -> av), k)
+      })
+  )
+  ```
+
+
+
+## Small-Step Operational Semantics
+
+- Big-step style
+
+  - 이전까지는 big-step style로 semantic을 정의했다.
+
+    - Big-step semantic은 직관적이며, big-step semantic의 inference rule은 interpreter를 구현하는데 훌륭한 실마리를 제공한다.
+    - 하나의 semantic rule은 일반적으로 interpreter에서 pattern matching의 하나의 case에 부합하므로, big-step semantic을 기반으로 interpreter를 구현하는 것은 간단하며, 역으로 interpreter의 구현을 기반으로 semantic rule을 작성하는 것도 간단하다.
+
+  - 그러나 big-step semantic으로 continuation을 정의하는 것은 까다롭다.
+
+    - Big-step semantic의 inference rule은 computation의 한 단계를 설명하는 대신 expression의 결과를 설명하기 때문이다.
+    - 예를들어, 아래와 같은 rule이 있다고 가정해보자.
+
+    $$
+    σ├e_1⇒n_1\ \ \ \ \ \ σ├e_2⇒n_2\over σ├e_1+e_2⇒n_1+n_2
+    $$
+
+    - 위 rule은 `e_1+e_2`가 `n_1+n_2`라는 것을 의미한다.
+    - 이는 어떻게 `e_1`이 `n_1`으로 평가되고, `e_2`가 `n_2`로 평가되는지 설명하지 않는다.
+    - 즉 `e_1`이 `n_1`으로 평가되고, `e_2`가 `n_2`로 평가되는 단계들을 설명하지 않는다.
+    - 위 rule이 설명하는 유일한 단계는 마지막 단계인 `n_1+n_2`이다.
+    - 또 다른 문제는 computation의 순서를 특정하지 않는다는 것이다.
+    - 예를 들어 위 rule에서 `e_1`과 `e_2`의 평가 순서를 결정하지 않는다.
+    - Rule이 필요로하는 유이한 것은 `e_1`이 `n_1`으로 평가되고, `e_2`가 `n_2`로 평가된다는 것 뿐이며, `e_1`, `e_2` 중 무엇이 먼저 평가되어야 하는지에 대한 순서는 존재하지 않는다.
+
+  - Continuation은 고정된 순서를 가진 compuation들의 정확한 단계에 깊게 의존한다.
+
+    - 그러나, 위에서 살펴본대로, big-step semantic은 고정된 순서를 가지고 있지도 않고, 모든 단계를 보여주지도 않는다.
+    - 따라서, continuation을 설명할 때, big-step semantic은 적절치 않다.
+
+
+
+- Small-step operational semantic은 language의 semantic을 정의하는 또 다른 방식이다.
+  - Big-step semantic이 expression들과 value들 사이의 관계를 정의한다면, small-step semantic은 state들 사이의 관계를 정의한다.
+    - 만약 computation의 한 단계가 program의 state를 A에서 B로 변경시킨다면, A와 B는 관계가 있는 것이다.
+    - 이러한 computation의 한 단계를 reduction(환원)이라 부른다.
+    - 만약 A에서 B로의 reduction이 가능하다면, A는 reducible하고, B로 환원된다고 말할 수 있다.
+    - 반면에, state가 다른 어떤 state로도 환원될 수 없다면, 해당 state는 irreducible하다고 할 수 있다.
+  - Small-step semantic에서 state의 정의는 다양하다.
+    - State의 가능한 정의 중 하나는 expression이다.
+    - 예를 들어 `1+2`, `3` 등은 state이며, `1+2`는 computation의 한 단계를 거쳐 `3`으로 환원된다.
+    - 그러나, 이 장에서 small-step semantic은 state로써 expression을 사용하지는 않을 것이다.
+  - Program의 실행은 반복적인 환원으로 정의된다.
+    - 실행은 초기 state에서 시작해서 환원 가능한 다른 state로 환원된다.
+    - 더 이상 환원이 불가능해지면, 실행은 멈추게되고, 최종 state가 결과가 된다.
+  - Small-step semantic은 continuation을 정의하는 데 적절하다.
+    - 실행은 일련의 환원 단계들로 이루어지며, compuation의 모든 단계는 규정될 수 있다.
+    - 또한 단계들 사이의 순서도 자연스럽게 형성된다.
+    - 단계들을 두 부분으로 분리함으로서, redex와 continuation을 보다 잘 설명할 수 있다.
+
+
+
+- Now, let us define states of FAE. A state of FAE is a pair of a computation stack and a value stack.
+
 
 
 
