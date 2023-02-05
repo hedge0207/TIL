@@ -889,3 +889,45 @@
         - "5602:5601"
   ```
 
+
+
+
+
+# Error
+
+- `vm.max_map_count is too low` error
+
+  - elasticsearch 실행 시 아래와 같은 error가 발생할 때가 있다.
+
+  ```
+  ERROR: [1] bootstrap checks failed 
+  [1]: max virtual memory areas vm.max_map_count [65530] is too low, increase to at least [262144]
+  ```
+
+  - 원인
+
+    - elasticsearch는 index들을 저장하기 위해 mmapfs 디렉터리를 사용한다.
+    - mmapfs을 사용하여 index를 저장할 때, mmap을 이용한 많은 수의 메모리 매핑이 발생한다.
+    - 운영체제에서 mmap 값은 65530으로 제한되어 있다.
+
+    - elasticsearch는 bootstrap 과정에서 mmap 수가 262,144 이하면 실행되지 않도록 설정 되어 있다.
+
+  - `vm.max_map_count` 값을 수정하는 방법
+    - 영구적으로 수정하는 방법이 있고, 일시적으로 수정하는 방법이 있다.
+
+  ```bash
+  # 일시적 변경(재부팅시 초기화)
+  $ sysctl -w vm.max_map_count=262144
+  
+  # 영구적 수정
+  $ vi /etc/sysctl.conf
+  # 아래 내용을 추가 혹은 수정한다.
+  vm.max_map_count=262144
+  ```
+
+  - 변경 확인
+
+  ```bash
+  $ sysctl vm.max_map_count
+  ```
+
