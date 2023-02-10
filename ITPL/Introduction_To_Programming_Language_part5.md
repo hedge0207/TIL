@@ -964,7 +964,112 @@
 
 
 
-- Now, let us define states of FAE. A state of FAE is a pair of a computation stack and a value stack.
+- FAE의 state를 정의하기
+
+  - FAE의 state는 computation stack과 value stack의 쌍이다.
+
+    - 아래는 computation stack과 value stack을 정의한 것이다.
+    - Computation stack은 computation의 남은 단계들을 포함하고 있는 stack이다.
+    - Value stack은 value들을 포함하고 있는 stack이다.
+    - Metabarivable `k`는 computation stack을 의미하며, metavariable `s`는 value stack을 의미한다.
+    - 즉, `k`는 computation의 남은 단계들을 포함하고, `s`는 남은 단계들에서 사용될 value들을 포함한다.
+    - `(@)`는 function application을 의미한다.
+
+    $$
+    k ::= □\ |\ σ├e::k\ |\ (+)\ ::k\ |\ (-)::k\ |\ (@)::k \\
+    s ::= ■\ |\ v::s
+    $$
+
+    - S<sub>Comp</sub>가 모든 computation stack이라고 하고, S<sub>Val</sub>가 모든 value stack이라고 해보자.
+    - `k||s`는 computation stack `k`와 value stack `s`로 구성된 state를 가리킨다.
+
+  - 하얀 사각형(`□`)은 빈 computation stack을 나타낸다. 즉, 더 이상 할 것이 없는 상태를 나타낸다.
+
+    - 주의할 점은 우리가 이전에 사용했던 `□`와는 다른 의미로 사용된다는 점이다.
+    - 이전에 사용했던 `□`는 redex의 결과로 채워져야 할 구멍을 의미했지만, 여기서는 아니다.
+    - 만약 state의 computation stack이 `□`라면, 더 이상의 환원은 불가능하며, 평가는 종료된다.
+
+  -  하얀 사각형 이외에 네 종류의 computation(`σ├e`, `(+)`, `(-)`, `(@)`이 있다.
+
+    - Stack의 top에 있는 computation이 가장 첫 단계이며, 한 단계가 종료되면, 종료 된 단계는 stack에서 pop 된다.
+    - 예를 들어 `∅├1::□`는 `∅├1`라는 한 단계의 computation으로 이루어지며, 이 단계가 종료된 후에는 stack이 `□`가 되고, 평가가 종료된다.
+
+  - 검은 사각형(`■`)은 빈 value stack을 의미한다.
+
+    - 예를 들어 `1 :: 2 :: ■`은 `1`과 `2`를 포함하고 있는 stack이다.
+    - Stack이기 때문에, 가능으한 유이한 연산은 push와 pop뿐이다.
+    - `1 :: 2 :: ■`에 0을 push하면 `0 :: 1 :: 2 :: ■`이 되고, `1 :: 2 :: ■`에서 pop하면 `2 :: ■`이 된다.
+
+
+
+- Reduction의 high-level idea
+  - 환원의 각 단계는 computation stack의 top을 pop하고, pop된 computation과, 그와 관련된 value stack을 조작한다.
+  - `σ├e`는 value stack에 value를 push하는 유일한 computation이다.
+    - `σ├e`는 `σ` 하에서 `e`를 평가하며, 그 결과를 value stack에 push한다.
+    - 그러므로, 만약 현재 상태가 `σ├e :: k || s`라면, redex는 `e`이고, continuation은 `k || s`이다.
+    - Continuation을 value에 apply하는 것은 value stack에 value를 push함으로써 이루어진다.
+    - 그러므로, `e`가 `v`로 평가되면, continuation은 continuation은 v에 apply된다.
+    - 따라서, state는 `k || v :: s`가 된다.
+    - 예를 들어 `∅├1 :: k || s`는 `k || 1 :: s`로 환원된다.
+  - 반면에, 다른 종류의 computation들은 value stack에 있는 value들을 소비한다.
+    - `(+)`는 value stack에서 두 개의 value를 pop한 후, 두 value의 합을 value stack에 push한다.
+    - 예를 들어 `(+) :: k || 2 :: 1 :: s`는 `k || 3 :: s`로 환원된다.
+    - `(-)`와 `(@)`역시 `(+)`와 유사하게 동작한다.
+  - 아래 예시를 통해 computation의 각 단계가 computation에 대한 우리의 직관적인 개념과 일치한다는 것을 보다 분명하게 확인할 수 있다.
+    - 빈 environment하에서 `1+2`를 평가할 때 아래 세 단계를 거친다.
+    - Interger value 1을 얻기 위해서 표현식 `1`을 평가한다.
+    - Interger value 2를 얻기 위해서 표현식 `2`를 평가한다.
+    - Interger value 3을 얻기 위해서 interger value 1을 interger value 2에 더한다.
+    - 첫 번째 단계와 두 번 째 단계는 각기 `∅├1`과 `∅├2`로 표현되며, `∅├1`은 1로 평가되고, 1을 continuation의 stack value에 push하고, `∅├2`도 같은 과정을 거친다.
+    - 마지막으로, 세 번째 단계는 `(+)`로 표현되며, stack value에서 두 개의 value를 pop한 후, 그 합인 3을 stack value에 push한하며, 이 값이 전체 실행의 결과값이 된다.
+    - 그러므로 `1+2`의 평가는 computation stack으로 `∅├1 :: ∅├2 :: (+) :: □`와 같이 표현할 수 있다.
+
+
+
+- Reflexive, transitive closure
+  - 이미 언급한대로, program의 실행은 더 이상 가능한 환원이 없을 때 까지 환원을 반복하는 것이다.
+    - 만약 state가 더 이상 환원이 불가능하다면, 실행은 종료되며, state가 result가 된다.
+    - 실행의 개념을 형식화하여 표현하기 위해서 반복적인 환원을 reduction relation의 reflexive, transivive closure로 정의할 것이다.
+  - Reflexive relations(반사 관계)
+    - `A`가 하나의 집합이고, `R`이 `A`와 `A` 사이의 이항 관계일 때, 모든 `a`에 대해 `(a, a) ∈ R`이면, R은 reflexive하다고 할 수 있다.
+  - Transitive relations(추이적 관계)
+    - `A`가 하나의 집합이고, R이 `A`와 `A` 사이의 이항 관계일 때, 모든 `a, b, c ∈ A`에 대해 `(a, b), (b,c) ∈ R`이 `(a,c) ∈ R`을 의미하면, R은 transitive하다고 할 수 있다.
+  - Reflexive, transitive closure
+    - `A`가 하나의 집합이고, R이 `A`와 `A` 사이의 이항 관계일 때, `R`의 reflexive, transitive closure는 `R ⊆ S ⊆ A × A `이고, reflexive하고 transitive한 S의 가장 작은 집합이다. 
+
+
+
+- Reduction 정의하기
+
+  - Reduction은 S<sub>Comp</sub>, S<sub>Val</sub>, S<sub>Comp</sub>, S<sub>Val</sub>의 관계로 정의할 수 있다.
+
+  $$
+  →\subseteq S_{Comp} × S_{Val} × S_{Comp} × S_{Val}
+  $$
+
+  - `→`는 환원을 의미한다.
+
+    - `k_1 || s_1 → k_2 || s_2`는 `k_1 || s_1`이 `k_2 || s_2`로 환원된다는 의미이다.
+    - 예를 들어 `∅├1 :: □ || ■ → □ || 1 :: ■`와 같이 쓸 수 있다.
+
+  - →<sup>∗</sup>는 반복적인 환원을 의미한다.
+
+    - `k_1 || s_1 →^* k_n || s_n`은 `k_1 || s_1 → k_2 || s_2`, `k_2 || s_2 → k_3 || s_3`, ... , `k_{n-1} || s_{n-1} → k_n || s_n`을 의미한다.
+    - 아래 수식은 위와 같은 관계를 표현한다.
+
+    $$
+    k\ ||\ s\ →^*\ k\ ||\ s
+    \\
+    \\
+    k_1\ ||\ s_1→^*k_2\ ||\ s_2\ \ \ \ \ \ k_2\ ||\ s_2→^*k_3\ ||\ s_3\over k_1\ ||\ s_1 →^*k_3\ ||\ s_3
+    $$
+
+    - →<sup>∗</sup>는 →의 reflexive, transitive closure를 가리킨다.
+    - 직관적으로, `k_1 || s_1 →^* k_2 || s_2`는  `k_1 || s_1`가 0개 이상의 단계의 환원을 거쳐 `k_2 || s_2`에 도달할 수 있다는 것을 의미한다.
+
+
+
+
 
 
 
