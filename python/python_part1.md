@@ -874,6 +874,65 @@
 
 
 
+
+
+# Python의 동작 방식
+
+> https://cjh5414.github.io/about-python-and-how-python-works/  참고
+
+- Python에는 두 가지 의미가 있다.
+  - 프로그래밍 언어로서의 Python 그 자체
+  - Python 구현체(implementation)
+    - 구현체란 Python이라는 언어를 이해하고 실행하는 기계를 말한다.
+    - C로 Python을 구현한 CPython, Java로 구현한 Jython, Python으로 구현한 PyPy 등이 있다.
+    - CPython이 Python 표준 구현체다.
+
+
+
+- 어떤 언어를 인터프리터 언어 혹은 컴파일 언어로 구분할 수는 없다.
+  - 이는 언어의 속성이 아니라 구현체의 디자인과 관련된 것이기 때문이다.
+  - 예를 들어 Python(CPython)의 경우 아래 과정을 거쳐 실행된다.
+    - Python 코드를 bytecode로 컴파일한다.
+    - 컴파일된 파일을 인터프리터가 해석하고 실행한다.
+  - 위 예에서 알 수 있듯이 컴파일과 인터프리터는 Python이라는 언어의 특성이 아니라 CPython이라는 구현체의 디자인일 뿐이다.
+
+
+
+- Python의 동작 방식
+
+  > 아래는 CPython 기준이다.
+
+  - Python 코드를 bytecode로 컴파일한다.
+    - 인터프리터 언어인 Python이 다른 인터프리터 언어와 다른 점은 bytecode로 컴파일 한다는 점이다.
+    - `__pycache__` 폴더 내부의 `.pyc` 파일이 바로 컴파일된 바이트코드 파일이다.
+    - 오직 Python 코드에 변경사항이 있을 경우에만 다시 컴파일한다.
+    - 매번 인터프리터를 통해 한 라인씩 해석해서 실행해야 한다면 성능이 매우 떨어질 수 밖에 없어 택한 방식이다.
+    - `ids` 라이브러리를 사용하면 python 코드가 bytecode로 변환되는 과정을 볼 수 있다.
+
+  ```python
+  import dis
+  
+  
+  def foo():
+      print("bar")
+  
+  dis.dis(foo)
+  """
+    5           0 LOAD_GLOBAL              0 (print)
+                2 LOAD_CONST               1 ('bar')
+                4 CALL_FUNCTION            1
+                6 POP_TOP
+                8 LOAD_CONST               0 (None)
+               10 RETURN_VALUE
+  """
+  ```
+
+  - 컴파일 된 파일을 인터프리터(virtual machine)가 기계어로 번역한 후 실행한다.
+
+
+
+
+
 # Easter Egg
 
 - `import this`를 실행하면 The Zen of Python이라는 19가지 규칙이 나온다.

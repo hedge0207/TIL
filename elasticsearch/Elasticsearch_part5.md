@@ -1841,6 +1841,29 @@
 
 
 
+# Exist query
+
+- exist query
+
+  - 특정 field에 색인 된 값이 존재하는 document들을 검색하는 query
+    - 값이 null이거나 빈 배열(`[]`)이면 값이 없는 것으로 판단한다.
+    - 그러나 빈 문자열, `"-"`, null과 다른 값을 함께 가진 배열(e.g. `[null, "foo"]`), custom_null value 등은 값이 있는 것으로 판단한다.
+
+  ```json
+  // GET /_search
+  {
+    "query": {
+      "bool": {
+        "must_not": {
+          "exists": {
+            "field": "user.id"
+          }
+        }
+      }
+    }
+  }
+  ```
+
 
 
 

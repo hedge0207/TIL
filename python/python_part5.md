@@ -1381,7 +1381,6 @@
 
   ```python
   import csv
-  from os import write
   
   
   fields = ['name','age','gender']
@@ -1395,14 +1394,13 @@
       writer.writerow(fields)
       writer.writerows(people_list)
   ```
-
+  
   - dict를 CSV로 저장
     - `DictWriter`를 사용한다.
     - `fieldnames` 파라미터에 필드 정보를 넘겨줘야 한다.
-
+  
   ```python
   import csv
-  from os import write
   
   
   fields = ['name','age','gender']
