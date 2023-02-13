@@ -1065,7 +1065,188 @@
     $$
 
     - →<sup>∗</sup>는 →의 reflexive, transitive closure를 가리킨다.
-    - 직관적으로, `k_1 || s_1 →^* k_2 || s_2`는  `k_1 || s_1`가 0개 이상의 단계의 환원을 거쳐 `k_2 || s_2`에 도달할 수 있다는 것을 의미한다.
+    - 직관적으로, `k_1 || s_1 →* k_2 || s_2`는  `k_1 || s_1`가 0개 이상의 단계의 환원을 거쳐 `k_2 || s_2`에 도달할 수 있다는 것을 의미한다.
+  
+  - →<sup>∗</sup>는 결과 state가 환원 불가능한 state일 필요는 없다.
+  
+    - 이는 단순히 0개 이상의 환원 단계를 가리킬뿐이다.
+    - `k_1 || s_1 → k_2 || s_2`와 `k_2 || s_2 → k_3 || s_3`이 있을 때, `k_1 || s_1 →* k_1 || s_1`, `k_1 || s_1 →* k_2 || s_2`와 `k_1 || s_1 →* k_3 || s_3`는 참이다.
+    - 그러므로, 우리는 `k_1 || s_1 →* k_2 || s_2`가 `k_1 || s_1`로 시작하여 `k_2||s_2`로 끝나는  program이라고 말할 수 없다.
+    - `k_2||s_2`가 최종 상태가 아닐 수 있기 때문이다.
+    - 위 program이 `k_2||s_2`로 종료된다고 말하기 위해서는 `k_2||s_2`가 환원불가능하다는 추가적인 조건이 필요하다.
+
+
+
+- Small-step semantic에는 두 종료의 종료가 존재한다.
+  - 한 종류는 결과로 값을 생산하는 정상적인 종료이다.
+    - Computation stack이 비게 되면 실행이 정상적으로 종료된다.
+    - 각 환원 단계가 computation 단계를 pop하기 때문에, stack이 빌 경우 환원은 불가능해진다.
+    - 빈 stack은 더 이상 남은 computation이 없다는 것을 의미하며, 따라서 이로인한 종료는 의도된 것이다.
+  - 다른 종료의 종료는 run-time error로 인한 비정상적인 종료이다.
+    - 이는 value stack에 현재 computation step에서 사용될 수 없는 value가 포함되어 있을 때 발생한다.
+    - 예를 들어 pop된 value가 integer가 아니라면, 덧셈과 뺄셈은 불가능하고, 따라서 pop된 computation이 `(+)`나 `(-)`일 경우 환원이 발생할 수 없다.
+    - 이는 남아 있는 computation이 있는 경우에도 더 이상의 환원을 불가능하게 만든다.
+    - 따라서 이러한 종료는 해로운 것이다.
+
+
+
+- Reduction의 rule 정의하기
+
+  - Small-step semantic을 따르는 평가가 성공적으로 값을 생성하면, big-step semantic을 통해서도 같은 결론에 도달할 수 있다.
+    - `σ├e⇒v`가 `e`가 `σ`하에서 `v`로 평가된다는 것을 의미한다는 것을 떠올려보라.
+    - Small-step semantic에서, `σ`의 하에서 `e`의 평가는 `σ├e::□||■`로 시작한다.
+    - State의 redex는 e이고, continuation은 identity function이다.
+    - 따라서 state는 e를 평가한다.
+    - 만약 평가 결과 v가 나왔다면, 최종 상태는 `□||v::■`가 된다.
+    - Computation stack이 비어 있고, value stack이 오직 v만 담고 있다면, v가 result가 된다.
+    - 그러므로 아래의 명제는 참이다.
+    - $∀σ.∀e.∀v(σ├e⇒v)↔(σ├e::□||■→^*□||v::■)$
+    - 보다 일반적으로, 아래의 문장은 참이다.
+    - $∀σ.∀e.∀v.∀k.∀s(σ├e⇒v)↔(σ├e::k||s→^*k||v::s)$
+  
+  - Num case의 interpreter 살펴보기
+    - `n`이 redex이고, k가 continuation 이라면, evaluation은 n에 k를 apply함으로써 진행된다.
+    - 이러한 상태는 `σ├n::k||s`로 표현되며, 여기서 continuation k는 `k||s`이다.
+    - `k||s`를 n에 apply하는 것은 `k||n::s`를 평가하기 위함이다.
+  
+  
+  ```scala
+  case Num(n) => k(NumV(n))
+  ```
+  
+  - Num case의 rule 정의하기
+  
+    - 위에서 살표본바에 따라 아래와 같은 환원 rule을 정의할 수 있다.
+  
+    $$
+    σ├n::k||s → k||n::s
+    $$
+  
+    - 이 rule은 환원에 관한 high-level idea와 부합한다.
+    - `σ├n`은 n을 평가하여 n을 얻는다.
+    - 환원 이후에, computation 단계는 computation stack에서 삭제되고, 결과 값은 value stack에 push 된다.
+  
+  - Id, Fun case의 intepreter 살펴보기
+    - Num case와 유사하다.
+  
+  ```scala
+  case Id(x) => k(env(x))
+  case Fun(x, b) => k(CloV(x, b, env))
+  ```
+  
+  - Id, Fun case의 rule 정의하기
+  
+    - Num case와 유사한 방식으로 정의할 수 있다.
+  
+    $$
+    Id\ case\\
+    σ├x::k||s → k||σ(x)::s
+    \\
+    \\
+    Fun\ case
+    σ├λx.e::k\ ||\ s → k\ ||<λx.e, σ>::s
+    $$
+  
+  - Add case의 interpreter 살펴보기
+    - `e_1+e_2`가 redex일 때, 평가는 세 부분으로 나뉜다.
+    - `e_1`을 평가하여 `v_1`을 얻는다(`interpCps(l, env, v1) =>`).
+    - `e_2`를 평가하여 `v_2`를 얻는다(`interpCps(r, env, v2) =>`).
+    - `v_1`, `v_2` 모두 interger라면, `v_1+v_2`를 얻기 위해 `v_1`과 `v_2`를 더한 후, continuation을 `v_1+v_2`에 apply한다(`k(add(v1, v2))`).
+  
+  ```scala
+  case Add(l, r) =>
+      interpCps(l, env, v1 =>
+          interpCps(r, env, v2 =>
+          	k(add(v1, v2))
+      )
+  )
+  ```
+  
+  - Add case의 rule 정의하기
+  
+    - 위에서 첫 번째 단계와 두 번째 단계는 `σ├e_1`과 `σ├e_2`로 각각 표현된다.
+    - 먼저, `σ├e_1`는 `e_1`의 결과를 value stack에 push하고, `σ├e_2`는 `e_2`의 결과를 value stack에 push한다.
+    - 세 번째 단계는 `(+)`로 표현될 수 있으며, 이는 value stack에서 두 개의 값을 pop 한 후 그 둘을 더한다.
+    - 위와 같은 관찰에 따라 아래와 rule을 아래와 같이 정의할 수 있다.
+  
+    $$
+    Add1\\
+    σ├e_1+e_2::k\ ||\ s → σ├e_1::σ├e_2::(+)::k\ ||\ s
+    \\
+    \\
+    Add2\\
+    (+)::k\ ||\ n_2::n_1::s → k\ ||\ n_1+n_2::s
+    $$
+  
+    - Add1은 `e_1+e_2`의 평가를 앞에서 언급한 세 부분으로 나눈다.
+    - 그 후, 이어지는 환원 단계들은 `e_1`과 `e_2`를 평가하고, 평가 결과들을 stack value에 push한다.
+    - `e_2`의 평가 이후, `(+)`는 computation stack의 top에 위치하게 된다.
+    - Add2에 정의된 환원 단계는 value stack에서 값들을 pop하고, 이들의 합을 value stack에 push한다.
+    - 아래 그림은 이러한 과정을 요약한 것이다.
+  
+    
+  
+    ![image-20230213115119547](Introduction_To_Programming_Language_part5.assets/image-20230213115119547.png)
+  
+  - Sub case도 Add와 유사한 방식으로 작성이 가능하다.
+    $$
+    Sub1\\
+    σ├e_1-e_2::k\ ||\ s → σ├e_1::σ├e_2::(-)::k\ ||\ s
+    \\
+    \\
+    Sub2\\
+    (-)::k\ ||\ n_2::n_1::s → k\ ||\ n_1-n_2::s
+    $$
+  
+  - App case의 interpreter 살펴보기
+    - `e1 e2`가 redex일 때, 평가는 세 부분으로 나뉜다.
+    - `v_1`을 얻기 위해 `e_1`을 평가한다(`interpCps(f, env, fv =>)`).
+    - `v_2`를 얻기 위해 `e_2`를 평가한다(`interpCps(a, env, av =>)`).
+    - `v_1`이 `<λx.e, σ'>`라면, `σ'[x↦v_2]`하에서 주어진 continuation과 함께 `e`를 평가한다(`interpCps(b, fEnv + (x -> av), k))`).
+  
+  ```scala
+  case App(f, a) =>
+      interpCps(f, env, fv =>
+          interpCps(a, env, av => {
+              val CloV(x, b, fEnv) = fv
+              interpCps(b, fEnv + (x -> av), k)
+      })
+  )
+  ```
+  
+  - App case의 rule 정의하기
+  
+    - 앞의 두 단계는 Add, Sub와 같으므로, 아래와 같은 rule을 정의할 수 있다.
+  
+    $$
+    App1\\
+    σ├e_1\ e_2::k\ ||\ s→σ├e_1::σ├e_2::(@)::k\ ||\ s
+    $$
+  
+    - 그러나 마지막 단계는 약간 다르다.
+    - Add, Sub의 경우, 마지막 단계는 continuation을 덧셈 혹은 뺄셈을 통해 얻은 특정 value에 apply 했지만, App의 경우 function의 body가 반드시 평가되어야한다.
+    - 그러므로, 특정 value에 continuation을 직접 정용하는 대신, 같은 continuation으로 body를 평가하기 위한 rule을 정의해야한다.
+  
+    $$
+    App2\\
+    (@)::k\ ||\ v::<λx.e, σ>::s→σ[x↦v]├e::k\ ||\ s
+    $$
+  
+    - 아래 그림은 App의 평가 과정을 요약한 것이다.
+  
+    ![image-20230213130245389](Introduction_To_Programming_Language_part5.assets/image-20230213130245389.png)
+  
+    - 아래 그림은 (1+2)-(3+4)를 계산할 때의 환원 과정을 보여준다.
+  
+    ![image-20230213130327573](Introduction_To_Programming_Language_part5.assets/image-20230213130327573.png)
+  
+    - 아래 그림은 `e=λx.λy.x+y`, `σ_1=[x↦1]`, ``σ_2=[x↦1, y↦2]`일 때의 `(λx.λy.x+y) 1 2`의 환원 과정을 보여준다.
+  
+    ![image-20230213130431950](Introduction_To_Programming_Language_part5.assets/image-20230213130431950.png)
+  
+    
+  
+  
 
 
 
