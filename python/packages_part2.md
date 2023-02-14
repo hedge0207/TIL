@@ -1,4 +1,4 @@
-# 시작하기
+# locust
 
 - locust
   - performance testing tool
@@ -110,11 +110,9 @@
 
 
 
+## locustfile 작성하기
 
-
-# locustfile 작성하기
-
-## User class
+### User class
 
 - locustfile은 적어도 하나의 사용자 클래스가 있어야 한다.
   - 사용자 클래스인지는 `HttpUser` class를 상속 받은 클래스인가로 판단한다.
@@ -222,8 +220,6 @@
           for i in range(10):
               self.client.get("/article?id=%i" % i)
   ```
-
-
 
 
 
@@ -515,7 +511,11 @@
 
 
 
-# Library로 사용하기
+
+
+
+
+## Library로 사용하기
 
 - `locust` command 대신 python script로 test를 실행할 수 있다.
 
@@ -583,9 +583,7 @@
 
 
 
-
-
-# Locust Test Non Http service
+## Locust Test Non Http service
 
 - Locust를 사용하여 대부분의 시스템을 테스트할 수 있다.
   - Locust는 기본적으로 HTTP/HTTPS test만이 내장되어 있다.
@@ -738,7 +736,7 @@
 
 
 
-# Worker
+## Worker
 
 - locust는 여러 개의 worker를 생성하여 테스트가 가능하다.
 
