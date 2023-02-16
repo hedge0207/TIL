@@ -305,6 +305,207 @@
 
 
 
+- 여러 process에서 한 파일에 logging하기
+
+  - 기본적으로 Python의 logging 모듈은 thread-safe하다.
+    - 따라서, 하나의 process에서 여러 thread가 한 file에 logging이 가능하다.
+  - 그러나 여러 process에서 한 file에 logging하는 것은 지원하지 않는다.
+    - 이는 Python에는 여러 process가 한 file에 직렬적으로 접근하는 표준화된 방식이 없기 때문이다.
+  - 그러나 불가능한 것은 아니며, 아래와 같은 방식들을 사용할 수 있다.
+    - 모든 process의 log를 `SocketHandler`에 보내고, socket을 읽고 log를 file에 작성하는 별도의 process를 하나 생성하는 방법.
+    - `Queue`와 `QueueHandler`를 사용하여 모든 log를 하나의 process로 보내는 방법.
+  - 아래 예시는 두 번째 방법을 사용한 것이다.
+
+  ```python
+  import logging
+  import logging.handlers
+  import multiprocessing
+  
+  # 아래는 순전히 예시를 위한 import로 실제 사용에는 필요 없을 수 있다.
+  from random import choice, random
+  import time
+  
+  
+  def listener_configurer():
+      root = logging.getLogger()
+      h = logging.handlers.TimedRotatingFileHandler('./logs/mptest.log', 'a', 300, 10)
+      f = logging.Formatter('%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s')
+      h.setFormatter(f)
+      root.addHandler(h)
+  
+  # log가 오면 log를 작성하는 listener process
+  # queue에 있는 LogRecords를 받아서 처리하는 역할을 한다.
+  # 만일 None이 들어올 경우 실행이 종료된다.
+  def listener_process(queue, configurer):
+      configurer()
+      while True:
+          try:
+              record = queue.get()
+              # process에게 main application의 종료를 알리기위해 None을 보낸다.
+              if record is None:
+                  break
+              logger = logging.getLogger(record.name)
+              logger.handle(record)
+          except Exception:
+              import sys, traceback
+              print('Whoops! Problem:', file=sys.stderr)
+              traceback.print_exc(file=sys.stderr)
+  
+  
+  LEVELS = [logging.DEBUG, logging.INFO, logging.WARNING,
+            logging.ERROR, logging.CRITICAL]
+  
+  LOGGERS = ['a.b.c', 'd.e.f']
+  
+  MESSAGES = [
+      'Random message #1',
+      'Random message #2',
+      'Random message #3',
+  ]
+  
+  # worker 설정은 worker process의 실행이 시작될 때 완료된다.
+  # Windows에서는 fork semantic을 사용할 수 없으므로, 
+  # 각 process는 시작될 때 logging 설정 관련 code를 실행시킨다.
+  def worker_configurer(queue):
+      h = logging.handlers.QueueHandler(queue)  # Just the one handler needed
+      root = logging.getLogger()
+      root.addHandler(h)
+      # send all messages, for demo; no other level or filter logic applied.
+      root.setLevel(logging.DEBUG)
+  
+  # random log를 생성하기 위한 process
+  def worker_process(queue, configurer):
+      configurer(queue)
+      name = multiprocessing.current_process().name
+      print('Worker started: %s' % name)
+      for i in range(10):
+          time.sleep(random())
+          logger = logging.getLogger(choice(LOGGERS))
+          level = choice(LEVELS)
+          message = choice(MESSAGES)
+          logger.log(level, message)
+      print('Worker finished: %s' % name)
+  
+  
+  def main():
+      # queue를 생성한다.
+      queue = multiprocessing.Queue(-1)
+      listener = multiprocessing.Process(target=listener_process,
+                                         args=(queue, listener_configurer))
+      listener.start()
+      workers = []
+      for i in range(10):
+          worker = multiprocessing.Process(target=worker_process,
+                                           args=(queue, worker_configurer))
+          workers.append(worker)
+          worker.start()
+      for w in workers:
+          w.join()
+      # 실행이 종료되면 queue에 None을 보내 listener를 종료시킨다.
+      queue.put_nowait(None)
+      listener.join()
+  
+  if __name__ == '__main__':
+      main()
+  ```
+
+  - 아래 예시는 main process에서 logging을 하되, 분리된 thread에서 하는 방식이다.
+
+  ```python
+  import logging
+  import logging.config
+  import logging.handlers
+  from multiprocessing import Process, Queue
+  import random
+  import threading
+  import time
+  
+  def logger_thread(q):
+      while True:
+          record = q.get()
+          if record is None:
+              break
+          logger = logging.getLogger(record.name)
+          logger.handle(record)
+  
+  
+  def worker_process(q):
+      qh = logging.handlers.QueueHandler(q)
+      root = logging.getLogger()
+      root.setLevel(logging.DEBUG)
+      root.addHandler(qh)
+      levels = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR,
+                logging.CRITICAL]
+      loggers = ['foo', 'foo.bar', 'foo.bar.baz',
+                 'spam', 'spam.ham', 'spam.ham.eggs']
+      for i in range(100):
+          lvl = random.choice(levels)
+          logger = logging.getLogger(random.choice(loggers))
+          logger.log(lvl, 'Message no. %d', i)
+  
+  if __name__ == '__main__':
+      q = Queue()
+      d = {
+          'version': 1,
+          'formatters': {
+              'detailed': {
+                  'class': 'logging.Formatter',
+                  'format': '%(asctime)s %(name)-15s %(levelname)-8s %(processName)-10s %(message)s'
+              }
+          },
+          'handlers': {
+              'console': {
+                  'class': 'logging.StreamHandler',
+                  'level': 'INFO',
+              },
+              'file': {
+                  'class': 'logging.FileHandler',
+                  'filename': 'mplog.log',
+                  'mode': 'w',
+                  'formatter': 'detailed',
+              },
+              'foofile': {
+                  'class': 'logging.FileHandler',
+                  'filename': 'mplog-foo.log',
+                  'mode': 'w',
+                  'formatter': 'detailed',
+              },
+              'errors': {
+                  'class': 'logging.FileHandler',
+                  'filename': 'mplog-errors.log',
+                  'mode': 'w',
+                  'level': 'ERROR',
+                  'formatter': 'detailed',
+              },
+          },
+          'loggers': {
+              'foo': {
+                  'handlers': ['foofile']
+              }
+          },
+          'root': {
+              'level': 'DEBUG',
+              'handlers': ['console', 'file', 'errors']
+          },
+      }
+      workers = []
+      for i in range(5):
+          wp = Process(target=worker_process, name='worker %d' % (i + 1), args=(q,))
+          workers.append(wp)
+          wp.start()
+      logging.config.dictConfig(d)
+      lp = threading.Thread(target=logger_thread, args=(q,))
+      lp.start()
+      
+      for wp in workers:
+          wp.join()
+      # logging thread에게 실행이 종료되었다는 것을 알려준다.
+      q.put(None)
+      lp.join()
+  ```
+
+  
+
 
 
 
