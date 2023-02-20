@@ -63,6 +63,21 @@
 
 
 
+- 주의사항
+
+  - Python의 tuple은 element가 1개 뿐일 경우 맨 뒤에 `,`가 추가된다.
+
+    - 이는 하나의 element가 들어 있는 데, 콤마가 없을 경우 괄호 안에 있는 integer와 구분을 할 수 없기 때문이다.
+
+    ```python
+    single_elem = [1]
+    multi_elem = [1,2]
+    print(tuple(single_elem))	# (1,)
+    print(tuple(multi_elem))	# (1,2)
+    ```
+
+
+
 
 ### List
 
