@@ -244,7 +244,8 @@
   - `fileConfig()`를 사용하는 방법
     - Logging 설정을 위한 내용을 file에 저장한 후 해당 file을 읽어와 설정한다.
     - Logging 설정과 관련된 설정과 code를 분리할 수 있으며, 개발자가 아닌 사람도 쉽게 수정이 가능하다는 장점이 있다.
-
+    - handler에 따라 class에 `handlers.TimedRotatingFileHandler`와 같이 `handlers`라는 모듈명을 적어줘야 하는 경우가 있다.
+  
   ```python
   """
   logging.conf
@@ -294,7 +295,7 @@
   logger.error('error message')
   logger.critical('critical message')
   ```
-
+  
   - `dictConfig()`는 설정을 dictionary에 저장한 후 해당 dictionary를 읽어 logging 관련 설정을 하는 방식이다.
     - JSON, YAML 형태로 저장해 두었다가 이를 dictionary로 읽어와 설정하는 것도 가능하다.
     
