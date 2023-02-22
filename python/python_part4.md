@@ -405,6 +405,8 @@
     - 그런데 Python의 경우 정확히 이런 역할을 하는 메서드가 존재하지 않는다.
   - `__new__` 는 생성된 인스턴스를 반환하기는 하지만 인스턴스를 위한 메모리를 할당하는 것이므로 생성이라 보기 어려우며 초기화 역할을 하지도 않는다.
   - `__init__`은 초기화 역할만을 담당한다.
+    - 초기화 역할만을 담당하고 class object에 memory를 할당하지 않는다.
+    - 즉 class instance를 생성하지 않는다.
   - 일반적으로 생성자의 두 가지 역할 중 객체의 초기화에 방점이 찍히게 되는데, 이런 관점에서 보면 `__init__`이 그나마 생성자에 가깝긴 하다.
     - Python 공식 문서에서도 `__init__`을 constructor라고 표현한다.
 
@@ -719,26 +721,6 @@
   print(programmer.name)
   ```
 
-  - 단순히 부모 클래스의 `__init__`메서드의 호출 여부가 중요한 것이 아니다.
-    - 아래와 같이 개별적으로 실행시킬 경우에도 부모 클래스의 인스턴스 변수에도 접근이 불가능하다.
-
-  ```python
-  class Person:
-      def __init__(self, name):
-          print("Person __init__")
-          self.name = name
-          
-          
-  class Programer(Person):
-      def __init__(self, part):
-          print("Programmer __init__")
-          self.part = part
-  
-  
-  Person('theo')
-  programmer = Programer('server')
-  print(programmer.name)	# AttributeError
-  ```
 
 
 

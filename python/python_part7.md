@@ -1207,23 +1207,22 @@
   """    
   ```
 
-  
+
+
 
 - 복수의 오류 처리하기
 
   - except를 여러 개 사용하면 된다.
-  - 가장 먼저 빠진 except문만 실행 되고 다음 try 블록의 다음 줄은 실행 되지 않는다.
+  - 가장 먼저 진입한 except문만 실행 되고 다음 try 블록의 다음 줄은 실행 되지 않는다.
 
   ```python
   try:
       3//0
       print(arr)
   except ZeroDivisionError as e:
-      print(e)
+      print(e)	# integer division or modulo by zero 
   except NameError as e:
       print(e)
-  
-  # integer division or modulo by zero 
   
   
   
@@ -1232,9 +1231,7 @@
       3//0
       print(arr)
   except (ZeroDivisionError,NameError) as e:
-      print(e)
-  
-  # integer division or modulo by zero
+      print(e)	# integer division or modulo by zero
   ```
 
 
@@ -1424,7 +1421,7 @@
 
 - error가 발생한 모듈 이름을 얻는 방법
 
-  - `traceback` 모듈을 의 `extract_tb()` 메서드를 사용한다.
+  - `traceback` 모듈의 `extract_tb()` 메서드를 사용한다.
   - my_module.py
 
   ```python
@@ -1481,5 +1478,3 @@
   ```bash
   $ pydoc builtins
   ```
-
-  

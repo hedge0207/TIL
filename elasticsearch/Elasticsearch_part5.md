@@ -1609,9 +1609,9 @@
     - `from`, `size`를 활용한 방법.
     - search after를 활용하는 방법.
     - scroll api를 활용하는 방법.
-  - 위 셋 중 ES에서 추천하는 방법은 searach after+PIT를 활용하는 것이다.
+  - 위 셋 중 ES에서 추천하는 방법은 searach after+pit를 활용하는 것이다.
     - `from`, `size`의 경우 두 값의 합이 10000을 넘을 수 없다. 즉 최대 10000건의 데이터만 pagination이 가능하다.
-    - scroll api의 경우 7버전 이전까지는 ES가 추천하는 방법이었으나 7+버전부터는 추천하지 않는다.
+    - scroll api의 경우 7버전 이전까지는 ES가 추천하는 방법이었으나 7버전부터는 추천하지 않는다.
     - searach after 역시 page jump(e.g from page 1 to 5)를 할 수 있는 방법이 없다는 문제가 있다.
   - `from`, `size`의 경우 ES 설정을 변경하여 10000개 이상도 가능하게 할 수 있지만 권장되지 않는다.
     - `index.max_result_window` 설정을 변경하면 된다.
