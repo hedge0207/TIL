@@ -1470,7 +1470,6 @@
 
 
 
-
 - Python의 모든 Exception class는 `BaseException` class를 상속받은 것이다.
 
   - pydoc을 통해 확인이 가능하다.
@@ -1478,3 +1477,119 @@
   ```bash
   $ pydoc builtins
   ```
+
+  - `BaseException` class는 `__new__`메서드(`__init__` 메서드가 아니다)의 인자로 `args`를 받는다.
+    - 따라서 `BaseException`을 상속 받은 하위 class에서 `__init__` 메서드를 실행하더라도 `args`는 여전히 존재하게 된다.
+    - CPython의 `BaseException` code의 일부를 Python code로 변환하면 아래와 같다.
+
+  ```python
+  class BaseException(Exception):
+      def __new__(cls, *args):
+          # self = self.에 object를 생성하여 할당하는 code
+          self.args = args
+          return self
+  ```
+
+  - `args`가 **유일하게** 사용되는 곳은 `__str__` 메서드로, `args`를 string으로 변환하여 반환하는 역할을 한다.
+    - CPython의 `BaseException`내부의 `__str__` 메서드를 python code로 변환하면 아래와 같다.
+
+  ```python
+  def __str__(self):
+      if len(self.args) == 0:
+          return ""
+      if len(self.args) == 1:
+          return str(self.args[0])
+      return str(self.args)
+  ```
+
+  - 확인해보기
+
+  ```python
+  try:
+      raise Exception
+  except Exception as e:
+      print(e)	#
+  try:
+      raise Exception("hello")
+  except Exception as e:
+      print(e)	# "hello"
+  try:
+      raise Exception("hello", "world", 42)
+  except Exception as e:
+      print(e)	# ('hello', 'world', 42)
+  ```
+
+
+
+- 새로운 Exception 만들기
+
+  - Exception을 만들어야하는 이유
+    - 개발을 하다보면 Python에서 제공하는 built in exception로 처리할 수 없는 예외들이 존재한다.
+    - 따라서 개발자가 이러한 예외들을 직접 만들어서 처리해줘야한다.
+  - 항상 `Exception` class를 상속받아야 한다.
+    - `Exception` class는 `BaseException` class를 상속 받는 class이다.
+
+  ```python
+  class MyException(Exception):
+      pass
+  ```
+
+  - 반드시 어떤 예외가 발생한 것인지 정확히 할 수 있도록 정확한 메시지를 남겨야한다.
+
+  ```python
+  class MyException(Exception):
+      def __init__(self, msg):
+          super(MyException, self).__init__(msg)
+  ```
+
+  - 굳이 부모 class의  `__init__` 메서드를 실행해야 하는 이유는?
+    - 사실 위와 같이 직접 작성한 Exception class가 인자를 하나만 받을 때는 굳이 부모 class의 `__init__` 메서드를 실행시키지 않아도 된다.
+    - 부모 class의 `__init__`메서드가 실행되며, msg가 넘어가기 때문이다.
+    - 그러나 아래와 같이 default msg를 설정해줘야 하거나 인자를 둘 이상 받을 때는 반드시 `__init__` 메서드를 실행해야한다.
+
+  ```python
+  # default msg를 설정하고자 하는 경우
+  class MyException(Exception):
+      def __init__(self, msg=None):
+          if msg is None:
+              msg = "Default detail message"
+          super(MyException, self).__init__(msg)
+          
+  # 인자를 둘 이상 받아야 하는 경우
+  class MyException(Exception):
+      def __init__(self, foo, msg=None):
+          print(foo)
+          if msg is None:
+              msg = "Default detail message"
+          super(MyException, self).__init__(msg)
+  
+  # 만일 인자를 둘 이상 받을 때, 부모 class의 __init__메서드를 실행시키지 않으면, 모든 인자가 부모 class의 args인자로 넘어가게 된다.
+  # 아래 예시에서 실제 exception 메시지로 사용하려 한 것은 world인데, world뿐 아니라 hello까지 부모 class의 __init__ 메서드의 args로 넘어가게 된다.
+  class MyException(Exception):
+      def __init__(self, foo, msg=None):
+          pass
+  
+  try:
+      raise MyException("hello", "world")
+  except MyException as e:
+      print(e)	# ('hello', 'world')
+  ```
+
+  - 인자로 받은 값을 활용하기
+    - 인자로 받은 값을 활용하여 보다 구체적인 예외 처리가 가능하다.
+
+  ```python
+  class MyException(Exception):
+      def __init__(self, msg, foo):
+          self.msg = msg
+          self.foo = foo
+          super(MyException, self).__init__(msg)
+    
+  try:
+  
+      raise MyException("Exception!!", False)
+  except Exception as e:
+      if e.foo:
+          do_something()
+  ```
+
