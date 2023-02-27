@@ -34,6 +34,39 @@
 
 
 
+- Walrus operator(`:=`)
+
+  > https://docs.python.org/3/whatsnew/3.8.html#assignment-expressions
+
+  - PEP 572에서 assignment expression이라는 이름으로 제안되어 Python 3.8에 추가되었다.
+    - `:=`의 형태가 바다코끼리의 눈과 엄니를 닮아 walrus operator라고도 불린다.
+  - 표현식 내에서 변수에 값을 할당하게 해주는 연산자이다.
+    - 가독성을 높이는데 목적이 있다.
+
+  ```python
+  # 예를 들어, walrus operator를 사용하지 않은 코드는 아래와 같다.
+  n = len(a)
+  if n > 10:
+      print("List is too long ({} elements, expected <= 10)".format{n})
+      
+  # 위 코드를 walrus operator를 사용하면 아래와 같이 변경 할 수 있다.
+  if (n:=len(a) > 10):
+      print("List is too long ({} elements, expected <= 10)".format{n})
+  ```
+
+  - List comprehension에서 아래와 같이 사용이 가능하다.
+
+  ```python
+  [clean_name.title() for name in names 
+   if (clean_name := normalize('NFC', name)) in allowed_names]
+  ```
+
+
+
+
+
+
+
 ## 산술 연산자
 
 
