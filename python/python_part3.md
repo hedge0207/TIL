@@ -38,11 +38,13 @@
 
   > https://docs.python.org/3/whatsnew/3.8.html#assignment-expressions
 
-  - PEP 572에서 assignment expression이라는 이름으로 제안되어 Python 3.8에 추가되었다.
-    - `:=`의 형태가 바다코끼리의 눈과 엄니를 닮아 walrus operator라고도 불린다.
   - 표현식 내에서 변수에 값을 할당하게 해주는 연산자이다.
     - 가독성을 높이는데 목적이 있다.
-
+    - PEP 572에서 assignment expression이라는 이름으로 제안되어 Python 3.8에 추가되었다.
+    - `:=`의 형태가 바다코끼리의 눈과 엄니를 닮아 walrus operator라고도 불린다.
+  - 기본 문법
+    - 기본적인 syntax는 `NAME := expr`의 형태로, `expr`은 괄호 없는 튜플을 제외하고, 유효한 Python 표현식이라면 어떤 것이든 가능하다.
+  
   ```python
   # 예를 들어, walrus operator를 사용하지 않은 코드는 아래와 같다.
   n = len(a)
@@ -52,13 +54,41 @@
   # 위 코드를 walrus operator를 사용하면 아래와 같이 변경 할 수 있다.
   if (n:=len(a) > 10):
       print("List is too long ({} elements, expected <= 10)".format{n})
-  ```
-
-  - List comprehension에서 아래와 같이 사용이 가능하다.
-
-  ```python
+      
+  # List comprehension에서 아래와 같이 사용이 가능하다.
   [clean_name.title() for name in names 
    if (clean_name := normalize('NFC', name)) in allowed_names]
+  ```
+  
+  - 예외 사항
+    - Top level에서 괄호로 묶이지 않은 assignment expression은 유효한 문법이 아니다(assignment statement와 혼용을 피하기 위함).
+    - Top level에서 괄호로 묶인 assignment expression은 유효한 문법이지만 추천되지 않는다.
+    - 함수의 parameter에서 사용하거나, argument로 사용하는 것은 적절치 않다.
+  
+  
+  ```python
+  y := f(x)  # 유효하지 않음
+  (y := f(x))  # 유효하지만 추천되지 않음
+  
+  # 부적절하다.
+  foo(x=(p := 42)):
+      pass
+  
+  # 부적절하다.
+  ans = (y := foo(y))
+  ```
+  
+  - 주의 사항
+    - 괄호가 없는 tuple에서는 예상과 다르게 동작할 수 있다.
+    - Python에서 괄호 없이 콤마로 구분된 값은 tuple이 되는데, assignment expression의 경우에는 이것이 적용되지 않는다.
+  
+  ```python
+  assignment_statement = 1, 2
+  # top level에서의 사용이므로 적절치는 않지만 예시를 위해 아래와 같이 사용
+  (assignment_expression := 1, 2)
+  
+  print(assignment_statement)		# (1, 2)
+  print(assignment_expression)	# 1
   ```
 
 
