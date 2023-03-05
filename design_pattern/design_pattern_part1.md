@@ -123,7 +123,7 @@
 
   - 변화하는 부분과 그대로 있는 부분을 분리하기
     - 변화하는 부분인 나는 행동과 꽥꽥 거리는 행동을 캡슐화하기 위해 모두 class로 만든다.
-    - class들을 두 개의 집합으로 구분한다.
+    - class들을 두 개의 집합(interface)으로 구분한다.
     - 하나는 나는 것과 관련된 부분, 다른 하나는 꽥꽥거리는 것과 관련된 부분이다.
     - 각 class 집합에는 각 행동을 구현한 것을 전부 집어넣는다.
     - 예를 들어 빽빽 거리는 행동을 구현하는 class를 만들고, 삑삑 거리는 행동을 구현하는 class를 만들고, 아무 것도 하지 않는 class를 만들어 꽥꽥거리는 것과 관련된 class 집합에 넣는다.
@@ -190,15 +190,17 @@
 - 오리의 행동 통합하기
 
   - 가장 중요한 점은 나는 행동과 꽥꽥거리는 행동을 Duck class(혹은 그 sub class)에서 정의한 메서드를 써서 구현하지 않고 다른 클래스에 위임한다는 것이다.
-  - 우선 Duck class에서 행동과 관련된 두 인터페이스의 인스턴스 변수를 추가한다.
+  - 우선 Duck class에서 행동과 관련된 두 인터페이스(`FlyBehavior`, `QuackBehavior`)의 인스턴스 변수를 추가한다.
+    - 즉 두 인터페이스의 인스턴스를 할당 받는 변수를 추가한다.
     - 인터페이스의 인스턴스 변수를 설정하는 이유는 동적 타이핑을 지원하지 않는 언어들(대표적으로 Java)의 경우 인터페이스를 구현한 모든 class를 변수에 대입하기 위해서 해당 인터페이스를 type으로 설정해야 하기 때문이다.
     - 각 sub class 객체에서는 실행시에 이 변수에 특정 행동 형식(`FlyWithWings`, `MuteQuack` 등)의 레퍼런스를 다형적으로 설정한다.
+    
   - `Duck` class에 `perform_fly()`와 `perform_quack()`이라는 메서드를 추가한다.
     - 나는 행동과 꽥꽥거리는 행동은 `FlyBehavior`와 `QuackBehavior` 인터페이스로 옮겨놨으므로, `Duck` class와 모든 subclass에서 `fly()`와 `quack()` 메서드를 제거한다.
-
+  
   ```python
   class Duck:
-      def __init__(self, ):
+      def __init__(self):
           self.fly_behavior = None
           self.quack_behavior = None
           
@@ -215,11 +217,11 @@
       def perform_quack(self):
           self.quack_behavior.quack()
   ```
-
+  
   - 실제 Duck 객체를 생성할 때, 행동 객체를 설정해준다.
     - 상속 받은 `perform_quack`, `perform_fly` 메서드를 실행할 때, 각기 실제 행동의 실행은 `Quack`, `FlyWithWings`에 위임된다.
     - 예시로 `MallardDuck`를 살펴보면 아래와 같다.
-
+  
   ```python
   class MallardDuck(Duck):
       def __init__(self):
@@ -229,7 +231,7 @@
       def display(self):
           # display code
   ```
-
+  
   - 참고
     - 특정 구현에 맞춰서 프로그래밍해선 안된다고 했지만, `MallardDuck` class를 보면 `self.fly_behavior = FlyWithWings()`과 같이 `FlyWithWings`라는구현되어 있는 구상 class의 인스턴스를 만들었다.
     - 이는 단순함을 위해 이렇게 한 것으로, 추후에 변경할 것이다.
@@ -283,6 +285,275 @@
 
 
 
+# Observer Pattern
+
+- 기상 모니터링 애플리케이션 만들기
+
+  - 기상 모니터링 애플리케이션은 아래 세 부분으로 구성된다.
+    - 기상 스테이션: 실제 기상 정보를 수집하는 물리 장비.
+    - WeatherData 객체: 기상 스테이션으로부터 오는 정보를 추적하는 객체
+    - 디스플레이: 사용자에게 현재 기상 조건을 보여 주는 디스플레이 장비.
+  - WeatherData class는 아래와 같이 구성된다.
+    - `get_temperature()`: 온도를 반환하는 메서드
+    - `get_humidity()`: 습도를 반환하는 메서드
+    - `get_pressure()`: 기압을 반환하는 메서드
+    - `measurements_changed()`: WeatherData에서 갱신된 정보를 가져올 때 마다 호출되는 메서드.
+
+  - 우리는 이 중에서 WeatherData 객체에서 data를 가져와 디스플레이에 보여주는 기능을 개발해야한다.
+    - 기온, 습도, 기압을 보여줘야한다.
+    - 새로운 기상 측정 데이터가 들어올 때 마다 `measurements_changed()` 메서드가 호출된다.
+    - 기상 데이터를 사용하는 디스플레이 요소 3가지를 구현해야 하는데, 그 3가지는 현재 조건 디스플레이, 기상 통계 디스플레이, 기상 예보 디스플레이이다.
+    - 위 세 가지 외에 또 다른 디스플레이가 추가될 가능성도 고려하여 확장성 있는 코드를 작성해야한다.
+    - WeatherData에서 새로운 측정값이 들어올 때마다 디스플레이를 갱신해야한다.
+  - 일단 작성해보기
+
+  ```python
+  class WeatherData:
+      def __init__(self):
+          # 인스턴스 변수 선언
+          
+      def measurements_changed(self):
+          temp = self.get_temperature()
+          humidity = self.get_humidity()
+          pressure = self.get_pressure()
+          
+          # 현재 상태를 보여주는 display
+         	self.current_conditions_display.update(temp, humidity, pressure)
+          # 기상 통계를 보여주는 display
+          self.statistics_display.update(temp, humidity, pressure)
+          # 기상 예보를 보여주는 display
+          self.forecast_display.update(temp, humidity, pressure)
+      
+      # get_temerature 등의 다른 methods
+  ```
+
+  - 위 코드에서 잘 구현된 점과 잘 못 구현된 점
+    - 구체적인 구현에 의존해서 짰으므로 프로그램을 수정하지 않고는 다른 디스플레이를 추가하거나 제가할 수 없다.
+    - 실행 중에 디스플레이를 추가하거나 제거 할 수 없다.
+    - 바뀔 수 있는 부분(display 부분)을 캡슐화하지 않았다.
+    - display를 보여주는 모든 부분은 `update`라는 공통된 메서드를 가지고 있는 것으로 보아 공통된 인터페이스를 사용하고 있는 점은 잘 구현된 것이다.
+
+
+
+- 옵저버 패턴
+
+  - 옵저버 패턴은 신문사의 구독 서비스와 유사한데, 신문은 아래와 같은 특징이 있다.
+
+    - 신문사가 사업을 시작하고 신문을 발행하기 시작한다.
+    - 독자가 특정 신문사에 구독 신청을 하면, 구독을 해지하기 전까지 매번 새로운 신문이 나올 때마다 배달을 받을 수 있다.
+    - 신문을 더 이상 보고 싶지 않으면 구독 해지 신청을 한다.
+    - 신문사가 망하지 않는 이상 개인, 호텔, 항공사, 회사 등은 꾸준히 신문을 구독하거나 해지한다.
+
+  - 옵저버 패턴에서 신문사를 주제(subject), 구독자를 옵저버(observer)라 부른다.
+
+    - 주제에서는 중요한 데이터(신문)를 관리한다.
+    - 주제가 관리하는 데이터에 변경 사항이 있을 경우 옵저버에게 그 소식이 전해진다.
+    - 옵저버 객체들은 주제 객체에 등록되어 있으며(주제를 구독하고 있으며) 주제 데이터가 바뀌면 갱신 내용을 전달받는다.
+
+  - 작동 원리
+
+    - 새로운 객체가 등장해 주제에게 자신도 옵저버가 되고 싶다고 이야기한다.
+    - 이제 주제는 이 새로운 객체를 옵저버로 등록하고, 새로 추가된 옵저버는 주제로부터 변경 사항을 받게 된다.
+    - 이번에는 현재 옵저버인 객체가 옵저버 목록에서 탈퇴하고 싶다는 요청을 한다.
+    - 주제는 옵저버 목록에서 이 객체를 제외시킨다.
+    - 이 객체는 이제 주제에서 변경 사항을 받지 않게 된다.
+
+  - 정의
+
+    - 한 객체의 상태가 변경되면 그 객체에 의존하는 다른 객체들에게 연락이 가고 자동으로 내용이 갱신되는 방식으로 일대다 의존성을 정의하는 방식이다.
+
+  - 구현
+
+    - 다양한 구현 방식이 있지만 일반적으로 주제 인터페이스와 옵저버 인터페이스가 들어 있는 클래스 디자인으로 구현한다.
+
+    ![image-20230304150742733](design_pattern_part1.assets/image-20230304150742733.png)
+
+    - 옵저버를 등록하거나 옵저버 목록에서 탈퇴하고자 할 때는 `Subject` 인터페이스에 있는 메서드를 사용한다.
+    - 각 주제 마다 여러 개의 옵저버가 있을 수 있다.
+    - 옵저버가 될 가능성이 있는 객체는 반드시 Observer 인터페이스를 구현해야하며, 이 인터페이스에는 주제의 상태가 바뀌었을 때 호출되는 `update()` 메서드 밖에 없다.
+    - 주제 역할을 하는 구상 클래스(`ConcreteSubject`)에는 항상 `Subject` 인터페이스를 구현해야하며, 등록 및 해지용 메서드와 상태가 바뀔 때마다 모든 옵저버에게 연락하는 `notifyObservers()` 메서드도 구현해야한다. 또한 setter, getter도 있을 수 있다.
+    - `Observer` 인터페이스를 구현한다면, 무엇이든 옵저버 클래스가 될 수 있다.
+
+  - Pub-Sub 패턴과의 관계
+
+    - Publish-Subscribe 패턴 역시 publisher가 다양한 subscriber에게 메시지를 전달한다는 점에서는 유사하다.
+    - 그러나 완전히 동일한 패턴이라고 볼 수는 없다.
+    - 옵저버 패턴과는 달리 pub-sub 패턴의 경우 중간에 broker 혹은 event bus라 불리는 중계층이 있다.
+    - 따라서 publisher, subscriber는 서로의 존재에 관심이 없으며, 알 필요도 없다.
+    - 그러나, 옵저버 패턴의 경우 주제가 옵저버에 대한 정보를 알고 있어야 한다.
+    - 따라서 pub-sub 패턴이 결합도가 더 낮으며, 여러 도메인에 걸쳐 사용하기도 훨씬 편리하다.
+
+
+
+- 옵저버와 느슨한 결합
+
+  - 느슨한 결합(Loose Coupling)
+    - 객체들이 상호작용할 수는 있지만, 서로를 잘 모르는 관계를 의미한다.
+    - 유연성이 높은 코드를 작성할 수 있게 해준다.
+  - 주제는 옵저버가 특정 인터페이스를 구현한다는 사실만을 안다.
+    - 옵저버의 구상 클래스가 무엇인지, 옵저버가 무엇을 하는지는 알 필요가 없다.
+
+  - 옵저버는 언제든 추가와 제거가 가능하다.
+    - 주제는 Observer 인터페이스를 구현하는 객체의 목록에만 의존하므로 언제든지 새로운 옵저버를 추가할 수 있다.
+    - 마찬가지로 언제든 제거도 가능하다.
+  - 새로운 형식의 옵저버를 추가할 때도 주제를 변경할 필요가 없다.
+    - 새로운 클래스 형식의 옵저버라고 해도, Observer 인터페이스를 구현하기만 했다면, 주제는 변경사항 없이 새로운 옵저버를 추가할 수 있다.
+  - 주제와 옵저버는 서로 독립적으로 재사용할 수 있다.
+    - 주제나 옵저버를 다른 용도로 활용해야 한다고 하더라도, 둘이 단단히 결합되어 있지 않기에 손쉽게 재사용 할 수 있다.
+  - 주제나 옵저버가 달라져도 서로에게 영향을 미치지 않는다.
+    - 서로 느슨하게 결합되어 있으므로, 주제나 옵저버 인터페이스를 구현한다는 조건만 만족하면 어떻게 고쳐도 문제가 생기지 않는다.
+
+
+
+- 옵저버 패턴 정의하기
+
+  - 인터페이스 작성하기
+
+  ```python
+  from abc import ABC, abstractmethod
+  
+  
+  class Subject(ABC):
+      @abstractmethod
+      def register_observer(self, observer):
+          pass
+      
+      @abstractmethod
+      def remove_observer(self, observer):
+          pass
+      
+      # 주제의 상태가 변경되었을 때 모든 옵저버에게 변경 내용을 알리는 메서드
+      @abstractmethod
+      def notify_observer(self):
+          pass
+  
+      
+  class Observer(ABC):
+      @abstractmethod
+      def update(self, tmep, humidity, pressure):
+          pass
+  
+  # 모든 display에 공통으로 들어가는 내용을 정의하기위한 인터페이스
+  class DisplayElement(ABC):
+      @abstractmethod
+      def display(self):
+          pass
+  ```
+
+  - Subject 인터페이스 구현하기
+
+  ```python
+  class WeatherData(Subject):
+      def __init__(self):
+          self.observers = []
+          self.temperature = None
+          self.humidity = None
+          self.pressure = None
+      
+      def register_observer(self, observer):
+          self.observers.append(observer)
+      
+      def remove_observer(self, observer):
+          self.observers.remove(observer)
+      
+      # 모든 옵저버에게 상태 변화를 알린다.
+      def notify_observers(self):
+          for observer in self.observers:
+              observer.update(self.temperature, self.humidity, self.pressure)
+      
+      # 기상 스테이션으로부터 갱신된 측정값을 받으면 옵저버들에게 알린다.
+      def measurements_changed(self):
+          self.notify_observers()
+      
+      # 기상 스테이션으로부터 갱신된 측정값을 받는다.
+      def set_measurements(self, temperature, humidity, pressure):
+          self.temperature = temperature
+          self.humidity = humidity
+          self.pressure = pressure
+          self.measurements_changed()
+  ```
+
+  - 디스플레이 요소 구현하기
+    - 예시를 위해 현재 날씨 정보를 보여주는 클래스만 구현한다.
+
+  ```python
+  class CurrentConditionDisplay(Observer):
+      def __init__(self, weather_data):
+          self.temperature = None
+          self.humidity = None
+          self.pressure = None
+          # 굳이 weather_data를 인스턴스 변수에 저장하는 이유는 추후 탈퇴시 사용하기 위함이다.
+          self.weather_data = weather_data
+          self.weather_data.register_observer(self)
+          
+      def update(temperature, humidity, pressure):
+          self.temperature = temperature
+          self.humidity = humidity
+          self.pressure = pressure
+          self.display()
+      
+      def display(self):
+          print("t:{}, h:{}, p:{}".format(self.temperature, self.humidity, self.pressure))
+  ```
+
+
+
+- Pull 방식
+  - Push 방식
+    - 지금까지 구현한 방식은 push 방식이다.
+    - 주제가 옵저버에게 데이터를 push한다하여 이렇게 부른다.
+  - Push 방식의 문제
+    - 만일 온도, 습도, 기압 이외에 풍속이라는 새로운 유형의 data가 추가되었다고 가정하자. 
+    - 풍속 디스플레이는 온도, 습도, 기압에는 관심이 없고 오직 풍속만을 보여주면 된다.
+    - 그러나 push 방식은 비효율적이게도 온도, 습도, 기압, 풍속 중 어느 하나에만 변경사항이 있어도 모든 옵저버들에게 모든 기후 정보를 보낸다.
+  - Pull 방식
+    - 주제가 옵저버에게 데이터를 push하는 것이 아니라 옵저버가 주제로부터 데이터를 pull하는 방식.
+    - Push와 pull 어느 한 쪽이 맞는 방식이라고 할 수는 없으나 대부분의 경우 pull 방식이 더 적절하다.
+
+
+
+- Pull 방식으로 코드 변경하기
+
+  - 옵저버의 `update()` 메서드를 인자 없이 호출하도록 `WeatherData` 클래스의 `notifiy_observers()` 메서드를 수정한다.
+    - 또한 각 기후 요인 별로 getter 메서드를 구현한다.
+
+  ```python
+  class WeatherData(Subject):
+      # (...)
+      def notify_observers(self):
+          for observer in self.observers:
+              observer.update()
+      
+      def get_temperature(self):
+          return self.temperature
+      
+      # 위와 같은 형태로 humidity, pressure 등도 구현한다.
+  ```
+
+  - Observer 인터페이스에서 update 메서드의 매개변수를 병경한다.
+
+  ```python
+  class Observer(ABC):
+      @abstractmethod
+      def update(self):
+          pass
+  ```
+
+  - Observer 인터페이스의 각 구상 클래스의 `update` 메서드도 변경한다.
+
+  ```python
+  class CurrentConditionDisplay(Observer):
+      # (...)
+          
+      def update(temperature, humidity, pressure):
+          self.temperature = self.weather_data.get_temperature()
+          self.humidity = self.weather_data.get_humidity()
+          self.pressure = self.weather_data.get_pressure()
+          self.display()
+  ```
+
+  
+
 
 
 # 디자인 원칙 모아보기
@@ -290,4 +561,5 @@
 - 애플리케이션에서 달라지는 부분을 찾아내고, 달라지지 않는 부분과 분리한다.
 - 구현보다는 인터페이스에 맞춰서 프로그래밍한다.
 - 상속보다는 구성을 활용한다.
+- 상호작용하는 객체 사이에는 가능하면 느슨한 결합을 사용해야한다.
 
