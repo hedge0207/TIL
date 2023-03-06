@@ -898,28 +898,33 @@
 
 
 
-- Python의 동작 방식
+- Python은 어떻게 동작하는가
 
-  > 아래는 CPython 기준이다.
+  > https://opensource.com/article/18/4/introduction-python-bytecode
 
-  - Python 코드를 bytecode로 컴파일한다.
+  - Python code는 virtual machine을 위한 instruction들로 변환된다.
+    - Python interpreter는 이 virtual machine의 구현이다.
     - 인터프리터 언어인 Python이 다른 인터프리터 언어와 다른 점은 bytecode로 컴파일 한다는 점이다.
     - `__pycache__` 폴더 내부의 `.pyc` 파일이 바로 컴파일된 바이트코드 파일이다.
     - 오직 Python 코드에 변경사항이 있을 경우에만 다시 컴파일한다.
     - 매번 인터프리터를 통해 한 라인씩 해석해서 실행해야 한다면 성능이 매우 떨어질 수 밖에 없어 택한 방식이다.
-    - `ids` 라이브러리를 사용하면 python 코드가 bytecode로 변환되는 과정을 볼 수 있다.
+    - Python interpreter로 넘어가는 형식을 bytecode라 부른다.
+    - 따라서 `.pyc` 파일에 있는 내용는 Python code의 더 빠르고 최적화된 버전이 아니며, Python의 virtual machine이 실행할 bytecode의 instruction들일 뿐이다.
+    - 컴파일 된 파일을 인터프리터(virtual machine)가 기계어로 번역한 후 실행한다.
+  - `dis`를 사용하면 bytecode로 변환된 내용을 사람이 읽기 쉬운 형식으로 출력해준다.
+    - 아래 예시에서 `hello` 함수를 호출하는 코드를 추가하고, CPython interpreter를 사용하여 실행하면 아래 출력된 순서로 프로그램이 실행된다.
 
   ```python
   import dis
   
   
-  def foo():
-      print("bar")
+  def hello():
+      print("Hello, World!")
   
-  dis.dis(foo)
+  dis.dis(hello)
   """
     5           0 LOAD_GLOBAL              0 (print)
-                2 LOAD_CONST               1 ('bar')
+                2 LOAD_CONST               1 ('Hello, World!')
                 4 CALL_FUNCTION            1
                 6 POP_TOP
                 8 LOAD_CONST               0 (None)
@@ -927,7 +932,87 @@
   """
   ```
 
-  - 컴파일 된 파일을 인터프리터(virtual machine)가 기계어로 번역한 후 실행한다.
+  - `__code__` attribute를 사용하는 방법
+    - `__code__` attribute를 사용하여 여러 유용한 정보를 확인 할 수 있다(아래 예시 말고도 다양한 정보를 확인할 수 있다).
+    - `co_consts`는 function body 내부에 등장한 모든 literal들을 tuple로 묶은 것이다.
+    - `co_varnames`는 function body 내부에서 사용되는 지역 변수들의 이름을 tuple로 묶은 것이다.
+    - `co_names`는 function body에서 참조되지만 지역 변수가 아닌 변수들의 이름을 tuple로 묶은 것이다.
+    - `co_code`를 사용하면 bytecode 그대로를 보여준다.
+
+  ```python
+  print(hello.__code__)				# <code object hello at 0x7f6cb9e19660, file "test.py", line 1>
+  print(hello.__code__.co_consts)		# (None, 'Hello, World!')
+  print(hello.__code__.co_varnames)	# ()
+  print(hello.__code__.co_names)		# ('print',)
+  ```
+
+
+
+- CPython은 stack 기반의 virtual machine을 사용하며, 아래와 같은 세 가지 종류의 stack이 있다.
+  - Call stack
+    - Python program이 실행되는 메인 구조이다.
+    - 현재 활성화된 함수 호출 하나 당 frame이라 불리는 하나의 item을 가지고있다.
+    - Stack의 bottom이 entry point가 된다.
+    - 모든 함수 호출은 call stack에 새로운 frame을 push하며, 함수 호출이 끝날 때 마다 해당 frame이 pop 된다.
+  - Evaluation stack(data stack)
+    - 각 frame에는 evaluation stack을 가지고 있다.
+    - Python의 함수 실행이 일어나는 곳이며, Python code를 실행한다는 것은 대부분의 경우에 evaluation stack에 data를 push하고, 조작하고, pop하는 것이다.
+  - Block stack
+    - 또 각 frame에는 block stack이 존재한다.
+    - 이는 반복문, try/except block, with block 같은 특정 유형의 제어 구조를 추적하기 위해 사용한다.
+    - 이들은 모두 block stack에 push되고, 해당 block을 빠져 나오면 pop된다.
+    - 이들은 Python이 어떤 block이 특정 시점에 활성화 되어 있는지를 알 수 있게 해주어 `continue`, `break` 같은 동작이 가능하게 해준다.
+
+
+
+- 대부분의 Python bytecode instruction은 현재 call-stack frame의 evaluation stack을 조작한다.
+  - 예를 들어 `my_function(my_variable, 2)`와 같은 함수 호출이 있을 때, bytecode 상으로는 아래와 같은 과정을 거친다.
+    - `LOAD_NAME` instruction은 `my_function`라는 함수 객체를 조회하고, 이를 evaluation stack의 top에 push한다.
+    - 또 다른 `LOAD_NAME` instruction은 `my_variable`라는 변수를 조회하고, 이를 evaluation stack의 top에 push한다.
+    - `LOAD_CONST` instruction은 literal integer 2를 evaluation stack의 top에 push한다.
+    - `CALL_FUNCTION` instruction이 실행된다.
+  - `CALL_FUNCTION` 
+    - `CALL_FUNCTION` instruction은 2개의 argument를 가지고 있으며, 이는 Python이 두 개의 positional argument를 stack에서 pop해야 한다는 것을 의미하므로, 두 개의 값을 pop한다.
+    - 그럼 top에는 호출 할 함수가 오게 되는데, 이 함수 역시 pop한다.
+    - 그 후 Python 은 call stack에 새로운 frame을 할당하고, 함수 호출을 위한 local variable을 채운다.
+    - 다음으로 frame 내부의 `my_function`의 bytecode를 실행한다.
+    - 실행이 종료되면, frame은 call stack에서 pop되고, `my_function`의 반환 값이 original frame의 evaluation stack에 push된다.
+
+
+
+- 위 정보를 기반으로 `dis`의 output을 해석하면 다음과 같다.
+
+  ```python
+  import dis
+  
+  
+  def hello():
+      print("Hello, World!")
+  
+  dis.dis(hello)
+  """
+    5           0 LOAD_GLOBAL              0 (print)
+                2 LOAD_CONST               1 ('Hello, World!')
+                4 CALL_FUNCTION            1
+                6 POP_TOP
+                8 LOAD_CONST               0 (None)
+               10 RETURN_VALUE
+  """
+  ```
+
+  - `LOAD_GLOBAL 0`
+    - Python에게 `co_names`의 0번 인덱스에 있는 이름(예시의 경우 `print`)으로 참조된 전역 객체를 찾으라고 말해준다.
+    - 그리고 이를 evaluation stack에 push한다.
+  - `LOAD_CONST 1`
+    - `co_consts`의 1번 인덱스에 있는 literal을 가져오고, 이를 evaluation stack에 push한다.
+    - 0번 인덱스가 아니고 1번 인덱스에 있는 literal을 가져오는 이유는 0번 인덱스에 있는 값은 literal None이기 때문이다.
+    - 이는 Python의 경우 함수에 return 값이 없으면 암시적으로 None을 반환하기 때문이다.
+
+  - `CALL_FUNCTION 1`
+    - Python에게 함수를 호출하라고 말해준다.
+    - 이는 evaluation stack에서 하나의 positional argument를 pop해야하며, 이렇게 되면 evaluation stack의 top에는 호출해야 하는 함수가 오게 된다.
+
+
 
 
 
