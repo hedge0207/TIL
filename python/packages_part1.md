@@ -550,6 +550,8 @@
 
 
 
+
+
 # Pydantic
 
 - 개요
@@ -582,16 +584,17 @@
   - `BaseModel`을 상속받는 `User` 클래스를 작성한다. 
     - 클래스 내부에는 각 속성들의 type 혹은 기본값을 지정한다.
   - 기본값 없이 type만 지정
-    - id는 기본값 없이 type만 지정해줬으므로 required 값이 된다.
+    - `id`는 기본값 없이 type만 지정해줬으므로 required 값이 된다.
     - String, floats이 들어오는 경우 int로 변환이 가능하다면 int로 변환된다.
     - 만일 int로 변환이 불가능하다면 exception이 발생한다.
   - type 없이 기본값만 지정
-    - name은 type 없이 기본값만 지정해줬으므로 optional한 값이 된다.
+    - `name`은 type 없이 기본값만 지정해줬으므로 optional한 값이 된다.
     - 또한 기본값으로 지정해준 값이 문자열이므로 type은 string이 된다.
   - type과 기본값을 모두 지정
-    - signup_ts, friends는 타입과 기본값을 모두 지정해주었으므로 optional한 값이 된다.
-    - friends의 경우 int가 들어있는 list이므로 만일 string이나 floats이 int로 변환 가능하다면 변환되게 되고, 불가능하다면 exception이 발생한다.
-
+    - `signup_ts`, `friends`는 타입과 기본값을 모두 지정해주었으므로 optional한 값이 된다.
+    - `signup_ts`의 경우 `typing.Optional`을 type으로 지정해줬는데, 아무 입력 값이 없을 경우 None을 받게 된다. 따라서, 뒤의 `=None`은 사실 불필요하지만, 입력이 없을 경우 `None`이 들어오게된다는 것을 명시적으로 표현하기 위해 추가해줬다.
+    - `friends`의 경우 int가 들어있는 list이므로 만일 string이나 floats이 int로 변환 가능하다면 int로 변환되고, 불가능하다면 exception이 발생한다.
+  
   ```python
   from datetime import datetime
   from typing import List, Optional
@@ -601,7 +604,7 @@
   class User(BaseModel):
       id: int
       name = 'Theo'
-      signup_ts: Optional[datetime] = None
+      signup_ts: Optional[datetime] = None	# signup_ts: Optional[datetime]와 동일하다.
       friends: List[int] = []
   
   
@@ -1038,6 +1041,33 @@
   time.sleep(3)
   foo2 = Foo()
   print(foo1.my_time == foo2.my_time)		# False
+  ```
+
+
+
+- 자기 자신을 참조하는 모델 정의하기
+
+  - 개발을 하다보면 재귀적인 모델이 필요할 때가 있다.
+    - 예를 들어 elasticsearch의 aggregaion은 하나의 aggregation 하위에 다른 aggregation이 올 수 있다.
+    - 이를 모델로 정의하려면 재귀가 필요하다.
+  - 모델명을 작은 따옴표로 감싸면 된다.
+
+  ```python
+  from pydantic import Basemodel
+  from typing import Union
+  
+  
+  class BucketAggregation(Basemodel):
+      pass
+  
+  
+  class MetricAggregation(Basemodel):
+      pass
+  
+  
+  class Aggregation(Basemodel):
+      aggregation: Union[BucketAggregation, MetricAggregation]
+      sub: 'Aggregation' = None
   ```
 
 
