@@ -774,6 +774,19 @@
   except ValidationError as e:
       print(e)
   ```
+  
+  - 주의할 점은 값이 주어지지 않을 경우 해당 field는 validation을 하지 않는다는 점이다.
+    - 이는 성능상의 이유 때문으로, 굳이 값이 주어지지 않은 field를 대상으로 validation을 할 필요가 없기 때문이다.
+    - 값이 주어지지 않더라도 validation을 해야한다면 아래와 같이 `always`를 `True`로 주면 된다.
+  
+  ```python
+  class DemoModel(BaseModel):
+      ts: datetime = None
+  
+      @validator('ts', pre=True, always=True)
+      def set_ts_now(cls, v):
+          return v or datetime.now()
+  ```
 
 
 
@@ -799,8 +812,23 @@
           return v.strftime("%Y-%m-%d")
   ```
 
-  - 위와 같이 정확히 동일하게 동작하는 validate을 여러 필드에 해줘야 할 경우
+  - 아래와 같이 여러 field명을 넣으면 된다.
 
+  ```python
+  from datetime import date
+    
+    
+  class MyRange(pyd.BaseModel):
+      gte:date
+      lte:date
+  
+      @pyd.validator('gte', 'lte')
+      def change_to_str(cls, v):
+          return v.strftime('%Y-%m-%d')
+  ```
+  
+  - 위와 같이 정확히 동일하게 동작하는 validate을 여러 필드에 해줘야 할 경우
+  
   ```python
   from datetime import date, timedelta
   from pydantic import BaseModel, validator
@@ -819,10 +847,10 @@
   print(my_range.gte)		# 2022-03-04
   print(my_range.lte)		# 2022-03-05
   ```
-
+  
   - class 내의 모든 field에 하나의 validation 적용하기
     - class 내의 모든 field에 하나의 validation 적용하기
-
+  
   ```python
   from datetime import date, timedelta
   from pydantic import BaseModel, root_validator
