@@ -2037,7 +2037,7 @@
 
 ## Pipeline aggregations
 
-### Bucket sort
+### Bucket sort(pagination)
 
 - 상위의 multi-bucket aggregation을 정렬하는데 사용한다.
   - `_key`, `_count` 혹은 sub aggs를 기준으로 정렬된다.
