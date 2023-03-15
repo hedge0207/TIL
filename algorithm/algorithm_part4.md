@@ -433,8 +433,35 @@
     - Clustering의 영향을 거의 받지 않으므로 해시 함수 구현시 충돌의 최소화만 살펴보면 된다. 반면에 open-addressing은 clustering의 영향을 받으므로 해시 함수를 구현할 때 clustering도 최소화시켜야한다.
     - Hash table이 채워져도(load factor가 증가해도) 성능 저하가 linear하게 발생한다. 반면에 open-addressing 방식은 load factor가 일정 값을 넘어가기 시작하면 성능저하가 급격히 증가하기 시작한다.
   - Open-Addressing의 장점
-    - Chaining과 달리 추가적인 작업 공간(연결 리스트)를 필요로 하지 않는다.
+    - Chaining과 달리 추가적인 작업 공간(연결 리스트)를 필요로 하지 않기에, 추가적인 메모리 할당이 불필요하다.
+    - 일반적으로 linear probing의 성능이 chaining에 비해 좋긴 하지만, load factor가 0.8에 근접하면 급격한 성능 저하가 발생한다.
   - 결론
     - Open-Addressing의 경우 data의 크기가 작고 예측 가능할 때 사용하는 것이 좋다.
     - Chaining은 높은 load factor가 예상되거나, data의 크기가 크거나 가변적일 때 사용하는 것이 좋다.
 
+
+
+- 언어별 해시 테이블 구현 방식
+
+  > 파이썬 알고리즘 인터뷰, 박상길/정진호, 책만, 2020
+
+  - Python의 dictionary와 set은 hash table로 구현되었다.
+  - Python의 dictionary는 open-addressing 방식으로 구현되었다.
+    - CPython의 dictionary 소스 코드에는 chaining시 malloc으로 메모리를 할당하는 오버헤드가 높아 open-addressing을 선택했다는 [주석](https://hg.python.org/cpython/file/52f68c95e025/Objects/dictobject.c#l297)이 달려있다.
+  - Modern language들의 일반적인 경향은 다음과 같다.
+    - Load factor가 작을 경우 chaining보다 좋은 성능을 보이는 open-addressing을 채택하되, load factor를 낮게 설정한다.
+    - 만일 load factor가 설정값을 초과할 경우 hash table을 resize한다.
+    - 이를 통해 open-addressing의 성능을 취하면서, 안정적으로 활용할 수 있도록 한다.
+  - 언어별 해시 테이블 구현
+  
+  | 언어   | 방식                               |
+  | ------ | ---------------------------------- |
+  | C++    | Chaining                           |
+  | Java   | Chaining                           |
+  | Go     | Chaining                           |
+  | Ruby   | Open-Addressing(load factor: 0.5)  |
+  | Python | Open-Addressing(load factor: 0.66) |
+  
+  
+  
+  
