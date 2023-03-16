@@ -1,4 +1,4 @@
-# docker로 실행하기
+# Docker로 실행하기
 
 > https://www.elastic.co/guide/en/logstash/current/docker.html 참고
 
@@ -45,9 +45,20 @@
 
 
 
+# Logstash와 DB 연결하기
+
+- JDBC input plugin 설치하기
+
+  - 7.17.0 버전 기준으로 설치 된 상태로 패키징이 된 것 같지만, 이전 버전에서는 따로 설치를 해줘야 하는 것으로 보인다.
+  - `/logstash/vendor/bundle/jruby/{version}/gems`에 `logstash-integration-jdbc-{version}`이 있으면 굳이 하지 않아도 된다.
+  - 명령어
+    - logstash가 설치된 folder에서 실행한다.
+
+  ```bash
+  $ bin/logstash-plugin install logstash-input-jdbc
+  ```
 
 
-## logstash와 DB 연결하기
 
 - hive의 데이터를 logstash를 통해 elasticsearch에 바로 색인할 수 있다.
 
@@ -183,7 +194,7 @@
 
 
 
-## Logstash와 Kafka 연동
+# Logstash와 Kafka 연동
 
 - docker-compose.yml 파일에 아래와 같이 작성한다.
 
@@ -237,9 +248,7 @@
 
 
 
-
-
-# output
+# Output Plugin
 
 - elasticsearch output 사용시 template을 미리 정의할 수 있다.
 
@@ -300,6 +309,66 @@
     - log를 확인 후 `Failed to install template`와 같은 error 메시지가 있다면 template 파일을 확인 후 수정하면 된다.
 
 
+
+
+
+# Dead letter queues(DLQ)
+
+- DLQ
+
+  - 처리에 실패한 event들(즉 output에 성공적으로 도달하지 못 한 event들)을 pipeline의 blocking이나 event의 유실 없이 처리하기 위한 도구이다.
+  - DLQ의 구조
+    - DLQ에 작성된 event 들을 처리하기 위해서 추가적인 logstash pipeline이 필요하다.
+
+  > 출처: https://www.elastic.co/guide/en/logstash/7.17/dead-letter-queues.html
+
+  ![image-20230314172147622](logstash.assets/image-20230314172147622.png)
+
+  - 처리 과정
+    - Main pipeline에서 event 처리에 실패한다.
+    - 처리에 실패한 각 event는 original event, event가 처리되지 못한 이유를 설명하는 metadata, timestamp 등과 함께 DLQ가 file 형태로 작성된다.
+    - DLQ를 처리하기 위한 DLQ pipeline이 처리 후 elasticsearch에 다시 색인한다.
+  - DLQ file의 저장 방식
+    - 우선 임시 file에 실패한 event들을 작성된다.
+    - 마지막 작성으로부터 `flush_interval`에 설정한 시간 만큼이 지나거나 file이 다 찼다고 생각되면 dead letter queue segment file이라 불리는 ingest가 가능해지는 file로 임시 file의 이름을 변경한다.
+    - 이름이 변경된 후 새로운 임시 file이 생성된다.
+  - 한계
+    - DLQ pipeline에서도 실패할 경우, 이를 다시 DLQ pipeline에 넣어 재처리 하는 것은 불가능하다.
+    - 현재까지는 elasticsearch output 에서 실패한 event 만을 처리 가능하다.
+    - 그 중에서도 response code가 400, 404인 문서들을 대상으로만 사용이 가능한데, 이는 해당 event 자체가 client의 잘못(잘못된 mapping이나 잘못된 양식 등)으로 인해 retry를 하더라도 실패할 것이기 때문이다.
+  - 실패 사유별 처리 과정
+    - HTTP request 자체가 실패한 경우, 즉 elasticsearch에 문제가 생긴 경우에는 요청에 성공할 때 까지 retry를 무한히 반복하므로 DLQ는 추가적으로 할 일이 없다.
+    - HTTP request는 성공했으나, 일부 문서가 색인에 실패한 경우에는, 해당 문서들에 대한 정보만 DLQ에 작성되고 DLQ pipeline에 의해 처리된다.
+
+
+
+- 실행해보기
+
+  - 우선 DLQ를 사용하기 위해 `logstash.yml` 설정을 변경한다.
+  
+  ```yaml
+  # DLQ를 활성화하기 위해 true를 준다(기본값은 false).
+  dead_letter_queue.enable: true
+  
+  # DLQ file이 저장될 path를 설정한다.
+  path.dead_letter_queue: /usr/share/logstash/data
+  
+  # 임시 파일이 마지막 작성으로부터 얼마의 시간이 지났을 때 segment file로 이름이 변경될지를 ms 단위로 설정한다.
+  # 만일 작성이 빈번히 일어나지 않다면(마지막 작성으로부터의 경과 시간이므로) 이 값이 작을수록 각 segment file의 크기는 더 작아지고, 더 많은 segment file이 생성될 것이다.
+  # 1000 미만으로 설정할 수 없다.
+  dead_letter_queue.flush_interval: 5000
+  
+  # DLQ segment 하나의 size를 설정한다.
+  # 이 값이 초과되는 event들은 drop된다.
+  dead_letter_queue.max_bytes: 1024mb
+  
+  # max_bytes에 도달했을 때 어떤 data를 drop 시킬지 설정하는 옵션이다.
+  # drop_newer는 추가시에 file size가 max_bytes보다 커질 수 있는 새로운 값들을 받지 않는 옵션이다.
+  # drop_older는 새로운 data를 위해 기존 data들 중 가장 오래된 것 부터 삭제시키는 옵션이다.
+  dead_letter_queue.storage_policy: drop_newer
+  ```
+  
+  
 
 
 
