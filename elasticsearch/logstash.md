@@ -1,3 +1,201 @@
+# Logstash
+
+- Elasticsearch에서 개발한 data pipeline이다.
+
+  - Kafka, Database, Elasticsearch, Redis를 비롯한 다양한 input plugin과 마찬가지로 다양한 output plugin이 있어 쉽게 data를 옮길 수 있다.
+
+  - 다양한 설정 관련 file이 있으며, 각 file이 있어야 할 위치가 정해져있다.
+
+    > https://www.elastic.co/guide/en/logstash/current/dir-layout.html#dir-layout
+
+
+
+- Pipeline 생성하기
+
+  - Pipeline configuration file 생성하기
+    - input, filter, output으로 구성된다.
+    - filter는 필수가 아니지만, input, output은 반드시 있어야한다.
+
+  ```
+  input {
+    ...
+  }
+  
+  filter {
+    ...
+  }
+  
+  output {
+    ...
+  }
+  ```
+
+  - Pipeline 설정 적용하기
+
+    - 위에서 작성한 configuration을 pipeline에 적용하는 방법은 다음과 같다.
+    - Logstash는 pipeline configuration file들이 저장된 folder(이하 `conf` folder)의 위치를 설정으로 받는다.
+    - 이는 `logstash.yml`에서 `path.config` 설정을 변경하여 기본 directory를 변경할 수 있다.
+    - 만일 설정을 변경하지 않았을 경우의 기본값은 운영체제마다, 설치 방식마다 다르다(docker의 경우 `/usr/share/logstash/pipeline`가 기본 경로이다).
+    - Logstash는 `conf` folder에 저장된 모든 `*.conf` 형식의 file들을 읽어서 pipeline을 구성한다.
+    - Logstash 실행시 `-f` 옵션으로 어떤 config file을 읽을지 선택이 가능하다.
+
+  - `conf` folder에  `.conf` 파일이 여러 개일 경우.
+
+    - `.conf` 파일이 여러 개일 경우 logstash는 `.conf` 파일들을 하나의 `.conf` 파일로 합친 후 이를 기반으로 단일 pipeline을 구성한다.
+    - 이 경우 여러 `.conf` file의 모든 input의 값이 여러 `.conf` file의 모든 filter를 거쳐 여러 `.conf` file의 모든 output으로 전송된다.
+
+  - 주의사항
+
+    - Logstash 설치시 기본적으로 아래와 같은 sample `.conf` 파일이 포함되어 있다(설치 방식, 운영체제에 따라 내용, 위치 등은 다르며, 아래는 docker 기준이다).
+
+    ```
+    input {
+      beats {
+        port => 5044
+      }
+    }
+    
+    output {
+      stdout {
+        codec => rubydebug
+      }
+    }
+    ```
+
+    - 상기했듯 logstash는 `.conf` 파일을 지정해주지 않으면 pipeline configuration folder에 있는 모든 file을 읽어서 하나의 `.conf` file을 구성한 후 이를 하나의 pipeline으로 실행시키므로, 예시 file의 내용도 pipeline에서 실행되게 된다.
+    - 따라서 반드시 해당 `.conf` file을 삭제한 뒤 실행해야한다.
+
+  - Worker
+
+    - 하나의 pipeline은 여러 개의 worker들에 의해 처리되게 된다.
+    - 정확히는 input은 logstash에 의해 처리되고, filter와 output이 여러 개의 worker에 의해 처리된다.
+    - Worker의 개수는 `logstash.yml`, `pipeline.yml` 등에서 설정 가능하다.
+
+
+
+- `logstash.yml`
+  - Logstash와 관련된 설정을 변경할 수 있는 file이다.
+    - `pipeline.yml`이 개별 pipeline들에 적용될 설정을 입력하는 file이라면 `logstash.yml`은 모든 pipeline에 기본값으로 적용될 설정을 입력하는 file이다.
+  - 성능과 관련된 주요 설정은 다음과 같다.
+    - `pipeline.workers`: 각 pipeline별 worker의 개수를 설정한다. 기본값은 host machine의 CPU core 개수이다.
+    - `pipeline.batch.size`: 하나의 worker가 input으로 들어온 event를 최대 몇 개까지 모아서 filter와 output을 처리할지를 설정하는 옵션으로, 값이 클 수록 성능이 좋아지지만, OOM이 발생할 위험이 있다.
+    - `pipeline.batch.delay`: `pipeline.batch.size`가 차지 않더라도 일정 시간이 지나면 worker는 지금까지 모은 event만으로 처리를 시작하는데, 그 기간을 설정하는 옵션이다.
+
+
+
+- 여러 pipeline 생성하기
+
+  - `pipeline.yml` file을 작성하여 여러 개의 pipeline을 하나의 instance에서 실행시키는 것이 가능하다.
+    - `logstash.yml`에 있는 모든 설정을 적용할 수 있다.
+    - 따로 설정을 주지 않을 경우 `logstash.yml`에 설정한 값이 기본값으로 설정된다.
+    - 설정을 해줄 경우 `logstash.yml`에 설정한 값은 무시된다.
+    - `pipeline.yml` file은 반드시 `path.settings`(docker 기준 `/usr/share/logstash/config`)에 위치해야한다.
+  - 예시
+    - `pipeline.yml` file에 실행시키고자하는 pipeline들의 정보를 입력하면 된다.
+    - 아래 예시와 같이 `pipeline.id`를 입력하고, 해당 pipeline을 구성할 때 사용할 `.conf` file의 위치를 입력한다.
+    - 각 pipeline 마다 worker의 수를 다르게 주는 것도 가능하다.
+
+  ```yaml
+  - pipeline.id: my-pipeline_1
+    path.config: "/etc/path/to/p1.conf"
+    pipeline.workers: 3
+  - pipeline.id: my-other-pipeline
+    path.config: "/etc/different/path/p2.cfg"
+    queue.type: persisted
+  ```
+
+
+
+- `.conf` 파일에서 값에 접근하기
+
+  > https://www.elastic.co/guide/en/logstash/current/field-references-deepdive.html
+
+  - 기본적으로 `[]`를 사용하여 event의 filed의 값에 접근이 가능하다.
+    - String 내부에서 사용할 때는 `%[]`형태로 사용한다.
+
+  ```yaml
+  filter {
+    #  +----literal----+     +----literal----+
+    #  |               |     |               |
+    if [@metadata][date] and [@metadata][time] {
+      mutate {
+        add_field {
+          "[@metadata][timestamp]" => "%{[@metadata][date]} %{[@metadata][time]}"
+        # |                      |    |  |               |    |               | |
+        # +----string-argument---+    |  +--field-ref----+    +--field-ref----+ |
+        #                             +-------- sprintf format string ----------+
+        }
+      }
+    }
+  }
+  ```
+
+  - `@metadata`는 pipeline 내에서만 사용하고 output에 설정한 실제 목적지까지는 전달하지 않는 임시 data를 위한 특수 filed이다.
+    - 예를 들어, kafka에서 message를 받아서 elasticsearch에 색인을 할 때, message에 어떤 index에 색인할지에 대한 정보도 함께 전달했다고 해보자.
+    - 이를 그대로 색인하면 index에 대한 정보도 함께 색인될 것이다.
+    - 따라서 `@metadata` field에 임시로 index 정보를 저장하고, index정보는 event에서는 삭제해준다.
+
+  ```yaml
+  input {
+      kafka {
+          bootstrap_servers => "localhost:9092"
+          codec => "json"
+          topics => "foo"
+          group_id => "logstash"
+          consumer_threads => 1
+          max_poll_records => 1000
+          auto_offset_reset => "earliest"
+      }
+  }
+  
+  filter {
+      # 임시로 index 정보를 metadata에 저장하고
+      mutate { add_field => { "[@metadata][index_name]" => "%{[index_name]}" } }
+      # 실제 event에서는 삭제한다.
+      mutate { remove_field => ["index_name"]}
+  }
+  
+  output {
+      elasticsearch {
+          hosts => ["localhost:9200"]
+          action => "index"
+          # 위에서 추가한 metadata field에서 index정보를 가져온다.
+          index => "%{[@metadata][index_name]}"
+  
+      }
+  }
+  ```
+
+
+
+- 환경변수 설정하기
+
+  - 환경변수를 설정하고, 이를 `.conf` 파일에서 사용할 수 있다.
+  - 환경변수에 대한 접근은 `${some_env_val}`과 같이 하면 된다.
+    - `:`을 사용하여 기본값을 주는 것도 가능하다.
+    - 예를 들어 `${foo:hello}`와 같이 사용할 경우 `foo`라는 환경 변수가 있으면, 해당 변수에 저장된 값을 사용하고, 없으면 hello를 사용하게 된다.
+  - 다음과 같이 환경 변수를 export하고
+
+  ```bash
+  $ export MY_HOME_PATH="/log"
+  ```
+
+  - `.conf` 파일에서 사용할 수 있다.
+
+  ```yaml
+  filter {
+    mutate {
+      add_field => {
+        "my_path" => "${MY_HOME_PATH:/home}/file.log"
+      }
+    }
+  }
+  ```
+
+
+
+
+
 # Docker로 실행하기
 
 > https://www.elastic.co/guide/en/logstash/current/docker.html 참고
