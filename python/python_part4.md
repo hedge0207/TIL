@@ -857,7 +857,9 @@
   - `abc` 모듈을 불러와서 사용해야 한다.
     - abstract base class의 약자이다.
   - 추상 클래스 생성하기
-
+    - `metaclass=ABCMeta`와 같이 함으로써 instance를 생성할 수 없게 된다.
+  
+  
   ```python
   # abc 모듈을 불러온다.
   from abc import *
@@ -870,10 +872,10 @@
       def foo():
           pass
   ```
-
+  
   - 자식 클래스에 추상 메서드를 구현하지 않을 경우
     - Hello!까지는 출력이 되지만 인스턴스를 생성할 때 에러가 발생한다.
-
+  
   ```python
   from abc import *
   

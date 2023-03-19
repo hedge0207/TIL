@@ -164,6 +164,7 @@
       def fly(self):
           pass
   
+      
   class QuackBehavior(ABC):
       @abstractmethod
       def quack(self):
@@ -482,7 +483,7 @@
           self.temperature = None
           self.humidity = None
           self.pressure = None
-          # 굳이 weather_data를 인스턴스 변수에 저장하는 이유는 추후 탈퇴시 사용하기 위함이다.
+          # 굳이 subject인 weather_data를 인스턴스 변수에 저장하는 이유는 추후 탈퇴시 사용하기 위함이다.
           self.weather_data = weather_data
           self.weather_data.register_observer(self)
           
@@ -552,7 +553,315 @@
           self.display()
   ```
 
+
+
+
+
+
+# Decorator Pattern
+
+- 커피 전문점 스타버즈
+
+  - 사업이 확장됨에 따라 다양한 음료를 모두 포괄하는 주문 시스템을 갖추려고 한다.
+  - 기존의 주문 시스템은 다음과 같았다.
+    - `Beverage`라는 추상 class가 있고, 이 추상클래스를 상속받는 실제 음료 class가 있다.
+    - `get_description()`은 메뉴에 대한 설명을, `cost()`는 메뉴의 가격을 반환한다.
+
+  ```python
+  from abc import *
   
+  class Beverage(metaclass=ABCMeta):
+      def __init__(self, description):
+          self.description = description
+      
+      @abstractmethod
+      def get_description(self):
+          pass
+      
+      @abstractmethod
+      def cost(self):
+          pass
+  
+  class HouseBlend(Beverage):
+      pass
+  
+  class DarkRoast(Beverage):
+      pass
+  
+  class Decaf(Beverage):
+      pass
+  ```
+
+  - 문제는 토핑의 조합에 따라 하나의 메뉴의 가격이 달라질 수 있다는 점이다.
+    - 따라서 이 모든 가격을 반영하기 위해 토핑마다 class를 생성한다.
+    - 메뉴, 토핑이 증가할수록 무수히 많은 class를 생성해야한다.
+
+  ```python
+  class DecafWithSoy(Beverage):
+      pass
+  
+  class DecafWithSoyandMocha(Beverage):
+      pass
+  
+  class DecafWithSteamedMilkandCaramel(Beverage):
+      pass
+  
+  # ...
+  ```
+
+  - 해결 방법
+    - `Beverage`를 추상 class가 아닌 일반 class로 선언하고, 인스턴스 변수로 토핑의 종류를 선언한 뒤, `cost`를 직접 구현한다.
+
+  ```python
+  class Beverage:
+      def __init__(self, description):
+          self.description = description
+          # 토핑의 여부를 bool 값으로 받고
+          self.milk = False
+          # 토핑의 가격을 받는다.
+          self.milk_cost = 0.4
+          self.soy = False
+          self.soy_cost = 0.3
+          # 그 밖의 토핑들을 선언
+          # ...
+  
+      def get_description(self):
+          return self.description
+  	
+      # 토핑 여부를 bool 값으로 반환
+      def has_milk(self):
+          return self.milk
+  	
+      # 토핑 여부를 설정
+      def set_milk(self, milk):
+          self.milk = milk
+  
+      def has_soy(self):
+          return self.soy
+  
+      def set_soy(self, soy):
+          self.soy = soy
+  
+      # 각종 토핑 관련 method들
+      # ...
+  
+      def cost(self):
+          condiment_cost = 0
+          if self.has_milk():
+              condiment_cost += self.milk_cost
+  
+          if self.has_soy():
+              condiment_cost += self.soy_cost
+  
+          # 다른 토핑 관련 분기
+          # ...
+  
+          return condiment_cost
+  
+      
+  # Beverage를 상속 받는다.
+  class Decaf(Beverage):
+      def cost(self):
+          # 메뉴의 가격에 토핑의 가격을 더한다.
+          return 1.99 + super().cost()
+  ```
+
+  - 이 방식의 문제
+    - 토핑 가격이 바뀔 때 마다 코드가 수정되어야 한다.
+    - 첨가물의 종류가 추가될 때 마다 새로운 메서드를 만들어야 한다.
+    - 첨가물의 종류가 추가될 때 마다 슈퍼 클래스(`Beverage`)의 `cost` 메서드도 수정되어야 한다.
+    - 새로 추가된 음료에는 필요 없는 토핑들이 있을 수 있다(예를 들어 아이스 티라는 메뉴가 추가될 때에도 슈퍼 클래스에 있는 `has_whip` 등의 메서드를 그대로 상속 받게 된다).
+    - 기존에 정의되지 않은 토핑을 주문하는 경우 대응이 어렵다.
+
+
+
+- OCP(Open-Closed Principle)
+  - Class는 확장에는 열려 있어야 하지만 변경에는 닫혀 있어야 한다는 원칙이다.
+  - 모순처럼 보이지만 이미 이전 장에서 obsever pattern을 공부할 때 경험한 적이 있다
+    - Observer를 추가하더라도, subject의 코드는 하나도 변경 할 필요가 없었다.
+  - 모든 부분에서 OCP를 준수하는 것은 불가능에 가깝고, 굳이 그렇게 할 필요도 없다.
+    - 오히려 코드가 더 지저분해 질 수도 있다.
+    - 변경 가능성이 높은 부분에 중점적으로 적용하는 것이 좋다.
+
+
+
+- Decorator Pattern
+
+  - 한 음료의 토핑을 상속을 통해 관리하는 것에는 다양한 문제들이 있었다.
+
+    - 따라서 상속이 아닌 다른 방식을 통해 관리해야 할 것 같다.
+
+  - 어떤 음료의 토핑으로 해당 음료를 장식(decorate)하는 방식을 사용한다.
+
+    - 예를 들어 디카페인 음료에 토핑을 추가한다고 가정해보자.
+    - `Decaf` 객체를 가져온다
+    - `Mocah` 객체로 장식한다.
+    - `Whip` 객체로 장식한다.
+    - `cost()` 메서드를 호출한다. 이 때 토핑의 가격을 계산하는 일은 더 이상 슈퍼 클래스가 하지 않고, 해당 객체에 위임한다.
+
+  - 데코레이터 객체는 일종의 wrapper 객체라고 생각하면 된다.
+
+    - 데코레이터 객체의 형식은 데코레이터 객체가 장식하는 객체를 반영한다.
+    - 반영(mirror)이란 같은 형식을 같는다는 의미이다.
+    - 즉, deocator의 슈퍼 클래스는 자신이 장식하고 있는 객체의 슈퍼클래스와 같다.
+    - 한 객체를 여러 개의 decorator로 감쌀 수 있다.
+    - 따라서 위 예시와 같이 decorator 객체 `Mocha`는 자신이 장식하는 `Decaf` 객체가 상속 받아 가지고 있는 `cost` 메서드를 가지고 있고, `Whip` 객체 역시 마찬가지로 자신이 장식하는 `Decaf`를 장식하는 `Mocah`가 반영한 `cost` 메서드를 가지고 있다.
+
+    ![image-20230319150811088](design_pattern_part1.assets/image-20230319150811088.png)
+
+  - Decorator를 사용했을 때 가격이 계산되는 방식은 다음과 같다.
+
+    - 먼저 가장 바깥쪽에 있는 decorator 객체인 `Whip`의 `cost` 메서드가 호출된다.
+    - `Whip`의 `cost` 메서드는 자신이 장식하는 `Mocha`의 `cost` 메서드를 호출한다.
+    - `Mocha`는 자신이 장식하는 `Decaf`의 `cost` 메서드를 호출한다,
+    - `Decaf`의 `cost` 메서드는 디카페인 커피의 가격을 반환한다.
+    - `Mocha`의 `cost` 메서드는 `Decaf`의 `cost` 메서드에서 반환된 가격에 모카 토핑의 가격을 추가하여 반환한다.
+    - `Whip`의 `cost` 메서드는 `Mocha`의 `cost` 메서드가 반환한 가격에 휘핑 가격을 추가하여 반환한다.
+
+  - 정리
+
+    - 데코레이터의 슈퍼 클래스는 자신이 장식하고 있는 객체의 슈퍼 클래스와 같다.
+    - 한 객체를 여러 개의 데코레이터로 감쌀 수 있다.
+    - 데코레이터는 자신이 감싸고 있는 객체와 같은 슈퍼클래스를 가지고 있기에 원래 객체(싸여 있는 객체)가 들어갈 자리에 데코레이터 객체를 넣을 수 있다(위에서 `Whip`이 `Decaf`를 직접 감싸지 않고 `Decaf`를 감싼 `Mocha`를 감싼 것 처럼).
+    - 데코레이터는 자신이 장식하고 있는 객체에 어떤 행동을 위임하는 일 말고도 추가 작업을 수행할 수 있다.
+    - 객체는 언제든지 감쌀 수 있으므로 실행 중에 필요한 데코레이터를 동적으로 적용할 수 있다.
+
+  - 데코레이터 패턴의 정의
+
+    - 객체에 추가 요소를 동적으로 더할 수 있게 해주는 패턴.
+    - 서브 클래스를 활용하는 것 보다 훨씬 더 유용하게 기능을 확장할 수 있다.
+
+  - 구조
+    - 각 구성 요소는 직접 쓰일 수도 있고, 데코레이터에 감싸여 쓰일 수도 있다.
+    - 각 `Decorator` 안에는 `Component` 객체가 들어 있다.
+    - `Decorator`는 자신이 장식할 구성 요소와 같은 인터페이스 또는 추상클래스를 구현한다.
+    - `ConcreteDecorator`에는 데코레이터가 감싸고 있는 `Component` 객체용 인스턴스 변수가 있다.
+    - 데코레이터는 `Component`의 상태를 확장할 수 있다(`ConcreteDecoratorB`의 `new_state`와 같이)
+    - 데코레이터가 새로운 메서드를 추가할 수도 있다. 그러나 일만적으로 새로운 메서드를 추가하는 대신 `Component`에 원래 있던 메서드를 호출하기 전후에 별도의 작업을 추가하는 방식으로 새로운 기능을 추가한다.
+
+  ![image-20230319153332506](design_pattern_part1.assets/image-20230319153332506.png)
+
+  - 스타 버즈에 적용하면 다음과 같다.
+
+    ![image-20230319155315213](design_pattern_part1.assets/image-20230319155315213.png)
+
+  - 상속보다 구성을 사용하라 했는데 왜 상속을 사용하는 것인가?
+
+    - 데코레이터의 형식을 데코레이터가 장식하는 객체(감싸줄 객체)의 형식과 같게 하기 위해서 `CondimentDecorator`에서 `Beverage`를 상속하고 있다.
+    - 이는 행동을 물려받기 위함이 아니라 형식을 맞춰주기 위함이다.
+    - 새로운 행동은 슈퍼클래스로부터 행동을 상속 받아서 얻어지는 것이 아니라, 구성 요소를 가지고 데코레이터를 만들 때 새로운 행동을 추가하는 방식으로 얻어진다.
+    - 실제로 Decorator 클래스들은 모두 `Beverage`의 인스턴스를 인스턴스 변수로 가지고 있다.
+    - 즉 `Beverage`를 상속 받았음에도 `Beverage`의 행동을 상속 받아 사용하지는 않고, 구성을 통해 사용한다.
+
+
+
+- 구현하기
+
+  - Beverage class 구현하기
+    - 예시에서는 기존 `Beverage` 클래스가 추상 클래스였어서 추상 클래스로 구현했지만, 인터페이스로 구현해도 된다.
+
+  ```python
+  from abc import *
+  
+  class Beverage(metaclass=ABCMeta):
+      def __init__(self):
+          self.description = None
+  
+      def get_description(self):
+          return self.description
+  
+      @abstractmethod
+      def cost(self):
+          pass
+  ```
+
+  - Decorator class 구현하기
+    - `Beverage` 객체가 들어갈 자리에 들어갈 수 있도록 `Beverage` class를 상속받는다.
+    - 모든 데코레이터 클래스가 `get_description`를 구현하도록, `get_description`를 추상 메서드로 구현한다(이유는 추후 설명).
+    - 각 데코레이터가 장식할 음료를 나타내는 `Beverage` 객체를 인스턴스 변수에 저장한다.
+
+  ```python
+  class CondimentDecorator(Beverage):
+      def __init__(self, beverage):
+          self.beverage = beverage
+  
+      @abstractmethod
+      def get_description(self):
+          pass
+  ```
+
+  - 음료 코드 구현하기
+    - 예시로 에스프레소만 구현한다.
+
+  ```python
+  class Expresso(Beverage):
+      def __init__(self):
+          self.description = "expresso"
+      
+      def cost(self):
+          return 1.99
+  ```
+
+  - 토핑 코드 구현하기
+    - 예시로 모카와 두유만 구현한다.
+    - `CondimentDecorator`에서 `get_description`를 추상 메서드로 구현한 이유가 바로 아래와 같이 토핑 정보를 추가하여 반환하기 위함이다.
+
+  ```python
+  class Mocha(CondimentDecorator):
+      def __init__(self, beverage):
+          self.beverage = beverage
+      
+      def get_description(self):
+          return self.beverage.get_description() + ", mocha"
+      
+      def cost(self):
+          return self.beverage.cost() + 0.20
+  
+      
+  class Soy(CondimentDecorator):
+      def __init__(self, beverage):
+          self.beverage = beverage
+      
+      def get_description(self):
+          return self.beverage.get_description() + ", soy"
+      
+      def cost(self):
+          return self.beverage.cost() + 0.10
+  ```
+
+  - 실행해보기
+
+  ```python
+  beverage = Expresso()
+  print(beverage.cost())					# 1.99
+  print(beverage.get_description())		# expresso
+  
+  beverage2 = Expresso()
+  beverage2 = Mocha(beverage2)
+  beverage2 = Mocha(beverage2)
+  beverage2 = Soy(beverage2)
+  print(beverage2.cost())					# 2.49
+  print(beverage2.get_description())		# expresso, mocha, mocha, soy
+  ```
+
+
+
+- 한계
+  - 구상 구성 요소로 어떤 작업을 처리하는 코드에 데코레이터 패턴을 적용하면 코드가 제대로 동작하지 않는다.
+    - 예를 들어 위 코드는 `Beverage`라는 추상 구성 요소 어떤 작업을 처리하는 코드이지, `Expressso`, `Decaf` 등의 특정한 구상 구성 요소별로 특별한 작업을 처리하는 코드가 아니다.
+    - 원래 decorator pattern 자체가  추상 구성 요소에 새로운 행동을 추가하기 위한 pattern이므로, 특정 구상 구성 요소별로 고유한 작업을 decorator를 사용하여 추가하는 것은 적절하지 않다.
+    - 예를 들어 에스프레소 할인 행사를 진행해야해서 `Expresso` 에만 특별한 처리가 필요하다.
+    - 그러나, 일단 데코레이터로 구상 구성 요소를 감싸고 나면, 해당 메뉴가 `Beverage`의 구상 구성 요소라는 것 만 알 수 있을 뿐, 구체적으로 어떤 구상 구성 요소인지는 알 수 없게 된다.
+    - 즉 데코레이터가 장식하는 대상이 `Beverage`의 서브 클래스라는 것만 알고 있을 뿐 구체적으로 어떤 class인지는 모르므로, `Expresso`일 경우에만 할인을 적용할 수는 없다(물론 `Express` class를 변경하면 되지만, 이는 원하는 해결 방식이 아니다).
+  - 데코레이터는 같은 객체를 감싸고 있는 다른 데코레이터를 알 수 없다.
+    - 데코레이터는 감싸고 있는 객체에 행동을 추가하는 용도로 만들어진다.
+    - 만약 여러 단계의 데코레이터를 파고들어 어떤 작업을 해야한다면 이는 원래 데코레이터 패턴이 만들어진 의도에 어긋난다.
+  - 잡다한 class가 지나치게 많이 생성될 수 있다.
+  - 구성 요소(`Beverage`와 이를 상속 받는 `Decaf` 등)를 초기화하는 데 필요한 코드가 훨씬 복잡해진다.
+
+
+
+
 
 
 
@@ -562,4 +871,4 @@
 - 구현보다는 인터페이스에 맞춰서 프로그래밍한다.
 - 상속보다는 구성을 활용한다.
 - 상호작용하는 객체 사이에는 가능하면 느슨한 결합을 사용해야한다.
-
+- 클래스는 확장에는 열려있어야 하지만 변경에는 닫혀있어야 한다.
