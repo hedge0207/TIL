@@ -817,7 +817,7 @@
       def cost(self):
           return self.beverage.cost() + 0.20
   
-      
+  
   class Soy(CondimentDecorator):
       def __init__(self, beverage):
           self.beverage = beverage
@@ -847,6 +847,9 @@
 
 
 - 한계
+  
+  > https://betterprogramming.pub/the-decorator-pattern-why-i-stopped-using-it-and-the-alternative-2ae447f9de08 참고
+  
   - 구상 구성 요소로 어떤 작업을 처리하는 코드에 데코레이터 패턴을 적용하면 코드가 제대로 동작하지 않는다.
     - 예를 들어 위 코드는 `Beverage`라는 추상 구성 요소 어떤 작업을 처리하는 코드이지, `Expressso`, `Decaf` 등의 특정한 구상 구성 요소별로 특별한 작업을 처리하는 코드가 아니다.
     - 원래 decorator pattern 자체가  추상 구성 요소에 새로운 행동을 추가하기 위한 pattern이므로, 특정 구상 구성 요소별로 고유한 작업을 decorator를 사용하여 추가하는 것은 적절하지 않다.
@@ -854,10 +857,24 @@
     - 그러나, 일단 데코레이터로 구상 구성 요소를 감싸고 나면, 해당 메뉴가 `Beverage`의 구상 구성 요소라는 것 만 알 수 있을 뿐, 구체적으로 어떤 구상 구성 요소인지는 알 수 없게 된다.
     - 즉 데코레이터가 장식하는 대상이 `Beverage`의 서브 클래스라는 것만 알고 있을 뿐 구체적으로 어떤 class인지는 모르므로, `Expresso`일 경우에만 할인을 적용할 수는 없다(물론 `Express` class를 변경하면 되지만, 이는 원하는 해결 방식이 아니다).
   - 데코레이터는 같은 객체를 감싸고 있는 다른 데코레이터를 알 수 없다.
+    - 그러므로 특정 decorator stack에서 특정 decorator만 제거할 수 없다.
+    - 또한 decorator의 순서에 의존적인 구현을 하는 것도 어렵다.
+    - 이는 decorator의 한계라기 보다는 설계 의도에 맞지 않는 행동들이라고 할 수 있다.
     - 데코레이터는 감싸고 있는 객체에 행동을 추가하는 용도로 만들어진다.
     - 만약 여러 단계의 데코레이터를 파고들어 어떤 작업을 해야한다면 이는 원래 데코레이터 패턴이 만들어진 의도에 어긋난다.
-  - 잡다한 class가 지나치게 많이 생성될 수 있다.
-  - 구성 요소(`Beverage`와 이를 상속 받는 `Decaf` 등)를 초기화하는 데 필요한 코드가 훨씬 복잡해진다.
+  - 코드의 복잡성이 증가한다.
+    - 잡다한 class가 지나치게 많이 생성될 수 있다.
+    - 구성 요소(`Beverage`와 이를 상속 받는 `Decaf` 등)를 초기화하는 데 필요한 코드가 훨씬 복잡해진다.
+    - 또한 연관성이 강한 logic들이 서로 다른 class로 흩어져 있게 된다.
+    - 이에 따라 전체 구조를 파악하기 힘들어진다.
+  - Client는 decorator의 존재를 알 수 없다.
+    - 이 문제와 코드의 복잡성이 증가한다는 문제가 결합되어 여러가지 문제를 야기할 수 있다.
+    - 예를 들어 decorator가 적용된 기존의 Component A에 새로운 기능을 추가하려 한다고 가정해보자.
+    - Component A의 code만 봤을 때는 여기에 decorator가 적용될지 아닐지 알 수 없다.
+    - 따라서 Component A에 새로운 기능을 추가 하게된다.
+    - 그러나 사실 Component A에는 decorator가 적용되고 있었고, 새로운 기능의 추가로 인해 error가 발생하게 된다.
+    - 만일, error가 발생하지 않는다 하더라도, decorator로 인해 결과 값이 예상과 달라지게 될 수도 있다.
+    - 그럼 이 새로운 기능을 추가한 개발자는 decorator의 존재를 인식할 때 까지 원인 모를 버그에 시달려야 한다.
 
 
 
