@@ -1352,7 +1352,9 @@
   ```
 
   - 유효성 검증
-
+    - 주로 아래와 같이 유효성 검증을 위해 사용한다.
+  
+  
   ```python
   class Employee:
       def __init__(self, name):
@@ -1374,7 +1376,7 @@
 
 - Descriptor
 
-  - Python에서 하나의 객체는 다른 객체를 속성으로 가질 수 있다.
+  - Python에서 한 class는 다른 class의 instance를 class attribute로 가질 수 있다.
   - 이 때 속성이 되는 객체의 값을 읽거나, 쓰거나, 삭제하려고 할 때 이루어질 동작이 미리 정의된 객체를 디스크립터라 한다.
     - `__get__`, `__set__`, `__delete__` 메서드를 사용하여 구현할 수 있다.
     - 셋 중 하나만 정의되어 있어도 디스크립터라 할 수 있다.
@@ -1402,7 +1404,6 @@
   class Person:
       company = Company("Kim", "CompanyCompany")
   
-  property
   
   person = Person()
   person.company     # __get__ 실행
@@ -1410,10 +1411,43 @@
   person.company = changed_company    # __set__ 실행
   del person.company    # __delelte__ 실행
   ```
-
+  
   - Descriptor에는 2가지 종류가 있다.
     - Data descriptor: `__set__`, `__delete__` 중 하나라도 정의되어 있는  descriptor.
     - Non-data descriptor: `__get__`만 정의되어 있는 descriptor.
+  - 아래와 같이 사용할 수도 있다.
+  
+  ```python
+  # desciptor
+  class Company:
+      def __init__(self, name, location):
+          self.name = name
+          self.location = location
+      
+      def __get__(self, obj, objtype):
+          return "name: {}, location: {}".format(self.name, self.location)
+      
+      def __set__(self, obj, val):
+          print(obj.foo)                  # bar
+          self.name = val.name
+          self.location = val.location
+  
+      def __delete__(self, obj):
+          self.name = ""
+          self.location = ""
+  
+  class Person:
+      company = Company("Kim", "CompanyCompany")
+  
+      def __init__(self, company):
+          self.foo = "bar"
+          self.company = company
+  
+  person = Person(Company("Park", "AnotherCompany"))
+  print(person.company)
+  ```
+
+
 
 
 
