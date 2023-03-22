@@ -165,8 +165,17 @@
       }
   }
   ```
-
-
+  
+  - 만일 접근하려는 값이 없으면 문자열이 그대로 들어가게 된다.
+    - 예를 들어 아래에서 event에 `index_name`이라는 field가 없다면 `[@metadata][index_name]`에는 `"%{[index_name]}"`라는 문자열이 그대로 들어가게 된다.
+  
+  ```yaml
+  filter {
+      mutate { add_field => { "[@metadata][index_name]" => "%{[index_name]}" } }
+  }
+  ```
+  
+  
 
 - 환경변수 설정하기
 
@@ -187,6 +196,59 @@
     mutate {
       add_field => {
         "my_path" => "${MY_HOME_PATH:/home}/file.log"
+      }
+    }
+  }
+  ```
+
+
+
+- 다음과 같이 input, output을 여러 개 설정하는 것도 가능하다.
+
+  - 이 경우 설정된 모든 input에서 data를 받아와서 설정된 모든 output으로 data를 보내게 된다.
+
+  ```yaml
+  input {
+      twitter {
+          consumer_key => "enter_your_consumer_key_here"
+          consumer_secret => "enter_your_secret_here"
+          keywords => ["cloud"]
+          oauth_token => "enter_your_access_token_here"
+          oauth_token_secret => "enter_your_access_token_secret_here"
+      }
+      beats {
+          port => "5044"
+      }
+  }
+  
+  output {
+      elasticsearch {
+          hosts => ["IP Address 1:port1", "IP Address 2:port2", "IP Address 3"]
+      }
+      file {
+          path => "/path/to/target/file"
+      }
+  }
+  ```
+
+  - 만일 filter가 있을 경우 모든 data에 대해 filter가 적용된다.
+  - 다음과 같이 분기를 주는 것도 가능하다.
+
+  ```yaml
+  output {
+    if [type] == 'foo' {
+      elasticsearch {
+        index => "foo"
+      }
+    }
+    else if [type] == 'bar' {
+      elasticsearch {
+        index => "bar"
+      }
+    }
+    else {
+      elasticsearch {
+        index => "baz"
       }
     }
   }
@@ -445,8 +507,22 @@
 
 
 
-
 # Output Plugin
+
+- stdout
+
+  - Logstash가 실행중인 shell의 stdout에 output을 출력해주는 plugin이다.
+  - 주로 pipeline을 debugging할 때 사용한다.
+  - 기본적으로 logstash의 reserved field인 `@metadata` field는 출력하지 않는데, 출력하려면 아래와 같이 설정해줘야한다.
+    - codec을 `rubydebug`로 설정하고 `{ metadata => true }`를 추가해준다.
+
+  ```yaml
+  output {
+      stdout { codec => rubydebug { metadata => true } }
+  }
+  ```
+
+
 
 - elasticsearch output 사용시 template을 미리 정의할 수 있다.
 
