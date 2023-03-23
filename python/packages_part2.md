@@ -809,5 +809,125 @@
           environment.runner.send_message('test_users', users)
   ```
 
+
+
+
+
+
+# APScheduler
+
+- Python에서 schedule 처리를 보다 간편하게 할 수 있게 해주는 package
+
+  > [github](https://github.com/agronholm/apscheduler)
+
+  - 관련 package로는 아래와 같은 것들이 있다.
+    - Python의 내장 package인 `sched`
+    - 분산 처리 큐 package인 `celery`
+    - `sched`의 경우 지원하는 기능이 제한적이고, `celery`의 경우 package의 목적이 스케쥴링 보다는 분산 처리에 가깝다.
+  - `APScheduler`를 사용하면 스케쥴링이 필요한 작업들을 동적으로 추가, 수정, 삭제할 수 있다.
+  - 설치
+
+  ```bash
+  $ pip intall apscheduler
+  ```
+
+  - github에서 [다양한 예제 코드](https://github.com/agronholm/apscheduler/tree/3.x/examples/?at=master)를 볼 수 있다.
+
+
+
+- 4개의 component로 구성된다.
+
+  - Triggers
+    - Scheduling과 관련된 logic이 포함되어 있다.
+    - 모든 job은 job의 실행 시점을 결정하는 각각의 trigger를 가지고 있다.
+  - Job stores
+    - Job들을 저장하는 저장소이다.
+    - 기본적으로 job들을 memory에 저장하지만, database 등의 저장소를 사용할 수도 있다.
+  - Executors
+    - Job의 실행을 통제하는 역할을 한다.
+  - Scheduler
+    - 여러 job들을 하나로 묶어서 관리하는 역할을 한다.
+    - 일반적으로 하나의 application에 하나씩 존재한다.
+    - 일반적으로 trigger, job store, executor를 직접 조작하진 않고, scheduler를 통해서 조작한다.
+    - 다양한 종류의 Scheduler가 존재한다.
+  - 구성 예시
+
+  ```python
+  from pytz import utc
+  
+  from apscheduler.schedulers.background import BackgroundScheduler
+  from apscheduler.jobstores.mongodb import MongoDBJobStore
+  from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+  from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
+  
+  # mongodb에 job들을 저장한다.
+  jobstores = {
+      'mongo': MongoDBJobStore(),
+      'default': SQLAlchemyJobStore(url='sqlite:///jobs.sqlite')
+  }
+  executors = {
+      'default': ThreadPoolExecutor(20),
+      'processpool': ProcessPoolExecutor(5)
+  }
+  job_defaults = {
+      'coalesce': False,
+      'max_instances': 3
+  }
+  scheduler = BackgroundScheduler(jobstores=jobstores, executors=executors, job_defaults=job_defaults, timezone=utc)
+  ```
+
+
+
+- 실행해보기
+
+  - Job 추가 및 삭제
+    - 예시에서는 `BackgroundScheduler`를 사용한다.
+    - 삭제는 `add_job()`메서드가 반환한 job 객체의 id 속성을 사용하거나, job 객체 자체를 사용하여 삭제한다.
+  
+  
+  ```python
+  from datetime import datetime
+  import time
+  import os
+  
+  from apscheduler.schedulers.background import BackgroundScheduler
+  
+  
+  def tick(foo):
+      print(foo)
+      print('Tick! The time is: %s' % datetime.now())
+  
+  
+  if __name__ == '__main__':
+      scheduler = BackgroundScheduler()
+      # job을 등록하고
+      job = scheduler.add_job(tick, 'interval', ["foo"], seconds=3)
+      # scheduler를 실행시킨다.
+      scheduler.start()
+      print('Press Ctrl+{0} to exit'.format('Break' if os.name == 'nt' else 'C'))
+  
+      try:
+          # BackgroundScheduler의 경우 이름처럼 background에서 실행되기 때문에 main process를 계속 실행중으로 유지해야한다.
+          cnt = 0
+          while True:
+              cnt += 1
+              if cnt == 5:
+                  # job id를 통해 삭제한다.
+                  scheduler.remove_job(job.id)
+                  # 혹은 아래와 같이 job 객체 자체를 사용하여 삭제할 수도 있다.
+                  # job.remove()
+              time.sleep(2)
+              
+      except (KeyboardInterrupt, SystemExit):
+          scheduler.shutdown()
+  ```
+  
+  - 삭제를 더욱 편하게 하고자 한다면 아래와 같이 id를 지정해서 job을 생성할 수도 있다.
+  
+  ```python
+  job = scheduler.add_job(my_func, 'interval', seconds=3, id="123")
+  print(job.id)	# 123
+  ```
+  
   
 

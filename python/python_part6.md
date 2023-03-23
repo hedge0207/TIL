@@ -250,6 +250,34 @@
 
 
 
+- 하위 namespace에서 상위 namespace의 값을 변경하는 것은 불가능하다고 했는데, list 나 dictionary는 수정이 되는 이유가 무엇인가?
+
+  - 예를 들어 아래 코드와 같이 함수 안에서 함수 밖의 list를 수정하는 것이 가능하다.
+
+  ```python
+  def add_value(num):
+      my_list.append(num)
+  
+  my_list = []
+  add_value(1)
+  print(my_list)	# [1]
+  ```
+
+  - dictionary도 마찬가지다.
+
+  ```python
+  def update_value(num):
+      my_dict["foo"] = num
+  
+  my_dict = {"foo":0}
+  update_value(1)
+  print(my_dict)	# {"foo": 1}
+  ```
+
+  - 이는 이 type들이 다른 대부분의 type들과는 달리 mutable한 type이기 때문이다.
+    - 다른 type들의 경우 값을 변경하면 실제로는 값이 변경되는 것이 아니라 새로운 객체를 생성하여 재할당하는 과정을 거친다.
+    - 그러나 list와 dictionary의 경우 실제 값을 변경시키므로 위와 같이 하위 namespace에서도 수정이 가능한 것이다.
+
 
 
 # 클로저
