@@ -462,6 +462,290 @@
   | Ruby   | Open-Addressing(load factor: 0.5)  |
   | Python | Open-Addressing(load factor: 0.66) |
   
+
+
+
+
+
+# 그래프
+
+- 그래프
+
+  > 파이썬 알고리즘 인터뷰, 박상길, 정진호, 책만
+
+  - 그래프 이론에서 그래프란 객체의 일부 쌍들이 연관되어 있는 객체 집합 구조를 말한다.
+  - 그래프 이론의 시작
+    - 1700년대 프로이센 공국의 쾨니히스베르크(현재는 러시아의 칼리닌그라드)에는 프레겔 강이 흐르고 있었는데, 이 강에는 2개의 큰 섬이 있었고, 섬과 도시를 연결하는 7개의 다리가 놓여 있었다.
+    - 어느날 한 시민이 이 7개의 다리를 한 번씩만 건너서 모두 지나갈 수 있을지에 대한 문제를 냈다.
+    - 오일러는 이 문제를 두고 오래 고민했으나, 기존의 기하학으로는 풀 수 없음을 깨달았고, 이것이 그래프 이론의 시작이 됐다.
+  - 오일러 경로
+    - 오일러는 7개의 다리에 a~g라는 이름을 부여하고, 강으로 서로 구분 된 4개의 영역을 도식화했는데, 이 도식은 현재 그래프 구조의 원형이 되었다.
+    - 현대에는 강으로 서로 구분 된 4개의 영역을 정점(Vertex), 구분 된 영역을 잇는 7개의 다리를 간선(Edge)라 부른다.
+    - 오일러는 모든 정점이 짝수 개의 차수(Degree)를 갖는다면 모든 다리를 한 번씩만 건너서 도달하는 것이 성립한다고 주장했다.
+    - 1873년, 독일의 수학자 칼 히어홀저가 이를 수학적으로 증명해내는데, 이를 오일러의 정리라 부른다.
+    - 모든 간선을 한 번씩 방문하는 유한 그래프를 오일러 경로라 부르며, 이를 활용한 놀이로 한붓 그리기가 있다.
+    - 사족으로 쾨니히스베르크의 다리는 모든 정점이 짝수 개의 차수를 갖지 않으므로, 오일러 경로가 아니다.
+  - 해밀턴 경로
+    - 각 정점을 한 번씩 방문하는 무향 또는 유향 그래프를 말한다.
+    - 오일러 경로와의 차이점은 오일러 경로는 간선을 기준으로 하는데 반해, 해밀턴 경로는 정점을 기준으로 한다는 것이다.
+    - 이러한 단순한 차이에도 불구하고, 해밀턴 경로를 찾는 문제는 최적 알고리즘이 없는 대표적인 NP-완전(complete) 문제다.
+    - NP-완전 문제란 NP 문제 중 NP-난해(hard)인 문제를 NP-완전 문제라 부른다.
+  - 해밀턴 순환
+    - 원래의 출발점으로 돌아오는 경로는 특별히 해밀턴 순환이라 하는데, 이중에서도 최단 거리를 찾는 문제는 알고리즘 분야에서 외판원 문제(Travelling Salesman Problem, TSP)로도 유명하다.
+    - 외판원 문제란 각 도시를 방문하고 돌아오는 가장 짧은 경로를 찾는 문제, 최단 거리인 해밀턴 순환 거리를 찾는 문제이며, NP-난해 문제로 이론 컴퓨터과학 분야의 매우 중요한 문제 중 하나이기도 하다.
+  - 차수(degree)
+    - 무방향 그래프에서 차수란 각 정점에 대해서 간선으로 연결된 이웃한 정점의 개수를 말한다.
+    - 방향 그래프에서는 차수가 outdegree와 indegree 두 개로 나뉘는데, outdegree는 정점에서 다른 정점으로 가는 간선의 개수, indegree는 다른 정점에서 정점으로 오는 간선의 개수이다.
+  - 루프(loop)
+    - 한 정점에서 같은 정점으로 돌아오는 간선을 loop라 부른다.
+    - cycle과는 다른데, cycle은 다른 정점을 거쳐 다시 시작 정점으로 돌아올 수 있는지와 관련이 있지만, 루프는 자기 자신에서 출발한 간선이 자기 자신을 가리키는 것이다.
+
+
+
+- 그래프의 종류
+
+  - 무방향 그래프(Undirected Graph)와 방향 그래프(Directed Graph)
+    - 그래프의 간선에는 방향이 있을 수 있는데, 방향성이 있는 것을 무방향 그래프, 없는 것을 방향 그래프라한다.
+
+  - 순환 그래프(Cyclic Graph)와 비순환 그래프(Acyclic Graph)
+    - 임의의 한 점에서 출발해 자기 자신으로 돌아올 수 있는 경로를 cycle이라 한다.
+    - 그래프 안에 cycle이 하나라도 있으면 순환 그래프라 하고, 하나도 없으면 비순환 그래프라 한다.
+
+  - 완전 그래프(Complete Graph)와 연결 그래프(Connected Graph)
+    - 모든 정점이 서로 다른 정점들과 모두 연결되어 있는 그래프를 완전 그래프라 한다.
+    - 임의의 두 정점 사이에 경로가 항상 존재하는 그래프를 연결 그래프라 한다(즉 연결되어 있지 않은 정점이 없는 그래프이다).
+
+  - 단순 그래프(Simple Graph)
+    - 두 정점 사이의 간선이 1개 이하이고 루프가 존재하지 않는 그래프를 단순 그래프라 부른다.
+
+
+
+- 그래프 구현
+
+  - 그래프 구현 방식에는 인접 행렬 방식(Adjacency Matrix)와 인접 리스트(Adjacency List)라는 두 가지 방식이 있다.
+  - 그래프 예시
+
+  ![Graph theory - Wikipedia](algorithm_part4.assets/1200px-6n-graf.svg.png)
+
+  - 인접 행렬 방식
+    - Python의 list로 구현이 가능하다.
+    - 중첩 list의 형태로 구현하는데, 외부 list의 index가 정점, 내부 리스트의 index가 또 다른 정점이 된다.
+    - 즉 외부 list의 인덱스를 i, 내부 list의 인덱스를 j라 했을 때, `list[i][j]`에 특정 값(아래 예시에서는 `1`)이 있다면, i노드와 j 노드 사이에 간선이 있는 것이다.
+
+  ```python
+  v, e = 6, 7
+  
+  edges = [
+      [1, 2], [1, 5], [2, 3], [2, 5],
+      [3, 4], [4, 5], [4, 6]
+  ]
+  
+  # 무향 그래프의 구현
+  graph = [[0] * (v + 1) for _ in range(v + 1)]
+  for i in range(e):
+      vertex, another_vertex = edges[i]
+      graph[vertex][another_vertex] = 1
+      graph[another_vertex][vertex] = 1
+  
+  for i in range(e):
+      print(graph[i])
+  
+  print("-"*100)
+  # 유향 그래프 구현
+  graph = [[0] * (v + 1) for _ in range(v + 1)]
+  for i in range(e):
+      vertex, another_vertex = edges[i]
+      graph[vertex][another_vertex] = 1
+  
+  for i in range(e):
+      print(graph[i])
+  ```
+
+  - 인접 리스트 방식
+    - Python의 dictionary를 사용하여 구현이 가능하다(list를 사용해도 구현이 가능하긴 하다).
+    - 출발 노드를 key로, 도착 노드를 value로 표현한다.
+
+  ```python
+  v, e = 6, 7
+  
+  edges = [
+      [1, 2], [1, 5], [2, 3], [2, 5],
+      [3, 4], [4, 5], [4, 6]
+  ]
+  
+  # 유향 그래프
+  graph = {i: [] for i in range(1, v + 1)}
+  for edge in edges:
+      graph[edge[0]].append(edge[1])
+  
+  for vertex, adjacent_vertices in graph.items():
+      print(vertex, adjacent_vertexes)
+  
+  print("-"*100)
+  # 무향 그래프
+  graph = {i: [] for i in range(1, v + 1)}
+  for edge in edges:
+      graph[edge[0]].append(edge[1])
+      graph[edge[1]].append(edge[0])
+  
+  for vertex, adjacent_vertices in graph.items():
+      print(vertex, adjacent_vertexes)
+  ```
+
+  - 인접 리스트 방식(list로 구현)
+
+  ```python
+  # 유향 그래프
+  adjacency_list = [[] for _ in range(v+1)]
+  for edge in edges:
+      adjacency_list[edge[0]].append(edge[1])
+  
+  for i in range(1, v+1):
+      print(i, adjacency_list[i])
   
   
+  # 무향 그래프
+  adjacency_list = [[] for _ in range(v+1)]
+  for edge in edges:
+      adjacency_list[edge[0]].append(edge[1])
+      adjacency_list[edge[1]].append(edge[0])
   
+  for i in range(1, v+1):
+      print(i, adjacency_list[i])
+  ```
+
+  - 두 방식의 비교
+
+    > https://blog.encrypted.gg/1016
+
+    - V는 정점의 개수, E는 간선의 개수를 의미한다.
+    - deg(x)는 정점 x의 차수를 의미한다.
+
+  |                                | 인접 행렬                                                    | 인접 리스트                                                  |
+  | ------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+  | 공간복잡도                     | O(V<sup>2</sup>)                                             | O(V+E)                                                       |
+  | 정점 u, v의 연결 여부 확인     | O(1)                                                         | O(min(deg(u), deg(v)))                                       |
+  | 정점 v와 연결된 모든 정점 확인 | O(V)                                                         | O(deg(v))                                                    |
+  | 효율적인 상황                  | 두 점의 연결 여부를 자주 확인할 때, E가 V<sup>2</sup>에 가까울 때 | 특정 정점에 연결된 모든 정점을 자주 확인할 때, E가 V<sup>2</sup>보다 훨씬 작을 때 |
+
+  
+
+
+
+- 그래프 순회(Graph Traversals)
+  - 그래프 탐색(Graph Search)이라고도 불리며, 그래프의 각 정점을 방문하는 과정을 말한다.
+  - 크게 깊이 우선 탐색(Depth-First Search, DFS)과 너비 우선 탐색(Breadth-Fisrt Search, BFS)이 있다.
+    - 일반적으로 DFS가 BFS에 비해 더 널리 쓰인다.
+    - DFS는 일반적으로 스택이나 재귀를 활용하여 구현하며, 백트래킹을 통해 뛰어난 효용을 보인다.
+    - BFS는 주로 큐로 구현하며, 그래프의 최단 경로를 구하는 문제 등에 사용된다.
+
+
+
+- 그래프 순회 구현
+
+  - 우선 그래프를 Python의 dictionary로 표현한다.
+    - `1:[2,3,4]`는 1번 정점에서 2,3,4번 정점으로 가는 간선이 있다는 의미이다.
+
+  ```python
+  graph = {
+      1:[2,3,4],
+      2:[5],
+      3:[5],
+      4:[],
+      5:[6,7],
+      6:[],
+      7:[3]
+  }
+  ```
+
+  - DFS 구현(재귀)
+    - 스택을 활용한 방식보다 간단하게 구현이 가능하다.
+
+  ```python
+  def recursive_dfs(vertex, discovered=[]):
+      discovered.append(vertex)
+      for adjacent_vertex in graph[vertex]:
+          if adjacent_vertex in discovered:
+              continue
+          else:
+              recursive_dfs(adjacent_vertex, discovered)
+      return discovered
+  
+  
+  graph = {
+      1: [2, 3, 4],
+      2: [5],
+      3: [5],
+      4: [],
+      5: [6, 7],
+      6: [],
+      7: [3]
+  }
+  
+  start_vertex = 1
+  print(recursive_dfs(start_vertex))	# [1,2,5,6,7,3,4]
+  ```
+
+  - DFS 구현(스택)
+    - 재귀에 비해 직관적이고 실행 속도더 더 빠르다.
+
+  ```python
+  graph = {
+      1: [2, 3, 4],
+      2: [5],
+      3: [5],
+      4: [],
+      5: [6, 7],
+      6: [],
+      7: [3]
+  }
+  
+  start_vertex = 1
+  stack = [start_vertex]
+  discovered = []
+  while stack:
+      vertex = stack.pop()
+      if vertex not in discovered:
+          discovered.append(vertex)
+          for adjacent_vertex in graph[vertex]:
+              stack.append(adjacent_vertex)
+  
+  print(discovered)	# [1,4,3,5,7,6,2]
+  ```
+
+  - BFS 구현
+    - DFS와는 달리 재귀를 통해 구현할 수는 없다.
+
+  ```python
+  graph = {
+      1: [2, 3, 4],
+      2: [5],
+      3: [5],
+      4: [],
+      5: [6, 7],
+      6: [],
+      7: [3]
+  }
+  
+  start_vertex = 1
+  discovered = [start_vertex]
+  queue = [start_vertex]
+  while queue:
+      vertex = queue.pop(0)
+      for adjacent_vertex in graph[vertex]:
+          if adjacent_vertex not in discovered:
+              discovered.append(adjacent_vertex)
+              queue.append(adjacent_vertex)
+  
+  print(discovered)	# [1,2,3,4,5,6,7]
+  ```
+
+
+
+
+- 재귀 DFS와 반복 DFS 사이에 차이가 있을 수 있다?
+
+  > https://blog.encrypted.gg/1016
+
+
+
