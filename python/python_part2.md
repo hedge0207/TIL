@@ -472,6 +472,37 @@
   | a.sort()       | O(n log n)  | Timsort를 사용하여, 최선의 경우 O(n)에도 가능하다.           |
   | min, max       | O(n)        | 전체를 선형탐색해야한다.                                     |
   | a.reverse()    | O(n)        | 리스트 전체를 뒤집는다.                                      |
+  
+  - `+` 연산과 `append` 메서드의 비교
+    - `+` 연산자를 사용하면 `append` 메서드를 사용하지 않고도 list에 element를 추가하는 것이 가능하다.
+    - 그러나, 둘의 시간을 비교하면 `append`가 훨씬 빠른 것을 확인할 수 있다.
+    - 이 차이는 `+`의 경우 두 list를 합쳐 새로운 list를 만드는 연산인데 반해, `append`는 기존 list에 값을 추가하는 것이기 때문이다.
+  
+  ```python
+  import time
+  
+  
+  cnt = 10000
+  append_time = 0
+  plus_time = 0
+  for _ in range(cnt):
+      st = time.time()
+      my_list = []
+      for _ in range(cnt):
+          my_list.append(1)
+      append_time += time.time()-st
+  
+      st = time.time()
+      my_list = []
+      for _ in range(cnt):
+          my_list += [1]
+      plus_time += time.time()-st
+  
+  print(append_time/cnt)	# 0.0007246953248977662
+  print(plus_time/cnt)	# 0.0009403074264526367
+  ```
+
+
 
 
 
