@@ -533,6 +533,275 @@
 
 
 
+# 싱글턴 패턴
+
+- Instance를 단 하나만 생성하기 위한 패턴
+  - Instance가 2개 이상일 때, 아래와 같은 문제가 발생할 수 있다.
+    - 프로그램이 이상하게 돌아간다.
+    - 자원을 불필요하게 잡아먹는다.
+    - 결과에 일관성이 없어진다.
+  - 따라서 단 하나의 instance만 생성하기 위한 pattern이 필요하다.
+    - 굳이 싱글턴 패턴을 사용하지 않고 instance를 전역 변수로 선언한 뒤 사용하면 되지 않을까 생각할 수 있지만, 전역 변수를 사용하는 것과 차별점이 있다.
+    - 단순히 전역 변수로 선언하면, 해당 인스턴스를 사용하지 않더라도 계속 메모리를 점유하고 있게 된다.
+    - 반면에 싱글턴 패턴은 필요할 때만 인스턴스를 생성하여 메모리를 절약할 수 있게 된다.
+
+
+
+- 고전적인 싱글턴 패턴 구현 방법
+
+  - Java code는 아래와 같다.
+    - `Singleton`도 일반적인 class이므로 다른 인스턴스 변수와 메서드들을 가질 수 있다.
+
+  ```java
+  public class Singleton {
+      // Singleton class의 하나뿐인 인스턴스를 저장하기 위한 변수
+      private static Singleton uniqueInstance;
+      
+      // 기타 인스턴스 변수
+      
+      // 생성자를 private으로 선언했으므로, Singleton에서만 class의 instance를 만들 수 있다.
+      private Singleton(){}
+      
+      // class의 인스턴스를 만들어서 반환하는 정적 메서드이다.
+      public static Singleton getInstance() {
+          if (uniqueInstance == null) {
+              uniqueInstance = new Singleton();
+          }
+          return uniqueInstance;
+      }
+      
+      // 기타 메서드
+  }
+  ```
+
+  - 방식
+    - `Singleton`의 생성자 메서드를 private으로 선언해 class 외부에서 생성자에 접근할 수 없게 한다.
+    - `getInstance()` 메서드를 정적 메서드로 선언하여 인스턴스를 생성하지 않고도 class만으로 호출할 수 있게한다.
+    - 조건문을 통해 `uniqueInstance`가 null일 때만, 즉 한 번도 생성된 적 없을 때만 인스턴스를 생성하게 한다.
+
+
+
+- 초콜릿 보일러 코드
+
+  - 초콜릿 공장에서 초콜릿 끓이는 장치를 컴퓨터로 제어하는데, 이 장치를 초콜릿 보일러라 한다.
+    - 초콜릿 보일러는 초콜릿과 우유를 받아서 끓이고 초코바를 만드는 단계로 넘겨준다.
+
+  ```java
+  public class ChocolateBoiler {
+      private boolean empty;
+      private boolean boiled;
+      
+      private ChocolateBoiler() {
+          empty = true;
+          boiled = true;
+      }
+      
+      // 보일러가 비어 있을 때만 재료를 넣는다.
+      public void fill() {
+          if (isEmpty()) {
+              empty = false;
+              boiled = false;
+          }
+      }
+      
+      public void drain() {
+          if (!isEmpty() && isBoiled()) {
+              empty = true;
+          }
+      }
+      
+      public void boil() {
+          if (!isEmpty() && !isBoiled()) {
+              boiled = true;
+          }
+      }
+      
+      public boolean isEmpty() {
+          return empty;
+      }
+      
+      public boolean isBoiled() {
+          return boiled;
+      }
+  }
+  ```
+
+  - 위 코드에는 싱글턴 패턴이 적용되지 않았다.
+    - 따라서 둘 이상의 `ChocolateBoiler` 인스턴스가 생성되어 따로 작동할 경우 문제가 발생할 수 있다.
+
+
+
+- 싱글턴 패턴(Singleton Pattern)
+
+  - 정의
+    - 클래스 인스턴스를 하나만 만들고, 그 인스턴스로의 전역 접근을 제공하는 패턴이다.
+  - 클래스 인스턴스를 하나만 만든다.
+    - 싱글턴 패턴을 실제로 적용할 때는 클래스에서 하나뿐인 인스턴스를 관리하도록 만들어야한다.
+    - 어떤 클래스에서도 자신의 인스턴스를 추가로 만들지 못하게 해야한다.
+  - 어디서든 인스턴스에 접근할 수 있도록 전역 접근 지점을 제공한다.
+    - 언제든 이 인스턴스가 필요하면 클래스에 요청할 수 있게 만들어 놓고, 요청이 들어오면 그 하나뿐인 인스턴스를 건네주도록 만들어야 한다.
+  - 즉, 단일 인스턴스를 저장할 변수와 단일 인스턴스를 생성 및 생성된 단일 인스턴스에 접근할 수 있게 해주는 메서드를 반드시 구현해야한다.
+  - `ChocolateBoiler`에 고전적 싱글턴을 적용하기
+
+  ```java
+  public class ChocolateBoiler {
+      private boolean empty;
+      private boolean boiled;
+      // 유일한 인스턴스를 담을 변수를 추가한다.
+      private static ChocolateBoiler uniqueInstance;
+  
+      private ChocolateBoiler() {
+          empty = true;
+          boiled = true;
+      }
+  	
+      // getInstanace 메서드를 추가한다.
+      private static ChocolateBoiler getInstance() {
+          if (uniqueInstance == null) {
+              uniqueInstance = new ChocolateBoiler();
+          }
+          return uniqueInstance;
+      }
+      
+      // 기타 메서드
+  }
+  ```
+
+
+
+- 멀티스레딩 문제
+
+  - 고전적 싱글턴 패턴을 적용했음에도, 멀티스레딩을 적용했을 때 문제가 발생했다.
+    - 두 개의 스레드가 다른 보일러 객체를 사용하게 되어 이 같은 문제가 발생하게 됐다.
+    - `fill()`메서드에서 아직 초콜릿이 끓고 있는데 새로운 재료를 넣어 우유와 초콜릿이 넘치고 말았다.
+  - 원인
+    - 두 개의 스레드가 거의 동시에 `getInstance()` 메서드를 실행한다.
+    - `(uniqueInstance == null)` 를 체크 할 때 어떤 스레드도 아직 인스턴스를 생성하지 않았으므로, `(uniqueInstance == null)`의 값이 true가 되고, 두 스레드 모두 새로운 인스턴스를 생성한다.
+
+  ```java
+  private static ChocolateBoiler getInstance() {
+      if (uniqueInstance == null) {
+          uniqueInstance = new ChocolateBoiler();
+      }
+      return uniqueInstance;
+  }
+  ```
+
+  - 해결
+    - `synchronized` 키워드를 추가하여 한 스레드가 메서드 사용을 끝내기 전 까지 다른 스레드가 대기하도록 한다.
+
+  ```java
+  private static synchronized ChocolateBoiler getInstance() {
+      if (uniqueInstance == null) {
+          uniqueInstance = new ChocolateBoiler();
+      }
+      return uniqueInstance;
+  }
+  ```
+
+  - 또 다른 문제
+    - 한 스레드가 대기해야 하므로 속도가 문제가 될 수 있다.
+    - 사실 위 메서드에서 동기화가 필요한 시점(즉, 한 스레드가 다른 스레드를 기다려야 하는 시점)은 `(uniqueInstance == null)`를 판단할 때 뿐이다.
+    - 따라서 메서드 전체를 동기화시키는 것은 불필요한 오버헤드를 증가시킬 수 있다.
+
+
+
+- 더 효율적인 해결 방법
+
+  - `getInstance()` 메서드의 속도가 그리 중요하지 않다면 그냥 둔다.
+  - 인스턴스가 필요할 때는 생성하지 말고 처음부터 만든다.
+
+  ```java
+  public class Singleton {
+      private static Singleton uniqueInstance = new Singleton();
+      
+      private Singleton() {}
+      
+      public static Singleton getInstance() {
+          return uniqueInstance;
+      }
+  }
+  ```
+
+  - DCL을 써서 `getInstance()`에서 동기화되는 부분을 줄인다.
+    - DCL(Double-Checked Locking)을 사용하면 인스턴스가 생성되어 있는지 확인한 다음 생성되어 있지 않았을 때만 동기화할 수 있다.
+    - `volatile` 키워드를 사용하면 멀티 스레딩을 사용하더라도 `uniqueInstance` 변수가 `Singleton` 인스턴스로 초기화되는 과정이 올바르게 진행된다.
+
+  ```java
+  public class Singleton {
+      private volatile static Singleton uniqueInstance;
+      
+      private Singleton() {}
+      
+      public static Singleton getInstance() {
+          if (uniqueInstance == null) {
+              synchronized (Singleton.class) {
+                  if (uniqueInstance == null) {
+                      uniqueInstance = new Singleton();
+                  }
+              }
+          }
+      }
+  }
+  ```
+
+
+
+- 싱글턴 패턴의 문제점들
+
+  - 느슨한 결합 원칙에 위배된다.
+    - 싱글턴을 사용하다보면 느슨한 결합 원칙을 위배하기 쉽다.
+    - 싱글턴을 바꾸면 연결된 모든 객체를 바꿔야할 가능성이 높아진다.
+
+  - 한 클래스가 한 가지만 책임지기 원칙에 위배된다.
+    - 싱글턴 클래스는 자신의 인스턴스를 관리하는 일 외에 그 인스턴스를 사용하고자 하는 목적에 부합하는 작업(위의 경우 초콜릿을 끓이는 것)을 책임져야한다.
+    - 따라서 2가지를 책임지고 있다고 할 수 있다.
+  - 리플렉션, 직렬화, 역직렬화가 문제가 될 수 있다.
+
+  - 싱글턴의 서브 클래스 만들기가 까다롭다.
+    - 생성자가 private으로 선언되어 있어 확장할 수 없기에 생성자를 public, protected로 선언해야 한다.
+    - 그러나 이 경우 다른 클래스에서 인스턴스를 만들 수 있기에 싱글턴이라 할 수 없다.
+    - 어찌 저찌 위 문제를 해결한다 하더라도, 싱글턴은 정적 변수를 바탕으로 구현한다는 문제가 있다.
+    - 정적 변수를 바탕으로 구현하기에 모든 서브클래스가 같은 인스턴스 변수를 공유하게 된다.
+  - 클래스 로더마다 서로 다른 네임스페이스를 정의하기에 클래스 로더가 2개 이상이라면 같은 클래스를 여러 번(각 클래스 로더마다 한 번씩)로딩할 수도 있다.
+    - 싱글턴을 이런 식으로 로딩하면 인스턴스가 여러 개 만들어지는 문제가 발생할 수 있다.
+    - 클래스 로더를 직접 지정하면 이 문제를 피할 수 있다.
+
+
+
+- Enum을 활용한 보다 간편한 구현
+
+  - Enum을 사용하면 위에서 언급한 문제들 중 동기화 문제, 클래스 로딩 문제, 리플렉션, 직렬화, 역직렬화 문제 등을 해결할 수 있다.
+
+  - Enum으로 구현하기
+
+  ```java
+  public enum Singleton {
+      UNIQUE_INSTANCE;
+      // 기타 field 들
+  }
+  
+  
+  public class SingletonClient {
+      public static void main(String[] args) {
+          Singleton singleton = Singleton.UNIQUE_INSTANCE;
+          // 여기서 싱글턴 사용
+      }
+  }
+  ```
+
+  - 실제로는 이 방식을 가장 많이 사용한다.
+    - 사실 위에서 살펴본 고전적인 싱글턴 구현은 잘 사용하지 않는다. 
+    - 그럼에도 살펴본 이유는 싱글턴의 작동 원리를 살펴보기 위해서다.
+
+
+
+
+
+
+
+
+
 
 
 # 디자인 원칙 모아보기
