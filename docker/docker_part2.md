@@ -986,6 +986,94 @@
 
 # etc
 
+## Docker Volume 사용시 ownership 문제
+
+- 문제
+  - Docker volume 사용시 container 내부에서 volume으로 설정된 file 혹은 directory(이하 file)의 소유권은, host에서 해당 container를 실행시킨 사람의 uid, gid로 설정된다.
+  - 일부 docker image들은 내부적으로 기본 사용자만 특정 file에 접근하도록 설정되어 있다.
+  - 만일 이러한 file에 volume을 설정할 경우 해당 file의 소유권은 host에서 container를 실행시킨 user의 id와 group id로 설정된다.
+  - 따라서 docker image 상에서 기본 사용자로는 permission 문제로 해당 file에 접근할 수 없게 된다.
+
+
+
+- 예시
+
+  - Elasticsearch에서 제공하는 logstash image는 `logstash`를 기본 사용자로 하고, logstash 실행시 file 작성이 필요할 경우 `logstash`가 소유하고 있는 file에 작성한다.
+    - 아래와 같이 logstash가 file을 작성하는 data folder는 소유 유저가 `logstash`, 소유 그룹이 `root`로 설정되어 있다.
+
+  ```bash
+  # docker container
+  $ ls -l
+  # ...
+  drwxrwsr-x 1 logstash root  4096 Jan 28  2022 data
+  # ...
+  ```
+
+  - 그런데 위 file에 아래와 같이 volume을 설정할 경우 경우 
+
+  ```yaml
+  version: '3.2'
+  
+  services:
+    logstash:
+      # ...
+      volumes:
+        - ./data:/usr/share/logstash/data
+  	# ...
+  ```
+
+  - 소유권이 container를 실행시킨 host user(아래의 경우 foo)의 user id와 group id가 된다.
+
+  ```bash
+  # host machine
+  $ id
+  uid=1022(foo) gid=1022(foo) groups=1022(foo)
+  
+  # docker container
+  $ ls -l
+  # ...
+  drwxrwsr-x 1 1022 1022  4096 Jan 28  2022 data
+  # ...
+  ```
+
+  - 따라서 `logstash` user는 `1022`라는 uid를 가진 user가 소유한 `data` folder에 쓰기 권한이 사라져 file을 쓸 수 없게 되고, 문제가 발생한다.
+
+
+
+- 해결
+
+  - 불가능한 방식들
+    - 가장 깔끔한 방식은 docker에서 volume을 설정할 때 소유권을 함께 설정하는 기능을 제공하는 것이겠으나, 그런 기능을 지원하지 않는다.
+    - 그렇다고 아래와 같이 docker image를 build할 때 미리 file을 생성해놓고 해당 file의 소유권을 변경해줘도, 결국 container 실행시 volume이 설정되면서 소유권이 덮어씌워지게 된다.
+
+  ```dockerfile
+  FROM docker.elastic.co/logstash/logstash:7.17.0
+  # folder를 생성하고
+  RUN mkdir /usr/share/data/main
+  # 소유권을 변경해도
+  RUN chmod logstash:root /usr/share/data/main
+  
+  # 결국 container 실행시 volume이 설정되면 host의 user 정보로 소유권이 설정된다.
+  ```
+
+  - 해결 방법
+    - 아래와 같이 image 내의 기본 user(아래 예시의 경우 `logstash`)의 uid를 host user의 uid와 맞춰준다.
+    - 상기했듯, container 내부의 소유권은 host user의 uid, guid로 설정되므로, container 내부의 기본 user의 uid만 host user의 uid로 변경해주면 file에 접근이 가능해진다.
+    - 주의할 점은 build 과정에서 build process가 기본 user로 실행되고 있으므로 `usermod` 명령어가 실행이 안 될 수 있다.
+    - 따라서 uid 변경 전에 임시로 다른 user로 변경하는 과정이 필요하다.
+
+  ```dockerfile
+  FROM docker.elastic.co/logstash/logstash:7.17.0
+  # 임시로 root로 변경하고
+  USER root
+  # 기본 user의 uid 변경 후
+  RUN usermod -u 1012 logstash
+  # 다시 기본 user로 변경한다.
+  USER logstash
+  ```
+
+
+
 ## sudo 없이 docker 명령어 실행
 
 - docker 명령어는 기본적으로 root 권한으로 실행해야 한다.
