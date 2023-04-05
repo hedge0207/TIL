@@ -227,7 +227,7 @@
     - Java와 같은 언어의 경우에는 public, private 등의 접근제어자가 존재한다.
     - Python에는 접근제어자가 존재하지 않으므로 기본적으로 모두 public 상태이다.
   - 그러나 naming을 통해 private으로 설정할 수 있다.
-    - 이름 앞에 언더바 2개(`__`)를 붙이면 private이 되어 외부에서 접근이 불가능해진다.
+    - 이름 앞에 언더바 2개(`__`)를 붙이면 private이 되어 외부에서 접근이 불가능해진다(name mangling).
     - 이름 앞에 언더바 1개(`_`)를 붙이는 것은 해당 변수 혹은 함수는 외부에서는 사용하지 않는다는 의미인데 문법적인 제약은 없다.
     - 아래 예시에는 나오지 않았지만 메서드 역시 마찬가지로 메서드명 앞에 언더바 2개를 붙이면 외부에서는 호출이 불가능하다.
 
@@ -250,6 +250,41 @@
   print(my_instance.foo)		# foo
   print(my_instance._bar)		# bar
   print(my_instance.__baz)	# AttributeError
+  ```
+
+
+
+- Python name mangling
+
+  - Name mangling은 이름을 짓이기는 것으로, 변수 혹은 함수의 이름을 짓이겨서 변경시키는 것을 의미한다.
+    - 따라서 원래 이름으로는 접근할 수 없게 된다.
+  - 하위 클래스가 상위 클래스의 속성을 오버라이딩 하는 것을 막기 위해 사용하기도 한다.
+
+  ```python
+  class Parent:
+      def __init__(self):
+          self.__name = "foo"
+          
+  class Child(Parent):
+      def __init__(self):
+          self.__name = "bar"
+  
+  child = Child()
+  print(child.__name)     # AttributeError
+  ```
+
+  - 완전한 private attribute가 되는 것은 아니다.
+    - 아래 예시에서 확인할 수 있듯 단순히 attribute의 이름을 `_class명_attribute`의 형태로 변경해주는 것이기 때문에 외부에서 접근을 어렵게 할 뿐, 접근이 불가능한 것은 아니다.
+
+  ```python
+  class Foo:
+      def __init__(self):
+          self.__bar = "baz"
+  
+  
+  foo = Foo()
+  print(dir(foo)) 		# ['_Foo__bar', ...]
+  print(foo._Foo__bar)	# baz
   ```
 
 
@@ -585,8 +620,6 @@
   print(my_inst.name)	# name
   my_inst.foo()	    # FOO!
   ```
-
-
 
 
 

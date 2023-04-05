@@ -1214,14 +1214,13 @@
 
 
 
-# immutable 
+# Immutable 
 
 - Python에서 어떤 값이 immutable하다는 것은 해당 값이 변경될 수 없을 뿐만 아니라, 변경사항이 있을 경우 새로운 객체를 생성한다는 의미이다.
 
   - 예를 들어 integer는 immutable한 type이다.
     - 아래와 같이 immutable한 type인 integer type의 값을 변경하면, 새로운 객체를 생성한다.
-
-
+  
   ```python
   num = 1
   num_copy = num
@@ -1229,6 +1228,24 @@
   
   num += 1
   print(id(num)==id(num_copy))	# False
+  ```
+
+
+
+- Python은 메모리 최적화를 위해서 immutable type을 cache한다.
+
+  - Immutable type의 경우 서로 다른 변수에 할당해도 같은 객체를 가리키게 된다.
+
+  ```python
+  a = 42
+  b = "hello"
+  c = 4.2
+  d = (4, 2)
+  e = [42, "hello", 4.2, (4, 2)]
+  print(id(a) == id(e[0]))	# True
+  print(id(b) == id(e[1]))	# True
+  print(id(c) == id(e[2]))	# True
+  print(id(d) == id(e[3]))	# True
   ```
 
 
