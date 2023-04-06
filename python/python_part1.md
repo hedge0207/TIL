@@ -1014,6 +1014,209 @@
 
 
 
+# EAFP와 LBYL
+
+- EAFP와 LBYL
+
+  > [PEP 463](https://peps.python.org/pep-0463/)
+
+  - EAFP(Easier to Ask for Forgiveness than Permission)
+    - 용서를 구하는 것이 허락을 구하는 것 보다 쉽다는 Python의 일반적인 코딩 스타일이다.
+    - 유효한 key 혹은 attribute가 존재한다고 가정하고, 만일 가정이 틀렸을 경우(key 혹은 attribute가 존재하지 않을 경우) exception을 catch하는 방식으로 처리한다.
+    - 예외를 방지하지 않고 예외 발생시킨 뒤 핸들링 하는 방식이다.
+    - `try`, `catch`문을 사용한다.
+
+  ```python
+  try:
+      return mapping[key]
+  except:
+      print("invalid key")
+  ```
+
+  - LBYL(Look Before You Leap)
+    - 뛰기 전에 살펴보라는 코딩 스타일로, 누울 자리 보고 발 뻗으라는 속담과 유사한 뜻이다.
+    - 예외 발생을 방지하는 방식이다.
+    - `if`문을 사용한다.
+    - 이 방식의 경우 multi-thread 혼경에서 문제가 발생할 수 있다.
+    - 예를 들어 아래와 같은 code에서 한 thread가 `if key in mapping`를 수행하여 `mapping`에 `key`가 있다는 것을 확인하고 `mapping[key]`를 실행하기 직전에 다른 thread가 `mapping`에서 `key`를 삭제했다면 예외가 발생하게 된다.
+    - 따라서 LBYL 방식을 사용할 경우 lock을 거는 등의 추가적인 처리가 필요하다.
+
+  ```python
+  if key in mapping:
+      return mapping[key]
+  ```
+
+  - Guido van Rossum은 [이곳](https://mail.python.org/pipermail/python-dev/2014-March/133118.html)에서 아래와 같이 말했다.
+
+    > Python에서 EAFP가 LBYL보다 낫다거나, 일반적으로 추천된다는 것에 동의하지 않는다.
+
+    - EAFP와 LBYL 중 무엇이 더 Python 스러운 방식인지에 대한 의견은 아직도 분분한 상황으로 보인다.
+
+
+
+- EAFP와 LBYL의 비교
+
+  > https://realpython.com/python-lbyl-vs-eafp/#the-pythonic-way-to-go-lbyl-or-eafp
+
+  - 아래와 같은 4가지 기준으로 비교가 가능하다.
+    - Check 횟수
+    - 가독성과 명확성
+    - Race condition
+    - 성능
+  - 불필요한 check의 반복
+    - 불필요한 check의 반복을 피하게 해준다는 면에서 EAFP가 LBYL보다 낫다.
+    - 예를 들어 아래와 같이 양수를 string 형식으로 받아서 interger로 변환하여 반환하는 함수가 있다고 해보자.
+    - 아래에서 LBYL 스타일을 적용한 함수는 `isdigit()` 메서드를 실행한 후 결과가 True면 value를 int로 변환하는데, 사실 이는 중복 check이다.
+    - `int()`의 실행은 내부적으로 string을 integer로 변환하는데 필요한 모든 check를 수행한다. 즉, `isdigit()`이 반복 실행된다고 볼 수 있다.
+    - 반면에 EAFP 스타일을 적용할 경우 이러한 중복 check를 피할 수 있다.
+
+  ```python
+  # LBYL
+  def to_integer(value):
+      if value.isdigit():
+          return int(value)
+      return None
+  
+  # EAFP
+  def to_interger(value):
+      try:
+          return int(value)
+      except ValueError:
+          return None
+  ```
+
+  - 가독성과 명확성
+    - 가독성과 명확성 측면에서도 EAFP가 낫다.
+    - 예를 들어 아래와 같이 a, b를 인자로 받아 a를 b로 나눈 결과를 반환하는 함수가 있다고 하자.
+    - 이 때, b 값으로 0이 들어오면 `ZeroDivisionError`가 발생할 것이다.
+    - 각 스타일에서 이 error를 처리하는 방식에 차이가 있다.
+    - LBYL의 경우 개발자로 하여금 주요 기능 보다 분기에 더 관심을 가지게 만든다.
+    - 그러나, EAFP의 경우 주요 기능이 try 블록 안에 있으므로, try블록만 확인하면 주요 기능이 뭔지 쉽게 알 수 있다.
+
+  ```python
+  # LBYL
+  def divide(a, b):
+      if b==0:
+          print("zero division detected")
+      return a / b
+  
+  # EAFP
+  def divide(a, b):
+      try:
+          return a / b
+      except ZeroDivisionError:
+          pass
+  ```
+
+  - Race condition
+    - Race condition은 각기 다른 프로그램, 프로세스, 스레드 등이 동일한 자원에 동시에 접근할 때 발생하며, 꼭, multi-thread 환경이 아니더라도 다양한 상황에서 발생할 수 있다.
+    - LBYL의 경우 race condition의 위험을 증가시킬 수 있다.
+    - 아래 LBYL 코드에서 만약 `.is_active()`의 호출과 `.commit()`의 사이 시점에 db와 연결이 끊긴다면, error가 발생할 것이다.
+    - 반면에 EAFP의 경우 db와 연결되었는지 확인하지 않고 바로 `.commit()`을 실행하여 race condition의 위험을 제거한다.
+
+  ```python
+  # LBYL
+  connection = create_connection(db, host, user, password)
+  
+  if connection.is_active():
+      connection.commit()
+  else:
+      # handle the connection error
+      
+  # EAFP
+  connection = create_connection(db, host, user, password)
+  
+  try:
+      connection.commit()
+  except ConnectionError:
+      # handle the connection error
+  ```
+
+  - 성능(EAFP가 성능상 우위를 보이는 경우)
+    - 대부분의 Python 구현체(Cpython, PyPy 등)에서 예외 처리를 빠르게 할 수 있도록 구현하였다.
+    - 그럼에도 많은 예외를 처리하는 것 보다는 많은 조건을 비교하는 것이 더 비용이 적게들기는 한다.
+    - 반면에, 적은 수의 예외만을 처리하면 된다면 EAFP가 보다 효율적인 전략이 될 것이다.
+    - 예를 들어, 아래 함수에서, except문은 counter에 char라는 key가 없을 때에만 실행된다.
+    - 반면에, if문은 매 순회마다 반복적으로 실행된다.
+
+  ```python
+  # LBYL
+  def char_frequency(text):
+      counter = {}
+      for char in text:
+          if char in counter:
+              counter[char] += 1
+          else:
+              counter[char] = 1
+      return counter
+  
+  # EAFP
+  def char_frequency(text):
+      counter = {}
+      for char in text:
+          try:
+              counter[char] += 1
+          except KeyError:
+              counter[char] = 1
+      return counter
+  ```
+
+  - 성능(LBYL이 성능상 우위를 보이는 경우)
+    - 위 예시에서는 character 단위로 끊었고, 영문만 들어온다 가정하면, execpt문은 최대 52번(알파벳 대소문자의 개수) 밖에 실행되지 않는다.
+    - 그러나 만일 한글이거나, character 단위가 아닌 단어 단위로 끊는다면 except문의 실행 횟수나 조건문의 실행 회수에 차이가 없어지게 되고, 이 경우 조건문을 사용하는 것(LBYL을 사용하는 것)이 더 빠르다.
+
+  ```python
+  # LBYL
+  def char_frequency(text):
+      counter = {}
+      for word in text.split():
+          if word in counter:
+              counter[word] += 1
+          else:
+              counter[word] = 1
+      return counter
+  
+  # EAFP
+  def char_frequency(text):
+      counter = {}
+      for word in text.split():
+          try:
+              counter[word] += 1
+          except KeyError:
+              counter[word] = 1
+      return counter
+  ```
+
+
+
+- Duck typing과 EAFP
+
+  - Type checking
+    - Python에서 object의 type 혹은 attribute를 검사하는 것은 anti-pattern으로 여겨진다.
+    - 이는 type checking이 Python의 핵심 원리들 중 두 가지를 침해하기 때문이다.
+    - 이는 다형성과 duck typing으로, type을 check하는 것은 duck typing 스럽지 않기 때문이다.
+  - Type checking의 문제점
+    - 아래 예시는 `append`가 있다면 `list`로 보자는 duck typing의 원리를 따르는 코드가 아니라, list라면 append를 하는 코드이다.
+    - 또 만일, list대신 deque를 사용하기로 했다고 하자, deque는 list와 마찬가지로 `append` 메서드를 지원하므로, EAFP 방식으로 구현했다면 코드를 수정하지 않아도 되지만 아래와 같이 type checking을 했다면 `isinstance`의 두 번째 인자를 list에서 deque로 변경해줘야한다.
+
+  ```python
+  def add_number(num, numbers):
+      if isinstance(numbers, list):
+          numbers.append(num)
+  ```
+
+  - EAFP 적용
+    - 위 코드에 EAFP를 적용하면 아래와 같다.
+    - 이는 duck typing도 침해하지 않으면서, list에서 deque으로 변경되더라도 함수를 변경하지 않아도 된다.
+
+  ```python
+  def add_number(num, numbers):
+      try:
+          numbers.append(num)
+      except AttributeError:
+          pass
+  ```
+
 
 
 
