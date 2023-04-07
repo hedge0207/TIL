@@ -505,13 +505,72 @@
       lp.join()
   ```
 
+
+
+
+
+
+# Interface
+
+> https://jellis18.github.io/post/2022-01-11-abc-vs-protocol/
+
+- Python에서의 interface 구현
+  - Python은 Java와 달리 `interface` keyword를 지원하지 않는다.
+  - 그럼에도 interface의 구현이 불가능 한 것은 아닌데, Python에서 interface를 구현할 수 있는 방법은 크게 두 가지가 있다.
+    - ABC 사용
+    - Protocol(Structural subtyping) 사용
+
+
+
+- ABC
+
+  - Python에서 추상 클래스를 구현할 수 있도록 해주는 Python 내장 모듈이다.
+  - 주로 두 가지 목적으로 사용한다.
+    - Interface 생성.
+    - 추상 클래스 생성
+  - Interface 생성을 위해 사용
+    - ABC class를 상속 받고, 모든 메서드에 `@abstractmethod` decorator를 추가하여 인터페이스를 생성할 수 있다.
+    - 이제 People을 구현(implement)한 class에서 아래 메서드 들 중 하나라도 빼먹는다면, `TypeError`가 발생하게 된다.
+
+  ```python
+  from abc import ABC, abstractmethod
   
+  class People(ABC):
+      @abstractmethod
+      def think(self):
+          pass
+  
+      @abstractmethod
+      def sleep(self):
+          pass
+  ```
+
+  - 보다 일반적인 사용법은 추상 클래스 생성하기 위해 사용하는 것이다.
+    - 모든 method가 abstract method인 interface와 달리, 추상 클래스는 하나 이상의 method가 abstract method인 클래스로, 자식 클래스마다 공통으로 들어가는 메서드와, 다르게 들어가야 하는 메서드를 분리하기 위해 사용한다.
 
 
 
+- Protocol
 
+  - Structural subtyping(static duck typing)을 Python의 type annotation(type hint)에 추가하기 위해 [PEP-544](https://peps.python.org/pep-0544/)에서 소개되었다.
+  - 주로 두 가지 목적으로 사용된다.
+    - Class 혹은 함수를 위한 interface 생성.
+    - Generic type에 경계를 설정.
+  - Interface 생성
+    - ABC를 사용했을 때와는 달리 method에 추가적으로 decorator를 붙이지 않아도 되며, 관례상 `pass` 대신 `...`을 사용한다.
 
+  ```python
+  from typing import Protocol
+  
+  class People(Protocol):
+      def think(self):
+          ...
+  
+      def speak(self):
+          ...
+  ```
 
+  
 
 
 

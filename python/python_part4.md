@@ -419,7 +419,7 @@
            return height * Peperoni.compute_area(radius)
   ```
 
-  - [Fluent Python]의 저자인 루시아누 하말류의 주장
+  - [Fluent Python]의 저자인 루시아누 하말류의 의견
     - `@classmethod`는 용도가 명확한데 비해 `@staticmethod`는 그렇지 않은 것 같다.
     - 만일 `@staticmethod`를 써야 하는 상황이라면 class 선언부 앞, 뒤에 일반 함수로 선언하는 것이 더 나은 것 같다.
 
@@ -897,8 +897,6 @@
     - abstract base class의 약자이다.
     - `metaclass=ABCMeta`와 같이 설정함으로써 instance를 생성할 수 없게 한다.
   
-  
-  
   ```python
   # abc 모듈을 불러온다.
   from abc import *
@@ -931,6 +929,38 @@
   print("Hello!")		# Hello!
   my_inst = MyClass()	# TypeError
   ```
+  
+  - 추상 클래스는 두 가지 방법으로 생성이 가능하다.
+    - 두 방식의 기능적인 차이는 존재하지 않으나, 굳이 두 가지 방식을 지원하는 이유는 Python이 다중 상속을 지원하기 때문이다.
+    - 여러 개의 class를 상속 받을 때, metaclass가 충돌될 수 있기 때문이다.
+    - 따라서 명시적으로 metacalss가 `ABCMeta`임을 지정해주는 방식도 지원하는 것이다.
+  
+  ```python
+  from abc import ABC, ABCMeta, abstractmethod
+  
+  class Animal(ABC):
+      @abstractmethod
+      def walk(self) -> None:
+          pass
+  
+  class Animal(metaclass=ABCMeta):
+      @abstractmethod
+      def walk(self) -> None:
+          pass
+  ```
+  
+  - ABC class는 결국 `ABCMeta`를 metaclass로 받는다.
+    - 아래 코드는 abc 패키지 내에 있는 `ABC` class의 실제 코드이다.
+  
+  ```python
+  class ABC(metaclass=ABCMeta):
+      """Helper class that provides a standard way to create an ABC using
+      inheritance.
+      """
+      __slots__ = ()
+  ```
+
+
 
 
 
@@ -1570,7 +1600,9 @@
 
 
 
-# Python slot
+
+
+## Python slot
 
 - slot
 
