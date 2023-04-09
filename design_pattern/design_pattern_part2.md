@@ -708,8 +708,8 @@
 
 - 더 효율적인 해결 방법
 
-  - `getInstance()` 메서드의 속도가 그리 중요하지 않다면 그냥 둔다.
-  - 인스턴스가 필요할 때는 생성하지 말고 처음부터 만든다.
+  - 방법1. `getInstance()` 메서드의 속도가 그리 중요하지 않다면 그냥 둔다.
+  - 방법2. 인스턴스가 필요할 때는 생성하지 말고 처음부터 만든다.
 
   ```java
   public class Singleton {
@@ -723,7 +723,7 @@
   }
   ```
 
-  - DCL을 써서 `getInstance()`에서 동기화되는 부분을 줄인다.
+  - 방법3. DCL을 써서 `getInstance()`에서 동기화되는 부분을 줄인다.
     - DCL(Double-Checked Locking)을 사용하면 인스턴스가 생성되어 있는지 확인한 다음 생성되어 있지 않았을 때만 동기화할 수 있다.
     - `volatile` 키워드를 사용하면 멀티 스레딩을 사용하더라도 `uniqueInstance` 변수가 `Singleton` 인스턴스로 초기화되는 과정이 올바르게 진행된다.
 
@@ -800,7 +800,475 @@
 
 
 
+# 커맨드 패턴
 
+- 만능 리모컨 만들기
+
+  - 여러 개의 가정용 기기를 제어할 수 있는 리모컨의 API를 제작해야한다.
+    - 각 가정용 기기의 코드는 이미 고객사에서 완성시킨 상태이다.
+    - 우리는 리모컨 API를 생성하여 고객사에서 완성시킨 가정용 기기의 코드를 호출하기만 하면 된다.
+  - 리모컨은 아래와 같이 생겼다.
+    - 7개의 슬롯 각각에 여러 기기들 중 하나를 등록해 놓고 ON, OFF 버튼만을 사용하여 해당 기기를 조작한다.
+    - UNDO 버튼을 누르면 마지막으로 누른 버튼의 명령을 취소한다.
+
+  ![image-20230409180628236](design_pattern_part2.assets/image-20230409180628236.png)
+
+  - 문제
+    - 다양한 종류의 가정용 기기들을 제어해야한다.
+    - 단순히 on/off만 시키면 되는 것이 아니라 각 기기별로 추가적인 기능도 제어할 수 있어야 한다.
+    - 제어해야하는 가정용 기기의 종류가 추후에 계속 추가 될 수도 있다.
+
+
+
+- 커맨드 패턴에 따라 음식 주문하기
+
+  - 음식 주문 과정
+    - 고객이 종업원에게 원하는 물건을 주문한다(`create_order()`).
+    - 종업원은 고객의 주문(`Order` class의 instance)을 받는다(`take_order()`).
+    - 종업원은 주문 처리를 준비한다(`Order` 객체에 있는 `order_up()` 메서드를 호출한다).
+    - `Order` 객체에는 음식을 준비할 때 필요한 모든 주문 사항이 들어있는데, `Order` 객체가 `make_burger()`, `make_shake()` 같은 메서드를 호출하여 주방장에게 행동을 지시한다.
+    - 주방장은 `Order` 객체로부터 전달받은 지시사항에 따라 음식을 준비한다.
+
+  - 주문서(`Order` 객체)의 역할
+    - 주문서는 주문 내용을 캡슐화한다.
+    - 주문서의 인터페이스에는 식사 준비에 필요한 행동을 캡슐화한 `order_up()` 메서드가 들어있다(이게 유일한 메서드에다).
+    - 식사를 주문해야 하는 객체(주방장)의 레퍼런스도 들어있다.
+    - 실제와 다른 점은 종업원이 고객이 무엇을 주문했는지, 누가 요리를 할 건지 등을 신경쓰지만, 여기서는 Order 객체가 그러한 역할을 한다는 점이다.
+  - 종업원의 역할
+    - 종업원은 `Order` 객체에서 `order_up()` 메서드를 호출하는 역할을 한다.
+    - 실제 종업원과는 달리 주문서에 무슨 내용이 있는지, 누가 식사를 준비하는지 알 필요가 없다.
+    - `take_order()` 메서드를 통해 `Order` 객체를 받아 `Order` 객체에서 `order_up`을 호출하기만 하면 된다.
+  - 주방장의 역할
+    - 식사를 준비하는 데 필요한 정보를 가지고 잇다.
+    - 종업원이 `Order` 객체에 있는 `order_up()` 메서드를 호출하면, 주방장이 음식을 만들 때 필요한 메서드를 전부 처리한다.
+    - 주방장과 종업원은 완전히 분리되어 있으며 종업원은 각 `Order` 객체에 있는 메서드를 호출할 뿐이고, 주방장은 `Order`객체의 `order_up()` 메서드의 호출에 따라 움직일 뿐이다.
+
+
+
+- 커맨드 패턴의 요소들
+
+  - 음식 주문 예시와 대응하는 커맨드 패턴의 요소들을 다음과 같다.
+
+  | 커맨드 패턴의 요소 | 음식 주문    |
+  | ------------------ | ------------ |
+  | Client             | 고객         |
+  | Command            | Order        |
+  | Invoker            | 종업원       |
+  | Receiver           | 주방장       |
+  | set_command()      | take_order() |
+  | execute()          | order_up     |
+
+  - `Client` 
+    - `Client`객체는 `Command` 객체를 생성한다.
+    - `Command` 객체는 `Receiver` 객체에 전달할 일련의 행동으로 구성된다.
+  - `Command` 
+    - `Command`객체에는 행동과 `Receiver` 객체의 정보가 같이 들어있다.
+    - `Command` 객체가 제공하는 메서드는 `execute()` 하나 뿐이며 이 메서드는 행동을 캡슐화하여 `Receiver` 객체에 있는 특정 행동(method)을 처리한다.
+  - `Invoker`
+    - `Client` 객체는 `Invoker` 객체의 `set_command()` 메서드를 호출하여 `Command` 객체를 넘겨준다.
+    - `Command` 객체는 나중에 쓰이기 전까지 `Invoker` 객체에 보관된다.
+    - `Client` 객체에서 요청이 오면 `Invoker` 객체는 전달 받은 `Command` 객체 내부의 `execute()` 메서드를 실행한다.
+    - 이 때, `execute()` 메서드를 실행한 후 `Command` 객체를 `Invoker` 객체에서 지우도록 할 수도 있고, 지우지 않고 여러 번 실행시키도록 할 수도 있다.
+  - `Receiver`
+    - `Invoker` 객체가 `Command` 객체의 `execute()` 메서드를 실행하면, `Command` 객체는 생성시에 전달 받았던 `Receiver` 객체에 대한 정보를 토대로 `Receiver` 객체에 있는 행동들을 실행한다.
+
+
+
+- 첫 번째 커맨드 객체 만들기
+
+  - 가정용 기기를 제어하는 데 사용할 리모컨을 위한 커맨드 객체를 생성한다.
+  - 커맨드 객체는 모두 같은 인터페이스를 구현해야한다.
+    - 이 인터페이스에 메서드는 `execute()`하나 뿐이다.
+
+  ```python
+  from abc import ABC
+  
+  
+  class Command(ABC):
+      def execute(self):
+          pass
+  ```
+
+  - 조명을 켤 때 필요한 커맨드 클래스 구현
+    - 조명을 켤 때 필요한 커맨드 클래스를 구현한다.
+    - `Command` interface를 구현한 클래스이다.
+    - 생성자에 이 커맨드 객체로 제어할 특정 조명(거실 조명인지 차고 조명인지 욕실 조명인지 등)의 정보가 전달된다.
+    - 이 조명 정보가 바로 Receiver 객체이다.
+    - 해당 조명의 정보는 `light`라는 인스턴스 변수에 저장된다.
+    - `execute()` 메서드가 호출되면 Receiver 객체(`light`)에 있는 `on()` 메서드를 호출한다.
+
+  ```python
+  class LigthOnCommand(Command):
+      def __init__(self, light):
+          self.ligth = ligth
+      
+      def execute(self):
+          self.light.on()
+  ```
+
+  - 커맨드 객체 사용하기
+    - 제어할 기기를 연결할 슬롯과 버튼이 각각 하나씩 밖에 없는 리모컨이 있다고 가정하고, 이 리모컨에서 커맨드 객체를 사용해본다.
+    - 이 리모컨 객체가 Invoker 객체가 되는 것이다.
+
+  ```python
+  class SimpleRemoteControl:
+      def __init__(self):
+          # Command 객체를 저장 할 하나의 slot
+          self.slot = None
+      
+      # slot을 가지고 제어할 command를 설정하는 메서드
+      def set_command(self, command):
+          self.slot = command
+      
+      # 리모컨의 버튼을 눌렀을 때 호출되는 메서드
+      def button_was_pressed(self):
+          self.slot.execute()
+  ```
+
+  - Client 코드 작성하기
+    - `Ligth` 클래스는 고객사에서 이미 만들어두었다고 가정한다.
+
+  ```python
+  # Invoker 역할을 하는 remote 변수 생성
+  remote = SimpleRemoteControl()
+  # 고객사에서 만든 Ligth 객체 생성(Receiver 객체)
+  light = Ligth()
+  # Receiver 객체를 전달하여 Command 객체 생성
+  light_on = LigthOnCommand(light)
+  
+  # Inovker 객체에 Command 객체 저장
+  remote.set_command(light_on)
+  # Invoker에 저장된 command 객체에서 execute() 메서드 실행
+  remote.button_was_pressed()
+  ```
+
+
+
+- 커맨드 패턴(Command Pattern)
+
+  - 정의
+    - 작업을 요청하는 쪽(Invoker)과 처리하는 쪽(Receiver)을 분리할 수 있게 해주는 패턴이다.
+    - 요청 내역을 객체로 캡슐화해서 객체를 서로 다른 요청 내역에 따라 매개변수화 할 수 있다.
+    - 이를 통해 요청을 큐에 저장하거나 로그로 기록하거나 작업 취소 기능을 사용할 수 있다.
+  - Command 객체는 일련의 행동을 특정 receiver와 연결함으로써 요청을 캡슐화한다.
+    - 이를 위해 행동과 receiver를 한 객체에 넣고 `execute()`라는 메서드 하나만 외부에 공개하는 방법을 사용해야 한다.
+    - `execute()` 메서드 호출에 따라 receiver에서 일련의 작업을 처리한다.
+    - 밖에서 볼 때는 어떤 객체가 receiver 역할을 하는지, 그 receiver가 어떤 행동을 하는지 알 수 없다.
+    - 단순히 `execute()` 메서드를 호출하면 해당 요청이 처리된다는 사실만 알 수 있다.
+  - Command 객체를 매개변수화 할 수도 있다.
+    - Invoker 객체는 command 객체가 특정 인터페이스를 구현하기만 했다면, 해당 command에서 실제로 어떤 일을 하는지 신경 쓸 필요가 없다.
+
+  - 다이어그램
+    - 클라이언트는 `Receiver`와 행동을 넣어 `ConcreteCommand`를 생성한다.
+    - `Invoker`에는 command 객체가 들어있으며, `execute_command()` 메서드를 호출하여 `ConcreteCommand` 객체의 `execute()` 메서드를 수행한다.
+    - `Command`는 모든 `ConcreteCommand` 객체가 구현해야하는 인터페이스로, `execute()` 메서드와 `undo()` 메서드를 포함하고 있다.
+    - `execute()` 메서드는 `Receiver` 객체에 있는 메서드를 호출해서 요청된 작업을 수행한다.
+    - `ConcreteCommand` 는 특정 행동과 Receiver를 연결해준다. `Invoker` 객체가 `execute()`를 실행시키면, `ConcreteCommand` 객체에서 `Receiver` 객체에 있는 메서드를 호출해서 그 작업을 처리한다.
+    - `Receiver`는 요구 사항 수행을 위해 어떤 일을 해야하는지 알고 있는 객체이다. 
+
+  ![image-20230409213916328](design_pattern_part2.assets/image-20230409213916328.png)
+
+
+
+- 리모컨의 모든 슬롯에 기기 할당하기
+
+  - 리모컨 코드 만들기
+    - 총 7개의 슬롯이 있으므로 7개의 슬롯의 on/off 버튼에 할당할 command들을 저장할 `on_commands`와 `off_commands`를 선언한다.
+
+  ```python
+  class RemoteControl:
+      def __init__(self):
+          NUM_SLOT = 7
+          self.on_commands = [NoCommand() for _ in range(NUM_SLOT)]
+          self.off_commands = [NoCommand() for _ in range(NUM_SLOT)]
+  
+      def set_command(self, slot, on_command, off_command):
+          self.on_commands[slot] = on_command
+          self.off_commands[slot] = off_command
+  
+      def on_button_was_pushed(self, slot):
+          self.on_commands[slot].execute()
+  
+      def off_button_was_pushed(self, slot):
+          self.off_commands[slot].execute()
+  ```
+
+  - `NoCommand` 객체에 대해서
+    - 위에서 `on_commands`와 `off_commands` 인스턴스 변수를 초기화 할 때 `NoCommand` 변수로 초기화했다.
+    - 이는 아래 `on_button_was_pushed` 등에서 각 인스턴스 변수에 저장된 `Command` 객체에 인덱스로 접근하기에 `IndexError`가 발생하는 것을 방지하기 위함이다(Python 스러운 방법은 아닌 듯 하다).
+    - 이러한 객체를 널 객체라고도 하는데, 딱히 반환할 객체도 없고 클라이언트가 null을 처리하지 않게 하고 싶을 때 활용한다.
+    - 구현은 아래와 같다.
+
+  ```python
+  class NoCommand(Command):
+      def execute(self):
+          pass
+  ```
+
+  - 조명을 끌 때 사용할 커맨드 클래스 만들기
+    - 이번에는 조명을 끌 때 쓰는 `LightOffCommand` 클래스를 만든다.
+
+  ```python
+  class LigthOffCommand(Command):
+      def __init__(self, light):
+          self.light = light
+      
+      def execute(self):
+          self.light.off()
+  ```
+
+  - 이번에는 조명 보다 조금 더 복잡한 오디오를 켜고 끌 때 사용할 커맨드 클래스를 만든다.
+    - 오디오를 켤 때는 단순히 오디오를 켜기만 하는 것이 아니라 켜고 CD를 넣고, 볼륨을 기본값으로 설정한다.
+
+  ```python
+  class StrereoOnWithCDCommand(Command):
+      def __init__(self, stereo):
+          self.stereo = stereo
+          
+      def execute(self):
+          self.stereo.on()
+          self.stereo.set_cd()
+          self.stereo.set_volume(10)
+  
+  class class StrereoOffCommand(Command):
+      def __init__(self, stereo):
+          self.stereo = stereo
+          
+      def execute(self):
+          self.stereo.off()
+  ```
+
+  - 리모컨 테스트 해보기
+
+  ```python
+  # 각 기기를 생성한다.
+  living_room_light = Light("Living Room")
+  garage_light = Light("Garage")
+  stereo = Stereo()
+  
+  # 각 기기별 Command 객체를 생성한다.
+  living_room_light_on = LightOnCommand(living_room_light)
+  living_room_light_off = LightOffCommand(living_room_light)
+  garage_light_on = LightOnCommand(garage_light)
+  garage_light_off = LightOffCommand(garage_light)
+  stereo_on_with_cd = StrereoOnWithCDCommand(stereo)
+  stereo_off = StrereoOffCommand(stereo)
+  
+  # Command 객체를 RemoteControl객체의 각 슬롯에 로드한다.
+  remote_control = RemoteControl()
+  remote_control.set_command(0, living_room_light_on, living_room_light_off)
+  remote_control.set_command(1, garage_light_on, garage_light_off)
+  remote_control.set_command(2, stereo_on_with_cd, stereo_off)
+  
+  # 실행한다.
+  remote_control.on_button_was_pushed(0)
+  remote_control.off_button_was_pushed(0)
+  remote_control.on_button_was_pushed(1)
+  remote_control.off_button_was_pushed(1)
+  remote_control.on_button_was_pushed(2)
+  remote_control.off_button_was_pushed(2)
+  ```
+
+
+
+- 작업 취소 기능 추가하기
+
+  - 위에서 커맨드 디자인 패턴에 대해 "작업 취소 기능을 사용할 수 있다"고 했다.
+    - 리모컨에 UNDO 버튼을 추가하면서 어떻게 작업 취소가 가능한지 살펴볼 것이다.
+    - 예를들어 조명이 꺼진 상태에서 ON 버튼을 눌러 조명을 켠 후 UNDO 버튼을 눌러 조명이 다시 꺼지도록 구현할 것이다.
+  - 커맨드에서 작업 취소 기능을 지원하려면 `execute()` 메서드와 비슷한 `undo()` 메서드가 있어야한다.
+    - Command interface에 `undo()` 메서드를 추가한다.
+
+  ```python
+  from abc import ABC
+  
+  class Command(ABC):
+      def execute(self):
+          pass
+      
+      def undo(self):
+          pass
+  ```
+
+  - ConcreteCommand class에 `undo()` 메서드를 추가한다.
+    - 비교적 간단한 `LightOnCommand`, `LightOffCommand`에 추가해본다.
+
+  ```python
+  class LigthOnCommand(Command):
+      def __init__(self, light):
+          self.ligth = ligth
+      
+      def execute(self):
+          self.light.on()
+      
+      def undo(self):
+          self.ligth.off()
+  
+          
+  class LigthOffCommand(Command):
+      def __init__(self, light):
+          self.ligth = ligth
+      
+      def execute(self):
+          self.light.off()
+      
+      def undo(self):
+          self.ligth.on()
+  ```
+
+  - 리모컨 class에 `undo_command`라는 인스턴스 변수와 `undo_button_was_pushed()` 메서드를 추가한다.
+    - 또한 `on_button_was_pushed()`와 `off_button_was_pushed()` 메서드도 약간씩 수정한다.
+
+  ```python
+  class RemoteControl:
+      def __init__(self):
+          # ...
+          self.undo_command = NoCommand()
+  
+      def set_command(self, slot, on_command, off_command):
+          self.on_commands[slot] = on_command
+          self.off_commands[slot] = off_command
+  
+      def on_button_was_pushed(self, slot):
+          self.on_commands[slot].execute()
+          self.undo_command = on_command[slot]
+  
+      def off_button_was_pushed(self, slot):
+          self.off_commands[slot].execute()
+          self.undo_command = off_command[slot]
+          
+      def undo_button_was_pushed(self):
+          self.undo_command.undo()
+  ```
+
+
+
+- 작업 취소 기능을 구현할 때 상태를 사용하는 방법
+
+  - 고객사에서 제공한 선풍기의 코드는 아래와 같다.
+    - 선풍기의 속도와 방향을 instance 변수와 속도를 변경할 수 있는 메서드들, 그리고 현재 속도를 반환하는 메서드를 가지고 있다.
+    - 선풍기에서 작업 취소 기능을 구현하기 위해서는 이전에 설정했던 선풍기 속도에 대한 정보가 필요하다.
+    - 이전 속도를 저장해 뒀다가 `undo()` 메서드 호출시 이전 속도로 되돌아가도록 해야한다.
+
+  ```python
+  class CeilingFan:
+      HIGH = 3
+      MEDIUM = 2
+      LOW = 1
+      OFF = 0
+  
+      def __init__(self, location):
+          self.location = location
+          self.speed = self.OFF
+  
+      def high(self):
+          self.speed = self.HIGH
+  
+      def medium(self):
+          self.speed = self.MEDIUM
+  
+      def low(self):
+          self.speed = self.LOW
+  
+      def off(self):
+          self.speed = self.OFF
+      
+      def get_speed(self):
+          return self.speed
+  ```
+
+  - 선풍기 속도를 high로 변경하는 Command 구현하기
+
+  ```python
+  class CeilingFanHighCommad(Command):
+      def __init__(self, ceiling_fan):
+          self.ceiling_fan = ceiling_fan
+          self.prev_speed = None
+  
+      def execute(self):
+          prev_speed = self.ceiling_fan.get_speed()
+          self.ceiling_fan.high()
+  
+      def undo(self):
+          if self.prev_speed == CeilingFan.HIGH:
+              self.ceiling_fan.high()
+          elif self.prev_speed == CeilingFan.MEDIUM:
+              self.ceiling_fan.medium()
+          elif self.prev_speed == CeilingFan.LOW:
+              self.ceiling_fan.low()
+          elif self.prev_speed == CeilingFan.OFF:
+              self.ceiling_fan.off()
+
+
+
+- 여러 동작을 한 번에 처리하기
+
+  - 버튼 한 개만 누르면 조명이 어두워지면서 TV가 켜지고 DVD 모드로 변경되는 등의 동작이 한 번에 처리되게 하려고 한다.
+  - 매크로 커맨드 구현하기
+
+  ```python
+  class MacroCommand(Command):
+      def __init__(self, commands):
+          self.commands = commands
+      
+      def execute(self):
+          for command in self.commands:
+              command.execute()
+      
+      def undo(self):
+          for command in self.commands:
+              command.undo()
+  ```
+
+  - 사용해보기
+
+  ```python
+  # Receiver들을 생성한다.
+  light = Light("Living Room")
+  stereo = Stereo()
+  tv = TV()
+  hottub = Hottub()
+  
+  # MacroCommand에 추가할 command들을 생성한다.
+  party_on = [LightOnCommand(light), StereoOnCommand(stereo), TVOnCommand(tv), HottubOnCommand(hottub)]
+  party_off = [LightOffCommand(light), StereoOffCommand(stereo), TVOffCommand(tv), HottubOffCommand(hottub)]
+  
+  # MacroCommand를 생성한다.
+  party_on_macro = MacroCommand(party_on)
+  party_off_macro = MacroCommand(party_off)
+  
+  # MacroCommand 객체를 버튼에 할당한다.
+  remote_control.set_command(0, party_on_macro, party_off_macro)
+  ```
+
+
+
+- 요청을 큐에 저장하기
+  - Command 객체를 큐에 넣는 방식으로 활용할 수 있다.
+    - 이를 통해 클라이언트 애플리케이션에서 커맨드 객체를 생성한 뒤 오랜 시간이 지나도 Command 객체를 호출할 수 있게 된다.
+    - 심지어 이를 다른 스레드에서 호출할 수도 있다.
+    - 이점을 이용해 커맨드 패턴을 스케쥴러나 스레드 풀, 작업 큐와 같은 다양한 작업에 적용할 수 있다.
+  - 작업 큐 예시
+    - 큐에 Command 객체를 추가한다.
+    - 큐에서 Command 객체를 하나씩 빼서 여러 개의 스레드로 분배한다.
+    - 각 스레드는 받아 온 Command 객체에서 `execute()` 메서드를 실행한다.
+    - 실행이 완료되면 작업 큐에서 새로운 Command 객체를 받아온다.
+
+
+
+- 복구 시스템에 사용하기
+  - Command 인터페이스에 `execute()` 메서드 뿐 아니라 `store()`, `load()` 메서드를 추가한다.
+    - `store()` 메서드는 Command 객체를 저장하는 메서드이다.
+    - `load()` 메서드는 Command 객체를 불러오는 메서드이다.
+  - 복구 과정 예시
+    - `InsertDataCommand`라는 command 객체가 있다.
+    - 이 객체는 `execute()`가 실행될 때 임의의 저장소에 data를 1건씩 저장한다.
+    - 그런데, 모종의 이유로 해당 저장소가 복구 할 수 없는 상태로 다운되었다.
+    - 이 때, `InsertDataCommand`에 `store()`, `load()` 메서드가 있었다면 다음과 같이 처리할 수 있었을 것이다.
+    - 먼저 `execute()` 메서드를 실행하여 저장소 A에 data를 저장한다.
+    - 그 후 `store()` 메서드를 실행하여 저장소 B에 `InsertDataCommand` 객체를 저장한다.
+    - 저장소 A가 다운 될 경우 저장소 B에 저장된 `InsertDataCommand` 객체들의 `load()` 메서드를 사용하여 하나씩 불러온다.
+    - 불러온 `InsertDataCommand()` 객체들에서 `execute()` 메서드를 재실행한다. 
 
 
 
