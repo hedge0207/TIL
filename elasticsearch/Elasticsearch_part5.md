@@ -47,7 +47,9 @@
 - Query profile
 
   - query의 parameter로 `profile`을 `true`로 주면 query의 profiling이 가능하다.
-
+    - Kibana의 profile 탭에서도 사용이 가능하다.
+  
+  
   ```json
   {
       "query":{
@@ -56,6 +58,30 @@
       }
   }
   ```
+  
+  - response 중 description에 아래와 같이 Lucene explation text가 담겨 있다.
+  
+  ```json
+  {
+      // ...
+      "description" : "-((+bar:hello +bar:world) | (+foo:hello +foo:world)) #*:*"
+      // ...
+  }
+  ```
+  
+  - 기호
+    - `<field>:<term>`: field에 term이 포함되어야 한다는 의미이다.
+    - `+`: 뒤에 오는 값이 문서에 반드시 포함되어 있어야 한다는 의미이다.
+    - `-`: 뒤에 오는 값이 문서에 반드시 포함되어 있지 않아야 한다는 의미이다.
+    - `*`: 정규 표현식의 `*`와 유사한 용도로 사용된다.
+    - `|`: or와 같은 뜻이다.
+  
+  - 즉 위 쿼리는 다음과 같이 볼 수 있다.
+    - `(+bar:hello +bar:world)`: `bar` field에 "hello"와 "world"가 반드시 포함.
+    - `(+foo:hello +foo:world))`: `foo` field에 "hello"와 "world"가 반드시 포함.
+    - `|`: 둘 중 하나로 매칭 되는 것을
+    - `*:*`: 전체 문서에서
+    - `-`: 제외한 나머지를 검색한다.
 
 
 
@@ -355,12 +381,20 @@
   $ curl 'localhost:9200/인덱스명/_doc/_search' -H 'Content-Type: application/json' -d '{
   "query": {
     "multi_match":{
-      "query": "텀",
-      "fields": ["필드1", "필드2"] 
+      "query": "term1 term2",
+      "fields": ["field1", "field2"] 
     }
   }
   }'
   ```
+  
+  - `operator`
+    - 옵션으로 `operator`를 줄 수 있다.
+    - 주의할 점은 `operator`가 각 filed 사이에 적용되는 것이 아니라, 각 term마다 적용된다는 것이다.
+    - 예를 들어 위 예시에서 `operator`를 `and`로 주는 것은 `field1`에도 term1, term2가 포함되고, `filed2`에도 term1, term2가 포함된 문서를 찾는 것이 아니라, `field1`에 term1, term2가 모두 포함된 문서나 `field2`에 term1, term2가 모두 포함된 문서를 찾는것이다.
+    - 만약, field 사이에 and를 적용시키고자 한다면 `type`을 `cross_field`로 주면 된다.
+  - `minimum_shoud_match`
+    - `operator`와 마찬가지로 동작한다.
 
 
 
