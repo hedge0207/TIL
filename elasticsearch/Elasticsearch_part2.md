@@ -675,8 +675,10 @@
   ```
 
   - read only 모드가 되었을 때, 쓰기 작업이 가능하도록 변경해주는 curl
+    - 이전 버전에서는 디스크 공간을 확보해도 읽기 전용 모드에서 쓰기 가능 모드로 자동으로 변경되지 않으므로 수동으로 변경해줘야한다.
     - 인덱스 단위로도 읽기 전용 모드를 해제 가능하다.
     - 그러나 읽기 전용 모드는 flood_stage에 의해 다수의 인덱스에 설정되므로 가능한 아래 코드와 같이 `_all`을 통해 모든 인덱스에 동시 적용하는 것이 좋다.
+  
   
   ```bash
   $ curl -XPUT "localhost:9200/_all/_settings?pretty" -H 'Content-type:application/json' -d'{
