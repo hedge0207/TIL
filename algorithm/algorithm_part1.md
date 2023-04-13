@@ -161,6 +161,24 @@
     |      |      |      |      |      |      | ed, mid | st   |      |      |
 
   - st가 ed보다 커졌으므로, 25는 배열에 없다는 것을 확정하고 탐색을 종료한다.
+  
+- Python으로 구현
+
+  ```python
+  def binary_search(arr, target):
+      st, ed = 0, len(arr)-1
+      while st <= ed:
+          mid = (st + ed) // 2
+  
+          if arr[mid] > target:
+              ed = mid - 1
+          elif arr[mid] < target:
+              st = mid + 1
+          else:
+              return mid
+      
+      return -1
+  ```
 
 
 
@@ -270,11 +288,91 @@
       return st
   ```
 
+
+
+
+- 좌표 압축(Coordinate Compression)
+
+  - 정렬된 배열이 있을 때, 배열에 있는 각 요소를 인덱스와 매팽시키는 과정이다.
+    - 예를 들어 `[4, 7, 3, 1]`은 `[2, 3, 1, 0]`과 같이 압축될 수 있다.
+  - 범위가 크지만 오직 각 값들의 상대적인 위치만 신경쓰면 될 때 유용하게 사용할 수 있다.
+    - 예를 들어 가능한 값의 범위가 0~10<sup>10</sup>이지만 실제로 들어오는 숫자의 개수가 10개 뿐인 숫자들의 집합이 있다고 할 때, 전체 범위를 배열의 index로 쓰는 것은 메모리 측면에서 매우 비효율적일 수 있다.
+    - 실제 저장해야 하는 값은 10개 뿐인데 10개를 저장하자고 10<sup>10</sup> 크기의 배열을 생성해야 하기 때문이다.
+    - 이럴 때 좌표 압축을 적용하면 `0 ~ 10-1`  사이의 숫자만으로 처리가 가능하다.
+    - 즉 값의 범위가 어떻든 간에 실제 입력으로 N개의 숫자가 들어온다면 `0 ~ N-1` 내의 숫자로 변환하여 처리 할 수 있게 해준다.
+  - 좌표 압축을 적용하지 않은 경우
+    - 만약 x, y 좌표를 처리해야 하는 경우가 있다고 가정해보자, 각 좌표의 대소만 알면 되고, 실제 좌표 값은 사용하지 않아도 된다고 할 때, 좌표압축을 적용하면 메모리를 훨씬 절약할 수 있다.
+    - 예를 들어 아래와 같은 좌표들을 가지고, 각 좌표들의 대소비교를 해야한다고 가정해보자.
+    - 좌표 의 범위는 `0<=x, y <= 1000`이다.
+    - 대부분의 좌표 값은 1~7 사이에 있지만 좌표 값의 범위가 최대 1000까지이므로 모든 입력 좌표들을 담기 위해서는 `board`의 크기를 1000*1000으로 선언해야한다.
+
+  ```python
+  # coordinates의 각 요소들은 [x좌표, y좌표]
+  coordinates = [[1000, 1000], [1, 1], [3, 7], [5, 2]]
+  board = [[0]*1000 for _ in range(1000)]
+  ```
+
+  - 좌표압축을 적용한 경우
+    - 위 예시에서 좌표 압축을 적용하면 다음과 같이 `board`의 크기를 줄일 수 있다.
+    - 1000\*1000크기의 좌표가 아닌 4\*4 크기의 배열로 해결이 가능하게 된다.
+
+  ```python
+  coordinates = [[1000, 1000], [1, 1], [3, 7], [5, 2]]
+  # 좌표 압축
+  coordinates = compress_coordinate(coordinates)
+  print(coordinates)	# [[3, 3], [0, 0], [1, 2], [2, 1]]
+  max_x = max([coordinate[0] for coordinate in arr])	# 3
+  max_y = max([coordinate[1] for coordinate in arr])	# 3
+  board = [[0]*(max_x+1) for _ in range(max_y+1)]
+  ```
+
+  - 구현 과정
+    - 좌표 압축을 적용하려는 배열을 오름차순으로 정렬한다.
+    - 정렬된 배열에서 중복을 제거한다.
+    - 이 배열을 대상으로 특정 값이 몇 번째로 등장하는지를 찾는다.
+
+  - 이진 탐색과의 관계
+    - 좌표 압축을 구현할 때 정렬된 배열에서 중복을 제거한 후, 특정 값이 몇 번째로 등장하는지를 찾게 되는 데, 이 때 이진탐색을 사용하여 찾는다.
+    - 선형탐색으로 구현해도 되지만, 탐색 시간을 줄이기 위해 주로 이진 탐색으로 구현한다.
+  - 구현
+
+  ```python
+  def binary_search(arr, target):
+      st, ed = 0, len(arr)-1
+      while st <= ed:
+          mid = (st + ed) // 2
   
+          if arr[mid] > target:
+              ed = mid - 1
+          elif arr[mid] < target:
+              st = mid + 1
+          else:
+              return mid
+      
+      return -1
+      
+  
+  def compress_coordinate(lst):
+      # 중복을 제거한 후 오름차순으로 정렬한다.
+      unique_lst = sorted(list(set(lst)))
+      compressed_lst = []
+      for num in lst:
+          # 특정 값이 몇 번째로 등장하는지를 찾는다.
+          compressed = binary_search(unique_lst, num)
+          compressed_lst.append(compressed)
+      
+      return compressed_lst
+  
+  
+  
+  print(compress_coordinate([3, 13, 2, 13, 7, 65, 42, 2]))	# [1, 3, 0, 3, 2, 5, 4, 0]
+  ```
 
   
 
-  
+
+
+
 
 
 
