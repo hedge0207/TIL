@@ -374,6 +374,137 @@
 
 
 
+- 이진탐색 응용
+
+  - 전체 순회 대상 중 일부를 묶은 후 일부만 이분 탐색 함으로써 시간 복잡도를 낮출 수 있다.
+  - 예를 들어 1 이상의 정수로 이루어진 배열 arr의두 요소의 합 중에서 arr에 포함된 것들 중 최대값을 구하려고 한다고 가정해보자.
+    - 즉 arr[i] + arr[j] = arr[k]인 arr[k]들 중에서 최대값을 구하려 한다고 가정해보자.
+    - 가장 먼저 떠올 릴 수 있는 풀이는 O(N<sup>3</sup>)일 것이다.
+
+  ```python
+  arr = [1, 2, 3, 43, 5, 9, 21, 13, 22]
+  
+  max_num = 0
+  for i in arr:
+      for j in arr:
+          for k in arr:
+              if i+j == k and k > max_num:
+                  max_num = k
+  ```
+
+  - 이는 이진 탐색을 활용하면 O(N<sup>2</sup>lgN)에 풀 수 있다.
+
+  ```py
+  def binary_search(num):
+      st, ed = 0, len(arr) - 1
+      while st <= ed:
+          mid = (st + ed) // 2
+          if arr[mid] > num:
+              ed = mid - 1
+          elif arr[mid] < num:
+              st = mid + 1
+          else:
+              return True
+  
+  arr = [1, 2, 3, 43, 5, 9, 21, 13, 22]
+  arr.sort()
+  max_num = 0
+  for i in arr:
+      for j in arr:
+          sum_ = i + j
+          if binary_search(sum_) and sum_ > max_num:
+              max_num = sum_
+  
+  print(max_num)
+  ```
+
+
+
+- 이분 탐색 구현시 주의사항
+
+  - 이분 탐색 구현시 아래와 같이 무한 루프에 빠지는 경우가 있다.
+    - `binary_search` 함수는 target보다 작은 원소 중 가장 큰 원소를 반환하는 함수이다.
+    - 아래 함수를 실행하게 되면 무한 루프에 빠지게 된다.
+
+  ```python
+  def binary_search(target):
+      st, ed = 0, len(arr)
+      while st < ed:
+          mid = (st + ed) // 2
+  
+          if arr[mid] < target:
+              st = mid
+          else:
+              ed = mid - 1
+      
+      return st
+  
+  
+  arr = [1, 5, 8, 10, 11, 13, 14, 15, 22, 27]
+  print(binary_search(11))
+  ```
+
+  - 원인
+    - 첫 반복이 될 때, `mid` 값이 5이므로 `arr[mid]`가 target보다 크다.
+    - 따라서 `ed` 값이 4가 되고, 다음 반복을 돌 때, mid 값은 2가 되고 `arr[mid]`가 target보다 작다.
+    - 따라서 `st` 값이 2가 되고, 다음 반복을 돌 때 mid 값은 3이 되고, `arr[mid]`가 target보다 작다.
+    - 따라서 `st` 값이 3이 되는데, 여기서부터 문제가 발생한다.
+    - `st`가 3이고, `ed`가 4이므로 `mid` 값은 또 다시 3이 되고 무한 루프에 빠지게 된다.
+    - 이는 `st+ed`의 값이 항상 정수여야하기 때문에 발생하는 문제로, `st`와 `ed`의 값이 1차이가 난다면 주의해야한다.
+  - 해결법
+    - `mid` 값을 `(st+ed+1)//2`로 설정한다.
+
+  ```python
+  def binary_search(target):
+      st, ed = 0, len(arr)
+      while st < ed:
+          mid = (st + ed + 1) // 2
+  
+          if arr[mid] < target:
+              st = mid
+          else:
+              ed = mid - 1
+      
+      return st
+  
+  
+  arr = [1, 5, 8, 10, 11, 13, 14, 15, 22, 27]
+  print(binary_search(11))
+  ```
+
+
+
+
+- Parametric search(매개 변수 탐색)
+
+  - 최적화 문제를 결정 문제로 변환해 이분탐색을 수행하는 방법
+    - 최적화 문제: 조건을 만족하는 최대값 혹은 최소값을 구하는 문제
+    - 결정 문제: True 또는 False 둘 중 하나의 답 만을 가지는 문제.
+    - 최적화 문제의 답이 결정 문제의 인자로 들어가게 된다.
+
+  - Parametric search 문제를 해결하기 위해 이분 탐색을 사용한다.
+
+  - 예시
+
+    - 가격 순으로 정렬된 제품의 배열이 있을 때, 가격이 5만원 이상인 것들 중 가격이 가장 싼 제품을 찾고자한다.
+    - 이 때, 5만원 이상인 것들 중 가장 싼 가격 X를 찾는 것이 최적화 문제이고, X의 값이 5만원 이상인지를 판단하는 것이 결정 문제이다.
+    - 즉 가격 X를 받아, X값이 주어진 조건에 부합하는지를 이진탐색을 사용하여 반복적으로 체크하는 방식이다.
+
+    - 먼저 가장 가운데에 위치한 제품의 가격을 확인한다.
+    - 만약 해당 제품의 가격이 5만원보다 작으면 그 제품 뒤에 있는 제품들을 살펴보고, 적으면 그 제품 앞에 있는 제품들을 살펴본다.
+    - 예컨데 가운데 있는 제품의 가격(X 값)이 4만원이라면, 찾고자 하는 제품은 해당 제품보다 뒤에 있을 것이다.
+
+  - 어떤 문제를 parametric search로 풀려면 아래 조건들이 충족되어야한다.
+
+    - 결정 문제로 풀 수 있어야 한다.
+    - 정답이 될 수 있는 값들이 연속적이어야한다.
+    - 예를 들어 최대값을 구하는 최적화 문제에서 결정 문제를 푸는 함수 `f(x)`가 True라면, x 이상인 모든 값들에 대해서 `f(x)`는 True여야 하고, 마찬가지로 최소값을 구하는 최적화 문제에서 `f(x)`가 True라면 x 이하인 모든 값들에 대해서 `f(x)`는 True여야한다.
+
+    - Parametric search의 개념이나 기본적인 구현 난이도 자체는 높지 않지만 문제를 보고 parametric search로 풀 수 있다는 것을 알아내기가 쉽지 않은 만큼, 위 조건들을 항상 생각해야한다.
+
+
+
+
 
 
 ***
