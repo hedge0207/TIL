@@ -1,4 +1,4 @@
-# 팩토리 패턴
+# Factory Pattern
 
 - 최첨단 피자 코드 만들기
 
@@ -533,7 +533,7 @@
 
 
 
-# 싱글턴 패턴
+# Singleton Pattern
 
 - Instance를 단 하나만 생성하기 위한 패턴
   - Instance가 2개 이상일 때, 아래와 같은 문제가 발생할 수 있다.
@@ -800,7 +800,7 @@
 
 
 
-# 커맨드 패턴
+# Command Pattern
 
 - 만능 리모컨 만들기
 
