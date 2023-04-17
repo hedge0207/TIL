@@ -251,6 +251,16 @@
 
 
 
+- 주요 용어 정리
+  - Resources
+    - HTTP request의 타겟을 리소스라 부른다.
+    - 즉 HTTP request를 통해 추가, 수정, 삭제 등을 수행하고자 하는 데이터를 리소스라 부른다.
+  - Representations
+    - 주어진 resource의 과거, 현재, 혹은 원하는 상태를 반영하기 위한 정보이다.
+    - Resource는 문서, 사진 hypertext, json 등 다양한 형태로 존재할 수 있는데, 이들을 어떤 방식으로 보여줄지와 관련이 있다.
+
+
+
 ## HTTP의 특징
 
 - 클라이언트 서버 구조
@@ -361,6 +371,128 @@
 
 
 
+
+## HTTP Request Method
+
+- HTTP 요청 메서드
+  - 주어진 리소스에 수행하길 원하는 행동을 나타낸다.
+  - HTTP 동사라고 부르기도 한다.
+
+
+
+- 메서드의 종류
+
+  - GET
+    - 목표 resource에 대한 representation의 전송을 요청한다.
+    - 오직 데이터를 받기만 하며 응답에 body는 포함되지 않는다(쿼리 스트링, 쿼리 파라미터 등으로 표시하고자 하는 데이터에 대한 정보를 표시하긴 하지만 이는 요청하는 데이터의 경로를 표시한 것이라 봐야한다).
+  - HEAD
+    - Response가 content를 담고있지 않다는 것을 제외하면 GET과 동일하다.
+    - 특정 representation에 대한 metadata를 얻기 위해 사용한다.
+    - GET으로 요청했을 때와 동일한 header를 전송해야 한다.
+    - 그러나 일부 예외도 존재하는데 `Content-Length`나 ` Vary` 등의 header field는 생략할 수도 있다.
+    - HEAD 메서드는 content를 전달받지 않기에 `Content-Length` 등의 header field를 필요로하지 않기 때문이다.
+  - POST
+    - 목표 resource가 request와 함께 전송된 representation을 처리하도록 요청한다.
+    - 새로운 resource를 생성하거나 이미 존재하는 resource의 representation에 data를 추가하기 위해 사용한다.
+    - 만약 POST 요청을 통해 서버에 하나 이상의 resource가 생성되었다면, 서버는 `201(Created)`를 응답으로 보내야하며, `Location` header field를 포함시켜야한다.
+    - 요청을 보낼 때 body의 type은 `Content-Type` 헤더에 명시해서 보낸다.
+    - 만일 요청에 포함된 representation의 처리 결과가 이미 존재하는 resource의 representation과 동일하다면, 서버는 `303(See Other)` 응답 코드와 `Location` header filed에 이미 존재하는 resource의 identifier를 포함시켜 redirect 시킬 수도 있다.
+  - PUT
+    - 목표 resource의 상태가 request와 함께 전송된 representation에 정의된 상태로 생성되거나 변경되도록 요청한다.
+    - 만약 목표 resource가 현재 representation이 없을 경우 PUT 메서드를 통해 성공적으로 representation을 생성하면, 서버는 반드시 `201(Created)`를 응답으로 보내야한다.
+    - 만약 목표 resource가 현재 representation을 가지고 있고, 해당 representation이 요청에 포함된 representation의 상태와 일치하도록 변경되면, 서버는 반드시 `200(OK)` 혹은 `204(No Content)`를 응답으로 보내야한다.
+    - 서버는 request와 함께 전송된 representation이 목표 resource의 제약조건과 일치하는지 확인해야한다.
+    - 예를 들어 목표 resource의 `Content-Type`이 `text/html`이고 요청에 포함 된 representation이 `image/jpeg`라면, 서버는 목표 resource의 제약조건을 수정하거나, 요청으로 온 representation을 resource의 제약 조건에 맞게 변환하거나, `415(Unsupported Media Type)` 상태 코드를 응답으로 보내 요청을 거부해야한다.
+
+  - DELETE
+    - 목표 resource와 그것의 현재 기능 사이의 관계를 제거하도록 요청한다.
+    - 단순하게 말하면, 목표 resource의 삭제를 요청한다.
+    - 목표 resource의 하나 이상의 현재 representation이 삭제될 수도, 삭제되지 않을 수도 있고, 관련된 저장소 역시 수정되거나 수정되지 않을 수도 있따다.
+    - 이는 순전히 서버의 구현과 resource의 특성에 달려있다.
+    - 만약 DELETE 메서드가 성공적으로 적용되었고, 삭제가 성공적으로 수행될 것 같다면 `202 (Accepted)`, 삭제가 성공적으로 수행되었다면 `204 (No Content)`, 삭제가 성공적으로 수행되었으면서 상태를 묘사하기 위한 응답 메시지를 보내야 한다면 `200 (OK)`를 보낸다.
+  - CONNECT
+    - 목료 리소스에 대해 양방향 연결을 시작하는 메서드이다.
+    - CONNECT 메서드는 host와 port 번호로만 구성된 특수한 형식의 request target을 사용한다.
+    - 만약 포트 번호가 잘못되었을 경우 서버는 반드시 CONNECT 요청을 거부해야하며, 일반적으로 `400 (Bad Request)`를 응답으로 보낸다.
+  - OPTIONS
+    - 목표 resource가 사용할 수 있는 communication option에 대한 정보를 요청한다.
+    - 리소스가 어떤 method, header, content-type 등을 지원하는지 알 수 있다.
+    - CORS에서도 사용된다.
+  - TRACE
+    - Request message의 loop-back을 요청하기 위해 사용한다.
+    - 이 요청을 받은 최종 목적지(일반적으로 서버)는 받은 message에서 일부 필드를 제외하고 다시 클라이언트로 전송해야한다.
+    - 클라이언트는 TRACE request에 response에서 탈취될 수 있는 민감한 정보를 담아선 안된다.
+    - 즉, TRACE request 전송 - 서버에서 일부 필드 제외하고 클라이언트로 response 전송의 순서를 거치는데, TRACE request에 민감한 정보가 담겨있다면, 이 정보는 고스란히 response에 담겨 다시 클라이언트로 돌아오게 될 텐데, 이 때 response가 탈취당하면 민감한 정보도 함께 탈취되기 때문이다.
+    - 예를 들어 TRACE request에는 사용자 인증과 관련된 정보를 담아서는 안 된다.
+    - 또한 TRACE request를 받은 서버는 request에서 민감한 정보가 포함되었을 것 같은 필드들을 제외한 후 response를 생성해야한다.
+
+
+
+- POST와 PUT의 차이
+  - POST와 PUT의 근본적인 차이는 request와 함께 전송된 representation의 의도이다.
+    - POST에서 목표 resource는 request에 포함된 representation을 resource의 semantic에 따라 처리해야한다.
+    - 반면에, PUT에서 request에 포함된 representation은 목표 resource의 상태를 대체한다.
+  - 이 근본적인 차이에 의해서 멱등성에서도 차이가 발생한다.
+    - PUT은 POST와 달리 멱등성을 지닌다.
+
+
+
+- 멱등성과 안정성, 캐시 가능성
+
+  | Method  | Idempotence | Safety | Cacheable                              |
+  | ------- | ----------- | ------ | -------------------------------------- |
+  | GET     | YES         | YES    | YES                                    |
+  | HEAD    | YES         | YES    | YES                                    |
+  | POST    | NO          | NO     | Freshness 관련 정보가 있을 때에만 가능 |
+  | PUT     | YES         | NO     | NO                                     |
+  | DELETE  | YES         | NO     | NO                                     |
+  | CONNECT | NO          | NO     | NO                                     |
+  | OPTIONS | YES         | YES    | NO                                     |
+  | TRACE   | YES         | YES    | NO                                     |
+  
+  - 멱등성
+  
+    - 멱등성이란 같은 연산을 여러번 실행하더라도 그 결과가 달라지지 않는 성질을 의미한다.
+    - HTTP 메서드의 경우 경우 한 메서드로 여러 번 요청하더라도 서버의 상태가 한 번 요청한 것과 다르지 않다면, 해당 HTTP 메서드는 멱등성이 보장된다고 할 수 있다.
+    - 외부 요인으로 리소스의 변경이 일어나는 것은 고려하지 않는다.
+    - 즉, GET으로 data 조회, 해당 데이터를 PUT으로 수정, 해당 데이터를 다시 GET으로 조회하면 처음과 마지막의 결과가 달라지겠지만, 이런 경우는 고려하지 않는다.
+    - 또한 status code가 다르다고 해서 멱득성이 보장되지 않는 것이 아니다.
+  
+  - 멱등성이 보장되는 메서드들
+  
+      - GET, HEAD, OPTIONS 등 단순 조회의 경우 여러번 수행되어도 결과값은 변하지 않기에 멱등성이 보장된다.
+  
+      - PUT은 목표 resource의 상태를 요청으로 보낸 representation으로 변경하는 것이므로, 여러 번 수행되도 결과는 변하지 않는다.
+  
+      - DELETE는 있는 데이터를 삭제할 경우와 없는 데이터를 삭제하려는 경우의 응답 코드는 다르겠지만 역시 해당 데이터가 없다는 결과 자체는 변하지 않는다.
+  
+  - 멱등성이 보장되지 않는 메서드들
+  
+      - POST의 경우 request와 함께 전송된 representation을 처리해야 하므로, 경우에 따라서 같은 request를 보내더라도 여러 개의 resource가 생성될 수 있다.
+  
+  - 안정성
+  
+    - 서버의 상태를 변경시키지 않는 메서드를 안전한 메서드라 부른다.
+  
+  - 캐시 가능성
+  
+    - 응답 결과 resource를 캐싱해서 사용할 수 있는가에 관한 개념이다.
+    - 캐싱이 가능한 HTTP 메서드들은 캐싱해둔 resource를 사용하여 빠르게 응답을 반환할 수 있다.
+  
+
+
+
+
+
+
+
+## HTTP Status code
+
+- 200
+  - 204 No Content
+    - 클라이언트의 요청을 정상적으로 처리했으나, 응답으로 돌려줄 data는 없을 때 사용한다.
+    - 예를 들어 PUT이나 DELETE 등으로 새로운 데이터를 수정, 삭제 했을 경우에 사용한다.
+    - 사용자가 요청한 data가 존재하지 않는다는 의미로 잘못 사용하지 않도록 주의해야한다.
 
 
 
