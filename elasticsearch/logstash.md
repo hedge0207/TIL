@@ -10,6 +10,23 @@
 
 
 
+- Memory Queue
+  - Logstash는 event들을 memory queue에 저장한다.
+    - 따라서 일시적인 장애가 발생할 경우 memory queue에 담겨 있던 data들이 유실될 가능성이 있다.
+    - 데이터 유실을 막기 위해서 Kafka 등의 추가적인 외부 queue를 사용하거나 Logstash에서 제공하는 Persistent  Queue를 사용해야한다.
+  - Logstash가 disk가 아닌 memory queue에 data를 저장하는 이유는 다음과 같다.
+    - 설정이 간편하다.
+    - 관리가 간편하다.
+    - 처리 속도가 빠르다.
+  - Memory queue size
+    - Memory queue의 size를 사용자가 직접적으로 설정할 수는 없다.
+    - Logstash의 다른 설정들에 따라 자동으로 결정된다.
+    - 상한선은 `pipeline.workers`과 `pipeline.batch.size`를 곱한 값으로, 둘 다 기본값으로 설정되었을 경우 125개가 된다.
+    - 이를 inflight count라 부르며, 각 memory queue가 보관할 수 있는 event의 최대 개수이다.
+    - worker의 개수를 두 배로 늘리면 inflight count가 두 배가 될 것이며, batch size를 두 배로 늘려도 마찬가지로 inflight count가 두 배가 될 것이고, 둘 다 두 배로 늘리면 inflight count는 네 배가 될 것이다.
+
+
+
 - Pipeline 생성하기
 
   - Pipeline configuration file 생성하기
