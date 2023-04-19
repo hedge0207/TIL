@@ -158,3 +158,40 @@
     - 성숙도에 따라 Sandbox, Incubating, Graduated라는 세 단계로 나뉜다.
     - 이 중 Graduated 단계의 경우 평가자 3분의 2이상의 찬성이 필요하다.
     - Graduated 프로젝트에는 Kubernetes(첫 Graduated 등급의 프로젝트), Prometheus, fluentd 등이 있다.
+
+
+
+
+
+# Stream Backpressure
+
+> https://doublem.org/stream-backpressure-basic/
+
+- Backpressure(배압, 역압)
+  - 파이프를 통한 유체 흐름에 반하는 저항을 말한다.
+    - 액체나 증기가 관을 통해 배출 될 때, 유체가 흐르는 방향과 반대 방향으로 작용하는 저항 압력이다.
+
+
+
+- 소프트웨어에서의 backpressure
+  - 소프트웨어에도 Stream과 PIpe가 존재한다.
+    - 두 용어 모두 유체의 흐름(stream)과 이를 이동시키는 pipe에서 따온 것이다.
+    - 단지 내용물이 유체가 아닌 data라는 차이가 있을 뿐이다.
+  - 마찬가지로, 소프트웨어에도 backpressure가 존재한다.
+    - Data의 흐름이 일정치 않거나 예상치 못하게 높아질 경우 발생할 수 있다.
+    - 예를 들어 A에서 B로 data를 옮길 때, B가 처리할 수 있는 데이터 양 보다 많은 양을 A가 지속적으로 보낼 경우 backpressure가 발생할 수 있다.
+  - 소프트웨어에서 backpressure가 발생할 경우 아래와 같은 현상이 발생할 수 있다.
+    - Network I/O
+    - Disk I/O
+    - Out of Memory
+    - Drop data
+
+
+
+- Backpressure를 방지할 수 있는 방법
+  - Buffer를 사용하여 backpressure를 방지할 수 있다.
+    - Buffer란 데이터를 한 곳에서 다른 곳으로 전송하는 동안 일시적으로 그 데이털를 보관하는 메모리 영역을 말한다.
+    - Buffering이란 버퍼를 활용하는 것 혹은 버퍼를 채우는 것을 말한다.
+    - 구현에 queue를 사용한다.
+  - Pull 기반의 데이터 처리
+    - Consumer가 처리할 수 있는 만큼만 producer로 부터 data를 받아와서 처리한 후 처리가 완료되면 다시 data를 받아오는 방식이다.

@@ -237,6 +237,23 @@
 
 
 
+## Docker log 수집하기
+
+- Fluentd의 강점 중 하나는 Docker 컨테이너의 로그를 간단하게 수집할 수 있다는 점이다.
+  - Application은 다양한 event 혹은 문제들을 로그로 남길 필요가 있지만, 이를 직접 관리하는 것은 매우 까다로운 일이다.
+    - 특히 log를 분석해야 하거나, 여러 instance가 log를 남겨야 하는 상황인 경우에는 더 까다로워진다.
+  
+  - 그러나 Fluentd를 사용하면 보다 간단하게 docker container의 log를 수집할 수 있다.
+    - Docker가 Fluentd logging driver를 제공하기 때문이다.
+    - Docker v1.8부터 사용 가능하다.
+  
+
+
+
+
+
+
+
 
 
 
