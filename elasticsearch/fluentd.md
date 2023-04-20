@@ -250,6 +250,100 @@
 
 
 
+- 우선 Docker log를 남기기 위해 log 생성기를 준비한다.
+
+  - 아래와 같은 Python 스크립트를 통해 log를 남긴다.
+
+  ```python
+  import time
+  import logging
+  
+  
+  logger = logging.getLogger("simple_example")
+  logger.setLevel(logging.DEBUG)
+  
+  sh = logging.StreamHandler()
+  sh.setLevel(logging.DEBUG)
+  
+  formatter = logging.Formatter("[%(asctime)s] - [%(levelname)s] - %(message)s")
+  sh.setFormatter(formatter)
+  
+  logger.addHandler(sh)
+  
+  
+  try:
+      while True:
+          logger.info("Hello World!")
+          time.sleep(1)
+  except (KeyboardInterrupt, SystemExit):
+      logger.info("Bye!")
+  ```
+
+  - Docker image 생성을 위한 dockerfile을 작성한다.
+
+  ```dockerfile
+  FROM python:3.8.0
+  COPY ./main.py /main.py
+  ENTRYPOINT ["python", "main.py"]
+  ```
+
+  - Docker image를 생성한다.
+
+  ```bash
+  $ docker build -t log-generator:1.0.0 <dockerfile 경로>
+  ```
+
+
+
+- Fluentd를 실행한다.
+
+  - Configuration file 작성
+    - `forward`는 다른 Fluentd로부터 log를 받아오는 plugin이다.
+
+  ```xml
+  <source>
+    @type forward
+    port 24224
+    bind 0.0.0.0
+  </source>
+  
+  <match *.*>
+    @type stdout
+  </match>
+  ```
+
+  - Fluentd를 실행한다.
+    - 아래는 Docker로 실행시키는 명령어이다.
+
+  ```bash
+  $ docker run -p 24224:24224 -v <위에서 작성한 .conf파일 경로>:/fluentd/etc/fluent.conf --name log-fluent fluent/fluentd:latest
+  ```
+
+
+
+- 위에서 만든 로그 생성기를 실행한다.
+
+  - `--log-driver` flag에 `fluentd`를 값을 준다.
+    - `--log-opt`flag의 옵션으로 `fluentd-address=192.168.0.4:24225`와 같이 fluentd의 host와 port를 설정하는 것도 가능하다.
+
+  ```bash
+  $ docker run --log-driver=fluentd --name theo-log-gen theo-log-gen:lastest
+  ```
+
+  - 아래 명령어로 Fluentd container의 log를 확인해보면 log 생성기에서 생성된 로그가 출려되는 것을 확인할 수 있다.
+
+  ```bash
+  $ docker logs log-fluent
+  ```
+
+  
+
+
+
+
+
+
+
 
 
 

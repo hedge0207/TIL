@@ -139,21 +139,61 @@
   - FROM 명령에서 지정한 베이스 이미지에 대해 애플리케이션/미들웨어를 설치 및 설정하거나 환경 구축을 위한 명령을 실행할 떄 사용한다.
   - Shell 형식으로 기술
     - 명령의 지정을 쉘에서 실행하는 방식으로 기술하는 방법.
-
+    - /bin/sh을 통해서 실행한다.
+  
   ```dockerfile
   # elasticsearch에 노리 형태소 분석기를 설치하는 예시
   RUN bin/elsticsearch-plugin install analysis-nori
   ```
-
+  
   - Exec 형식으로 기술
     - Shell  형식으로 명령을 기술하면 /bin/sh에서 실행되지만, Exec 형식으로 기술하면 쉘을 경유하지 않고 직접 실행한다.
     - 따라서 명령 인수에 환경변수를 지정할 수 없다.
-    - 실행하고 싶은 명령을  JSON  배열로 지정한다.
-
+    - 실행하고 싶은 명령을  JSON  배열로 지정한다(따라서 반드시 쌍따옴표로 묶어야한다).
+  
   ```dockerfile
   # elasticsearch에 노리 형태소 분석기를 설치하는 예시
   RUN ["bin/elasitcsearch-plugin", "-c", "install analysis-nori"]
   ```
+
+
+
+- Shell 형식과 Exec 형식의 차이
+
+  - 같은 Python script를 아래와 같이 Shell 형식으로 실행시키면
+
+  ```python
+  FROM python:3.8.0
+  COPY ./main.py /main.py
+  ENTRYPOINT python main.py
+  ```
+
+  - 아래와 같이 실행되지만
+    - /bin/sh의 subprocess로 `python main.py`이 실행되는 것을 확인할 수 있다.
+  
+  
+  ```bash
+  UID          PID    PPID  C STIME TTY          TIME CMD
+  root           1       0  0 04:37 ?        00:00:00 /bin/sh -c python main.py
+  root           7       1  3 04:37 ?        00:00:00 python main.py
+  ```
+
+  - 아래와 같이 Exec 형식으로 실행시키면
+  
+  ```dockerfile
+  FROM python:3.8.0
+  COPY ./main.py /main.py
+  ENTRYPOINT ["python", "main.py"]
+  ```
+
+  - 아래와 같이 실행된다.
+  
+  ```bash
+  UID          PID    PPID  C STIME TTY          TIME CMD
+  root           1       0  1 04:33 ?        00:00:00 python main.py
+  ```
+  
+  - Exec 형식이 Docker에서 권장하는 방식이다.
 
 
 
