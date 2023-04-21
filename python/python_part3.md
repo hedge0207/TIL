@@ -1053,15 +1053,19 @@
   print(type(num))	# <class 'int'>
   ```
 
-  
+
+
 
 - 출력
 
+  > https://realpython.com/python-flush-print-output/ 참고
+  
   - `print()`를 사용
     - 큰 따옴표로 둘러싸인 문자열은 + 연산과 동일하다.
     - 문자열  띄어 쓰기는 콤마로 한다.
     - 한 줄에 결과값 출력하고 싶다면 `end=''` 를 옵션으로 주면 된다. 따옴표 안에 출력 사이에 들어갈 문자를 입력한다.
-
+    - `end`의 기본값은 개행문자이다.
+  
   ```python
   print("안녕" "하세요")		# 안녕하세요
   print("안녕"+"하세요")		# 안녕하세요
@@ -1071,8 +1075,61 @@
   for i in range(3):
       print(i,end=",")	# 0,1,2,
   ```
-
   
+  - `print()`는 내부적으로 인자로 전달된 객체 내부의 `__str__()`메서드를 호출하여 문자열로 변환한 후 이를 출력한다.
+  
+  ```python
+  class Foo:
+      def __str__(self):
+          return "hello"
+  print(Foo())	# hello
+  ```
+  
+  - `print()`는 인자로 넘겨진 값을 바로 출력하지 않고 buffer에 담아뒀다가 한 번에 출력한다.
+    - `print()` 메서드의 `flush` 인자가 이를 조절하는 것으로, 만약 `flush`를 True로 주면 바로 출력된다.
+    - 예를 들어, 아래 코드를 실행하면 0, 1, 2가 1초 간격으로 출력되지 않고 3초가 지난 후에 한 번에 출력된다.
+    - Buffer를 사용하는 이유는 system call을 줄이기 위해서로, 출력이 발생할 때 마다 system call이 발생하기 때문이다.
+  
+  ```python
+  import time
+  
+  for i in range(3):
+      print(i, end=' ')
+      time.sleep(1)
+  
+  for i in range(3):
+      print(i, end=' ', flush=True)
+      time.sleep(1)
+  ```
+  
+  - Buffer에는 세 가지 종류가 있다.
+    - Unbuffered: Buffer를 사용하지 않는 것으로, 모든 byte는 바로 출력된다.
+    - Line-buffered: 개행문자(`\n`)를 만날 때 까지 buffer에 byte를 저장하다, 개행 문자를 만나면 방출한다.
+    - Fully-buffered(Block-buffered): 특정 size에 도달하면 한 번에 방출한다.
+  - Python의 경우 파일 출력에는 block buffering을 기본값으로 사용하고, interactive 환경에서는 line-buffer를 사용한다.
+    - 위 예시에서 문자들이 한 번에 출력되는 이유는 `end`값을 기본값인 개행문자가 아닌 다른 문자로 줬기 때문이다.
+    - Interactive 환경에서 기본값은 line-buffer이기에 개행문자를 만나지 않으면 출력을 하지 않는다.
+  - Python script를 실행할 때, `-u` 옵션을 주면 모든 buffer를 사용하지 않고 바로 flush한다.
+    - 혹은 `PYTHONUNBUFFERED` 환경변수를 비어있지 않은 string값으로 변경(기본값은 빈 스트링)해도 동일하게 동작한다.
+    - 사실 `-u` 옵션 자체가 `PYTHONUNBUFFERED` 환경변수를 수정하는 옵션이다.
+    - 단, 이는 stderr과 stdout 모두에서 buffer를 사용하지 않게 되므로, 만약 각기 다르게 지정(예를 들어 stdout에는 buffer를 사용하고, stderr에는 buffer를 사용하지 않는 식으로)해야한다면 이 방법은 사용할 수 없다.
+  - Pycharm에서 사용할 경우
+    - Pycharm의 경우 아래와 같은 script를 `Run '<module_name>'`을 통해 실행시키면 unbuffer 처럼 동작하는 것을 확인할 수 있다.
+    - 아마 Pycharm은 `-u`를 기본적으로 추가해서 실행시키는 듯 하다.
+  
+  ```python
+  import time
+  
+  for i in range(3):
+      print(i, end = ' ')
+      time.sleep(1)
+  ```
+  
+  
+  
+  
+
+
 
 
 

@@ -670,6 +670,18 @@
   print(issubclass(Programmer, Person))	# True
   ```
   
+  - `__bases__()`메서드를 통해 상위 class를 확인할 수 있다.
+  
+  ```python
+  class Parent:
+      pass
+  
+  class Child(Parent):
+      pass
+  
+  print(Child.__bases__)	# (<class '__main__.Parent'>,)
+  ```
+  
   - 사실 Pyhon의 모든 클래스는 모든 클래스의 조상 클래스인 `object` 클래스를 상속받는다.
     - Python 3 이전 버전의 경우 모든 클래스를 정의할 때 `object`를 상속한다는 것을 명시적으로 표시해줘야 했다.
     - 그러나 Python 3 이후부터는 아무 것도 상속받지 않을 경우 자동으로 `object`를 상속 받도록 변경되었다.
