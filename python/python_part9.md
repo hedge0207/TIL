@@ -571,6 +571,9 @@
     - GIL이 걸려 있어도 아래와 같이 race condition이 발생하게 된다.
   
   ```python
+  """
+  3.10부터 재현이 불가능하다.
+  """
   import threading 
   
   x = 0
@@ -797,6 +800,11 @@
     ```
 
 
+
+- Python에서 thread들 간의 switching은 오직 bytecode를 실행하고 다음 bytecode를 실행되기 전의 기간에만 일어난다.
+
+  - 따라서 원자성 문제가 생길 수 있다.
+  - Switching이 얼마나 빈번하게 일어날지는 `sys.setswitchinterval()`의 설정에 따라 달라진다.
 
 
 
