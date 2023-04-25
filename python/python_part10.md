@@ -570,6 +570,196 @@
           ...
   ```
 
+
+
+
+
+
+# Python Bytecode
+
+- 사전지식
+  - Programming language의 source code는 interpreter 혹은 compiler를 통해 실행된다.
+  - Compile 언어에서 compiler는 source code를 바로 binary 형태의 기계어(machine code)로 변환한다.
+    - 기계어는 hardware나 OS에 따라 달라질 수 있다.
+    - 일련의 편집을 거친 후에, 기계(컴퓨터, CPU)는 기계어를 실행하게 된다.
+  - Interpreter 언어에서는 source code는 기계에서 바로 실행되지 않는다.
+    - Interpreter라 불리는 또 다른 program이  source code를 직접 일고 실행한다.
+    - Interpreter는 hardware나 OS에 따라 달라질 수 있으며, source code의 각 구문을 기계어로 변환한 뒤 실행한다.
+  - Bytecode
+    - Python은 일반적으로 interpreter 언어로 분류된다.
+    - 그러나 사실은 compile과 interpreting을 모두 수행한다.
+    - Source code(`.py` 파일)가 실행되면 Python은 먼저 source code를 bytecode로 컴파일한다.
+    - Bytecode는 low-level의 platform 독립적인 code이다.
+    - 그러나, 기계어는 아니며 기계에서 직접 실행할 수는 없다.
+  - PMV(Python Virtual Machine)
+    - PVM은 bytecode를 실행하는 interpreter로 Python system의 일부이다.
+    - 즉, bytecode는 PVM이라는 virtual machine에서 실행할 일련의 명령어들의 모음이다.
+    - Bytecode는 platform에 독립적이지만, PVM은 target machine(Python code를 실행시키려는 기계)에 특화되어 있다(종속적이다).
+  - CPython
+    - 가장 널리 사용되는 Python 구현체로 C로 작성되었다.
+    - CPython은 Python source code를 컴파일하여 bytecode로 변환한다.
+    - 변환된 bytecode는 CPython virtual machine에서 실행된다.
+
+
+
+- Bytecode file 생성하기
+
+  - Python에서 bytecode는 `.pyc` 파일에 저장된다.
+    - Python3에서 bytecode file은 `__pycache__`라는 폴더에 저장되며, 이 폴더는 다른 file을 import할 때 자동으로 생성된다.
+    - 그러나 만일 다른 file을 import하지 않는다면, 생성되지 않는데, 이 경우 수동으로 생성할 수 있다.
+  - Source code file컴파일하기
+    - 아래 명령어를 수행하면 `__pycache__` 폴더와 `.pyc` 파일이 생성된다.
+    - 만일 compile할 source code 파일을 명시하지 않을 경우 경로 상의 모든 source code를 compile한다.
+
+  ```bash
+  $ python -m compileall [file_name1.py file_name2.py ...]
+  ```
+
+  - Source code 컴파일하기
+    - `compile` 함수를 사용하여 일부만 컴파일 하는 것이 가능하다.
+    - `source` parameter는 compile할 source code를 string, byte object 혹은 AST object로 입력한다.
+    - `filename` parameter는 source code가 작성된 file의 이름을 입력하면 되며, 만일 file에 작성된 것이 아닐 경우(REPL 등) 빈 문자열을 입력한다.
+    - `mode` parameter는 `"exec"`, `"eval"`, `"single"`중 하나를 입력하면 된다.
+    - `"exec"`은 모든 형식의 Python source code를 input으로 받으며 이를 bytecode로 변환한다.
+    - `"eval"`은 single expression을 input으로 받으며 이를 bytecode로 변환한 후 expression의 결과를 반환한다.
+    - `"single"`은 single statement 혹은 `;`로 분리된 여러 개의 statement를 input으로 받으며, 만약 마지막 statement가 expression이라면 expression의 값의 `repr()` 결과를 stdout에 출력한다.
+
+  ```python
+  s='''
+  a=5
+  a+=1
+  print(a)
+  '''
+  compile(s, "", "exec")
+  compile("a+7", "", "eval")
+  compile("a=a+1", "", "single")
+  ```
+
+
+
+- Code object
+
+  - `compile`함수의 반환값은 `code` class의 instance이다.
+    - `compile` 함수로 생성된 bytecode를 저장하기위해 사용한다.
+    - `code`의 instance에는 bytecode뿐 아니라 CPython이 bytecode를 실행하기 위해 필요한 정보들이 포함되어 있다.
+
+  ```python
+  s='''
+  a=5
+  a+=1
+  print(a)
+  '''
+  code_obj = compile(s, "", "exec")
+  print(code_obj)			# <code object <module> at 0x7fbba6a6ea80, file "", line 2>
+  print(type(code_obj))	# <class 'code'>
+  ```
+
+  - `code` object는 `exec()` 혹은 `eval()` 함수에 인자로 넣어 실행하거나 평가할 수 있다.
+
+  ```python
+  exec(compile("print(5)", "", "single"))  # 5
+  ```
+
+  - 함수가 정의될 때, `code` object가 생성되며, 함수의 `__code__` attribute를 통해 접근할 수 있다.
+
+  ```python
+  def funcion():
+      pass
+  print(function.__code__)	# <code object function at 0x7f834dc7c660, file "test.py", line 1>
+  ```
+
+  - `code` object에 저장된 bytecode를 가져오려면 `co_code` attribute를 사용하면 된다.
+    - 반환값은 `b` prefix가 붙은 bytes literal이다.
+    - 각 byte들은 0~255까지의 10진수 중 하나의 값을 가지며, 따라서 bytes literal은 0~255 사이의 integer들의 연속(sequence)이다.
+    - 각 byte를 byte의 값과 일치하는 ASCII 문자로도 볼 수 있다.
+    - 맨 앞의 `\x` escape의 의미는 다음 두 chacacter가 16진수로 해석되어야 함을 의미한다.
+
+  ```python
+  c = compile("print(5)", "", "single")
+  
+  print(c.co_code)		    # b'e\x00d\x00\x83\x01F\x00d\x01S\x00'
+  # 첫 번째 byte의 값
+  print(c.co_code[0])         # 101
+  # 첫 번째 byte의 값을 ASCII 문자로 변환
+  print(chr(c.co_code[0]))    # e
+  ```
+
+  - 위에서 본 일련의 bytes는 CPython에 의해 해석된다.
+    - 그러나, 사람이 보기 편한 형식은 아니기에, 이 bytes들이 어떻게 실제 명령문과 mapping되는지를 이해해야한다.
+
+
+
+- Bytecode 상세
+
+  - Bytecode는 Python interpreter가 실행할 low-level program 혹은 일련의 명령문들이라고 생각하면 된다.
+    - Python 3.6 이후로, Python은 각 instruction마다 2bytes를 사용한다.
+    - 한 byte는 opcode라 불리는 instruction의 code에 사용하고, 다른 한 byte는 oparg라 불리는 opcode의 argument에 사용한다.
+    - 각 opcode는 opname이라 불리는 사람이 읽기 쉬운이름을 가지고 있다.
+    - Bytecode instruction은 일반적으로 `opcode oparg`의 형태를 가진다.
+  - `dis`
+    - 위에서 살펴본 bytecode에 opcode들은 들어있을 것이므로, 우리는 이것들을 적절한 opname과 mapping만 시켜주면 된다.
+    - 이를 가능하게 해주는 것이 `dis`라는 모듈이다.
+    - 이 모듈에는 `opname`이라 불리는 모든 opname들이 저장된 list가 있다.
+    - 이 list의 i번째 element는 opcode가 i인 instruction의 이름이 된다.
+  - 어떤 instruction들은 argument가 필요 없다.
+    - 따라서 이들은 opcode 이후의 byte를 무시헌다.
+    - 특정 숫자 이하의 값을 가지는 opcode들은 그들의 argument를 무시한다.
+    - 이 특성 숫자는 `dis.HAVE_ARGUMENT`에 저장되어 있으며, 기본값은 90이다.
+    - 즉 opcode의 값이 `dis.HAVE_ARGUMENT`보다 크거가 같다면, arugment가 있는 것이고, 아니라면 arugment를 무시한다.
+
+  ```python
+  import dis
+  
+  # 아래와 같은 bytecode가 있을 때
+  bytecode = b'd\x00Z\x00d\x01S\x00'
+  for byte in bytecode:
+      print(byte, end=' ')	# 100 0 90 0 100 1 83 0
+      
+  
+  # 첫 두 개의 byte들인 100 0에서 opcode인 100은 아래와 같이 LOAD_CONST를 의미하고, 
+  print(dis.opname[100])	# LOAD_CONST
+  # 100은 0보다 크므로 oparg인 0을 무시하지 않는다. 결국 bytecode 100 0은 LOAD_CONST 0을 의미한다.
+  ```
+
+  - `EXTENDED_ARG`
+    - 어떤 instruction들은 1 byte에 맞지 않을 만큼 클 수도 있다.
+    - 이러한 경우를 처리하기 위해 `144`라는 특별한 opcode가 존재한다.
+    - opcode 144의 opname은 `EXTENDED_ARG`로, 이 값은 `dis.EXTENDED_ARG`에 저장되어 있다.
+    - 이 opcode는 1 byte 보다 큰 argument를 가지는 어떤 opcode에든 prefix로 붙을 수 있다.
+    - 예를 들어 131이라는 opcode가 있고(opname은 `CALL_FUNCTIOM`), oparg가 260이라고 가정해보자.
+    - 그러나 1byte가 담을 수 있는 최대 값은 255이기때문에, 260은 1byte에 담을 수 없다.
+    - 따라서 `EXTENDED_ARG`를 prefix로 붙여야 한다.
+
+  ```bash
+  EXTENDED_ARG 1
+  CALL_FUNCTION 4
+  ```
+
+  - `EXTENDED_ARG`의 oparg
+    - Interpreter가 `EXTENDED_ARG`를 실행할 때, `EXTENDED_ARG`의 oparg인 1을 8bits만큼 left-shift 시켜 임시 변수에 저장된다.
+    - 즉, binary value인 `0b1`은 `0b100000000`이 되는데, 이 값은 10진수에서 1에 256을 곱한 값이다(`1 << 8`은 256이다).
+    - 이 때, interpreter가 다음 instruction을 실행시키면 2 byte value가 or bit 연산자를 통해 해당 instruction의 oparg에 추가된다(위 예시의 경우 4).
+    - 결국 최종적으로 `CALL_FUNCTION`의 oparg의 실제 값은 260이 된다.
+
+  ```python
+  # extended_arg는 2 bytes를 가지게 된다.
+  extened_arg = 1 << 8			# 256
+  
+  # bitwise 연산자 or 사용
+  extened_arg = extened_arg | 4	# 260
+  
+  # 결국 아래와 같은 instruction은
+  EXTENDED_ARG 1
+  CALL_FUNCTION 4
+  
+  # 아래와 같이 해석된다.
+  EXTENDED_ARG 1
+  CALL_FUNCTION 260 
+  ```
+
+  - 각 opcode 별로 최대 세 개의 `EXTENDED_ARG`가 붙을 수 있다.
+    - 즉 oparg의 가능한 크기는 4byte까지이다.
+
   
 
 
