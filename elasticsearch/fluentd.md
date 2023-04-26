@@ -235,6 +235,35 @@
 
 
 
+- Elasticsearch output plugin 설치
+
+  - `td-agent` V3.0.1 이상부터는 내장되어 있지만, docker image의 경우 elasticsearch output plugin이 내장되어 있지 않다.
+    - 따라서 별도로 설치를 해줘야한다.
+  - Fluentd image 생성을 위한 dockerfile 작성
+    - `debian` 이미지를 사용해야 한다.
+
+  ```dockerfile
+  FROM fluent/fluentd:v1.16-debian-1
+  
+  USER root
+  
+  RUN apt update -y
+  RUN apt install -y ubuntu-dev-tools
+  
+  RUN gem install elasticsearch -v 7.17.1 --no-document
+  RUN gem install fluent-plugin-elasticsearch -v 5.0.3 --no-document
+  
+  USER fluent
+  ```
+
+  - Docker image 빌드
+
+  ```bash
+  $ docker build -t fluentd:latest .
+  ```
+
+
+
 
 
 ## Docker log 수집하기
@@ -339,6 +368,69 @@
   
 
 
+
+# Python과 연동하기
+
+- Fluentd configuration file 작성하기
+
+  - `./conf/fluent.conf`에 아래와 같이 configuration 파일을 생성한다.
+
+  ```xml
+  <source>
+    @type forward
+    port 24224
+  </source>
+  <match fluentd.test.**>
+    @type stdout
+  </match>
+  ```
+
+
+
+- Fluentd docker container 생성
+
+  ```yaml
+  version: "3"
+  services:
+    fluentd:
+      image: fluent/fluentd:latest
+      volumes:
+        - ./conf/fluent.conf:/fluentd/etc/fluent.conf
+      ports:
+        - "24224:24224"
+  ```
+
+
+
+- Python script 작성하기
+
+  - Fluentd package 설치
+
+  ```bash
+  $ pip install fluent-logger
+  ```
+
+  - Script 작성
+
+  ```python
+  from fluent import sender
+  from fluent import event
+  
+  
+  sender.setup('fluentd.test', host='localhost', port=24224)
+  event.Event('follow', {
+    'from': 'userA',
+    'to':   'userB'
+  })
+  ```
+
+  - 위 파일을 실행하면 아래와 같이 log가 찍히게 된다.
+
+  ```
+  fluentd-fluentd-1  | 2023-04-25 05:00:52.000000000 +0000 fluentd.test.follow: {"from":"userA","to":"userB"}
+  ```
+
+  
 
 
 
