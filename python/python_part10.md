@@ -574,8 +574,9 @@
 
 
 
-
 # Python Bytecode
+
+> https://towardsdatascience.com/understanding-python-bytecode-e7edaae8734d
 
 - 사전지식
   - Programming language의 source code는 interpreter 혹은 compiler를 통해 실행된다.
@@ -760,9 +761,207 @@
   - 각 opcode 별로 최대 세 개의 `EXTENDED_ARG`가 붙을 수 있다.
     - 즉 oparg의 가능한 크기는 4byte까지이다.
 
+
+
+
+- `code` 객체의 attribute들
+
+  - 아래와 같이 `code` 객체를 생성한다.
+    - 상기했듯 `compile()` 함수는 `code` 객체를 반환한다.
+
+  ```python
+  s = '''
+  a = 5
+  b = 'text'
+  def f(x):
+      return x
+  f(5)
+  '''
+  c=compile(s, "", "exec")
+  print(c.co_consts)			# (5, 'text', <code object f at 0x7fe7cca80c90, file "", line 4>, 'f', None)
+  print(c.co_names)       	# ('a', 'b', 'f')
+  ```
+
+  - `co_consts`
+    - Bytecode에서 사용되는 literal들을 담고 있는 tuple이다.
+    - 함수의 body는 또 다른 code object에 저장된다(`<code object f at 0x7fe7cca80c90, file "", line 4>`).
+    - 상기했듯 `exec` 모드로 실행된 `compile()` 함수는 최종적으로 None을 반환하는 bytecode를 생성하므로, None도 포함되어 있다.
+    - 함수의 기본 반환값은 None이므로 함수의 `code.co_const`에는 항상 None이 포함되어 있다.
+    - 심지어 반환값이 있을 때도 None이 포함되어 있는데, 이는 Python이 효율성을 위해서 함수의  `return` 문에 항상 도달하는지를 check하지 않기 때문이다.
+
+  ```python
+  def f(x):
+      x += 2
+      return x
   
+  # 함수의 code object에는 항상 None이 포함된다.
+  print(f.__code__.co_consts)   # (None, 2)
+  ```
+
+  - `co_names`
+    - Bytecode에서 사용되는 이름들을 담고 있는 tuple이다.
+    - 함수명, 변수명, 클래스명, object의 attribute명 등이 들어간다.
+  - `co_varnames`
+    - Bytecode에서 사용되는 local name들을 담고 있는 tuple이다.
+    - 아래 예시를 보면 `z`는 포함되어 있지 않은데, `t`는 `f`의 local variable이 아니라 closure인 `g` 내부에서 접근하기 때문이다.
+    - 사실 `x`도 local variable이 아니지만, 함수의 인자이기 때문에 항상 `co_varnames`에 들어가게 된다. 
+
+  ```python
+  def f(x):
+      y = 3
+      z = 5
+      def g(p):
+          return z*x + p
+      return g
+  
+  print(f.__code__.co_varnames)	# ('x', 'y', 'g')
+  ```
+
+  - `co_cellvars`
+    - Nonlocal variable 들을 저장하고 있는 tuple이다.
+    - 어떤 함수의 내부 함수 안에서 접근하는 local variable 들이 담기게 된다.
+
+  ```python
+  def f(x):
+      y = 3
+      z = 5
+      def g(p):
+          return z*x + p
+      return g
+  
+  print(f.__code__.co_cellvars)	# ('x', 'z')
+  ```
+
+  - `co_freevars`
+    - Free variable 들을 저장하고 있는 tuple이다.
+    - Free variable은 내부 함수에서 접근할 수 있는 외부 함수의 local variable을 말한다.
+
+  ```python
+  def f(x):
+      y = 3
+      z = 5
+      def g(p):
+          return z*x + p
+      return g
+  
+  h = f(1)
+  # f가 반환한 h의 code object를 확인한다.
+  print(h.__code__.co_freevars)   # ('x', 'z')
+  ```
 
 
+
+- oparg
+
+  - 예시 코드
+
+  ```python
+  s = '''
+  a = 5
+  b = 'text'
+  def f(x):
+      return x
+  f(5)
+  '''
+  c=compile(s, "", "exec")
+  print(c.co_consts)			# (5, 'text', <code object f at 0x7fe7cca80c90, file "", line 4>, 'f', None)
+  ```
+
+  - oparg의 의미는 oparg의 opcode에 달려 있다.
+
+    - 다양한 종류의 opcde의 category가 있으며, oparg는 각기 다른 의미를 가진다.
+    - `dis` module을 사용하여 각 category에 해당하는 opcode들을 확인할 수 있다.
+
+  - `dis.hasconst`
+
+    - `dis.hasconst`에는 100이라는 opcode만을 담고 있는 list가 저장되어 있다.
+    - opcode 100의 opname은 `LOAD_CONST`이다.
+    - opcode 100의 oparg는 `co_const` tuple의 index이다.
+    - 즉, `LOAD_CONST 1`에서 oparg에 해당하는 `1`은 `co_const`의 1번 인덱스에 해당하는 값이다.
+    - 위 예시 코드에서 `co_consts`의 1번 인덱스에 해당하는 값이 `"text"`였으므로, `LOAD_CONST 1`은 사실 `LOAD_CONST 'text'`인 것이다.
+
+    ```python
+    import dis
+    print(dis.hasconst)		# [100]
+    ```
+
+  - `dis.hasname`
+
+    - 여기 담겨 있는 opcode들의 oparg는 `co_names` tuple의 index이다.
+
+  - `dis.haslocal`
+
+    - 여기 담겨 있는 opcode들의 oparg는 `co_varnames` tuple의 index이다.
+
+  - `dis.hasfree`
+
+    - 여기 담겨 있는 opcode들의 oparg는 `co_cellvars`와 `co_freevars` tuple의 index이다.
+
+  - `dis.hascompare`
+
+    - 여기 담겨 있는 opcode들의 oparg는 `dis.cmp_op` tuple의 index이다.
+    - `dis.cmp_op`에는 비교 연산자, 멤버 연산자(`in`)가 들어있다.
+
+  - `dis.hasjrel`
+
+    - 여기 담겨 있는 opcode들의 opargsms `offset + 2 + oparg`로 대체되어야 한다.
+    - `offset`은 opcode를 표현하는 일련의 bytecode들의 index를 의미한다.
+
+
+
+- `co_lnotab`
+
+  - `code` object의 또 다른 attribute로, bytecode의 line number 정보를 저장하고 있다.
+    - 각 bytecode offset을 source code의 line number와 매핑하기 위해 사용한다.
+  - 예시
+    - 아래 예시는 줄이 단 3개 뿐인 코드를 컴파일한 것이다.
+
+  ```
+  1        0 LOAD_CONST             0 
+           2 STORE_NAME             0 
+  
+  2        4 LOAD_NAME              0 
+           6 LOAD_CONST             1 
+           8 INPLACE_ADD             
+          10 STORE_NAME             0 
+  
+  3       12 LOAD_NAME              1 
+          14 LOAD_NAME              0 
+          16 CALL_FUNCTION          1 
+          18 POP_TOP                 
+          20 LOAD_CONST             2 
+          22 RETURN_VALUE
+  ```
+
+  - 줄 번호와 bytecode의 offset을 아래와 같이 mapping한다.
+    - bytecode offset은 항상 0부터 시작한다.
+    - `code` object의 `co_firstlineno`에는 0번 offset에 해당하는 line number가 저장되어 있다.(위 예시의 경우 1)
+
+  | bytecode offset | source code line number |
+  | --------------- | ----------------------- |
+  | 0               | 1                       |
+  | 4               | 2                       |
+  | 12              | 3                       |
+
+  - Python은 offset과 line number를 그대로 저장하지는 않는다.
+    - Python은 오직 한 row에서 다음 row로의 증가만 저장한다.
+    - 즉 아래 표에서 `bytecode offset increment`와 `source code line number increment`만 저장한다.
+    - Python은 이 증가수치를 가지고  `bytecode offset increment`, `  source code line number increment` 순서를 반복하여 수열을 만든다.
+    - 완성 된 수열은 4 1 8 1이다.
+
+  | bytecode offset | source code line number | bytecode offset increment | source code line number increment |
+  | --------------- | ----------------------- | ------------------------- | --------------------------------- |
+  | 0               | 1                       | -                         | -                                 |
+  | 4               | 2                       | 4(4-0)                    | 1                                 |
+  | 12              | 3                       | 8(12-4)                   | 1                                 |
+
+  - 그 후 각 숫자를 byte로 변환하고 전체 bytes를 `co_lnotab`에 저장된다.
+
+  ```python
+  b'\x04\x01\x08\x01'
+  ```
+
+  
 
 
 
