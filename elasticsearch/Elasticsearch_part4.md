@@ -874,9 +874,8 @@
 
   - nested 타입으로 지정하려면 매핑이 다음과 같이 `"type":"nested"`를 명시한다.
     - 다른 부분은 object와 동일하다.
-
-
-  ```bash
+  
+  ```json
   curl -XPUT "http://localhost:9200/movie" -H 'Content-Type: application/json' -d'{
   "mappings":{    
     "properties":{      
@@ -895,18 +894,18 @@
     }
   }'
   ```
-
-  - nested 필드를 검색 할 때는 반드시 nested 쿼리를 써야 한다. 
-    - nested 쿼리 안에는 path 라는 옵션으로 nested로 정의된 필드를 먼저 명시하고 그 안에 다시 쿼리를 넣어서 입력한다.
-    - nested 쿼리로 검색하면 nested 필드의 내부에 있는 값 들을 모두 별개의 도큐먼트로 취급한다.
-    - object 필드 값들은 실제로 하나의 도큐먼트 안에 전부 포함되어 있다.
-    - nested 필드 값들은 내부적으로 별도의 도큐먼트로 분리되어 저장되며 쿼리 결과에서 상위 도큐먼트와 합쳐져서 보여지게 된다.
-
-  - 역색인 방식
-    - Object 타입과 달리 필드 내부의 값들이 각각 역색인 된다.
-    - 따라서 아래와 같은 검색 쿼리를 보내면 `characters.name`이 Loki 이면서 `characters.side`가 villain인 1번 문서만 검색되게 된다.
-
-  ```bash
+  
+    - nested 필드를 검색 할 때는 반드시 nested 쿼리를 써야 한다. 
+      - nested 쿼리 안에는 path 라는 옵션으로 nested로 정의된 필드를 먼저 명시하고 그 안에 다시 쿼리를 넣어서 입력한다.
+      - nested 쿼리로 검색하면 nested 필드의 내부에 있는 값 들을 모두 별개의 도큐먼트로 취급한다.
+      - object 필드 값들은 실제로 하나의 도큐먼트 안에 전부 포함되어 있다.
+      - nested 필드 값들은 내부적으로 별도의 도큐먼트로 분리되어 저장되며 쿼리 결과에서 상위 도큐먼트와 합쳐져서 보여지게 된다.
+  
+    - 역색인 방식
+      - Object 타입과 달리 필드 내부의 값들이 각각 역색인 된다.
+      - 따라서 아래와 같은 검색 쿼리를 보내면 `characters.name`이 Loki 이면서 `characters.side`가 villain인 1번 문서만 검색되게 된다.
+  
+  ```json
   # 인덱스 생성
   curl -XPUT 'localhost:9200/movies' -H 'Content-Type: application/json' -d '
   {
@@ -987,6 +986,8 @@
 
 
 
+
+
 - array
 
   - 공식적으로 지원하는 타입은 아니지만, 사용은 가능하다.
@@ -1062,7 +1063,7 @@
 
 
 
-#### Join filed type
+#### Join field type
 
 - 한 인덱스의 documents 내부에서 부모/자식 관계를 생성하는 필드
 
@@ -1196,20 +1197,22 @@
 
 - Global ordinals
 
-  - join field는 join의 속도 향상을 위해서 [global ordinals](https://www.elastic.co/guide/en/elasticsearch/reference/current/eager-global-ordinals.html)을 사용한다.
+  > https://www.elastic.co/guide/en/elasticsearch/reference/current/eager-global-ordinals.html
+  
+  - join field는 join의 속도 향상을 위해서 global ordinals을 사용한다.
     - global ordinals은 샤드에 변경이 있을 때마다 리빌드된다.
     - 따라서 더 많은 parent id가 샤드에 저장될 수록, 리빌드에도 더 많은 시간이 걸리게 된다.
     - 만약 인덱스가 변경되면,  global ordinals 역시 refresh의 일부로서 리빌드 된다.
     - 이는 refresh 시간에 상당한 영향을 미치게 된다.
     - 그러나 이는 어쩔 수 없다.
   - 만일 join 필드를 자주 사용하지는 않지만, join 필드에 값을 빈번하게 추가해야 할 경우 아래와 같이 `eager_global_ordinals`를 false로 주는 것이 좋다.
-
+  
   ```bash
   $ curl -XPUT "http://localhost:9200/my-index" -H 'Content-Type: application/json' -d'{  "mappings": {    "properties": {      "my_join_field": {        "type": "join",        "relations": {           "question": "answer"        },        "eager_global_ordinals": false      }    }  }}
   ```
 
   - global ordinals의 heap 사용량을 체크
-
+  
   ```bash
   # Per-indexGET _stats/fielddata?human&fields=my_join_field#question# Per-nodeGET _nodes/stats/indices/fielddata?human&fields=my_join_field#question
   ```
@@ -1262,69 +1265,6 @@
   ```bash
   $ curl -XGET "http://localhost:9200/my-index/_search" -H 'Content-Type: application/json' -d'{  "query": {    "parent_id": {       "type": "answer",      "id": "1"    }  },  "aggs": {    "parents": {      "terms": {        "field": "my_join_field#question",         "size": 10      }    }  },  "runtime_mappings": {    "parent": {      "type": "long",      "script": """        emit(Integer.parseInt(doc['my_join_field#question'].value))      """    }  },  "fields": [    { "field": "parent" }  ]}'
   ```
-
-
-
-### fielddata와  doc_values
-
-- fielddata
-
-  - text field는 기본적으로 검색은 가능하지만 집계, 정렬, scripting은 불가능하다.
-    -  fielddata는 text field에서 집계, 정렬 scripting을 실행할 수 있게 해주는 **유일한** 방법이다.
-  - 상당히 많은 메모리를 필요로한다.
-    - 기본값은 false로 설정되어 있다.
-    - query time에 term들(field data)을 계산한다.
-    - 주의할 점은 특정 query에 matching 되는 문서의 field뿐 아니라 모든 문서의 field들을 대상으로 계산한다는 것이다.
-    - 이는 요청 때마다 매번 메모리에 적재하여 사용하는 것 보다 미리 모든 field를 적재해 놓으면, 다음 수행되는 query에 사용이 용이하기 때문이다.
-    - field data는 heap에 저장되는데,  이는 segment의 lifetime 동안 남아 있게 된다.
-    - 따라서 가급적 집계, 정렬, scripting이 가능한 keyword 필드를 사용하는 것을 권장한다.
-  - 동적 매핑이 가능하다.
-  - `fielddata_frequency_filter`
-    - 메모리에서 불러오는 term의 수를 빈도를 기준으로 감소시켜 메모리 사용을 줄일 수 있다.
-    - `min`, `max` 값을 지정하며 둘 사이의 빈도를 지닌 term들만 메모리에서 불러온다.
-    - `min`, `max` 값은 양의 정수 혹은 0~1 사이의 소수로 지정한다.
-    - 퍼센트는 세그먼트 내의 모든 문서가 아닌, 해당 field에 값이 있는 문서들만 대상으로 계산된다.
-    - `min_segment_size` 옵션을 통해 일정 개수 이상의 문서를 가지지 못한 세그먼트를 제외시킬 수 있다.
-
-  ```bash
-  PUT my-index-000001
-  {
-    "mappings": {
-      "properties": {
-        "tag": {
-          "type": "text",
-          "fielddata": true,
-          "fielddata_frequency_filter": {
-            "min": 0.001,	# 1%
-            "max": 0.1,	# 10%
-            "min_segment_size": 500
-          }
-        }
-      }
-    }
-  }
-  ```
-
-  - fielddata 모니터링
-
-  ```bash
-  # 각 index 별로 전체적인 fielddata 상태를 출력
-  $ curl -XGET 'localhost:9200/_stats/fielddata?fields=*&pretty'
-  
-  # 클러스터 내의 각 node 별로 사용되고 있는 fielddata 상태를 출력
-  $ curl -XGET 'localhost:9200/_nodes/stats/indices/fielddata?fields=*&pretty'
-  ```
-
-
-
-- doc_values
-  - fielddata가 in memory에서 동작하는 것과 달리 on-disk에서 동작한다.
-  - Query time이 아닌 index time에 빌드(생성)된다.
-  - fielddata와 마찬가지로 집계, 정렬, scripting을 위해 필요하다.
-    - keyword 필드에서 집계 등이 가능한 이유가 바로 doc_values가 기본값은 True로 설정되어 있기 때문이다.
-    - text 필드에는 설정이 불가능하다.
-
-
 
 
 

@@ -1,3 +1,226 @@
+# Elasticsearch의 자료 구조
+
+- 역색인(Inverted Index)
+
+  - 역색인은 키워드들에 문서들의 PK(또는 주소, 파일명 등)와 같은 값들을 매핑하여 저장하는 기술이다.
+    - 역색인 작업의 장점은 매우 빨리 찾을 수 있다는 것이다.
+    - 기존보다 추가적인 작업과 메모리가 필요하게 되지만, 검색은 매우 빠른 속도로 처리가 된다.
+  - 다음과 같이 dictionary 구조로 저장되어 있는 데이터(문서)가 있다.
+
+  ```python
+  data1 = {1:"사과의 효능에 대해서 알아봅시다."}
+  data2 = {2:"사과의 효능과 유통기한에 대해서 알아봅시다."}
+  data3 = {3:"제가 가장 좋아하는 과일은 사과입니다."}
+  ```
+
+  - 위 data들의 value에 형태소 분석을 수행하면 각 value의 형태소들이 추출된다.
+    - 일반적으로 검색엔진은 불필요한 품사를 제외한 명사등만 추출한다(명사만 추출된다고 가정).
+    - data1: 사과, 효능
+    - data2: 사과, 효능, 유통기한
+    - data3: 사과, 과일
+  - 검색 엔진은 위 결과를 토대로 역색인 작업을 하게 된다.
+
+  | 키워드   | 문서 번호 |
+  | -------- | --------- |
+  | 사과     | 1, 2, 3   |
+  | 효능     | 1, 2      |
+  | 유통기한 | 2         |
+  | 과일     | 3         |
+
+  - "사과 효능"을 검색했을 경우
+    - 사과가 포함된 문서 1,2,3을 가져오고
+    - 유통기한이 포함된 문서 1, 2를 가져온다.
+    - 마지막으로 둘의 교집합인 1, 2를 출력해준다.
+
+  - AND가 아닌 OR 처리가 필요하다면 다음과 같은 처리를 하면 된다.
+    - "사과 효능"을 검색할 경우
+    - 1번 문서에는 사과, 효능이 모두 일치한다 - 2개가 일치
+    - 2번 문서도 사과, 효능이 모두 일치한다 - 2개가 일치
+    - 3번 문서는 사과만 일치한다 - 1개만 일치
+    - 이제 문서별로 일치도가 높은 순으로 정렬(1,2,3) 후 사용자에게 출력한다.
+
+
+
+- fielddata
+
+  - 집계, 정렬 등은 역인덱스를 통해서는 불가능하다.
+    - 역인덱스를 사용하는 검색은 어떤 문서가 특정 키워드를 포함하는지 여부를 보는 것이다.
+    - 그러나 집계 정렬 등은 특정 키워드를 포함하는지가 아닌 특정 field의 값이 무엇인지를 알아야 가능하다.
+  - 따라서 Elasticsearch 집계, 정렬등을 위해 fielddata라는 자료 구조를 사용한다.
+    - fielddata는 key를 document로, value를 field와 field value로 하는 자료구조이다.
+
+  ```json
+  [
+      {
+          "some_doc_id1": {
+              "field1":"foo",
+              "field2":"bar"
+          }
+      },
+      {
+          "some_doc_id2": {
+              "field1":"baz",
+              "field2":"qux"
+          }
+      }
+  ]
+  ```
+
+  - text field는 기본적으로 검색이 가능하지만, 집계, 정렬, scripting은 불가능하다.
+    - 만약 text field를 대상으로 집계, 정렬, 혹은 script를 사용하여 text field의 값에 접근해야한다면, `fielddata` 값을 true로 변경해줘야한다.
+    - 이 경우 분리된 token 별로 집계가 가능하다.
+
+  ```json
+  PUT my-index-000001/_mapping
+  {
+    "properties": {
+      "my_field": { 
+        "type":     "text",
+        "fielddata": true
+      }
+    }
+  }
+  ```
+
+  - fielddata는 in-memory 구조로 동작하여 많은 heap memory를 소비한다.
+    - 아마 이것이 text type의 fielddata의 기본값으로 false로 설정해둔 이유일 듯 하다.
+    - text 필드는 token 단위로 저장을 해야하는데, field value가 조금만 길어져도 무수히 많은 token이 생성될 것이기에 훨씬 많은 heap memory를 소비하게 될 것이다.
+    - 기본적으로 특정 field를 대상으로 fielddata를 생성해야하면, elasticsearch는 모든 document의 field value를 memory에 올린다.
+    - 예를 들어 `subject`라는 필드를 대상으로 집계를 해야한다고 하면, elasticsearch는 모든 document의 subject field의 값을 전부 memory에 올린다.
+    - 이는 매번 메모리에 적재하는 것 보다 미리 모두 적재해두고 다음 query에도 사용하는 것이 보다 효율적이기 때문이다. 
+  - `fielddata_frequency_filter`
+    - 메모리에서 불러오는 term의 수를 빈도를 기준으로 감소시켜 메모리 사용을 줄일 수 있다.
+    - `min`, `max` 값을 지정하며 둘 사이의 빈도를 지닌 term들만 메모리에서 불러온다.
+    - `min`, `max` 값은 양의 정수 혹은 0~1 사이의 소수로 지정한다.
+    - 퍼센트는 세그먼트 내의 모든 문서가 아닌, 해당 field에 값이 있는 문서들만 대상으로 계산된다.
+    - `min_segment_size` 옵션을 통해 일정 개수 이상의 문서를 가지지 못한 세그먼트를 제외시킬 수 있다.
+  
+  ```json
+  PUT my-index-000001
+  {
+    "mappings": {
+      "properties": {
+        "tag": {
+          "type": "text",
+          "fielddata": true,
+          "fielddata_frequency_filter": {
+            "min": 0.001,	# 1%
+            "max": 0.1,	# 10%
+            "min_segment_size": 500
+          }
+        }
+      }
+    }
+  }
+  ```
+  
+  - fielddata 모니터링
+  
+  ```bash
+  # 각 index 별로 전체적인 fielddata 상태를 출력
+  $ curl -XGET 'localhost:9200/_stats/fielddata?fields=*&pretty'
+  
+  # 클러스터 내의 각 node 별로 사용되고 있는 fielddata 상태를 출력
+  $ curl -XGET 'localhost:9200/_nodes/stats/indices/fielddata?fields=*&pretty'
+  ```
+
+
+
+- doc_values
+
+  - Elasticsearch는 문서별로 field 값을 조회해야 하는 집계 등의 작업을 위해 `doc_values`라는 자료 구조를 사용한다.
+    - `doc_values`는 on-disk 자료구조로, document가 색인될 때 생성된다.
+    - ` _source`에 저장되는 것과 같은 값을 저장하지만, `_source`와는 달리 집계나 정렬을 효율적으로 하기 위해서 column 형(column-oriented)으로 저장한다.
+    - `doc_values`는 거의 대부분의 field type을 지원하지만, text와 annotated_text type은 지원하지 않는다.
+  - fielddata와의 차이
+    - query time에 생성되는 fielddata와 달리 doc_value는 index time에 생성된다.
+    - memory를 사용하는 fielddata와 달리 doc_value는 disk에 저장된다(따라서 속도는 doc_value가 더 느리다).
+  - 구조 예시
+    - key-value 기반이 아닌 column 기반임을 명심해야한다.
+
+  | fieldA | fieldB |
+  | ------ | ------ |
+  | value1 | value1 |
+  | value2 | value2 |
+  | value3 | value3 |
+
+  - Doc-value-only-fields
+    - numeric, date, boolean, ip, geo_point, keyword type등은 index되지 않아도 doc values가 활성화 되었다면 검색이 가능하다.
+    - 단, 검색 속도는 index되었을 때 보다 훨씬 느리다.
+    - 그러나 disk 사용량은 훨씬 줄어든다는 장점이 있다.
+    - 따라서 거의 검색되지 않는 필드를 대상으로는 아래와 같이 index는 false로 주고 doc value만 활성화(아무 옵션을 주지 않으면 기본적으로 활성화 된다)하여 사용하는 것도 좋은 선택이다.
+
+  ```json
+  PUT my-index-000001
+  {
+    "mappings": {
+      "properties": {
+        "session_id": { 
+          "type":  "long",
+          "index": false
+        }
+      }
+    }
+  }
+  ```
+
+  - doc values 비활성화하기
+    - doc values를 지원하는 모든 field는 기본적으로 doc values가 활성화되어있다.
+    - 만일 비활성화 시키고자 한다면 아래와 같이 하면 된다.
+
+  ```json
+  PUT my-index-000001
+  {
+    "mappings": {
+      "properties": {
+        "session_id": { 
+          "type": "keyword",
+          "doc_values": false
+        }
+      }
+    }
+  }
+  ```
+
+
+
+- Global Ordinals
+
+  - keyword field 등의 term 기반 field type들은 doc_value를 ordinal mapping을 사용하여 저장한다.
+
+    - Mapping은 각 term에 증가하는 integer 혹은 사전순으로 정렬된 순서(ordinal)를 할당하는 방식으로 이루어진다.
+    - Field의 doc value들은 각 document의 순서(ordinal)만을 저장하며, 원래 term들은 저장하지 않는다.
+
+  - 예시
+
+    - 아래와 같이 field value에 순서를 매기고
+
+    | Ordinal | field_value |
+    | ------- | ----------- |
+    | 0       | apple       |
+    | 1       | banana      |
+    | 2       | watermelon  |
+    | 3       | kiwi        |
+
+    - 이를 기반으로 oridinal mapping을 생성한다.
+
+    | doc_id | field   |
+    | ------ | ------- |
+    | doc_1  | 0, 1    |
+    | doc_2  | 1, 3    |
+    | doc_3  | 0, 3    |
+    | doc_4  | 0, 2, 3 |
+
+    - 위 표에서 doc_1은 apple, banana라는 문자열을 저장하는 대신, 0, 1이라는 순서만을 저장했는데, 나중에 field_value가 필요하면 해당 순서에 해당하는 문자열을 가져와서 사용하는 방식이다.
+
+  - global ordinal이란
+    - 각 index의 segment들은 각자 자신의 ordinal mapping을 정의한다.
+    - 그러나 aggregation은 전체 shard를 대상으로 이루어져야 하므로, Elasticsearch는 global ordinal이라 부르는 ordinal mapping들의 결합체를 생성한다.
+  - 아래와 같을 때 사용된다.
+    - keyword, ip, falttend field를 대상으로 한 특정 bucket aggregation(terms, composite 등).
+    - fielddata가 true로 설정된 text field에 대한 aggregation
+    - join field를 대상으로 하는 연산(has_child query 혹은 parent aggregation 등)
+
 
 
 # Elasticsearch의 score 계산 방식
