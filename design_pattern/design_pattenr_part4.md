@@ -315,3 +315,291 @@
 
   
 
+
+
+# Template Method Pattern
+
+- 커피와 홍차 만들기
+
+  - 커피 클래스 만들기
+    - 각 메서드는 커피를 만드는 각 단계를 구현한다.
+
+  ```python
+  class Coffee:
+      def prepare_recipe(self):
+          self.boil_water()
+          self.brew_coffe_grinds()
+          self.pour_in_cup()
+          self.add_sugar_and_milk()
+  
+      def boil_water(self):
+          print("물 끓이기")
+  
+      def brew_coffe_grinds(self):
+          print("커피 우려내기")
+      
+      def pour_in_cup(self):
+          print("컵에 따르기")
+      
+      def add_sugar_and_milk(self):
+          print("설탕과 우유 추가하기")
+  
+  ```
+
+  - 홍차 클래스 만들기
+    - `Coffee` 클래스와 동일한 메서드도 있고 다른 메서드도 있다.
+
+  ```python
+  class Tea:
+      def prepare_recipe(self):
+          self.boil_water()
+          self.steep_tea_bag()
+          self.pour_in_cup()
+          self.add_remon()
+  
+      def boil_water(self):
+          print("물 끓이기")
+  
+      def steep_tea_bag(self):
+          print("찻잎을 우려내는 중")
+  
+      def pour_in_cup(self):
+          print("컵에 따르기")
+      
+      def add_remon(self):
+          print("레몬을 추가하는 중")
+  ```
+
+  - 상속을 통해 추상화하기
+    - `CaffeineBeverage`라는 abstract class를 만들어 `Coffee`와 `Tea`에 공통으로 들어가는 부분을 정의하고, `Coffee`와 `Tea`가 이를 상속 받는 방식으로 추상화 할 수 있다.
+    - Abstract class로 선언하는 이유는, `prepare_recipe()`를 추상 메서드로 선언하기 위함이다.
+
+  ```python
+  from abc import ABCMeta, abstractmethod
+  
+  class CaffeineBeverage(metaclass=ABCMeta):
+      @abstractmethod
+      def prepare_recipe(self):
+          pass
+  
+      def boil_water(self):
+          print("물 끓이기")
+  
+      def pour_in_cup(self):
+          print("컵에에 따르기")
+  ```
+
+  - `prepare_recipe` 메서드도 추상화하기
+    - 사실은 공통으로 들어가지 않는 부분도 무언가를 우려낸다는 점과 첨가물을 넣는다는 점에서는 동일하므로 이 역시도 추상화 할 수 있다.
+    - 따라서 이들 메서드를 각각 `brew()`, `add_condiments()`라는 메서드로 추상화 할 수 있다.
+
+  ```python
+  from abc import ABCMeta, abstractmethod
+  
+  
+  class CaffeineBeverage(metaclass=ABCMeta):
+      def prepare_recipe(self):
+          self.boil_water()
+          self.brew()
+          self.pour_in_cup()
+          self.add_condiments()
+  
+      @abstractmethod
+      def brew(self):
+          pass
+  
+      @abstractmethod
+      def add_condiments(self):
+          pass
+  
+      def boil_water(self):
+          print("물 끓이기")
+  
+      def pour_in_cup(self):
+          print("컵에에 따르기")
+  ```
+
+  - `Coffee`와 `Tea` class 수정하기
+    - `CaffeineBeverage`를 확장하여 생성한다.
+
+  ```python
+  class Coffee(CaffeineBeverage):
+  
+      def brew(self):
+          print("커피 우려내기")
+          
+      def add_condiments(self):
+          print("설탕과 우유 추가하기")
+  
+  
+  class Tea:
+      def brew(self):
+          print("홍차 우려내기")
+          
+      def add_condiments(self):
+          print("레몬 추가하기")
+  ```
+
+
+
+- 템플릿 메서드 패턴
+
+  - 정의
+    - 알고리즘의 골격(템플릿, 일련의 단계로 알고리즘을 정의한 메서드)을 정의하며, 알고리즘의 일부 단계를 서브클래스에서 구현할 수 있도록 유도한다.
+    - 템플릿 메서드를 사용하면 알고리즘의 일부 단계를 서브클래스에서 정의할 수 있으며, 알고리즘의 구조는 그대로 유지하면서 알고리즘의 특정 단계를 서브클래스에 재정의 할 수 있다.
+    - 여러 단계 가운데 하나 이상의 단계가 추상 메서드로 저으이되며, 그 추상 메서드는 서브클래스에서 구현된다.
+    - 이를 통해 서브클래스가 알고리즘의 일부를 처리하게 하면서도 알고리즘의 구조는 바꾸지 않아도 된다.
+    - 일반적으로 템플릿 메서드는 서브클래스에서 오버라이드하지 못하도록 `final` 키워드를 붙여 선언한다.
+  - 지금까지 `Coffee`와 `Tea` 클래스에 템플릿 메서드 패턴을 적용했다고 할 수 있다.
+    - `prepare_recipe()` 메서드가 템플릿 메서드이다.
+    - 카페인 음료를 만드는 알고리즘의 템플릿 역할을 한다.
+    - 템플릿 내에서 알고리즘의 각 단계는 메서드로 표현된다.
+  - 템플릿 메서드 패턴의 장점
+    - 서브클래스의 코드 중복을 줄일 수 있다.
+    - 알고리즘이 바뀔 경우 서브클래스를 일일이 변경하는 대신 한 부분만 변경하면 된다.
+    - 다른 서브클래스도 쉽게 추가할 수 있다.
+    - 알고리즘에 대한 정보와 구현 방법이 여러 클래스에 분산되어 있는 것이 아니라 한 곳에 집중되어 있다.
+
+  - 클래스 다이어그램
+
+  ![image-20230416173211749](design_pattenr_part4.assets/image-20230416173211749.png)
+
+  - 주의사항
+    - 추상 메서드가 너무 많아질 경우 서브 클래스에서 일일이 추상 메서드를 구현해야하는 번거로움이 있다.
+    - 이를 피하기 위해서 알고리즘의 단계를 너무 잘게 쪼개지 않는 것이 한 가지 방법이 될 수 있다.
+    - 그러나 그렇다고 너무 큼직하게 나누면 유연성이 떨어지게 되므로 숙고한 후 어느 정도 크기로 자를지 결정해야한다.
+    - 또한 템플릿 메서드 패턴은 실전에서 상당히 자주 쓰이지만, 위 예시처럼 정석적으로 쓰이지는 않는 경우가 많아 템플릿 메서드 패턴인지 눈치채지 못 할 수도 있으므로, 주의 깊게 봐야한다.
+
+
+
+- 후크(Hook)
+
+  - 템플릿 메서드 패턴에서의 메서드들
+    - Template method: 알고리즘의 골격을 제공하는 메서드.
+    - Abstract method: 서브 클래스에 구현을 맡기는 메서드.
+    - Concrete method: 서브 클래스에 구현을 맡기지 않는, 모든 서브클래스에 공통으로 들어가는 메서드.
+    - Hook: 추상 클래스에서 선언되지만 기본적인 내용만 구현되어 있거나 아무 코드도 들어있지 않은 메서드.
+
+  ```python
+  from abc import ABCMeta, abstractmethod
+  
+  
+  class CaffeineBeverage(metaclass=ABCMeta):
+      # template method
+      def prepare_recipe(self):
+          self.boil_water()
+          self.brew()
+          self.pour_in_cup()
+          if self.customer_wants_condiments():
+              self.add_condiments()
+  	
+      # abstract method
+      @abstractmethod
+      def brew(self):
+          pass
+  
+      @abstractmethod
+      def add_condiments(self):
+          pass
+  	
+      # concrete method
+      def boil_water(self):
+          print("물 끓이기")
+  
+      def pour_in_cup(self):
+          print("컵에에 따르기")
+  	
+      # hook
+      def customer_wants_condiments(self):
+          return True
+  ```
+
+  - 후크의 활용
+    - 후크는 서브클래스에서 자유롭게 오버라이드 할 수 있으며, 오버라이드 하지 않을 수 있도 있다.
+    - 아래의 경우 hook를 오버라이드 했다.
+
+  ```python
+  class CoffeeWithHook(CaffeineBeverage):
+      def brew(self):
+          print("커피 우려내기")
+  
+      def add_condiments(self):
+          print("우유와 설탕 추가하기")
+  
+      # hook를 오버라이드하여 원하는 기능을 넣는다.
+      def customer_wants_condiments(self):
+          answer = self._get_user_input()
+          if answer == "YES":
+              return True
+          else:
+              return False
+  
+      def _get_user_input(self):
+          print("커피에 우유와 설탕을 넣을까요?")
+          answer = input()
+          return answer
+  ```
+
+  - 후크를 사용함으로써 템플릿 메서드의 수정 없이 후크를 오버라이드하여 템플릿 메서드의 실행을 변경시킬 수 있다.
+    - 예를 들어 `CoffeeWithHook` 클래스의 경우 사용자의 입력에 따라 `add_condiments()` 메서드가 실행되도록 했지만, 다른 클래스에서는 후크를 다르게 오버라이드하여 항상 실행되지 않도록 변경할 수도 있다.
+  - 후크와 추상 메서드의 구분
+    - 서브클래스가 알고리즘의 특정 단계를 제공해야한다면 추상 메서드를 사용해야한다.
+    - 알고리즘의 특정 단계가 선택적으로 적용된다면 후크를 쓰면 된다.
+
+
+
+- 할리우드 원칙(Hollywood Principle)
+  - 먼저 연락하지 마세요, 저희가 연락드리겠습니다.
+    - 저수준 구성 요소가 시스템에 접속할 수는 있지만 언제, 어떻게 그 구성 요소를 사용할지는 고수준 구성 요소가 결정하는 원칙이다.
+    - 즉 저수준 구성 요소는 절대 고수준 구성 요소를 직접 호출할 수 없고, 고수준 구성 요소가 저수준 구성 요소를 호출하는 것이다.
+    - 믈론 저수준 구성 요소에서도 고수준 구성 요소에 있는 메서드를 호출하면 안된다는 것은 아니다.
+    - 실제로고 고수준 구성 요소에서 상속받은 메서드를 저수준 구성 요소에서 사용하는 일은 빈번하게 일어난다.
+    - 단지, 고수준 구성 요소와 저수준 구성 요소 사이에 순환 의존성이 생겨선 안된다.
+  - 할리우드 원칙을 사용하면 의존성 부패(dependency rot)를 방지할 수 있다.
+    - 의존성 부패란 의존성이 복잡하게 꼬여 있는 상황을 말한다.
+    - 예를 들어 저수준 구성 요소가 고수준 구성 요소에 의존하고, 고수준 구성 요소가 또 다른 구성 요소에 의존하는 식으로 의존성이 여러 요소에 걸쳐 복잡하게 꼬여 있는 상황을 의존성이 부패했다고 한다.
+  - 할리우드 원칙과 템플릿 메서드 패턴
+    - 위의 예시에서 `CaffeineBeverage`는 고수준 구성 요소, `Coffee`와 `Tea` 등의 구상 클래스는 저수준 구성 요소이다.
+    - `CaffeineBeverage`가 알고리즘을 장악하고 있고, 메서드 구현이 필요한 상황에서만 서브클래스르 호출한다.
+    - 클라이언트는 저수준 구성 요소가 아니라 `CaffeineBeverage`의 추상화 되어 있는 부분에 의존함으로써 의존성을 줄일 수 있다.
+    - 구상 클래스들은 호출 당하기 전까지는 추상 클래스를 직접 호출하지 않는다.
+  - 기타 할리우드 원칙을 활용하는 패턴들
+    - 팩토리 메서드
+    - 옵저버 패턴
+  - 할리우드 원치과 의존성 역전 원칙
+    - 의존성 역전 원칙은 가능하면 구상 클래스 사용을 줄이고 추상화된 것을 사용해야 한다는 원칙이다.
+    - 할리우드 원칙은 저수준 구성 요소가 전체 컴퓨테이션에는 참여하면서도 저수준 구성 요소와 고수준 계층 간 의존을 없애야한다는 원칙이다.
+    - 즉 두 원칙은 객체를 분리한다는 동일한 목표를 가지고 있지만, 의존성을 피하는 방법에 있어서 의존성 역전 원칙이 훨씬 더 강하고 일반적인 내용을 담고 있다.
+
+
+
+- 전략 패턴과 템플릿 메서드 패턴의 차이
+  - 정의
+    - 전략 패턴: 바꿔 쓸 수 있는 행동을 캡슐화하고, 어떤 행동을 사용할지는 서브클래스에 맡긴다.
+    - 템플릿 메서드 패턴: 알고리즘의 어떤 단계를 구현하는 방법을 서브클래스에서 결정한다.
+  - 차이
+    - 템플릿 메서드 패턴은 알고리즘의 개요를 정의하고, 알고리즘의 일부를 서브클래스에서 구현하도록 하는데 목적이 있는 반면에 전략 패턴은 어떤 알고리즘을 사용할지를 서브클래스에서 결정하도록 한다.
+    - 템플릿 메서드 패턴은 상속을 사용하는데 반해 전략 패턴은 구성을 사용한다.
+
+
+
+- 팩토리 메서드 패턴과 템플릿 메서드 패턴의 차이
+  - 팩토리 메서드 패턴은 특화된 템플릿 메서드 패턴이다.
+  - 팩토리 메서드 패턴의 목적은 구상 클래스의 인스턴스 생성을 서브클래스에서 결정하도록 하는 것이다.
+
+
+
+
+
+
+
+
+
+# 디자인 패턴 모아보기
+
+- 할리우드 원칙
+  - 먼저 연락하지 마세요, 저희가 연락드리겠습니다.
+  - 할리우드 원칙을 사용하면 의존성 부패를 방지할 수 있다.
+
+ 
+
