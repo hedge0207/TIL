@@ -313,7 +313,114 @@
           self.winner_state: State = WinnerState()
   ```
 
+
+
+
+
+
+# Proxy Pattern
+
+> State Pattern에 이어서 진행하지만, 첫 예시로 나오는 remote proxy를 Python으로 적절히 설명할 수 없어서 Java code로 변경했다.
+
+- 뽑기 기계를 모니터링하는 기능을 만들고자 한다.
+
+  - `GumballMachine` 클래스에 뽑기 기계의 현재 위치를 알려주는 기능을 추가한다.
+
+  ```python
+  from state_pattern.state import State, HasQuarterState, NoQuarterState, SoldState, SoldOutState, WinnerState
   
+  
+  
+  class GumballMachine:
+      def __init__(self, location, num_gumballs):
+          self.location = location
+          self.has_quarter_state:State = HasQuarterState()
+          self.no_quarter_state:State = NoQuarterState()
+          self.sold_state: State = SoldState()
+          self.sold_out_state: State = SoldOutState()
+          self.winner_state: State = WinnerState()
+  
+          self.count = num_gumballs
+          if self.count > 0:
+              self.state = self.no_quarter_state
+          else:
+              self.state = self.sold_out_state
+  
+      def get_location(self):
+          return self.location
+  
+      def get_count(self):
+          return self.count
+      
+      def get_state(self):
+          return self.state
+      
+      # ...
+  ```
+
+  - `GumballMonitor` class를 생성한다.
+
+  ```python
+  from gumball_machine import GumballMachine
+  
+  
+  class GumballMonitor:
+  
+      def __init__(self, machine: GumballMachine):
+          self.machine = machine
+  
+      def report(self):
+          print("위치:", self.machine.get_location())
+          print("재고:", self.machine.get_count())
+          print("상태:", self.machine.get_state())
+  ```
+
+  - 문제
+    - 뽑기 기계 코드와 뽑기 기계를 모니터링하는 코드가 같은 기기에서 실행된다.
+    - 고객은 뽑기 기계를 다른 기기에서 모니터링하기를 원한다.
+  - 해결 방법
+    - 원격 프록시를 사용한다.
+    - 프록시는 진짜 객체를 대신하는 역할을 맡는다(이 경우에는 `GumballMachine`을 대신하는 역할을 맡는다).
+    - 실제로는 네트워크를 통해 다른 기기에 있는 진짜 `GumballMachine`과 데이터를 주고 받는다.
+    - 즉 코드는 그대로 두고 `GumballMachine` 클래스의 프록시를 레퍼런스로 건네주고, 이 프록시는 진짜 객체처럼 행동하지만 실제로는 네트워크로 진짜 객체와 데이터를 주고 받는다.
+
+
+
+- 원격 프록시의 역할
+  - 원격 프록시는 원격 객체의 로컬 대변자 역할을 한다.
+    - 원격 객체란 다른 기기에서 실행되고 있는 객체를 뜻한다.
+    - 로컬 대변자란 로컬 대변자의 어떤 메서드를 호출하면, 다른 원격 객체에게 그 메서드 호출을 전달해 주는 객체를 의미한다.
+  - 클라이언트 객체는 프록시를 활용하는 객체이다.
+    - 이 경우에는 `GumballMonitor` class가 클라이언트 객체이다.
+    - 클라이언트 객체는 원격 객체의 메서드를 호출하는 것 처럼 행도한다.
+    - 그러나 실제로는 로컬에서 실행되고 있는 프록시 객체의 메서드를 호출하는 것이다.
+    - 네트워크 통신과 관련된 저수준 작업은 프록시 객체에서 처리한다.
+
+
+
+- 원격 메서드의 기초
+  - 클라이언트 보조 객체(프록시)와 서비스 보조 객체가 필요하다.
+    - 클라리언트는 클라이언트 보조 객체의 메서드를 호출한다.
+    - 클라이언트는 클라이언트 보조 객체가 실제 서비스 객체라고 생각하지만 실은 그렇지 않다.
+    - 클라이언트 보조 객체는 서버에 연락을 취하고, 메서드 호출에 관한 정보(메서드명, 인자 등)를 전달하고, 서버로부터 반환되는 정보를 기다린다.
+    - 서버는 서비스 보조 객체(service helper)가 있어, socket 연결로 클라리언트 보조 객체로부터 요청을 받아오고, 호출 정보를 해석해서 진짜 서비스 객체에 있는 진짜 메서드를 호출한다.
+    - 따라서 직접적인 메서드의 호출은 서비스 보조 객체가 실행하므로 서비스 객체는 그 메서드의 호출이 원격 클라이언트가 아닌 로컬 객체로부터 들어온다고 생각한다.
+    - 서비스 보조 객체는 서비스로부터 반환값을 받아 Socket의 출력 스트림으로 클라리언트 보조 객체에게 전송한다.
+    - 클라이언트 보조 객체는 그 정보를 해석해서 클라이언트 객체에 반환한다.
+  - 즉 아래와 같은 과정을 거친다.
+    - 클라이언트에 속한 클라이언트 객체는 클라이언트 보조 객체의 메서드를 호출한다.
+    - 클라이언트에 속한 클라이언트 보조 객체는 서버에 속한 서비스 보조 객체에게 메서드 호출 정보를 네트워크를 통해 전달한다.
+    - 이를 받은 서버 측의 서비스 보조 객체는 서버에 속한 서비스 객체에서 실제 메서드를 호출하고 그 반환 값을 받는다.
+    - 서비스 보조 객체는 이를 다시 클라이언트 쪽의 클라이언트 보조 객체에게 전달한다.
+    - 클라이언트 보조 객체는 이를 해석하여 클라이언트 객체에게 반환한다.
+  - Java의 RMI
+    - 클라이언트 보조 객체와 서비스 보조 객체를 생성해준다.
+    - 클라이언트 보조 객체르르 Stub, 서비스 보조 객체를 Skeleton이라 부른다.
+
+
+
+- `GumballMachine` 클래스를 원격 서비스로 변경하기
+  - 
 
 
 
