@@ -326,55 +326,45 @@
 
   - `GumballMachine` 클래스에 뽑기 기계의 현재 위치를 알려주는 기능을 추가한다.
 
-  ```python
-  from state_pattern.state import State, HasQuarterState, NoQuarterState, SoldState, SoldOutState, WinnerState
+  ```java
+  package Proxy;
   
+  public class GumballMachine {
+      String location;
   
+      public GumballMachine(String location, int count) {
+          this.location = location;
+      }
   
-  class GumballMachine:
-      def __init__(self, location, num_gumballs):
-          self.location = location
-          self.has_quarter_state:State = HasQuarterState()
-          self.no_quarter_state:State = NoQuarterState()
-          self.sold_state: State = SoldState()
-          self.sold_out_state: State = SoldOutState()
-          self.winner_state: State = WinnerState()
+      public String getLocation() {
+          return location;
+      }
   
-          self.count = num_gumballs
-          if self.count > 0:
-              self.state = self.no_quarter_state
-          else:
-              self.state = self.sold_out_state
+      // 기타 메서드
+  }
   
-      def get_location(self):
-          return self.location
-  
-      def get_count(self):
-          return self.count
-      
-      def get_state(self):
-          return self.state
-      
-      # ...
   ```
-
+  
   - `GumballMonitor` class를 생성한다.
-
+  
   ```python
-  from gumball_machine import GumballMachine
+  package Proxy;
   
+  public class GumballMonitor {
+      GumballMachine machine;
   
-  class GumballMonitor:
+      public GumballMonitor(GumballMachine machine) {
+          this.machine = machine;
+      }
   
-      def __init__(self, machine: GumballMachine):
-          self.machine = machine
-  
-      def report(self):
-          print("위치:", self.machine.get_location())
-          print("재고:", self.machine.get_count())
-          print("상태:", self.machine.get_state())
+      public void report() {
+          System.out.println("위치: " + this.machine.getLocation());
+          System.out.println("재고: " + this.machine.getCount());
+          System.out.println("상태: " + this.machine.getState());
+      }
+  }
   ```
-
+  
   - 문제
     - 뽑기 기계 코드와 뽑기 기계를 모니터링하는 코드가 같은 기기에서 실행된다.
     - 고객은 뽑기 기계를 다른 기기에서 모니터링하기를 원한다.
@@ -413,14 +403,329 @@
     - 이를 받은 서버 측의 서비스 보조 객체는 서버에 속한 서비스 객체에서 실제 메서드를 호출하고 그 반환 값을 받는다.
     - 서비스 보조 객체는 이를 다시 클라이언트 쪽의 클라이언트 보조 객체에게 전달한다.
     - 클라이언트 보조 객체는 이를 해석하여 클라이언트 객체에게 반환한다.
-  - Java의 RMI
-    - 클라이언트 보조 객체와 서비스 보조 객체를 생성해준다.
-    - 클라이언트 보조 객체르르 Stub, 서비스 보조 객체를 Skeleton이라 부른다.
 
 
 
-- `GumballMachine` 클래스를 원격 서비스로 변경하기
-  - 
+- Java RMI(Remote Method Invocation)의 기초
+  - 클라이언트 보조 객체와 서비스 보조 객체를 생성해준다.
+    - 클라이언트 보조 객체에는 원겨 서비스와 똑같은 메소드가 들어있다.
+    - RMI를 사용하면 네트워킹 및 입출력 관련 코드를 직접 작성하지 않아도 된다.
+    - 클라이언트는 그냥 같은 기기에 있는 메서드를 호출하듯이 원격 메서드(서비스 객체에 있는 진짜 메서드)를 호출할 수 있다.
+
+  - 클라이언트 보조 객체를 Stub, 서비스 보조 객체를 Skeleton이라 부른다.
+    - 즉 Stub이 Proxy이다.
+
+
+
+
+- 원격 서비스 만들기
+
+  - 원격 인터페이스 만들기
+    - 원격 인터페이스는 클라이언트가 원격으로 호출할 메서드를 정의한다.
+    - 클라이언트에서 이 인터페이스를 서비스의 클래스 형식으로 사용한다.
+    - 스텁과 실제 서비스에 이 인터페이스를 구현해야한다.
+
+  ```java
+  package Proxy;
+  
+  import java.rmi.*;
+  
+  // Remote는 marker용 인터페이스인데, 메서드가 없다.
+  public interface MyRemote extends Remote {
+      // 모든 메서드는 RemoteException을 던지도록 선언해야 한다.
+      // 스텁이 각종 입출력 작업을 처리할 때 네트워크에 문제가 생길 수 있으므로 이에 대비하기 위함이다.
+      // 원격 메서드의 인자와 반환값은 반드시 원시 타입 혹은 Serializable 타입으로 선언해야한다.
+      public String sayHello() throws RemoteException;
+  }
+  ```
+
+  - 서비스 구현 클래스 만들기
+    - 실제 작업을 처리하는 클래스를 만든다.
+    - 위에서 만든 원격 인터페이스를 구현하는 클래스를 생성한다.
+    - 원격 서비스 객체 역할을 수행하도록 하기 위해, UnicastRemoteObject를 확장해서 원격 객체 기능을 추가한다.
+
+  ```java
+  package Proxy;
+  
+  import java.net.MalformedURLException;
+  import java.rmi.*;
+  import java.rmi.server.UnicastRemoteObject;
+  
+  public class MyRemoteImpl extends UnicastRemoteObject implements MyRemote {
+      private static final long serialVersionUID = 1L;
+      public String sayHello() {
+          return "Server says, 'Hey'";
+      }
+  
+      public MyRemoteImpl() throws RemoteException { }
+      
+      // 서비스를 RMI 레지스트리에 등록한다.
+      public static void main(String[] args) {
+          try {
+              MyRemote service = new MyRemoteImpl();
+              Naming.rebind("RemoteHello", service);
+          } catch (Exception e) {
+              e.printStackTrace();
+          }
+      }
+  }
+  ```
+
+  - 클라이언트 코드 구현하기
+
+  ```java
+  package Proxy;
+  
+  import java.rmi.*;
+  
+  public class MyRemoteClient {
+      public static void main (String[] args) {
+          new MyRemoteClient().go();
+      }
+      
+      public void go() {
+          try {
+              // RMI 레지스트리에 등록된 스텁을 받아와서
+              MyRemote service = (MyRemote) Naming.lookup("rmi://127.0.0.1/RemoteHello");
+              
+              // 시용한다.
+              String s = service.sayHello();
+              System.out.println(s);
+          } catch (Exception e) {
+              e.printStackTrace();
+          }
+      }
+  }
+  ```
+
+
+
+- GumballMachine 클래스를 원격 서비스로 변경하기
+
+  - GumballMachine 클래스가 클라이언트로부터 전달 된 원격 요청을 처리할 수 있도록 변경해야한다.
+    - 즉, 서비스를 구현한 클래스로 만들어야하는데, 그 과정은 다음과 같다.
+    - GumballMachine의 원격 인터페이스를 만든다.
+    - 인터페이스의 모든 반환 형식을 직렬화 할 수 있는지 확인한다.
+    - 구상 클래스에서 인터페이스를 구현한다.
+
+  ```java
+  package Proxy;
+  
+  import java.rmi.*;
+  
+  public class GumballMachineRemote extends Remote{
+      public int getCount() throws RemoteException;
+      public String getLocation() throws RemoteException;
+      public State getState() throws RemoteException;
+  }
+  ```
+
+  - `State`는 직렬화 할 수 없는 타입이므로 직렬화 할 수 있게 변경해준다.
+    - `Serializable` 인터페이스를 확장한다.
+
+  ```java
+  package Proxy;
+  
+  import java.io.*;
+  
+  public interface State extends Serializable{
+      public void insertQuarter();
+      public void ejectQuarter();
+      public void turnCrank();
+      public void dispense();
+  }
+  ```
+
+  - 또한 기존에 `State` 객체는 `GumballMachine`의 레퍼런스가 들어있었는데 `GumballMachine` 객체도 함께 직렬화 되는 것은 바람직하지 않다.
+    - 따라서 아래와 같이 `State` 인터페이스를 구현하는 모든 클래스에서 `GumballMachine` 인스턴스 변수를 선언하는 부분에 `transient` 키워드를 추가한다.
+    - 이러면 JVM은 해당 필드를 직렬화하지 않는다.
+
+  ```java
+  package Proxy;
+  
+  public class NoQuarterState implements State{
+      private static final long serialVersionUID = 2L;
+      transient GumballMachine gumballMachine;
+  }
+  ```
+
+  - `GumballMachine` 클래스를 원격에서 들어온 요청을 처리하는 서비스로 변경한다.
+
+  ```java
+  package Proxy;
+  
+  import java.rmi.*;
+  import java.rmi.server.*;
+  
+  public class GumballMachine extends UnicastRemoteObject implements GumballMachineRemote {
+      private static final long serialVersionUID = 2L;
+  
+      public GumballMachine(String location, int count) throws RemoteException{
+          // 생성자 코드
+      }
+  
+      public int getCount() {
+          return count;
+      }
+      
+      public State getState() {
+          return state;
+      }
+      public String getLocation() {
+          return location;
+      }
+  
+      // 기타 메서드
+  }
+  ```
+
+  - RMI 레지스트리 등록하기
+
+  ```java
+  package Proxy;
+  
+  import java.rmi.Naming;
+  
+  public class GumballMachineTestDrive {
+  
+      public static void main(String[] args) {
+          GumballMachineRemote gumballMachine = null;
+          int count;
+  
+          if (args.length < 2) {
+              System.out.println("GumballMachine <name> <inventory>");
+              System.exit(1);
+          }
+  
+          try {
+              count = Integer.parseInt(args[1]);
+  
+              gumballMachine = new GumballMachine(args[0], count);
+              Naming.rebind("//" + args[0] + "/gumballmachine", gumballMachine);
+          } catch (Exception e) {
+              e.printStackTrace();
+          }
+      }
+  }
+  ```
+
+  - `GumballMonitor` 클라이언트 수정하기
+
+  ```java
+  package Proxy;
+  
+  import java.rmi.RemoteException;
+  import java.util.*;
+  
+  public class GumballMonitor {
+      GumballMachineRemote machine;
+  
+      public GumballMonitor(GumballMachineRemote machine) {
+          this.machine = machine;
+  }
+  
+      public void report() {
+          try {
+              System.out.println("위치: " + this.machine.getLocation());
+              System.out.println("재고: " + this.machine.getCount());
+              System.out.println("상태: " + this.machine.getState());
+          } catch (RemoteException e) {
+              e.printStackTrace();
+          }
+          
+      }
+  }
+  ```
+
+
+
+- 프록시 패턴
+
+  - 정의
+    - 특정 객체로의 접근을 제어하는 대리인(특정 객체를 대변하는 객체)을 제공한다.
+  - 종류
+    - 원격 프록시(remote proxy, 지금까지 살펴본 프록시가 원격 프록시였다).
+    - 가상 프록시(virtual proxy): 생성하기 힘든 자원으로의 접근을 제어한다.
+    - 보호 프록세(protection proxy): 접근 권한이 필요한 자원으로의 접근을 제어한다.
+
+  - 클래스 다이어그램
+    - ConcreteService가 실제 작업을 처리한다.
+    - `Proxy`에는 진짜 작업을 처리하는 객체(ConcreteService)의 레퍼런스가 들어 있다.
+    - `Proxy`에서 ConcreteService의 생성 혹은 삭제를 책임지는 경우도 있다.
+    - 클라이언트는 항상 Proxy로 ConcreateService와 데이터를 주고 받는다.
+    - Proxy와 ConcreteService는 같은 인터페이스를 구현하기에 ConcreteService가 들어갈 자리라면 어디든지 Proxy를 대신 넣을 수 있다.
+    - Proxy는 ConcreteService로의 접근을 제어하는 역할도 맡는다.
+
+  ![image-20230501130406494](design_pattern_part4.assets/image-20230501130406494.png)
+
+
+
+- 원격 프록시와 가상 프록시 비교
+  - 원격 프록시
+    - 다른 기기에 있는 객체의 대리인에 해당하는 로컬 객체이다.
+    - 프록시의 메서드를 호출하면 그 호출이 네트워크로 전달되어 결국 원격 객체의 메서드가 호출된다.
+    - 그 결과는 다시 프록시를 거쳐 클라이언트에게 전달된다.
+  - 가상 프록시
+    - 생성하는 데 많은 비용이 드는 객체를 대신한다.
+    - 진짜 객체가 필요한 상황이 오기 전까지 객체의 생성을 미루는 기능을 제공한다.
+    - 진짜 객체가 필요한 상황이 되면 프로시에서 해당 객체를 생성한다.
+    - 객체 생성 전이나 객체 생성 도중에 객체를 대신하기도 한다.
+    - 객체 생성이 끝나면 ConcreteService에 직접 요청을 전달한다.
+
+
+
+- 가상 프록시 예시
+  - 앨범 커버 뷰어 프로그램
+    - 앨범 커버를 온라인에서 가져와 보여주는 프로그램을 제작하려 한다.
+    - 네트워크 상태와 인터넷 연결 속도에 따라 앨범 커버 이미지를 가져오는 데 시간이 걸릴 수 있다.
+  - 조건
+    - 이미지를 불러오는 동안 화면에 뭔가 다른 걸 보여주려고 한다. 
+    - 이미지를 기다리는 동안 애플리케이션 전체가 작동을 멈춰서도 안 된다.
+  - 가상 프록시를 사용하면 이 2가지 조건을 간단하게 만족할 수 있다.
+    - 가상 프록시가 아이콘 대신 백그라운드에서 이미지를 불러오는 작업을 처리하고, 이미지를 완전히 가져오기 전까지는 기다려 달라는 메시지를 보여준다.
+    - 이미지 로딩이 끝나면 프록시는 아이콘 객체에게 모든 작업을 넘긴다.
+
+
+
+- 보호 프록시
+  - 접근 권한을 바탕으로 객체로의 접근을 제어하는 프록시이다.
+  - 예를 들어 회사 직원을 나타내는 객체가 있다면 일반 직원 객체에서 호출할 수 있는 메서드가 정해져 있고, 관리자는 더 많은 메서드를 호출할 수 있고, 인사과 직원은 모든 메서드를 호출할 수 있어야 할 것이다.
+
+
+
+- 다양한 프록시 패턴들
+  - 방화벽 프록시(Firewall Proxy)
+    - 네트워크 자원으로의 접근을 제어하여 악의적인 클라이언트로부터 보호한다.
+  - 스마트 레퍼런스 프록시(Smart Reference Proxy)
+    - Service가 참조될 때 마다 추가 행동을 제공한다.
+  - 캐싱 프록시(Caching Proxy)
+    - 비용이 많이 드는 작업의 결과를 임시로 저장한다.
+    - 여러 클라이언트에 결과를 공유함으로써 계산 시간과 네트워크 지연을 줄여주는 효과가 있다.
+  - 동기화 프록시(Synchronization Proxy)
+    - 여러 스레드에서 주제에 접근할 때 안전하게 작업을 처리할 수 있게 해준다.
+  - 복잡도 숨기 프록시(Complexity Hiding Proxy)
+    - 복잡한 클래스의 집합으로의 접근을 제어하고 그 복잡도를 숨겨준다.
+    - 퍼사드 프록시라고 부르기도 하는데, 퍼사드 패턴과의 차이는 프록시는 접근을 제어하지만, 퍼사드는 대체 인터페이스만 제공한다는 점이다.
+  - 지연 복사 프록시(Copy-On-Wriht Proxy)
+    - 클라이언트에서 필요로 할 때까지 객체가 복사되는 것을 지연시킴으로써 객체의 복사를 제어한다.
+    - 변형된 가상 프록시이다.
+
+
+
+- 프록시 패턴과 데코레이터 패턴
+  - 프록시 패턴과 데코레이터 패턴은 얼핏 보기에 비슷해보인다.
+    - 그러나 엄연히 다른 패턴이다.
+  - 우선 둘의 목적이 다르다.
+    - 프록시 패턴은 객체로의 접근을 제어하는 데 목적이 있다.
+    - 데코레이터 패턴은 행동을 추가하는 데 목적이 있다.
+  - 데코레이터가 객체를 꾸미는 데 반해 프록시는 객체를 대변한다.
+    - 가상 프록시의 경우 생성하는 데 비용이 많이 드는 객체를 로딩하는 동안 다른 행동을 추가해 주고 있는 것이 아닌가?
+    - 원격 프록시도 마찬가지로 클라이언트가 원격 객체의 메서드를 호출하는 일을 편하게 해 주려고 원격 객체와 통신하는 기능을 추가하는 일을 하는 것 아닌가?
+    - 프록시는 단순히 행동을 추가하는 것이 아니라 Service의 대리인 역할을 한다.
+
+
+
+
 
 
 
