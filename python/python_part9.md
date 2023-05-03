@@ -291,10 +291,19 @@
   print(ref_count)	# 4
   ```
 
+  - ref_count가 증가하는 경우들
+  
+    - 변수에 객체를 할당할 경우
+    - 객체를 arguments로 넘길 경우
+    - 객체를 list에 포함시킬 경우
+  
+  
+  
+  
   - ref_count 감소시키기
     - bar가 foo를 참조하게 하여 foo의 ref_count를 1 증가시킨 후, bar에 None을 할당하면, bar가 더 이상 foo를 참조하지 않게 되면서 foo의 ref_count가 다시 감소하게 된다.
     - 혹은 `del bar`를 통해 bar 객체를 삭제하여도 foo의 ref_count가 1 감소하게 된다.
-
+  
   ```python
   import sys
   
@@ -309,12 +318,12 @@
   ref_count = sys.getrefcount(foo)
   print(ref_count)    # 4
   ```
-
+  
   - Reference count를 활용한 GC
     - Reference count를 활용한 GC의 원리는 단순하다.
     - 어떤 객체의 ref_count가 0이 되면, GC는 해당 객체를 memory에서 삭제한다.
     - Reference count를 활용한 GC는 real-time으로 진행되며, 비활성화 하는 것이 불가능하다.
-
+  
   ```python
   # 아래와 같이 foo를 삭제하더라도, foo가 가리키는 객체를 참조하는 bar가 존재하므로, foo가 가리키던 객체는 memory에서 삭제되지 않는다.
   foo = "memory"

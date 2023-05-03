@@ -720,6 +720,25 @@
 
 
 
+- trace 모듈을 사용하여 script 실행 추적하기
+
+  - main option
+    - `--trace`, `-t`
+    - `--count`, `-c`
+    - `--listfuncs`, `-l`
+    - `--report`, `-r`
+    - `--trackcalls`, `-T`
+
+  - sub option
+    - https://docs.python.org/ko/3/library/trace.html 참고
+
+  ```bash
+  $ python -m trace <main_option> [sub_option] <script_path>
+  
+  # 예시
+  $ python -m trace --trace test.py
+  ```
+
 
 
 ## time

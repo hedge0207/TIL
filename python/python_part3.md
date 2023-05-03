@@ -844,20 +844,35 @@
   print(plus(1))
   ```
 
-  - 기본값으로 설정해준 argument는 함수가 정의될 때 딱 1번 평가된다.
-    - 즉, 함수가 호출될 때마다 평가되지 않는다.
-    - 따라서 mutable한 값을 기본값으로 설정하고, 함수에서 해당 값을 수정할 경우, 예상치 못한 결과가 나올 수 있다.
+
+
+
+- Python의 default parameter에 mutable object를 줄 경우 주의사항
+
+  >  [Why are default values shared between objects?](https://docs.python.org/ko/3.7/faq/programming.html?highlight=default parameter#id14)
+
+  - 아래와 같이 예상치 못 한 결과가 나올 수 있다.
 
   ```python
-  def foo(num, numbers=[]):
-      numbers.append(num)
-      print(numbers)
+  def f(x,l=[]):
+      for i in range(x):
+          l.append(i)
+      print(l) 
   
-  for i in range(1,4):
-      foo(i)
+  f(2)			# [0, 1]
+  f(3,[3,2,1])	# [3, 2, 1, 0, 1, 2]
+  f(3)			# [0, 1, 0, 1, 2]
   ```
 
+  - 이는 Python function의 default value는 함수가 정의될 때 딱 한 번만 평가되기 때문이다.
+    - 따라서 공식 문서에서는 default value로 None을 주고, 함수 내에서 이를 체크해서 mutable 객체를 생성하는 것을 추천한다.
 
+  - 왜 이렇게 설계했는가?
+    - 얼핏 보면 버그 같지만, 사실은 의도된대로 동작하고 있는 것이다.
+    - Python에서 모든 것은 객체이다.
+    - 따라서 function또한 객체이며, function의 parameter는 function 객체의 attribute라고 볼 수 있다.
+    - 만일 함수 호출이 발생할 때 마다 function 객체를 생성해야 한다면 메모리가 감당할 수 없을 정도로 커질 것이다.
+    - 따라서 Python에서는 이러한 방식을 취했다.
 
 
 
