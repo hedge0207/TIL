@@ -228,3 +228,184 @@
     - 유닉스에서는 표준 출력, 표준 에러 모두 콘솔로 설정되어 있다.
     - 표준 출력은 정상적인 출력이 반환되는 방향을 말하고, 표준 에러는 프로그램의 비정상 종료 시에 반환되는 방향을 말한다.
 
+
+
+
+
+# Shorts
+
+- Type system
+
+  - 모든 프로그래밍 언어는 어떤 category에 속한 object가 어떤 작업을 할 수 있고, 어떤 category가 어떻게 처리될지를 형식화하는 type system을 가지고 있다.
+  - Dynamic Typing
+    - Type checking을 run time에 수행하고, 변수의 type이 변경되는 것을 허용하는 방식을 말한다.
+    - 대표적으로 Python이 있는데, 아래 코드는 절대 error가 발생하지 않는다.
+
+  ```python
+  # 1과 "foo"를 더하는 것은 불가능하지만, 해당 코드는 실행되지 않으므로 에러가 발생하지 않는다.
+  if False:
+      1 + "foo"
+  ```
+
+  - Static Typing
+    - Type checking을 compile time에 수행하고, 일반적으로 변수의 type 변경이 불가능하다.
+    - 대표적으로는 Java가 있는데, 아래 코드는 compile time에 error가 발생한다.
+
+  ```java
+  String foo;
+  foo = 1;
+  ```
+
+
+
+- duck typing
+
+  > if it walks like a duck and it quacks like a duck, then it must be a duck
+  >
+  > 만일 어떤 것이 오리 처럼 걷고 오리처럼 꽥꽥거린다면, 그것은 오리일 것이다.
+
+  - duck test에서 개념을 따 왔다.
+  - 동적 타이핑 언어 및 다형성과 관련된 개념이다.
+  - 객체의 type보다 해당 객체에 정의되어 있는 method 혹은 attribute가 더 중요하다는 개념이다.
+    - 객체에 이미 존재하는 메서드를 호출하기 위해, 객체가 해당 메서드를 갖는 타입인지 확인하지 말고, 해당 메서드를 가지고 있다면 해당 타입으로 간주하라는 것이다.
+
+  - 예시
+
+  ```python
+  class Duck:
+      def fly(self):
+          print("fly with wings")
+  
+          
+  class Plane:
+      def fly(self):
+          print("fly with fuel")
+          
+          
+  class Ostrich:
+      def walk(self):
+          print("walking")
+  
+          
+  def fly_duck(duck):
+      duck.fly()
+  
+  # Ostrich는 fly라는 메서드를 가지고 있지 않기에 error가 발생한다.
+  for obj in [Duck(), Plane(), Ostrich()]:
+      obj.fly()
+  ```
+
+  - 코드가 특정 type에 강하게 결합되지 않게 해준다는 장점이 있지만, 문제가 생길 경우 디버깅이 어려워진다는 단점이 있다.
+  - Duck typing 덕분에 Python에서는 interface를 구현해야 하는 번거로움이 많이 줄어들었다.
+    - Interface가 하는 역할을 duck typing이 해주고 있는 것이다.
+    - 물론 그렇다고 Python에서 interface 자체가 쓸모 없다는 것은 아니다.
+
+  
+
+
+
+- Call by value, Call by reference, Call by sharing
+
+  > https://en.wikipedia.org/wiki/Evaluation_strategy
+
+  - 평가 전략(Evaluation Strategy)
+
+    - 프로그래밍 언어에서 평가 전략이란 표현식을 평가하는 규칙들의 집합이다.
+    - 그러나 주로 parameter 전달 전략(Parameter-passing strategy)의 개념을 가리킨다.
+    - Parameter-passing strategy란 function에 전달되는 각 parameter의 값의 종류를 정의하고, 함수 호출시의 parameter를 평가할지 여부를 결정하고, 만약 평가한다면, 평가 순서를 결정하는 전략을 의미한다.
+
+  - Parameter와 argument
+
+    - Parameter(매개변수, 형식 매개변수(formal parameter))란 함수에 정의된 매개변수를 의미한다.
+    - Argument(인자, 실인자(actual parameter))란 함수에 전달하는 값을 의미한다.
+    - Parameter는 함수 선언부에 정의되고, argument는 함수 호출부에서 사용된다.
+
+  ```python
+  def f(a):	# 함수에 정의된 매개변수 a는 parameter
+      return a
+  
+  f(1)		# 함수에 실제로 넘어가는 값인 1은 argument
+  ```
+
+  - Call by value
+    - Argument 표현식의 평가된 값이 함수 내에서 일치하는 변수에 binding된다.
+    - 주로 새로운 메모리에 값을 복사하는 방식으로 이루어진다.
+    - 즉, 먼저 argument 표현식을 평가한다.
+    - `f(1)`에서 argument 표현식에 해당하는 `1`이라는 표현식을 평가하면 `1`이라는 값을 얻게 된다.
+    - 이 평가된 값을 함수 내에서 일치하는 변수인 `a`에 binding한다.
+    - 이 때, 주로 1이라는 값을 복사하여 새로운 메모리 영역에 생성하는 방식을 사용한다.
+    - 따라서 함수 내에서 값이 변경되어도 원본 값은 변경되지 않는다.
+  - Call by reference
+    - Parameter가 argument의 reference에 bound된다.
+    - 이는 function이 argument로 사용된 변수를 변경할 수 있다는 것을 의미한다.
+    - 이 방식은 프로그래머가 함수 호출의 영향을 추적하기 힘들게 만들고, 사소한 버그를 유발할 수도 있다.
+  - Call by sharing(call by object, call by object-sharing)
+    - Caller와 callee가 object를 공유하는 것이다.
+    - 값이 원시 타입이 아니라 객체에 기반하고 있음을 표현하기 위해 주로 사용한다.
+    - Callee에게 전달 된 값이 변경된다는 점에서 call by value와 다르고, 주소가 아닌 object를 공유한다는 점에서 call by reference와는 다르다.
+    - Immutable object의 경우 call by value와 실질적인 차이가 존재하지 않는다.
+
+  - Python과 Java, Javascript등의 언어는 Call by sharing 방식을 사용한다.
+
+    - 그러나 일반적으로 call by sharing이라는 용어를 사용하지는 않는다.
+    - Python community에서는 이를 call by assignment라 부른다.
+
+
+
+- 도메인 로직(domain logic, 비즈니스 로직(Business logic))
+
+  > https://velog.io/@eddy_song/domain-logic
+  >
+  > https://enterprisecraftsmanship.com/posts/what-is-domain-logic/
+
+  - Problem space와 solution space
+    - 하나의 프로젝트는 크게 problem space와 solution space라는 두 개의 영역으로 나눠진다.
+    - Problem space는 일반적으로 domain 혹은 problem domain, core domain이라 부르며, software를 통해 해결하고자 하는 현실의 문제들을 의미한다.
+    - Solution space는 business logic, business rules, domain logic, domain knowledge라 부르며, problem domain을 해결하기 위한 방안들을 의미한다.
+
+  - 비즈니스 혹은 도메인
+    - 소프트웨어 공학에서 비즈니스 혹은 도메인이라는 말은 소프트웨어가 해결하고자 하는 현실의 문제를 가리킨다.
+    - 즉 소프트웨어의 존재 이유이다.
+  - 도메인 로직
+    - 소프트웨어가 해결하고자 하는 현실 문제를 해결하는 데 직접적으로 관련된 로직을 의미한다.
+    - Software는 도메인 로직으로만 구성되지 않는다.
+    - 개발을 하다 보면 다양한 코드를 작성하게 되며, 이들이 모두 domain model을 작성하는 것과 관련되지는 않는다.
+    - 대부분의 경우 domain model을 DB 등의 data store, 외부 서비스, 사용자와 연결하기위해 많은 코드를 작성하게 된다.
+    - 따라서 domain model과 직접적으로 관련된 코드와 그렇지 않은 코드를 구분하는 것은 쉽지 않다.
+  - 애플리케이션 서비스 로직
+    - 비즈니스 로직과 구분되는 현실 문제 해결에 직접적으로 관여하지 않는 로직을 의미한다.
+    - 애플리케이션 서비스 로직은 애플리케이션 서비스 계층에서 결정들을 조율하고 의사결정 결과를 반영하는 등의 역할을 한다.
+  - 도메인 로직과 애플리케이션 서비스 로직의 구분
+    - 어떤 코드가 비즈니스에 대한 의사결정을 하고 있는가로 구분한다.
+
+  - 왜 구분해야 하는가
+    - 관심사의 분리를 가능하게 해준다.
+    - 이를 통해 도메인과 관련된 로직에 보다 집중할 수 있게 된다.
+
+  - 예시
+    - 아래 코드는 application service layer를 보여준다.
+    - 실제 비즈니스 로직은 atm 객체에서 처리하고 application service는 비즈니스에 관한 의사 결정 결과를 조율하고 반영하는 역할을 한다.
+    - 비즈니스와 직접적으로 관련된 코드만 보고 싶다면 atm만 확인하면 된다.
+    - 즉 아래와 같이 계층을 구분함으로써 코드를 보다 쉽게 읽을 수 있게 되고, 도메인 로직에 집중할 수 있게 된다.
+
+  ```python
+  class Bank:
+      def __init__(self):
+          self.atm = ATM()
+          self.payment_gateway = None
+          self.repository = None
+  	
+      # take_money 메서드 자체는 아무런 의사 결정을 하지 않는다.
+      def take_money(amount):
+          # 돈을 출금할 수 있는지에 대한 의사 결정은 atm 객체의 can_take_money 메서드를 통해 이루어진다.
+          if self.atm.can_take_money(amount):
+              # 수수료를 포함한 금액이 얼마인지에 대한 의사 결정 역시 atm 객체에서 이루어진다.
+              amount_with_commision = self.amount.calculate_amount_with_commision(amount)
+              
+              self.payment_gateway.charge_payment(amount_with_commision)
+              self.repository.save(self.atm)
+          else:
+              return "Not enough meney to withdraw"
+  ```
+
+  
