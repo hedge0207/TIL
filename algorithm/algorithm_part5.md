@@ -146,7 +146,7 @@
 
 
 
-## Binary Search Tree
+## Binary Search Tree(BST)
 
 - 이진 탐색 트리
 
