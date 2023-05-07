@@ -1,9 +1,8 @@
 from abc import ABCMeta, abstractmethod
-from multiprocessing import Process
 import time
 
 
-class BeatModelInterface(metaclass=ABCMeta):
+class Interface(metaclass=ABCMeta):
     @abstractmethod
     def count_down(self):
         pass
@@ -17,7 +16,7 @@ class BeatModelInterface(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def set_time(self, bpm):
+    def set_remain_time(self, bpm):
         pass
 
     @abstractmethod
@@ -33,12 +32,12 @@ class BeatModelInterface(metaclass=ABCMeta):
         pass
 
 
-class BeatModel(BeatModelInterface):
+class Model(Interface):
     def __init__(self):
         self.observers = []
         self.input_time = 60
         self.start_time = 0
-        self.remain_time = 0
+        self.remain_time = 60
         self.stop = False
     
     def count_down(self):
@@ -58,12 +57,14 @@ class BeatModel(BeatModelInterface):
     def off(self):
         self.stop = True
         self.remain_time = self.input_times
-    
-    def set_time(self, remain_time):
-        self.remain_time = remain_time
 
     def get_remain_time(self):
         return self.remain_time
+    
+    def set_remain_time(self, remain_time):
+        print(self.remain_time)
+        self.remain_time = remain_time
+        self.notify_observers()
     
     def register_observer(self, observer):
         self.observers.append(observer)
