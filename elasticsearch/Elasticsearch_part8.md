@@ -589,7 +589,7 @@
 - backing index
 
   - data stream의 데이터를 저장하고 있는 인덱스들이다.
-    - 자동으로 생성되며 hidden 인덱스이다.
+    - 자동으로 생성되며, hidden 인덱스이다.
     - 검색 및 색인 요청은 backing indices에 직접 하는 것이 아니라 data stream을 통해서 간접적으로 한다.
 
   - Read & write requests
@@ -811,6 +811,254 @@
   ```
 
 
+
+
+
+# Index template
+
+> Elasticsearch 7.8부터 동작 방식이 변경되었으며, 아래는 Elasticsearch 7.8 이상의 내용을 다룬다.
+
+- Index template 개요
+  - Index가 생성될 때 index를 어떻게 구성할지를 미리 정의할 수 있는 기능이다.
+    - Create index API를 통해 Index를 명시적으로 생성하든, 문서를 색인하여 생성하든 동일하게 적용된다.
+  - Elasticsearch는 data stream에 backing index들을 생성하기 위해 index template을 사용한다.
+
+
+
+- Index template 생성하기
+
+  > Kibana의 Stack Management - Index Management에서 간편하게 생성이 가능하다.
+
+  - Index pattern 설정시 주의사항
+    - 다음 세 패턴, `logs-*-*`, `metrics-*-*`, `synthetics-*-*`은 Elasticsearch의 bulit-in index template에서 사용중인 pattern이므로 사용해선 안 된다.
+    - 우선순위가 100으로 설정되어 있어 유사한 pattern으로 index pattern을 생성하더라도 위 세 패턴이 우선순위를 가진다.
+    - 만약 꼭 저 패턴들을 사용해야 겠다면 아래와 같이 cluster setting에서 `stack.templates.enabled` 값을 false로 변경하면 된다.
+
+  ```json
+  // PUT /_cluster/settings
+  PUT _cluster/settings
+  {
+    "persistent": {
+      "stack.templates.enabled": "false" 
+    }
+  }
+  ```
+
+  - Template 생성
+    - `index_patterns`에 설정해준 pattern과 일치하는 index가 생성될 경우, 아래 template에 따라 생성되게 된다.
+    - Index가 생성될 때 여러 개의 index pattern에 매칭 될 경우, `priority`가 높은 index template이 적용된다.
+    - `aliases`의 경우 이미 존재하는 alias를 설정해도 되고, 존재하지 않는 alias를 설정할 경우 alias도 함께 생성한다.
+
+  ```json
+  PUT /_index_template/template_1
+  {
+    "index_patterns": [
+      "test*"
+    ],
+    "priority": 1,
+    "template": {
+      "settings": {
+        "number_of_shards": 2
+      },
+      "mappings": {
+        "properties": {
+          "foo": {
+            "type": "keyword"
+          }
+        }
+      },
+      "aliases":{
+         "test":{}
+      }
+    }
+  }
+  ```
+
+  - Template 생성시에 설정한 `index_patterns`와 매칭되는 이름을 가진 index를 생성한다.
+
+  ```json
+  PUT test-index
+  ```
+
+  - 확인
+    - template에서 설정한 setting, mapping, alias가 적용된 것을 확인 할 수 있다.
+
+  ```json
+  // GET test-index
+  {
+    "test-index" : {
+      "aliases" : {
+        "test" : { }
+      },
+      "mappings" : {
+        "properties" : {
+          "foo" : {
+            "type" : "keyword"
+          }
+        }
+      },
+      "settings" : {
+        "index" : {
+          // ...
+          "number_of_shards" : "2",
+          // ...
+        }
+      }
+    }
+  }
+  ```
+
+  - Metadata를 넣을 수도 있다.
+    - `_meta`부분에 추가하면 되며, 정해진 양식은 없고 사용자가 추가하고자 하는 metadata를 json 형식으로 넣으면 된다.
+
+  ```json
+  PUT /_index_template/template_1
+  {
+    "index_patterns": ["foo", "bar"],
+    "template": {
+      "settings" : {
+          "number_of_shards" : 3
+      }
+    },
+    "_meta": {
+      "foo": "bar",
+      "baz": {
+        "qux": "quxx",
+        "id": 17
+      }
+    }
+  }
+  ```
+
+
+
+- Component template과 함께 사용하기
+
+  - Component template
+    - Mapping, setting, alias를 각기 하나의 component로 생성하고, 각 component들을 조합하여 index template을 보다 간편하게 생성할 수 있게 해주는 기능이다.
+
+  - Component template생성하기
+    - 위에서 생성했던 index template을 setting, mapping, alias으로 나눠 각각을 component template으로 구성한다.
+    - 아래에서는 setting, mapping, alias를 각각의 component로 생성했지만 하나의 component에 setting, mapping, alias를 모두 구성할 수도 있다.
+
+  ```json
+  // PUT _component_template/setting_template
+  {
+    "template": {
+      "settings": {
+        "number_of_shards": 2
+      }
+    }
+  }
+  
+  // PUT _component_template/mapping_template
+  {
+    "template": {
+      "mappings": {
+        "properties": {
+          "foo": {
+            "type": "keyword"
+          }
+        }
+      }
+    }
+  }
+  
+  //PUT _component_template/alias_template
+  {
+    "template": {
+      "aliases": {
+        "test": {}
+      }
+    }
+  }
+  ```
+
+  - 위에서 생성한 component template으로 index template 생성하기
+    - `composed_of`에 위에서 생성한 component template 이름들을 array 형태로 넣어준다.
+    - 아래와 같이 생성한 template은 위에서 생성했던 index template과 완전히 동일하다.
+
+  ```json
+  // PUT /_index_template/template_1
+  {
+    "index_patterns": ["t*"],
+    "composed_of": ["setting_template", "mapping_template", "alias_template"]
+  }
+  ```
+
+  - index 생성하기
+
+  ```json
+  PUT test-index
+  ```
+
+  - 확인
+    - component를 사용하지 않고 index template을 생성했을 때와 완벽히 동일하다.
+
+  ```json
+  // GET test-index
+  {
+    "test-index" : {
+      "aliases" : {
+        "test" : { }
+      },
+      "mappings" : {
+        "properties" : {
+          "foo" : {
+            "type" : "keyword"
+          }
+        }
+      },
+      "settings" : {
+        "index" : {
+          // ...
+          "number_of_shards" : "2",
+          // ...
+        }
+      }
+    }
+  }
+  ```
+
+  - 복수의 component template 사이에 불일치가 있을 경우
+    - 예를 들어 아래와 같이 서로 불일치하는 내용을 담은 두 개의 component template을 생성하고, 이를 가지고 index template을 생성할 경우 `composed_of`에 정의된 순서대로 내용을 병합한다.
+    - 즉 아래의 경우 더 늦게 정의된 `template_with_3_shards`이 `template_with_2_shards`를 덮어쓰게 되어 shard의 개수는 3개가 되게 된다.
+    - setting뿐 아니라 mapping에도 똑같이 적용된다.
+
+  ```json
+  PUT /_component_template/template_with_2_shards
+  {
+    "template": {
+      "settings": {
+        "index.number_of_shards": 2
+      }
+    }
+  }
+  
+  PUT /_component_template/template_with_3_shards
+  {
+    "template": {
+      "settings": {
+        "index.number_of_shards": 3
+      }
+    }
+  }
+  
+  PUT /_index_template/template_1
+  {
+    "index_patterns": ["t*"],
+    "composed_of": ["template_with_2_shards", "template_with_3_shards"]
+  }
+  ```
+
+
+
+
+- Index template의 우선순위
+  - 7.8 버전 이상부터 적용되는 composable template이 7.8 버전 미만까지 사용하던 legacy template보다 우선 순위를 가진다.
+  - 만약 create index API를 사용하여 index를 생성하면서 setting을 명시적으로 설정해줬다면, 일치하는 index template이 있다 하더라도 명시적으로 지정해준 setting이 우선적으로 적용된다.
+  - Index template에 설정해둔 setting이 component template에 설정해둔 setting보다 우선한다.
+  - 만약 새로운 data stream이나 index 가 하나 이상의 index template들과 일치할 경우 더 높은 우선순위를 가지는 index template이 적용된다.
 
 
 
