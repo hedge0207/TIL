@@ -602,8 +602,177 @@
 
 
 
-- 브리지 패턴
-  - 
+## Bridge Pattern
+
+> https://refactoring.guru/design-patterns/bridge
+
+- 문제
+
+  - 상황
+    - `Circle`과 `Square` class를 subclass로 가지는 `Shape` class가 있다.
+    - `Shape` class에 모양 뿐 아니라 `Blue`, `Red`라는 색도 추가하려고 한다.
+    - 이를 위해 `RedCircle`, `RedSquare`, `BlueCircle`, `BlueSqure`라는 4개의 subclass를 생성했다.
+    - 그러나 이 방식을 계속 사용한다면, 새로운 모양 혹은 색을 추가할 때 마다 모양과 색의 모든 조합에 해당하는 class를 만들어줘야한다.
+
+  ```python
+  class Shape:
+      pass
+  
+  class RedCircle(Shape):
+      pass
+  
+  class BlueCircle(Shape):
+      pass
+  
+  class RedSquare(Shape):
+      pass
+  
+  class BlueSquare(Shape):
+      pass
+  ```
+
+  - 원인
+    - 문제는 `Shape` class를 모양과 색이라는 서로 독립적인 차원으로 확장하려 해서 발생한다.
+    - 이는 class 상속에서 매우 빈번하게 발생하는 문제이기도 하다.
+
+
+
+- 해결
+
+  - Bridge pattern은 상속 대신 구성을 사용하는 방식으로 이러한 문제를 해결한다.
+    - 모양과 색 중 하나를 분리하여 원래 class(이 경우 `Shape` class)와 같은 계층의 class로 생성한다.
+    - 원래 class는 분리된 class의 object를 참조하도록한다.
+    - 이를 통해 `Shape` class는 분리된 object에 관련 작업을 위임할 수 있게 된다.
+  - 예시
+
+  ```python
+  # Color관련 로직을 Shape에서 분리하여 Shape와 같은 계층으로 생성한다.
+  class Color:
+      pass
+  
+  class Red(Color):
+      pass
+  
+  class Blue(Color)
+  
+  
+  class Shape:
+      # 구성을 통해 color를 활용한다.
+      def __init__(self, color: Color):
+          self.color = color
+  
+  class Circle(Shape):
+      pass
+  
+  class Square(Shape):
+      pass
+  
+  
+  red_circle = Circle(Red())
+  ```
+
+
+
+- Bridge Pattern
+
+  - 추상과 구현을 분리하여 추상과 구현을 독립적으로 확장시킬 수 있게 해주는 패턴이다.
+    - OOP에서 일반적으로 말하는 추상과 구현 개념과는 약간 다르다.
+    - 구현을 캡슐화하여 추상에 포함시키는 방식을 사용한다.
+    - 구성을 통해 두 클래스가 연결되며, 구성을 통해 참조되는 object(위의 경우 Color의 object)가 두 클래스 사이의 다리 역할을 한다 하여 bridge design pattern이라는 이름이 붙었다.
+  - 추상과 구현(abstraction and implementation)
+    - 추상(혹은 interface(OOP에서 일반적으로 쓰이는 interface와는 다르다))이란 어떤 entity의 높은 수준의 계층을 말한다.
+    - 추상 계층은 애플리케이션에 필요한 business logic의 틀만 잡는다.
+    - 실제 business logic은 abstraction과 분리되어 구현 계층에 작성한다.
+    - 즉, 추상 계층은 그 자체로는 어떠한 작업도 하지 않으며, 구현 계층에게 모든 일을 위임한다.
+    - 구현(혹은 platform)이란 추상 계층에게 실제 작업을 위임 받아 처리하는 계층을 의미한다.
+  - 예시
+    - 여러 개의 application을 개발하려 하는데, 각 애플리케이션마다 GUI도 제각각이고 API도 제각각이다.
+    - 만일 이들을 모두 개별적으로 개발하려 한다면 `GUI 개수 * API 개수 ` 만큼의 class를 생성해야 할 것이다.
+    - 따라서 bridge pattern을 적용하기로 한다.
+    - GUI는 실제로는 어떠한 작업도 하지 않고 모든 작업을 API에 위임하므로 인터페이스라 볼 수 있다.
+    - API 서버는 GUI로부터 작업을 위임 받아 처리하므로 플랫폼이라 볼 수 있다.
+    - GUI에 구성을 통해 API 서버에 대한 참조를 설정함으로써 위와 같은 문제를 해결할 수 있다.
+    - 서로 다른 플랫폼들은 같은 인터페이스를 공유하기만 한다면  언제든 교체될 수 있다.
+  - 클래스 다이어그램
+    - Abstraction을 실제 작업의 처리를 Implementation에 위임한다(Abstraction은 추상 클래스나 인터페이스로 선언한다).
+    - RefinedAbstraction은 Absraction의 다양한 변형이며, Abstraction과 마찬가지로 구성을 통해 Implementation에 작업의 처리를 위임한다(패턴에서 필수 요소는 아니다).
+    - Implementation은 모든 ConcreteImplementation이 공유하는 공통 로직을 정의한다.
+    - Abstraction은 오직 Implementation에 호출된 메서드를 통해서만 Implementation object와 소통한다.
+    - ConcreteImplementation에는 platform에 특화된 코드들이 들어간다.
+    - Client는 일반적으로 Abstraction에게만 관심을 가진다.
+
+  ![image-20230510175731278](design_pattern_part5.assets/image-20230510175731278.png)
+  
+  - 동작 과정
+    - Client가 Abstraction object의 `feature()`를 호출한다.
+    - Abstraction은 `feature()`가 호출되면 Implementation의 `method()`를 호출하여 실제 작업을 처리하도록 한다.
+  
+
+
+
+- 예시
+
+  ```python
+  from abc import ABCMeta, abstractmethod
+  
+  
+  # implementation
+  class MoveLogic(metaclass=ABCMeta):
+      @abstractmethod
+      def move(self):
+          pass
+  
+  
+  class Walk(MoveLogic):
+      def move(self):
+          print("Walking")
+  
+  
+  class Fly(MoveLogic):
+      def move(self):
+          print("Flying")
+  
+  
+  class Swim(MoveLogic):
+      def move(self):
+          print("Swimming")
+  
+  
+  # abstcation
+  class Animal(metaclass=ABCMeta):
+      def __init__(self, move_logic: MoveLogic):
+          self.move_logic = move_logic
+      
+      @abstractmethod
+      def how_do_i_move(self):
+          self.move_logic.move()
+  
+  
+  class Person(Animal):
+      def how_do_i_move(self):
+          self.move_logic.move()
+  
+  
+  class Bird(Animal):
+      def how_do_i_move(self):
+          self.move_logic.move()
+  
+  
+  class Fish(Animal):
+      def how_do_i_move(self):
+          self.move_logic.move()
+  
+  
+  if __name__ == "__main__":
+      person = Person(Walk())
+      person.how_do_i_move()
+      bird = Bird(Fly())
+      bird.how_do_i_move()
+      fish = Fish(Walk())
+      fish.how_do_i_move()
+  ```
+
+  
 
 
 
