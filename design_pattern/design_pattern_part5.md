@@ -602,8 +602,382 @@
 
 
 
-- 브리지 패턴
-  - 
+## Bridge Pattern
+
+> https://refactoring.guru/design-patterns/bridge
+
+- 문제
+
+  - 상황
+    - `Circle`과 `Square` class를 subclass로 가지는 `Shape` class가 있다.
+    - `Shape` class에 모양 뿐 아니라 `Blue`, `Red`라는 색도 추가하려고 한다.
+    - 이를 위해 `RedCircle`, `RedSquare`, `BlueCircle`, `BlueSqure`라는 4개의 subclass를 생성했다.
+    - 그러나 이 방식을 계속 사용한다면, 새로운 모양 혹은 색을 추가할 때 마다 모양과 색의 모든 조합에 해당하는 class를 만들어줘야한다.
+
+  ```python
+  class Shape:
+      pass
+  
+  class RedCircle(Shape):
+      pass
+  
+  class BlueCircle(Shape):
+      pass
+  
+  class RedSquare(Shape):
+      pass
+  
+  class BlueSquare(Shape):
+      pass
+  ```
+
+  - 원인
+    - 문제는 `Shape` class를 모양과 색이라는 서로 독립적인 차원으로 확장하려 해서 발생한다.
+    - 이는 class 상속에서 매우 빈번하게 발생하는 문제이기도 하다.
 
 
+
+- 해결
+
+  - Bridge pattern은 상속 대신 구성을 사용하는 방식으로 이러한 문제를 해결한다.
+    - 모양과 색 중 하나를 분리하여 원래 class(이 경우 `Shape` class)와 같은 계층의 class로 생성한다.
+    - 원래 class는 분리된 class의 object를 참조하도록한다.
+    - 이를 통해 `Shape` class는 분리된 object에 관련 작업을 위임할 수 있게 된다.
+  - 예시
+
+  ```python
+  # Color관련 로직을 Shape에서 분리하여 Shape와 같은 계층으로 생성한다.
+  class Color:
+      pass
+  
+  class Red(Color):
+      pass
+  
+  class Blue(Color)
+  
+  
+  class Shape:
+      # 구성을 통해 color를 활용한다.
+      def __init__(self, color: Color):
+          self.color = color
+  
+  class Circle(Shape):
+      pass
+  
+  class Square(Shape):
+      pass
+  
+  
+  red_circle = Circle(Red())
+  ```
+
+
+
+- Bridge Pattern
+
+  - 추상과 구현을 분리하여 추상과 구현을 독립적으로 확장시킬 수 있게 해주는 패턴이다.
+    - OOP에서 일반적으로 말하는 추상과 구현 개념과는 약간 다르다.
+    - 구현을 캡슐화하여 추상에 포함시키는 방식을 사용한다.
+    - 구성을 통해 두 클래스가 연결되며, 구성을 통해 참조되는 object(위의 경우 Color의 object)가 두 클래스 사이의 다리 역할을 한다 하여 bridge design pattern이라는 이름이 붙었다.
+  - 추상과 구현(abstraction and implementation)
+    - 추상(혹은 interface(OOP에서 일반적으로 쓰이는 interface와는 다르다))이란 어떤 entity의 높은 수준의 계층을 말한다.
+    - 추상 계층은 애플리케이션에 필요한 business logic의 틀만 잡는다.
+    - 실제 business logic은 abstraction과 분리되어 구현 계층에 작성한다.
+    - 즉, 추상 계층은 그 자체로는 어떠한 작업도 하지 않으며, 구현 계층에게 모든 일을 위임한다.
+    - 구현(혹은 platform)이란 추상 계층에게 실제 작업을 위임 받아 처리하는 계층을 의미한다.
+  - 예시
+    - 여러 개의 application을 개발하려 하는데, 각 애플리케이션마다 GUI도 제각각이고 API도 제각각이다.
+    - 만일 이들을 모두 개별적으로 개발하려 한다면 `GUI 개수 * API 개수 ` 만큼의 class를 생성해야 할 것이다.
+    - 따라서 bridge pattern을 적용하기로 한다.
+    - GUI는 실제로는 어떠한 작업도 하지 않고 모든 작업을 API에 위임하므로 인터페이스라 볼 수 있다.
+    - API 서버는 GUI로부터 작업을 위임 받아 처리하므로 플랫폼이라 볼 수 있다.
+    - GUI에 구성을 통해 API 서버에 대한 참조를 설정함으로써 위와 같은 문제를 해결할 수 있다.
+    - 서로 다른 플랫폼들은 같은 인터페이스를 공유하기만 한다면  언제든 교체될 수 있다.
+  - 클래스 다이어그램
+    - Abstraction을 실제 작업의 처리를 Implementation에 위임한다(Abstraction은 추상 클래스나 인터페이스로 선언한다).
+    - RefinedAbstraction은 Absraction의 다양한 변형이며, Abstraction과 마찬가지로 구성을 통해 Implementation에 작업의 처리를 위임한다(패턴에서 필수 요소는 아니다).
+    - Implementation은 모든 ConcreteImplementation이 공유하는 공통 로직을 정의한다.
+    - Abstraction은 오직 Implementation에 호출된 메서드를 통해서만 Implementation object와 소통한다.
+    - ConcreteImplementation에는 platform에 특화된 코드들이 들어간다.
+    - Client는 일반적으로 Abstraction에게만 관심을 가진다.
+
+  ![image-20230510175731278](design_pattern_part5.assets/image-20230510175731278.png)
+  
+  - 동작 과정
+    - Client가 Abstraction object의 `feature()`를 호출한다.
+    - Abstraction은 `feature()`가 호출되면 Implementation의 `method()`를 호출하여 실제 작업을 처리하도록 한다.
+  
+
+
+
+- 예시
+
+  ```python
+  from abc import ABCMeta, abstractmethod
+  
+  
+  # implementation
+  class MoveLogic(metaclass=ABCMeta):
+      @abstractmethod
+      def move(self):
+          pass
+  
+  
+  class Walk(MoveLogic):
+      def move(self):
+          print("Walking")
+  
+  
+  class Fly(MoveLogic):
+      def move(self):
+          print("Flying")
+  
+  
+  class Swim(MoveLogic):
+      def move(self):
+          print("Swimming")
+  
+  
+  # abstcation
+  class Animal(metaclass=ABCMeta):
+      def __init__(self, move_logic: MoveLogic):
+          self.move_logic = move_logic
+      
+      @abstractmethod
+      def how_do_i_move(self):
+          self.move_logic.move()
+  
+  
+  class Person(Animal):
+      def how_do_i_move(self):
+          self.move_logic.move()
+  
+  
+  class Bird(Animal):
+      def how_do_i_move(self):
+          self.move_logic.move()
+  
+  
+  class Fish(Animal):
+      def how_do_i_move(self):
+          self.move_logic.move()
+  
+  
+  if __name__ == "__main__":
+      person = Person(Walk())
+      person.how_do_i_move()
+      bird = Bird(Fly())
+      bird.how_do_i_move()
+      fish = Fish(Walk())
+      fish.how_do_i_move()
+  ```
+
+
+
+
+
+
+## Builder
+
+- 문제
+
+  - 상황
+    - House 클래스를 통해 인스턴스를 생성해야 한다고 가정해보자.
+    - 간단한 객체를 생성하려 한다면 wall, door, window, roof, floor 등의 arguments만 받으면 될 것이다.
+    - 그러나, House class를 통해 보다 다양한 유형의 인스턴스를 생성하고자 한다면, has_garden, has_heating_system, has_swimming_pool 등 보다 많은 arguments를 받아야 할 것이다.
+  - 이를 House class에서 모두 관리를 하는 것은 비효율 적이다.
+    - 예를 들어 굉장히 소수의 인스턴스만 has_swimming_pool의 값이 true로 들어올텐데, 이들을 생성시마다 넘겨주는 것은 비효율 적이다.
+    - 또한 만약 요구사항 변경에 의해 새로운 arguments가 추가된다면, 예를 들어 has_garage argument가 추가된다면, 기존 House 인스턴스를 생성하는 모든 코드에 has_garage parameter를 추가해줘야 한다.
+    - 또한 객체 생성 부분만 보고, 각 parameter가 무엇을 의미하는지 알기도 쉽지 않다.
+
+  ```python
+  class House:
+  	def __init__(self, num_window, wall, roof, floor, 
+  				has_garden, has_heating_system, has_swimming_pool):
+  		pass
+  
+  simple_house = House(2, "stone", "wood", 1, False, False, False)
+  fancy_house = House(8, "brick", "glass", 2, True, True, True)
+  
+  # 만일 새로운 argument가 추가된다면 simple_house, fancy_house의 생성 부분에 모두 parameter를 추가해야한다.
+  # 또한 House(8, "brick", "glass", 2, True, True, True)만 보고는 어떤 집을 만드려는 것인지 파악이 쉽지 않다.
+  ```
+
+  - 해결
+    - 모든 Builder에 공통으로 들어가는 로직을 선언할 Builder interface를 생성한다.
+    - 이 interface를 Builder라 부르고, 이를 구체화 한 class를 Concrete Builder라 부르기도 한다.
+    - Builder interface를 구체화 한 Concrete Builder class를 생성한다.
+    - Builder interface를 생성하지 않았다면 그냥 Builder class를 생성한다.
+    - Director를 생성하고, director에게 객체의 생성을 맡긴다.
+    - Director에는 builder 내에 정의되어 있는 객체 생성 메서드들을 어느 순서로 실행할지를 정의한다.
+    - Director를 사용할 경우 client는 director를 통해서만 객체를 생성한다.
+    - 따라서 객체의 생성을 client code로부터 완전히 감출 수 있다.
+
+
+
+
+- Builder Pattern
+
+  - 복합 객체의 생성과 표현을 분리한다.
+    - 이를 통해 동일한 생성 절차로 다른 표현을 생성할 수 있다.
+  - 객체의 spec을 실제 표현과 분리해야 할 때 유용하게 사용할 수 있다.
+  - 클래스 다이어그램
+    - Builder interface는 Product를 생성하는 단계들을 정의한다.
+    - ConcreteBuilder는 각 생성 단계에 대한 실제 구현을 정의하는데, ConcreteBuilder마다 실제 구현 방식이 다를 수 있다.
+    - Director 클래스는 생성 단계의 순서를 정의한다.
+    - Director의 경우 builder를 아래 다이어그램에서와 같이 attribute로 가지고 있으면서 계속 해당 builder만 사용하는 방식이 있고, 실제 객체를 생성할 때 인자로(`make()` 메서드의 인자로) builder 객체를 받아 사용하는 방식이 있다.
+    - Client는 Director를 통해 Builder를 조작한다.
+
+  ![image-20230511125929982](design_pattern_part5.assets/image-20230511125929982.png)
+
+
+
+- 예시
+
+  - 자동차를 생성하는 concrete builder class를 작성한다.
+    - 자동차는 다양한 방식으로 생성된다.
+    - 자동차를 생성하는 모든 방식을 망라하는 하나의 거대한 class를 만드는 대신 자동차를 조립하는 코드를 개별적인 builder로 분리해서 자동차를 생성한다.
+  - 자동차의 메뉴얼을 생성하는 concrete builder class를 생성한다.
+    - 자동차의 메뉴얼은 자동차의 종류에 따라 달라지며, 대부분 자동차의 부품에 대한 설명이다.
+    - 따라서 자동차와 같은 builder interface를 구현하여 작성이 가능하다.
+  - 아래 예시에서 Dicrector는, 위에서 살펴본 다이어그램과는 달리,  builder object를 attribute로 갖는 대신 Car object를 생성할 때 builder를 parameter로 받는 방식을 사용했다.
+
+  ```python
+  from abc import abstractmethod
+  
+  # Product 객체
+  class Car:
+  	def __init__(self):
+  		self.num_seat = 0
+  		self.engine = None
+  		self.trip_computer = None
+  		self.gps = None
+  
+  # Product 객체
+  class Manual:
+  	def __init__(self):
+  		self.num_seat = ""
+  		self.engine_name = ""
+  		self.trip_computer_name = ""
+  		self.gps_name = ""
+  
+  # builder (interface) 생성하기
+  class Builder:
+  
+  	@abstractmethod
+  	def reset(self):
+  		pass
+  
+  	@abstractmethod
+  	def set_seats(self):
+  		pass
+  
+  	@abstractmethod
+  	def set_engine(self):
+  		pass
+  
+  	@abstractmethod
+  	def set_trip_computer(self):
+  		pass
+  
+  	@abstractmethod
+  	def set_gps(self):
+  		pass
+  
+  
+  # Car 생성을 위한 (concrete) builder 생성하기
+  class CarBuilder(Builder):
+  
+  	def __init__(self):
+  		self.reset()
+  	
+  	def reset(self):
+  		self._car = Car()
+  
+  	def set_seats(self, num_seat):
+  		self._car.num_seat = num_seat
+  
+  	def set_engine(self, engine):
+  		self._car.engine = engine
+  
+  	def set_trip_computer(self, trip_computer):
+  		self._car.trip_computer = trip_computer
+  
+  	def set_gps(self, gps):
+  		self._car.gps = gps
+  	
+  	@property
+  	def car(self):
+  		car = self._car
+  		self.reset()
+  		return car
+  
+  
+  # Car Manual 생성을 위한 (concrete) builder 생성하기
+  class ManualBuilder(Builder):
+  
+  	def __init__(self):
+  		self.reset()
+  	
+  	def reset(self):
+  		self._manual = Manual()
+  
+  	def set_seats(self, num_seat):
+  		self._manual.num_seat = "number of seats : {}".format(num_seat)
+  
+  	def set_engine(self, engine):
+  		self._manual.engine_name = "engine : {}".format(engine)
+  
+  	def set_trip_computer(self, trip_computer):
+  		self._manual.trip_computer_name = "trip_computer : {}".format(trip_computer)
+  
+  	def set_gps(self, gps):
+  		self._manual.gps_name = "gps : {}".format(gps)
+  
+  	@property
+  	def manual(self):
+  		manual = self._manual
+  		self.reset()
+  		return manual
+  
+  
+  # Builder를 통한 객체 생성 순서를 정의하기 위한 Director 생성
+  class Director:
+  
+  	def construct_sporst_car(self, builder):
+  		builder.reset()
+  		builder.set_seats(2)
+  		builder.set_engine("sports_car_engine")
+  		builder.set_trip_computer("sports_navi")
+  		builder.set_gps("sports_gps")
+  	
+  	def construct_suv(self, builder):
+  		builder.reset()
+  		builder.set_seats(6)
+  		builder.set_engine("suv_engine")
+  		builder.set_trip_computer("suv_navi")
+  		builder.set_gps("suv_gps")
+  
+  
+  if __name__=="__main__":
+  	# client code
+  	# director를 사용했으므로, construct_sporst_car 메서드만 호출하면 되며,
+  	# 내부적으로 sports car가 어떻게 생성되는지는 감출 수 있다.
+  	direcotr = Director()
+  	builder = CarBuilder()
+  	direcotr.construct_sporst_car(builder)
+  	car = builder.car
+  
+  	builder = ManualBuilder()
+  	direcotr.construct_sporst_car(builder)
+  	manual = builder.manual
+  ```
+
+
+
+- 한계
+  - 결국 생성하려는 객체에 맞춰 builder를 계속 늘어나게 된다.
+  - Python에서도 유용한 패턴인지 의문
+    - Python의 경우 parameter에 기본값을 설정 가능하다.
+    - Keyword argument를 통해 어떤 값을 넘기는지 명시적으로 표현이 가능하다.
 

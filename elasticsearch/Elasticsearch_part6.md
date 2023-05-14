@@ -1,5 +1,148 @@
 # minimum_should_match
 
+- mininum_should_match는 반드시 matching되어야 하는 should 절의 개수를 변경하는 것이다.
+
+  - should 절
+    - should 절은 query string syntax에서  `+` operator가 붙어있지 않은 절을 의미한다.
+    - 예를 들어 `name:foo name:bar name:baz +name:qux`와 같은 query string이 있을 때, should 절에 해당하는 것은 `+`가 붙어있지 않은 `name:foo`, `name:bar`, `name:baz`이다.
+    - 또한 `((text:qwe text:asd text:zxc)~2)`와 같이 그룹으로 묶인 절이라 하더라도 `+`가 붙지 않았으므로 should절이다.
+    - mininum_should_match를 n으로 변경하면 should 역시 적어도 n개는 포함되어야 하지만, n개만 포함된다면 나머지는 포함하지 않아도 되도록 변경된다.
+  - 예시 데이터 색인하기
+
+  ```json
+  // PUT test/_doc/1
+  {
+    "name":"foo bar"
+  }
+  
+  // PUT test/_doc/2
+  {
+    "text":"foo baz"
+  }
+  ```
+
+  - 이는 bool query 내부의 should 절 안에서만 동작한다는 의미가 아니다.
+    - 예를 들어 아래는 query는 should 절을 사용했음에도 minimum_should_match가 예상대로 동작하지 않는다.
+    - 아래 query는 `(+text:foo +text:bar)~1`로 변환되는데, text에 foo나 bar 중 하나만 포함되어 있으면 검색 될 것 같지만 검색되지 않는다.
+    - 이는 query에 should절이 없기 때문에 should 절이 1개 이상 포함될 수가 없기 때문이다.
+    - 비록 query 자체는 should절에 작성되었다고 하더라도 분석된 query는 `+text:foo +text:bar`로 should가 존재하지 않는다.
+
+  ```json
+  // GET test/_search
+  {
+    "profile": true,
+    "query": {
+      "bool": {
+        "should": [
+          {
+            "match": {
+              "text": {
+                "query": "foo bar",
+                "operator": "and", 
+                "minimum_should_match": 1
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+  ```
+
+  - 반대로 아래 query는 bool query의 should 절과 아무 상관 없는데도 minimum_should_match가 예상대로 동작한다.
+    - 아래 쿼리는 `(text:baz text:bar)~1`로 분석된다.
+    - 여기서 `text:baz text:bar`가 should 절로, `text` field에 `baz`, `bar`중 하나라도 포함되는 문서는 모두 검색된다. 
+
+  ```json
+  // GET test/_search
+  {
+    "profile": true,
+    "query": {
+      "match":{
+        "text":{
+          "query":"baz bar",
+          "minimum_should_match": 1
+        }
+      }
+    }
+  }
+  ```
+
+  - 아래도 마찬가지로 must는 무시하고 should 맥락에서만 적용된다.
+    - 아래 쿼리는 `(+text:foo text:qwe)~1`와 같이 분석된다.
+    - 위 쿼리에서 should의 맥락은 `text:qwe`부분인데, `text` field에 `qwe`를 포함하는 문서는 존재하지 않는다.
+    - 그러므로 `minimum_should_match`의 조건을 충족시키지 못했고, 아무 문서도 검색되지 않는다.
+    - 만약 `minimum_should_match`가 must절까지 고려한다면 foo가 포함된 두 문서 모두 검색이 되어야 할 것이다.
+
+  ```json
+  GET test/_search
+  {
+    "profile": true,
+    "query": {
+      "bool": {
+        "must": [
+          {
+            "match": {
+              "text": "foo"
+            }
+          }
+        ],
+        "should": [
+          {
+            "match": {
+              "text": {
+                "query": "qwe"
+              }
+            }
+          }
+        ],
+        "minimum_should_match": 1
+      }
+    }
+  }
+  ```
+
+  - 반면에 should 절에 문서가 matching되는 query를 추가하면 검색 결과가 나오게 된다.
+    - 아래 쿼리는 `(+text:foo text:qwe text:bar)~1`로 분석된다.
+    - 이 중에서 query 맥락은 `text:qwe text:bar`인데 `text` field에 `bar`를 포함하는 문서가 있으므로, `minimum_should_match`의 조건이 충족되어 검색 결과가 나오게 된다.
+
+  ```json
+  // GET test/_search
+  {
+    "profile": true,
+    "query": {
+      "bool": {
+        "must": [
+          {
+            "match": {
+              "text": "foo"
+            }
+          }
+        ],
+        "should": [
+          {
+            "match": {
+              "text": {
+                "query": "qwe"
+              }
+            }
+          },
+          {
+            "match": {
+              "text": {
+                "query": "bar"
+              }
+            }
+          }
+        ],
+        "minimum_should_match": 1
+      }
+    }
+  }
+  ```
+
+
+
 - multi_match의 type이 `best_field`거나 `most_field`일 경우 `operator`와 `minimum_should_match` 옵션이 각 filed마다 개별적으로 적용된다.
 
   - 예를 들어 아래와 같은 문서가 있다고 가정한다.
