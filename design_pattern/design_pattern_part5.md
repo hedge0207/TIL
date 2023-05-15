@@ -981,3 +981,210 @@
     - Python의 경우 parameter에 기본값을 설정 가능하다.
     - Keyword argument를 통해 어떤 값을 넘기는지 명시적으로 표현이 가능하다.
 
+
+
+
+
+## Chain of Responsibility Pattern
+
+> https://betterprogramming.pub/understanding-the-chain-of-responsibility-design-pattern-2f44cdff61e5
+>
+> https://refactoring.guru/design-patterns/chain-of-responsibility
+
+- 문제
+
+  - 사용자 인증 시스템을 만드려고 한다.
+    - 처음에는 아래와 같이 간단하게 id와 password만 확인하는 방식으로 사용자 인증이 이루어졌다.
+    - 또한 관리자에게는 모든 권한을 주기 위해 관리자인지 체크하는 함수도 필요했다.
+
+  ```python
+  class AccessControl:
+      user_info = {
+          "user_id1":"password1", 
+          "user_id2":"passowrd2",
+          "admin1":"1q2w3e4r"
+          "admin2":"r4e3w2q1"
+      }
+      administrators = ["admin1", "admin2"]
+  
+      def authenticate(self, id_, password):
+          pass
+      
+      def is_admin(self, id_):
+          pass
+  
+  if __name__ == "__main__":
+      request = get_request()
+      access_control = AccessControl()
+      admin = False
+      if verified := access_control.authenticate(request.id, request.password):
+          admin = access_control.is_admin(request.id)
+  ```
+
+  - 그런데 점점 인증 방식이 복잡해지기 시작한다.
+    - Brute force password cracking을 막기 위해 일정 횟수 이상 틀릴 경우 대기 시간을 줘야 한다.
+    - ID, password를 요청에 바로 넘기지 않고 암호화된 token을 받아와서 복호화한 후 인증하는 방식을 사용한다.
+    - 더 이상 memory에 사용자 정보와 admin 계정들을 관리하지 않고 DB에서 받아온다.
+
+  ```python
+  class AccessControl:
+      def __init__(self):
+          self.db_conn = get_db_connection()
+          self.num_try = 0
+          
+      def set_db_connection(self, db_info):
+          pass
+      
+      def decrypt_token(self, token):
+          pass
+  
+      def authenticate(self, decrypted_token):
+          pass
+      
+      def count_num_try(self):
+          pass
+      
+      def is_administrator(self, decrypted_token):
+          pass
+  
+  
+  if __name__ == "__main__":
+      MAX_RETRY = 5
+      access_control = AccessControl()
+      try:
+  	    access_control.set_db_connection(db_info)
+      except ConnectionError:
+          raise
+      
+      while num_try < MAX_RETRY:
+          request = get_request()
+          access_control.count_num_try()
+          decrypted_token = access_control.decrypt_token(request.token)
+          admin = False
+          if verified := access_control.authenticate(decrypted_token):
+              admin = access_control.is_admin(decrypted_token)
+  ```
+
+  - 인증 방식이 추가, 수정 될 때 마다 인증 관련 코드와 client 코드를 계속 변경해줘야 한다.
+
+
+
+- Chain of Responsibility Pattern
+
+  - Request을 보내는 쪽과 해당 요청을 받아서 처리하는 쪽이 강하게 결합되는 것을 막는 패턴이다.
+    - 하나의 요청을 여러 객체가 연쇄적으로 처리하는 방식을 통해 sender와 receiver를 분리한다.
+    - 전체 과정을 세부 과정으로 나누고, 각 과정을 handler라 불리는 객체들에 위임한다.
+  - Handler
+    - 각 handler들은 서로 연결(link)되어 있으며, 이전 단계의 handler의 결과물을 input으로 받아 처리 후 그 output을 다음 단계의 handler로 보낸다.
+    - 각 handler들은 자신에게 들어온 request를 처리할지 말지를 결정할 수 있다. 
+    - 또한 다음 handler로 보낼지, 아니면 보내지 않을 지도 결정할 수 있다.
+    - 따라서 불필요하게 모든 과정을 거치지 않더라도 처리가 완료될 수 있다.
+  - Request는 chain 상의 아무 handler에나 전달될 수 있다.
+    - chain을 이루고 있다고 해서 꼭 첫 번째 handler에만 request를 전달할 수 있는 것은 아니다.
+  - CoR 패턴을 사용해야 하는 이유
+    - 요청을 보내는 쪽과 받는 쪽의 결합도를 줄일 수 있다(요청을 보내는 쪽은 request가  handler에 의해 처리된다는 것만 알면 된다).
+    - 전체 처리 과정을 나누고 각 과정을 handler에 위임함으로써, request가 어떤 과정을 거쳐 처리되는지를 보다 명확히 알 수 있게 된다.
+    - 런타임에 처리 방식을 동적으로 변경할 수 있다.
+    - 새로운 과정의 추가 및 삭제를 보다 간단하게 할 수 있다.
+  - 클래스 다이어그램
+    - Handler에는 모든 ConcreteHandler에게 공통으로 들어가는 로직을 작성한다.
+    - 일반적으로 request 처리를 위한 단 하나의 method만 정의되어 있지만, 경우에 따라서는 실행될 다음 handler를 설정하는 메서드도 정의된다.
+    - BaseHandler는 필수적으로 들어가지는 않는 클래스로, 모든 handler class에 공통으로 들어가는 boilerplate code를 작성하기 위해 사용한다.
+    - 일반적으로 다음 handler에 대한 참조를 저장하기 위한 field를 선언한다.
+    - ConcreteHandler는 request를 처리하기 위한 실제 코드가 들어간다.
+    - ConcreteHandler는 request를 받았을 때 해당 request를 처리할지 말지를 결정해야하며, 다음 handler로 넘길지 말지도 결정해야한다.
+    - Client는 handler들의 체인을 구성하는 역할을 한다.
+
+  ![image-20230511142559094](design_pattern_part5.assets/image-20230511142559094.png)
+
+
+
+
+
+- 예시
+
+  - 
+
+  ```python
+  from __future__ import annotations
+  from abc import ABC, abstractmethod
+  
+  
+  class Handler(ABC):
+      @abstractmethod
+      def set_next(self, handler: Handler) -> Handler:
+          pass
+  
+      @abstractmethod
+      def handle(self, request):
+          pass
+  
+  
+  class AbstractHandler(Handler):
+      _next_handler = None
+      
+      # handler들 사이에 링크를 위해 handler를 반환한다.
+      def set_next(self, handler: Handler) -> Handler:
+          self._next_handler = handler
+          return handler
+  
+      @abstractmethod
+      def handle(self, request: str) -> str:
+          if self._next_handler:
+              return self._next_handler.handle(request)
+  
+          return None
+  
+  
+  class MonkeyHandler(AbstractHandler):
+      def handle(self, request: str) -> str:
+          # 모든 handler는 작업을 처리할지 처리하지 않을지 결정할 수 있다.
+          if request == "Banana":
+              return f"Monkey: I'll eat the {request}"
+          else:
+              return super().handle(request)
+  
+  
+  class SquirrelHandler(AbstractHandler):
+      def handle(self, request: str) -> str:
+          if request == "Nut":
+              return f"Squirrel: I'll eat the {request}"
+          else:
+              return super().handle(request)
+  
+  
+  class DogHandler(AbstractHandler):
+      def handle(self, request: str) -> str:
+          if request == "MeatBall":
+              return f"Dog: I'll eat the {request}"
+          else:
+              return super().handle(request)
+  
+  
+  def client_code(handler: Handler) -> None:
+  
+      for food in ["Nut", "Banana", "Cup of coffee"]:
+          print(f"\nClient: Who wants a {food}?")
+          result = handler.handle(food)
+          if result:
+              print(f"  {result}", end="")
+          else:
+              print(f"  {food} was left untouched.", end="")
+  
+  
+  if __name__ == "__main__":
+      monkey = MonkeyHandler()
+      squirrel = SquirrelHandler()
+      dog = DogHandler()
+  
+      monkey.set_next(squirrel).set_next(dog)
+      print("Chain: Monkey > Squirrel > Dog")
+      client_code(monkey)
+      print("\n")
+  
+      print("Subchain: Squirrel > Dog")
+      client_code(squirrel)
+  ```
+
+  
+
