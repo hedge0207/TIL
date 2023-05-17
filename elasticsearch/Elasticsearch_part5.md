@@ -764,6 +764,10 @@
   }'
   ```
   
+  - format을 지정할 수 있다.
+    - 주지 않을 경우 검색 대상 index의 해당 field의 format을 기본 값으로 사용한다.
+    - `"format":"yyyy-MM-dd'T'HH:mm:ss.SSS"`와 같은 형태로 주면 된다.
+  
   - Elasticsearch의 **Date Math**
   
     - ES에서 date를 기준으로 쿼리를 작성하는 경우(range query, daterange aggs 등)아래와 같은 Date Math를 사용 가능하다.
