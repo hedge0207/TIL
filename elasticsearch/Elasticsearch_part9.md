@@ -90,6 +90,44 @@
 
 
 
+- Normalizer
+
+  - Normalizer는 analyzer와 유사하지만, 오직 하나의 token만을 반환한다는 점에서는 다르다.
+  - 따라서 tokenizer는 받지 않으며, 오직 char filter와 token filter만을 받는다.
+    - 모든 filter가 가능한 것은 아니며 character 기반으로 동작하는 filter만 설정 가능하다.
+    - 예를 들어 lowercase filter는 개별 character들을 소문자로 변경하므로, normalizer에서 사용이 가능하다.
+    - 그러나 stemming filter의 경우 전체 keyword를 대상으로 동작하므로, normalizer에서 사용이 불가능하다.
+    - 사용 가능한 filter list는 [공식 문서](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-normalizers.html#analysis-normalizers) 참고.
+  - 예시
+
+  ```json
+  // PUT index
+  {
+    "settings": {
+      "analysis": {
+        "normalizer": {
+          "my_normalizer": {
+            "type": "custom",
+            "filter": ["lowercase", "asciifolding"]
+          }
+        }
+      }
+    },
+    "mappings": {
+      "properties": {
+        "foo": {
+          "type": "keyword",
+          "normalizer": "my_normalizer"
+        }
+      }
+    }
+  }
+  ```
+
+
+
+
+
 - analyzer 
   - analyzer는 역색인을 만들어주는 것이다.
     - analyzer는 운영 중에 동적으로 변경할 수 없다. 
