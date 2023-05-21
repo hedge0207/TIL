@@ -585,6 +585,76 @@
 
 
 
+
+
+- query string syntax
+
+  - query string은 일련의 term들과 operator들로 파싱된다.
+    - term은 한 단어일 수도 있고 큰따옴표로 묶인 문장일 수도 있다.
+  - Field 지정하기
+
+  | type                           | example               | description                                                  |
+  | ------------------------------ | --------------------- | ------------------------------------------------------------ |
+  | 기본형                         | `color:red`           | `:` 왼쪽에 쓰고, 오른쪽에 term을 쓴다.                       |
+  | 여러 term 검색                 | `color:(red or blue)` | color field의 값이 red나 blue인 문서를 찾는다.               |
+  | 정확한 순서로 검색             | `name:"John Doe"`     | name filed에서 정확히 John Doe 순서로 등장하는 값만 찾는다.  |
+  | field 명에 space가 들어갈 경우 | `first\ name:John`    | `\`를 사용하여 space를 표현한다.                             |
+  | 모든 sub field를 대상으로 검색 | `movie.\*:action`     | `movie.title`, `movie.genre`등 movie의 모든 sub field를 대상으로 검색한다. |
+  | 값이 있는 field만 검색         | `_exists:title`       | title 필드에 값이 있는 문서만 검색한다.                      |
+
+  - Wildcard
+    - `term`의 시작 부분에 wildcard를 사용하는 것은 특히 더 많은 자원을 필요로 한다.
+    - `bro*`는 일단 `bro`로 시작하는 것들을 찾으면 되지만 `*wn`은 일단 모든 단어를 찾고 이후에 `wn`이 들어가는지를 확인해야 하기 때문이다.
+    - `allow_leading_wildcard`를 false로 줌으로써 시작 부분에 wildcard를 사용하지 못하도록 막을 수 있다.
+
+  | type | example | description                                    |
+  | ---- | ------- | ---------------------------------------------- |
+  | `?`  | `qu?ck` | Single character를 대체하기 위해 사용한다.     |
+  | `*`  | `bro*`  | 0개 이상의 character를 대체하기 위해 사용한다. |
+
+  - Range
+
+  | type                 | example                                   | description                                   |
+  | -------------------- | ----------------------------------------- | --------------------------------------------- |
+  | 날짜형 데이터에 사용 | `created_date:[2021-01-01 TO 2022-12-31]` | 2021년에 생성된 모든 data를 보여준다.         |
+  | 숫자형 데이터에 사용 | `age:[1 TO 10]`                           | age field의 값이 1~10인 문서를 검색한다.      |
+  | wildcard 사용        | `count:[10 TO *]`                         | count field의 값이 10 이상인 문서를 검색한다. |
+  | 기준 값 제외         | `age:{1 TO 10}`                           | age filed의 값이 2~9인 문서를 검색한다.       |
+  | 복합                 | `age:[1 TO 10}`                           | age filed의 값이 1~9인 문서를 검색한다.       |
+  | 간단한 방식          | `age:<=10`                                | age filed의 값이 10이하인 문서를 검색한다.    |
+
+  - Fuzziness
+    - `~`를 사용하여 fuzzy query를 실행할 수 있다.
+    - Fuzzy query에는 normalizer가 적용되므로, 소수의 filter만 적용 가능하다.
+    - Damerau–Levenshtein distance를 사용하며, 기본값으로 설정된 편집거리는 2이다.
+    - 그러나 사실 편집 거리가 1만 되어되 80%의 오타를 잡아낼 수 있다.
+    - `quick~`과 같이 사용하며 edit distanc를 변경하고자 할 경우 `quick~2`와 같이 주면 된다.
+    - proximity search에도 사용할 수 있는데, `"fox quick"~5`과 같이 사용하면 순서가 다르더라도 편집거리 5 이라면 검색된다.
+    - `~`는 minimun_should_match에서도 사용되는데, `(title:foo title:bar title:baz)~2`는 foo, bar, baz 중 최소 둘 이상이 match되어야 한다는 뜻이다.
+  - Boosting
+    - `^`를 사용하여 특정 query에 가중치를 줄 수 있다.
+    - `quick^2 fox`
+    - term 뿐 아니라 문장(`"John Doe"^2`)이나 group(`(foo bar)^3`)에도 가중치를 줄 수 있다.
+  - Boolean operation
+    - 기본적으로 하나의 term만 matching되면, 다른 모든 term은 optional하다.
+    - 예를 들어 `name:foo bar baz`와 같은 query_string의 경우 name이라는 필드에 foo, bar 혹은 baz 중 하나만 포함되어 있으면 검색 된다.
+    - Boolean operation은 이러한 동작 방식을 변경하기 위해 사용한다.
+    - `foo bar +baz -qux`는 `((foo AND baz) or (bar and baz) or baz) AND NOT qux`로 변경된다.
+    - 즉, foo와 bar는 포함되던 안되던 baz가 포함되고, qux가 포함되지 않는다면 모든 문서가 검색된다.
+
+  | type | example      | description                                                  |
+  | ---- | ------------ | ------------------------------------------------------------ |
+  | `+`  | quick +brown | brown을 포함하는 문서만 검색(quick은 포함되지 않아도 되지만, 포함되면 점수가 올라간다) |
+  | `-`  | quick -brown | brown을 포함하지 않는 문서만 검색(quick은 포함되지 않아도 되지만, 포함되면 점수가 올라간다) |
+
+  - 예약어
+    - `\+ - = && || > < ! ( ) { } [ ] ^ " ~ * ? : \ /`는 모두 예약어이므로, operator가 아닌 일반 문자로 사용하고자 한다면 `\`를 통해 escape 처리를 해줘야한다.
+    - range query를 만들 때 사용하는 `<`와 `>`는 escape가 불가능하다.
+
+
+
+
+
 - Elasticsearch는 mapping되어 있는 field에 값을 넣지 않는 것이 가능하다.
 
   - Elasticsearch를 사용하다 보면 특정 필드에 값이 있는 문서의 개수가 몇 개인지 알아야 할 때가 있음에도 불구하고, 이러한 특성 때문에 특정 필드의 값을 가진 문서의 개수를 정확히 알 수 업는 경우가 많다.
@@ -763,6 +833,10 @@
   }
   }'
   ```
+  
+  - format을 지정할 수 있다.
+    - 주지 않을 경우 검색 대상 index의 해당 field의 format을 기본 값으로 사용한다.
+    - `"format":"yyyy-MM-dd'T'HH:mm:ss.SSS"`와 같은 형태로 주면 된다.
   
   - Elasticsearch의 **Date Math**
   
