@@ -447,6 +447,108 @@
 
 
 
+- nori tokenizer에서 `decompound_mode`를 mixed로 줄 경우 아래와 같이 예상과 달리 동작한다.
+
+  - index 생성
+
+  ```json
+  PUT mixed_test
+  {
+    "settings": {
+      "analysis": {
+        "tokenizer": {
+          "mixed_nori_tokenizer": {
+            "type": "nori_tokenizer",
+            "decompound_mode": "mixed"
+          }
+        },
+        "analyzer": {
+          "mixed_nori_analyzer": {
+            "type": "custom",
+            "tokenizer": "mixed_nori_tokenizer"
+          }
+        }
+      }
+    }, 
+    "mappings": {
+      "properties": {
+        "text":{
+          "type": "text",
+          "analyzer": "mixed_nori_analyzer"
+        }
+      }
+    }
+  }
+  ```
+
+  - 데이터 색인
+
+  ```json
+  PUT mixed_test/_doc/1
+  {
+    "text":"가곡역"
+  }
+  ```
+
+  - analyze 결과 확인
+
+  ```json
+  GET mixed_test/_termvectors/1?fields=text
+  
+  // ["가곡", "역", "가곡역"]으로 토큰이 생성된 것을 확인 할 수 있다.
+  ```
+
+  - 검색 profile
+
+  ```json
+  GET mixed_test/_search
+  {
+    "profile": true, 
+    "query": {
+      "match": {
+        "text": "가곡역"
+      }
+    }
+  }
+  
+  // query string이 "text:가곡역 text:\"가곡 역\""와 같이 만들어진다.
+  ```
+
+  - 예상하기로는 `text:가곡 text:역 text:가곡역`과 같이 만들어 질 것 같지만 예상과 달리 `text:가곡역 text:\"가곡 역\"`과 같이 query가 생성된다.
+    - 더 정확히는 `text:가곡역`은 TermQuery로, `text:\"가곡 역\"`은 PhraseQuery로 생성된다.
+  - `elasticsearch.index.search.MatchQueryParser`의 `createFieldQuery()` 메서드에는 아래와 같은 logic이 있다.
+    - `posLenAtt`는 token의 positionLength 정보를 담고 있는 object이고, `enableGraphQueries`는 기본값이 true로 설정돼있다(token stream의 생성 결과에 따라 false로 변경되기도 한다).
+    - 따라서 아래 조건문은 token의 `positionLength`가 1보다 클 경우(mixed로 분석한 "가곡역" token의 `positionLength`는 2이다), `isGraph` 변수를 true로 변경한다.
+    - `isGraph`값이 true이고 `type`이 `Type.PHRASE`이거나 `Type.PHRASE_PREFIX`이면 `analyzeGraphPhrase()` 메서드를 실행시킨다.
+
+  ```java
+  while (stream.incrementToken()) {
+      // ...
+      int positionLength = posLenAtt.getPositionLength();
+      if (enableGraphQueries && positionLength > 1) {
+          isGraph = true;
+      }
+  }
+  
+  if (numTokens == 0) {
+      return null;
+  // ...
+  } else if (isGraph) {
+      if (type == Type.PHRASE || type == Type.PHRASE_PREFIX) {
+          return analyzeGraphPhrase(stream, field, type, phraseSlop);
+      } else {
+          return analyzeGraphBoolean(field, stream, operator, type == Type.BOOLEAN_PREFIX);
+      }
+  }
+  ```
+
+  - `elasticsearch.index.query.IntervalBuilder`에도 유사한 코드가 있다.
+    - `analyzeText()` 메서드도 유사한 과정을 거친다.
+
+
+
+
+
 
 
 
