@@ -894,6 +894,28 @@
 
 
 
+- Python decorator와 decorator pattern
+
+  - Python의 decorator는 decorator pattern의 구현이 아니다.
+
+    - 이는 decorator가 제안된 [PEP 318](https://peps.python.org/pep-0318/#on-the-name-decorator)에서 확인 가능한데, 실제로 decorator라는 이름으로 인해 논란이 있었다고 한다.
+    - [wikipedia](https://en.wikipedia.org/wiki/Python_syntax_and_semantics#Decorators)에도 아래와 같이 적혀있다.
+
+    > Despite the name, Python decorators are not an implementation of the [decorator pattern](https://en.wikipedia.org/wiki/Decorator_pattern).
+
+    - 또한 [Python wiki](https://wiki.python.org/moin/PythonDecorators#What_is_a_Python_Decorator)에도 아래와 같이 적혀있다.
+
+    > The "decorators" we talk about with concern to Python are not exactly the same thing as the [DecoratorPattern](https://wiki.python.org/moin/DecoratorPattern) described above.
+
+  - 보다 정확히 말하면 decorator pattern의 정확한 구현은 아니다.
+
+    - Decorator pattern을 사용한 application 보다 읽기 쉬운 application을 구현하게 해주고, decorator pattern으로 이룰 수 있는 것들 보다 더 많은 곳에 적용이 가능하다.
+    - Decorator pattern은 object에 특정 행동을 동적으로 추가하기 위한 pattern이다.
+    - 어떤 object에 decorator를 적용하면, 같은 class의 다른 instacne들에 영향을 주지 않고도 object의 기능을 확장할 수 있다.
+    - 반면에 Python decorator는 함수 혹은 method의 definition time에 기능을 추가하는 역할을 한다.
+    - Python decorator는 run time에 기능을 추가하는 데 사용되지 않는다.
+    - 반면에, 둘은 기존 코드의 수정 없이 기능을 추가할 수 있다는 점에서는 동일하다.
+
 
 
 # 가상환경
