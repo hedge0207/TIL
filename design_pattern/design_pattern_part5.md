@@ -777,7 +777,7 @@
 
 
 
-## Builder
+## Builder Pattern
 
 - 문제
 
@@ -1099,11 +1099,7 @@
 
 
 
-
-
 - 예시
-
-  - 
 
   ```python
   from __future__ import annotations
@@ -1185,6 +1181,150 @@
       print("Subchain: Squirrel > Dog")
       client_code(squirrel)
   ```
-
   
 
+
+
+
+
+## Flyweight Pattern
+
+- 문제
+
+  - 평면 맵을 돌아다니면서 슬라임을 사냥하는 게임을 만드려고 한다.
+    - 아래와 같이 Slime class를 작성했다.
+
+  ```python
+  class Slime:
+      def __init__(self, size, coords, level, items):
+          self.size = size
+          self.coords = coords
+          self.level = level
+          self.items = items
+  ```
+
+  - 각 attribute가 차지하는 용량은 다음과 같다.
+    - `size`: 28bytes
+    - `coords`: 72bytes
+    - `level`: 28bytes
+    - `items`: 1024bytes
+  - 생성된 슬라임의 개수가 많아질수록 메모리는 점점 부족해져간다.
+    - `items`에는 슬라임을 잡았을 때 슬라임이 반환하는 item들의 목록이 들어 있어 다른 attribute들 보다 용량이 크다.
+    - 모든 슬라임은 동일한 item을 반환한다.
+    - 따라서 `Slime` class로 생성된 모든 객체는 동일한 `items`값을 가지고 있다.
+    - 만약 1000마리의 슬라임이 생성된다면 이를 표현하기 위해서 1,152,000byte가 필요하다.
+
+  - 해결
+    - Attribute를 객체마다 다르게 가지는 부분과 거의 모든 객체가 동일하게 가지는 부분을 분리한다.
+    - 예를 들어 size, coords, level등은 슬라임마다 달라질수 있지만, items는 모든 슬라임이 동일하게 가진다.
+    - 대부분의 객체가 동일하게 가지는 부분을 매번 생성하지 않고, 미리 생성된 객체가 있다면 해당 객체를 사용한다.
+
+
+
+- Flyweight Pattern
+
+  - Flyweight
+    - 객체마다 다르게 가지는 부분을 extrinsic state(고유한 상태, unique_state), 거의 모든 객체가 동일하게 가지는 부분을 intrinsic state(공유한 상태, repeating_state)라고 부른다.
+    - 오직 intrinsic state만을 attribute로 가지는 객체를 flyweight라 부른다.
+  - 정의
+    - 동일하거나 유사한 객체들 사이에 가능한 많은 데이터를 서로 공유하여 사용함으로써 메모리 사용량을 최소화하는 패턴.
+    - Flyweight 객체를 매 번 생성하지 않고, 변경사항이 있을 경우에만 생성해서 메모리를 절약한다.
+
+  - 클래스 다이어그램
+    - Flyweight class는 거의 모든 object들이 공유하는 값을 가지고 있으며, 같은 Flyweight object라 하더라도 여러 다른 COntext에서 사용될 수 있다.
+    - Context class는 extrinsic state를 담고 있으며, flyweight object와 결합하여 완전한 생태가 된다.
+    - 일반적으로 분리되기 이전의 object에 있던 행동들(method들)은 Flyweight class에 작성하는데, 이럴 경우  Flyweight class에 작성된 method를 호출하는 쪽에서는 반드시 method의 파라미터로 extrinsic state를 넘겨줘야한다.
+    - FlyweightFactory는 이미 생성된 Flyweight object들을 관리한다.
+    - Client는 오직 Factory를 통해서만 Flyweight 객체를 생성하며, 직접 생성하지는 않는다.
+    - FlyweightFactory는 요청이 들어왔을 때, 이미 생성된 Flyweight 객체가 있다면 해당 객체를 반환하고, 없다면 새로운 객체를 생성해서 반환한다.
+
+  ![image-20230525160743347](design_pattern_part5.assets/image-20230525160743347.png)
+
+  - 주의 사항
+    - 한 번 생성된 flyweight object는 절대 변경되어선 안된다.
+    - 여러 객체가 flyweight object를 공유하기에, flyweight 객체에 변경사항이 생길 경우 예상치 못한 결과가 나올 수 있다.
+  - 패턴 사용을 고려해볼만한 경우
+    - 많은 양의 object를 생성해야 하는 경우.
+    - RAM 사용양이 부족할 것으로 예상되는 경우.
+    - Object들이 중복된 값을 많이 가질 경우.
+  - Singleton pattern과의 차이
+    - Singleton은 단 하나의 object만을 생성하지만, flyweight는 소수의 중복 없는 object를 생성한다.
+    - Singleton object는 수정이 가능하지만, flyweight object는 수정해선 안된다.
+
+
+
+- Slim class에 적용하기
+
+  - 아래와 같이 변경한다.
+
+  ```python
+  class FlyweightSlime:
+      def __init__(self, items):
+          self.items = items
+      
+      def operation(self, **extrinsic_state):
+          for k, v in extrinsic_state.items():
+              print("{}: {}".format(k, v))
+          print("items: {}".format(self.items))
+          print("-"*10)
+  
+  
+  class UniqueSlime:
+      def __init__(self, size, coords, level):
+          self.size = size
+          self.coords = coords
+          self.level = level
+  
+  
+  class FlyweightFactory:
+      _flyweights = {}
+      def __init__(self, intrinsic_states):
+          for state in intrinsic_states:
+              key = self._make_key(state)
+              self._flyweights[key] = FlyweightSlime(state)
+      
+      def get_flyweight(self, intrinsic_state):
+          key = self._make_key(intrinsic_state)
+  
+          # 만약 이미 생성된 flyweight 객체가 있으면 해당 객체를 반환
+          if self._flyweights.get(key):
+              print("Already exist")
+              return self._flyweights[key]
+          # 없을 경우 새로운 flyweight 객체를 생성해서 반환
+          else:
+              flyweight = FlyweightSlime(intrinsic_state)
+              self._flyweights[key] = flyweight
+              print("Create new object")
+              print("-"*10)
+              return flyweight
+  
+      def _make_key(self, state):
+          return "".join(sorted(state))
+  
+  
+  # Context에 해당
+  class Slime:
+      def __init__(self, size, coords, level, intrinsic_states, factory: FlyweightFactory):
+          self.size = size
+          self.coords = coords
+          self.level = level
+          self.intrinsic_states: FlyweightSlime = factory.get_flyweight(intrinsic_states)
+  
+      def operation(self):
+          self.intrinsic_states.operation(**{"size":self.size, "coords":self.coords, "level":self.level})
+  
+  
+  
+  
+  if __name__ == "__main__":
+      factory = FlyweightFactory([
+          ["sword", "bow", "part_of_slime"]
+      ])
+      slime = Slime(5, [42, 24], 1, ["sword", "bow", "part_of_slime"], factory)
+      slime.operation()
+      strong_slime = Slime(500, [42, 24], 50, ["greate_sword", "greate_bow", "big_part_of_slime"], factory)
+      strong_slime.operation()
+  ```
+
+  - 만일 같은 flyweight object를 공유하는 1000개의 Slime object가 생성된다면 128,124bytes(`(28+28+72)*1000 + 1024`)의 메모리만 있으면 된다.
+    - 기존 코드의 경우 1,152,000bytes(`(28+28+72+1024)*1000`)를 필요로 했다.
