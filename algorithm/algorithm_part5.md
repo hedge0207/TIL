@@ -638,3 +638,308 @@
     - 이로 인해 메모리가 낭비된다.
   - 삭제가 빈번하게 발생할 경우 트라이를 사용하는 것은 적절치 않다.
 
+
+
+
+
+# 정렬
+
+- 버블 정렬(Bubble Sort)
+
+  - 구현 가능한 정렬 알고리즘 중 가장 느린 알고리즘이다.
+  - 매번 앞뒤의 원소를 비교해가며 정렬하는 알고리즘이다.
+    - 한 번 반복문이 돌 때마다 가장 큰 원소가 배열의 가장 뒤로 가게 된다.
+  - 시간복잡도
+    - 매 번 모든 원소들을 비교해야 하기 때문에 O(n<sup>2</sup>)이다.
+
+  - 구현
+
+  ```python
+  def bubble_sort(arr):
+      length = len(arr)
+      for i in range(1, length):
+          for j in range(length-i):
+              if arr[j] > arr[j + 1]:
+                  arr[j], arr[j+1] = arr[j+1], arr[j]
+  
+  lst = [4, 2, 3, 5, 6, 1, 4, 9, 8, 7]
+  bubble_sort(lst)
+  ```
+
+
+
+- 선택 정렬(Selection Sort)
+
+  - 제자리 정렬(In-Place Sort) 알고리즘 중 하나이다.
+    - 제자리 정렬 알고리즘이란 정렬할 원소들의 개수에 비해서 충분히 무시할 만한 저장 공간만을 필요로 하는 정렬 알고리즘을 말한다.
+  - 정렬 방식
+    - 원소들 중 가장 작은 값을 찾는다.
+    - 해당 값을 배열의 가장 첫 원소와 바꾼다.
+    - 맨 처음 위치를 뺀 배열을 같은 방식으로 교체한다.
+  - 시간복잡도
+    - 매 번 남은 배열 전체를 순회하면서 가장 작은 값을 찾아야 하기에 O(n<sup>2</sup>)이다.
+    - 같은 O(n<sup>2</sup>)인 버블 정렬보다는 항상 우수하다.
+  - 구현
+
+  ```py
+  def selection_sort(arr):
+      length = len(arr)
+      for i in range(length - 1):
+          index_min = i
+          for j in range(i + 1, length):
+              if arr[index_min] > arr[j]:
+                  index_min = j
+          arr[i], arr[index_min] = arr[index_min], arr[i]
+  
+  
+  lst = [4, 2, 3, 5, 6, 1, 4, 9, 8, 7]
+  selection_sort(lst)
+  ```
+
+
+
+- 삽입 정렬(Insertion Sort)
+
+  - 정렬 방식
+    - 특정 인덱스의 앞에 있는 값들을 정렬된 값, 뒤에 있는 값들을 정렬되지 않은 값으로 본다.
+    - 0번 인덱스는 정렬되었다고 가정하고 1번 인덱스부터 탐색을 시작한다.
+    - 특정 인덱스를 이미 정렬된 배열(즉, 특정 인덱스 앞의 값들)의 적절한 위치에 삽입하는 방식으로 정렬한다.
+  - 시간복잡도
+    - 위의 두 정렬 알고리즘과 마찬가지로 O(n<sup>2</sup>)이다.
+    - 선택 정렬에 비해 조금 더 효율적이다.
+  - 구현
+
+  ```python
+  def insert_sort(arr):
+      for i in range(1, len(arr)):
+          for j in range(i, 0, -1):
+              if arr[j - 1] > arr[j]:
+                  arr[j - 1], arr[j] = arr[j], arr[j - 1]
+  
+  
+  lst = [4, 2, 3, 5, 6, 1, 4, 9, 8, 7]
+  insert_sort(lst)
+  ```
+
+
+
+- 병합 정렬(Merge Sort)
+
+  - 분할 정복(Divide and Conquer) 알고리즘을 활용한 정렬 알고리즘이다.
+    - 존 폰 노이만이 고안했다.
+  - 과정
+    - 정렬하고자 하는 배열을 반으로 분할 한다(divide).
+    - 나눈 두 개의 배열을 각각 정렬한다(conquer).
+    - 정렬 된 두 개의 배열을 합한다.
+  - 시간복잡도
+    - O(NlgN)이다(N은 배열의 길이).
+    - 정렬하고자 하는 배열의 원소가 1개가 될 때까지 분할하는 시간복잡도는 O(N)이다.
+    - 예를 들어 [1,2,3,4,5,6,7,8]을 원소가 1개인 배열들로 분할될 때 까지 분할해보면 아래와 같다.
+    - `[1,2,3,4], [5,6,7,8]`(1번), `[1,2], [3,4], [5,6], [7,8]`(2번), `[1], [2], [3], [4], [5], [6], [7], [8]`(4번)
+    - 즉 한 번 분할될 때 마다 2<sup>k</sup>번 분할 과정이 실행되게 되고, 총 2N-1번 실행되어 시간복잡도는 O(N)이 된다.
+    - 분할된 배열들을 정렬하면서 합치는 과정의 시간복잡도는 O(NlgN)이다.
+    - 각 단계에서 정렬에 필요한 시간복잡도는 O(N)이고, 이 과정을 lgN번 반복하므로 병합 과정의 시간 복잡도는 O(NlgN)이다.
+    - lgN번 반복하는 이유는, 분할이 완료됐을 때 배열의 길이는 항상 1인데, 한 번 병합을 거칠 때 마다 2배씩 커지며, 최종적으로는 N개가 되어야 한다.
+    - 즉 2<sup>k</sup> = N를 만족하는 k의 값이 반복 횟수인데, 양변에 log를 취하면 k=lgN이 되므로 lgN번 반복하게 된다.
+    - O(N)과 O(NlgN)중 O(NlgN)이 더 크므로 시간복잡도는 O(NlgN)이 된다.
+  - 구현
+
+  ```python
+  def merge(arr1, arr2):
+      i = 0
+      j = 0
+      n = len(arr1)
+      m = len(arr2)
+      sorted_arr = []
+      while i < n and j < m:
+          if arr1[i] < arr2[j]:
+              sorted_arr.append(arr1[i])
+              i += 1
+          else:
+              sorted_arr.append(arr2[j])
+              j += 1
+  
+      if i == n:
+          sorted_arr += arr2[j:]
+  
+      if j == m:
+          sorted_arr += arr1[i:]
+  
+      return sorted_arr
+  
+  
+  def merge_sort(arr):
+      if (length := len(arr)) < 2:
+          return arr
+  
+      lh = arr[:length // 2]
+      rh = arr[length // 2:]
+      return merge(merge_sort(lh), merge_sort(rh))
+  
+  
+  arr = [2, 5, 7, 3, 8, 9, 4, 1]
+  print(merge_sort(arr))
+  
+  ```
+
+  - 병합정렬은 대표적인 안정 정렬(Stable Sort)이다.
+    - 안정 정렬이란 중복된 값을 입력 순서와 동일하게 정렬하는 정렬을 의미한다.
+    - 즉 입력값의 순서가 정렬 후에도 달라지지 않는 정렬 방식을 말한다.
+
+  ```python
+  # 예를 들어 아래와 같은 데이터가 있다.
+  users = [
+      {
+          "age":31,
+          "name":"John"
+      },
+      {
+          "age":25,
+          "name":"Mike"
+      },
+      {
+          "age":25,
+          "name":"Paul"
+      }
+  ]
+  
+  # 위 데이터를 안정 정렬을 통해 age를 내림차순으로 정렬하면 아래와 같은 결과가 나온다.
+  users = [
+      {
+          "age":31,
+          "name":"John"
+      },
+      {
+          "age":25,
+          "name":"Mike"
+      },
+      {
+          "age":25,
+          "name":"Paul"
+      }
+  ]
+  
+  # 그러나 불안정 정렬을 통해 age를 내림차순으로 정렬하면 아래와 같은 결과가 나올 수도 있다.
+  # 입력상으로는 Mike가 Paul보다 먼저 왔지만 불완전 정렬을 거치면서 순서가 뒤바뀌었다.
+  users = [
+      {
+          "age":31,
+          "name":"John"
+      },
+      {
+          "age":25,
+          "name":"Paul"
+      },
+      {
+          "age":25,
+          "name":"Mike"
+      }
+  ]
+  ```
+
+
+
+- 퀵 정렬(Quick Sort)
+
+  - 거의 모든 정렬 알고리즘보다 빨라서 퀵 정렬이라는 이름이 붙었다.
+    - 피벗을 기준으로 좌우를 나누는 특징 때문에 파티션 교환 정렬이라고도 불린다.
+    - 병합 정렬과 마찬가지로 분할 정복 알고리즘을 활용한 알고리즘이다.
+  - 과정
+    - 피봇을 기준으로 배열을 3등분한다(피봇보다 작은 값들, 피봇, 피봇보다 큰 값들).
+    - 피벗 값은 분할시에 확정된다(피벗의 왼쪽에는 피벗 보다 작은 값이, 오른쪽에는 피벗 보다 큰 값이 왔으므로 피벗은 더 이상 움직일 필요가 없다).
+    - 분할된 배열을 각각 정렬한다.
+    - 각각 정렬된 배열을 다시 합친다.
+    - 재귀 호출이 한 번 실행될 때 마다 적어도 피벗의 위치는 정해지므로 이 알고리즘이 반드시 끝이 난다는 것이 보장된다.
+  - 파티션 방식
+    - 파티션 방식(분할 방식)에 따라 호어 방식(Hoare Partition)과 로무토 방식(Lomuto Partition)으로 나뉜다.
+    - 호어 방식은 호어가 퀵 정렬을 고안할 때 사용한 방식으로 배열의 중간값을 피봇으로 선택한다.
+    - 로무토 방식은 항상 맨 오른쪽의 피벗을 선택하는 방식으로, 호어 파티션보다 구현이 간결하다는 장점이 있다.
+    - 두 방식 모두 최악, 최선일 때 시간복잡도는 같지만, 특정 상황에서 호어 방식이 로무토 방식보다 효율적이다.
+  - 로무토 방식 구현
+    - 배열의 맨 오른쪽 요소를 피벗으로 선택한다.
+    - 두 개의 포인터(left, right)를 배열의 시작점에 위치시키고, right 포인터를 먼저 전진시키면서 pivot보다 작은 값이 나오면 left 포인터가 가리키는 값과 스왑한다.
+    - 스왑이 일어났을 경우에만 left 포인터를 전진시킨다.
+    - right 포인터가 끝(pivot이 가리키는 요소의 바로 앞 요소)에 도달하면 left 포인터와 pivot의 값을 스왑하고 분할을 종료한다.
+
+  ```python
+  # 로무토 방식
+  def lomuto_partition(arr, low, high):
+      # pivot으로 배열의 가장 오른쪽 값을 선택
+      pivot = arr[high]
+      left = low
+      for right in range(low, high):
+          if arr[right] < pivot:
+              arr[right], arr[left] = arr[left], arr[right]
+              left += 1
+  
+      arr[left], arr[high] = arr[high], arr[left]
+  
+      # pivot을 반환한다.
+      return left
+  
+  
+  def quick_sort(arr, low, high):
+      if low < high:
+          pivot = lomuto_partition(arr, low, high)
+          quick_sort(arr, low, pivot - 1)
+          quick_sort(arr, pivot + 1, high)
+  
+  
+  lst = [2, 4, 5, 2, 1, 4, 6, 7, 2, 9]
+  quick_sort(lst, 0, len(lst)-1)
+  ```
+
+  - 호어 방식 구현
+    - 배열의 맨 왼쪽 요소를 피벗으로 선택한다.
+    - 먼저 left 포인터를 피벗 다음에서 출발시켜 피벗보다 큰 값을 찾을 때 까지 오른쪽으로 이동시킨다.
+    - 다음으로 right 포인터를 배열의 마지막 값에서 출발하여 피벗보다 작은 값을 찾을 때 까지 왼쪽으로 이동시킨다.
+    - 두 포인터가 가리키는 값을 서로 바꾼다.
+    - 이 과정을 left 포인터가 right 포인터보다 작거나 같을 때 까지, 즉 두 포인터가 교차할 때 까지 반복한다.
+    - 두 포인터가 교차하면 pivot과 right 포인터가 가리키는 값을 교체하고 종료한다.
+
+  ```python
+  # 호어 방식
+  def hoare_partition(arr, left, right):
+      i = left
+      j = right
+      pivot = arr[left]
+      while i <= j:
+          while i <= j and arr[i] <= pivot:
+              i += 1
+          while i <= j and arr[j] >= pivot:
+              j -= 1
+          if i < j:
+              arr[i], arr[j] = arr[j], arr[i]
+      arr[left], arr[j] = arr[j], arr[left]
+      return j
+  
+  
+  def hoare_quick_sort(arr, low, high):
+      if low < high:
+          pivot = hoare_partition(arr, low, high)
+          hoare_quick_sort(arr, low, pivot - 1)
+          hoare_quick_sort(arr, pivot + 1, high)
+  
+  
+  lst = [2, 4, 5, 2, 1, 4, 6, 7, 2, 9]
+  hoare_quick_sort(lst, 0, len(lst) - 1)
+  ```
+
+  - 평균 시간복잡도
+    - 평균적으로 O(NlgN)이다.
+    - 피벗의 위치를 찾는 데(partition 함수) 매 단계마다 대략 O(N) 만큼의 시간이 필요하다.
+    - 예를 들어 길이가 8인 배열 [4,3,2,6,7,5,1,8]이 있을 때, pivot이 들어갈 위치를 찾기 위해 대략 O(N)의 시간이 걸린다.
+    - 또한 위 배열에서 pivot을 찾아 [3,2,1], [4], [6,7,5,8]과 같이 분할되었을 경우 pivot보다 작은 값을 담은 배열의 pivot을 찾는데 대략 O(N/2), pivot보다 큰 값을 담은 배열의 pivot을 찾는 데 대략 O(N/2)의 시간이 필요하다.
+    - N/2+N/2=N이므로 다음 단계도 O(N)의 시간이 걸리는 셈이다.
+    - 결국 각 단계마다 O(N)의 시간이 걸린다.
+    - 단계가 증가할 수록 확정되는 pivot의 개수는 1, 2, 4, 8과 같이 지수적으로 증가하므로 이 과정은 lgN번 반복한다.
+    - 따라서 전체 시간 복잡도는 N번 수행해야 하는 작업이 lgN번 반복되므로 O(NlgN)이다.
+  - 최악의 경우의 시간복잡도
+    - 만약 이미 정렬된 배열을 정렬하려 할 때, pivot값은 호어 방식의 경우 맨 왼쪽의 값으로 고정된다(로토무의 경우 맨 오른쪽 값으로 고정).
+    - 따라서 파티셔닝이 전혀 이루어지지 않으므로 pivot을 찾는 단계가 lgN번이 아닌 N번 수행된다.
+    - 따라서 시간복잡도는 O(N<sup>2</sup>)이 된다.
+  - 특징
+    - 다른 O(NlgN) 알고리즘들 보다는 빠른 속도를 보여주는데 매 사이클마다 적어도 1개의 원소(pivot)는 정렬되므로 정렬 대상이 줄어들기 때문이다.
+    - 또한 다루는 데이터들의 지역성이 높아 cache hit rate이 높다.
+    - 제자리 정렬이지만 불안정 정렬이다.
+
