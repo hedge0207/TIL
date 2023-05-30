@@ -1328,3 +1328,121 @@
 
   - 만일 같은 flyweight object를 공유하는 1000개의 Slime object가 생성된다면 128,124bytes(`(28+28+72)*1000 + 1024`)의 메모리만 있으면 된다.
     - 기존 코드의 경우 1,152,000bytes(`(28+28+72+1024)*1000`)를 필요로 했다.
+
+
+
+## Mediator Pattern
+
+- Mediator pattern
+
+  - 정의
+    - 객체들 사이의 의존성을 줄이기 위한 design pattern이다.
+    - 객체들 간의 직접적인 연결을 제한하고 mediator 객체를 통해서만 협동하도록 강제한다.
+    - 이를 통해 component들은 오직 mediator에만 의존하게 된다.
+  - 클래스 다이어그램
+    - Components들은 business logic을 담고 있는 다양한 class들이다.
+    - Component들은 다른 컴포넌트들의 존재를 몰라야한다.
+    - Mediator로 요청을 보낸다 하더라도 요청을 보내는 component는 자신이 보낸 요청을 어떤 component에서 처리하는지 몰라야하며, 요청을 받아서 처리하는 component도 자신이 처리하는 요청이 어디서 온 것인지를 몰라야한다.
+    - 각 컴포넌트는 Mediator에 대한 reference를 가지고 있으며, 이 reference의 type은 Mediator interface로 선언되어 ConcreteMediator에 대한 정보는 알지 못한다.
+    - 이렇게 구현하는 이유는 Mediator가 바뀌더라도 Component를 변경 없이 사용할 수 있게 하기 위함이다.
+    - Mediator에는 component들과 통신을 위한 메서드를 구현한다.
+    - Component들은 이 메서드를 호출할 때 객체 자신을 포함한 context 정보를 argument로 넘긴다.
+    - 단, 이 메서드를 통해서 다른 객체와 의존성이 생겨선 안된다.
+    - ConcreteMediator는 다양한 컴포넌트들의 관계를 캡슐화하며, 모든 컴포넌트들에 대한 reference를 가지고 있다.
+
+  ![image-20230526165738109](design_pattern_part5.assets/image-20230526165738109.png)
+
+  - Chain of Responsibility Pattern과의 차이
+    - Chain of responsibility는 chain을 구성하는 객체들이 연속적으로 연결되어 있으며 요청을 처리할지 여부를 각 객체들이 판단한다.
+    - 반면에 mediator pattern은 mediator가 중앙에서 어떤 component로 요청을 보낼지를 결정한다.
+
+
+
+- 예시
+
+  ```python
+  from __future__ import annotations
+  from abc import ABC
+  
+  
+  class Mediator(ABC):
+      
+      """
+      Component들이 mediator에게 event의 발생을 알리기 위한 method.
+      Component에 대한 정보와 event에 대한 정보를 argument로 받는다.
+      """
+      def notify(self, sender: object, event: str) -> None:
+          pass
+  
+  
+  class ConcreteMediator(Mediator):
+      def __init__(self, component1: Component1, component2: Component2) -> None:
+          self._component1 = component1
+          # component는 mediator에 대한 reference를 갖는다.
+          self._component1.mediator = self
+          self._component2 = component2
+          self._component2.mediator = self
+  
+      def notify(self, sender: object, event: str) -> None:
+          if event == "A":
+              print("Mediator reacts on A and triggers following operations:")
+              self._component2.do_c()
+          elif event == "D":
+              print("Mediator reacts on D and triggers following operations:")
+              self._component1.do_b()
+              self._component2.do_c()
+  
+  
+  class BaseComponent:
+      """
+      모든 component가 공유하는 logic을 작성하기 위한 class
+      """
+      def __init__(self, mediator: Mediator = None) -> None:
+          self._mediator = mediator
+  
+      @property
+      def mediator(self) -> Mediator:
+          return self._mediator
+  
+      @mediator.setter
+      def mediator(self, mediator: Mediator) -> None:
+          self._mediator = mediator
+  
+  
+  # ConcreteComponent class
+  class Component1(BaseComponent):
+      def do_a(self) -> None:
+          print("Component 1 does A.")
+          self.mediator.notify(self, "A")
+  
+      def do_b(self) -> None:
+          print("Component 1 does B.")
+          self.mediator.notify(self, "B")
+  
+  
+  class Component2(BaseComponent):
+      def do_c(self) -> None:
+          print("Component 2 does C.")
+          self.mediator.notify(self, "C")
+  
+      def do_d(self) -> None:
+          print("Component 2 does D.")
+          self.mediator.notify(self, "D")
+  
+  
+  if __name__ == "__main__":
+      c1 = Component1()
+      c2 = Component2()
+      mediator = ConcreteMediator(c1, c2)
+  
+      print("Client triggers operation A.")
+      c1.do_a()
+  
+      print("\n", end="")
+  
+      print("Client triggers operation D.")
+      c2.do_d()
+  ```
+
+  
+
