@@ -1446,3 +1446,182 @@
 
   
 
+## Memento Pattern
+
+- 상황
+
+  - 사각형을 그리는 프로그램을 만들려고 한다.
+    - 사각형의 높이와 너비를 설정 할 수 있어야 하며, 이전에 설정한 내용을 취소하는 것도 가능해야한다.
+    - 이전에 설정한 내용을 취소하는 기능은 객체에 변경사항이 있을 때 마다 객체의 현재 상태에 대한 snapshot을 생성하고, 이를 어딘가에 저장한 뒤 사용자가 취소를 실행할 때 마다 저장해둔 snapshot으로 객체의 상태를 변경하는 방식으로 구현한다.
+    - 높이와 너비는 외부에서 접근할 수 없도록 private attribute로 설정되어 있다.
+
+  ```python
+  class Rectangle:
+      def __init__(self, height, width):
+          self.__height = height
+          self.__width = width
+      
+      def undo(self):
+          pass
+  ```
+
+  - 문제
+    - 이전에 설정한 내용을 취소하는 기능을 넣기 위해서는 객체의 이전 상태를 저장해야한다.
+    - 그런데 Rectangle class의 attribute들은 모두 private으로 설정되어 있기에 외부에서 접근이 불가능하다.
+    - 따라서 객체의 이전 상태를 저장할 수 없다.
+    - 또한 어떻게 저장할 것인지도 문제가 되는데, 여러 개의 snapshot을 생성할 것이므로 결국 이 snapshot들도 객체에 저장해두어야한다.
+    - 그런데 snapshot들을 저장할 객체가 snapshot들을 private으로 저장할 경우 외부 객체에서 접근을 못 하므로 snapshot을 저장하고 있는 의미가 없고, private으로 저장할 경우 원본 객체가 굳이 attribute들을 private으로 설정할 이유가 사라진다.
+  - 해결
+    - Snapshot은 Rectangle 객체가 직접 만들고, 이를 memento라 불리는 snapshot들을 저장하는 class를 하나 생성한다.
+    - Memento 객체에 저장된 snapshout들에는 memnto 객체를 생성한 객체를 제외한 그 어떤 객체도 접근할 수 없다.
+    - 접근한다 하더라도 snapshot의 생성 시간 등의 meta data에만 접근이 가능하고 snapshot 자체에는 접근할 수 없게 한다.
+    - 또한 Memento 객체는 caretaker라 불리는 다른 객체 내부에 저장되는데, caretaker는 meneto와 제한된 interface를 통해서만 소통이 가능하며, memento 내부에 저장된 상태를 수정할 수는 없다.
+
+
+
+- Memento pattern
+
+  - 정의
+    - 구체적인 구현을 모르더라도, 객체의 이전의 상태를 저장하고 복원할 수 있게 해주는 디자인 패턴.
+    - 캡슐화를 깨지 않고도 객체 내부의 private attribute까지 복사하여 저장할 수 있게 해준다.
+    - 예시에서 살펴본 undo 기능 외에도 transaction 처리 등에도 유용하게 사용할 수 있다.
+  - 클래스 다이어그램
+    - Originator는 자신의 상태에 대한 snapshot을 생성하고, 필요할 때 생성한 snapshot을 통해 복원이 가능하다.
+    - Memento는 Originator의 상태에 대한 snapshot들을 저장하는 객체로, 일반적으로 immutable하며, state는 생성자를 통해 단 한 번만 받는다.
+    - Caretaker는 snapshot이 언제, 그리고 왜 생성되었는지를 알고 있으며, 언제 snapshot을 사용하여 복원이 실행되어야 하는지도 알고 있다.
+    - Caretaker는 Memento들을 stack에 저장하여 Originator의 history를 추적할 수 있다.
+    - Originator가 복원이 필요할 경우 Caretaker는 history에서 가장 상단에 위치한 Memento를 Originator에게 전달하고, Originator는 이를 통해 복원을 실행한다.
+
+  ![image-20230530143255346](design_pattern_part5.assets/image-20230530143255346.png)
+
+  - 굳이 Memento를 사용하지 않고 그냥 Originator에 snapshot을 저장하면 되는 것 아닌가?
+    - 이 방식을 사용해도 private한 attribute들을 외부 객체로부터의 접근에서 보호하는 것은 가능하다.
+    - 그러나 snapshot을 관리하는 코드까지 Originator에 넣을 경우 Originator가 지나치게 복잡해질 수 있다는 문제가 있다.
+
+
+
+- 구현
+
+  - 일반적으로는 Memento를 Originator의 nested class로 구현한다.
+
+  ```python
+  from __future__ import annotations
+  from abc import ABC, abstractmethod
+  from datetime import datetime
+  
+  
+  # Originator class
+  class Rectangle():
+      """
+      Originator는 이후에 변경될 수 있는 state들을 가지고 있다.
+      또한 memento에 현재 상태를 저장하고, 이를 추후에 불러와서 복원하는 method를 가지고 있다.
+      """
+  
+      def __init__(self, height: int, width: int) -> None:
+          self.__height = height
+          self.__width = width
+      
+      def increse(self):
+          """
+          Originator의 business logic
+          """
+          self.__height += 1
+          self.__width += 1
+  
+      def save(self) -> Memento:
+          """
+          현재 상태를 Memento에 저장한다.
+          """
+  
+          return ConcreteMemento(self.__height, self.__width)
+  
+      def restore(self, memento: Memento) -> None:
+          """
+          Memento object를 가져와서 이전 상태로 복원한다.
+          """
+          self.__height = memento.get_height()
+          self.__width = memento.get_width()
+  
+  
+  class Memento(ABC):
+      """
+      Memento interface는 memento의 생성일이나 이름 같은 meta data에 접근할 수 있는 방법을 제공한다.
+      그러나 Originator의 snapshot을 노출하지는 않는다.
+      """
+  
+      @abstractmethod
+      def get_created_date(self) -> str:
+          pass
+  
+  
+  class ConcreteMemento(Memento):
+      def __init__(self, height: int, width: int) -> None:
+          self.__width = width
+          self.__height = height
+          self._created_date = str(datetime.now())[:19]
+  
+      def get_height(self) -> str:
+          """
+          Originator가 이전의 상태를 복원하기 위해 snapshot을 가져갈 때 사용하는 method
+          """
+          return self.__height
+  
+      def get_width(self) -> str:
+          """
+          Originator가 이전의 상태를 복원하기 위해 snapshot을 가져갈 때 사용하는 method
+          """
+          return self.__width
+  
+      def get_created_date(self) -> str:
+          """
+          metadata를 제공하기 위한 method
+          """
+          return self._created_date
+  
+  
+  class Caretaker():
+      """
+      Caretaker는 ConcreteMemento class에 의존하지 않는다.
+      그러므로, originator의 state에 접근할 수 없다.
+      """
+  
+      def __init__(self, originator: Rectangle) -> None:
+          self._mementos = []
+          self._originator = originator
+  
+      def backup(self) -> None:
+          """
+          Originator의 business logic은 state에 영향을 미친다.
+          그러므로 client code는 business logic을 실행하기 전에 state를 backup해야한다.
+          """
+          self._mementos.append(self._originator.save())
+  
+      def undo(self) -> None:
+          if not self._mementos:
+              return
+  
+          memento = self._mementos.pop()
+          self._originator.restore(memento)
+  
+  
+      def show_history(self) -> None:
+          for memento in self._mementos:
+              print(memento)
+  
+  
+  if __name__ == "__main__":
+      originator = Rectangle(10, 5)
+      caretaker = Caretaker(originator)
+  
+      caretaker.backup()
+      originator.increse()
+  
+      caretaker.backup()
+      originator.increse()
+      caretaker.show_history()
+      
+      caretaker.undo()
+  
+      caretaker.undo()
+  ```
+
