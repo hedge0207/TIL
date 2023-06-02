@@ -1749,6 +1749,29 @@
           return name
   ```
   
+  - list, tuple 등의 자료형으로 type hint를 줄 경우 `typing.List`와 `list`의 차이
+  
+    >https://stackoverflow.com/questions/39458193/using-list-tuple-etc-from-typing-vs-directly-referring-type-as-list-tuple-etc
+  
+    - Python 3.8까지는 list, tuple 등의 내장 자료형이 generic type이 아니었기에 `baz`함수에서와 같이 내장 자료형으로 구체적인 type hint를 주는 것은 불가능했다.
+    - 그러나 3.9부터는 내장 자료형으로도 `baz` 함수처럼 구체적인 type hint를 주는 것이 가능해졌다.
+  
+  ```python
+  from typing import List
+  
+  
+  def foo(lst: List[str]):
+      pass
+  
+  # 3.8까지는 아래와 같이 type hint를 주는 것은 가능했지만
+  def bar(lst: list):
+      pass
+  
+  # 아래와 같이 주는 것은 불가능했다.
+  def baz(lst: list[str]):
+      pass
+  ```
+  
   
 
 
