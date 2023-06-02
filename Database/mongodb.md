@@ -109,6 +109,36 @@
 
 
 
+- 삭제
+
+  - `deleteOne`
+    - 조건에 맞는 document 1개 삭제
+    - 조건에 맞는 document가 없더라도 error가 발생하지는 않기에, 원하는 데이터가 정확히 삭제되었는지 확인해야 한다.
+  
+  ```bash
+  $ db.<collection명>.deleteOne(<조건>)
+  
+  # 예시
+  $ db.books.deleteOne({name:"foo"})
+  
+  # 결과
+  # { acknowledged: true, deletedCount: 1 }
+  ```
+  
+  - `deleteMany`
+    - 조건에 맞는 document 모두 삭제
+  
+  ```bash
+  $ db.<collection명>.deleteMany(<조건>)
+  
+  # 예시
+  $ db.books.deleteMany({name:"foo"})
+  ```
+  
+  
+
+
+
 
 
 
