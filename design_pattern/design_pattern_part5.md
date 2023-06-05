@@ -1627,3 +1627,118 @@
 
 
 
+
+
+## Prototype Pattern
+
+- 상황
+
+  - 이미 생성된 object를 복제하려고 한다.
+    - 이를 위해서 이미 생성된 object에서 attribute들을 가져와서 같은 class로 새로운 object를 만들려고 한다.
+
+  ```python
+  class Person:
+      def __init__(self, name, email):
+          self.name = name
+          self.__email = email
+          
+  person1 = Person()
+  person2 = Person(person1.name, person2.email)
+  ```
+
+  - 문제
+    - Object의 일부 attribute는 private으로 선언되어 있어 값을 가져올 수 없다.
+    - 또한 위와 같이 할 경우 복제하려는 객체를 생성한 class에 대해 알아야 하기 때문에(constructor에 무엇을 넘겨야 하는지 등), 해당 class에 의존할 수 밖에 없다.
+    - 예를 들어 해당 class가 변경될 경우, 복제하는 code도 변경되어야 한다.
+    - 만일 interface에 대한 정보만 알고 있고, concrete class에 대한 정보는 모른다면 복제할 수 없다.
+    - 또한 다른 클래스를 상속 받은 클래스의 object를 복제해야하는 경우 상속한 class에 대한 정보도 알아야 할 수 있다.
+    - 객체 생성시에 복잡한 logic이 들어가는 경우 매 복제마다 복잡한 logic을 실행해야한다.
+  - 해결
+    - 복제 대상이 되는 객체에 복제 과정을 위임한다.
+    - 즉 자신의 복제 객체를 자신이 생성하도록 한다.
+
+
+
+- Prototype pattern
+
+  - 정의
+    - 이미 존재하는 object를 해당 object의 class에 의존하지 않고도 복사할 수 있게 해주는 design pattern.
+  - 클래스 다이어그램
+    - Prototype interface에는 객체를 복제하는 clone 메서드를 선언한다.
+    - ConcretePrototype class에는 clone 메서드를 구현한다.
+    - Client는 Prototype interface를 따르는 객체를 복제한다. 
+
+  ![image-20230530165839992](design_pattern_part5.assets/image-20230530165839992-16856641013891.png)
+
+
+
+- 구현
+
+  > [참고](https://github.com/faif/python-patterns/blob/master/patterns/creational/prototype.py)
+
+  - Python의 경우 copy module의 deepcopy 메서드를 사용하면 보다 간단하게 구현이 가능하다.
+  - 아래의 경우 위 다이어그램에서는 다루지 않은 `PrototypeDispatcher` class를 구현했는데, 복제한 object들을 보다 쉽게 관리하는 용도로 사용한다.
+    - 일반적으로는 Registry라고 부른다.
+
+  ```py
+  from __future__ import annotations
+  
+  from typing import Any
+  
+  
+  class Prototype:
+      def __init__(self, value: str = "default", **attrs: Any) -> None:
+          self.value = value
+          self.__dict__.update(attrs)
+  
+      def clone(self, **attrs: Any) -> Prototype:
+          """Prototype을 복제하고 inner attribute들을 update한다."""
+          # Python in Practice, Mark Summerfield
+          # 아랫줄의 코드 대신에 copy module의 deepcopy 메서드를 사용해도 된다.
+          obj = self.__class__(**self.__dict__)   # obj = copy.deepcopy(self)
+          obj.__dict__.update(attrs)
+          return obj
+  
+  
+  class PrototypeDispatcher:
+      def __init__(self):
+          self._objects = {}
+  
+      def get_objects(self) -> dict[str, Prototype]:
+          """Get all objects"""
+          return self._objects
+  
+      def register_object(self, name: str, obj: Prototype) -> None:
+          """Register an object"""
+          self._objects[name] = obj
+  
+      def unregister_object(self, name: str) -> None:
+          """Unregister an object"""
+          del self._objects[name]
+  
+  
+  if __name__ == "__main__":
+      dispatcher = PrototypeDispatcher()
+      prototype = Prototype()
+  
+      d = prototype.clone()
+      a = prototype.clone(value='a-value', category='a')
+      b = a.clone(value='b-value', is_checked=True)
+      dispatcher.register_object('objecta', a)
+      dispatcher.register_object('objectb', b)
+      dispatcher.register_object('default', d)
+  
+      print([{n: p.value} for n, p in dispatcher.get_objects().items()])  
+      # [{'objecta': 'a-value'}, {'objectb': 'b-value'}, {'default': 'default'}]
+      
+      print(b.category, b.is_checked)     # a True
+  ```
+
+  
+
+
+
+
+
+
+
