@@ -396,7 +396,7 @@
 
 
 
-# text encoding
+# Text Encoding
 
 - encoding
   - 컴퓨터는 전기 신호로 정보를 표현한다.
@@ -413,13 +413,11 @@
 
   - 이름에서 알 수 있듯이 미국에서 정의한 부호 체계이다.
 
-  - 7비트로 문자를 표현한다.
-
+  - 7비트로 character 하나를 표현한다.
     - 즉 128개의 문자를 표현할 수 있으며, 33개의 출력 불가능한 제어 문자들과 95개의 출력 가능한 문자들로 이루어져 있다.
     - 제어문자들의 대부분은 더 이상 사용되지 않는다.
     - 95개의 문자는 52개의 영문 알파벳 대소문자와 10개의 숫자, 32개의 특수문자, 하나의 공백 문자로 구성된다.
-
-    - 8비트가 아닌 7비트를 사용하는 이유는 1비트는 통신 에러 검출을 위해 사용하기 때문이며, 이를 위해 사용되는 비트를 Parity bit라 부른다.
+  - 8비트가 아닌 7비트를 사용하는 이유는 1비트는 통신 에러 검출을 위해 사용하기 때문이며, 이를 위해 사용되는 비트를 Parity bit라 부른다.
 
 
 
@@ -464,6 +462,142 @@
     - 문자를 1byte~6bytes까지 가변적으로 인코딩하는 방식.
     - 예를 들어 ASCII 코드상의 문자들은 1bytes로, 아시아 문자는 3bytes로 인코딩한다.
     - 표현 가능한 길이는 최대 66bytes지만 다른 인코딩과의 호환을 위해 46bytes까지만 사용한다.
+
+
+
+- Base64
+  
+  - Binary data를 64진법으로 표현된 ASCII코드 문자열로 변환시키는 인코딩이다.
+    - 64개의 문자를 사용한다고 하여 Base 64라는 이름이 붙었다.
+    - ASCII 문자들 중 제어문자를 제외하고 아래와 같은 64개의 문자들을 사용 한다.
+    - `A-Z`, `a-z`, `0-9`, `+`, `/`
+    - 여기에 추가로  `=`도 사용하는데, 이는 padding을 위해 사용한다.
+    - 64개의 문자를 사용하므로, 64개의 문자를 표현할 수 있는 6bit(2**6==24)를 사용한다.
+  
+  - 64인 이유는 2의 제곱수 중 ASCII 코드를 가장 많이 표현할 수 있는 수이기 때문이다.
+  
+    - ASCII 문자는 128개의 문자를 표현할 수 있다.
+    - 그러나 제어문자를 제외하면 실제 표현 가능한 문자는 95개뿐이다.
+    - 따라서 2의 제곱수 중 64가 ASCII 코드를 가장 많이 표현할 수 있는 수이다.
+  
+  - 24bit 크기의 버퍼를 사용하여 데이터를 담는다.
+  
+    - 대부분의 컴퓨터는 8bit를 1byte로 사용한다.
+    - 그러나 base64는 6bit로 하나의 charater를 표현한다.
+    - 따라서 8과 6의 최소공배수인 24bit를 버퍼의 크기로 사용한다.
+    - 만일 24bit를 채우지 못 할 경우 남은 bit를 0으로 채우는 padding을 거친다.
+    - 즉 3byte의 data를 4개의 charater로 표현한다.
+  
+  - 인코딩 예시1
+  
+    > 색인표는 [링크](https://en.wikipedia.org/wiki/Base64) 참고
+  
+    - Hello를 base64로 인코딩 하는 과정은 아래와 같다.
+    - 먼저 각 charater를 ascii code 값으로 변환하면 `72 101 108 108 111`가 된다.
+    - 그 후 각 ascii code를 2진수로 변환하면`0100100001100101011011000110110001101111`가 된다.
+    - 이를 6bit씩 끊으면 `010010 000110 010101 101100 011011 000110 1111`이 된다.
+    - 6bit씩 끊었을 때 마지막은 6bit가 채워지지 않으므로 padding을 추가하여 `111100`이 된다(여기서 이루어진 padding을 결과에는 영향을 미치지 않는다).
+    - 또한 6bit씩 끊은 덩어리의 개수가 4의 배수(base64는 3byte의 data를 4개의 charater로 표현한다)가 아닌 7이므로, 4의 배수가 되도록 0으로만 이루어진 6bit 덩어리를 추가해준다(여기서 이루어진 padding이 결과에 영향을 미친다).
+    - 결국 `010010 000110 010101 101100 011011 000110 111100 000000`이 된다.
+    - Base64 index에서 각 2진수에 해당하는 값을 찾아 변환해주면 `SGVsbG8`이 된다.
+    - 위에서 6bit 덩어리들의 개수를 4의 배수로 맞추기 위해 `000000`를 padding을 했다는 것을 표시하기 위해 `=`을 추가하면 최종적으로 `SGVsbG8=`가 된다.
+  
+  - 인코딩 예시2
+  
+    - Theo를 base64로 인코딩하는 과정은 아래와 같다.
+    - 각 charater를 ascii code 값으로 변환하면 `84, 104, 101, 111`가 된다.
+    - 이를 2진수로 변환하면 `01010100011010000110010101101111`이 되고, 6bit씩 끊으면 `010101 000110 100001 100101 011011 11`이 된다.
+    - 마지막 덩어리는 6bit가 아니므로 6bit가 되도록 0을 채우면 `110000`이 된다.
+    - 전체 덩어리의 개수가 4의 배수가 아닌 6이므로 4의 배수가 되도록 0으로 이루어진 6bit 덩어리를 추가해준다.
+    - 결국 `010101 000110 100001 100101 011011 110000 000000 000000`이 되고, 이를 base64 index에서 찾아 변환하면 `VGhlbw`가 된다.
+    - 위에서 6bit 덩어리들의 개수를 4의 배수로 맞추기 위해 `000000`를 padding을 했다는 것을 표시하기 위해 `==`을 추가(`000000`을 2개 추가했으므로)하면 `VGhlbw==`가 된다.
+  
+  - Python으로 변환하기
+  
+    - 사실 Python의 경우 `base64` 패키지를 사용하면 훨씬 간편하게 인코딩이 가능하다.
+  
+  ```python
+  def convert_to_binary(ascii_code):
+      binary_string = ""
+      while ascii_code:
+          if ascii_code % 2 == 0:
+              binary_string += "0"
+          else:
+              binary_string += "1"
+          ascii_code //= 2
+  
+      while len(binary_string) != 8:
+          binary_string += "0"
+  
+      return binary_string[::-1]
+  
+  
+  def get_base64_index(six_bits):
+      index = 0
+      position = 5
+      for bit in six_bits:
+          if int(bit):
+              index += 2 ** position
+          position -= 1
+  
+      return index
+  
+  
+  def make_base64_index():
+      base64_index = {
+          62: "+",
+          63: "/"
+      }
+      num_to_plus = 65
+      for i in range(62):
+          if i == 26:
+              num_to_plus += 6
+          if i == 52:
+              num_to_plus = -4
+          base64_index[i] = chr(i + num_to_plus)
+  
+      return base64_index
+  
+  
+  base64_index = make_base64_index()
+  
+  ascii_codes = [ord(char) for char in input()]
+  binary_string = ""
+  for ascii_code in ascii_codes:
+      binary_string += convert_to_binary(ascii_code)
+  
+  base64_encoded = ""
+  num_padding = 0
+  for i in range(0, len(binary_string), 6):
+      six_bits = binary_string[i:i + 6]
+  
+      length = len(six_bits)
+      if length != 6:
+          num_padding = length % 3
+          for _ in range(6 - length):
+              six_bits += "0"
+  
+      print(base64_index[get_base64_index(six_bits)], end="")
+  
+  for _ in range(num_padding):
+      print("=", end="")
+  ```
+  
+  - ASCII는 text를 bytes로 변환하는 데 반해, base64는 data를 text로 변환한다.
+    - 즉 ASCII는 text를 byte로 변환하기 위한 encoding이고, base64는 data를 text로 변환하기 위한 encoding이다.
+    - 즉, 위에서도 확인했듯 base64의 결과값은 bytes가 아니라 string이다.
+  - Base64를 사용하는 이유
+    - Base64를 사용하여 인코딩하면, 인코딩하기 전 보다 사이즈가 더 커지게 된다.
+    - 그럼에도 base64를 사용하는 이유는 ASCII코드의 경우 8bits 중 7bits로 data를 표현하고, 나머지 1bit를 처리하는 방식이 시스템별로 통일되어 있지 않고, 제어문자의 경우도 시스템 별로 다른 코드 값기 때문에 문제가 생길 수 있다.
+    - 따라서 ASCII 코드들 중 모든 시스템에 동일하게 적용될 수 있는 64개의 문자로만 데이터를 전달하기 위해 base64를 사용한다.
+    - 그냥 2진수를 보내면 되는 것 아닌가라고 생각할 수 있지만, text만을 input으로 받는 경우 2진수를 바로 보낼 수 없다.
+  
+  - Base32, base16 등
+    - 이들은 모두 base64와 동일한 과정으로 거치지만 각각 5bit, 4bit로 data를 표현하여 표현할 수 있는 문자의 개수가 base64보다는 적다.
+
+
+
+
 
 
 
