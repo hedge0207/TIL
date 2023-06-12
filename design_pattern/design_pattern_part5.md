@@ -1742,3 +1742,139 @@
 
 
 
+## Visitor pattern
+
+- 상황
+
+  - 동물원에서는 기존에 아래와 같이 각 동물들의 우리 class를 생성하여 관리하고 있었다.
+    - 각 동물 우리 class는 우리 내에 있는 동물들을 관리하기 위해 사용한다.
+
+  ```python
+  from abc import ABCMeta
+  
+  class AnimalCage(metaclass=ABCMeta):
+      pass
+  
+  class LionCage(AnimalCage):
+      pass
+  
+  class TigerCage(AnimalCage):
+      pass
+  
+  class ElephantCage(AnimalCage):
+      pass
+  ```
+
+  - 각 우리의 관리를 자동화하기 위해서 먹이를 주는 기능을 추가하려고한다.
+    - 따라서 아래와 같이 모든 class에 먹이를 주는 기능을 추가했다.
+
+  ```python
+  from abc import ABCMeta, abstractmethod
+  
+  class AnimalCage(metaclass=ABCMeta):
+      @abstractmethod
+      def feed(self):
+          pass
+  
+  class LionCage(AnimalCage):
+      def feed(self):
+          pass
+  
+  class TigerCage(AnimalCage):
+      def feed(self):
+          pass
+  
+  class ElephantCage(AnimalCage):
+      def feed(self):
+          pass
+  ```
+
+  - 문제
+    - 시스템 관리자가 이미 운영 중인 동물 우리 class에 다른 기능에 영향을 줄 수도 있는 새로운 기능을 추가하는 것이 부담스럽다고 말한다.
+    - 동물 우리 class는 원래 우리 있는 동물들의 정보를 저장하기 위해 사용해왔는데, 먹이를 주는 기능을 동물 우리 class에 포함되는 것이 맞는지도 의문스럽다.
+    - 또한 `feed` 메서드가 모든 동물 우리 class에 흩어져 있으므로 유지보수하기에도 어려울 것 같다.
+  - 해결
+    - 새롭게 추가할 행동을 기존 class가 아닌 visitor라 불리는 새로운 class에 넣는다.
+    - 기존 class들을 visitor class의 method를 인자로 받아 실행시킨다.
+
+  ```python
+  class CageVisitor:
+      def feed_lion(self, lion):
+          pass
+      
+      def feed_tiger(self, tiger):
+          pass
+      
+      def feed_elephant(self, elephant):
+          pass
+  ```
+
+  - 새로운 문제
+    - Client에서 visitor를 통해 method를 실행시키려 한다고 가정해보면, 아마 아래와 같은 code가 될 것이다.
+    - 모든 object의 type을 check해야한다는 문제가 있다.
+
+  ```python
+  visitor = CageVisitor()
+  
+  animal_cages: List[AnimalCage] = [LionCage(), TigerCage(), ElephantCage()]
+  
+  for cage in animal_cages:
+      if isinstance(cage, LionCage):
+          visitor.feed_lion()
+      elif isinstance(cage, TigerCage):
+          visitor.feed_tiger()
+      elif isinstance(cage, ElephantCage):
+          visitor.feed_elephant()
+  ```
+
+  - Double Dispatch를 사용하면 해결 가능하다.
+    - Visitor에서 어떤 method를 실행시킬지를 client가 선택하는 방식이 아니라, visitor class에 기존 class의 object를 넣어서 해당 object가 어떤 method를 실행시킬지 선택하도록한다.
+    - Visitor에 인자로 전달 된 기존 class의 object는 자신이 어떤 class의 instance인지를 알고 있으므로 분기를 줄 필요가 없다.
+    - 따라서 이 방식을 통해 복잡하게 분기를 주지 않아도 적절한 method를 실행할 수 있게 해준다.
+
+  ```python
+  class LionCage(AnimalCage):
+      def accept(self, visitor: Visitor):
+          # 메서드를 실행시킬 때 객체 자신을 인자로 넘긴다.
+          visitor.feed_lion(self)
+  
+  class TigerCage(AnimalCage):
+      def accept(self, visitor: Visitor):
+          visitor.feed_tiger(self)
+  
+  class ElephantCage(AnimalCage):
+      def accept(self, visitor: Visitor):
+          visitor.feed_elephant(self)
+  
+  x visitor = CageVisitor()
+  animal_cages: List[AnimalCage] = [LionCage(), TigerCage(), ElephantCage()]
+  
+  for cage in animal_cages:
+      cage.accept(visitor)
+  ```
+
+  - 결국 기존 class들의 코드를 수정해야 하는 것 아닌가?
+    - 기존 class를 수정하는 것은 맞지만, 새로운 행동을 개별 class에 추가하는 것 보다는 훨씬 위험 부담이 적다.
+    - 또한 추후에 `feed_<animal>()` 메서드에 변경사항이 생긴다 하더라도, 기존 class는 수정하지 않고 visitor만 수정하면 된다.
+
+
+
+- Visitor Pattern
+
+  - 정의
+    - 실제 로직을 가지고 있는 객체와 로직을 적용할 객체를 분리하고, 로직을 가지고 있는 객체가 로직을 적용할 객체를 방문하면서 로직을 실행하는 패턴.
+    - 로직을 적용할 객체를 수정하지 않고도 로직을 변경할 수 있다.
+  - 장점
+    - 부가적인 로직은 주요 class에서 분리하여 visitor로 옮김으로써 주요 class들은 자신의 목적에만 집중할 수 있게 된다.
+    - Class 계층에서 일부 class들에만 적용되는 유사한 logic을 작성할 때 유용하게 사용할 수 있다.
+    - 예를 들어 Foo라는 interface의 concrete class로 Bar, Baz, Qux가 있다고 가정해보자.
+    - 이 중 Bar, Baz에는 필요하지만 Qux에서는 사용하지 않는 logic이 있다면, 이를 Foo에다 선언하기도 애매하고, Bar, Baz 두 곳에 각각 선언하는 것도 비효율적인 것 같다.
+    - 이럴 때 visitor pattern을 적용하면 코드의 중복 없이도, 일부 class들만 필요로 하는 logic을 작성할 수 있다.
+  - 클래스 다이어그램
+    - Visitor interface에는 argument로 ConcreteElement를 받는 visit method들을 선언한다(만일 overloading을 지원하는 언어라면 argument type만 다르게 주는 방식으로 구현한다).
+    - ConcreteVisitor에는 ConcreteElement의 type에 따라 다르게 동작하는 여러 유사한 행동들을 정의한다.
+    - Element interface에는 visitor를 받아오기 위한 method를 선언하는데, argument는 오직 visitor를 받는 하나만 있어야한다.
+    - ConcreteElement class들에는 visitor를 받아오기 위한 method를 구현하는데, 받아온 visitor 객체에서 적절한 method를 실행시킨다.
+
+  ![image-20230609162700646](design_pattern_part5.assets/image-20230609162700646.png)
+
