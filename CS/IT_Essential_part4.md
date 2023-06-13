@@ -373,6 +373,191 @@
 
 
 
+## Method Dispatch
+
+- Method Dispatch
+
+  - 어떤 메서드를 호출할 것인가를 결정하고 실행하는 과정을 의미한다.
+  - Static Method Dispatch
+    - 컴파일 시점에 호출되는 메서드가 결정되는 method dispatch
+    - 아래 코드에서 `foo()` 메서드는 아래 코드가 컴파일 되는 시점에 실행될 것이 결정된다.
+
+  ```python
+  def foo():
+      return
+  
+  foo()
+  ```
+
+  - Dynamic Method Dispatch
+    - 실행 시점에 호출되는 메서드가 결정되는 method dispatch
+    - 아래의 경우 obj를 Abstract class type이라고 지정해줬기에 다른 코드는 보지 않고 `obj.foo()`만 봤을 때는 어떤 class의 `foo` method가 실행될지 컴파일 타임에는 알 수 없고, 런타임에 결정된다.
+    - 또한 이 때 receiver parameter가 전달되는데, 이는 객체 자신이다(`self`와 동일하다).
+
+  ```python
+  from abc import ABCMeta
+  
+  class Abstract(metaclass=ABCMeta):
+      pass
+  
+  class ConcreteA(Abstract):
+      def foo(self):
+          return
+      
+  class ConcreteB(Abstract):
+      def foo(self):
+          return
+      
+  obj: Abstract = ConcreteA()
+  obj.foo()
+  ```
+
+
+
+- Double Dispatch
+
+  > [참고 영상](https://www.youtube.com/watch?v=s-tXAHub6vg&list=PLv-xDnFD-nnmof-yoZQN8Fs2kVljIuFyC&index=17)
+
+  - Dynamic dispatch를 두 번 한다는 의미이다.
+    - 즉, 실행 시점에 호출할 메서드를 결정하는 과정을 2번에 걸쳐서 한다는 의미이다.
+
+  - 예를 들어 아래와 같이 `Post` interface와 `SNS` interface가 있다고 가정해보자.
+
+  ```python
+  from __future__ import annotations
+  from abc import ABCMeta, abstractmethod
+  from typing import List
+  
+  
+  class Post(metaclass=ABCMeta):
+  
+      @abstractmethod
+      def post_on(self, sns:SNS):
+          pass
+  
+  
+  class Text(Post):
+      def post_on(self, sns:SNS):
+          pass
+  
+  
+  class Picture(Post):
+      def post_on(self, sns:SNS):
+          pass
+  
+  
+  class SNS(metaclass=ABCMeta):
+      pass
+  
+  
+  class FaceBook(SNS):
+      pass
+  
+  
+  class Instagram(SNS):
+      pass
+  
+  
+  posts: List[Post] = [Text(), Picture()]
+  snss: List[SNS] = [FaceBook(), Instagram()]
+  for post in posts:
+      for sns in snss:
+          post.post_on(sns)
+  ```
+
+  - 이 때 SNS의 종류에 따라 다른 작업을 하기 위해 Post의 concrete class들을 아래와 같이 변경했다.
+
+  ```python
+  class Text(Post):
+      def post_on(self, sns:SNS):
+          if isinstance(sns, FaceBook):
+              pass
+          elif isinstance(sns, Instagram):
+              pass
+  
+  
+  class Picture(Post):
+      def post_on(self, sns:SNS):
+          if isinstance(sns, FaceBook):
+              pass
+          elif isinstance(sns, Instagram):
+              pass
+  ```
+
+  - 위와 같은 방식의 문제는 새로운 SNS가 추가될 때 마다 분기를 추가해줘야 한다는 점이다.
+    - 예를 들어 새로운 SNS로 Line이 추가되었을 경우 `post_on()` 메서드는 다음과 같이 변경되어야한다.
+    - SNS가 추가될 때 마다 Post도 변경해줘야하므로 이는 OCP 위반이다.
+
+  ```python
+  def post_on(self, sns:SNS):
+      if isinstance(sns, FaceBook):
+          pass
+      elif isinstance(sns, Instagram):
+          pass
+      elif isinstnace(sms, Line):
+          pass
+  ```
+
+  - Double dispatch를 사용하면 이와 같은 문제를 해결할 수 있다.
+    - 아래 코드에서는 dynamic dispatch가 2번 일어난다.
+    - `post.post_on(sns)`가 실행될 때 한 번, `post_on()` 메서드 안에서 `sns.post()`가 실행될 때 한 번.
+    - `post.post_on(sns)`가 실행될 때는 Post의 concreate class 중 어떤 class의 method가 실행될 지 실행될 때까지 알 수 없으므로 dynamic dispatch이다.
+    - `sns.post()`도 마찬자기로 SNS의 concreate class 중 어떤 class의 method가 실행될 지 실행될 때까지 알 수 없으므로 dynamic dispatch이다.
+
+  ```python
+  from __future__ import annotations
+  from abc import ABCMeta, abstractmethod
+  from typing import List
+  
+  
+  class Post(metaclass=ABCMeta):
+  
+      @abstractmethod
+      def post_on(self, sns:SNS):
+          pass
+  
+  
+  class Text(Post):
+      def post_on(self, sns:SNS):
+          sns.post(self)
+  
+  
+  class Picture(Post):
+      def post_on(self, sns:SNS):
+          sns.post(self)
+  
+  
+  class SNS(metaclass=ABCMeta):
+      @abstractmethod
+      def post(self, post: Post):
+          pass
+  
+  
+  class FaceBook(SNS):
+      def post(self, post: Post):
+          pass
+  
+  class Instagram(SNS):
+      def post(self, post: Post):
+          pass
+  
+  
+  
+  posts: List[Post] = [Text(), Picture()]
+  snss: List[SNS] = [FaceBook(), Instagram()]
+  for post in posts:
+      for sns in snss:
+          post.post_on(sns)
+  ```
+
+  - Visitor Pattern의 보다 일반적인 형태이다.
+
+
+
+
+
+
+
 
 
 # Shorts
