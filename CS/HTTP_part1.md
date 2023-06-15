@@ -496,3 +496,42 @@
 
 
 
+
+
+# Shorts
+
+- Path variable과 Query parameter
+
+  > https://medium.com/@fullsour/when-should-you-use-path-variable-and-query-parameter-a346790e8a6d
+
+  - Path variable(path parameter)
+    - URL 경로의 일부를 매개변수로 사용하는 방식이다.
+    - 일반적으로 특정 resource를 가리키기 위해 사용한다.
+    - 아래의 `1`이 path variable이다.
+
+  ```bash
+  $ curl "localhost:8000/docs/1"
+  ```
+
+  - Query parameter(query component, query string)
+    - URL의 끝 부분에서 key, value의 쌍으로 매개변수를 표현하는 방식이다.
+    - URL 경로와는 `?`를 통해 구분하며, 여러 개를 넘겨야 할 경우 `&`로 구분한다.
+
+  ```bash
+  $ curl "localhost:8000/docs?genre=romance"
+  ```
+
+  - 사용하는 이유
+    - HTTP GET method를 사용해서 통신할 때는 body를 함께 전달할 수 없다.
+    - 그러나 GET method를 사용하더라도 data를 전달해야 하는 경우가 있는데, 이 때 data를 전달하기 위해 사용한다.
+  - 각각을 언제 사용해야 하는가?
+    - 만약 resource를 식별해야한다면 path variable을 사용하는 것이 좋다.
+    - 그러나 만약 정렬이나 filtering을 해야한다면 query parameter를 사용하는 것이 좋다.
+  - Query parameter 사용시 URL의 마지막에 `/`를 붙여야 하는가?
+    - 이전에는 붙여야 했지만, 현재는 붙이지 않아도 된다.
+    - 즉 `localhost:8000/docs?genre=romance`와 같이 써도 되고, `localhost:8000/docs/?genre=romance`와 같이 써도 된다.
+
+  
+
+
+
