@@ -769,6 +769,20 @@
   my_dict2 = dict.fromkeys(keys, 10)
   print(my_dict2)		# {'a': 10, 'b': 10, 'c': 10}
   ```
+  
+  - `setdefault(k, v)`
+    - k에 해당하는 key가 있을 때는 해당 key의 값은 반환하고, 없을 때는, k:v를 저장하고 v를 반환한다.
+    - key가 있을 경우 k:v를 저장하지 않는다.
+    - `collecions`패키지의 `defaultdict`를 쓰는 것이 더 낫다.
+  
+  ```python
+  my_dict = {"a":1}
+  print(my_dict.setdefault("a", 3))	# 1
+  print(my_dict.setdefault("b", 3))	# 3
+  print(my_dict)						# {'a': 1, 'b': 3}
+  ```
+
+
 
 
 

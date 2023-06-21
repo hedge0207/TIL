@@ -251,6 +251,8 @@
   print(my_instance._bar)		# bar
   print(my_instance.__baz)	# AttributeError
   ```
+  
+  - 단, name mangling을 통해 private화 시키는 것은 권장되지 않는다.
 
 
 
