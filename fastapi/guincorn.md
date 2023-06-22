@@ -111,6 +111,42 @@
   # 2023-06-21 10:26:44,125 - INFO - uvicorn.access - 127.0.0.1:12345 - "GET / HTTP/1.1" 200
   ```
 
+  - 특정 endpoint로 들어오는 log 필터링하기
+    - Endpoint를 특정할 수는 없으나 아래와 같이 Python logging 모듈의 filter기능을 사용하여 record 기반으로 필터링할 수 있다.
+    - 아래와 같이 함수를 추가해줘도 되고, `logging.Filter`를 상속 받는 class를 지정해줘도 된다.
+    - 단 class를 지정해줄 경우 반드시 `filter` 메서드를 가지고 있어야한다.
+    - 주의할 점은 `gunicorn.access`가 아닌 `uvicorn.access`에 설정해줘야한다는 점이다.
+  
+  ```python
+  from fastapi import FastAPI
+  import logging
+  import uvicorn
+  
+  
+  class MyFilter(logging.Filter):
+      def filter(self, record):
+          return "GET / HTTP/1.1" not in record.getMessage()
+  
+  def filter(record):
+      return "GET / HTTP/1.1" not in record.getMessage()
+  
+  # 함수를 사용할 경우
+  logging.getLogger("uvicorn.access").addFilter(filter)
+  # class를 사용할 경우
+  logging.getLogger("uvicorn.access").addFilter(MyFilter())
+  
+  app = FastAPI()
+  
+  
+  @app.get("/")
+  def test():
+      return
+  
+  if __name__ == "__main__":
+      uvicorn.run(app)
+  ```
+  
   
 
-  
+
+
