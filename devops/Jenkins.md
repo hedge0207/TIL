@@ -1,7 +1,11 @@
-# Jenkins
+# Jenkins tutorial
 
 - Jenkins Docker로 설치하기
 
+  - Host machine의 docker deamon을 사용하지 않고 docker container 내부에 docker container를 띄우는 방식(DinD)을 사용한다.
+    - 따라서 Docker를 실행하기 위한 container와 Jenkins container 2개의 container를 생성해야한다.
+    - Jenkins container에서 실행되는 docker 명령어는 Docker를 실행하기 위한 container에서 실행되며, Jenkins container에서 새로운 image나 container 생성시 Docker를 실행하기 위한 container 내부에 생성된다.
+  
   - Bridge network를 생성한다.
   
   ```bash
@@ -9,11 +13,11 @@
   ```
   
   - Jenkins node 내부에서 docker를 실행하기 위해 `docker:dind` image를 사용한다.
-  
+
   ```bash
   $ docker image pull docker:dind
   ```
-
+  
   - `docker:dind` image를 아래와 같이 실행한다.
     - `--privileged`: DinD를 위해서는 privileged 옵션을 줘야한다.
     - `--network`: 위에서 생성한 network를 입력한다.
@@ -98,7 +102,7 @@
 
 
 
-- Jenkins pipeline 생성하기
+- Jenkins pipeline 생성해보기
 
   - Jenkins Pipline(Pipeline)이란
     - Jenkins에서 CD(Continuous delivery) pipeline을 구현하고 통합하는 플러그인들의 모음이다.
@@ -122,5 +126,163 @@
   
     - `New Item`을 클릭한 후 `Multibranch Pipeline`을 선택한다.
       - `Branch Sources`에서 Add Source를 눌러 github credential 설정과 repository를 설정한다.
-      - Credentials의 Username에는 github username입력하고, password에는 github access token을 입력하면 된다.
+      - Credentials의 username에는 github username입력하고, password에는 github access token을 입력하면 된다.
       - 그 후 Save를 누르면 자동으로 실행된다.
+    - 실행하면 위에서 입력한대로 python version이 출력되는 것을 확인할 수 있다.
+
+
+
+
+
+# Jenkins로 application 관리하기
+
+- 배포용 applicaction 생성하기
+
+  - 배포할 application을 생성한다.
+
+  ```python
+  # main.py
+  from fastapi import FastAPI
+  import uvicorn
+  
+  
+  app = FastAPI()
+  
+  
+  @app.get("/")
+  def hello_world():
+      return "Hello World!"
+  
+  if __name__ == "__main__":
+      uvicorn.run(app, host="0.0.0.0")
+  ```
+
+  - Application을 실행하기 위한 requirements 파일을 작성한다.
+
+  ```bash
+  $ pip freeze > requirements.txt
+  ```
+
+  - Application을 build하기 위한 Dockerfile을 작성한다.
+
+  ```dockerfile
+  FROM python:3.8.0
+  
+  RUN mkdir /app
+  COPY . /app
+  WORKDIR /app
+  
+  RUN pip install --upgrade pip
+  RUN pip install -r requirements.txt
+  
+  CMD ["python", "main.py"]
+  ```
+
+  - 배포를 위한 Jenkinsfile을 작성한다.
+    - 먼저 위에서 작성한 Dockerfile을 기반으로 application을 build한다.
+    - 그 후 build한 image로 container를 생성한다.
+
+  ```groovy
+  pipeline {
+      agent any
+      stages {
+          stage('build') {
+              steps {
+                  sh 'docker build -t jenkins-test-app .'
+              }
+          }
+          stage('deploy') {
+              steps {
+                  sh 'docker run -d -p 8000:8000 --name jenkins-test-app jenkins-test-app'
+              }
+          }
+      }
+  }
+  ```
+
+  - 최종 directory는 아래와 같다.
+
+  ```
+  app
+  ├── main.py
+  ├── requirements.txt
+  ├── Dockerfile
+  ├── Jenkinsfile
+  └── README.md
+  ```
+
+  - 위 directory를 github에 push한다.
+
+
+
+- 기존에 띄웠던 `jenkins-docker` container 수정하기
+
+  - 외부에서 `jenkins-docker` container 내부에 생성되는 application container에 접근하기 위해 port를 publish해야한다.
+    - 기존과 동일하게 하되, `--publish 8000:8000`를 추가한다.
+
+  ```sh
+  $ docker run \
+  --name jenkins-docker \
+  --privileged \
+  --network jenkins \
+  --network-alias docker \
+  --env DOCKER_TLS_CERTDIR=/certs \
+  --volume /some/path/jenkins-docker-certs:/certs/client \
+  --volume /some/path/jenkins_home:/var/jenkins_home \
+  --publish 2376:2376 \
+  --publish 8000:8000
+  docker:dind
+  ```
+
+  - Jenkins container는 수정할 필요가 없다.
+
+
+
+- Jenkins pipeline을 구성한 후 실행하면 `jenkins-docker` container 내부에  `jenkins-test-app` container가 생성된 것을 확인할 수 있다.
+
+  - `jenkins-docker` container 내부로 접속하기
+
+  ```bash
+  $ docker exec -it jenkins-docer /bin/sh
+  ```
+
+  - Application container가 생성 되었는지 확인
+
+  ```bash
+  $ docker ps
+  ```
+
+  - 생성된 application container에 요청을 보내본다.
+
+  ```bash
+  $ curl <host>:8000
+  ```
+
+
+
+- Github repository에 Push가 발생할 때 마다 자동으로 배포하기
+  - Jenkins에 `Multibranch Scan Webhook Trigger` plugin을 설치한다.
+    - 위에서 사용한 multi branch pipeline은 기본적으로 webhook trigger를 지원하지 않기에, plugin을 설치해야한다.
+    - `Manage Jenkins` - `Plugins`에서 `Multibranch Scan Webhook Trigger`을 찾아 설치한다.
+  - 기존 pipeline에 webhook 관련 설정을 추가한다.
+    - 이제 pipeline 설정으로 이동하면, `Scan Repository Triggers`에 이전에는 없던 `Scan by webhook`이 생겼을 것이다.
+    - `Scan by webhook`을 체크하면, `Trigger token`을 입력해야하는데, 원하는 형식으로 token 값을 입력한다(e.g. my-token)
+  - Github repository에서 webhook을 설정한다.
+    - Github repository의 `Settings`  > `Webhooks`로 이동하여 `Add webhook`을 클릭한다.
+    - `Payload URL`에는 `http://<Jenkins url>/multibranch-webhook-trigger/invoke?token=<위에서 설정한 trigger token>`을 입력한다.
+    - `Content type`은 `application/json`으로 설정한다.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
