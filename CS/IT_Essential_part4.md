@@ -554,6 +554,232 @@
 
 
 
+# DI
+
+- Dependency
+
+  - 의존성의 의미
+    - A가 B를 class 변수 혹은 instance 변수로 가지고 있는 경우
+    - B가 A의 메서드의 parameter로 전달되는 경우.
+    - A가 B의 메서드를 호출하는 경우
+    - 이들 모두 A가 B에 의존하고 있다고 표현한다.
+  - 예시
+    - 아래 예시에서 Qux는 Foo, Bar, Baz 모두에게 의존하고 있다.
+
+  ```python
+  class Foo:
+      pass
+  
+  class Bar:
+      def do_something(self):
+          pass
+  
+  class Baz:
+      @classmethod
+      def do_something(self):
+          pass
+  
+  class Qux:
+      def __init__(self, foo: Foo):
+          self.foo = foo
+      
+      def do_somthing_with_bar(self, bar: Bar):
+          bar.do_something()
+      
+      def do_somthing(self):
+          Baz.do_something()
+  
+  
+  qux = Qux(Foo())
+  qux.do_somthing_with_bar(Bar())
+  qux.do_somthing()
+  ```
+
+  - 의존성의 문제
+    - 만약 위 예시에서 Foo, Bar, Baz  중 하나에라도 변경사항이 생긴다면 Qux도 함께 변경해주어야한다.
+    - 따라서 코드의 유지보수가 어려워지고, 코드의 재사용성도 떨어지게 된다.
+    - 예를 들어 아래 예시에서 Zookeeper는 Lion class에 강하게 의존하고있다.
+    - 만약 Tiger class가 추가된다면 Zookeeper class의 feed 메서드도 함께 변경하거나 TigerZookeeper class를 생성해야한다.
+    - 즉, Zoopkeeper class는 유지보수도 어려우며 따로 떼서 사용할 수도 없으므로 재사용성도 떨어진다.
+
+  ```python
+  class Lion:
+      def eat(self):
+          pass
+  
+  
+  class Zookeeper:
+      def __init__(self, lion: Lion):
+          self.lion = lion
+      
+      def feed(self):
+          self.lion.eat()
+  ```
+
+
+
+- DIP(Dependency Inversion Principle, 의존성 역전 원칙)
+
+  - 정의
+    - 고차원 모듈은 저차원 모듈에 의존하면 안 된다.
+    - 추상화 된 것은 구체적인 것에 의존하면 안 된다.
+    - 구체적인 것이 추상화된 것에 의존해야한다.
+  - 위에서 살펴본 Zookeeper 예시에 DIP 원칙을 적용하면 아래와 같다.
+    - Zookeeper class는 더 이상 Lion class라는 구상 class에 의존하지 않고, Animal이라는 추상 class에 의존한다.
+    - 이제 새로운 동물이 추가되더라도, 그것이 Animal class를 상속 받기만 한다면 Zookeepr class를 변경할 필요가 없어진다.
+
+  ```python
+  from abc import ABCmeta, abstractmethod
+  
+  
+  class Animal(metaclass=ABCmeta):
+      @abstractmethod
+      def eat(self):
+          pass
+  
+  
+  class Lion(Animal):
+      def eat(self):
+          pass
+  
+  
+  class Zookeeper:
+      def __init__(self, animal: Animal):
+          self.animal = animal
+      
+      def feed(self):
+          self.animal.eat()
+  ```
+
+    - 의존성 역전(dependency inversion)
+      - 전통적으로 의존 주체 모듈과 의존 대상 모듈 사이에 의존 관계가 생성되어 왔다.
+      - 그러나, 더 이상 의존 주체 모듈이 의존 대상 모듈을 직접적으로 의존하게 하지 말고, 의존 대상의 고차원 모듈, 혹은 의존 대상을 추상화한 모듈에 의존하도록 하는 것을 가리키는 용어가 의존성 역전이다.
+
+
+
+- 의존성 주입(Dependency Injection, DI)
+
+  - 의존성을 의존 주체가 생성하지 않고, 외부에서 생성하여 의존 주체에게 주입해주는 방식이다.
+
+  - 의존성 주입을 사용하지 않을 경우
+    - 아래 코드에서는 Lion을 의존하는 Zookeeper class에서 Lion class의 instance를 직접 생성한다.
+
+  ```python
+  class Lion:
+      def eat(self):
+          pass
+      
+      
+  class Zookeeper:
+      def __init__(self):
+          self.lion = Lion()
+      
+      def feed(self):
+          self.lion.eat()
+  ```
+
+  - 이 때, DIP를 적용하기 위해 Lion의 상위 class인 Animal class를 생성했다고 가정해보자.
+    - 구상 클래스가 아닌 추상 클래스에 의존하기 위해 Animal class를 생성했으나, 여전히 Zookeeper class에서 Lion class를 직접 생성하고 있으므로, Animal class에 의존할 수 없는 상황이 된다.
+    - 따라서 다형성을 활용할 수 없는 상황이 되는 것이다.
+
+  ```python
+  from abc import ABCmeta, abstractmethod
+  
+  class Animal:
+      @abstractmethod
+      def eat(self):
+          pass
+      
+  class Lion(Animal):
+      def eat(self):
+          pass
+  
+  class Zookeeper:
+      def __init__(self):
+          self.lion = Lion()
+      
+      def feed(self):
+          self.lion.eat()
+  ```
+
+  - DI 적용하기
+    - 따라서 아래와 같이 Lion을 외부에서 생성해서 Zookeeper로 **주입**해준다.
+
+  ```python
+  from abc import ABCmeta, abstractmethod
+  
+  class Animal(metaclass=ABCmeta):
+      @abstractmethod
+      def eat(self):
+          pass
+  
+  class Lion(Animal):
+      def eat(self):
+          pass
+  
+  class Zookeeper:
+      def __init__(self, animal: Animal):
+          self.animal = animal
+      
+      def feed(self):
+          self.animal.eat()
+  ```
+
+  - DIP와 자주 엮이는 개념이라 DIP와 DI를 혼동하기도 하지만 명백히 별개의 개념이다.
+    - 위에서 확인했듯이 DI를 사용하여 DIP를 구현할 수 있다.
+
+
+
+- 제어의 역전(Inversion of Control, IoC)
+
+  > https://martinfowler.com/bliki/InversionOfControl.html
+  >
+  > https://martinfowler.com/articles/injection.html
+
+  - 정의
+    - 프로그램의 제어 흐름을 한 곳에서 다른 곳으로 전환시키는 원칙이다.
+    - 주로 객체들 사이의 의존성을 낮추기 위해 사용한다.
+    - DIP와 마찬가지로 하나의 원칙이다.
+    - 디자인 패턴이 아닌 하나의 원칙이기에 구체적인 구현 방식을 정의하지는 않는다.
+
+  - IoC는 UI 프레임워크의 등장과 함께 등장한 개념이다.
+    - GUI 등장 이전의 UI는 프로그램이 사용자에게 언제 입력을 받을지, 언제 입력 받은 내용을 처리할지를 정했다.
+    - 그러나 UI 프레임워크가 나오면서 이러한 제어권이 프로그램이 아닌 UI 프레임워크로 이동했다.
+    - 즉 이전에는 아래 코드와 같이 프로그램이 제어권을 가지고 있었으나, UI 프레임워크의 등장과 함께 UI 프레임워크가 프로그램의 동작에 대한 제어권을 가져가게 된다.
+    - 예를 들어 사용자가 UI 상에 입력값을 넣으면 UI 프레임워크가 프로그램을 실행시킨다.
+
+  ```python
+  # 기존에는 아래와 같이 프로그램이 제어권을 가지고 있었다.
+  print("이름을 입력하세요")
+  name = input()
+  process_name(name)
+  print("나이를 입력하세요")
+  age = input()
+  process_age(age)
+  ```
+
+  - IoC는 framework과 library를 가르는 중요한 기준 중 하나이다.
+    - Framework는 code에 대한 주도권을 가져가는 반면, library는 code에 대한 주도권은 여전히 프로그래머에게 있다.
+    - 즉, framework에서는 IoC가 존재하는 반면, library에서는 IoC가 발생하지 않는다.
+  - DI와의 관계
+    - DI는 IoC를 구현하는 하나의 방식일 뿐이다.
+    - 이전에는 DI라는 용어가 존재하지 않았지만, IoC에서 현재의 DI의 개념을 분리하기 위해 DI라는 용어를 만들어 낸 것이다.
+  - 예시
+    - 위의 의존성 주입에서도 IoC를 찾아낼 수 있다.
+    - DI를 적용하기 이전의 Zookeeper class는 Lion class를 강하게 의존하고 있었으며, Lion instance를 언제 생성할지에 대한 통제권을 Zookeeper class가 가지고 있었다.
+    - 그러나 DI를 적용함으로써 Zookeeper class가 사용할 Animal instance의 생성에 관한 통제권이 Zookeeper class가 아닌 client code로 옮겨가게 되었다.
+    - 즉 위 예시는 DI를 사용하여 IoC를 구현한 것이기도 하다.
+
+  - IoC Container
+    - DI가 자동적으로 이루어지도록 하기 위한 framework를 의미한다.
+    - 객체의 생성과 생명주기를 관리하며, 다른 class들에 의존성을 주입하는 역할을 한다.
+
+
+
+
+
+
+
 # CI/CD
 
 > https://www.redhat.com/en/topics/devops/what-is-ci-cd
