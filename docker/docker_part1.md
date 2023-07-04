@@ -619,6 +619,10 @@
 
 - 컨테이너에 연결하기
 
+  - 정확히는 host machin의 표준 입력(stdin)과 표준 출력(stdout), error stream을 실행중인 container에 연결하는 명령어이다.
+  - Host machine의 stdin, stdout, error stream이 container의 root process에 연결되는 형식이다.
+  - Container를 실행했을 때의 환경이 foreground로 보이게 된다.
+  
   ```bash
   $ docker attach 컨테이너명
   ```
@@ -628,16 +632,76 @@
 - 가동 컨테이너에서 프로세스 실행
 
   - 가동 중인 컨테이너에서 새로운 프로세스를 실행
-    - 백그라운드에서 실행되고 있는 컨테이너에 액세스하소자 할 때는  attach  명령으로 연결해도 쉘이 작동하지 않는 경우 명령을 접수할 수 없다.
+    - 백그라운드에서 실행되고 있는 컨테이너에 액세스하고자 할 때는 attach  명령으로 연결해도 쉘이 작동하지 않는 경우 명령을 접수할 수 없다.
     - 따라서 아래 명령어를 입력하여 임의의 명령을 실행한다.
-
   - `-d(--detach)`: 명령을 백그라운드에서 실행한다.
   - `-i(--interactive)`: 컨테이너의 표준 입력을 연다.
+    - 이를 통해 attach되어 있지 않아도 container의 stdin에 접근할 수 있게 되어, container 내부에 명령어를 입력할 수 있게 된다.
+  
   - `-t(--tty)`: tty 디바이스를 사용한다.
   - `-u(--user)`: 사용자명을 지정한다.
-
+  
   ```bash
   $ docker exec [옵션] <컨테이너 식별자> <실행할 명령> [인수]
+  ```
+  
+  - `-it`
+    - `--interactive` option과 `--tty` option은 주로 함께 사용한다.
+    - 만일 `-i` 옵션만 줄 경우 아래와 같이 tty가 ?표 표시된다.
+  
+  ```bash
+  $ docker exec -i <container> /bin/bash
+  
+  $ ps
+  PID TTY          TIME CMD
+  19 ?        00:00:00 bash
+  25 ?        00:00:00 ps
+  ```
+  
+  
+
+
+
+- `attach`와 `exec`의 차이
+
+  - `attach`는 실행 중인 컨테이너의 stdin, stdout, error stream을 container의 root 프로세스의 stdin, stdout, error stream과 연결되는 것이다.
+  - 예를 들어 아래와 같이 container를 실행시키고
+
+  ```bash
+  $ docker run -it --name test ubuntu:20.04 /bin/bash
+  ```
+
+  - attach를 통해 접속한 뒤
+
+  ```bash
+  $ docker attach test
+  ```
+
+  - Process들을 확인하면, 새로운 process가 생성되지 않은 것을 확인할 수 있다.
+
+  ```bash
+  $ ps -ef
+  UID          PID    PPID  C STIME TTY          TIME CMD
+  root           1       0  0 04:26 pts/0    00:00:00 /bin/bash
+  root          11       1  0 04:26 pts/0    00:00:00 ps -ef
+  ```
+
+  - 만약 이 상태에서 `exit` 명령을 입력할 경우 root process가 종료되고, container도 정지되게 된다.
+  - 반면에 `exec`을 통해 접속할 경우
+
+  ```bash
+  $ docker exec -it test /bin/bash
+  ```
+
+  - 아래와 같이 새로운 프로세스가 생성되는 것을 확인할 수 있다.
+
+  ```bash
+  $ ps -ef
+  
+  UID          PID    PPID  C STIME TTY          TIME CMD
+  root           1       0  0 04:26 pts/0    00:00:00 /bin/bash
+  root          20       0  1 04:34 pts/1    00:00:00 /bin/bash
+  root          28      20  0 04:34 pts/1    00:00:00 ps -ef
   ```
 
 
