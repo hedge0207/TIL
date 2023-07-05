@@ -60,7 +60,8 @@
   $ systemctl status <서비스명>
   ```
   
-  
+
+
 
 
 
@@ -71,20 +72,17 @@
   - Description
 
     - 해당 유닛에 대한 설명
-- Type
-  
-  - 유닛 타입을 선언한다.
-    - simple: 기본값으로, 유닛이 시작된 즉시 systemd는 유닛의 시작이 완료됐다고 판단한다.
-  
-  - forking: 자식 프로세스 생성이 완료되는 단계까지를 systemd가 시작이 완료됐다고 판단한다.
-  - ExecStart
+  - Type
+    - 유닛 타입을 선언한다.
 
+    - simple: 기본값으로, 유닛이 시작된 즉시 systemd는 유닛의 시작이 완료됐다고 판단한다.
+    - forking: 자식 프로세스 생성이 완료되는 단계까지를 systemd가 시작이 완료됐다고 판단한다.
+
+  - ExecStart
     - 시작 명령을 정의한다.
-- ExecStop
-  
-  - 중지 명령을 정의한다.
-  - WorkingDirectory
-  - 해당 동작을 수행할 Directory를 지정한다.
+  - ExecStop
+    - 중지 명령을 정의한다.
+    - WorkingDirectory: 해당 동작을 수행할 Directory를 지정한다.
 
 
 
@@ -114,6 +112,25 @@
   ```bash
   setfacl -m u:<사용자명>:rw <service 파일 경로>
   ```
+
+
+
+# Shorts
+
+- GPG(GNU Privacy Guard)
+  - RFC(Request for Comments)4880(PGP라고도 불린다)에서 정의된 OpenPGP 표준의 구현체이다.
+  - 공개 키 암호화 방식을 사용하여, 개인 간, machine 간 교환되는 메시지나 파일을 암호화하거나 서명을 추가하여 작성자를 확인하고 변조 유무를 식별하는 데 사용한다.
+
+
+
+- `/etc/apt/sources.list`
+  - ubuntu, debian에서 사용하는 apt(advanced package tool)가 패키지를 가져 올 소스 저장소(repository)를 지정하는 파일이다.
+  - 파일 내부에는 아래와 같은 정보가 작성된다.
+    - `deb`: 이미 컴파일된 바이너리 패키지
+    - `deb-src`: 소스 상태의 오리지널 프로그램과 데비안 컨트롤 파일
+  - `/etc/apt/sources.list.d` 
+    - 패키지별로 보다 편하게 관리하기 위해서, 패키지별로 `sources.list` 파일을 작성한 것을 모아놓은 디렉터리이다.
+    - 확장자는 `.list` 또는 `.sources`를 사용한다.
 
 
 

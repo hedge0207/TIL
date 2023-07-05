@@ -48,6 +48,7 @@
   
   - 위에서 받은 jenkins docker image를 custom한다.
     - Dockerfile을 아래와 같이 작성 후 build한다.
+    - 아래 image는 Docker client만 설치된 상태로, 위에서 생성한 `jenkins-docker`의 Docker daemon으로 요청을 보낸다.
   
   ```dockerfile
   FROM jenkins/jenkins:2.401.1

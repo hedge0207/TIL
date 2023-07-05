@@ -88,4 +88,62 @@
   $ docker run --log-opt mode=non-blocking --log-opt max-buffer-size=4m
   ```
 
+
+
+
+- Docker container 내부에서 host의 Docker daemon에 요청 보내기(DooD)
+
+  > Host machine에 Docker가 설치된 상태에서 진행한다.
+
+  - Ubuntu image pull 받기
+
+  ```bash
+  $ docker pull ubunut:20.04
+  ```
+
+  - Dockerfile 생성하기
+    - Docker daemon은 host machine의 것을 쓸 것이기에 docker cli(docker client)만 설치한다.
+    - Docker는 보다 안전하게 docker package를 설치할 수 있도록 gpg key를 제공한다.
+    - 따라서 gpg key를 받아와서 install시 사용해야한다.
+
+  ```dockerfile
+  FROM ubuntu:20.04
   
+  # docker cli를 설치하는 데 필요한 package들을 설치한다.
+  RUN apt-get update && apt-get install -y ca-certificates curl lsb-release gnupg
+  
+  # gpg key를 저장하기 위한 directory를 생성한다.
+  RUN mkdir -p /etc/apt/keyrings
+  
+  # Docker 공식 gpg key를 받아와서  /etc/apt/keyrings/docker.gpg에 저장한다.
+  # gpg --dearmor -o에서 -o는 결과를 file에 쓰겠다는 옵션이다.
+  RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  
+  # docker-ce-cli package를 받아올 repository를 설정한다.
+  RUN echo \
+    # `dpkg --print-architecture`를 통해 arch(architecture) 정보를 입력한다.
+    "deb [arch=$(dpkg --print-architecture) \ 
+    # 위에서 받아온 /etc/apt/keyrings/docker.gpg 파일을 signed-by에 넣어준다.
+    signed-by=/etc/apt/keyrings/docker.gpg] \  
+    https://download.docker.com/linux/ubuntu \ 
+    # 위에서 설치한 lsb-release를 사용하여 `lsb_release -cs` 명령어를 통해 linux 배포판의 codename을 입력한다.
+    $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
+  
+  RUN apt-get update && apt-get install -y docker-ce-cli
+  ```
+
+  - Docker client가 설치된 ubuntu container 실행하기
+    - 아래 보이는 것과 같이 host machine의 `/var/run/docker.sock`를 container 내부에 bind mount 해줘야한다.
+    - Ubuntu container 내부의 docker cli가 docker.sock을 통해서 host machine의 docker daemon에 요청을 보낸다.
+
+  ```bash
+  $ docker run -it --name dood-ubuntu -v /var/run/docker.sock:/var/run/docker.sock dood-ubuntu:latest /bin/bash
+  ```
+
+  - Docker 명령어 테스트 해보기
+    - Container 내부에서 아래와 같이 명령어를 입력하면 host의 container들의 목록이 뜨는 것을 확인할 수 있다.
+
+  ```bash
+  $ docker ps
+  ```
+

@@ -195,7 +195,7 @@
 
 
 
-# docker 설치하기
+# Docker 설치하기
 
 > ubuntu 기준
 
