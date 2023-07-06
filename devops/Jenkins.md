@@ -103,10 +103,8 @@
 
 
 
-- Jenkins pipeline 생성해보기
+- Jenkins Pipeline 생성해보기
 
-  - Jenkins Pipline(Pipeline)이란
-    - Jenkins에서 CD(Continuous delivery) pipeline을 구현하고 통합하는 플러그인들의 모음이다.
   - Docker, Docker Pipeline plugin을 설치한다.
     - `Manage Jenkins`> `Plugins` page에서 설치할 수 있다.
     - 설치후 Jenkins를 재실행해야한다.
@@ -130,6 +128,450 @@
       - Credentials의 username에는 github username입력하고, password에는 github access token을 입력하면 된다.
       - 그 후 Save를 누르면 자동으로 실행된다.
     - 실행하면 위에서 입력한대로 python version이 출력되는 것을 확인할 수 있다.
+
+
+
+
+
+# Jenkins Pipeline
+
+- Jenkins Pipeline(Pipeline, P를 대문자로 써야 한다)
+  - CD pipeline을 구현하고 통합하는데 도움을 주는 plugin들의 모음이다.
+  - 여러 종류의 tool들을 지원하며, Pipeline DSL syntax를 사용한다.
+  - Jenkins Pipeline은 Jenkinsfile이라 불리는 text file로 정의된다.
+    - Jenkinsfile은 프로젝트의 source control repository에 작성한다.
+  - Jenkinsfile을 프로젝트의 source control repository에 함께 작성함으로써 아래와 같은 이점을 누릴 수 있다.
+    - 모든 branch와 pull request에 대해서 Pipeline build process를 자동으로 생성할 수 있다.
+    - Pipeline의 변경 이력을 추적할 수 있다.
+    - 프로젝트를 진행하는 모든 팀원이 확인하고 편집할 수 있다.
+  - Jenkinsfile은 Declarative와 Scripted라는 두 종류의 syntax로 작성할 수 있다.
+    - Declarative Pipeline이 Scripted Pipeline보다 최근에 나온 방식이다.
+    - Declarative Pipeline이보다 풍부한 기능을 제공하며, 읽고 쓰기도 더 쉽다.
+
+
+
+- Pipeline과 관련된 개념들
+  - Pipeline
+    - CD pipeline을 사용자가 정의한 model이다.
+    - Pipeline의 code는 build하고 test하고, 배포하는 전체 build process를 정의한다.
+  - Node
+    - Pipeline을 실행하는 machine을 의미한다.
+  - Stage
+    - 전체 Pipeline에서 실행되는 task들을 정의하는 부분이다.
+  - Step
+    - 하나의 task를 의미한다.
+    - 각 단계에서 무엇을 해야 하는지 Jenkins에게 알려주는 역할을 한다.
+
+
+
+- Pipeline overview
+
+  - Declarative Pipeline
+
+  ```groovy
+  pipeline {
+      agent any 
+      stages {
+          // Build를 위한 stage를 정의한다.
+          stage('Build') { 
+              steps {
+                  // 
+              }
+          }
+          // Test를 위한 stage를 정의한다.
+          stage('Test') { 
+              steps {
+                  // 
+              }
+          }
+          // Deploy를 위한 stage를 정의한다.
+          stage('Deploy') { 
+              steps {
+                  // 
+              }
+          }
+      }
+  }
+  ```
+
+  - Scripted Pipeline
+    - Scripted Pipeline에서는 `node ` block이 최상단에 위치한 것을 볼 수 있다.
+    - Scripted Pipeline 방식에서 `node` block이 필수적인 것은 아니지만, Pipeline에서 수행할 작업을 `node` block에 넣으면 아래와 같이 동작한다.
+    - Jenkins queue에 step들을 추가하는 방식으로 step들을 스케쥴링하며, node의 executor가 수행하는 작업이 없을 경우, step들이 수행된다.
+
+  ```groovy
+  node {  
+      stage('Build') { 
+          // 
+      }
+      stage('Test') { 
+          // 
+      }
+      stage('Deploy') { 
+          // 
+      }
+  }
+  ```
+
+
+
+- Pipeline(Jenkinsfile)은 세 가지 방법으로 정의할 수 있다.
+  - Blue Ocean을 사용하는 방법
+    - Pipeline을 간편하게 구성할 수 있도록 해주는 Blue Ocean plugin을 사용하는 방식이다.
+  - Classic UI를 사용하는 방법
+    - 본래 Jenkins에서 제공하는 UI를 사용하는 방식이다.
+  - SCM을 사용하는 방법
+    - Jenkinsfile을 수동으로 작성하는 방식이다.
+    - UI를 사용해서 구성하기 힘든, 복잡한 Pipeline을 구성할 때 사용한다.
+
+
+
+## Jenkinsfile
+
+> 아래 내용은 이미 source code를 저장할 repository와 Jenkins Pipeline이 생성되었다고 가정한다.
+
+- Jenkinsfile 개요
+
+  - Jenkinsfile의 기본 구조는 아래와 같다.
+    - 꼭 아래와 같이 많은 stage들이 있어야 하는 것은 아니지만, 아래와 같은 구조가 가장 기본적인 형태이다.
+    - 각각의 keyword(`agent`, `stages` 등)을 directive라고 부른다.
+
+  ```groovy
+  pipeline {
+      agent any
+  
+      stages {
+          stage('Build') {
+              steps {
+                  echo 'Building..'
+              }
+          }
+          stage('Test') {
+              steps {
+                  echo 'Testing..'
+              }
+          }
+          stage('Deploy') {
+              steps {
+                  echo 'Deploying....'
+              }
+          }
+      }
+  }
+  ```
+
+  - `agent`
+    - 필수 값으로 Jenkins가 Pipeline을 위한 executor와 workspace를 할당하도록 하는 역할을 한다.
+    - 또한 source repository를 check하고 이후의 stage들이 실행될 수 있도록 해준다.
+    - 필수 값이므로 설정하지 않았을 경우 Pipeline이 동작하지 않는다.
+    - 위 예시에서와 같이 최상단에만 설정해도 되고, 각 stage마다 설정해줄 수도 있는데, 최상단에는 반드시 설정되어야한다.
+    - 각 stage마다 다르게 설정할 경우 각 stage가 각기 다른 agent로 실행된다.
+  - Build stage
+    - 일반적으로 source code가 모여서 컴파일되고 패키징 되는 단계이다.
+    - Jenkinsfile은 Mavne, Gradle 등의 build tool을 대체하는 것은 아니다.
+
+  - Test stage
+    - 자동화된 테스트를 수행하는 단계이다.
+  - Deploy stage
+    - 배포를 실행하는 단계이다.
+    - 이전의 stage들이 성공적으로 완료되었을 때만 실행된다.
+
+
+
+- Jenkinsfile에서 사용할 수 있는 환경 변수들
+
+  - Jenkins Pipeline에서 `env`라는 global variable을 통해 환경 변수에 접근할 수 있다.
+    - Jenkinsfile의 어디서나 사용이 가능하다.
+  - 기본적으로 아래와 같은 환경 변수들이 설정되어 있다.
+    - `BUILD_ID`, `BUILD_NUMBER`, `BUILD_TAG`, `BUILD_URL`, JENKINS_URL, `JAVA_HOME`
+    - 전체 목록은 `${YOUR_JENKINS_URL}/pipeline-syntax/globals#env`에서 확인할 수 있다.
+
+  ```groovy
+  pipeline {
+      agent any
+      stages {
+          stage('Example') {
+              steps {
+                  echo "Running ${env.BUILD_ID} on ${env.JENKINS_URL}"
+              }
+          }
+      }
+  }
+  ```
+
+  - Jenkinsfile 내에서 환경 변수를 설정하는 것도 가능하다.
+    - `environment` directive를 통해 설정할 수 있다.
+    - Scripted Pipeline에서는 `withEnv`를 사용한다.
+    - 환경 변수는 자신이 설정된 범위 내에서만 유효한데, 예를 들어 최상단서 설정된 `CC`의 경우 Pipeline의 모든 곳에서 사용할 수 있지만, Example stage에서 설정된 `DEBUG_FLAG`는 Example stage에서만 사용할 수 있다.
+
+  ```groovy
+  pipeline {
+      agent any
+      environment { 
+          CC = 'clang'
+      }
+      stages {
+          stage('Example') {
+              environment { 
+                  DEBUG_FLAGS = '-g'
+              }
+              steps {
+                  sh 'printenv'
+              }
+          }
+      }
+  }
+  ```
+
+  - 환경 변수를 동적으로 설정하기
+    - Shell script를 사용하여 run time에 환경변수가 동적으로 설정되도록 할 수 있다.
+
+  ```groovy
+  pipeline {
+      agent any 
+      environment {
+          // Using returnStdout
+          CC = """${sh(
+                  returnStdout: true,
+                  script: 'echo "clang"'
+              )}""" 
+          // Using returnStatus
+          EXIT_STATUS = """${sh(
+                  returnStatus: true,
+                  script: 'exit 1'
+              )}"""
+      }
+      stages {
+          stage('Example') {
+              environment {
+                  DEBUG_FLAGS = '-g'
+              }
+              steps {
+                  sh 'printenv'
+              }
+          }
+      }
+  }
+  ```
+
+
+
+- Credential 관리하기
+
+  - Jenkins에는 credential을 관리하는 기능이 있다.
+    - Jenkinsfile은 source repository에서 관리되기에 사용자 이름이나 비밀번호 등이 노출될 수 있다.
+    - 따라서 이러한 내용들을 Jenkins의 credential로 따로 빼고 Jenkinsfile에서 이 credentail에 접근하여 값을 가져오는 방식으로 작성해야한다.
+  - `credentials()` 메서드를 사용하여 credential에 접근할 수 있다.
+    - `environment` directive에서 사용할 수 있다.
+    - 당연하게도 `enviroment` directive가 작성된 범위 내에서만 사용이 가능하다.
+    - 만일 Pipeline 상에서 credential 정보를 노출해야 하는 경우(e.g. 아래 예시에서 `echo AWS+ACCESS_KEY_ID`가 실행될 경우) "\****"으로 표기된다.
+
+  ```groovy
+  pipeline {
+      agent {
+          // 
+      }
+      environment {
+          AWS_ACCESS_KEY_ID     = credentials('jenkins-aws-secret-key-id')
+          AWS_SECRET_ACCESS_KEY = credentials('jenkins-aws-secret-access-key')
+      }
+  }
+  ```
+
+  - 만일 credentail을 생성할 때 종류를 `Username with password`로 설정했을 경우 세 개의 환경 변수를 사용할 수 있다.
+    - 사용자가 지정한 환경 변수 외에 `_USR`, `_PSW` suffix가 붙은 환경 변수가 자동으로 생성된다.
+    - 예를 들어 아래와 같이 선언했을 때, 따로 선언하지 않아도 자동으로 `BITBUCKET_COMMON_CREDS`, `BITBUCKET_COMMON_CREDS_USR`, `BITBUCKET_COMMON_CREDS_PSW`라는 세 개의 환경 변수가 생성된다.
+
+  ```groovy
+  environment {
+      BITBUCKET_COMMON_CREDS = credentials('jenkins-bitbucket-common-creds')
+  }
+  ```
+
+  - Text뿐 아니라 file도 지정 가능하다.
+    - GPG 파일과 같이 binary 형식의 file이나, Jenkinsfile에 직접 입력하기에 너무 긴 내용을 file로 관리할 수 있다.
+
+  ```groovy
+  pipeline {
+      agent {
+          //
+      }
+      environment {
+          MY_KUBECONFIG = credentials('my-kubeconfig')
+      }
+      stages {
+          stage('Example stage 1') {
+              steps {
+                  sh("kubectl --kubeconfig $MY_KUBECONFIG get pods")
+              }
+          }
+      }
+  }
+  ```
+
+  - Text나 file 외에도 다양한 종류의 crential에 접근하는 것이 가능하다.
+    - 더 자세한 정보는 [공식 문서](https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#handling-credentials) 참고
+
+
+
+- 문자열 보간법
+
+  - Jenkinsfile은 Groovy와 동일한 문자열 보간법 규칙을 사용한다.
+    - Groovy는 string을 선언할 때 작은 따옴표와 큰 따옴표 모두를 지원한다.
+    - 그러나 문자열 보간법은 오직 큰 따옴표만 사용할 수 있으며, 아래와 같이 `$` 기호를 사용한다.
+
+  ```groovy
+  def username = 'Jenkins'
+  echo 'Hello Mr. ${username}'
+  echo "I said, Hello Mr. ${username}"
+  ```
+
+  - Credentials에는 절대 문자열 보간법을 사용해선 안된다.
+    - 문자열 보간법 대신 작은 따옴표를 사용해서 linux에서 환경 변수를 참조하는 방식을 사용해야 한다.
+
+  ```groovy
+  // 아래와 같이 보간법을 사용하면 안된다.
+  sh("curl -u ${EXAMPLE_CREDS_USR}:${EXAMPLE_CREDS_PSW} https://example.com/")
+  
+  // 아래와 같이 참조해야한다.
+  sh('curl -u $EXAMPLE_CREDS_USR:$EXAMPLE_CREDS_PSW https://example.com/')
+  ```
+
+  - 또한 보간법 사용시 아래와 같은 경우도 주의해야한다.
+    - 보간법을 잘 못 사용할 경우 SQL injection과 같은 문제가 발생할 수 있다.
+
+  ```groovy
+  // 예를 들어 아래 Pipeline이 실행되면 hello; ls \가 echo되는 것이 아니라 hello가 echo 된 후 전체 파일 list가 출력된다.
+  pipeline {
+    agent any
+    parameters {
+      string(name: 'STATEMENT', defaultValue: 'hello; ls /', description: 'What should I say?')
+    }
+    stages {
+      stage('Example') {
+        steps {
+          /* WRONG! */
+          sh("echo ${STATEMENT}")
+        }
+      }
+    }
+  }
+  
+  // 따라서 위와 같은 경우를 방지하기 위해서, 보간법을 사용하지 말고 아래와 같이 작성해야한다.
+  pipeline {
+    agent any
+    parameters {
+      string(name: 'STATEMENT', defaultValue: 'hello; ls /', description: 'What should I say?')
+    }
+    stages {
+      stage('Example') {
+        steps {
+          /* CORRECT */
+          sh('echo ${STATEMENT}')
+        }
+      }
+    }
+  }
+  ```
+
+
+
+- Parameter
+
+  - Declarative Pipeline은 `parameter` directive를 통해 run time에 parameter를 설정할 수 있다.
+    - Scripted Pipeline에서는 `properties` step에서 설정한다.
+  - 예시
+    - 아래와 같이 `params`를 통해 접근할 수 있다.
+
+  ```groovy
+  pipeline {
+      agent any
+      parameters {
+          string(name: 'Greeting', defaultValue: 'Hello', description: 'How should I greet the world?')
+      }
+      stages {
+          stage('Example') {
+              steps {
+                  echo "${params.Greeting} World!"
+              }
+          }
+      }
+  }
+  ```
+
+
+
+- 실패 처리하기
+
+  - Declarative Pipeline은 다양한 failure handling 방식을 제공한다.
+    - Scripted Pipeline의 경우 Groovy의 try/catch/finally semantic을 사용한다.
+  - `post` sectin에 아래와 같은 것들을 정의할 수 있다.
+    - `always`, `unstable`, `success`, `failure`, `changed`
+  - 예시
+
+  ```groovy
+  pipeline {
+      agent any
+      stages {
+          stage('Test') {
+              steps {
+                  sh 'make check'
+              }
+          }
+      }
+      post {
+          always {
+              junit '**/target/*.xml'
+          }
+          failure {
+              mail to: team@example.com, subject: 'The Pipeline failed :('
+          }
+      }
+  }
+  ```
+
+
+
+- 병렬 실행하기
+
+  - `parallel` step을 사용하여 여러 개의 작업을 동시에 실행할 수 있다.
+  - 예시
+
+  ```groovy
+  stage('Test') {
+      parallel linux: {
+          node('linux') {
+              checkout scm
+              try {
+                  unstash 'app'
+                  sh 'make check'
+              }
+              finally {
+                  junit '**/target/*.xml'
+              }
+          }
+      },
+      windows: {
+          node('windows') {
+              /* .. snip .. */
+          }
+      }
+  }
+  ```
+
+  
+
+
+
+
+
+
+
+# Blue Ocean
+
+- Blue Ocean
+  - UI상으로 Jenkinsfile을 작성할 수 있도록 도와주는 plugin이다.
+  - 더 이상 기능 상의 업데이트는 없을 예정이다.
 
 
 
