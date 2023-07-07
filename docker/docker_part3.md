@@ -147,3 +147,186 @@
   $ docker ps
   ```
 
+
+
+
+
+# Docker registry
+
+- Docker image를 저장하고 공유할 수 있게 해주는 server side application이다.
+  - Apache license 하에서 open source로 개발되었다.
+  - Docker hub도 일종의 registry이며, private image를 저장할 수 있는 기능을 제공한다.
+  - 주로 아래의 용도로 사용한다.
+    - Image 저장소를 보다 엄격히 통제하기 위해서.
+    - Image 공유 pipeline을 보다 완전히 통제하기 위해서.
+    - Image 저장소를 내부 개발 workflow에 포함시키기 위해서.
+  - Docker 1.6.0 version부터 사용이 가능하다.
+
+
+
+- Docker registry 사용해보기
+
+  - Docker hub에서 `registry` image를 pull 받는다.
+
+  ```bash
+  $ docker pull registry:latest
+  ```
+
+  - Pull 받은 `registry` image를 사용하여 container를 생성한다.
+    - Registry가 생성된 서버에 문제가 생겨 registry containe가 정지되더라도, 바로 다시 실행햐야하므로 `--restart=always` 옵션을 준다.
+    - `registry`는 기본적으로 5000번 port로 생성되는데, 만약 이 값을 바꾸고 싶으면 `-e REGISTRY_HTTP_ADDR=localhost:5001`와 같이 환경변수로 추가해주면 된다.
+
+  ```bash
+  $ docker run -d -p 5000:5000 --restart=always --name my-registry registry:latest
+  ```
+
+  - 위에서 생성한 registry에 저장할 테스트용 image를 pull한다.
+
+  ```bash
+  $ docker pull python:3.10.0
+  ```
+
+  - 이 이미지를 우리가 생성한 registry에 등록하기 위해 아래와 같이 이름을 변경한다.
+    - `docker push`가 실행되면, image명에서 `/` 앞의 registry 주소(이 경우 `localhost:5000`)로 image가 push된다.
+    - 따라서 image명을 아래와 같이 `<registry_domain>:<port>/<image_name>[:<port>]` 형식으로 지정한다.
+
+  ```bash
+  $ docker image tag python:3.10.0 localhost:5000/myfirstimage
+  ```
+
+  - 이 상태에서 image 목록을 확인하면 아래와 같다.
+    - IMAGE ID가 같은 것에서 알 수 있듯, 두 image는 이름만 다른 같은 image이다.
+
+  ```bash
+  $ docker images
+  REPOSITORY                    TAG       IMAGE ID       CREATED         SIZE
+  python                        3.10.0    24gtea791238   19 months ago   917MB
+  localhost:5000/myfirstimage   latest    24gtea791238   19 months ago   917MB
+  ```
+
+  - 새로운 tag를 붙인 image를 push한다.
+    - 이렇게 push된 image는 `registry` container 내부의 `/var/lib/registry` directory에 저장된다.
+
+  ```bash
+  $ docker push localhost:5000/myfirstimage
+  ```
+
+  - 저장된 image를 pull 할 때도 동일한 image 이름을 사용한다.
+
+  ```bash
+  $ docker pull localhost:5000/myfirstimage
+  ```
+
+
+
+## Configuration
+
+- 설정 방법
+  - Docker container 생성시에 환경변수로 설정하는 방식
+    - Configuration을 환경 변수를 선언하여 설정할 수 있다.
+    - `REGISTRY_<variable>` 형식으로 선언하면 되며, `<variable>`에는 configuration option이 들어간다.
+    - 만일 들여쓰기로 level이 구분될 경우 `_`를 넣으면 된다.
+    - 예를 들어 `reporting.newrelic.verbose`의 값을 False로 설정하고 싶을 경우 `REGISTRY_REPORTING_NEWRELIC_VERBOSE=false`와 같이 설정하면 된다.
+  - Configuration file을 직접 작성하는 방식
+    - YAML 형식의 `config.yml`파일을 작성하여, `registry` container 내부의 `/etc/docker/registry/config.yml`에 bind mount한다.
+
+
+
+- 주요 설정들
+
+  > 전체 설정은 [Docker 공식 문서](https://docs.docker.com/registry/configuration/#list-of-configuration-options) 참고
+
+  - `notifications`
+    - Docker registry의 notification과 관련된 설정이며, `endpoints`리는 하나의 option만을 존재한다.
+    - `threshold`가 3이고, `backoff`가 1s일 경우, 3번의 실패가 연속적으로 발생할 경우, 1초 동안 기다린 뒤 재시도한다.
+
+  ```yaml
+  notifications:
+    events:
+      includereferences: true
+    endpoints:
+      - name: alistener						# service의 이름을 설정한다.
+        disabled: false						# 만일 false로 설정될 경우, service에 대한 notification이 비활성화된다.
+        url: https://my.listener.com/event	# event를 전송할 url.
+        headers: <http.Header>				# request와 함께 보낼 header를 설정한다.
+        timeout: 1s							# ns, us, ms, s, m, h, 와 숫자의 조합으로 timeout을 설정한다.
+        threshold: 10							# 몇 번의 실패를 실패로 볼지를 설정한다.
+        backoff: 1s							# 실패 후 재실행까지 얼마를 기다릴지를 설정한다.
+        ignoredmediatypes:					# 무시할 event들의 media type을 설정한다.
+          - application/octet-stream
+        ignore:
+          mediatypes:							# ignoredmediatypes와 동일하다.
+             - application/octet-stream
+          actions:							# event를 전송하지 않을 action들을 지정한다.
+             - pull
+             
+             
+             
+  # headers는 아래와 같이 작성하면 되며, 값은 반드시 array로 작성해야한다.
+  headers:
+    Authorization: [Bearer "qwer121t23t32gg34g4g43"]
+  ```
+
+
+
+
+
+## Notification
+
+- Docker registry는 notification 기능을 지원한다.
+  - Registry 내에서 event가 발생할 경우, 이에 대한 응답으로 webhook을 전송한다.
+    - Manifest push와 pull, layer push와 pull이 event에 해당한다.
+  - Event들은 registry 내부의 broadcast system이라는 queue에 쌓이며, queue에 쌓인 event들을 순차적으로 endpoint들로 전파한다.
+
+
+
+- Endpoint
+  - Notification은 HTTP request를 통해 endpoint로 전송된다.
+    - Request를 받은 endpoint들이 200번대나 300번대의 응답을 반환하면, message가 성공적으로 전송된 것으로 간주하고, message를 폐기한다.
+  - Registry 내에서 action이 발생할 경우, event로 전환되어 inmemory queue에 저장된다.
+    - Event가 queue의 끝에 도달할 경우, endpoint로 전송될 http request가 생성된다.
+  - Event들은 각 endpoint에 순차적으로 전송되지만, 순서가 보장되지는 않는다.
+
+
+
+- Event
+
+  - Event들은 JSON 형식으로 notification request의 body에 담겨서 전송된다.
+
+  - Event의 field들
+    - GO로 작성된 자료구조를 사용한다.
+
+  | Field      | Type                    | Description                          |
+  | ---------- | ----------------------- | ------------------------------------ |
+  | id         | string                  | Event들을 고유하게 식별할 수 있는 값 |
+  | timestamp  | Time                    | Event가 발생한 시간                  |
+  | action     | string                  | Event를 발생시킨 action              |
+  | target     | distribution.Descriptor | Event의 target                       |
+  | length     | int                     | Content의 bytes 길이                 |
+  | repository | string                  | repoitory명                          |
+  | url        | string                  | Content에 대한 link                  |
+  | tag        | string                  | Tag event의 tag                      |
+  | request    | RequestRecord           | Event를 생성한 request               |
+  | actor      | ActorRecord             | Event를 시작한 agent                 |
+  | source     | SourceRecord            | Event를 생성한 registry node         |
+
+  - 하나 이상의 event들은 envelope이라 불리는 구조로 전송된다.
+    - 하나의 envelope으로 묶였다고 해서 해당 event들이 서로 관련이 있는 event라는 것은 아니다.
+    - Envelope은 단순히 request 횟수를 줄이기  위해 event들을 묶어서 한 번에 보내는 것 뿐이다.
+
+  ```json
+  {
+      "events":[
+          //
+      ]
+  }
+  ```
+
+  
+
+
+
+
+
+
+
