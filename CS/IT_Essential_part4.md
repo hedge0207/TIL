@@ -1032,4 +1032,20 @@
               return "Not enough meney to withdraw"
   ```
 
-  
+
+
+
+- TTY
+  - TTY의 기원
+    - 1830년대에 와이어를 통해 message를 주고 받을 수 있는 teleprinter(전신인자기)가 개발되었다.
+    - 기존에는 전송자가 모스 부호 입력하고, 수신자가 모스 부호를 받는 형식이었지만, teleprinter는 전송자가 문자를 입력하면 이를 모스 부호로 변환하여 전달하고, 수신자 측에 모스 부호로 도착하면 이를 다시 문자로 변환하여 수신자에게 출력해주었다.
+    - 이후 개량을 거쳐 1908년 Teletypewriter가 발명되었다.
+    - 컴퓨터가 개량되면서, 컴퓨터에도 입출력 장치가 필요하게 되었고, 컴퓨터에도 teletypewriter가 입출력장치로 사용되기 시작했다.
+    - Teletypewriter은 시간이 흐르면서 teletype으로 줄여서 불리기 시작했고, 결국 현재는 TTY로 줄여서 부른다.
+  - PTY(Pseudo-TeletYpes)
+    - TTY는 Unix 계열 운영체제에서 software화 되었는데, 이를 물리적인 TTY와 구분하기 위해서 PTY라고 부른다.
+    - Software로서의 TTY 역시 그냥 TTY라고 부르기도 한다.
+    - Terminal과 동의어로 쓰인다.
+  - PTS(Pseudo Terminal Slave)
+    - `ssh` 등으로 서버에서 원격으로 접속했을 때 열리는 TTY이다.
+
