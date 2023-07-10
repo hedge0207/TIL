@@ -322,8 +322,99 @@
   }
   ```
 
-  
 
+
+
+- Docker registry notification 활용
+
+  - Notification을 받을 app을 실행한다.
+
+  ```python
+  from pydantic import BaseModel
+  from typing import List, Any
+  from fastapi import FastAPI
+  import uvicorn
+  
+  
+  class DockerRegistryEvent(BaseModel):
+      events: List[Any]
+  
+  app = FastAPI()
+  
+  @app.post("/notifiaction")
+  def get_event(event: DockerRegistryEvent):
+      print(event)
+  
+  
+  if __name__ == "__main__":
+      uvicorn.run(app, host="0.0.0.0", port=8017)
+  ```
+
+  - Registry configuration file을 아래와 같이 작성한다.
+    - `notifications.endpoints.url`에 위에서 실행한 app의 url을 입력한다.
+
+  ```yaml
+  version: 0.1
+  storage:
+    filesystem:
+      rootdirectory: /var/lib/registry
+  http:
+    addr: :5000
+    headers:
+      X-Content-Type-Options: [nosniff]
+  notifications:
+    events:
+      includereferences: true
+    endpoints:
+      - name: alistener
+        url: http://<app_host>:8017/notifiaction
+        timeout: 1s
+        threshold: 10
+        backoff: 1s
+  ```
+
+  - registry를 실행시킬 Docker container를 실행한다(optional).
+    - 위에서 작성한 config파일을 volume으로 설정한다.
+
+  ```yaml
+  version: '3.2'
+  
+  services:
+    docker-node1:
+      image: docker:dind
+      container_name: docker-node1
+      privileged: true
+      volumes:
+        - ./config.yml:/home/config.yml
+      restart: always
+  ```
+
+  - Registry container를 실행한다.
+
+  ```bash
+  $ docker pull registry
+  $ docker run -d -p 5000:5000 -v /home/config.yml:/etc/docker/registry/config.yml --name my-registry registry:latest
+  ```
+
+  - Docker registry에 push할 image를 생성한다.
+
+  ```bash
+  $ docker pull python:3.10.0
+  $ docker docker image tag python:3.10.0 localhost:5000/my-python
+  ```
+
+  - 위에서 생성한 image를 registry에 push한다.
+    - 여기까지 완료하면 맨 처음에 띄운 app의 `/notifiaction`로 요청이 들어오는 것을 확인할 수 있다.
+
+  ```bash
+  $ docker push localhost:5000/my-python
+  ```
+
+  - 현재 bug인지 의도된 것인지는 모르겠지만 ignore에 actions만 줄 경우 적용이 되지 않는다.
+
+    > https://github.com/distribution/distribution/issues/2916
+
+    - mediatypes를 반드시 함께 줘야한다.
 
 
 
