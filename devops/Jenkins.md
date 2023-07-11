@@ -22,9 +22,10 @@
     - `--privileged`: DinD를 위해서는 privileged 옵션을 줘야한다.
     - `--network`: 위에서 생성한 network를 입력한다.
     - `--network-alias`: 위에서 생성한 `jenkins` 네트워크 내부에서 `docker`라는 hostname을 사용한다.
-    - `--env DOCKER_TLS_CERTDIR`: DinD를 위해 `--privileged` 옵션을 줬으므로, 보안을 위해 TLS를 사용해야 하므로, `DOCKER_TLS_CERTDIR` 환경 변수로 Docker TLS 인증서들의 root directory를 설정한다.
-    - 다른 다른 container에서 `jenkins-docker` container의 docker deamon을 사용할 수 있도록 client용 인증서를 호스트 머신에 복사한다.
+    - `--env DOCKER_TLS_CERTDIR`: DinD를 위해 `--privileged` 옵션을 줬으므로, 보안을 위해 TLS를 사용해야 한다. 따라서 `DOCKER_TLS_CERTDIR` 환경 변수로 Docker TLS 인증서들의 root directory를 설정한다.
+    - 다른 container에서 `jenkins-docker` container의 docker deamon을 사용할 수 있도록 client용 인증서를 호스트 머신에 복사한다.
     - `jenkins-docker` container와 이후에 띄울 `jenkins` container가 데이터를 공유할 수 있도록 호스트 머신에 복사한다.
+    - 2376 port는 docker daemon과 통신을 위한 port이다.
   
   ```bash
   $ docker run \
@@ -559,7 +560,8 @@
   }
   ```
 
-  
+
+
 
 
 

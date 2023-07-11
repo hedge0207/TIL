@@ -91,6 +91,12 @@
 
 
 
+
+
+
+# DooD
+
+
 - Docker container 내부에서 host의 Docker daemon에 요청 보내기(DooD)
 
   > Host machine에 Docker가 설치된 상태에서 진행한다.
@@ -400,7 +406,7 @@
 
   ```bash
   $ docker pull python:3.10.0
-  $ docker docker image tag python:3.10.0 localhost:5000/my-python
+  $ docker image tag python:3.10.0 localhost:5000/my-python
   ```
 
   - 위에서 생성한 image를 registry에 push한다.
@@ -415,9 +421,72 @@
     > https://github.com/distribution/distribution/issues/2916
 
     - mediatypes를 반드시 함께 줘야한다.
+  
+  ```yaml
+  ignore:
+    mediatypes:
+      - application/octet-stream
+    actions:
+      - pull
+  ```
+
+
+
+- Jenkins와 연동하기
+
+  - Docker repository에 push가 발생할 때 마다 Jenkins pipeline에서 build가 이루어지도록 할 것이다.
+  - Jenkins pipeline을 생성한다.
+    - Build Triggers에서 `빌드를 원격으로 유발`을 선택하고 원하는 token 값을 입력한다.
+  - Jenkins에 [`Build Authorization Token Root`](https://plugins.jenkins.io/build-token-root/) plugin을 설치한다.
+    - 이 plugin을 설치하지 않을 경우 `<jenkins_url>/job/<job_name>/build?token=<token>` 형태로 요청을 보내야 trigger가 동작하는데, CSRF 문제로 403 Forbidden이 반환된다.
+    - 이 plugin을 설치 후 `<jenkins_url>/buildByToken/build?job=<job_name>&token=<token>`로 요청을 보내면, 정상적으로 build가 trigger된다.
+  - Docker registry 설정
+
+  ```yaml
+  version: 0.1
+  storage:
+    filesystem:
+      rootdirectory: /var/lib/registry
+  http:
+    addr: :5000
+    headers:
+      X-Content-Type-Options: [nosniff]
+  notifications:
+    endpoints:
+      - name: jenkins
+        url: http://<jenkins_url>/buildByToken/build?job=<job_name>&token=<token>
+        timeout: 1s
+        threshold: 10
+        backoff: 1s
+        ignore:
+          mediatypes:
+             - application/octet-stream
+          actions:
+             - pull
+  ```
+
+  - 이제 Docker registry에 image를 push할 경우 Jenkins pipeline이 trggier되어 실행된다.
 
 
 
 
 
+## Registry Security
+
+- Insecure registry
+
+  - 어떠한 보안 조치도 취하지 않은 Docker registry를 의미한다.
+    - 당연하게도, CA에 의해 발행된 TLS 인증서를 사용하여 registry를 보호하는 것이 권장된다.
+    - 그러나 사용하다보면, 테스트 등의 목적으로 보안을 전부 해제해야하는 경우도 있다.
+  - `/etc/docker/daemon.json` 파일을 아래와 같이 수정한다.
+    - 파일을 수정한 후 Docker를 재실행해야한다.
+
+  ```json
+  {
+    "insecure-registries" : ["http://<registry_host>:<registry_port>"]
+  }
+  ```
+
+  - Insecure registry에 접근하고자 하는 모든 host에서 위와 같은 작업을 해야한다.
+    - 주의할 점은 접근하고자 하는 host의 ip가 아닌 registry가 위치한 ip를 입력해야한다는 점이다.
 
