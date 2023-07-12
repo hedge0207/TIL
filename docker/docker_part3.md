@@ -24,7 +24,7 @@
 
 - 기본 logging driver 설정하기
 
-  - 기본 logging driver를 설정하기 위해서는 Docker daemin의 설정을 변경해야한다.
+  - 기본 logging driver를 설정하기 위해서는 Docker daemon의 설정을 변경해야한다.
     - `daemon.json` 파일을 아래와 같이 수정하면 기본 logging driver가 변경된다.
     - `daemon.json` 파일의 경로는 linux 기준 `/etc/docker/daemon.json`이다.
     - 주의할 점은 숫자나 boolean 값이라 할지라도 문자열로 묶어줘야 한다는 것이다.
@@ -490,3 +490,248 @@
   - Insecure registry에 접근하고자 하는 모든 host에서 위와 같은 작업을 해야한다.
     - 주의할 점은 접근하고자 하는 host의 ip가 아닌 registry가 위치한 ip를 입력해야한다는 점이다.
 
+
+
+
+
+# Docker swarm
+
+> https://docs.docker.com/
+
+- Swarm이란
+  - Docker engine에 포함되어 있는 cluster 관리 및 orchestration 기능이 이다.
+  - Swarm은 swarm mode가 활성화 된 상태로 실행중인 Docker host들로 구성된다.
+    - 각 Docker host들은 manager와 worker의 역할을 수행한다.
+    - Docker swarm을 통해 관리되는 container들을 swarm service라 부른다.
+  - Docker swarm의 대략적인 동작 방식
+    - Swarm service를 생성할 때, 이상적인 상태를 정의힌다.
+    - Docker swarm은 이 이상적인 상태를 유지하는 방식으로 동작한다.
+  - Swarm으로 관리되지 않는 container를 standalone container라 부른다.
+    - Swarm mode로 실행중인 Docker에서도 standalone container를 실행할 수 있다.
+    - Standalone container와 swarm service의 가장 핵심적인 차이는 swarm service는 swarm manager만이 관리 하지만, standalone container는 아무 daemon에서나 실행될 수 있다는 것이다.
+
+
+
+- Node
+  - Swarm에 참여하고 있는 Docker engine을 의미한다.
+  - Manager node
+    - Task라 불리는 작업들의 unit을 worker 노드에게 전파하는 역할을 한다. 
+    - Orchestration과 cluster 관리를 통해 이상적인 상태를 유지하는 역할을 한다.
+    - Manager node는 orchestration task를 수행하기 위해서 단일 leader를 선출한다.
+    - 기본적으로 manager node 또한 worker node의 역할을 수행하지만, 설정을 통해 manager task만 수행하도록 할 수 있다.
+    - Manger node의 개수가 는다고 가용성이나 성능이 좋아지는 것은 아니며, 오히려 그 반대이다.
+    - 홀수 N개 만큼의 manager node가 있을 경우 (N-1)/2 만큼의 manager node가 손실되어도 버틸 수 있다.
+    - Docker 공식 문서에서는 Manager node의 개수가 최대 7개를 넘지 않도록 권고한다.
+  - Worker node
+    - Manager node가 전파한 task들을 수행하는 역할을 한다.
+    - Manager node가 이상적인 상태를 유지할 수 있도록 worker node는 manager node에게 자신이 할당 받은 작업의 현재 상태를 알린다.
+
+
+
+- Services와 tasks
+  - Service
+    - Manager node 혹은 worker node에서 실행될 작업들을 의미한다.
+    - Swarm system의 중심 구조이면서 사용자가 swarm과 상호작용하는데 가장 근본이 되는 요소이다.
+    - Service를 생성할 때, 어떤 image를 사용하여 container를 생성할 것이고 해당 container가 어떤 명령어를 실행할지를 지정해줘야한다.
+    - Replicated service model에서 swarm manager는 특정 수의 replica task들을 node들에게 뿌려준다.
+    - Global service에서 swarm은 cluster 내의 모든 가용한 node들에게 하나의 task만을 실행하도록 한다.
+  - Task
+    - Docker container와 container 내에서 실행할 명령을 의미한다.
+    - Manager node가 worker node들에게 task를 할당하면, task들은 다른 node로 이동할 수 없다.
+    - 오직 할당 받은 node에서 실행되거나 실패될 뿐이다.
+
+
+
+- Load balancing
+  - Swarm manager는 ingress load balancing을 사용한다.
+    - 이를 통해 service를 swarm 외부에서 접근할 수 있게 된다.
+  - Swarm manager는 service에 자동으로 PublishedPort를 할당할 수 있으며, 사용자가 수종으로 설정할 수도 있다.
+    - Port를 설정하지 않을 경우 30000에서 32767 사이의 port를 자동으로 할당한다.
+  - Cloud load balancer 등의 외부 컴포넌트는 cluster에 속한 아무 node의 PublishedPort를 통해 service에 접근할 수 있다.
+    - 해당 node가 task를 실행 중이 아니라도 접근할 수 있다.
+  - Swarm mode는 각 service마다 자동적으로 부여할 internal DNS component를 가지고 있다.
+    - 이는 DNS entry에서 하나씩 빼서 부여하는 방식이다.
+    - Swarm manager는 cluster 내의 service들에 request를 분산하기 위해서 service의 DNS name을 기반으로 internal load balancing를 사용한다.
+
+
+
+- Docker swam 시작하기
+
+  - Docker 1.12부터는 Docker에 docker swarm이 포함되어 별도의 설치 없이도, 도커만 설치되어 있다면 바로 사용이 가능하다.
+  - ServerA에 Docker container 생성하기
+    - `Docker:dind` image를 사용하여 Docker container를 생성한다.
+
+  ```bash
+  $ docker pull docker:dind
+  $ docker run \
+  --name docker-node1 \
+  --privileged \
+  --publish 2378:2377 \
+  --publish 7947:7946 \
+  docker:dind
+  $ docker exec -it docker-node1 /bin/sh
+  ```
+
+  - Docker container 내부에서 Docker swarm을 실행한다.
+
+    - 제대로 실행 되었다면 `docker node ls`를 입력했을 때 cluster에 속한 docker node들이 출력된다.
+
+    - 혹은 `docker info` 명령어를 입력하여 `Server.Swarm` 값이 active로 설정되었는지를 확인하면 된다.
+
+    - 또한 init시에 swarm에 다른 worker를 추가하려면 어떤 명령어를 입력해야 하는지도 함께 출력된다.
+
+  ```bash
+  $ docker swarm init
+  $ docker node ls
+  $ docker info
+  ```
+
+  - ServerB에 Docker container 생성하기
+    - 위와 동일한 방식으로 ServerB에 Docker container를 생성한다.
+  - ServerB에 새로 생성한 Docker를 Docker swarm에 추가하기
+    - 아래 명령어를 입력하면 Docker Swarm에 추가된다.
+
+  ```bash
+  $ docker swarm join --token <ServerA의 docker swarm init시에 출력된 token> <host>:2378
+  ```
+
+  - 만일 ServerA에서 `docker swarm init` 실행시에 token을 확인하지 못했다면 아래 명령어를 입력하여 token을 확인할 수 있다.
+    - Worker node용 token과 manager용 token이 따로 생성되므로, worker를 입력해줘야한다.
+
+  ```bash
+  $ docker swarm join-token worker
+  ```
+
+  - 추가 됐는지 확인
+    - ServerA의 Docker container 내부에서 아래 명령어를 입력한다(아래 명령어는 오직 Swarm manager에서만 사용이 가능하므로, ServerB에서는 확인이 불가능하다).
+    - ServerA의 docker와 ServerB의 docker가 모두 뜬다면 성공적으로 swarm에 추가가 된 것이다.
+
+  ```bash
+  $ docker node ls
+  ```
+
+
+
+
+
+## Swarm 관련 명령어
+
+> https://seongjin.me/docker-swarm-introduction-nodes/
+
+- Docker swarm 시작하기
+
+  - `--task-history-limit`
+    - Docker swarm은 기본적으로 이전의 작업 내역을 저장해둔다.
+    - 예를 들어 service를 생성한 후 해당 service를 몇 번 update하면 이전 version의 container들이 쌓이게 된다.
+    - 이 옵션은 몇 개의 내역을 쌓을지를 설정하는 값으로 기본 값은 5이다.
+    - 만일 init시에 설정을 못 했더라도 추후 update를 통해 변경이 가능하다.
+
+  ```bash
+  $ docker swarm init [options]
+  ```
+
+
+
+- Node 목록 조회
+
+  - ID 옆의 `*` 표시는 현재 명령을 실행한 node를 나타낸다.
+  - Docker swarm 내에서 HOSTNAME 값은 중복이 가능하지만 ID 값은 중복될 수 없다.
+  - AVAILABILITY
+    - Active: 새로운 task를 할당 받을 수 있는 상태
+    - Pause: 새로운 task를 할당 받지는 않지만 현재 실행중인 task는 구동중인 상태
+    - Drain: 새로운 task도 할당 받지 않고, 실행 중인 task들도 모두 종료되는 상태
+    - 단 이는 swarm service에 해당하는 사항으로, service가 아닌 standalone container의 경우 영향을 받지 않는다.
+    - 즉, 예를 들어 node가 Drain 상태라고 하더라도 해당 Docker로 띄운 standalone container는 계속 실행된다.
+  - MANAGER STATUS
+    - manager node에만 표시된다.
+    - Leader: Swarm 관리와 orchestration을 맡은 노드임을 의미한다. 
+    - Reachable: 다른 매니저 노드들과 정상적으로 통신 가능한 노드임을 의미하며, 만일 leader node에 장애가 발생할 경우 이 상태값을 가진 node들 중에 새로운 leader를 선출한다.
+    - Unavailable: Leader를 포함한 다른 매니저 노드들과 통신이 불가능한 상태임을 의미한다.
+
+  ```bash
+  $ docker node ls
+  ID                           HOSTNAME       STATUS    AVAILABILITY   MANAGER STATUS   ENGINE VERSION
+  vpaqawacp368mhz27ugn12qw     42535425321b   Ready     Active                          24.0.2
+  qgebfgjontqwmcvt4tibrevz *   35262352352q   Ready     Active         Leader           24.0.2
+  ```
+
+
+
+- 특정 노드 상세 조회
+
+  - 특정 node에 대한 상세한 정보를 JSON 형식으로 출력한다.
+
+  ```bash
+  $ docker node inspect <node 식별자>
+  ```
+
+
+
+- Node의 type 변경하기
+
+  - Worker node를 manager node로 변경하기
+    - 복수의 node를 space로 구분하여 한 번에 변경할 수 있다.
+
+  ```bash
+  $ docker swarm promote <node 식별자> [node 식별자2]
+  ```
+
+  - Manager node를 worker node로 변경하기
+    - 마찬가지로 복수의 node를 space로 구분하여 한 번에 변경할 수 있다.
+    - 단, manager node가 하나 뿐일 경우 실행할 수 없다.
+
+  ```bash
+  $ docker swarm demote <node 식별자> [node 식별자2]
+  ```
+
+
+
+- Node update하기
+
+  - Docker node 의 availability 변경하기
+
+  ```bash
+  $ docker node update --availability <상태> <node 식별자> 
+  ```
+
+  - Label 설정하기
+    - Label은 "key=value" 형태로 부여하거나 key만 부여할 수도 있다.
+    - Node에 부여된 label은 이후에 스케줄링에 사용된다.
+
+  ```bash
+  $ docker node update --label-add <key=value | key> <node 식별자>
+  ```
+
+  - Label 삭제하기
+
+  ```bash
+  $ docker node update --label-rm <key=value | key> <node 식별자>
+  ```
+
+
+
+- Cluster에서 node 제외시키기
+
+  - Cluster에서 node를 제외시키는 절차
+    - 만일 제외하려는 node가 manager node라면 먼저 worker node로 변경해준다.
+    - 삭제할 노드의 availability를 drain으로 변경한다.
+    - 삭제할 노드의 task들이 다른 node로 잘 옮겨졌는지 확인한다(`docker service ps`).
+    - 잘 옮겨졌다면 해당 node와 cluster의 연결을 끊는다.
+    - Manager node에서 해당 node를 삭제한다.
+  - Node와 cluster의 연결 끊기
+    - 제외시키려는 node에서 아래 명령어를 실행한다.
+    - 아직 node list에는 보이지만, `down`이라고 표시된다.
+
+  ```bash
+  $ docker swarm leave
+  ```
+
+  - Cluster에서 node 제외시키기
+    - Manager node에서 아래 명령어를 실행한다.
+
+  ```bash
+  $ docker node rm <node 식별자>
+  ```
+
+  - 만일 제외하려는 node가 manager node일 경우 매우 주의해서 제외시켜야한다.
+    - Manager node를 강제로 제거하려 할 경우 cluster가 기능을 멈출 수 있다.
