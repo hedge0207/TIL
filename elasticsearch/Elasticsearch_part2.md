@@ -49,12 +49,12 @@
 
 - Cluster 영역
 
-  ```txt
+  ```yaml
   # ---------------------------------- Cluster -----------------------------------
   #
   # Use a descriptive name for your cluster:
-  #
-  # cluster.name: my-application
+  cluster.name: my-application
+  cluster.initial_master_nodes: node1
   ```
 
   - 클러스터 전체에 적용 되는 설정
@@ -64,22 +64,24 @@
     - 클러스터 이름을 변경하려면 클러스터 내의 모든 노드를 재시작해야 하기 때문에 처음부터 신중하게 설정해야 한다.
     - 기본값은 주석 처리 상태로 프로세스를 시작하면 elasticsearch라는 이름으로 자동 설정된다.
   - cluster.initial_master_nodes
-    - master node 역할을 가진 node들의 목록을 작성한다.
+    - Cluster 최초 구성에 election에 참여할 master eligible node들의 목록을 입력한다.
+    - 이 옵션은 cluster를 최초로 구성할 때만 설정하고, 구성된 이후에는 모든 노드에서 제거하는 것이 권장된다.
+    - Cluster 구성 후 이 옵션을 제거하지 않고 cluster를 재시작하거나, 새로운 node를 cluster에 합류시킬 경우 문제가 생길 수 있다.
 
 
 
 - Node 영역
 
-  ```txt
+  ```yaml
   # ------------------------------------ Node ------------------------------------
   #
   # Use a descriptive name for the node:
   #
-  # node.name: node-1
+  node.name: node-1
   #
   # Add custom attributes to the node:
   #
-  # node.attr.rack: r1
+  node.attr.rack: r1
   ```
 
   - 해당 노드에만 적용되는 설정.
@@ -93,16 +95,16 @@
 
 - Paths 영역
 
-  ```ㅅㅌㅅ
+  ```yaml
   # ----------------------------------- Paths ------------------------------------
   #
   # Path to directory where to store the data (separate multiple locations by comma):
   #
-  #path.data: /path/to/data
+  path.data: /path/to/data
   #
   # Path to log files:
   #
-  #path.logs: /path/to/logs
+  path.logs: /path/to/logs
   ```
 
   - 데이터와 로그의 저장 위치와 관련된 설정이다.
@@ -120,12 +122,12 @@
 
 - Memory 영역
 
-  ```txt
+  ```yaml
   # ----------------------------------- Memory -----------------------------------
   #
   # Lock the memory on startup:
   #
-  # bootstrap.memory_lock: true
+  bootstrap.memory_lock: true
   #
   # Make sure that the heap size is set to about half the memory available
   # on the system and that the owner of the process is allowed to use this

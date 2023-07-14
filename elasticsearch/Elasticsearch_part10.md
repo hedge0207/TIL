@@ -47,3 +47,535 @@
 
   ![image-20230516180603316](Elasticsearch_part10.assets/image-20230516180603316.png)
 
+
+
+
+
+# Node의 역할
+
+- Node의 역할 13가지
+
+  - master-eligible(m)
+    - 클러스터의 상태를 변경
+    - 클러스터의 상태를 모든 노드에 게시
+    - 전역 클러스터 상태를 유지
+    - 샤드에 대한 할당과 클러스터 상태 변화 게시
+  - Data 관련 role 6가지
+    - data(d)
+    - data_content(s)
+    - data_hot(h)
+    - data_warm(w)
+    - data_cold(c)
+    - data_frozen(f)
+  - ingest(i)
+    - ingest pipeline 기능을 사용하기 위해서는 클러스터 내에 적어도 하나 이상의 ingest 역할을 하는 노드가 필요하다.
+    - master, data 역할을 같이 수행하지 않는 것이 좋다.
+    - 색인 전에 데이터를 전처리하기 위해 사용한다.
+  - machine_learning(l)
+    - xpack에서 제공하는 머신러닝 기능을 사용하기 위한 노드
+    - basic에서는 사용이 불가능하다.
+  - remote_cluster_client(r)
+    - 다른 클러스터에 연결되어 해당 클러스트의 원격 노드 역할을 수행하는 노드
+  - transform(t)
+    - 색인된 데이터로부터 데이터의 pivot이나 latest 정보를 별도 데이터로 변환해서 transform index로 저장한다.
+  - voting_only(v)
+    - 마스터 노드를 선출하는 역할만 하는 노드
+    - 주의할 점은 role 설정시 아래와 같이 master를 함께 줘야 한다는 것이다.
+    - 마스터 노드 역할을 동시에 줘야하지만, 마스터 노드로 선출되지 않는다.
+    - 마스터 노드 선출시 tiebreaker 역할을 한다.
+
+  ```yaml
+  node.roles: [master, voting_only]
+  ```
+
+  - coordinating node(-)
+    - 설정해준 역할과 무관하게 모든 노드가 수행하는 역할이다.
+    - `node.rules`에 빈 리스트를 주면 순수 coordinating node가 된다.
+    - 주로 search reqeust를 받거나 bulk indexing request를 받는 역할을 한다.
+
+
+
+- Data role
+  - Data노드는 기본적으로 아래와 같은 역할을 수행한다.
+    - 문서의 색인 및 저장
+    - 문서의 검색 및 분석
+    - 코디네이팅
+  - data_content
+    - 일반적으로, 제품의 카탈로그나 기사의 archive 같은 상대적으로 영속적으로 저장해야 하고 다른 tier로 옮길 필요가 없는 data를을 저장한다.
+    - 시간이 오래 지나더라도 빠른 속도로 검색이 가능해야하는 data를 저장하는 용도로 사용한다.
+    - 일반적으로 query 성능을 위해 최적화되므로, 복잡한 검색이나 aggregation도 빠르게 수행할 수 있다.
+    - Indexing도 수행하긴 하지만, 일반적으로 log나 metric 같은 time series data를 빠르게 수집하지는 못한다.
+    - Data stream의 일부가 아닌 index나 system index들은 자동으로 content tier를 할당 받는다.
+  - data_hot
+    - 검색이 빈번하게 이루어지고, 최신 데이터를 저장해야하는 노드에 지정하는 tier다.
+    - log, metrics 등의 time series 데이터들에 주로 사용한다.
+    - Hot tier에 있는 node들은 색인과 검색이 모두 빨라야하므로 보다 많은 hardware resource와 SSD 등의 보다 빠른 저장소를 필요로한다.
+    - Data stream을 통해 생성된 index들은 자동으로 hot tier로 할당된다.
+  - data_warm
+    - time series 데이터를 유지하고 있는 노드로 업데이트와 검색이 빈번하지 않게 이루어지는 경우에 사용한다.
+    - 일반적으로 지난 1주 정도의 data를 저장하고 검색하는 용도로 사용한다.
+  - data_cold
+    - 업데이트와 검색이 매우 드물게 이루어지는 경우에 사용한다.
+    - 이 tier에 속한 data들은 빠른 검색 보다는 저장에 보다 적은 비용을 사용하도록 최적화된다.
+    - Cold tier의 이점을 최대한 누리기 위해서는 searchable snapshot의 fully mounted index를 사용해야한다.
+    - 이를 사용하지 않아도 hardware resource를 덜 사용하긴 하지만, warm tier에 비해서 disk space가 줄지는 않는다.
+  - data_frozen
+    - 업데이트와 검색이 아예 이루어지지 않거나 거의 이루어지는 경우 사용한다.
+    - Cold tier와 마찬가지로 frozen tier의 이점을 최대로 누리기 위해선 searchable snapshot의 partially mounted index를 사용해야한다.
+  - Data tier 개념을 노드에 적용한 것은 각 tier별로 hardware 스펙을 동일하게 하게 맞추도록 하려는 의도이다.
+    - 같은 tier의 data node 끼리는 hardware 스펙을 동일하게 맞춰주는 것이 좋다. 
+    - 각기 다를 경우 병목 현상으로 색인, 검색 시에 성능에 문제가 생길 수 있다.
+  - Index에 data tier를 설정하면, 해당 tier에 맞는 노드로 인덱스의 shard가 할당된다.
+
+
+
+- 기본 할당 정책
+
+  - `index.routing.allocation.include._tier_preference`
+    - elasticsearch.yml 파일의 위 부분에 설정된대로 index를 tier에 할당한다.
+    - 기본값은 content이기에, `data_content` role을 맡은 shard가 있을 경우 shard를 이 node에 먼저 할당한다.
+    - 여러 개의 tier를 설정할 수 없으며, 앞에서부터 해당 tier의 node가 있는지 확인하고 있을 경우 할당한다.
+    - 없을 경우 다음으로 설정된 tier의 node에 할당한다.
+    - 예를 들어 아래와 같이 설정한 경우 `data_warm`으로 설정된 node가 있는지를 먼저 보고 없으면, `data_cold`로 설정된 node가 있는지를 확인후 있으면 해당 node에 할당한다.
+
+  ```yaml
+  index.routing.allocation.include._tier_preference: data_warm,data_cold
+  ```
+
+  - Data stream을 통해 생성된 index의 경우 위 설정의 영향을 받지 않으며, 무조건 hot tier에 할당된다.
+
+
+
+- Index 생성시에 tier 설정하기
+
+  - 아래와 같이 index 생성시에 설정이 가능하다.
+
+  ```json
+  PUT test
+  {
+    "settings": {
+      "index.routing.allocation.include._tier_preference": "data_warm"
+    }
+  }
+  ```
+
+  - 위 설정이 elasticsearch.yml에 설정된 값보다 우선한다.
+
+
+
+
+
+# ILM(Index Lifecycle Management)
+
+- Docker compose를 통해 아래와 같이 테스트용 cluster를 구성한다.
+
+  - Elasticsearch의 node는 홀수로 설정하는 것이 좋지만 테스트를 위한 cluster이므로 아래에서는 짝수로 설정했다.
+  - 각 노드마다 data_hot, data_warm, data_cold, data_content tier를 부여한다.
+
+  ```yaml
+  version: '3.2'
+  
+  services:
+    node1:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.6.0
+      container_name: node1
+      environment:
+        - node.name=node1
+        - cluster.name=es-docker-cluster
+        - node.roles=[master,data_hot]
+        - discovery.seed_hosts=node2,node3,node4
+        - cluster.initial_master_nodes=node1,node2,node3,node4
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      ports: 
+        - 9205:9200
+      restart: always
+      networks:
+        - elastic
+  
+    node2:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.6.0
+      container_name: node2
+      environment:
+        - node.name=node2
+        - cluster.name=es-docker-cluster
+        - node.roles=[master,data_warm]
+        - discovery.seed_hosts=node1,node3,node4
+        - cluster.initial_master_nodes=node1,node2,node3,node4
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      restart: always
+      networks:
+        - elastic
+  
+    node3:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.6.0
+      container_name: node3
+      environment:
+        - node.name=node3
+        - cluster.name=es-docker-cluster
+        - node.roles=[master,data_cold]
+        - discovery.seed_hosts=node1,node2,node4
+        - cluster.initial_master_nodes=node1,node2,node3,,node4
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      restart: always
+      networks:
+        - elastic
+    
+    node4:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.6.0
+      container_name: node4
+      environment:
+        - node.name=node4
+        - cluster.name=es-docker-cluster
+        - node.roles=[master,data_content]
+        - discovery.seed_hosts=node1,node2,node3
+        - cluster.initial_master_nodes=node1,node2,node3,node4
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      restart: always
+      networks:
+        - elastic
+  
+    kibana:
+      image: docker.elastic.co/kibana/kibana:8.6.0
+      container_name: kibana
+      ports:
+        - "5605:5601"
+      environment:
+        ELASTICSEARCH_URL: http://node1:9200
+        ELASTICSEARCH_HOSTS: http://node1:9200
+      networks:
+        - elastic
+      depends_on:
+        - node1
+  
+  networks:
+    elastic:
+      driver: bridge
+  ```
+
+
+
+
+
+## ILM을 사용하지 않고 tier를 수동으로 이동시키기
+
+- Test용 index를 생성한다.
+
+  - 당일에 색인된 data들은 data_hot, 지난 일주일의 data는 data_warm, 그 이상은 data_cold에 저장할 것이다.
+  - 아래와 같이 일별로 index를 생성한다.
+
+  ```json
+  PUT test-20230713
+  {
+    "settings": {
+      "number_of_replicas": 0, 
+      "index.routing.allocation.include._tier_preference": "data_hot"
+    }
+  }
+  
+  PUT test-20230706
+  {
+    "settings": {
+      "number_of_replicas": 0, 
+      "index.routing.allocation.include._tier_preference": "data_warm"
+    }
+  }
+  
+  PUT test-20230701
+  {
+    "settings": {
+      "number_of_replicas": 0, 
+      "index.routing.allocation.include._tier_preference": "data_cold"
+    }
+  }
+  ```
+
+
+
+- 각 shard들의 할당 상태를 확인한다.
+
+  - 요청
+
+  ```json
+  GET _cat/shards/test*?v&h=i,n&s=i:desc
+  ```
+
+  - 응답
+    - 위에서 설정한 대로 할당 된 것을 확인할 수 있다.
+
+  ```json
+  i             n
+  test-20230713 node1
+  test-20230706 node2
+  test-20230701 node3
+  ```
+
+
+
+- Tier를 이동시키기
+
+  - `test-20230713` index를 warm tier로, `test-20230706` index를 cold tier로 이동시킬 것이다.
+
+  ```json
+  PUT test-20230713/_settings
+  {
+    "index.routing.allocation.include._tier_preference": "data_warm"
+  }
+  
+  PUT test-20230706/_settings
+  {
+    "index.routing.allocation.include._tier_preference": "data_cold"
+  }
+  ```
+
+  - 다시 확인해보면
+
+  ```json
+  GET _cat/shards/test*?v&h=i,n&s=i:desc
+  ```
+
+  - 잘 옮겨진 것을 확인할 수 있다.
+
+  ```json
+  i             n
+  test-20230713 node1
+  test-20230706 node2
+  test-20230701 node3
+  ```
+
+
+
+
+
+## ILM을 사용하여 tier를 자동으로 이동시키기
+
+- Index의 lifecycle을 관리할 수 있게 해주는 기능이다.
+  - Index의 lifecycle은 아래와 같다.
+    - hot
+    - warm
+    - cold
+    - frozen
+    - delete
+  - 아래와 같은 방법으로 설정이 가능하다.
+    - `_ilm` API를 사용하여 설정.
+    - Kibana의 `Stack Management-Data-Index Lifecycle Policies`에서 UI를 통해 설정하는 방법.
+
+
+
+### Action
+
+- Action
+  - Lifecycle의 각 phase마다 실행할 동작들이다.
+  - 각 phase마다 실행할 수 있는 action이 다르다.
+
+
+
+- Rollover
+
+  > hot phase에서만 사용할 수 있다.
+
+  - 특정 조건이 충족됐을 때, 기존 index를 새로운 index로 roll over한다.
+  - Data stream과 index alias을 대상으로 사용할 수 있다.
+  - Alias를 대상으로 할 경우 반드시 아래의 조건을 충족해야한다.
+    - Index name은 반드시 `*^.\*-\d+$*` pattern과 일치해야한다.
+    - `index.lifecycle.rollover_alias` 옵션에 alias를 입력해야한다.
+    - Index가 반드시 write index여야한다(alias 설정시 `is_write_index`  옵션을 true로 줘야한다).
+
+
+
+- Migrate
+
+  > warm, cold phase에서 사용할 수 있다.
+
+  - warn, cold phase에서 아무 action을 설정하지 않을 경우, 자동으로 migrate action이 설정된다.
+  - Index를 다른 data tier로 이동시키는 action이다.
+    - `index.routing.allocation.include._tier_preference`을 자동으로 변경시키는 방식으로 동작한다.
+
+
+
+- Delete
+
+  > delete phase에서만 사용할 수 있다.
+
+  - Index를 영구적으로 삭제하는 action이다.
+
+
+
+### ILM 사용하기
+
+- ILM policy 생성 및 수정하기
+
+  - `_meta`
+    - Policy에 대한 meta data를 설정할 수 있다.
+    - 여기에 설정한 정보는 policy 정보를 확인할 때 함께 노출된다.
+  - `phases`
+    - Phase를 설정한다.
+    - 각 phase에는 `min_age`와 `actions`를 설정한다.
+    - `actions`에 들어갈 수 있는 값은 각 phase마다 다르며, [공식 문서](https://www.elastic.co/guide/en/elasticsearch/reference/current/ilm-actions.html)에서 확인할 수 있으며, 
+  - Update API는 따로 존재하지 않는다.
+    - 아래 API를 통해서 생성고 수정을 모두 실행한다.
+    - 이미 존재하는 `policy_id`로 요청을 보낼 경우 policy의 version이 올라가게 된다.
+  - 예시
+
+  ```json
+  PUT _ilm/policy/my-ilm-policy
+  {
+    "policy": {
+      "phases": {
+        "hot": {
+          "actions": {
+            "rollover": {
+              "max_age": "10s"
+            }
+          }
+        },
+        "warm": {
+          "min_age": "20s",
+          "actions": {}
+        },
+        "cold": {
+          "min_age": "30s",
+          "actions": {}
+        },
+        "delete": {
+          "min_age": "40s",
+          "actions": {
+            "delete": {}
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  - warm과 cold phase의 경우 action을 설정해주지 않아도 자동으로 migrage action이 추가된다.
+
+
+
+- ILM policy 조회 및 삭제하기
+
+  - ILM policy 모두 가져오기
+
+  ```json
+  GET _ilm/policy
+  ```
+
+  - 특정 ILM policy 가져오기
+
+  ```json
+  GET _ilm/policy/<policy_id>
+  ```
+
+  - ILM policy 삭제하기
+
+  ```json
+  DELETE _ilm/policy/<policy_id>
+  ```
+
+
+
+- 관련 설정
+
+  - 실행할 action이 있는지 확인하는 주기 변경하기
+    - 기본적으로 ILM은 10분마다 실행할 action이 있는지를 확인한다.
+    - 우리는 예시에서 10분보다 작은 간격을 설정했으므로, action을 확인하는 간격을 변경해줘야한다.
+    - `indices.lifecycle.poll_interval` 설정을 변경해준다.
+
+  ```json
+  PUT _cluster/settings
+  {
+    "transient": {
+      "indices.lifecycle.poll_interval": "5s" 
+    }
+  }
+  ```
+
+  - 문서가 없어도 action을 실행하도록 설정
+    - ILM은 색인된 문서가 있어야 action을 실행한다.
+    - `indices.lifecycle.rollover.only_if_has_documents` 값을 false로 변경해야 문서가 없어도 action을 실행한다.
+
+  ```json
+  PUT _cluster/settings
+  {
+    "transient": {
+      "indices.lifecycle.rollover.only_if_has_documents": false
+    }
+  }
+  ```
+
+
+
+
+
+- Index에 ILM policy를 적용하기
+
+  - Index template을 생성한다.
+
+  ```json
+  PUT _index_template/my-template
+  {
+    "index_patterns": [
+      "my-index-*"
+    ],
+    "template": {
+      "settings": {
+        "number_of_replicas": 0,
+        "index.lifecycle.name": "my-ilm",
+        "index.lifecycle.rollover_alias": "my-alias",
+        "index.routing.allocation.include._tier_preference": "data_hot"
+      }
+    }
+  }
+  ```
+
+  - 위에서 생성한 template으로 index를 생성한다.
+
+  ```json
+  PUT my-index-000001
+  {
+    "aliases": {
+      "my-alias": {
+        "is_write_index": true
+      }
+    }
+  }
+  ```
+
+  - 잘 적용되었는지 확인한다.
+
+  ```json
+  GET my-alias/_ilm/explain
+  ```
+
+  - 다음과 같이 동작한다(`indices.lifecycle.poll_interval`이 매우 작은 값이라 바로 적용된다고 가정)
+    - 첫 index가 생성된지 10초가 지나면 rollover가 실행되어 두 번째 index가 생성된다.
+    - 첫 index가 생성된지 20초가 지나면, 두 번째 index에 rollover가 실행되어 세 번째 index가 생성되고, 첫 번째 index가 hot에서 warm으로 tier가 변경된다(shard의 할당 위치가 다른 노드로 변경된다).
+    - 첫 index가 생성된지 30초가 지나면, 세 번째 index에 rollover가 실행되어 네 번째 index가 생성되고, 첫 번째 index는 warm에서 cold로, 두 번째 index는 hot에서 warm으로 tier가 변경된다.
+    - 첫 index가 생성된지 40초가 지나면, 네 번째 index에 rollover가 실행되어 다섯 번째 index가 생성되고, 두 번째 index는 warm에서 cold로, 세 번째 index는 hot에서 warm으로 tier가 변경되며, 첫 번째 index는 삭제된다.

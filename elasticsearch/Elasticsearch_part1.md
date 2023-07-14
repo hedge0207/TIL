@@ -444,8 +444,13 @@
 - 노드
 
   - 클러스터를 구성하는 논리적인 ES 프로세스 하나를 의미한다.
+  
   - 노드도 클러스터와 마찬가지로 각각의 고유한 노드 이름과 UUID가 있다.
+  
   - 역할에 따라 여러 노드로 구분할 수 있다.
+    
+    > 전체 역할은 part10 참고
+    
     - 각각 하나의 역할만 하는 것이 아니라 한 번에 여러 개의 역할을 할 수 있다.
   
   | 노드 역할               | 설명                                                         |
@@ -476,82 +481,6 @@
     - 실제 데이터를 저장하고 처리하지는 않지만, 사용자의 색인이나 검색 등 모든 요청을 데이터 노드에 전달하는 역할을 한다.
     - 문서를 저장하지 않는 데이터 노드라고도 생각할 수 있다.
     - 클라이언트 노드라고도 부른다.
-
-
-
-- 노드의 역할 13가지
-
-  - master-eligible(m)
-    - 클러스터의 상태를 변경
-    - 클러스터의 상태를 모든 노드에 게시
-    - 전역 클러스터 상태를 유지
-    - 샤드에 대한 할당과 클러스터 상태 변화 게시
-  - Data 관련 role 6가지
-    - data(d)
-    - data_content(s)
-    - data_hot(h)
-    - data_warm(w)
-    - data_cold(c)
-    - data_frozen(f)
-  - ingest(i)
-    - ingest pipeline 기능을 사용하기 위해서는 클러스터 내에 적어도 하나 이상의 ingest 역할을 하는 노드가 필요하다.
-    - master, data 역할을 같이 수행하지 않는 것이 좋다.
-    - 색인 전에 데이터를 전처리하기 위해 사용한다.
-  - machine_learning(l)
-    - xpack에서 제공하는 머신러닝 기능을 사용하기 위한 노드
-    - basic에서는 사용이 불가능하다.
-  - remote_cluster_client(r)
-    - 다른 클러스터에 연결되어 해당 클러스트의 원격 노드 역할을 수행하는 노드
-  - transform(t)
-    - 색인된 데이터로부터 데이터의 pivot이나 latest 정보를 별도 데이터로 변환해서 transform index로 저장한다.
-  - voting_only(v)
-    - 마스터 노드를 선출하는 역할만 하는 노드
-    - 주의할 점은 role 설정시 아래와 같이 master를 함께 줘야 한다는 것이다.
-    - 마스터 노드 역할을 동시에 줘야하지만, 마스터 노드로 선출되지 않는다.
-    - 마스터 노드 선출시 tiebreaker 역할을 한다.
-  
-  ```yaml
-  node.roles: [master, voting_only]
-  ```
-  
-  - coordinating node(-)
-    - 설정해준 역할과 무관하게 모든 노드가 수행하는 역할이다.
-    - `node.rules`에 빈 리스트를 주면 순수 coordinating node가 된다.
-    - 주로 search reqeust를 받거나 bulk indexing request를 받는 역할을 한다.
-
-
-
-- Data role
-  - Data노드는 기본적으로 아래와 같은 역할을 수행한다.
-    - 문서의 색인 및 저장
-    - 문서의 검색 및 분석
-    - 코디네이팅
-  - data_content
-    - 일반적으로, 제품의 카탈로그나 기사의 archive 같은 상대적으로 영속적으로 저장해야 하고 다른 tier로 옮길 필요가 없는 data를을 저장한다.
-    - 시간이 오래 지나더라도 빠른 속도로 검색이 가능해야하는 data를 저장하는 용도로 사용한다.
-    - 일반적으로 query 성능을 위해 최적화되므로, 복잡한 검색이나 aggregation도 빠르게 수행할 수 있다.
-    - Indexing도 수행하긴 하지만, 일반적으로 log나 metric 같은 time series data를 빠르게 수집하지는 못한다.
-    - Data stream의 일부가 아닌 index나 system index들은 자동으로 content tier를 할당 받는다.
-  - data_hot
-    - 검색이 빈번하게 이루어지고, 최신 데이터를 저장해야하는 노드에 지정하는 tier다.
-    - log, metrics 등의 time series 데이터들에 주로 사용한다.
-    - Hot tier에 있는 node들은 색인과 검색이 모두 빨라야하므로 보다 많은 hardware resource와 SSD 등의 보다 빠른 저장소를 필요로한다.
-    - Data stream을 통해 생성된 index들은 자동으로 hot tier로 할당된다.
-  - data_warm
-    - time series 데이터를 유지하고 있는 노드로 업데이트와 검색이 드물게 이루어지는 경우에 사용한다.
-    - 일반적으로 지난 1주 정도의 data를 저장하고 검색하는 용도로 사용한다.
-  - data_cold
-    - 업데이트와 검색이 거의 이루어지지 않는 경우에 사용한다.
-    - 이 tier에 속한 data들은 빠른 검색 보다는 저장에 보다 적은 비용을 사용하도록 최적화된다.
-    - Cold tier의 이점을 최대한 누리기 위해서는 searchable snapshot의 fully mounted index를 사용해야한다.
-    - 이를 사용하지 않아도 hardware resource를 덜 사용하긴 하지만, warm tier에 비해서 disk space가 줄지는 않는다.
-  - data_frozen
-    - 업데이트와 검색이 아예 이루어지지 않거나 매우 희박하게 이루어지는 경우 사용한다.
-    - Cold tier와 마찬가지로 frozen tier의 이점을 최대로 누리기 위해선 searchable snapshot의 partially mounted index를 사용해야한다.
-  - Data tier 개념을 노드에 적용한 것은 각 tier별로 hardware 스펙을 동일하게 하게 맞추도록 하려는 의도이다.
-    - 같은 tier의 data node 끼리는 hardware 스펙을 동일하게 맞춰주는 것이 좋다. 
-    - 각기 다를 경우 병목 현상으로 색인, 검색 시에 성능에 문제가 생길 수 있다.
-  - Index에 data tier를 설정하면, 해당 tier에 맞는 노드로 인덱스의 shard가 할당된다.
 
 
 
