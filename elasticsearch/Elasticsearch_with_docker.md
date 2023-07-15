@@ -48,6 +48,34 @@
 
 
 
+- Elasticsearch 8부터는 security 기능이 자동으로 활성화 되어 실행되는데, 비활성화 하는 방법은 아래와 같다.
+
+  - elasticsearch.yml 파일을 아래와 같이 작성한다.
+
+  ```yaml
+  xpack.security.enabled: false
+  xpack.security.enrollment.enabled: false
+  ```
+
+  - 위 파일을 container 내부의 `/usr/share/elasticsearch/config/elasticsearch.yml` 파일에 bind bount한다.
+
+  ```bash
+  $ docker run --name <컨테이너명> --net <네트워크명> -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" \
+  -v <path>/<to>/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml \
+  <이미지명>
+  ```
+
+  - 혹은 환경변수로 설정한다.
+
+  ```bash
+  $ docker run --name <컨테이너명> --net <네트워크명> -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" \
+  -e xpack.security.enabled=false \
+  -e xpack.security.enrollment.enabled=false \
+  <이미지명>
+  ```
+
+
+
 
 
 
