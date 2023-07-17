@@ -579,3 +579,319 @@
     - 첫 index가 생성된지 20초가 지나면, 두 번째 index에 rollover가 실행되어 세 번째 index가 생성되고, 첫 번째 index가 hot에서 warm으로 tier가 변경된다(shard의 할당 위치가 다른 노드로 변경된다).
     - 첫 index가 생성된지 30초가 지나면, 세 번째 index에 rollover가 실행되어 네 번째 index가 생성되고, 첫 번째 index는 warm에서 cold로, 두 번째 index는 hot에서 warm으로 tier가 변경된다.
     - 첫 index가 생성된지 40초가 지나면, 네 번째 index에 rollover가 실행되어 다섯 번째 index가 생성되고, 두 번째 index는 warm에서 cold로, 세 번째 index는 hot에서 warm으로 tier가 변경되며, 첫 번째 index는 삭제된다.
+
+
+
+
+
+# Snapshot
+
+- Snapshot
+  - Elasticsearch cluster의 backup이다.
+  - 아래와 같은 경우 사용한다.
+    - Cluster의 중단 없이 cluster를 backup하기 위해서.
+    - Data를 복원하기 위해서.
+    - Cluster 간에 data를 전송하기 위해서.
+    - Cold, frozen data tier에서 searchable snapshot을 사용하여 저장 비용을 절감하기 위해서.
+  - Snapshot repository
+    - Snapshot은 snapshot repository라 불리는 저장소에 저장된다.
+    - 따라서 snapshot 기능을 사용하기 위해서는 먼저 cluster에 snapshot repository를 지정해야한다.
+    - AWS S3, Google Cloud Storage, Microsoft Azure를 포함하여 다양한 option을 제공한다.
+  - Repository는 Elasticsearch version간에 호환되지 않을 수도 있다.
+    - 이전 version의 elasticsearch에서 snapshot을 생성하고, elasticsearch를 update하더라도, 기존의 snapshot을 그대로 사용할 수 있다.
+    - 그러나, 만약 update된 elasticsearch에서 repository에 수정을 가하면, 그 때부터는 이전 version의 elasticsearch에서 사용할 수 없을 수도 있다.
+    - 따라서 여러 cluster가 하나의 repository를 공유해야한다면 repository를 공유하는 모든 cluster들의 elasticsearch version이 같아야한다.
+
+
+
+- Snapshot test를 위한 cluster 구성
+
+  - Docker를 사용해 elasticsearch cluster를 구성하기 위해 docker-compose.yml 파일을 아래와 같이 작성한다.
+  - Test에서는 snapshot repository 중 shared file system repository를 사용할 것인데, 이를 위해서는 몇 가지 설정을 해줘야한다.
+    - `path.repo`에 snapshot을 저장할 directory를 지정한다.
+    - Snapshot을 생성하려는 위치에 volume을 설정한다(필수).
+
+  ```yaml
+  version: '3.2'
+  
+  services:
+    node1:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.6.0
+      container_name: node1
+      environment:
+        - node.name=node1
+        - cluster.name=es-docker-cluster
+        - node.roles=[master,data_hot,data_content]
+        - discovery.seed_hosts=node2,node3,node4
+        - cluster.initial_master_nodes=node1,node2,node3,node4
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+        - path.repo=/usr/share/elasticsearch/snapshots
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      volumes:
+        - snapshots:/usr/share/elasticsearch/snapshots
+      ports: 
+        - 9205:9200
+      restart: always
+      networks:
+        - elastic
+  
+    node2:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.6.0
+      container_name: node2
+      environment:
+        - node.name=node2
+        - cluster.name=es-docker-cluster
+        - node.roles=[master,data_warm]
+        - discovery.seed_hosts=node1,node3,node4
+        - cluster.initial_master_nodes=node1,node2,node3,node4
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+        - path.repo=/usr/share/elasticsearch/snapshots
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      volumes:
+        - snapshots:/usr/share/elasticsearch/snapshots
+      restart: always
+      networks:
+        - elastic
+  
+    node3:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.6.0
+      container_name: node3
+      environment:
+        - node.name=node3
+        - cluster.name=es-docker-cluster
+        - node.roles=[master,data_cold,ingest]
+        - discovery.seed_hosts=node1,node2,node4
+        - cluster.initial_master_nodes=node1,node2,node3,,node4
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+        - path.repo=/usr/share/elasticsearch/snapshots
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      volumes:
+        - snapshots:/usr/share/elasticsearch/snapshots
+      restart: always
+      networks:
+        - elastic
+  
+    kibana:
+      image: docker.elastic.co/kibana/kibana:8.6.0
+      container_name: kibana
+      ports:
+        - "5605:5601"
+      environment:
+        ELASTICSEARCH_URL: http://node1:9200
+        ELASTICSEARCH_HOSTS: http://node1:9200
+      networks:
+        - elastic
+      depends_on:
+        - node1
+  
+  volumes:
+    snapshots:
+      driver: local
+  
+  networks:
+    elastic:
+      driver: bridge
+  ```
+
+
+
+- Repository 등록하기
+
+  > Kibana를 통해서도 등록 가능하다.
+
+  - 아래와 같이 `_snapshot` API를 사용하여 repository를 등록할 수 있다.
+    - Shared file system respositroy로 사용하기 위해 `type`을 `fs`로 준다.
+    - 위에서 `path.repo`에 설정해준 경로를 넣어준다.
+    - 아래와 같이 모든 경로를 넣어줘도 되고, 넣지 않을 경우, `path.repo`에 설정한 경로부터 상대경로로 설정된다.
+
+  ```json
+  // PUT _snapshot/<repository>
+  {
+    "type": "<type>",
+    "settings": {
+      "location": "<path.repo에 설정한 경로를 기반으로 한 경로>"
+    }
+  }
+  ```
+
+  - 예시
+
+  ```json
+  // PUT _snapshot/my-fs-repo
+  {
+    "type": "fs",
+    "settings": {
+      "location": "/usr/share/elasticsearch/snapshots/my_snapshot"
+      // "location": "my_snapshot" 과 같이 주는 것과 완전히 같다.
+    }
+  }
+  ```
+
+  - 하나의 snapshot repository를 여러 cluster에 등록 할 경우, 오직 한 곳에서만 작성이 가능하고, 나머지 cluster에서는 읽기만 가능하다.
+
+
+
+- Repository에서 참조되지 않는 데이터 일괄 삭제하기
+
+  - 시간이 지남에 따라 respository에는 어느 snapshot도 참조하지 않는 data들이 쌓이기 시작한다.
+    - 이들이 repository의 성능에 악영향을 미치는 것은 아니지만, 용량을 차지하고 있기는 하므로, 삭제시키는 것이 좋다.
+  - 아래 API를 통해 참조되지 않는 data를 일괄 삭제할 수 있다.
+
+  ```http
+  POST _snapshot/<repository>/_cleanup
+  ```
+
+  - Snapshot을 삭제할 때 이 endpoint도 자동으로 호출된다.
+    - 따라서 만일 주기적으로 snapshot을 삭제한다면, 굳이 이 endpoint를 호출할 필요는 없다.
+
+
+
+- Snapshot
+  - Snapshot을 생성하기 위한 조건
+    - Master node가 있는 실행 중인 cluster가 있어야한다.
+    - Snapshot repository가 등록되어 있어야한다.
+    - Cluster의 global metadata가 readable해야한다.
+    - 만약 snapshot에 index를 포함시킬 것이라면, index와 index의 metadata도 readable해야한다.
+  - 고려사항
+    - 각 snapshot은 repository 내에서 고유한 이름을 가지므로, 이미 존재하는 이름으로는 snapshot을 생성할 수 없다.
+    - Snapshot에는 자동으로 중복 제거가 실행되므로, snapshot을 빈번하게 생성해도 storage overhead가 크게 증가하지는 않는다.
+    - 각각의 snapshot은 논리적으로 구분되므로, 하나의 snapshot을 삭제하더라도 다른 snapshot에는 영향을 주지 않는다.
+    - Snapshot을 생성하는 중에는 일시적으로 shard의 할당이 정지된다.
+    - Snapshot을 생성하더라도 indexing을 포함한 다른 요청들이 block되지는 않지만, snapshot의 생성이 시작된 이후의 변경사항들은 반영되지 않는다.
+    - `snapshot.max_concurrent_operation` 설정을 변경하여 동시에 생성 가능한 snapshot의 최대 개수를 변경할 수 있다.
+    - 만일 snapshot에 data stream을 포함할 경우, data stream의 backing index들과 metadata도 snapshot에 저장된다.
+
+
+
+- SLM(Snapshot Lifecycle Management)
+
+  - Snapshot을 자동으로 관리해주는 기능이다.
+    - 설정된 일정에 따라 snapshot을 자동으로 생성할 수 있다.
+    - 설정한 기간이 지난 snapshot들을 자동으로 삭제할 수 있다.
+
+  - SLM Policy 생성하기
+
+  ```json
+  // PUT _slm/policy/<snapshot>
+  {
+    // snapshot을 생성할 schedule을 설정한다.
+    "schedule": "0 30 1 * * ?",
+    // snapshot의 이름을 설정한다.
+    "name": "<nightly-snap-{now/d}>", 
+    // snapshot을 저장할 repository를 설정한다.
+    "repository": "my_repository",
+    "config": {
+      // data stream을 포함한 모든 종류의 index들을 snapshot에 저장한다.
+      "indices": "*",
+      // cluster state를 snapshot에 포함시킨다.
+      "include_global_state": true    
+    },
+    "retention": {
+      "expire_after": "30d",	// 30일 동안 snapshot을 저장한다.
+      "min_count": 5,			// 보유 기간과 상관 없이 최소 5개의 snapshot을 저장한다.
+      "max_count": 50			// 보유 기간과 상관 없이 최대 50개의 snapshot을 저장한다.
+    }
+  }
+  ```
+
+  - SLM Policy를 수동으로 실행하기
+    - Snapshot을 즉시 생성하기 위해서 SLM policy를 수동으로 실행할 수도 있다.
+
+  ```http
+  POST _slm/policy/<snapshot>/_execute
+  ```
+
+  - SLM retention
+    - SLM snapshot retension은 policy에 설정된 snapshot schedule과 별개로 실행되는 cluster 수준의 task이다.
+    - SLM retention task를 언제 실행할지는 아래와 같이 설정할 수 있다.
+
+  ```json
+  // PUT _cluster/settings
+  {
+    "persistent" : {
+      "slm.retention_schedule" : "0 30 1 * * ?"
+    }
+  }
+  ```
+
+  - SLM snapshot retention 바로 실행시키기
+    - SLM policy와 마찬가지로 바로 실행시키는 것도 가능하다.
+
+  ```http
+  POST _slm/_execute_retention
+  ```
+
+
+
+- SLM을 사용하지 않고 수동으로 관리하기
+
+  - Snapshot 생성하기
+
+  ```HTTP
+  PUT _snapshot/<repository>/<my_snapshot_{now/d}>
+  ```
+
+  - Snapshot을 삭제하기
+
+  ```http
+  DELETE _snapshot/<repository>/<snapshot>
+  ```
+
+
+
+- Snapshot monitoring하기
+
+  - 현재 실행중인 snapshot들 받아오기
+
+  ```http
+  GET _snapshot/<repository>/_current
+  ```
+
+  - Snapshout의 상태 받아오기
+
+  ```http
+  GET _snapshot/_status
+  ```
+
+  - SLM의 실행 기록 받아오기
+
+  ```http
+  GET _slm/stats
+  ```
+
+  - 특정 SLM policy의 실행 기록 가져오기
+
+  ```http
+  GET _slm/policy/<slm_policy>
+  ```
+
+
+
+
+
+
+
+
+
+
+
+
+
