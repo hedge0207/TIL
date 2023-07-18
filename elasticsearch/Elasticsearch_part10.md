@@ -532,8 +532,6 @@
 
 
 
-
-
 - Index에 ILM policy를 적용하기
 
   - Index template을 생성한다.
@@ -557,7 +555,7 @@
 
   - 위에서 생성한 template으로 index를 생성한다.
 
-  ```json
+  ```http
   PUT my-index-000001
   {
     "aliases": {
@@ -570,7 +568,7 @@
 
   - 잘 적용되었는지 확인한다.
 
-  ```json
+  ```http
   GET my-alias/_ilm/explain
   ```
 
@@ -603,6 +601,318 @@
     - 따라서 여러 cluster가 하나의 repository를 공유해야한다면 repository를 공유하는 모든 cluster들의 elasticsearch version이 같아야한다.
 
 
+
+- Snapshot에는 아래와 같은 정보들이 포함된다.
+  - Cluster state
+    - Persistent cluster settings(transient cluster settings는 저장되지 않는다).
+    - Index template
+    - Legacy index template
+    - Ingest pipeline
+    - ILM policy
+    - Feature state(Elasticsearch의 설정 정보를 저장하거나, security나 kibana 등의 특정 기능을 위한 index 혹은 data stream을 의미한다).
+  - Data stream
+  - Regular Index
+
+
+
+- Snapshot을 생성하기 위한 조건
+  - Master node가 있는 실행 중인 cluster가 있어야한다.
+  - Snapshot repository가 등록되어 있어야한다.
+  - Cluster의 global metadata가 readable해야한다.
+  - 만약 snapshot에 index를 포함시킬 것이라면, index와 index의 metadata도 readable해야한다.
+
+
+
+- Snapshot의 동작 방식
+  - Index를 backup하는 방식
+    - Index의 segment를 복사해서 snapshot repository에 저장한다.
+    - Segment는 수정할 수 없기 때문에, repository의 마지막 snapshot 생성 이후에 새로 생긴 segment들만 copy한다.
+    - 각각의 segment는 논리적으로 분리되어 있기 때문에, 한 snapshot을 삭제하더라도, 다른 snapshot에 저장된 segment는 삭제되지 않는다.
+  - Snapshot과 shard 할당
+    - Snapshot은 primary shard에 저장된 segment들을 복사한다.
+    - Snapshot 생성을 시작하면, Elasticsearch는 접근 가능한 primary shard의 segment들을 즉시 복제한다.
+    - 만약 shard가 시작 중이거나 재할당 중이라면, Elasticsearch는 이를 기다렸다 완료되면 복제한다.
+    - 만약 하나 이상의 primary shard를 사용할 수 없는 상태라면, snapshot은 생성되지 않는다.
+    - Snapshot을 생성하는 중에는, Elasticsearch는 shard를 이동시키지 않고, snapshot 생성이 완료되면 shard를 이동시킨다.
+  - Snapshot은 특정 시점의 cluster를 보여주지 않는다.
+    - Snapshot은 시작 시간과 종료 시간을 포함하고 있다.
+    - Snapshot은 이 시작 시간과 종료 시간 사이의 어떤 시점의 shard의 data 상태만 보여줄 뿐이다.
+
+
+
+- 고려사항
+  - 각 snapshot은 repository 내에서 고유한 이름을 가지므로, 이미 존재하는 이름으로는 snapshot을 생성할 수 없다.
+  - Snapshot에는 자동으로 중복 제거가 실행되므로, snapshot을 빈번하게 생성해도 storage overhead가 크게 증가하지는 않는다.
+  - 각각의 snapshot은 논리적으로 구분되므로, 하나의 snapshot을 삭제하더라도 다른 snapshot에는 영향을 주지 않는다.
+  - Snapshot을 생성하는 중에는 일시적으로 shard의 할당이 정지된다.
+  - Snapshot을 생성하더라도 indexing을 포함한 다른 요청들이 block되지는 않지만, snapshot의 생성이 시작된 이후의 변경사항들은 반영되지 않는다.
+  - `snapshot.max_concurrent_operation` 설정을 변경하여 동시에 생성 가능한 snapshot의 최대 개수를 변경할 수 있다.
+  - 만일 snapshot에 data stream을 포함할 경우, data stream의 backing index들과 metadata도 snapshot에 저장된다.
+
+
+
+- Repository 등록하기
+
+  > Kibana를 통해서도 등록 가능하다.
+
+  - 아래와 같이 `_snapshot` API를 사용하여 repository를 등록할 수 있다.
+    - Shared file system respositroy로 사용하기 위해 `type`을 `fs`로 준다.
+    - `elasticsearch.yml`파일의 `path.repo`에 설정해준 경로를 넣어준다.
+    - 아래와 같이 모든 경로를 넣어줘도 되고, 넣지 않을 경우, `path.repo`에 설정한 경로부터 상대경로로 설정된다.
+
+  ```json
+  // PUT _snapshot/<repository>
+  {
+    "type": "<type>",
+    "settings": {
+      "location": "<path.repo에 설정한 경로를 기반으로 한 경로>"
+    }
+  }
+  ```
+
+  - 예시
+
+  ```json
+  // PUT _snapshot/my-fs-repo
+  {
+    "type": "fs",
+    "settings": {
+      "location": "/usr/share/elasticsearch/snapshots/my_snapshot"
+      // "location": "my_snapshot" 과 같이 주는 것과 완전히 같다.
+    }
+  }
+  ```
+
+  - 하나의 snapshot repository를 여러 cluster에 등록 할 경우, 오직 한 곳에서만 작성이 가능하고, 나머지 cluster에서는 읽기만 가능하다.
+
+
+
+- Repository 목록 조회
+
+  - `_cat` API를 통해 전체 repository들을 확인할 수 있다.
+
+  ```http
+  GET _cat/repositories
+  ```
+
+
+
+- Repository에서 참조되지 않는 데이터 일괄 삭제하기
+
+  - 시간이 지남에 따라 respository에는 어느 snapshot도 참조하지 않는 data들이 쌓이기 시작한다.
+    - 이들이 repository의 성능에 악영향을 미치는 것은 아니지만, 용량을 차지하고 있기는 하므로, 삭제시키는 것이 좋다.
+  - 아래 API를 통해 참조되지 않는 data를 일괄 삭제할 수 있다.
+
+  ```http
+  POST _snapshot/<repository>/_cleanup
+  ```
+
+  - Snapshot을 삭제할 때 이 endpoint도 자동으로 호출된다.
+    - 따라서 만일 주기적으로 snapshot을 삭제한다면, 굳이 이 endpoint를 호출할 필요는 없다.
+
+
+
+- Repository 삭제하기
+
+  - Repository를 삭제하더라도, repository에 저장되어 있던 snapshot들은 삭제되지 않는다.
+
+  ```http
+  DELETE _snapshot/<repository>
+  ```
+
+  
+
+  
+
+
+
+- SLM(Snapshot Lifecycle Management)
+
+  - Snapshot을 자동으로 관리해주는 기능이다.
+    - 설정된 일정에 따라 snapshot을 자동으로 생성할 수 있다.
+    - 설정한 기간이 지난 snapshot들을 자동으로 삭제할 수 있다.
+
+  - SLM Policy 생성하기
+
+  ```json
+  // PUT _slm/policy/<snapshot>
+  {
+    // snapshot을 생성할 schedule을 설정한다.
+    "schedule": "0 30 1 * * ?",
+    // snapshot의 이름을 설정한다.
+    "name": "<nightly-snap-{now/d}>", 
+    // snapshot을 저장할 repository를 설정한다.
+    "repository": "my_repository",
+    "config": {
+      // data stream을 포함한 모든 종류의 index들을 snapshot에 저장한다.
+      "indices": "*",
+      // cluster state를 snapshot에 포함시킨다.
+      "include_global_state": true    
+    },
+    "retention": {
+      "expire_after": "30d",	// 30일 동안 snapshot을 저장한다.
+      "min_count": 5,			// 보유 기간과 상관 없이 최소 5개의 snapshot을 저장한다.
+      "max_count": 50			// 보유 기간과 상관 없이 최대 50개의 snapshot을 저장한다.
+    }
+  }
+  ```
+
+  - SLM Policy를 수동으로 실행하기
+    - Snapshot을 즉시 생성하기 위해서 SLM policy를 수동으로 실행할 수도 있다.
+
+  ```http
+  POST _slm/policy/<snapshot>/_execute
+  ```
+
+  - SLM retention
+    - SLM snapshot retension은 policy에 설정된 snapshot schedule과 별개로 실행되는 cluster 수준의 task이다.
+    - SLM retention task를 언제 실행할지는 아래와 같이 설정할 수 있다.
+
+  ```json
+  // PUT _cluster/settings
+  {
+    "persistent" : {
+      "slm.retention_schedule" : "0 30 1 * * ?"
+    }
+  }
+  ```
+
+  - SLM snapshot retention 바로 실행시키기
+    - SLM policy와 마찬가지로 바로 실행시키는 것도 가능하다.
+
+  ```http
+  POST _slm/_execute_retention
+  ```
+
+
+
+- SLM을 사용하지 않고 수동으로 관리하기
+
+  - Snapshot 생성하기
+    - Snapshot 이름은 [date math](https://www.elastic.co/guide/en/elasticsearch/reference/current/api-conventions.html#api-date-math-index-names)를 지원한다.
+
+
+  ```HTTP
+  PUT _snapshot/<repository>/<my_snapshot_{now/d}>
+  ```
+
+  - Snapshot을 삭제하기
+
+  ```http
+  DELETE _snapshot/<repository>/<snapshot>
+  ```
+
+
+
+- Snapshot monitoring하기
+
+  - 현재 실행중인 snapshot들 받아오기
+
+  ```http
+  GET _snapshot/<repository>/_current
+  ```
+
+  - Snapshout의 상태 받아오기
+
+  ```http
+  GET _snapshot/_status
+  ```
+
+  - SLM의 실행 기록 받아오기
+
+  ```http
+  GET _slm/stats
+  ```
+
+  - 특정 SLM policy의 실행 기록 가져오기
+
+  ```http
+  GET _slm/policy/<slm_policy>
+  ```
+
+
+
+- Snapshot 정보 확인하기
+
+  - 사용 가능한 전체 snapshot 목록 확인하기
+
+  ```http
+  GET _sanpshot
+  ```
+
+  - 특정 repository에 저장된 snapshot 목록 받아오기
+    - `<snapshot>`에 `*` 또는 `_all`을 입력하면 전체 목록을 받아올 수 있다.
+    - `verbose` query parameter를 false로 주어 간략한 정보만 받아올 수 있다.
+
+  ```http
+  GET _snapshot/<repository>/<snapshot>[?query_params]
+  ```
+
+
+
+- Snapshot 복원하기
+
+  - 아래에서는 API를 통해서 했지만, Kibana를 통해서도 가능하다.
+
+  ```http
+  POST _snapshot/<repository>/<snapshot>/_restore
+  {
+    "indices": "index_1,index_2",
+    "ignore_unavailable": true,
+    "include_global_state": false,
+    "rename_pattern": "index_(.+)",
+    "rename_replacement": "restored_index_$1",
+    "include_aliases": false
+  }
+  ```
+
+  - `indices`
+    - 복원할 index들과 data stream들을 array 형태로 입력한다.
+    - 아무 값도 주지 않으면 snapshot에 저장된 모든 index와 data stream이 복원된다.
+    - 단, sysrem index와 system data stream은 복원되지 않는데, 이는 `feature_state` 값을 true로 줘야한다.
+  - `ignore_unavailable`
+    - `indices`에 설정해준 index나 data stream 들이 snapshot에 없을 경우 예외를 발생시킬지 여부를 설정한다.
+    - false(기본값)로 줄 경우 없을 경우 예외가 발생한다.
+  - `include_global_state` 
+    - Cluster state도 함께 복원할지 여부를 결정하며, 기본값은 false이다.
+    - Data stream의 경우 복원시에 index template이 필요한데, index template은 cluster state에 포함되어 있는 값이다.
+    - 따라서 data stream을 복원하려면 이 값을 true로 주거나, index template을 새로 생성해야한다(index template이 없어도 data stream이 복원은 된다).
+  - `feature_state`
+    - 복원시킬 feature state의 목록을 입력한다.
+    - Feature state도 cluster state에 포함된 값이므로, `include_global_state`가 true로 설정되어 있다면 feature state도 복원된다.
+    - 만약 `include_global_state`가 false로 설정되어 있다면, feature state도 복원시키지 않는다.
+    - 만약 이 값을 `["none"]`으로 줄 경우 `include_global_state`값이 true라고 하더라도 feature state는 복원되지 않는다.
+  - `rename_pattern`
+    - 복원된 index와 data stream에 적용할 rename pattern을 설정한다.
+    - `rename_pattern`과 일치하는 index와 data stream은 `rename_replacement` 값에 따라 rename된다.
+    - 위 예시의 경우 만약 snapshot에 `index_(.+)`에 mathcing되는 index나 data stream이 있을 경우, `restore_index_$1` 형식으로 rename된다.
+
+
+
+- 복원하려는 index나 data stream과 동일한 이름으로 생성된 index 또는 data stream이 있다면 복원되지 않는다.
+  - 삭제 후 복원하기
+    - 이미 존재하는 index나 data stream을 삭제하고 snapshot에 있는 index나 data stream을 복원하는 방식이다.
+    - 이미 존재하는 index 혹은 data stream을 수동으로 삭제한 후 restroe API를 통해 snapshot에 있는 data를 복원한다.
+  - 복원시 rename하기
+    - 복원시에 `rename_pattern`과 `rename_replacement` 옵션을 줘서 복원시에 rename을 해준다.
+    - Data stream을 rename할 경우 data stream의 backing index들도 rename된다.
+    - Index template의 경우, 생성시에 설정한 `index_patterns`에 data stream의 이름을 맞춰줘야 하기에 결국 기존 index나 data stream을 삭제하고 reindex를 해줘야한다.
+
+
+
+- Snapshot 삭제하기
+
+  - 생성 중인 snapshot을 삭제할 경우 생성이 취소된다.
+
+  ```http
+  DELETE _snapshot/<repository>/<snapshot>
+  ```
+
+
+
+
+
+## 실습
 
 - Snapshot test를 위한 cluster 구성
 
@@ -713,175 +1023,281 @@
 
 
 
-- Repository 등록하기
+- Snapshot에 담길 data들 생성하기
 
-  > Kibana를 통해서도 등록 가능하다.
+  - Persistent cluster settings 변경하기
+    - 위에서 생성한 node 중 `node3`에는 shard가 할당되지 않도록 아래와 같이 설정을 변경한다.
 
-  - 아래와 같이 `_snapshot` API를 사용하여 repository를 등록할 수 있다.
-    - Shared file system respositroy로 사용하기 위해 `type`을 `fs`로 준다.
-    - 위에서 `path.repo`에 설정해준 경로를 넣어준다.
-    - 아래와 같이 모든 경로를 넣어줘도 되고, 넣지 않을 경우, `path.repo`에 설정한 경로부터 상대경로로 설정된다.
-
-  ```json
-  // PUT _snapshot/<repository>
+  ```http
+  PUT _cluster/settings
   {
-    "type": "<type>",
-    "settings": {
-      "location": "<path.repo에 설정한 경로를 기반으로 한 경로>"
+    "transient": {
+      "indices.lifecycle.poll_interval": "10s",
+      "indices.lifecycle.rollover.only_if_has_documents": false
     }
   }
   ```
+  
+  - Regular index 생성하기
+  
+  ```http
+  PUT my-index/_doc/1
+  {
+    "foo":"bar"
+  }
+  ```
+  
+  - ILM policy 생성하기
+  
+  ```http
+  PUT _ilm/policy/my-ilm-policy
+  {
+    "policy": {
+      "phases": {
+        "hot": {
+          "actions": {
+            "rollover": {
+              "max_age": "30s"
+            }
+          }
+        },
+        "warm": {
+          "min_age": "1m",
+          "actions": {}
+        },
+        "cold": {
+          "min_age": "2m",
+          "actions": {}
+        },
+        "delete": {
+          "min_age": "3m",
+          "actions": {
+            "delete": {}
+          }
+        }
+      }
+    }
+  }
+  ```
+  
+  - Index template 생성하기
+  
+  ```http
+  PUT _index_template/my-template
+  {
+    "index_patterns": [
+      "my-data-stream*"
+    ],
+    "data_stream": {},
+    "template": {
+      "settings": {
+        "number_of_replicas": 0,
+        "index.lifecycle.name": "my-ilm-policy",
+        "index.routing.allocation.include._tier_preference": "data_hot"
+      },
+      "mappings": {
+        "properties": {
+          "@timestamp": {
+            "type": "date"
+          },
+          "message": {
+            "type": "text"
+          }
+        }
+      }
+    }
+  }
+  ```
+  
+  - Data stream 생성하기
+  
+  ```http
+  PUT _data_stream/my-data-stream
+  ```
+  
+  - Data stream에 data 색인
+  
+  ```http
+  POST my-data-stream/_doc
+  {
+    "@timestamp": "2099-05-06T16:21:15.000Z",
+    "message": "hello world!"
+  }
+  ```
+  
+  - `docker-compose.yml`에 kibana도 함께 생성하도록 설정했으므로 kibana에 관한 feature state도 생성될 것이다.
 
-  - 예시
 
-  ```json
-  // PUT _snapshot/my-fs-repo
+
+- Snapshot 생성하기
+
+  - Repository 등록하기
+
+  ```http
+  PUT _snapshot/my_fs_backup
   {
     "type": "fs",
     "settings": {
       "location": "/usr/share/elasticsearch/snapshots/my_snapshot"
-      // "location": "my_snapshot" 과 같이 주는 것과 완전히 같다.
     }
   }
   ```
-
-  - 하나의 snapshot repository를 여러 cluster에 등록 할 경우, 오직 한 곳에서만 작성이 가능하고, 나머지 cluster에서는 읽기만 가능하다.
-
-
-
-- Repository에서 참조되지 않는 데이터 일괄 삭제하기
-
-  - 시간이 지남에 따라 respository에는 어느 snapshot도 참조하지 않는 data들이 쌓이기 시작한다.
-    - 이들이 repository의 성능에 악영향을 미치는 것은 아니지만, 용량을 차지하고 있기는 하므로, 삭제시키는 것이 좋다.
-  - 아래 API를 통해 참조되지 않는 data를 일괄 삭제할 수 있다.
-
-  ```http
-  POST _snapshot/<repository>/_cleanup
-  ```
-
-  - Snapshot을 삭제할 때 이 endpoint도 자동으로 호출된다.
-    - 따라서 만일 주기적으로 snapshot을 삭제한다면, 굳이 이 endpoint를 호출할 필요는 없다.
-
-
-
-- Snapshot
-  - Snapshot을 생성하기 위한 조건
-    - Master node가 있는 실행 중인 cluster가 있어야한다.
-    - Snapshot repository가 등록되어 있어야한다.
-    - Cluster의 global metadata가 readable해야한다.
-    - 만약 snapshot에 index를 포함시킬 것이라면, index와 index의 metadata도 readable해야한다.
-  - 고려사항
-    - 각 snapshot은 repository 내에서 고유한 이름을 가지므로, 이미 존재하는 이름으로는 snapshot을 생성할 수 없다.
-    - Snapshot에는 자동으로 중복 제거가 실행되므로, snapshot을 빈번하게 생성해도 storage overhead가 크게 증가하지는 않는다.
-    - 각각의 snapshot은 논리적으로 구분되므로, 하나의 snapshot을 삭제하더라도 다른 snapshot에는 영향을 주지 않는다.
-    - Snapshot을 생성하는 중에는 일시적으로 shard의 할당이 정지된다.
-    - Snapshot을 생성하더라도 indexing을 포함한 다른 요청들이 block되지는 않지만, snapshot의 생성이 시작된 이후의 변경사항들은 반영되지 않는다.
-    - `snapshot.max_concurrent_operation` 설정을 변경하여 동시에 생성 가능한 snapshot의 최대 개수를 변경할 수 있다.
-    - 만일 snapshot에 data stream을 포함할 경우, data stream의 backing index들과 metadata도 snapshot에 저장된다.
-
-
-
-- SLM(Snapshot Lifecycle Management)
-
-  - Snapshot을 자동으로 관리해주는 기능이다.
-    - 설정된 일정에 따라 snapshot을 자동으로 생성할 수 있다.
-    - 설정한 기간이 지난 snapshot들을 자동으로 삭제할 수 있다.
-
-  - SLM Policy 생성하기
-
-  ```json
-  // PUT _slm/policy/<snapshot>
-  {
-    // snapshot을 생성할 schedule을 설정한다.
-    "schedule": "0 30 1 * * ?",
-    // snapshot의 이름을 설정한다.
-    "name": "<nightly-snap-{now/d}>", 
-    // snapshot을 저장할 repository를 설정한다.
-    "repository": "my_repository",
-    "config": {
-      // data stream을 포함한 모든 종류의 index들을 snapshot에 저장한다.
-      "indices": "*",
-      // cluster state를 snapshot에 포함시킨다.
-      "include_global_state": true    
-    },
-    "retention": {
-      "expire_after": "30d",	// 30일 동안 snapshot을 저장한다.
-      "min_count": 5,			// 보유 기간과 상관 없이 최소 5개의 snapshot을 저장한다.
-      "max_count": 50			// 보유 기간과 상관 없이 최대 50개의 snapshot을 저장한다.
-    }
-  }
-  ```
-
-  - SLM Policy를 수동으로 실행하기
-    - Snapshot을 즉시 생성하기 위해서 SLM policy를 수동으로 실행할 수도 있다.
-
-  ```http
-  POST _slm/policy/<snapshot>/_execute
-  ```
-
-  - SLM retention
-    - SLM snapshot retension은 policy에 설정된 snapshot schedule과 별개로 실행되는 cluster 수준의 task이다.
-    - SLM retention task를 언제 실행할지는 아래와 같이 설정할 수 있다.
-
-  ```json
-  // PUT _cluster/settings
-  {
-    "persistent" : {
-      "slm.retention_schedule" : "0 30 1 * * ?"
-    }
-  }
-  ```
-
-  - SLM snapshot retention 바로 실행시키기
-    - SLM policy와 마찬가지로 바로 실행시키는 것도 가능하다.
-
-  ```http
-  POST _slm/_execute_retention
-  ```
-
-
-
-- SLM을 사용하지 않고 수동으로 관리하기
 
   - Snapshot 생성하기
 
-  ```HTTP
-  PUT _snapshot/<repository>/<my_snapshot_{now/d}>
+  ```http
+  PUT _snapshot/my_fs_backup/my_snapshot
   ```
 
-  - Snapshot을 삭제하기
+  - 잘 생성 됐는지 확인하기
 
   ```http
-  DELETE _snapshot/<repository>/<snapshot>
+  GET _snapshot/my_fs_backup/my_snapshot
   ```
 
 
 
-- Snapshot monitoring하기
+- Snapshot restore하기
 
-  - 현재 실행중인 snapshot들 받아오기
+  - Docker compose를 통해 생성한 모든 container를 삭제한다.
+    - Snapshot을 저장하는 repository 외에는 volume 설정을 하지 않았기에, container를 삭제하면 data가 모두 삭제된다.
+
+  ```bash
+  $ docker compose down
+  $ docker compose up
+  ```
+
+  - 이전에 등록했던 repoistory의 경로로 repository를 다시 등록해준다.
 
   ```http
-  GET _snapshot/<repository>/_current
+  PUT _snapshot/my_fs_backup
+  {
+    "type": "fs",
+    "settings": {
+      "location": "/usr/share/elasticsearch/snapshots/my_snapshot"
+    }
+  }
   ```
 
-  - Snapshout의 상태 받아오기
+  - 이전에 생성한 snapshot이 있는지 확인
 
   ```http
-  GET _snapshot/_status
+  GET _snapshot/my_fs_backup/my_snapshot
   ```
 
-  - SLM의 실행 기록 받아오기
+  - Snapshot을 통해 복원하기
+    - Regular index와 data stream 모두 `my-*` 형식으로 생성했으므로 `indices`에도 아래와 같이 넣어준다.
+    - 우선은 test를 위해 `include_global_state` 값을 false로 준다.
 
   ```http
-  GET _slm/stats
+  POST _snapshot/<repository>/<snapshot>/_restore
+  {
+    "indices": "my-*",
+    "ignore_unavailable": true,
+    "include_global_state": false,
+    "rename_pattern": "my-*",
+    "rename_replacement": "restored_my_index_"
+  }
   ```
 
-  - 특정 SLM policy의 실행 기록 가져오기
+  - 확인하기
+    - 아래와 같이 index와 data stream은 복원된 것을 확인할 수 있다.
+    - 그러나 `_cluster/settings`, `_index_template/my-*`, `_ilm/policy/my-*` 등을 통해 확인해보면 cluster settings, index template, ILM policy 등은 복원되지 않은 것을 확인할 수 있다.
+
+  ```json
+  // _cat/indices
+  restored_my_index_index                             
+  .ds-restored_my_index_data-stream-2023.07.17-000001
+  ```
+
+  - `include_global_state`를 true로 주고 다시 복원하기
+    - 기존에 복원한 것과 동일한 이름으로 rename할 수 는 없으므로 `rename_replacement`를 아래와 같이 변경한다.
 
   ```http
-  GET _slm/policy/<slm_policy>
+  POST _snapshot/<repository>/<snapshot>/_restore
+  {
+    "indices": "my-*",
+    "ignore_unavailable": true,
+    "include_global_state": true,
+    "rename_pattern": "my-*",
+    "rename_replacement": "restored_my_index_2_"
+  }
   ```
+
+  - 위에서 복원되지 않았던 값들이 전부 복원된 것을 확인할 수 있다.
+
+
+
+- Data stream과 index template
+
+  - 우리가 위에서 index template을 생성할 때, `index_patterns`를 `"my-data-stream*"`으로 줬다.
+  - 그러나, 복원시에 rename을 하면서 data stream의 이름이 `restored_my_index_2_data`로 변경되어, 더 이상 index template을 적용받지 못하게 된다.
+    - 아래와 같이 복원된 data stream을 확인해보면 template이 적용되어 있지 않다는 것을 확인할 수 있다.
+
+  ```http
+  GET _data_stream/restored_my_index_2_data-stream
+  {
+    "data_streams": [
+      {
+        "name": "restored_my_index_2_data-stream",
+        "timestamp_field": {
+          "name": "@timestamp"
+        },
+        "indices": [
+          {
+            "index_name": ".ds-restored_my_index_2_data-stream-2023.07.17-000001",
+            "index_uuid": "VzRqKpUNTb22J2txnq516Q"
+          }
+        ],
+        "generation": 1,
+        "status": "GREEN",
+        "hidden": false,
+        "system": false,
+        "allow_custom_routing": false,
+        "replicated": false
+      }
+    ]
+  }
+  ```
+
+  - 해결 방법
+    - 두 가지 해결 방법이 있다.
+    - 복원 전에 `index_patterns`값에 `restored_my_index_2_data-stream`를 포함시킨 index template을 생성하고 복원한다.
+    - 복원 된 index template의 `index_patterns`에 맞는 data stream을 생성 후, 해당 data stream에 복원된 data stream을 재색인한다.
+    - 아래 예시에서는 두 번째 방법을 적용해 볼 것이다.
+  - Index template의 `index_patterns`에 맞는 data stream 생성하기
+
+  ```http
+  PUT _data_stream/my-data-stream
+  ```
+
+  - 위 data stream에 복원된 data stream의 data를 재색인한다.
+    - Data stream을 재색인 할 때는 `op_type`을 create로 줘야한다.
+
+  ```http
+  POST _reindex
+  {
+    "source": {
+      "index":"restored_my_index_2_data-stream"
+    },
+    "dest": {
+      "index": "my-data-stream",
+      "op_type": "create"
+    }
+  }
+  ```
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

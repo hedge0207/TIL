@@ -810,7 +810,9 @@
 - 클러스터 설정 예시
 
   - persistent는 elasticsearch.yml 보다 우선순위가 높기 때문에 elasticsearch.yml 파일에서 `discovery.zen.minimum_master_nodes` 설정을 2로 줬다고 하더라도 아래 요청을 보내면 동적으로 변경이 가능하다.
-
+    - `discovery.zen.minimum_master_nodes` 설정은 7.0부터 사라졌다.
+  
+  
   ```bash
   $ curl -X PUT "localhost:9200/_cluster/settings?pretty" -H 'Content-type:application/json' -d'
   {
