@@ -958,10 +958,13 @@
 - generator based coroutine
   - 위와 같이 generator를 통해 만든 coroutine을 generator base coroutine이라 부른다.
   - async, await가 공식 문법으로 채택된 python 3.7 부터는 굳이 사용하지 않는 방식이다.
+  - Python 3.10에서 삭제되었다.
 
 
 
 # async / await
+
+> https://it-eldorado.tistory.com/159
 
 - 비동기처리
 
@@ -1001,28 +1004,29 @@
 
 
 
-- async 사용해보기
+- `async`
 
-  - 아래와 같이 네이티브 코루틴을 비동기 함수가 아닌 곳에서 호출하면 Warning 메세지가 출력되고 실행도 되지 않는다.
-    - 네이티브 코루틴이 실행되지 않는 것이지 error가 발생하진 않으므로 이후의 코드가 실행은 된다.
-
-  ```python
-  async def async_func():
-      print("Hello")
+  - `async` keyword를 붙여서 선언한 함수를 코루틴 함수라고 한다.
+    - `async`를 붙여서 선언한 함수는 호출시에 실행되지 않고, 코루틴 객체를 반환한다.
+    - 아래 함수는 corotine 객체를 반환 받고, `await`로 실행시키지 않았으므로 warning이 발생하지만, 코루틴 함수의 반환 type이 `coroutine`이라는 것은 확인할 수 있다.
   
-  async_func()
-  print("World!")
-  '''
-  test.py:4: RuntimeWarning: coroutine 'async_func' was never awaited
-    async_func()
-  RuntimeWarning: Enable tracemalloc to get the object allocation traceback
-  World!
-  '''
+  ```python
+  import asyncio
+  
+  
+  async def async_func():
+      return "Hello World!"
+  
+  
+  if __name__ == "__main__":
+      coro = async_func()
+      print(type(coro))	# <class 'coroutine'>
   ```
 
-  - 따라서  asyncio 모듈을 사용해 실행해야 한다.
+  - 코루틴 객체를 실행하려면 Eventloop에 코루틴 객체를 등록하고, Eventloop가 해당 객체를 실행할 수 있도록 Eventloop에 제어권을 넘겨줘야한다.
     - Python 3.7 이상에서는 `run` 메서드를 활용하여 훨씬 간편하게 호출이 가능하다.
     - 이벤트 루프(런 루프)는 무한 루프를 돌며 매 iteration마다 등록된 event들을 하나씩 실행시키는 로직을 의미한다.
+    - 스레드당 실행 중인 Eventloop는 하나뿐이어야한다.
   
   ```python
   import asyncio
@@ -1030,14 +1034,16 @@
   async def async_func():
       print("Hello")
   
+      
+  # Python 3.7 전까지는 아래와 같이 실행해야 했다.
   # 이벤트 루프를 가져온다.
   loop = asyncio.get_event_loop()
-  # 비동기 함수가 종료할 때 까지 기다린다.
+  # 코루틴 객체가 실행이 완료될 때 까지 기다린다.
   loop.run_until_complete(async_func())
   # 이벤트 루프를 닫는다.
   loop.close()
   
-  # Python 3.7+
+  # Python 3.7 이후
   asyncio.run(async_func())
   print("World!")
   ```
@@ -1049,8 +1055,7 @@
   - `yield from`을 보다 쉽게 작성해 줄 수 있도록 하는 문법적 설탕이다.
     - Python 3.5부터 사용 가능하다.
     - 이전 버전에서는 `yield from` 뒤에 generator를 두는 방식으로 사용했다면, `await` 키워드는 뒤에 코루틴 객체(뿐 아니라 `__await__` 메서드가 구현된 awaitable한 객체)를 두는 방식으로 사용한다.
-  - async로 생성한 비동기 함수 내에서만 사용이 가능하다.
-  - await가 붙은 부분은 동기적으로 처리된다.
+  - async로 생성한 코루틴 함수 내에서만 사용이 가능하다.
   
   ```python
   import asyncio
@@ -1064,6 +1069,10 @@
    
   asyncio.run(print_add(1, 2))
   ```
+  
+  - `await`는 두 가지 동작을 한다.
+    - `await` 뒤에 있는 awaitable 객체를 Eventloop에 등록한다.
+    - 제어권을 Eventloop에게 넘기고, 등록한 awaitable 객체의 실행이 종료되면 제어권을 받아온다. 
 
 
 
@@ -1106,6 +1115,155 @@
   
   asyncio.run(process_async())
   ```
+
+
+
+- `Future`와 `Task`
+
+  - `asyncio.Future`
+
+    - 어떤 작업의 실행 상태 및 결과를 저장하는 class.
+    - 실행 상태는 `PENDING`, `CANCELLED`, `FINISHED` 중 한 가지 값을 가진다.
+    - 아직은 완료되지 않았지만, 언제가 완료될 작업의 결과를 저장하는 데 사용한다.
+    - 단순히 어떠한 실행 상태 및 결과를 저장할 뿐, 작업의 실행을 개시하는 역할은 수행하지 않는다.
+    - 일반적으로 application level의 code에서 `Future`의 인스턴스를 생성할 일은 없다.
+
+  - `asyncio.Task`
+
+    - `coroutine` 객체를 감싸고 있는 wrapper class이다.
+    - `asyncio.Future` class를 상속 받는다.
+    - `asyncio.Future`와 마찬가지로 어떠한 작업의 실행 상태 및 결과를 저장하지만, `Task` class는 작업의 실행을 개시하는 역할도 수행한다.
+    - `Task` 객체는 생성시에 코루틴 객체를 받아 `_coro`라는 attiribute로 저장한다.
+    - Eventloop 내에서 적절한 때가 왔을 때 coroutine이 실행될 수 있도록 일정을 조율한다.
+
+  - `Task` 객체의 동작 방식
+
+    - `Task`객체는 생성되는 즉시 현재 스레드에 설정되어 있는 Eventloop에게 자신의 `__step()` 메서드를 호출해줄 것을 예약한다.
+    - `__step()` 메서드는 `Task` 객체에 저장된 코루틴 객체를 사용하여 해당 코루틴을 실행시키는 메서드이다.
+    - Eventloop는 적절한 때가 되면  `__step()` 메서드를 호출하고, 코루틴이 실행된다.
+
+    - 코루틴이 실행되다가 `await` keywor을 만나게 되면 또 다른 코루틴을 실행시키게 되고, 그 코루틴 안에서 또 다른 코루틴을 실행시키면서 코루틴 체인이 형성될 수 있다.
+
+    - 코루틴이 실행되다가 I/O 관련 코루틴을 만나게 되면, 자신의 실행을 중단하고 이후의 실행을 예약한 뒤 Eventloop에 제어권을 넘긴다.
+    - 제어권을 넘겨 받은 Eventloop는 예약된 코루틴 중 우선 순위가 높은 것을 선택하여 이를 실행시킨다.
+    - 이전에 실행이 중단되었던 코루틴이 다시 실행할 수 있는 상태가 되면, 다시 실행된다.
+    - `Task` 객체가 처음 실행한 코루틴의 실행이 완료되면, 코루틴 객체로부터 반환 값을 받아 자기 자신의 결과 값을 업데이트한다.
+
+
+
+- Eventloop의 동작 과정
+
+  - Python 3.7 전까지는 아래와 같이 코루틴을 실행했다.
+    - 3.7 이후부터는 `asyncio.run()`만으로 간단하게 실행할 수 있지만, 아래 코드가 동작 과정을 더 잘 보여주므로, 아래 코드를 가지고 설명한다.
+
+  ```python
+  loop = asyncio.get_event_loop()
+  loop.run_until_complete(first_coroutine())
+  loop.close()
+  ```
+
+  - `get_event_loop()`
+    - 현재 스레드에 설정된 Eventloop를 반환하는 함수로, 만약 설정된 Eventloop가 없다면, 새로 생성하여 이 스레드에 설정한 뒤 반환한다.
+  - `run_until_complete(coroutine)`
+    - 앞에서 반환 받은 Eventloop를 실행시키는 메서드이다.
+    - 인자로 넘어오는 코루틴 객체를 이용하여 `Task`의 instance를 생성하고, 그 과정에서 해당 `Task ` 객체가 나타내는 task의 실행이 Eventloop에 의해 즉시 예약된다(정확히는 `Task` 객체의 `__step()` 메서드를 callback 함수로 넘긴다).
+    - 적절한 때가 오면 Eventloop는 해당 `Task` 객체의 `__step()` 메서드를 호출한다. 
+    - `__step()`메서드는 `Task` 객체의 `_coro` attribute에 저장된 `coroutine` 객체의 `send()` 메서드를 호출하여 코루틴을 실행한다.
+    - 코루틴이 실행되면서 `await` keyword를 마주칠 때 마다 연쇄적으로 코루틴을 호출하며 코루틴 체인을 형성하게 된다.
+    - 코루틴 실행 중에 Sleep 혹은 I/O 관련 코루틴을 `await`하는 코드를 만나게 되는데, 이러한 종류의 코루틴들은 `Future` 객체를 `await`하도록 구현되어 있다.
+    - 이 `Future` 객체는 코루틴 체인을 따라 `yield`되면서  `Task` 객체의 `__step()` 메소드에 까지 전달되게 되고, 전달된 `Future`객체는 `Task`객체의 `__fut_waiter` attribute에 저장된다.
+    - 만약 sleep과 관련된 코루틴일 경우 `Future`객체를 생성한뒤 Eventloop에게 Eventloop 자체의 타이머를 이용하여 지정된 sleep 시간 이후에 해당 `Future` 객체의 결과 값을 업데이트하도록 요청한고, 해당 `Future` 객체를 await한는데, 이는 마찬가지로 코루틴 체인을 따라 `Task` 객체의 `__step()`메서드까지 전달된다.
+    - 그 후 `Future` 객체의 `add_done_callback()` 메서드를 호출하는데, 이 메서드는 해당 `Future` 객체가 완료됐을 때, Eventloop에 callback 함수의 실행을 예약하도록 해준다.
+    - `add_done_callback()` 메서드가 호출된다고 Eventloop에 즉시 callback 함수의 호출이 예약되는 것이 아니라, `Future` 객체가 완료됐을 때, Eventloop에 callback 함수의 호출을 예약하는 것으로, 예약의 예약이라고 볼 수 있다.
+    - 이 때 등록하는 callback 함수는 `Future` 객체 자신의 `__step()` 메서드이다.
+    - 여기까지 마치고 나면 `Task` 객체는 자신의 실행을 중단하고 제어를 Eventloop에게 넘긴다.
+    - 제어권을 받은 Eventloop는 실행이 예약된 task들 중(callback 함수들 중) 우선 순위가 높은 것을 선택하여 실행한다.
+    -  더 이상 실행이 예약된 task가 없어지면, Eventloop는 Future 객체의 결과 값을 업데이트하고, 이로 인해 `add_done_callback()` 메서드를 통해 예약해 둔대로 Eventloop에 callback 함수(`__step()`)의 실행이 예약되게 된다.
+    - `__step()` 메서드를 통해 task가 다시 실행되면, Future 객체와의 바인딩을 해제하고, `send()` 메서드를 호출하여 해당 코루틴의 실행을 재개하게 되고, 다시 코루틴 체인을 따라 올라가 다시 실행이 재개된다.
+    - 결국 task가 실행한 최초의 코루틴이 `return`에 도달하는 순간이 오게 되고, 해당 `Task` 객체의 `__step()` 메서드에서 `StopIteration` 예외가 발생하게 된다.
+    - `Task` 객체는 해당 예외 객체의 `value` attribute 값으로 자신의 결과 값을 업데이트 하고, 자신의 실행을 종료한다.
+  - `loop.close()`
+    - Eventloop를 닫는 메서드이다.
+    - Eventloop에 남아 있는 모든 데이터들을 제거한다.
+
+
+
+- `asyncio.create_task()`
+
+  - 코루틴을 실행시키는 방법은 대략적으로 세 가지이다.
+    - `await` keyword 사용
+    - `asyncio.run()`
+    - `asyncio.create_task()`
+    - 이 중 `await` keyword는 코루틴 내에서만 사용 할 수 있다는 제약이 있으므로 `asyncio.run()`과 `asyncio.create_task()`만이 코루틴 체인을 실행시킬 수 있는 entrypoint이다.
+  - `asyncio.run()`은 하나의 task만 실행할 수 있다.
+    - 코루틴 체인에서 추가적인 task를 생성하여 실행하지 않는다면, `asyncio.run()`으로 실행시킨 task가 종료되면, Eventloop는 실행시킬 다른 task가 없는 상태가 된다.
+    - 즉,  task를 하나밖에 실행시킬 수 밖에 없는 `asycio.run()`의 특성상, 동시적인 실행이라고 볼 수 없다.
+  - 여러 task의 동시적인 실행을 위해서는 `asyncio.create_task()` 메서드를 사용해야한다.
+    - `create_task()` 메서드는 `coroutine` 객체를 인자로 받아 이를 이용하여 `Task` 객체를 생성하고 반한환다.
+    - 이 때 해당 task의 실행이 Eventloop에 예약된다.
+  - `asyncio.gather()`
+    - `Future` 객체(`Task` 객체 포함)들이 완료 상태가 될 때까지 기다리는 함수이다.
+    - 인자로 여러 개의 awaitable 객체를 받을 수 있으며, `coroutine` 객체를 받을 경우 자동으로 `Task` 객체로 warpping도 시켜준다.
+    - 인자로 받은 모든 awaitable 객체들이 완료되면 그것들의 결과 값들을 list 형태로 반환한다.
+  - 예시
+
+  ```python
+  import asyncio
+  import time
+  
+  
+  async def foo(sec):
+      await asyncio.sleep(sec)
+      return sec
+  
+  async def main():
+      task1 = asyncio.create_task(foo(1))							# 2
+      task2 = asyncio.create_task(foo(2))
+      tasks_results = await asyncio.gather(task1, task2)			# 3
+      return tasks_results
+  
+  
+  if __name__ == "__main__":
+      st = time.time()
+      result = asyncio.run(main())								# 1
+      print('result : {}'.format(result))
+      print('total time : {0:.2f} sec'.format(time.time() - st))
+  ```
+
+  - 위 코드의 실행 과정은 아래와 같다.
+    - 1번에 의해 Task 0가 생성되고, 실행이 Eventloop에 예약된다.
+    - Eventloop에 예약된 task가 없으므로 바로 실행되고, `main()` 코루틴이 실행된다.
+    - 2번에 의해서 Task1과 Task2가 생성되고, 실행이 Eventloop에 예약된다.
+    - 3번에서 `asyncio.gather()` 메서드가 실행되면서 Task0가 Task 1이 완료될 때까지 제어권을 Eventloop에게 넘기고 대기한다.
+    - Eventloop가 Task1을 실행한다.
+    - Task1은 `foo()` 코루틴을 실행하고, `foo()` 코루틴 내에서 다시 `asyncio.sleep()` 코루틴이 실행된다.
+    - `asyncio.sleep()` 코루틴은 Future 1 객체를 만들고, 1초 뒤에 Future 1객체의 결과 값이 갱신되도록 Eventloop에 예약을 건 뒤 Future 1객체를 await한다.
+    - Task1은 Future 1객체가 완료 상태가 될 때까지 대기하고 Eventloop에게 제어권을 넘긴다.
+    - Eventloop는 Task 2를 실행한다.
+    - Task1과 동일한 과정을 거쳐 Future 2 객체를 만들고, 2초 뒤에 Future 2 객체의 결과값이 갱신되도록 Eventloop에 예약을 건 뒤 Futrue 2 객체를 await한다.
+    - Task2는 Future 2객체가 완료 상태가 될 때까지 대기하고 Eventloop에게 제어권을 넘긴다.
+    - Eventloop는 제어권을 받았으나 실행할 task가 없으므로 대기한다.
+    - Future 1 객체가 값의 갱신을 예약한지 1초가 지나면 Future 1객체의 결과값을 갱신하고, Task 1의 실행이 다시 예약된다.
+    - Eventloop가 Task1 을 다시 실행한다.
+    - `asyncio.sleep()` 코루틴으로 돌아가 실행을 재개한다.
+    - `asyncio.sleep()` 코루틴이 반환되고 `foo()`도 1을 반환하면서 종료된다.
+    - Task1 객체의 결과 값이 1로 설정되면서 Task 1의 실행이 완료된다.
+    - Task 1 객체가 완료 될 때까지 기다리던 Task 0의 실행이 예약된다.
+    - Eventloop가 Task 0을 실행한다.
+    - `asyncio.gather()`로 돌아가 실행이 중단되었던 부분부터 실행이 재개된다.
+    - `asyncio.gather()` 코루틴은 Task 1 객체의 결과 값을 저장하고, Task2 객체를 await한다.
+    - Task 0는 Task 2객체가 완료 상태가 될 때까지 기다리고, Eventloop에게 제어권을 넘긴다.
+    - Eventloop는 실행할 task가 없으므로 대기한다.
+    - Future 2 객체가 값의 갱신을 예약한지 2초가 지나면 Future 2객체의 결과값을 갱신하고, Task 2의 실행이 다시 예약된다.
+    - Eventloop가 Task2를 다시 실행하고, 이후 과정은 Task1과 같다.
+    - Task 2 객체가 완료 상태가 될 때 까지 기다리던 Task0의 실행이 다시 예약된다.
+    - Eventloop가 Task0을 실행한다.
+    - `asyncio.gather()`로 돌아가 실행이 중단되었던 부분부터 실행이 재개된다.
+    - `asyncio.gather()` 코루틴은 Task1의 결과값과 Task2의 결과값을 반환한다.
+    - `main()` 코루틴도 결과값을 반환한다.
+    - Task 0 객체의 결과값이 [1,2]로 설정되면서 Task 0의 실행이 완료된다.
+
+
 
 
 
