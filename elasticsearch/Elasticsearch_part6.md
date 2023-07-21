@@ -548,6 +548,8 @@
 
 
 
+
+
 # Highlight
 
 - 검색시에 어떤 query가 match되었는지를 확인할 수 있게 해주는 기능이다.
@@ -559,21 +561,275 @@
 
 
 
-- offset strategy
-  - highlighting을 위해서 highlighter는 text에 포함된 각 단어들의 start offset과 end offset을 알아야 한다.
-  - Postings list
-    - Posting list는 정렬된 skip list 구조로 query와 관련된 document id들을 저장하고 있는 Lucene의 자료구조이다.
-    - Posting list는 inverted index와 matching되어 검색시에 사용된다.
-    - Lucene 기준으로 `Document Ordinal(doc_id 등) : term frequency : [matching된 term들의 position 정보] : [matching된 term들의 offset 정보]` 형태이다.
-    - `index_options`가 `offsets`로 설정된 경우, unified highlighter는 text의 re-analyzing 없이 posting list의 정보를 가지고 highlight를 실행한다.
-    - re-analyzing을 수행하지 않기에 `terms_vector`에 비해 더 적은 디스크 공간을 필요로한다.
-  - Terms vectors
-    - `term_vector` 옵션이 `with_positions_offsets`으로 설정되었을 경우, unified highlighter는 term vector를 highlighting에 사용한다.
-    - 1MB 이상의 크기가 큰 필드거나 prefix나 wildcard같은 multi-term query 에서 특히 빠른 highlighting이 가능하다.
-    - fvh highlighter는 항상 term vector를 highlighting에 사용한다.
-  - Plain highlighting
-    - 다른 대안이 없을 경우 unified highlighter가 사용한다.
-    - plain highlighter는 항상 Plain highlighting를 highlighting에 사용한다.
+- unified
+  - Lucene Unified highlighter를 사용하는 highlighter이다.
+  - Text를 문장 단위로 쪼갠 뒤 BM25 algorithm을 사용해 각 sentence들의 점수를 매기는 방식을 사용한다.
+  - fuzzy, prefix, regex 등의 multi-term highlighting도 지원한다.
+  - 기본 highlighter이다.
+
+
+
+- plain highlighter
+  - Standard Lucene highlighter를 사용하는 highlighter이다.
+  - 단일 fileld에 대해 단일 query를 match 시킬 때는 잘 동작하지만, 많은 document를 대상으로 여러 field에 복잡한 query로 highlight를 적용해야 할 경우 사용하지 않는 것이 좋다.
+
+
+
+- fvh(fast vector highlighter)
+  - Lucene Fast Vector highlighter를 사용하는 highlighter이다.
+  - `term_vector`가 `with_positions_offsets`으로 설정된 filed에 사용할 수 있다.
+    - 이렇게 설정할 경우 index의 크기가 증가하게 된다.
+  - span query를 지원하지 않는다.
+
+
+
+- Offset stategy
+  - Query로 들어온 term으로부터 의미있는 snippet들을 찾기 위해서, highlighter는 각 단어의 시작과 끝 offset을 알아야한다.
+  - 이 offset에 대한 정보는 아래와 같은 방식으로 얻을 수 있다.
+  - Posting list(inverted index)
+    - Mapping 설정시에 `index_options`를 `offsets`으로 설정할 경우, unified highlighter는 text를 재분석하지 않고 문서를 highlight하기 위해서 postings list를 사용한다.
+    - 원본 query를 postings list에 재실행하여 index로부터 offset을 추출하고, highlight된 문서들의 집합을 제한한다.
+    - Text를 reanalyzing하지 않기 때문에, 큰 filed를 대상으로 highlight를 해야 할 때 특히 중요하다.
+    - 또한 `term_vectors`에 비해 memory를 덜 필요로한다.
+  - Term vectors
+    - Mapping 설정시에 `term_vector`가 `with_positions_offsets`으로 설정되어 있을 경우, unified highlighter는 `term_vector`를 사용하여 highlighting한다.
+    - 1MB 이상의 큰 field나 prefix나 wildcard 등의 multi-term query의 결과에 highlighting이 필요할 경우 특히 빠르다.
+    - fvh highlighter의 경우 항상 term_vector를 사용한다.
+  -  Plain highlighting
+    - 다른 대안이 없을 경우 unified highlighter에 의해 사용되는 mode이다.
+    - 작은 in-memory index를 생성하고, 해당 index를 대상으로 원본 query를 Lucene의 query execution planner를 통해 실행하여  document에 대한 low-level match 정보를 가져온다.
+    - 이는 highlight되어야 하는 모든 문서의 모든 field에 반복 실행된다.
+    - `plain` highlighter는 항상 이 mode를 사용한다.
+
+
+
+- Highlight와 관련된 settings
+  - `boundary_chars`
+    - Boundary character들을 string으로 받는다.
+    - 기본값은 `.,!? \t\n`이다.
+  - `boundary_max_scan`
+    - Boundary character를 scan할 거리를 입력한다.
+    - 기본값은 20이다.
+  - `boundary_scanner`
+    - Highlighting된 fragments들을 어떻게 자를지를 설정한다.
+    - `chars`, `sentence`, `word` 중 하나를 선택할 수 있다.
+    - `unified`, `fvh` highlighter에서만 사용할 수 있으며, `unified`의 경우 `sentence`가 기본 값, `fvh`의 경우 `chars`가 기본값이다.
+    - `chars`: `boundary_chars`에 설정된 character들을 highlighting boundary로 사용하며, `fvh` highlighter에서만 사용할 수 있다.
+    - `sentencce`: highlight된 fragment들을 다음 sentence boundary에서 끊는다.
+    - `word`: highlight된 fragment들을 다음 word boundary에서 끊는다.
+  - `fields`
+    - Highlights할 field들을 설정한다.
+    - Wildcard를 사용할 수 있다.
+  - `matched_fields`
+    - 여러 field들에서 match된 결과를 하나의 field에 highlighting 할 수 있도록 해준다.
+    - 같은 string을 서로 다르게 analyze하는 경우에 특히 유용하다.
+    - `fvh` highlighter에서만 사용할 수 있으며, `term_vector`가 `with_positions_offsets`으로 설정되어 있어야한다.
+  - `highlight_query`
+    - 검색 query 이외에 검색 결과를 highlight하는데 사용할 query를 추가로 정의한다.
+    - Elasticsearch는 `highlight_query`에 search query가 들어가 있는지 검사하지 않기에, search query를 `highlight_query`에 포함시키지 않으면 search query의 내용은 highlight되지 않는다.
+    - 입력하지 않을 경우 search query가 적용된다.
+
+
+
+- `matched_fields` 테스트
+
+  - 테스트에 필요한 data를 생성한다.
+    - standard analyzer에서 running은 running, scissors는 scissors로 tokenizing된다.
+    - english analyzer에서 running은 run, scissors는 scissor로 tokenizing된다.
+
+  ```json
+  PUT highlight-test
+  {
+    "mappings": {
+      "properties": {
+        "comment":{
+          "type":"text",
+          "analyzer": "standard",
+          "term_vector": "with_positions_offsets",
+          "fields": {
+            "plain":{
+              "type":"text",
+              "analyzer":"english",
+              "term_vector": "with_positions_offsets"
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  PUT highlight-test/_doc/1
+  {
+    "comment":"run with scissors"
+  }
+  
+  PUT highlight-test/_doc/2
+  {
+    "comment":"running with scissors"
+  }
+  ```
+
+  - running과 scissors가 포함된 문서를 검색하고, highlighting하기 위해 아래와 같이 query식을 작성했다.
+    - "scissors"는 복수형 그대로 들어간 문서만 검색 됐으면 하고, `running`은 원형인 run이 들어가 있는 문서도 검색 됐으면 한다.
+
+  ```json
+  GET highlight-test/_search
+  {
+      "query": {
+          "bool": {
+              "filter": [
+                  {
+                      "match": {
+                          "comment": "scissors"
+                      }
+                  },
+                  {
+                      "match": {
+                          "comment.plain": "running"
+                      }
+                  }
+              ]
+          }
+      },
+      "highlight": {
+          "order":"score",
+          "fields": {
+              "comment": {
+                  "type": "fvh"
+              },
+              "comment.plain": {
+                  "type": "fvh"
+              }
+          }
+      }
+  }
+  ```
+
+  - 아래와 같은 결과가 나온다.
+    - 결국 서로 다른 두 필드에서 highlighting된 결과를 직접 합쳐야한다.
+
+  ```json
+  "hits": [
+      {
+  		// ...
+          "highlight": {
+              "comment": [
+                  "run with <em>scissors</em>"
+              ],
+              "comment.plain": [
+                  "<em>run</em> with scissors"
+              ]
+          }
+      },
+      {
+          // ...
+          "highlight": {
+              "comment": [
+                  "running with <em>scissors</em>"
+              ],
+              "comment.plain": [
+                  "<em>running</em> with scissors"
+              ]
+          }
+      }
+  ]
+  ```
+
+  - `matched_fields`를 적용하면 위와 같은 수고를 덜 수 있다.
+    - highlight 부분을 아래와 같이 변경한다.
+
+  ```json
+  {
+      // ...
+      "highlight": {
+          "order":"score",
+          "fields": {
+              "comment": {
+                  "type": "fvh",
+                  "matched_fields": ["comment","comment.plain"]
+              }
+          }
+      }
+  }
+  ```
+
+  - 아래와 같이 highlighting 결과가 한 필드에 모여서 나오게 된다.
+
+  ```json
+  [
+      {
+      	// ...
+          "highlight": {
+              "comment": [
+                  "<em>run</em> with <em>scissors</em>"
+              ]
+          }
+      },
+      {
+          // ...
+          "highlight": {
+              "comment": [
+                  "<em>running</em> with <em>scissors</em>"
+              ]
+          }
+      }
+  ]
+  ```
+
+
+
+- `highlight_query` 테스트
+
+  - 테스트에 필요한 data를 색인한다.
+
+  ```json
+  PUT highlight-test/_doc/1
+  {
+    "text":"foo bar baz"
+  }
+  ```
+
+  - 아래와 같이 검색 query에서는 "foo"가 포함된 문서를 검색하고, `highlight_qurey`에서는 bar를 검색하도록 query를 작성한 후 검색하면
+
+  ```json
+  GET highlight-test/_search
+  {
+      "query": {
+          "match": {
+              "text": "foo"
+          }
+      },
+      "highlight": {
+          "fields": {
+              "text": {
+                  "highlight_query": {
+                      "match": {
+                          "text": "bar"
+                      }
+                  }
+              }
+          }
+      }
+  }
+  ```
+
+  - 다음과 같이 "foo"는 highlighting되지 않고, "bar"만 highlighting된다.
+
+  ```json
+  {
+      "highlight": {
+          "text": [
+              "foo <em>bar</em> baz"
+          ]
+      }
+  }
+  ```
+
+  - 주로 여러 fragments들 중 어떤 fragment를 상단으로 올릴지 결정하기 위해 사용한다.
+
+
+
+
 
 
 
