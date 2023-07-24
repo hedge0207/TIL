@@ -195,6 +195,230 @@
 
 
 
+
+
+# Docker image
+
+> https://www.44bits.io/ko/post/how-docker-image-work
+
+- Docker image pull 받기
+
+  - `docker pull python:3.9.0`을 실행하면 아래와 같이 출력된다.
+
+  ```bash
+  $ docker pull python:3.9.0
+  3.9.0: Pulling from library/python
+  756975cb9c7e: Pull complete 
+  d77915b4e630: Pull complete 
+  5f37a0a41b6b: Pull complete 
+  96b2c1e36db5: Pull complete 
+  c495e8de12d2: Pull complete 
+  33382189822a: Pull complete 
+  414ebfa5f45b: Pull complete 
+  dd860911922e: Pull complete 
+  b434dcf770b1: Pull complete 
+  Digest: sha256:387f88e770ef8bbce23e57bc7627f71bde1d32888b3f08a857308444c3d29226
+  Status: Downloaded newer image for python:3.9.0
+  docker.io/library/python:3.9.0
+  ```
+
+  - Docker image의 이름은 docker registry에서는 `<namepsace>/<image_name>:<tag>`의 형식으로 저장된다.
+    - 즉 `docker pull python:3.9.0`과 같이 입력하면, docker hub에서는 `docker.io/library/python:latest`라는 image를 찾는다.
+    - `docker.io`는 docker hub에서 찾겠다는 것이고 `library`는 docker hub에서 공식 image들을 저장하는 namepsace이다.
+  - 따로 namespace를 지정하지 않았는데도, docker hub에서 image를 찾는 이유는 Docker의 기본 registry가 docker hub이기 때문이다.
+    - 아래와 같이 확인이 가능하다.
+
+  ```bash
+  $ docker info | grep Registry
+  # Registry: https://index.docker.io/v1/
+  ```
+
+  - 또한 image를 pull 받을 때 sha256 digest 값이 있는 것을 확인할 수 있는데, 이 값을 가지고도 image를 pull 받을 수 있다.
+    - 예를 들어 python:3.9.0 image를 받으면 아래와 같이 출려된다.
+
+  ```bash
+  Digest: sha256:387f88e770ef8bbce23e57bc7627f71bde1d32888b3f08a857308444c3d29226
+  ```
+
+  - 즉 아래의 5가지 주소는 모두 같은 이미지를 가리킨다.
+    - `python:3.9.0`
+    - `pythpn@sha256:387f88e770ef8bbce23e57bc7627f71bde1d32888b3f08a857308444c3d29226`
+    - `library/python:3.9.0`
+    - `docker.io/library/python:3.9.0`
+    - `index.docker.io/library/python:3.9.0`
+
+
+
+- Docker image
+
+  - Docker image는 여러 개의 레이어들로 구성되어 있다.
+    - Image를 pull 받으면 레이어들이 독립적으로 저장되며, 컨테이너를 실행할 때 이 레이어들을 차례로 쌓아올려서 특정 위치에 마운트한다.
+    - 또한 이미지를 구성하는 레이어들은 읽기 전용이기에 절대 변하지 않는다.
+    - 모든 레이어를 쌓아올린 뒤에 마지막으로 컨테이너 전용으로 쓰기가 가능한 레이어를 한 층 더 쌓고, 컨테이너에서 일어나는 모든 변경사항을 해당 레이어에 저장한다.
+    - 컨테이너를 삭제하면 변경 사항들이 모두 날아가는 것은 이 때문으로, 모든 변경사항이 컨테이너 전용 레이어에 쌓이기 때문에, 컨테이너가 삭제되면 해당 레이어도 함께 삭제되기 때문이다.
+  - Container layer는 어디 저장되는가?
+    - 아래와 같이 container layer가 어디에 저장되는지를 알 수 있다.
+    - `GraphDriver.Data.UpperDir`의 경로가 바로 container layer가 저장되는 경로다.
+
+  ```bash
+  $ docker inspect <container>
+  ```
+
+  - Dockerfile의 모든 명령어가 layer를 생성하는 것은 아니다.
+    - `CMD`, `LABEL`, `ENV`, `EXPOSE` 등의 metadata를 다루는 부분은 레이어로 저장되지 않는다.
+    - `ADD`나 `RUN` 등이 일어나는 겨우에만 layer로 저장된다.
+    - 예를 들어 `python:3.9.0` image는 아래와 같이 다양한 과정을 거쳐 image가 생성되지만, 이 중에서 실제 layer를 생성하는 과정은  일부 뿐이다.
+
+  ```bash
+  $ docker history python:3.9.0
+  
+  IMAGE          CREATED       CREATED BY                                      SIZE      COMMENT
+  0affb4652fc0   2 years ago   /bin/sh -c #(nop)  CMD ["python3"]              0B        
+  <missing>      2 years ago   /bin/sh -c set -ex;   wget -O get-pip.py "$P…   7.3MB     
+  <missing>      2 years ago   /bin/sh -c #(nop)  ENV PYTHON_GET_PIP_SHA256…   0B        
+  <missing>      2 years ago   /bin/sh -c #(nop)  ENV PYTHON_GET_PIP_URL=ht…   0B        
+  <missing>      2 years ago   /bin/sh -c #(nop)  ENV PYTHON_PIP_VERSION=20…   0B        
+  <missing>      2 years ago   /bin/sh -c cd /usr/local/bin  && ln -s idle3…   32B       
+  <missing>      2 years ago   /bin/sh -c set -ex   && wget -O python.tar.x…   57.2MB    
+  <missing>      2 years ago   /bin/sh -c #(nop)  ENV PYTHON_VERSION=3.9.0     0B        
+  <missing>      2 years ago   /bin/sh -c #(nop)  ENV GPG_KEY=E3FF2839C048B…   0B        
+  <missing>      2 years ago   /bin/sh -c apt-get update && apt-get install…   17.9MB    
+  <missing>      2 years ago   /bin/sh -c #(nop)  ENV LANG=C.UTF-8             0B        
+  <missing>      2 years ago   /bin/sh -c #(nop)  ENV PATH=/usr/local/bin:/…   0B        
+  <missing>      2 years ago   /bin/sh -c set -ex;  apt-get update;  apt-ge…   510MB     
+  <missing>      2 years ago   /bin/sh -c apt-get update && apt-get install…   146MB     
+  <missing>      2 years ago   /bin/sh -c set -ex;  if ! command -v gpg > /…   17.5MB    
+  <missing>      2 years ago   /bin/sh -c apt-get update && apt-get install…   16.5MB    
+  <missing>      2 years ago   /bin/sh -c #(nop)  CMD ["bash"]                 0B        
+  <missing>      2 years ago   /bin/sh -c #(nop) ADD file:9a4fd72d749f4a791…   114MB
+  ```
+
+  - Docker image는 어디에 저장되는가?
+
+    > Ubuntu 22.04 LTS, Docker 20.10.22 기준
+
+    - `docker info | grep Storage`를 통해 확인해보면 `Storage Driver: overlay2`와 같이 나오는 것을 확인할 수 있다.
+    - Docker의 데이터는 기본적으로 `/var/lib/docker`에 저장되며, overlay2로 저장된 레이어 데이터는 다시 `image/overlay2/layerdb/sha256`에 저장된다.
+
+    - `docker image inspect python:3.9.0`을 입력하고 `Layers` 부분을 확인해보면, `/var/lib/docker/image/overlay2/layerdb/sha256` 디렉토리에 동일한 directory들이 생성되어 있는 것을 볼 수 있다.
+
+  - 중간 layer를 가지고 container를 실행시킬 수 있는가?
+
+    - 1.1 version 이전에서는 image와 layer가 명확히 구분되지 않아 가능했다.
+    - 그러나 이후 version부터는 image와 layer를 명확히 구분하면서, 중간 단계의 layer로 container를 실행시키는 것이 매우 복잡해졌다.
+
+  - Docker image가 만들어지는 기본적인 원리
+
+    - 앞서 말했듯 Docker image는 계층적 구조를 가지고 있으며, image를 가지고 container 생성시, container는 쓰기가 가능한 layer를 최상단에 추가한다.
+    - 또한 container에 변경사항이 생기면 container가 생성한 layer에 변경 사항이 추가된다.
+    - 이렇게 변경 사항이 적용된 layer를 `docker commit` 명령어를 통해 commit하여 읽기 전용 layer로 만든 후, 이를 기존 image에 쌓아 새로운 image를 만들게 된다.
+    - 따라서 Docker image를 build할 때는 이 점을 고려하여 순서를 정해야한다.
+
+
+
+- Docker container로 Docker image 생성하기
+
+  - Ubuntu image를 pull 받는다.
+
+  ```bash
+  $ docker pull ubuntu:20.04
+  ```
+
+  - `ubuntu:20.04` image의 history는 아래와 같다.
+
+  ```bash
+  $ docker history ubuntu:20.04
+  IMAGE          CREATED        CREATED BY                                      SIZE      COMMENT
+  d5447fc01ae6   6 months ago   /bin/sh -c #(nop)  CMD ["bash"]                 0B        
+  <missing>      6 months ago   /bin/sh -c #(nop) ADD file:9d282119af0c42bc8…   72.8MB
+  ```
+
+  - 위에서 받은 이미지를 기반으로 container를 생성하고,  `apt`를 update 한다.
+
+  ```bash
+  $ docker run --name layer-container ubuntu:20.04 /bin/bash -c 'apt-get update'
+  ```
+
+  - `apt`를 업데이트 한 container를 commit 한다.
+
+  ```bash
+  $ docker commit layer-container ubuntu:apt-update
+  ```
+
+  - 새로 생성된 `ubuntu:apt-update` image의 history를 확인한다.
+    - 기존과 달리 새로운 layer가 추가된 것을 확인할 수 있다.
+
+  ```bash
+  $ docker history ubuntu:apt-update
+  IMAGE          CREATED          CREATED BY                                      SIZE      COMMENT
+  ffcac381da1a   50 seconds ago   /bin/bash -c apt-get update                     44.2MB    
+  d5447fc01ae6   6 months ago     /bin/sh -c #(nop)  CMD ["bash"]                 0B        
+  <missing>      6 months ago     /bin/sh -c #(nop) ADD file:9d282119af0c42bc8…   72.8MB
+  ```
+
+
+
+- Dockerfile로 Docker image 생성하기
+
+  - 위에서 container를 사용하여 만든 image를 이번에는 Dockefile을 통해 만들어 볼 것이다.
+  - 아래와 같이 Dockerfile을 작성한다.
+
+  ```dockerfile
+  FROM ubuntu:20.04
+  
+  RUN apt-get update
+  ```
+
+  - 위 Dockerfile을 build한다.
+    - 아래와 같이 다양한 메시지가 출력된다.
+    - `d5447fc01ae6`는 `ubuntu:20.04`의 image id이다.
+    - 그 뒤로 `Running in c46b120a81fc`라는 메시지를 볼 수 있는데, Dockerfile의 `RUN`은 단순히 쉘 명령어를 수행하는 작업이 아니라, 바로 이전 단계의 layer를 기반으로 컨테이너를 생성하고, `RUN`에 지정된 명령어를 실행한 후, 이 컨테이너를 commit해서 새로운 이미지로 저장하는 작업이다.
+    - 즉 아래의 경우 `d5447fc01ae6` image를 기반으로 `c46b120a81fc` container를 생성하고, 해당 container에서 `apt-get update` 명령어를 수행한 후 해당 container를 commit하여 `a3bca4ab7b4f`라는 이미지를 만든 것이다.
+    - 따라서 더 이상 필요 없어진 `c46b120a81fc` 컨테이너는 삭제한다(`Removing intermediate container c46b120a81fc`).
+
+  ```bash
+  $ docker build -t ubuntu:apt-update2 .
+  
+  Sending build context to Docker daemon  2.048kB
+  Step 1/2 : FROM ubuntu:20.04
+   ---> d5447fc01ae6
+  Step 2/2 : RUN apt-get update
+   ---> Running in c46b120a81fc
+  # ...
+  Removing intermediate container c46b120a81fc
+   ---> a3bca4ab7b4f
+  Successfully built a3bca4ab7b4f
+  Successfully tagged ubuntu:apt-update2
+  ```
+
+  - 생성된 image의 history를 확인한다.
+
+  ```bash
+  $ docker history ubuntu:apt-update2
+  IMAGE          CREATED         CREATED BY                                      SIZE      COMMENT
+  a3bca4ab7b4f   7 minutes ago   /bin/sh -c apt-get update                       44.2MB    
+  d5447fc01ae6   6 months ago    /bin/sh -c #(nop)  CMD ["bash"]                 0B        
+  <missing>      6 months ago    /bin/sh -c #(nop) ADD file:9d282119af0c42bc8…   72.8MB    
+  ```
+
+
+
+- Docker pull을 통해 받은 image와 위 처럼 직접 build한 image의 가장 큰 차이는 바로 중간 layer가 남아있다는 점이다.
+
+  - 위 두 방식(container를 commit하는 방식과 Dockerfile로 build하는 방식) 모두 history를 확인하면, 직접 build한 부분의 image가 `<missing>`이 아니라, 남아있는 것을 확인할 수 있다.
+  - 따라서 위에 나와 있는 중간 image들로 Docker container를 실행하는 것이 가능하다.
+    - 예를 들어 `ubuntu:apt-update2` 이미지의 경우 `apt-get update`를 실행하기 이전의 image가 남아 있으므로 아래와 같이 실행하면 `apt-get update`가 실행되지 않은 ubuntu image를 실행시킬 수 있다.
+
+  ```bash
+  $ docker run d5447fc01ae6
+  ```
+
+
+
+
+
+
+
 # Docker 설치하기
 
 > ubuntu 기준
