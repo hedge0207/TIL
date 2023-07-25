@@ -415,6 +415,295 @@
 
 
 
+## Docker image 효율적으로 build하기
+
+- Docker image는 계층적 구조를 가지고 있다.
+
+  - 예를 들어 아래와 같은 app이 있고
+
+  ```python
+  from fastapi import FastAPI
+  import uvicorn
+  
+  
+  app = FastAPI()
+  
+  @app.get("")
+  def hello():
+      return
+  
+  
+  if __name__ == "__main__":
+      uvicorn.run(app)
+  ```
+
+  - 위 app을 실행하기 위한 requirements.txt들이 아래와 같을 때
+
+  ```bash
+  anyio==3.7.0
+  click==8.1.3
+  exceptiongroup==1.1.1
+  fastapi==0.98.0
+  h11==0.14.0
+  idna==3.4
+  pydantic==1.10.9
+  sniffio==1.3.0
+  starlette==0.27.0
+  typing_extensions==4.7.0
+  uvicorn==0.22.0
+  ```
+
+  - 아래 Dockerfile을
+
+  ```dockerfile
+  FROM python:3.9.0
+  
+  ENV foo bar
+  
+  COPY main.py /app/main.py
+  WORKDIR /app
+  
+  COPY requirements.txt /app/requirements.txt
+  RUN pip install --upgrade pip
+  RUN pip install -r requirements.txt
+  
+  CMD ["python", "main.py"]
+  ```
+
+  - build하면
+
+  ```bash
+  $ docker build -t test_image:1.0.0
+  ```
+
+  - 아래와 같은 계층 구조가 된다.
+    - `python:3.9.0` image의 마지막 계층부터 표시하면 아래와 같다.
+
+  ```bash
+  $ docker history test_image:1.0.0
+  
+  IMAGE          CREATED          CREATED BY                                      SIZE      COMMENT
+  ef7708dcc580   8 seconds ago    /bin/sh -c #(nop)  CMD ["python" "main.py"]     0B        
+  d97a200eb65a   8 seconds ago    /bin/sh -c pip install -r requirements.txt      17.8MB    
+  087b34aed24a   13 seconds ago   /bin/sh -c pip install --upgrade pip            16.4MB    
+  8230ff82febb   20 seconds ago   /bin/sh -c #(nop) COPY file:8eb70513058f29ae…   177B      
+  cdba6526752a   20 seconds ago   /bin/sh -c #(nop) WORKDIR /app                  0B        
+  3c12e4d3f954   20 seconds ago   /bin/sh -c #(nop) COPY file:61fa4cf0b88ff0d3…   148B      
+  1b2bf6c81145   20 seconds ago   /bin/sh -c #(nop)  ENV foo=bar                  0B        
+  0affb4652fc0   2 years ago      /bin/sh -c #(nop)  CMD ["python3"]              0B  
+  ```
+
+  - 또한 직접 build한 image의 모든 계층은 파일로 저장되어, 특정 계층을 실행시키는 것도 가능하다.
+    - 예를 들어 위 예시에서 pip를 통해 필요한 package를 설치하기 전 상태인 image `087b34aed24a`를 가지고 container를 실행하면 아무 package도 설치되지 않은 상태의 container가 실행된다.
+
+  ```bash
+  $ docker run --name update-pip 087b34aed24a /bin/bash -c 'pip list'
+  
+  Package    Version
+  ---------- -------
+  pip        23.1.2
+  setuptools 50.3.2
+  wheel      0.36.0
+  ```
+
+  - 또한 build 과정 중 일부가 변경된 경우, 모든 계층을 다시 생성하지 않고, 변경된 계층부터 다시 생성을 시작한다.
+
+
+
+- 이러한 특징들 때문에, 어떤 순서로 build를 하는가에 따라 build 속도나 image size가 달라질 수 있다.
+
+  - 예시1. source code만 변경할 경우
+    - 예를 들어 위 예시와 같은 Dockerfile에서 source code가 아래와 같이 변경될 경우
+
+  ```python
+  from fastapi import FastAPI
+  import uvicorn
+  
+  
+  app = FastAPI()
+  
+  @app.get("")
+  def hello():
+      return "Hello World"
+  
+  
+  if __name__ == "__main__":
+      uvicorn.run(app)
+  ```
+
+  - 다시 build하면 `COPY main.py /app/main.py` 계층부터 다시 생성을 시작한다.
+    - `ENV foo bar`에 해당하는 계층인 `1b2bf6c81145`까지는 동일한데, 그 이후 계층은 모두 새로 생성된 것을 확인 할 수 있다.
+
+  ```bash
+  $ docker build -t test_image:1.1.0
+  $ docker history test_image:1.1.0
+  
+  IMAGE          CREATED              CREATED BY                                      SIZE      COMMENT
+  f0393b6ea6b4   8 seconds ago        /bin/sh -c #(nop)  CMD ["python" "main.py"]     0B        
+  bd916ea37413   9 seconds ago        /bin/sh -c pip install -r requirements.txt      17.8MB    
+  7a980c84083e   12 seconds ago       /bin/sh -c pip install --upgrade pip            16.4MB    
+  5e28c2fb7e73   18 seconds ago       /bin/sh -c #(nop) COPY file:8eb70513058f29ae…   177B      
+  9787f191f30c   18 seconds ago       /bin/sh -c #(nop) WORKDIR /app                  0B        
+  237827f7fa3a   18 seconds ago       /bin/sh -c #(nop) COPY file:7c8c5f00e6553b99…   162B      
+  1b2bf6c81145   About a minute ago   /bin/sh -c #(nop)  ENV foo=bar                  0B        
+  0affb4652fc0   2 years ago          /bin/sh -c #(nop)  CMD ["python3"]              0B 
+  ```
+
+  - 예시2. requirements만 변경할 경우
+    - 마찬가지로 requirements.txt file이 변경될 경우 `COPY requirements.txt /app/requirements.txt`부터 다시 생성을 시작한다.
+
+  ```bash
+  $ docker build -t test_image:1.2.0
+  $ docker history test_image:1.2.0
+  
+  IMAGE          CREATED              CREATED BY                                      SIZE      COMMENT
+  67f997b138f6   4 seconds ago        /bin/sh -c #(nop)  CMD ["python" "main.py"]     0B        
+  6e022c1142a8   4 seconds ago        /bin/sh -c pip install -r requirements.txt      20.5MB    
+  1f818c4a097f   8 seconds ago        /bin/sh -c pip install --upgrade pip            16.4MB    
+  0c25d551c85c   13 seconds ago       /bin/sh -c #(nop) COPY file:4841ad04d11eec7f…   193B    
+  # 여기까지는 동일하다.
+  9787f191f30c   57 seconds ago       /bin/sh -c #(nop) WORKDIR /app                  0B        
+  237827f7fa3a   57 seconds ago       /bin/sh -c #(nop) COPY file:7c8c5f00e6553b99…   162B      
+  1b2bf6c81145   About a minute ago   /bin/sh -c #(nop)  ENV foo=bar                  0B        
+  0affb4652fc0   2 years ago          /bin/sh -c #(nop)  CMD ["python3"]              0B  
+  ```
+
+  - 문제1. 하위 계층에 변경사항이 생겨 다시 build할 경우 상위 계층도 모두 새롭게 build된다.
+    - 예시1에서는 source code만 변경되었는데도, 다시 `pip update`와 `pip install -r requirements.txt`가 실행된다.
+    - 예시에서는 requirements들을 install하는데 시간이 오래 걸리지 않지만, 만약 오랜 시간이 걸린다고 하면, 실제로는 변경 사항이 없음에도 requirements를 설치하는데 많은 시간을 보내야 할 것이다.
+  - 문제2. 계층은 해당 계층을 사용하는 모든 image가 삭제되지 않는 한 남아있다.
+    - 각 계층은 개별적으로 저장된다.
+    - 위 예시에서 가장 용량을 크게 증가시키는 부분은 `RUN pip install -r requirements.txt`부분이다.
+    - 예시1에서는 source만 변경하고, requirements는 변경하지 않았으므로, 사실 requirements도 다시 build할 이유는 없다.
+    - 그럼에도 더 아래 계층인 `COPY main.py /app/main.py` 계층부터 다시 생성하기 시작하므로, `RUN pip install -r requirements.txt` 계층도 다시 생성된다.
+    - 즉 source code의 변경사항이 생기기 이전의 `bd916ea37413` 계층이나 source code의 변경으로 새롭게 build된 `6e022c1142a8` 계층은 설치된 requirements들은 동일함에도 서로 다른 계층으로 저장되어 있다.
+    - 예시에서는 그렇게 큰 용량이 아니지만, 만약 requirements가 기가 단위가 되면, requirements는 동일한데도 기가 단위의 계층이 새롭게 생성되는 것이다.
+  - 해결
+    - 만일 source code의 변경이 잦고, requirements의 변경이 거의 없을 때는 아래와 같이 requirements를 먼저 install하고 source code를 copy하는 것이 좋다.
+    - Source code만 변경될 경우 `COPY main.py /app/main.py` 계층부터 다시 생성될 것이기 때문이다.
+
+  ```dockerfile
+  FROM python:3.9.0
+  
+  ENV foo bar
+  
+  COPY requirements.txt /app/requirements.txt
+  RUN pip install --upgrade pip
+  RUN pip install -r requirements.txt
+  
+  COPY main.py /app/main.py
+  WORKDIR /app
+  
+  CMD ["python", "main.py"]
+  ```
+
+
+
+- 결론
+  - 위에서 본 것과 같이 어떤 순서로 build하는가에 따라서 계층의 크기나 build 속도가 크게 차이날 수 있다.
+  - 따라서 build하려는 image의 특성에 따라 build 순서를 고려하여 build해야한다.
+
+
+
+- Size를 줄이는 다른 방법들
+  - alpine image를 사용하라
+    - 정말 필요한 것들만 들어가 있는 경량화된 image이다.
+  - Multi-stage build를 사용한다.
+    - App을 빌드할 image와 실행할 image를 나눠서 build하는 방식이다.
+    - Image가 2개 생성되긴 하지만 두 개의 Dockerfile에 따로 작성하지 않고, 하나의 Dockefile에 작성하는 것이 가능하다.
+
+
+
+- Multi-stage build
+
+  - 먼저 container로 실행시키고자하는 app을 생성한다.
+
+  ```python
+  from fastapi import FastAPI
+  import uvicorn
+  
+  
+  app = FastAPI()
+  
+  
+  @app.get("")
+  def hello():
+      return
+  
+  
+  if __name__ == "__main__":
+      uvicorn.run(app)
+  ```
+
+  - 그 후 일반적인 방식으로 Dockerfile을 작성한다.
+
+  ```dockerfile
+  # builder
+  FROM python:3.9.0
+  
+  COPY . /app
+  WORKDIR /app
+  
+  RUN pip install --upgrade pip
+  RUN pip install -r requirements.txt
+  
+  CMD ["python", "main.py"]
+  ```
+
+  - 빌드 된 image의 크기는 923MB이다.
+
+  ```bash
+  REPOSITORY   TAG       IMAGE ID       CREATED          SIZE
+  test_image   origin    d58bf027806d   31 seconds ago   923MB
+  ```
+
+  - Multi-stage build를 적용하고
+
+  ```dockerfile
+  # builder
+  FROM python:3.9.0 AS my_builder
+  
+  COPY . /app
+  WORKDIR /app
+  
+  RUN pip install --upgrade pip
+  RUN pip install -r requirements.txt
+  
+  # deployer
+  FROM python:3.9.0
+  # app 실행에 필요한 package들을 옮기고
+  COPY --from=my_builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
+  # source code를 옮긴다.
+  COPY --from=my_builder /app /app
+  
+  CMD ["python", "main.py"]
+  ```
+
+  - Image의 size를 확인하면, 기존에 비해 8MB 정도 감소한 것을 볼 수 있다.
+
+  ```bash
+  REPOSITORY                                      TAG              IMAGE ID       CREATED             SIZE
+  test_image                                      multi-stage      fe105498362c   3 seconds ago       915MB
+  ```
+
+  - History 확인
+    - 기본 Python image에 package들과 source code만 복사하여 실행한다.
+
+  ```bash
+  $ docker history test_image:multi-stage
+  
+  IMAGE          CREATED         CREATED BY                                      SIZE      COMMENT
+  9919acdc9b48   9 seconds ago   /bin/sh -c #(nop)  CMD ["python" "main.py"]     0B        
+  36effa42202d   9 seconds ago   /bin/sh -c #(nop) COPY dir:cf86af1cbd34128a5…   727B      
+  41439e081dd2   9 seconds ago   /bin/sh -c #(nop) COPY dir:1679144dabe104497…   29.2MB    
+  0affb4652fc0   2 years ago     /bin/sh -c #(nop)  CMD ["python3"]              0B     
+  ```
+
+  - 위 예시에서는 크게 감소하지는 않았지만, build 과정이 길고 복잡해질수록 image의 크기도 커질 수 밖에 없다.
+    - 따라서 이런 경우 보다 크게 감소시킬 수 있을 것이다.
+
+
+
 
 
 
