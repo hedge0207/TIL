@@ -829,6 +829,300 @@
 
 
 
+- `fragment_size`
+
+  - 각 fragment의 character들의 최대 길이를 정한다.
+    - 기본값은 100이며, 18미만으로 줄 수 없다.
+  - Character들의 최대 길이를 설정하는 옵션이지만, 반환된 fragment의 character 길이는 설정 값 보다 클 수 있다.
+    - 만약 단어가 중간에 잘리게 될 경우, 해당 단어를 전부 포함시켜 실제는 `fragment_size`에 설정한 값 보다 커질 수 있다.
+    - 예를 들어 "An apple is a round, edible fruit produced by an apple tree (Malus domestica). "와 같은 문장이 있을 때, "edible"의  e는 21번째 character이다.
+    - 이 때, `fragment_size`를 21로 주면 "An \<em>apple\</em> is a round, e"와 같이 highlighting되지 않고, "An \<em>apple\</em> is a round, edible"과 같이 마지막 character가 포함된 단어까지가 포함된다.
+  - 문서상에 `boundary_scanner`가 `sentence`일 때만 유효하다는 설명은 없지만, `sentence`이외의 값을 줬을 때는 아예 validation을 안하는 것으로 봐서 `sentence`일 때만 유효한 것으로 보인다.
+    - 이는 위에서 말한 것과 같이 단어의 일부 character가 `fragment_size`의 범위 안에 포함된 경우, 해당 character가 포함된 단어까지가 highlight 결과에 포함되는 것과 관련이 있다.
+    - `boundary_scanner`를 `word`로 줄 경우 단어 단위로 highlighting을 하는데, `fragment_size`를 1로만 줘도 단어 전체가 포함될 것이기 때문이다.
+    - 따라서 정확히는 `sentence` 이외의 `boundary_scanner` 옵션에 대해서는 `fragment_size`가 의미가 없다.
+  - 테스트 data 생성
+
+  ```json
+  // PUT highlight-test
+  {
+      "mappings": {
+          "properties": {
+              "text": {
+                  "type": "text",
+                  "analyzer": "standard",
+                  "term_vector": "with_positions_offsets"
+              }
+          }
+      }
+  }
+  
+  // PUT highlight-test/_doc/1
+  {
+    "text":"""An apple is a round, edible fruit produced by an apple tree (Malus domestica). Apple trees are cultivated worldwide and are the most widely grown species in the genus Malus. The tree originated in Central Asia, where its wild ancestor, Malus sieversii, is still found. Apples have been grown for thousands of years in Asia and Europe and were introduced to North America by European colonists. Apples have religious and mythological significance in many cultures, including Norse, Greek, and European Christian tradition."""
+  }
+  ```
+
+  - 기본값으로 검색하기
+
+  ```json
+  // GET highlight-test/_search
+  {
+      "query": {
+          "match": {
+              "text": "apple"
+          }
+      },
+      "highlight": {
+          "fields": {
+              "text":{}
+          }
+      }
+  }
+  
+  // output
+  {
+      // ...
+      "highlight": {
+          "text": [
+              "An <em>apple</em> is a round, edible fruit produced by an <em>apple</em> tree (Malus domestica).",
+              "<em>Apple</em> trees are cultivated worldwide and are the most widely grown species in the genus Malus."
+          ]
+      }
+  }
+  ```
+
+  - fragment size를 최솟값인 18로 주기
+    - 각 fragment들의 길이가 줄어든 것을 확인할 수 있다.
+
+  ```json
+  // GET highlight-test/_search
+  {
+      "query": {
+          "match": {
+              "text": "apple"
+          }
+      },
+      "highlight": {
+          "boundary_scanner": "sentence",
+          "fragment_size":18,
+          "fields": {
+              "text":{}
+          }
+      }
+  }
+  
+  // output
+  {
+      "highlight": {
+          "text": [
+              "An <em>apple</em> is a round",
+              "fruit produced by an <em>apple</em>",
+              "<em>Apple</em> trees are cultivated"
+          ]
+      }
+  }
+  ```
+
+
+
+- `required_field_match`
+
+  - 기본적으로 `fields`에 field를 추가했다고 하더라도, query에 match된 field들만을 highlighting한다.
+  - `required_field_match`는 `fields`에 추가된 fields들이 query에 match되지 않았어도, highlight를 할지를 결정한다.
+    - true로 줄 경우 `fields`에 설정된 field들 중 오직 query에 match된 field만을 highlighting한다(기본값).
+    - false로 줄 경우 `fields`에 설정된 field들 모두를 highlighting한다.
+
+  - 테스트 데이터 생성
+
+  ```json
+  PUT highlight-test
+  {
+    "mappings": {
+      "properties": {
+        "foo": {
+          "type": "text",
+          "analyzer": "standard",
+          "term_vector": "with_positions_offsets"
+        },
+        "bar": {
+          "type": "text",
+          "analyzer": "standard",
+          "term_vector": "with_positions_offsets"
+        }
+      }
+    }
+  }
+  
+  PUT highlight-test/_doc/1
+  {
+    "foo":"An apple is a round, edible fruit produced by an apple tree (Malus domestica).",
+    "bar":"An apple is a round, edible fruit produced by an apple tree (Malus domestica)."
+  }
+  ```
+
+  - `required_field_match`를 true로 두고 검색하기
+    - `highlight.fields`에는 `foo`, `bar` 두 field를 모두 지정해주었지만, query는 `foo` field 만을 대상으로 검색했으므로, 아래와 같이 검색 대상 field인 `foo`만 highlighting된다.
+
+  ```json
+  // GET highlight-test/_search
+  {
+      "query": {
+          "match": {
+              "foo": "apple"
+          }
+      },
+      "highlight": {
+          "boundary_scanner": "sentence",
+          "fields": {
+              "foo":{},
+              "bar":{}
+          }
+      }
+  }
+  
+  // output
+  {
+      "highlight": {
+          "foo": [
+              "An <em>apple</em> is a round, edible fruit produced by an <em>apple</em> tree (Malus domestica)."
+          ]
+      }
+  }
+  ```
+
+  - `required_field_match`를 false로 두고 검색하기
+    - 검색 대상 field가 아닌 `bar` field까지도 highlighting된 것을 볼 수 있다.
+
+  ```json
+  // GET highlight-test/_search
+  {
+      "query": {
+          "match": {
+              "foo": "apple"
+          }
+      },
+      "highlight": {
+          "boundary_scanner": "sentence",
+          "require_field_match": false, 
+          "fields": {
+              "foo":{},
+              "bar":{}
+          }
+      }
+  }
+  
+  // output
+  {
+      "highlight": {
+          "bar": [
+              "An <em>apple</em> is a round, edible fruit produced by an <em>apple</em> tree (Malus domestica)."
+          ],
+          "foo": [
+              "An <em>apple</em> is a round, edible fruit produced by an <em>apple</em> tree (Malus domestica)."
+          ]
+      }
+  }
+  ```
+
+
+
+- Highlighter의 동작 방식
+  - Highlighter의 목표는 query에 대한 최적의 fragment를 찾아내서, 찾아낸 fragment 내에서 검색어를 highlighting하는 것이다.
+    - 이를 위해 highlighter는 아래와 같은 정보를 처리해야한다.
+  - Text를 어떻게 fragment로 쪼갤 것인가.
+    - `fragment_size`, `fragmenter`, `type`, `boundary_chars`, `boundary_max_scan`, `boundary_scanner`, `boundary_scanner_locale` 설정들과 관련이 있다.
+    - Plain highlighter의 경우 주어진 analyzer를 활용하여 text를 analyze하여 token stream을 생성한다.
+    - Plain highlighter는 token stream을 fragment로 쪼개기 위해 매우 단순한 algorithm을 사용한다.
+    - Token stream을 term 단위로 순회하면서, 현재 term의 end_offset이, `fragment_size`와 생성된 fragment의 개수를 곱한 값을 초과할 경우 새로운 fragment를 생성한다(즉 `end_offset > fragment_size * num_of_created_fragment`이면 새로운 fragment를 생성한다).
+    - Unified와 FVH highlighter의 경우 Java의 `BreakIterator`를 사용하여 text를 fragment로 쪼갠다.
+  - 최적의 fragment는 어떻게 찾을 것인가.
+    - `number_of_fragments` 설정과 관련이 있다.
+    - 가장 관련이 있는 fragment들을 찾기 위해서 highlighter는 주어진 query를 반영하여 각 fragment의 점수를 매긴다.
+    - Plain highlighter는 token-stream을 가지고 in-memory index를 생성하여 원본 query를 in-memory index에 재실행한다.
+    - 이 결과를 가지고 각 fragment들에 점수를 매기는데, 점수 산정 fragment에 포함된 고유한 term의 개수를 세는 방식으로 이루어진다.
+    - 예를 들어 "foo bar foo"라는 term으로 검색했을 때, "foo bar"라는 fragment와 "foo bar foo"라는 fragment의 점수는 동일하게 매겨진다.
+    - "foo bar foo"에는 foo가 2번 포함되어 있기는 하지만, 고유한 term의 개수만 세기에, 몇 번 나왔는지는 점수에 영향을 미치지 않는다.
+    - FVH의 경우에는 이미 색인된 term vectors를 사용하기에, analyzing과 in-memory index를 필요로하지 않는다.
+    - 점수를 매기는 방식은 Plain highlighter와 유사하지만, 고유한 term의 개수가 아닌, 모든 개별 term을 가지고 점수를 계산한다.
+    - Unified highlighter는 이미 색인된 term vectors와 미리 색인된 terms offsets를 사용하며, 만일, 미리 색인된 term vectors와 terms offset이 없다면, Plain highlighter와 마찬가지로 text로부터 in-memory index를 생성한다.
+    - Unified highlighter의 경우 점수를 계산하기 위해 BM25를 사용한다.
+
+
+
+- Highlighter 동작 방식 예시
+
+  - Data 색인하기
+
+  ```json
+  // PUT test_index
+  {
+      "mappings": {
+          "properties": {
+              "content": {
+                  "type": "text",
+                  "analyzer": "english"
+              }
+          }
+      }
+  }
+  
+  // PUT test_index/_doc/1
+  {
+    "content" : "An apple is a round, edible fruit produced by an apple tree (Malus domestica)."
+  }
+  ```
+
+  - 검색하기
+
+  ```json
+  // GET test_index/_search
+  {
+      "query": {
+          "match_phrase" : {
+              "content" : "apple tree"
+          }
+      },
+      "highlight": {
+          "type" : "unified",
+          "number_of_fragments" : 3,
+          "fields": {
+              "content": {}
+          }
+      }
+  }
+  
+  ```
+
+  - In-memoery index 생성
+    - 1번 문서가 query에 hit되고, unified highlighter에 넘겨진다.
+    - `content` field는 offset이나 term vectors가 색인되지 않았기에, field value가 analyze되고, in-memory index가 생성된다.
+
+  ```json
+  [
+      {"token":"apple","start_offset":3,"end_offset":8,"position":1},
+      {"token":"apple","start_offset":49,"end_offset":54,"position":10},
+      {"token":"tree","start_offset":55,"end_offset":59,"position":11}
+  ]
+  ```
+
+  - 위에서 작성한 match_phrase query는 `spanNear([text:apple, text:tree], 0, true)` 형태의 span qeury로 전환된다.
+    - 이는 apple과 term이 0 distance 이내에 있으면서, 주어진 순서대로 나와야 함을 의미한다.
+    - 이전에 생성한 in-memory index에 위 span query를 실행하면, 아래와 같은 match를 얻을 수 있다.
+
+  ```json
+  [
+      {"token":"apple","start_offset":49,"end_offset":54,"position":10},
+      {"token":"tree","start_offset":55,"end_offset":59,"position":11}
+  ]
+  ```
+
+  - Text를 passage로 쪼갠다.
+    - 각 passage는 적어도 하나의 match를 포함해야한다.
+    - Java의 `BreakIterator`는 각 passage가 `fragment_size`를 초과하지 않는한, 전체 문장이 되도록 쪼갠다.
+  - 각 passage의 점수를 BM25로 계산하여 `number_of_fragments` 만큼의 passage를 선정한다.
+  - 마지막으로, 각 passage와 일치하는 일치하는 string을 text로부터 추출한다.
+
 
 
 
