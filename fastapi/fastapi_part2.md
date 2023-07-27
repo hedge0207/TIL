@@ -440,6 +440,107 @@
 
 
 
+# Backround Tasks
+
+- Response를 반환한 뒤 실행할 background task들을 설정하는 것이 가능하다.
+  - Request가 들어올 때 실행되어야 하지만, 굳이 그 결과를 client에게 반환할 필요는 없을 때 유용하게 사용할 수 있다.
+  - 예를 들어 request가 들어올 때 마다 mail을 전송하여 알림을 보내거나, 시간이 오래 걸리는 작업을 backround에서 처리해야하는 경우에 유용하다.
+  - 만일 보다 많은 자원을 필요로 하는 task를 backround에서 실행해야 할 경우 Celery 등의 보다 큰 tool을 사용하는 것이 좋다.
+
+
+
+- `BackgroundTasks`
+
+  - `BackgroundTasks` 예시
+
+  ```python
+  import time
+  # BackroundTasks를 import한다.
+  from fastapi import BackgroundTasks, FastAPI
+  import uvicorn
+  
+  
+  app = FastAPI()
+  
+  # backround에서 실행할 function을 정의한다.
+  def long_time_task(message: str):
+      time.sleep(30)
+      print(message)
+  
+  
+  # BackroundTasks를 parameter로 받는다.
+  @app.get("/")
+  async def send_notification(background_tasks: BackgroundTasks):
+      # BackroundTasks instance에 task를 추가한다.
+      background_tasks.add_task(long_time_task, "Hello World!")
+      return
+  
+  
+  if __name__ == "__main__":
+      uvicorn.run(app)
+  ```
+
+  - `BackgroundTasks`는 `starlette.background`를 사용하여 구현하였다.
+  - 동작 방식
+    - `add_task`를 호출하면, 인자로 받은 function(task)를 `BackroundTasks` instance의 `tasks` attribute에 저장한다.
+    - 실행시에는 `tasks`를 loop를 돌면서 `tasks`에 저장된 task들을 하나씩 실행한다.
+
+  ```python
+  class BackgroundTasks(BackgroundTask):
+      def __init__(self, tasks: typing.Optional[typing.Sequence[BackgroundTask]] = None):
+          self.tasks = list(tasks) if tasks else []
+  
+      def add_task(
+          self, func: typing.Callable[P, typing.Any], *args: P.args, **kwargs: P.kwargs
+      ) -> None:
+          # Parameter로 받은 function과 argument들로 task를 생성한 후
+          task = BackgroundTask(func, *args, **kwargs)
+          # tasks에 넣고
+          self.tasks.append(task)
+  
+      async def __call__(self) -> None:
+          # tasks를 순회하면서
+          for task in self.tasks:
+              # 하나씩 실행시킨다.
+              await task()
+  ```
+
+
+
+- 비동기 함수를 backround에서 실행시키기
+
+  - 동기적으로 동작하는 함수를 실행시키는 것과 동일한 방식으로 `BackroundTasks`를 사용하여 비동기 함수를 backround에서 실행시킬 수 있다.
+  - 예시
+
+  ```python
+  import asyncio
+  
+  from fastapi import BackgroundTasks, FastAPI
+  import uvicorn
+  
+  
+  app = FastAPI()
+  
+  
+  async def long_time_task(message: str):
+      asyncio.sleep(30)
+      print(message)
+  
+  
+  @app.get("/")
+  async def send_notification(background_tasks: BackgroundTasks):
+      background_tasks.add_task(long_time_task, "Hello World!")
+      return
+  
+  
+  if __name__ == "__main__":
+      uvicorn.run(app)
+  ```
+
+  
+
+
+
 
 
 
