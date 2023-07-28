@@ -440,6 +440,189 @@
 
 
 
+# Dependencies
+
+- Dependency injection
+  - FastAPI에서의 dependency injection은 프로그래밍에서 일반적으로 사용되는 dependency injection의 의미와 동일하다.
+    - FastAPI에서의 dependency란 path operation function이 필요로하는 것들이다.
+    - Path operation function이란 endpoint로 요청이 들어왔을 때 실행되는 함수를 의미한다.
+    - FastAPI라는 system은 path operation function이 필요로 하는 dependency들을 제공한다(의존성을 주입한다).
+  - 목표
+    - Logic을 공유하는 것.
+    - Database connection을 공유하는 것.
+    - 보안을 강화하고 인증과 인가 등을 처리하는 것.
+    - 요약하자면 코드의 반복을 최소화하는 것이 목표이다.
+
+
+
+- Dependency injection이 동작하는 방식
+
+  - 예시 코드
+    - 두 개의 path operation function이 완전히 동일한 parameter를 받을 경우 이를 의존성 주입을 통해 코드 중복을 최소화하는 코드이다.
+    - `Depends` method는 parameter로 dependency를 받는데, 반드시 callable한 값을 입력해야한다.
+    - Dependency의 type은 dependency의 반환 type(예시의 경우 dict)을 입력하면 된다.
+
+  ```python
+  from typing import Union
+  # Depends를 import한다.
+  from fastapi import Depends, FastAPI
+  
+  app = FastAPI()
+  
+  
+  async def common_parameters(
+      q: Union[str, None] = None, skip: int = 0, limit: int = 100
+  ):
+      return {"q": q, "skip": skip, "limit": limit}
+  
+  # path operation function의 parameter로 Depends를 사용하여 dependency를 선언한다.
+  @app.get("/items/")
+  async def read_items(commons: dict = Depends(common_parameters)):
+      return commons
+  
+  
+  @app.get("/users/")
+  async def read_users(commons: dict = Depends(common_parameters)):
+      return commons
+  ```
+
+  - 동작 방식
+    - Request가 들어오면 우선 query parameter를 인자로 dependency를 호출한다.
+    - Dependency로부터 반환값을 받고 그 값을 path operation function의 parameter로 넘긴다.
+
+
+
+- Class를 주입하기
+
+  - `Depends` method는 인자로 callable한 값을 받는다.
+    - Python에서는 class도 callable한 값이므로 `Depends` method의 parameter가 될 수 있다.
+  - 예시
+
+  ```python
+  from typing import Union
+  
+  from fastapi import Depends, FastAPI
+  from typing_extensions import Annotated
+  
+  app = FastAPI()
+  
+  
+  fake_items_db = [{"item_name": "Foo"}, {"item_name": "Bar"}, {"item_name": "Baz"}]
+  
+  # class를 선언하고
+  class CommonQueryParams:
+      def __init__(self, q: Union[str, None] = None, skip: int = 0, limit: int = 100):
+          self.q = q
+          self.skip = skip
+          self.limit = limit
+  
+  # 의존성을 주입한다.
+  @app.get("/items/")
+  async def read_items(commons: CommonQueryParams = Depends(CommonQueryParams)):
+      response = {}
+      if commons.q:
+          response.update({"q": commons.q})
+      items = fake_items_db[commons.skip : commons.skip + commons.limit]
+      response.update({"items": items})
+      return response
+  ```
+
+  - 동작 방식
+    - Request가 들어오면, dependency class의 `__init__` method가 호출되고, dependency class의 instance를 반환한다.
+    - Dependency가 반환한 instance를 path operation function의 parameter로 넘긴다.
+  - 위 예시를 보면 dependency를 선언하는 부분에 아래와 같이 `CommonQueryParams`가 중복되어 들어가는 것을 볼 수 있다.
+
+  ```python
+  async def read_items(commons: CommonQueryParams = Depends(CommonQueryParams)):
+      pass
+  ```
+
+  - FastAPI는 아래와 같이 중복을 없앨 수 있는 shortcut을 제공한다.
+
+  ```python
+  from typing import Annotated
+  
+  
+  async def read_items(commons: CommonQueryParams = Depends()):
+      pass
+  ```
+
+
+
+- Sub dependency
+
+  - Sub dependency를 설정할 수 있다.
+    - Sub dependency의 깊이에는 제한이 없다.
+  - 예시
+    - `query_or_cookie_extractor` dependency는 `query_extractor`라는 또 다른 dependency를 가지고 있다.
+
+  ```python
+  from typing import Annotated
+  
+  from fastapi import Cookie, Depends, FastAPI
+  
+  app = FastAPI()
+  
+  
+  def query_extractor(q: str | None = None):
+      return q
+  
+  
+  def query_or_cookie_extractor(
+      q: Annotated[str, Depends(query_extractor)],
+      last_query: Annotated[str | None, Cookie()] = None,
+  ):
+      if not q:
+          return last_query
+      return q
+  
+  
+  @app.get("/items/")
+  async def read_query(
+      query_or_default: Annotated[str, Depends(query_or_cookie_extractor)]
+  ):
+      return {"q_or_cookie": query_or_default}
+  ```
+
+
+
+- Path operation decorator에 dependency 선언하기
+
+  - Path operation decorator에도 dependency를 선언할 수 있다.
+    - 때로는 dependency의 반환값을 사용할 필요는 없지만, dependency가 실행은 되어야 할 때가 있다.
+    - 이런 경우에는 path operation function에 dependency를 parameter로 선언하는 것 보다 path operation decorator에 선언하는 것이 더 적절하다.
+  - 예시
+    - Path operation decorator에 작성된 dependency들의 반환 값은 사용되지 않는다.
+    - 아래 예시에서 `verify_key` 함수는 반환값이 있긴 하지만 이 값은 사용되지 않는다.
+    - 그럼에도 반환값을 지정한 이유는, 이 함수가 `read_item`의 dependency가 아닌 다른 곳에서 독립적으로 쓰일 때 반환값이 필요할 수 있기 때문이다.
+
+  ```python
+  from fastapi import Depends, FastAPI, Header, HTTPException
+  from typing_extensions import Annotated
+  
+  app = FastAPI()
+  
+  
+  async def verify_token(x_token: Annotated[str, Header()]):
+      if x_token != "fake-super-secret-token":
+          raise HTTPException(status_code=400, detail="X-Token header invalid")
+  
+  
+  async def verify_key(x_key: Annotated[str, Header()]):
+      if x_key != "fake-super-secret-key":
+          raise HTTPException(status_code=400, detail="X-Key header invalid")
+      return x_key
+  
+  
+  @app.get("/items/", dependencies=[Depends(verify_token), Depends(verify_key)])
+  async def read_items():
+      return [{"item": "Foo"}, {"item": "Bar"}]
+  ```
+
+  
+
+
+
 # Backround Tasks
 
 - Response를 반환한 뒤 실행할 background task들을 설정하는 것이 가능하다.
