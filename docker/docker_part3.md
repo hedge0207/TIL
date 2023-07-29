@@ -155,6 +155,110 @@
 
 
 
+# DinD DooD
+
+- Docker achitecture
+
+  > https://docs.docker.com/get-started/overview/
+
+  - Docker는 client-server 구조를 사용한다.
+    - Docker client가 빌드, 컨테이너 실행, 컨테이너 배포 등을 수행하는 Docker daemon와 통신한다.
+    - Docker client와 daemon은 같은 system에서 실행될 수도 있고, 서로 다른 시스템이서 실행되어 원격으로 통신할 수도 있다.
+    - Docker client와 daemon은 UNIX socket 혹은 network interface를 통해 REST API를 사용하여 통신한다.
+  - Docker daemon
+    - Docker daemon(`dockerd`)은 Docker API로 들어오는 요청을 처리한다.
+    - Image, container, network, volume 등의 docker object들을 관리한다.
+    - 또한 Docker service를 관리하기 위해서 다른 daemon들과도 상호작용한다.
+  - Docker client(Docker CLI)
+    - Docker client(`docker`)는 Docker와 상호작용하는 주요 방법이다.
+    - Docker 명령어(e.g. `docker run`)를 입력하면, Docker client는 dockerd로 해당 명령을 전송한다.
+    - 하나 이상의 Docker daemon과 통신할 수 있다.
+  - Docker registries
+    - Docker image를 저장하기 위한 저장소이다.
+    - Docker Hub는 누구나 사용할 수 있는 공개 저장소이며, private registry도 존재한다.
+  - Docker desktop
+    - Windows, Mac, Linux 등에서 Docker를 보다 쉽게 사용할 수 있게 해주는 application이다.
+    - Docker Client(`docker`)와 Docker daemon(`dockerd`), Docker compose 등을 모두 포함하고 있다.
+
+
+
+- DinD(Docker in Docker)
+
+  > https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/
+
+  - Docker container 내부에서 Docker를 실행시키는 방식이다.
+  - 본래 Docker를 개발하는 개발자들이 보다 쉽게 Docker를 개발할 수 있게 하기 위해 개발되었다.
+    - 그러나 많은 사람들이 CI pipeline을 위해 DinD 기능을 사용하기 시작했다.
+    - 그러나 후술할 여러 문제들로 인해, DinD 방식을 Docker 개발이 아닌 CI를 위해 사용하는 것은 권장하지 않는다.
+    - Jenkins 공식 문서에서도 DinD 방식을 사용하지만, 이는 이 방식이 가장 쉽고 직관적인 방식이어서 그런 것이지 DinD 방식을 권장해서는 아니다([출처](https://community.jenkins.io/t/what-is-the-purpose-of-docker-in-docker-when-using-a-dockerized-jenkins/1370/5)).
+  - DinD 이전의 Docker 개발 방식
+    - 개발
+    - 개발이 완료된 새로운 version의 Docker를 이전 version의 Docker로 build한다.
+    - Docker daemon을 정지시킨다.
+    - 새로운 version의 Docker daemon을 실행한다.
+    - Test를 수행한다.
+    - 새로운 version의 Docker daemon을 정지시킨다.
+    - 위 과정을 반복한다.
+  - DinD가 도입된 후의 Docker 개발 방식
+    - 개발
+    - Build와 실행을 동시에 한다.
+    - 반복한다.
+
+
+
+- DinD 방식의 문제점
+
+  - AppArmour나 SELinus 등의 LSM(Linux Security Modules)들이 내부 container와 외부 container 간에 충돌을 일으킬 수 있다.
+  - Storage driver 관련 문제
+    - 외부 Docker는 EXT4나 BTRFS 등의 normal filesystem에서 실행되는 반면, 내부 Docker는 AUFS, BTRFS 등의 copy-on-write system에서 실행된다.
+    - 이들은 에러를 발생시킬 수 있는 수 많은 조합이 존재한다.
+    - 예를 들어 AUFS 위에서 AUFS를 실행시킬 수는 없고, BTRFS 위에서 BTRFS를 실행시키면 처음에는 잘 동작하는 것 같지만, 중첩된 subvolume이 생성된다면, parent subvolume을 삭제할 수 없다.
+
+  - Build cache와 관련된 문제
+    - Docker 내부의 Docker에서 host에 위치한 image를 사용하려고 하는 사람들이 많다.
+    - 그들 중 일부는 Docker image들이 모여있는 외부 Docker의 `/var/lib/docker` directory를 내부 Docker에 bind-mount하기도 한다.
+    - 그러나 이는 container들 사이에 같은 data를 사용하여 data 손상이 발생할 수 있으므로 매우 위험한 행동이다.
+    - 또한 만약 위 처럼 `/var/lib/docker`가 volume이 잡혀있는 상태에서 내부 container에서 build를 한다면, 이는 build cache에 지대한 영향을 끼치게 된다.
+
+
+
+- DooD(Docker out of Docker)
+
+  - Docker container 내부에서 host machine의 Docker daemon을 사용하는 방식이다.
+    - DooD라는 용어 자체는 DinD처럼 널리 쓰이는 것은 아닌 듯 하고, DooD 방식 자체를 DinD의 하나로 보는 사람들도 있다.
+  - `docker.sock` 파일을 bind-mount해서 사용한다.
+
+  ```bash
+  $ docker run -v /var/run/docker.sock:/var/run/docker.sock ...
+  ```
+
+
+
+## DooD 사용시 permission denied 문제
+
+- DooD 사용시 `/var/run/docker.sock`에 대한 권한 문제가 생길 수 있는데, 아래와 같이 해결이 가능하다.
+
+  - Host machine의 docker group id를 확인한다.
+
+  ```bash
+  $ cat /etc/group | grep docker
+  ```
+
+  - Docker image build시 아래와 같이 docker group을 추가해주고, container 내부의 user를 해당 group에 추가해준다.
+    - 주의할 점은 docker group의 group id를 host machine의 docker group id와 동일하게 생성해야한다는 점이다.
+
+  ```dockerfile
+  RUN groupadd -g <host machine의 docker group id> docker
+  
+  RUN usermod -aG docker <container 내부 user>
+  ```
+
+
+
+
+
+
+
 
 
 # Docker registry
