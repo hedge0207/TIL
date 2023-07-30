@@ -839,3 +839,131 @@
 
   - 만일 제외하려는 node가 manager node일 경우 매우 주의해서 제외시켜야한다.
     - Manager node를 강제로 제거하려 할 경우 cluster가 기능을 멈출 수 있다.
+
+
+
+# Docker image build시 anti-pattern
+
+> http://jpetazzo.github.io/2021/11/30/docker-build-container-images-antipatterns/
+
+- Big image
+
+  - 큰 이미지 보다는 작은 이미지가 낫다.
+    - 이미지가 작을 수록 build, push 그리고 pull을 보다 빠르게 실행할 수 있다.
+    - 또한 공간도 더 적게 차지하며, network도 덜 사용한다.
+  - 얼마나 커야 크다고 할 수 있는가?
+    - 상대적으로 적은 수의 의존성을 가지고 있는 microservice의 경우 100MB 이상부터
+    - Monoliths의 경우 1GB 이상부터 크다고 할 수 있다.
+  - 여러 개의 app을 하나의 image로 build하거나, data를 image에 포함시키는 방식은 지양해야한다.
+    - 여러 개의 app은 각각의 image로 생성하는 것이 나을 수 있다.
+    - Data는 image에 포함시키기보다 volume으로 관리하는 것이 낫다.
+
+  - 작으면 무조건 좋은가?
+    - Image의 크기가 너무 작다면 필요한 tool들이 포함되어 있지 않을 수도 있다.
+    - 물론, 상황에 따라 필요한 tool이 무엇인지는 달리질 수 있지만, image의 크기를 줄이겠다고 필수적인 tool들까지 설치하지 않는 것은 지양해야한다.
+
+
+
+- Zip, tar 혹은 다른 종류의 archive들을 image에 포함시키는 경우
+  - Image에 zip, tar 등의 archive를 포함시키는 것은 일반적으로 좋지 않은 생각이며, container 실행시에 이들을 unpack하는 것은 확실히 좋지 않은 생각이다.
+  - Docker image는 registry에 저장될 때 이미 압축된 상태이다.
+    - 따라서 압축된 file을 image에 포함시킨다고 해서 image의 용량을 덜 차지하지 않는다.
+    - 또한 압축되지 않은 file을 image에 포함시킨다고 해서 image의 용량을 더 차지하는 것도 아니다.
+  - Image에 archive를 포함시키고, container 실행시에 이를 unpack하는 것은 아래와 같은 단점들이 있다.
+    - Unpack이 실행해야 하므로, 이미 unpack된 file들을 포함시켰을 때에 비해 CPU cycle과 시간을 낭비한다.
+    - 압축된 file과 unpack된 file을 모두 container에 보관하므로 공간이 낭비된다.
+
+
+
+- 동일한 base image로 생성할 image를 반복적으로 rebuilding하는 경우
+  - 여러 app이 같은 base image를 사용하는 것은 흔한 일이다.
+    - 여러 app에 공통으로 들어가지만, build하는 데 시간이 오래 걸리는 의존성들을 설치한 image를 base image로 사용하는 경우도 있을 수 있다.
+  - 이런 공통 image들은 매번 build하기 보다는 registry에 등록하고 필요할 때 pull해서 사용하는 것이 낫다.
+    - Image를 pull 하는 것이 build하는 것 보다 거의 항상 빠르기 때문이다.
+    - 또한 registry에 등록하지 않고, 동일한 app을 각기 다른 여러 사람이 각자의 컴퓨터에서 build하다보면, 각 image에 사이에 차이가 생기는 상황이 발생할 수 있다.
+    - 반면에 registry에 등록해 두고 registry에서 pull해서 사용한다면, 모든 사람이 동일한 image를 사용한다는 것이 보장된다.
+
+
+
+- 거대한 monorepo의 root directory에서 build하는 경우
+
+  > 이는 Buildkit을 사용하지 않을 경우에만 해당된다.
+
+  - Dockerfile을 거대한 monorepo의 root directory에 두고 build할 경우 monorepo의 모든 file과 directory가 build context에 포함되게 된다.
+    - 매 build마다 repoistory의 모든 file들을 묶어서 Docker server로 전송해야하므로 이는 매우 비효율적이다.
+
+  ```
+  # 아래와 같이 Dockerfile을 monorepo의 root에 둘 경우 매우 비효율적이다.
+  monorepo
+  ├── app1
+  │   └── source...
+  ├── app2
+  │   └── source...
+  ├── Dockerfile.app1
+  └── Dockerfile.app2
+  ```
+
+  - 이 문제는 아래와 같은 방식으로 해결할 수 있다.
+    - Monorepo 내에 있는 각 app directory에 Dockerfile을 작성한다.
+    - 혹은 Buildkit을 사용한다.
+
+  ```
+  # 아래와 같이 변경해준다.
+  monorepo
+  ├── app1
+  │   ├── Dockerfile
+  │   └── source...
+  └── app2
+      ├── Dockerfile
+      └── source...
+  ```
+
+
+
+- Buildkit을 사용하지 않는 것
+  - Buildkit은 보다 효율적인 image build를 위해 Docker 23.0. 부터 추가된 builder이다.
+    - 다양한 기능이 새롭게 추가되었다.
+    - 사용 방법은 기존 builder와 완전히 동일하지만 보다 빠르고 효율적인 build가 가능하다.
+  - Buildkit을 사용할 수 있다면, 사용하지 않을 이유가 없다.
+
+
+
+- 변경사항이 있을 때 마다 rebuild를 해야하는 경우
+  - Compile언어가 아닌 interpreter 언어에서 code가 약간 바뀌었다고 image를 rebuild하고 container를 다시 생성할 필요는 없다.
+  - volume을 사용해서 변경된 부분만 container에 적용해주면 된다.
+  - 물론 build에 시간이 오래 걸리지 않고, image의 크기가 크지 않다면, 변경 사항이 있을 때 마다 image를 rebuild해도 상관은 없다.
+
+
+
+# Build context
+
+- Build context
+
+  - Docker server가 image를 빌드하기 위해 필요로 하는 file들을 의미한다.
+  - Image를 빌드하기 위해 Docker client는 build context를 묶어서 tar acrchive로 만든 뒤 Docker server로 전송한다.
+    - Buildkit을 사용하지 않을 경우, 기본적으로 Docker client는 working directory의 모든 file과 directory를 build context로 보고 이들을 묶어 Docker server로 전송한다.
+    - Docker client는 image를 build할 때 마다 build context를 생성하여 Docker server로 전송하므로, 매 build마다 archive를 생성하고, 이를 저장하고, network를 통해 Docker server로 보내는 비용이 발생한다.
+  - `docker build` 명령어를 실행하면 아래와 같은 image를 맨 첫 줄에서 확인할 수 있다.
+
+  ```bash
+  $ docker build .
+  
+  Sending build context to Docker daemon 45.3 MB Step 1: FROM ...
+  ```
+
+  - `.dockerignore`
+    - Build context에서 제외시킬 file 혹은 directory들을 정의하는 file이다.
+    - `.dockerignore`에 포함된 file 혹은 directory들은 build context에 포함되지 않는다.
+    - 작성법은 `.gitignore` file과 거의 유사하다.
+
+
+
+# alpine image
+
+- alpine image의 경우 일반 image에 비해 size가 작긴 하지만, 경우에 따라 성능에 상당한 차이가 있을 수 있다.
+
+  > https://superuser.com/questions/1219609/why-is-the-alpine-docker-image-over-50-slower-than-the-ubuntu-image
+
+  - 예를 들어 `python:3.8.0` image와 `python:3.8.0-alpine` image의 경우 size는 `python:3.8.0-alpine`이 훨씬 작지만, 성능은 `python:3.8.0`이 보다 뛰어나다.
+  - 이러한 차이가 나는 이유는 두 image가 서로 다른 방식으로 구현되었기 때문이다.
+
