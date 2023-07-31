@@ -1772,7 +1772,40 @@
       pass
   ```
   
+
+
+
+- `Annotated`
+
+  > https://peps.python.org/pep-0593/
+  >
+  > https://docs.python.org/ko/3/library/typing.html
+
+  - Type hint에 metadata를 추가하기 위해서 사용한다.
+    - Python 3.9에서 `typing` moduke에 새롭게 추가된 class이다.
+    - 이전까지는 `typing_extensions`에 있었다.
+  - `T`라는 type에 `x`라는 meatadata를 추가하기 위해서 `Annotated[T, x]`와 같이 사용하면 된다.
+    - 이렇게 추가된 metadata는 static analysis tool들과 runtime에 사용될 수 있다.
+    - Runtime에 metadata는 `__metadata__` attribute에 저장된다.
+  - Library나 tool이 `Annotated[T, x]`를 만났을 때, metadata에 대한 특별한 logic이 없다면, metadata를 무시하고, annotation을 T type으로 취급한다.
+
+  ```python
+  from typing import Annotated
+  from dataclasses import dataclass
   
+  
+  @dataclass
+  class ValueRange:
+      lo: int
+      hi: int
+  
+  MyType = Annotated[int, ValueRange(-10, 5), "foo"]
+  print(MyType.__metadata__)							# (ValueRange(lo=-10, hi=5), 'foo')
+  foo : MyType = ValueRange(-30, 10)
+  print(foo)											# ValueRange(lo=-10, hi=5)
+  ```
+
+
 
 
 

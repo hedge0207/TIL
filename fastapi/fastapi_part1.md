@@ -339,6 +339,67 @@
 
 
 
+- `typing.Annotated` 사용하기
+
+  > FastAPI 0.95.0부터 사용 가능하다.
+  >
+  > Query parameter 뿐 아니라, dependency 등에서도 `Annotated`를 사용할 것을 권장한다.
+
+  - FastAPI에서는 `Annotated`를 여러 곳에서 여러 이유로 사용하는데, query parameter를 선언할 때는 validation을 위해 사용한다.
+    - 아래에서 `foo`의 경우는 query parameter q에 대하여 `Annotated`를 통해 `Query(max_length=3)`라는 metadata를 추가하여 `q`의 validation에 사용한다.
+    - 물론 `Annotated`를 사용하지 않은 `bar`도 `foo`와 정확하게 동일하게 동작하긴 한다.
+
+  ```python
+  from typing import Annotated
+  
+  from fastapi import FastAPI, Query
+  import uvicorn
+  
+  app = FastAPI()
+  
+  
+  @app.get("/foo")
+  def foo(q: Annotated[str | None, Query(max_length=3)] = None):
+      print(q)
+  
+  @app.get("/bar")
+  def bar(q: str | None = Query(default=None, max_length=3)):
+      print(q)
+  
+  if __name__ == "__main__":
+      uvicorn.run(app)
+  ```
+
+  - FastAPI는 `Annotated`를 사용할 것을 권장하는데, 그 이유는 아래와 같다.
+    - Parameter를 `q: Annotated[str | None, Query(max_length=3)] = None`와 같이 작성하는 것이 Python에서 일반적인 default value를 주는 방식이다.
+    - `q: str | None = Query(default=None, max_length=3)`와 같이 parameter를 선언하여 기본값을 설정하는 것은 오직 FastAPI라는 맥락 내에서만 유효한 방식이며, 만일 이런 방식으로 parameter를 선언한 함수를 FastAPI가 아닌 다른 곳에서 그대로 쓰려 한다면, 기본값을 추가해줘야할 것이다.
+    - 즉 FastAPI라는 맥락 내에서는 두 방식이 정확히 동일하게 동작하지만, 다른 곳에서 사용될 때는 그렇지 않다.
+    - 따라서 다른 곳에서 사용하게 될 경우에 대비하여 `Annotated` 방식을 사용하는 것을 권장한다.
+
+  ```python
+  # Annotate가 붙은 방식은
+  @app.get("/foo")
+  def foo(q: Annotated[str | None, Query(max_length=3)] = None):
+      print(q)
+      
+  # FastAPI라는 맥락을 걷어내도 수정 없이 바로 사용이 가능하다.
+  def foo(q: Annotated[str | None, Query(max_length=3)] = None):
+      print(q)
+      
+  # 반면에 Annotate를 사용하지 않은 방식은
+  @app.get("/bar")
+  def bar(q: str | None = Query(default=None, max_length=3)):
+      print(q)
+  
+  # FastAPI라는 맥락을 걷어내고 사용하려면 아래와 같이 수정해줘야한다.
+  def bar(q: str | None = Query(max_length=3) = None):
+      print(q)
+  ```
+
+  
+
+
+
 
 
 ## 쿼리 매개변수
