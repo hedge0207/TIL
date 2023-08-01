@@ -98,3 +98,102 @@
   - 폐쇄망으로 tar 파일을 옮긴 후 압축을 푼다.
   - 압축이 풀린 파일들을 폐쇄망에 설치된 Python 라이브러리 경로, 혹은 venv의 `lib/python<버전>/site-packages`에 넣는다.
 
+
+
+
+
+# Docker로 설치하기
+
+> https://luis-sena.medium.com/creating-the-perfect-python-dockerfile-51bdec41f1c8
+>
+> https://pythonspeed.com/articles/base-image-python-docker-images/
+>
+> https://pythonspeed.com/articles/alpine-docker-python/
+
+- 어떤 image를 선택해야하는가?
+
+  - Docker hub에는 아래와 같이 다양한 Python image가 존재한다.
+    - python
+    - python-alpine
+    - python-slim
+  - 가장 나은 선택은 ubuntu image에 python을 설치해서 사용하는 것이다.
+    - Alpine이나 slim의 경우 경량화를 위해 성능을 어느 정도 포기해야하므로, 성능이 중요한 작업을 실행해야 할 경우 적절하지 않을 수 있다.
+    - 기본 python image의 경우도 마찬가지로 ubuntu에 python을 설치하는 것 보다 성능이 나오지 않는다.
+
+  - Alpine linux image를 사용하면 되지 않나?
+    - Apline linux는 다른 image를 생성할 때는 좋은 base image일 수 있다.
+    - 그러나 Python image를 생성할 때에는 부적절 할 수 있다.
+    - 이는 PyPI에 있는 Python library들이 일반적으로 `Wheel` 포맷을 사용하는데 alpine linux의 경우 `Wheel` 포맷을 지원하지 않아 library의 source code를 직접 내려 받아 compile해야하는 경우가 있기 때문이다.
+    - 따라서 build시에 시간이 훨씬 오래걸리게 된다.
+
+
+
+- Ubuntu를 base image로 Python image 생성하기
+
+  - Ubuntu image를 받아온다.
+
+  ```bash
+  $ docker pull ubuntu:20.04
+  ```
+
+  - Python image를 생성하기 위해 아래와 같이 Dockerfile을 생성한다.
+
+  ```dockerfile
+  FROM ubuntu:20.04
+  
+  RUN apt-get update && apt-get install -y \
+      python3.8 \
+      python3-pip
+  ```
+
+  - Python image를 build한다.
+
+  ```bash
+  $ docker build -t my-python:3.8.0 .
+  ```
+
+  - Python app을 생성한다.
+
+  ```python
+  import time
+  
+  while 1:
+      try:
+          print("Hello World!")
+          time.sleep(3)
+      except KeyboardInterrupt:
+          print("Bye!")
+          break
+  ```
+
+  - Python app을 build하기 위한 Dockerfile을 생성한다.
+
+  ```dockerfile
+  FROM python:3.8.3
+  
+  ENV HOME /app
+  WORKDIR ${HOME}
+  COPY . ${HOME}
+  
+  ENTRYPOINT ["python3", "-u", "main.py"]
+  ```
+
+  - Python app을 build하고, container를 실행시킨다.
+
+  ```bash
+  $ docker build -t my-python-app .
+  $ docker run --name my-python-app my-python-app
+  ```
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+

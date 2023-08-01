@@ -160,7 +160,7 @@
 
   - 같은 Python script를 아래와 같이 Shell 형식으로 실행시키면
 
-  ```python
+  ```dockerfile
   FROM python:3.8.0
   COPY ./main.py /main.py
   ENTRYPOINT python main.py
