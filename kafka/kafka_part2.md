@@ -674,7 +674,7 @@
   
   
   consumer = KafkaConsumer('test',
-                          bootstrap_servers='192.168.0.237:9092',
+                          bootstrap_servers='localhost:9092',
                           group_id='test-group',
                           value_deserializer=deserializer_value,
                           auto_offset_reset='earliest',
