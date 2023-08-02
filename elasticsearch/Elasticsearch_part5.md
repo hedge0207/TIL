@@ -103,11 +103,79 @@
     - _source에 필드를 포함시키지 않아도 해당 필드에서 검색은 이루어진다.
     - 색인된 도큐먼트가 크고 결과에서 전체 내용이 필요하지는 않을 때 사용한다.
     - 이 옵션을 사용하려면, 색인 매핑에서 _source 필드를 비활성화하지 않아야 한다.
+    - `false`를 주면 아무 field도 반환하지 않는다.
   - sort
     - 기본 정렬은 도큐먼트 점수에 따른다.
     - 점수 계산이 필요 없거나 동일 점수의 다수 도큐먼트가 예상된다면, sort를 추가해서 원하는 대로 순서를 제어할 수 있다.
   - fields
-    - 검색을 실행 할 필드를 지정한다.
+    - 검색 결과로 반환할 filed들을 입력한다.
+    - 응답 값으로 오는 `_source` filed와 별개로 `fields`라는 filed에 지정한 filed들이 응답에 담겨서 온다.
+    - `_source`와 마찬가지로 꼭 검색 대상 filed가 포함될 필요는 없다.
+    - `_source`와는 달리 date type을 포함한 특정 field들의 format을 지정하는 것도 가능하다.
+  
+  ```json
+  PUT test_index/_doc/1
+  {
+      "foo":"foo",
+      "bar":"bar",
+      "user_name":"John Doe",
+      "user_email":"hello@world.com"
+  }
+  
+  GET test_index/_search
+  {
+      "query": {
+          "match": {
+              "foo": "foo"
+          }
+      },
+      "fields": [		// filed만 줘도 되고, format등을 지정해줄 수도 있다.
+          "bar",
+          "user_*",
+          {
+              "field": "last_login",
+              "format": "epoch_millis"
+          }
+      ]
+  }
+  
+  // 응답
+  "hits": [
+      {
+          "_index": "test_index",
+          "_id": "1",
+          "_score": 0.2876821,
+          "_source": {
+              "foo": "foo",
+              "bar": "bar",
+              "user_name": "John Doe",
+              "user_email": "hello@world.com",
+              "last_login": "2023-08-01"
+          },
+          "fields": {
+              "user_name.keyword": [
+                  "John Doe"
+              ],
+              "bar": [
+                  "bar"
+              ],
+              "user_email": [
+                  "hello@world.com"
+              ],
+              "user_email.keyword": [
+                  "hello@world.com"
+              ],
+              "user_name": [
+                  "John Doe"
+              ],
+              "last_login": [
+                  "1690848000000"
+              ]
+          }
+      }
+  ]
+  ```
+  
   - explain
     - boolean 값을 준다.
     - true로 설정할 경우 점수가 계산된 방식을 함께 반환한다.

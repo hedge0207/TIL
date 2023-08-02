@@ -43,8 +43,11 @@
 
   - 미리 정의하지 않은 string 타입의 필드가 입력될 때, 만일 값이 date 필드의 형식에 부합하면 string이 아닌 date 타입으로 매핑한다.
     - boolean 값을 받으며, 기본값은 true이다.
+  - `dynamic_date_formats`에 정의된 pattern과 일치하면 date type으로 본다.
+    - 기본 값은 [ [`"strict_date_optional_time"`](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-date-format.html#strict-date-time),`"yyyy/MM/dd HH:mm:ss Z||yyyy/MM/dd Z"`]이다.
+  
   - `properties`와 동일한 수준에 정의한다.
-
+  
   ```bash
   $ curl -XPUT 'localhost:9200/인덱스명' -H 'Content-Type: application/json' -d '{
       "mappings":{
@@ -55,9 +58,9 @@
       }
   }'
   ```
-
+  
   - 예시
-
+  
   ```bash
   PUT date_detection
   {
@@ -71,9 +74,9 @@
     "today":"2015/09/02"
   }
   ```
-
+  
   - 결과
-
+  
   ```bash
   GET date_detection/_mappings
   
@@ -291,13 +294,13 @@
 
 
 
-- `_source` 옵션
+- `_source` 
 
   - elasticsearch에서 색인과 저장은 다르다.
     - 색인은 들어온 데이터로 역색인 구조를 만드는 것이다.
     - 저장은 들어온 데이터를 그대로 저장하는 것이다.
     - elasticsearch는 indexing 요청이 들어올 때 모든 필드를 역색인구조로 색인한다.
-    - 또한 original data를 `_source`라 불리는 필드에 저장한다.
+    - 기본적으로 필드들은 색인되지만, 개별적으로 저장되지 않고 `_source`라 불리는 필드에 일괄적으로 저장된다.
   - elasticsearch는 index된 데이터에 검색을 실행하고, store된 데이터를 반환한다.
     - 즉, 실제 검색은 `_source` 필드에 행해지는 것이 아니라 역색인 테이블에 행해진다.
   - `_source` 필드는 overhead를 불러올 수 있지만 아래와 같은 이유로 저장이 필요하다.
@@ -383,6 +386,82 @@
     "stored_fields": [ "title", "content" ] 
   }
   ```
+
+
+
+- `store`
+
+  - `_source` option에서 살펴봤듯, 기본적으로 개별 field들은 저장되지 않고, `_source` field에 일괄적으로 저장된다.
+  - `store` option을 true로 주면 개별 field가 저장되게 해준다.
+
+  ```json
+  PUT test_index
+  {
+      "mappings":{
+          "properties":{
+              "foo":{
+                  "type": "text",
+                  "store": true
+              },
+              "bar":{
+                  "type":"text"
+              }
+          }
+      }
+  }
+  ```
+
+  - 용도
+    - 예를 들어 `foo`와 `bar`라는 두 개의 field가 있다고 가정해보자.
+    - `foo`는 짧은 text가 주로 저장되고, `bar`에는 매우 긴 text가 주로 저장되는데, 검색 결과에는 `foo`만 포함시켜도 된다.
+    - 그렇다면 굳이 긴 `bar` field의 값을 반환할 필요는 없으므로, `foo` filed만 반환받도록 하는 것이 효율적이다.
+    - 이를 위해  `foo` field를 저장해두고 검색시에 `stored_fields` 에 `foo` field만 입력하여 `foo` filed만 반환받는다.
+
+  ```json
+  PUT test_index/_doc/1
+  {
+      "foo":"foo",
+      "bar":"looooooooooooooooooooooooooooooong text"
+  }
+  
+  GET test_index/_search
+  {
+      "stored_fields": ["foo"], 
+      "query": {
+          "match": {
+              "foo": "foo"
+          }
+      }
+  }
+  
+  // 응답
+  "hits": [
+      {
+          "_index": "test_index",
+          "_id": "1",
+          "_score": 0.18232156,
+          "fields": {
+              "foo": [
+                  "foo"
+              ]
+          }
+      }
+  ]
+  ```
+
+  - `_source`나 `fields`를 사용하는 것과 무엇이 다른가?
+    - `_source`와 `fields`와는 달리, 해당 필드가 저장되었다는 것을 명시적으로 표현할 수 있다.
+    - 그러나 권장하는 방식은 아니며, 공식 문서에서도 `stored_fields`보다는 `_source`나 `fields`를 사용하는 것을 권한다.
+  - `store` 옵션은 Elasticsearch에서 권장하는 방식은 아니다.
+  - Stored fields
+    - `store`를 true로 준 field는 Lucene의 stored fields형태로 저장된다.
+    - `_id`와 `_source` field의 경우 stored field이다.
+    - Stored fields는 모든 stored field를 연속적으로 포함한 row 형태로 저장된다.
+    - 가장 앞에 있는 field가 `_id` field이며, `_source`가 가장 마지막 field이다.
+    - Row 형태로 저장되기에 column 형태로 저장되는 doc_values에 비해 retrieve 속도가 느리다.
+  
+  - Elasticsearch에서 stored fields는 압축된다.
+    - 따라서 당연하게도, `_id` field와 `_source` field도 압축된다.
 
 
 
