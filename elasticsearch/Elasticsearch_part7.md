@@ -1832,7 +1832,7 @@
   - 사용하기
 
   ```bash
-  curl -XGET "http://192.168.0.237:9201/nations/_search?size=0" -H 'Content-Type: application/json' -d'
+  curl -XGET "http://localhost:9200/nations/_search?size=0" -H 'Content-Type: application/json' -d'
   {  
     "aggs":{    
       "sum_population":{      
@@ -1858,7 +1858,7 @@
     - 단일 필드가 아닌, 더 복합적인 값들의 합계를 구할 때 사용한다.
 
   ```bash
-  curl -XPOST "http://192.168.0.237:9201/sales/_search?size=0" -H 'Content-Type: application/json' -d'
+  curl -XPOST "http://localhost:9200/sales/_search?size=0" -H 'Content-Type: application/json' -d'
   {
     "runtime_mappings": {
       "price.weighted": {
@@ -1895,7 +1895,7 @@
     - histogram 필드의 합계는 동일한 위치에 있는 `counts` 배열의 요소와  `values` 배열의 요소를 곱한 값들의 합계이다.
 
   ```bash
-  curl -XPUT "http://192.168.0.237:9201/metrics_index/_doc/1" -H 'Content-Type: application/json' -d'
+  curl -XPUT "http://localhost:9200/metrics_index/_doc/1" -H 'Content-Type: application/json' -d'
   {
     "network.name" : "net-1",
     "latency_histo" : {
@@ -1904,7 +1904,7 @@
      }
   }'
   
-  curl -XPUT "http://192.168.0.237:9201/metrics_index/_doc/2" -H 'Content-Type: application/json' -d'
+  curl -XPUT "http://localhost:9200/metrics_index/_doc/2" -H 'Content-Type: application/json' -d'
   {
     "network.name" : "net-2",
     "latency_histo" : {
@@ -1913,7 +1913,7 @@
      }
   }'
   
-  curl -XPOST "http://192.168.0.237:9201/metrics_index/_search?size=0" -H 'Content-Type: application/json' -d'
+  curl -XPOST "http://localhost:9200/metrics_index/_search?size=0" -H 'Content-Type: application/json' -d'
   {
     "aggs" : {
       "total_latency" : { "sum" : { "field" : "latency_histo" } }

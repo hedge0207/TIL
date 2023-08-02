@@ -332,7 +332,7 @@
 
   ```python
   class QuickstartUser(HttpUser):
-      host = "http://192.168.0.242:8002"
+      host = "http://localhost:8002"
   ```
 
   - 사용자가 테스트를 시작할 때와 종료할 때 수행할 메서드를 설정 가능하다.

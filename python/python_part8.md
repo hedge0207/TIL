@@ -1025,7 +1025,7 @@
   
   @pytest.fixture
   def es_client():
-      return Elasticsearch('192.168.0.242:9214')
+      return Elasticsearch('localhost:9214')
   
   def test_foo(es_client):
       assert id(es_client) == -1	# id 값 확인을 위해 일부러 fail이 뜨도록 한다.
@@ -1065,7 +1065,7 @@
   
   @pytest.fixture(scope=determine)
   def es_client():
-      return Elasticsearch('192.168.0.242:9200')
+      return Elasticsearch('localhost:9200')
   
   
   def test_foo(es_client):

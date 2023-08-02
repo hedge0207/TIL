@@ -724,7 +724,7 @@
   import redis
   
   
-  r = redis.StrictRedis('192.168.0.237', port=6379)
+  r = redis.StrictRedis('111.222.333.444', port=6379)
   init = 0 # cursor 값 0으로 스캔 시작
   
   while(True):

@@ -282,8 +282,8 @@
       ports:
         - "5604:5601"
       environment:
-        ELASTICSEARCH_URL: http://192.168.0.237:9204
-        ELASTICSEARCH_HOSTS: http://192.168.0.237:9204
+        ELASTICSEARCH_URL: http://localhost:9204
+        ELASTICSEARCH_HOSTS: http://localhost:9204
       networks:
         - elastic
       depends_on:

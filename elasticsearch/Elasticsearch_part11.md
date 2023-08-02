@@ -17,7 +17,7 @@
   from faker import Faker
   
   INDEX_NAME = "test-index"
-  es_client = Elasticsearch("http://192.168.0.244:9205")
+  es_client = Elasticsearch("http://localhost:9200")
   fake = Faker()
   
   bulk_data = [

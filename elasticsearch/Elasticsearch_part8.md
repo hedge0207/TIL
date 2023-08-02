@@ -323,10 +323,10 @@
   # ---------------------------- Elasticsearch Output ----------------------------
   output.elasticsearch:
     # Array of hosts to connect to.
-    hosts: ["192.168.0.242:9204"]
+    hosts: ["localhost:9200"]
     # (...)
   setup.kibana:
-    host: "192.168.0.242:5604"
+    host: "localhost:9200"
   # (...)
   ```
 

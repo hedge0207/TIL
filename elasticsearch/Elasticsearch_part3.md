@@ -224,6 +224,19 @@
 
 
 
+- Stored fields
+  - Mapping 설정시에 `store`를 true로 준 field는 Lucene의 stored fields형태로 저장된다.
+    - `_id`와 `_source` field의 경우 stored field이다.
+  - Stored fields는 모든 stored field를 연속적으로 포함한 row 형태로 저장된다.
+    - 가장 앞에 있는 field가 `_id` field이며, `_source`가 가장 마지막 field이다.
+    - Row 형태로 저장되기에 column 형태로 저장되는 doc_values에 비해 retrieve 속도가 느리다.
+  - Elasticsearch에서 stored fields는 압축된다.
+    - 따라서 당연하게도, `_id` field와 `_source` field도 압축된다.
+
+
+
+
+
 # Elasticsearch의 score 계산 방식
 
 > https://wikidocs.net/31698 참고

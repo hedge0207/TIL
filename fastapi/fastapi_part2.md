@@ -120,7 +120,7 @@
   
   @app.get("/my-redirect")
   async def redirect_typer():
-      return RedirectResponse("http://192.168.0.242:8002/hello-world")
+      return RedirectResponse("http://localhost:8002/hello-world")
   
   
   if __name__ == '__main__':
@@ -144,7 +144,7 @@
   
   @app.get("/my-redirect", response_class=RedirectResponse)
   async def redirect_typer():
-      return "http://192.168.0.242:8002/hello-world"
+      return "http://localhost:8002/hello-world"
   
   
   if __name__ == '__main__':

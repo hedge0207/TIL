@@ -453,15 +453,6 @@
     - `_source`와 `fields`와는 달리, 해당 필드가 저장되었다는 것을 명시적으로 표현할 수 있다.
     - 그러나 권장하는 방식은 아니며, 공식 문서에서도 `stored_fields`보다는 `_source`나 `fields`를 사용하는 것을 권한다.
   - `store` 옵션은 Elasticsearch에서 권장하는 방식은 아니다.
-  - Stored fields
-    - `store`를 true로 준 field는 Lucene의 stored fields형태로 저장된다.
-    - `_id`와 `_source` field의 경우 stored field이다.
-    - Stored fields는 모든 stored field를 연속적으로 포함한 row 형태로 저장된다.
-    - 가장 앞에 있는 field가 `_id` field이며, `_source`가 가장 마지막 field이다.
-    - Row 형태로 저장되기에 column 형태로 저장되는 doc_values에 비해 retrieve 속도가 느리다.
-  
-  - Elasticsearch에서 stored fields는 압축된다.
-    - 따라서 당연하게도, `_id` field와 `_source` field도 압축된다.
 
 
 
