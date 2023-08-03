@@ -1209,6 +1209,94 @@
       print("Parent process")
   ```
 
+
+
+
+- Event
+
+  - 여러 Process들 사이에 event를 공유하기 위해 사용한다.
+  - 예를 들어 한 프로세스가 특정 작업을 처리한 뒤에 다른 프로세스들이 실행되어야 하는 경우 등에 사용할 수 있다.
+  - Methods
+    - `wait()`: flag가 True가 될 때 까지 block한다.
+    - `set()`: flag를 True로 설정한다.
+    - `clear()`: flag를 False로 설정한다.
+  - 예시
+
+  ```python
+  from multiprocessing import Process, Event
+  import time
+  
+  
+  def first(event):
+      event.clear()
+      print("first")
+      time.sleep(5)
+      event.set()
+  
+  def second(event):
+      event.wait()
+      print("second")
+  
+  
+  if __name__ == "__main__":
+      event = Event()
+      processes = []
+      for i in range(3):
+          if i == 0:
+              process = Process(target=first, args=(event,))
+          else:
+              process = Process(target=second, args=(event,))
+          processes.append(process)
+          process.start()
+      
+      for p in processes:
+          p.join()
+  ```
+
+
+
+- Lock
+
+  - Event와 함께 Python에서 multiprocessing 실행시 race condition을 방지하기 위한 모듈이다.
+  - 여러 프로세스 중 오직 하나의 process만이 `acquire`를 통해 lock을 얻으며, `acquire`를 실행한 다른 process들은 lock을 획득한 process가 `release`를 실행할 때 까지 멈추게 block된다.
+  - Methods
+    - `acquire()`: lock을 획득한다. 이미 다른 process가 lock을 획득한 상태라면 lock을 획득한 process가 `release()`를 실행할 때 까지 block된다.
+    - `release()`: 획득한 lock을 반환한다.
+  - 예시
+
+  ```python
+  from multiprocessing import Process, Lock
+  import time
+  
+  
+  def first(lock):
+      lock.acquire()
+      print("first")
+      time.sleep(5)
+      lock.release()
+  
+  def second(lock):
+      lock.acquire()
+      print("second")
+      time.sleep(5)
+      lock.release()
+      
+  
+  if __name__ == "__main__":
+      lock = Lock()
+      processes = []
+      for i in range(3):
+          if i == 0:
+              process = Process(target=first, args=(lock,))
+          else:
+              process = Process(target=second, args=(lock,))
+          processes.append(process)
+          process.start()
+      
+      for p in processes:
+          p.join()
+  ```
+
   
 
 
