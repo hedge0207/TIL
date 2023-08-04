@@ -230,10 +230,14 @@
   - Stored fields는 모든 stored field를 연속적으로 포함한 row 형태로 저장된다.
     - 가장 앞에 있는 field가 `_id` field이며, `_source`가 가장 마지막 field이다.
     - Row 형태로 저장되기에 column 형태로 저장되는 doc_values에 비해 retrieve 속도가 느리다.
+    - 아래와 같이 문서 x의 각 field들이 순차적으로 저장되고, 그 이후에 문서 x+1의 각 field들의 field들이 순차적으로 저장되는 형식이다.
+    - 따라서 column기반으로 저장되는 doc_values에 비해 탐색 속도가 느릴 수 밖에 없다.
+  
+  | field1 | field2 | field3 | field4 | field1 | field2 | field3 | field4 | field5 | field6 |
+  | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ |
+  
   - Elasticsearch에서 stored fields는 압축된다.
     - 따라서 당연하게도, `_id` field와 `_source` field도 압축된다.
-
-
 
 
 

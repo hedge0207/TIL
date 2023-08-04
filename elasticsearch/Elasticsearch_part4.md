@@ -1350,7 +1350,7 @@
 
 
 
-# elasticsearch의 색인 처리 과정
+# Elasticsearch의 색인 처리 과정
 
 - Lucene의 색인 처리 과정
   -  In-memory buffer에 데이터 적재
@@ -1381,6 +1381,17 @@
 
 
 
+- Translog(Transactional log)
+  - Lucene의 변경사항은 commit이 발생해야만 disk에 저장되면서 영구적으로 반영된다.
+    - 이는 상대적으로 비용이 많이 드는 작업이므로 모든 색인, 삭제 작업이 발생할 때마다 실행할 수는 없다.
+    - Commit과 다음 commit 사이에 발생한 작업들은 process가 종료되거나 hardware에 문제가 생기면 유실될 수 있다.
+  - Commit이 비용이 많이 드는 작업이므로 각 shard는 translog라 불리는 transaction log에 작업들을 저장해둔다.
+    - 모든 shard들은 translog를 하나씩 가지고있다.
+    - 색인되고 삭제되는 모든 작업은 translog에 기록된다.
+    - Commit과 commit 사이에 문제가 생겨서 시스템이 내려가더라도, translog를 보고 복구가 가능하다.
+
+
+
 - Elasticsearch의 색인 처리 과정
   - Elasticsearch는 Lucene 기반으로 만들어져 색인 방식도 유사하다.
   - In-memory buffer와 translog에 data를 적재한다.
@@ -1392,6 +1403,7 @@
     - segment에 저장되었으므로 검색이 가능해진다.
   - Flush
     - in-memory로 저장된 segment를 disk에 쓰는 작업을 한다.
+    - 메모리에 저장된 여러 개의 segment들을 하나로 병합하여 disk에 저장한다.
     - 동시에 translog의 작성을 멈추고, 새로운 blank translog를 생성한다.
     - Flush가 발생하는 주기가 따로 있는 것은 아니다.
     - 아직 flush 되지 않은 translog와 각 flush를 수행하는 비용의 trade off를 고려하는 heuristic으로 flush 실행 여부를 결정한다.
