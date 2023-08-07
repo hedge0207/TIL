@@ -2,30 +2,49 @@
 
 ## Search API
 
-- 엘라스틱서치에서 검색을 실행할 때 어떤 일이 일어나는가?
-  - 가장 기본적인 검색 라우팅 기능인 query_then_fetch를 기준으로 설명한다.
-    - 라우팅 기능은 변경이 가능하다.
-  - 과정
-    - 검색 애플리케이션이 하나의 노드를 선택하고 선택한 노드에 검색 요청을 보낸다.
-    - 요청을 받은 노드는 모든 노드의 모든 샤드에 검색 요청을 보낸다.
-    - 모든 샤드에서 정렬 및 순위를 매긴 결과로부터 충분한 정보를 수집하면, 오직 반환될 도큐먼트 내용을 담고 있는 샤드만 해당 내용을 반환하도록 요청 받는다.
+- Elasticsearch에서 검색이 이루어지는 과정
+
+  > https://steve-mushero.medium.com/elasticsearch-search-data-flow-2a5f799aac6a
+
+  - Coordinator 역할을 수행하는 node에 검색 요청이 도착한다.
+  - Coordinator는 적절한 shard로 해당 quert를 routing시킨다.
+    - Routing을 위해 Coordinator는 요청에 담겨서 온 index pattern 혹은 alias를 기반으로 검색 대상 index의 목록을 생성한다.
+    - 그 후 target index들의 shard들의 목록을 생성하는데, 여기에 포함되는 shard들은 고유해야한다(primary일 수도 있고, replica일 수도 있다.).
+    - 예를 들어 2개의 primary shard와 2개의 replica shard가 있다면 총 shard의 개수는 6개이지만, 고유한 shard의 개수는 2개 뿐이고, shard의 목록에는 고유한 shard들만 있어야한다.
+    - Coordinator는 이 고유한 shard들의 목록을 바탕으로, query를 보내야 하는 shard와 해당 shard들이 포함된 node들을 확정한다.
+  - Query Phase
+    - Coordinator는 확정된 shard들에게 query를 전송한다.
+    - Coordinator로부터 query를 받은 shard들은 query와 일치하는 document들을 찾고, scoring을 실행한다.
+    - 이 때, 각 shard 당 하나의 thread만 실행되기에, primary shard의 개수가 많아질수록 검색 속도가 빨라질 수 있다.
+    - Query를 받은 각 shard들은 query 대상이 되는 field와 Lucene의 data fields를 mapping하고, query에 포함된 검색어를 analyzing하고, Lucene에서 실행할 수 있는 형태로 query를 재구성한다.
+    - 이렇게 재구성된 정보들을 바탕으로 segment 수준에서 실제 검색이 실행된다.
+    - 그 결과로 query와 일치하는 document들의 ID들이 저장된 우선순위 큐가 생성된다.
+    - 이 배열 내의 document들은 추후에 점수가 매겨지고, 점수에 따라 혹은 `sort`에  담긴 기준에 따라 정렬이 실행된다.
+    - 만약 document의 특정 field를 대상으로 정렬해야 한다면, doc values를 사용한다.
+    - 만약 query에 `aggs`도 포함되어 있다면, 이 역시 마찬가지로 doc values를 통해 실행된다.
+    - 각 shard는 일치하는 document ID들 중 `size` 만큼의 ID들만 coordinator에게 반환한다.
+  - Fetch Phase
+    - Coordinator는 각 shard들로 부터 받은 일치하는 document들의 ID가 담긴 배열을 병합하고, client에 반환할 최종 document들의 id를 확정한다.
+    - 집계도 마찬가지로 각 shard들이 반환한 집계 정보를 종합한다.
+    - Coordinator는 `_source` field를 반환하기위해 shard들에게 각 document ID에 해당하는 document들의 `_source` 값을 요청한다.
+    - Shard들로부터 `_source` 값까지 받아오면 coordinator는 이를 가지고 최종 결과를 생성하고 client에게 반환한다.
 
 
 
-- search API
+- Search API
 
   - 모든 search API 검색 요청은 _search REST end point를 사용하고 GET이나 POST 요청 중 하나가 된다.
     - end point는 path라고도 불리며 URL에서 호스트와 포트 이후의 주소를 말한다.
   - 간단한 형태의 URI Search 형태를 제공한다.
   
-  ```bash
-  /인덱스명/_search?q=쿼리
+  ```http
+  GET <index_name>/_search?q=<query>
   ```
   
   - RequestBody Search 형태도 제공한다.
   
-  ```bash
-  /인덱스명/_search
+  ```json
+  // GET <index_name>/_search
   {
     "query":{
       "term":{
@@ -38,8 +57,8 @@
     - 인덱스명에 한 개 이상의 인덱스를 지정해서 다수의 인덱스에 동시에 쿼리를 날릴 수 있다.
     - 아래와 같이 인덱스명이 올 자리에 `_all`을 입력하면 모든 인덱스에 쿼리를 날린다.
   
-  ```bash
-  curl "localhost:9200/_all/_search?q=쿼리"
+  ```http
+  GET _all/_search?q=<query>
   ```
 
 
@@ -431,11 +450,12 @@
 
   - 사용
 
-  ```bash
-  $ curl 'localhost:9200/인덱스명/_search' -H 'Content-Type: application/json' -d '{
-  "query": {
-    "match_all":{}
-  }
+  ```json
+  // GET <index_name>/_doc/_search
+  {
+      "query": {
+        	"match_all":{}
+      }
   }'
   ```
 
@@ -445,15 +465,15 @@
 
   - match와 동일하지만 두 개 이상의 필드에 match 쿼리를 날릴 수 있다.
 
-  ```bash
-  $ curl 'localhost:9200/인덱스명/_doc/_search' -H 'Content-Type: application/json' -d '{
-  "query": {
-    "multi_match":{
-      "query": "term1 term2",
-      "fields": ["field1", "field2"] 
-    }
+  ```json
+  // GET <index_name>/_doc/_search
+  {
+      "query": {
+            "multi_match":{
+                  "query": "term1 term2",
+                  "fields": ["field1", "field2"] 
+        }
   }
-  }'
   ```
   
   - `operator`
@@ -473,7 +493,7 @@
   - 예시 데이터 색인
 
   ```json
-  PUT test/_bulk
+  // PUT test/_bulk
   {"index":{"_id":"1"}}
   {"title":"quick brown fox"}
   {"index":{"_id":"2"}}
