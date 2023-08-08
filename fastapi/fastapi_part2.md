@@ -720,7 +720,94 @@
       uvicorn.run(app)
   ```
 
+
+
+
+
+
+# Async
+
+- FastAPI는 async 기능을 제공한다.
+
+  - Path operation function에 `async` keyword만 붙여주면 된다.
+    - 10번의 요청을 연속적으로 보내도 비동기로 처리되므로 10초 조금 넘는 시간에 모두 처리된다.
+
+  ```python
+  import asyncio
   
+  from fastapi import FastAPI
+  import uvicorn
+  
+  app = FastAPI()
+  
+  
+  @app.get("/async")
+  async def async_func():
+      await asyncio.sleep(10)
+      return
+  
+  if __name__ == "__main__":
+      uvicorn.run(app)
+  ```
+
+  - async를 붙이지 않았을 경우
+    - 놀라운 점은 아래 예시에서 `async` keyword를 붙이지 않은 `/sync`역시 10번의 요청을 보냈을 때 100초 넘는 시간이 걸리는 것이 아니라 10초 좀 넘는 시간 내에 처리가 된다는 것이다.
+
+  ```python
+  import asyncio
+  import time
+  
+  from fastapi import FastAPI
+  import uvicorn
+  
+  app = FastAPI()
+  
+  
+  @app.get("/async")
+  async def async_func():
+      await asyncio.sleep(10)
+      return
+  
+  @app.get("/sync")
+  def sync_func():
+      time.sleep(10)
+      return
+  
+  
+  if __name__ == "__main__":
+      uvicorn.run(app)
+  ```
+
+  - `async`를 붙이지 않았음에도 `async`처럼 동작하는 이유
+    - FastAPI는 `async`가 붙지 않은 일반 path operation의 경우 main thread가 아닌 외부 threadpool에서 실행시킨다.
+    - 이는 시간이 오래 걸리는 작업을 main thread에서 실행할 경우 다음 요청을 실행할 수 없기 때문이다.
+    - 이러한 이유로 겉으로 보기에는 비동기적으로 보이는 것인데, 실제 내부 동작은 비동기와 전혀 관련이 없다.
+  - `async`를 붙인 함수내에서 blocking을 할 경우
+    - 이 경우 `async`를 붙이지 않은 일반 함수처럼 외부 threadpool에서 실행되는 것이 아니므로, 10번의 요청을 보냈을 때, 100초가 넘는 시간이 걸리게 된다.
+
+  ```python
+  import asyncio
+  import time
+  
+  from fastapi import FastAPI
+  import uvicorn
+  
+  app = FastAPI()
+  
+  
+  @app.get("/async-blocking")
+  async def async_blocking():
+      time.sleep(10)
+      return
+  
+  
+  if __name__ == "__main__":
+      uvicorn.run(app)
+  ```
+
+  
+
+
 
 
 
