@@ -396,6 +396,18 @@
   - 기본적으로 `_cat` API로 요청을 보냈을 때 응답으로 오는 데이터들이 포함되어 있다.
     - 다만, 모두 포함 된 것은 아니다.
   - 한 클러스터 뿐 아니라 다른 클러스터에서 monitoring 데이터를 가져오는 것도 가능하다.
+  
+  - `_cat` API에 대응되는 API들
+    - `_cat` API는 대부분 사람이 command line이나 Kibana console을 통해 직접 사용하는 것을 의도하고 만들어졌다.
+    - 따라서 application에서 사용하기는 적절하지 않다.
+    - Application에서 사용해야 한다면 `_cat`에 대응되는 API를 사용하는 것을 권장한다.
+  
+  | _cat          | application용 API                                            |
+  | ------------- | ------------------------------------------------------------ |
+  | _cat/health   | [Cluster health API](https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-health.html) |
+  | _cat/indicise | [Get index API](https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-get-index.html#indices-get-index) |
+  | _cat/nodes    | [Nodes info API](https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-info.html) |
+  | _cat/segments | [Index segments API](https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-segments.html) |
 
 
 
@@ -420,6 +432,10 @@
 
 - 자체적으로 지원하는 모니터링 기능 외에도 metricbeat, filebeat 등을 사용 가능하다.
 
+
+
+
+
 ## 클러스터의 상태 확인하기
 
 - `_cat/health`
@@ -427,22 +443,22 @@
   - 클러스터의 상태를 확인하는 API
   - 기본형
 
-  ```bash
-  curl -XGET 'http://localhost:9200/_cat/health'
+  ```http
+  GET _cat/health
   ```
 
   - `v` 옵션을 추가
     - 결과 값에 header를 추가해서 보여준다.
 
-  ```bash
-  curl -XGET 'http://localhost:9200/_cat/health?v'
+  ```http
+  GET _cat/health?v
   ```
 
   - format 옵션을 추가
     - 지정한 format으로 보여준다.
 
-  ```bash
-  curl -XGET 'http://localhost:9200/_cat/health?format=json'
+  ```http
+  GET _cat/health?format=json
   ```
 
 
@@ -501,7 +517,7 @@
 
 - 미할당 샤드 수동으로 재할당하기
 
-  ```bash
+  ```http
   POST _cluster/reroute?retry_failed=true
   ```
 
@@ -575,30 +591,30 @@
   - `v`, `h`, `format` 옵션을 모두 사용 가능하다.
   - 확인
   
-  ```bash
-  $ curl -XGET 'http://localhost:9200/_cat/indices'
+  ```http
+  GET _cat/indices
   ```
   
   - `s`로 정렬이 가능하다.
   
-  ```bash
-  $ curl -XGET 'http://localhost:9200/_cat/indices?s=<정렬 할 내용>'
+  ```http
+  GET _cat/indices?s=<정렬 할 내용>
   
   #e.g.
-  $ curl -XGET 'http://localhost:9200/_cat/indices?s=docs.count:desc'
+  GET _cat/indices?s=docs.count:desc
   ```
   
   - size를 표시할 때 어떤 단위로 보여줄지 설정이 가능하다.
     - `bytes=<단위>`를 입력하면 된다.
   
   
-  ```json
+  ```http
   GET _cat/indices?h=i,p,r,dc,ss,cds&bytes=kb
   ```
   
   - `expand_wildcards` 옵션을 통해 open 상태인 인덱스만 보는 것도 가능하다.
   
-  ```json
+  ```http
   GET _cat/indices?h=i,status,p,r,dc,ss,cds&s=cds:desc&expand_wildcards=open
   ```
 
@@ -628,16 +644,14 @@
 
 
 
-
-
 ## 샤드의 상태 확인하기
 
 - `_cat/shards`
 
   - 마찬가지로 `v`, `h`, `format` 모두 사용 가능하다.
 
-  ```bash
-  $ curl -XGET 'http://localhost:9200/_cat/shards'
+  ```http
+  GET _cat/shards
   ```
 
   - `grep`을 사용 가능하다.
@@ -654,13 +668,13 @@
   
   ```bash
   # 어떤 인덱스의 어떤 샤드가 왜 미할당 상태인지 확인하는 명령어
-  $ curl -XGET 'http://localhost:9200/_cat/shards?h=index,shard,prirep,unassigned.reason | grep -i UNASSIGNED'
+  GET 'http://localhost:9200/_cat/shards?h=index,shard,prirep,unassigned.reason | grep -i UNASSIGNED'
   ```
   
   - 보다 정확한 원인을 알려주는 API
   
-  ```bash
-  $ curl -XGET 'http://localhost:9200/_cluster/allocation/explain'
+  ```http
+  GET _cluster/allocation/explain
   ```
 
 
@@ -695,11 +709,70 @@
 
 - segment 상태 확인
 
-  - `v`, `h`, `format` 옵션을 모두 사용 가능하다.
-
-  ```bash
-  $ curl -XGET 'http://localhost:9200/_cat/segments'
+  - `_cat` API
+    - `v`, `h`, `format` 옵션을 모두 사용 가능하다.
+  
+  
+  ```http
+  GET _cat/segments[/<target>]
   ```
+  
+  - Index segments API
+    - 특정 index에 속한 segments들만 확인할 수 있다.
+    - Application에서 사용할 때는 이 API를 사용하는 것이 권장된다.
+  
+  ```http
+  GET <index_name>/_segments
+  ```
+  
+  - Index segments API의 response
+    - Segment의 이름은 실제 file이름이다(`<data_dir>/indices/<index_uuid>/<shard>/index`에서 확인할 수 있다).
+    - `num_docs`은 삭제된 문서는 포함하지 않으며, nested documents들도 별개의 문서로 집계한다.
+    - `committed`가 true면 disk와 segment가 sync되었다는 것을 의미하며, false면 disk와 sync되어 있지 않다는 의미이다.
+    - Disk와 sync되어 있다면(committed가 true면) ES가 reboot 되더라도 segment data에 유실이 없다.
+    - `committed`가 false라고 하더라도, commit되지 않은 segment의 data들은 trans log에 기록되어 ES가 reboot될 때 trans log에서 data를 읽어올 수 있으므르로 유실이 발생할 일은 거의 없다.
+    - `search`가 true면 검색이 가능하다는 의미이고, false이면 refresh를 통해 검색이 가능하게 해줘야한다는 의미이다.
+    - `version`은 Lucene version을 의미한다.
+    - `attributes`: 압축과 관련된 정보를 보여준다.
+  
+  ```json
+  "shards": {
+      "0": [
+          {
+              "routing": {
+                  "state": "STARTED",
+                  "primary": false,
+                  "node": "5g4483g4g34gg5123T123"
+              },
+              "num_committed_segments": 1,
+              "num_search_segments": 1,
+              "segments": {
+                  // segment의 이름
+                  "_1v": {
+                      "generation": 67,			// 새로운 segment가 생성될 때 마다 증가하는 숫자, segment name을 결정할 때 사용한다.
+                      "num_docs": 1000000,		// segment에 저장된 문서의 수
+                      "deleted_docs": 0,			// 삭제된 문서의 수(실제 삭제된 문서의 개수와 다를 수 있다)
+                      "size_in_bytes": 1598215025,// segment의 크기
+                      "committed": true,
+                      "search": true,
+                      "version": "9.4.2",
+                      "compound": false,
+                      "attributes": {
+                          "Lucene90StoredFieldsFormat.mode": "BEST_SPEED"
+                      }
+                  }
+              }
+          }
+      ]
+  }
+  ```
+  
+  - `compound`
+    -  true면 Lucene이 file descriptor를 아끼기 위해 segment의 모든 파일들을 하나의 파일에 저장했다는 의미이다.
+    - Lucene에서 segment는 compound 방식과 multifile 방식이라는 두 가지 방식 중 하나로 저장된다.
+    - Multifile 방식은 segment를 여러 개의 file을 사용해서 저장하는 방식으로, term vector, inverted index, stored field 등을 모두 개별 file에 작성한다.
+    - Multifile의 단점은 너무 많은 file을 관리해야 한다는 점이다. OS에서는 open file의 개수가 제한되어 있는데(linux의 경우 `ulimit -n <숫자>` 옵션으로 변경 가능), 너무 많은 segment file이 열려 있을 경우 `Too many open files` error가 발생할 수 있다.
+    - Compound 방식은 segment의 여러 file들(term vector, inverted index, stored field 등)을 하나의 file에 저장하는 방식으로 file descriptor를 multifile 방식에 비해 덜 필요로 한다는 장점이 있다.
 
 
 
