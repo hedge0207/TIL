@@ -1118,7 +1118,11 @@
 
 
 
-- `Future`와 `Task`
+- `Future`
+
+  > https://tech.buzzvil.com/blog/asyncio-no-2-future/
+  >
+  > https://docs.python.org/3.10/library/asyncio-future.html#asyncio.Future
 
   - `asyncio.Future`
 
@@ -1128,6 +1132,80 @@
     - 단순히 어떠한 실행 상태 및 결과를 저장할 뿐, 작업의 실행을 개시하는 역할은 수행하지 않는다.
     - 일반적으로 application level의 code에서 `Future`의 인스턴스를 생성할 일은 없다.
 
+  - Futrue는 Python에 국한된 개념이 아니라 비동기 프로그래밍에서 널리 사용되는 개념이다.
+
+    - 주로 비동기 연산의 결과를 저장하는 객체이다.
+    - 비동기 함수의 경우 호출하는 곳에서 반환 값을 바로 받아볼 수 없다.
+    - 따라서 일단은 Future 객체를 반환하고, 비동기 함수의 호출이 완료되면 반환했던 Future 객체에 결과를 저장하는 방식으로 사용된다.
+
+  - `asyncio.Future`의 특징 및 기능
+
+    - Awaitable이므로 `await` keyword를 사용할 수 있다.
+    - `done()`으로 연산이 끝났는지 확인할 수 있다.
+    - `set_result()`로 연산의 결과를 지정할 수 있다.
+    - `cancel()`로 연산을 취소할 수 있다.
+    - `add_done_callback()`으로 call back 함수를 등록할 수 있다.
+
+  - `asyncio.Future`를 사용하여 유사 Semaphore 구현
+
+    - `asyncio.Future`를 사용하면 busy wating 방식을 사용하지 않고도 polling이 가능한 Semaphore를 구현할 수 있다.
+
+    - `asyncio.Future` 객체 생성시에 ``asyncio.Future()`와 같이 객체를 직접 생성하는 방식보다, 아래의 `loop.create_future()`와 같이 생성하는 것이 권장된다.
+
+  ```python
+  from datetime import datetime
+  from collections import deque
+  import asyncio
+  
+  
+  class FutureSemaphore:
+      def __init__(self, initial_value: int = 1) -> None:
+          self._value = initial_value
+          self._waiters = deque()
+  
+      async def acquire(self) -> None:
+          if self._value <= 0:
+              loop = asyncio.get_running_loop()
+              # Future 객체를 생성한다.
+              future = loop.create_future()
+              self._waiters.append(future)
+              # release가 호출 되어 future가 끝날 때 까지 대기한다.
+              await future
+  
+          self._value -= 1
+  
+      def release(self) -> None:
+          self._value += 1
+          if len(self._waiters) > 0:
+              fut = self._waiters.popleft()
+              # future에 값을 추가하고 Future를 끝낸다.
+              fut.set_result(None)
+  
+  async def run_job(semaphore, job_id):
+      await semaphore.acquire()
+      print(f'{datetime.now()} - start job {job_id}')
+      await asyncio.sleep(1)
+      print(f'{datetime.now()} - job {job_id} finished')
+      semaphore.release()
+  
+  
+  async def main() -> None:
+      semaphore = FutureSemaphore()
+      await asyncio.gather(
+        run_job(semaphore, 1),
+        run_job(semaphore, 2),
+        run_job(semaphore, 3),
+        run_job(semaphore, 4),
+        run_job(semaphore, 5),
+      )
+      
+  if __name__ == "__main__":
+      asyncio.run(main())
+  ```
+
+
+
+- Task
   - `asyncio.Task`
 
     - `coroutine` 객체를 감싸고 있는 wrapper class이다.
@@ -1135,7 +1213,6 @@
     - `asyncio.Future`와 마찬가지로 어떠한 작업의 실행 상태 및 결과를 저장하지만, `Task` class는 작업의 실행을 개시하는 역할도 수행한다.
     - `Task` 객체는 생성시에 코루틴 객체를 받아 `_coro`라는 attiribute로 저장한다.
     - Eventloop 내에서 적절한 때가 왔을 때 coroutine이 실행될 수 있도록 일정을 조율한다.
-
   - `Task` 객체의 동작 방식
 
     - `Task`객체는 생성되는 즉시 현재 스레드에 설정되어 있는 Eventloop에게 자신의 `__step()` 메서드를 호출해줄 것을 예약한다.
