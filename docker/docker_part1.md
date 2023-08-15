@@ -823,6 +823,30 @@
 
 
 
+- `docker history`
+
+  - Docker image가 만들어지기까지의 과정 전체를 보여주는 명령어이다.
+  - 결과는 아래에서부터 읽어 나가면 된다.
+
+  ```bash
+  $ docker history <image>
+  ```
+
+
+
+- `docker diff`
+
+  - Image와 해당 image로 만든 container 사이의 차이를 보여준다.
+  - `C`는 변경, `A`는 추가, `D`는 삭제를 의미한다.
+
+  ```bash
+  $ docker diff <container>
+  ```
+
+
+
+
+
 ## Docker Hub
 
 - Docker Hub에 공개된 이미지 검색
@@ -896,7 +920,8 @@
   - `--digests`: 다이제스트를 표시할지 여부, 다이제스트는 Docker 레지스트리(Docker Hub 등)에 업로드된 이미지를 식별하기 위한 값이다.
   - `--no-trunc`: 결과를 모두 표시한다.
   - `--quiet,-q`:  이미지 ID만 표시한다.
-
+  - image 명이 정확히 일치할 경우 `grep`을 사용하지 않아도 된다.
+  
   ```bash
   $ docker images [옵션] [리포지토리명]
   $ docker image ls [옵션] [리포지토리명]
