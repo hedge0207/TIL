@@ -1454,3 +1454,81 @@
   }
   ```
 
+
+
+# APIs
+
+- Clone API
+
+  - Elasticsearch는 index를 clone할 수 있는 기능을 제공한다.
+
+  ```http
+  POST source-index/_clone/target-index
+  ```
+
+  - Clone하기 위해서는 아래의 조건을 만족해야한다.
+    - Clone하려는 index가 read-only 상태여야한다.
+    - Clone하려는 index의 health가 red가 아니어야한다
+    - 공식문서에는 cluster health가 green이어야 한다고 나와있지만, cluster health가 green이 아니더라도, 혹은 index health가 green이 아니더라도, 심지어는 index health가 red더라도 동작은한다.
+    - 그러나 red일 경우 일부 데이터가 포함되지 않은 채로 clone될 수 있으므로 되도록 index health가 green이나 yellow인 index를 대상으로 하는 것이 좋다.
+    - Target index와 같은 이름의 index가 없어야한다.
+    - Target index는 source index와 같은 수의 primary shard를 가져야한다.
+    - Clone 작업을 진행하는 node에 충분한 disk 공간이 있어야한다.
+
+  - 주의 사항
+    - Index의 metadata(ILM, alias 등)는 복사되지 않는다.
+    - 대부분의 index setting은 복사되지만, replica의 개수는 복사되지 않으며, clone시에 설정해줘야한다(설정하지 않을 경우 기본 값인 1로 설정된다).
+  - 동작 과정
+    - Source index와 동일한 setting, mapping으로 새로운 index를 생성한다.
+    - Source index의 segment들로 target index의 segement를 hard-link한다(만약 file system이 hard-link를 지원하지 않을 경우, 모든 segment들이 target index로 복사되는데, 이는 훨씬 시간이 오래 걸린다).
+    - 마지막으로 target index를 close 되었던 index를 open하는 것 처럼 복구한다.
+  - Clone용 index 생성하기
+
+  ```json
+  // PUT source-index/_doc/1
+  {
+      "foo":"bar"
+  }
+  ```
+
+  - Index를 read-only 상태로 만들기
+
+  ```json
+  // PUT source-index/_settings
+  {
+      "index.blocks.write": true
+  }
+  ```
+
+  - Clone하기
+    - Clone할 때 target index의 setting과 alias 등을 설정할 수 있다.
+
+  ```json
+  // source-index/_clone/target-index
+  {
+      "settings": {
+          "number_of_replicas": 5
+      },
+      "aliases":{
+          "my_index":{}
+      }
+  }
+  ```
+
+  - Clone이 완료되면 read-only 상태를 해제한다.
+    - Target index도 source index의 setting을 그대로 복사해왔으므로 read-only 상태를 해제해야한다.
+
+  ```json
+  // PUT source-index/_settings
+  {
+      "index.blocks.write": false
+  }
+  
+  // PUT target-index/_settings
+  {
+      "index.blocks.write": false
+  }
+  ```
+
+
+
