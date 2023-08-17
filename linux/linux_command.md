@@ -54,7 +54,16 @@
     - `-a`: 숨겨진 파일 보기
     - `-l`: 권한, 소유자, 갱신일 확인
     - `*`를 wildcard로 사용 가능하다.
-
+  - file type
+    - `-`: 일반 파일
+    - `d`: directory
+    - `b`: 블록 디바이스 파일(e.g. sda, CD-ROM)
+    - `c`: 문자 디바이스 파일
+    - `p`: 파이프 파일
+    - `s`: 소켓 파일
+    - `l`: 심볼릭 링크
+  
+  
   ```bash
   # 기본 명령어
   $ ls [옵션]
@@ -974,6 +983,16 @@
   ```bash
   $ ping <옵션> <확인하려는 주소>
   ```
+
+
+
+- curl
+  - Command line용 data transfer protocel
+  - 주요 옵션들
+    - `--request`(`-X`): HTTP method를 설정한다.
+    - `-H`: 전송할 header를 설정한다.
+    - `--data`(`-D`): 요청과 함께 보낼 data를 설정한다.
+  - cors 설정이 제대로 되었는지 확인할 때 사용할 수 있다.
 
 
 
