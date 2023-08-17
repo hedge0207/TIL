@@ -721,6 +721,248 @@
 
 
 
+# Jenkins + Docker swarm  + Docker registry로 Continuous Deploy pipeline 구성
+
+- ServerA에 Docker Container 생성하기
+
+  - `daemon.json` 파일을 아래와 같이 작성한다.
+    - Test용으로 사용할 것이므로 Docker registry를 insercure repository로 사용한다.
+
+  ```json
+  {
+      "insecure-registries" : ["http://<ServerA_host>:5000"]
+  }
+  ```
+
+  - Docker daemon으로 사용하기 위한 Docker container를 생성한다.
+    - 2376 port는 docker daemon과 통신을 위한 port, 5000은 docker registry를 위한 port, 8021은 우리가 띄울 app을 위한 port, 2377은 docker swam에서 사용할 port이다.
+
+  ```bash
+  docker run \
+  --name docker-node1 \
+  --privileged \
+  --network jenkins \
+  --network-alias docker \
+  --env DOCKER_TLS_CERTDIR=/certs \
+  --volume <host_path>:/certs/client \
+  --volume <host_path>:/etc/docker/daemon.json \
+  --volume <host_path>:/var/jenkins_home \
+  --publish 2376:2376 --publish 5000:5000 --publish 8021:8021 --publish 2378:2377 \
+  docker:dind
+  ```
+
+  - `docker-node1` container 내부에서 Docker registry 생성하기
+
+  ```bash
+  $ docker pull registry
+  $ docker run -d -p 5000:5000 --name reg registry:latest
+  ```
+
+
+
+- Jenkins container 생성하기
+
+  - Jenkins container에 사용할 image를 cutstom한다.
+    - Blueocean은 예시에서는 사용하지 않지만, 추후에 사용할 수도 있으므로 함께 설치한다.
+
+
+  ```dockerfile
+  FROM jenkins/jenkins:latest
+  
+  USER root
+  
+  RUN apt-get update && apt-get install -y lsb-release
+  RUN curl -fsSLo /usr/share/keyrings/docker-archive-keyring.asc \
+    https://download.docker.com/linux/debian/gpg
+  RUN echo "deb [arch=$(dpkg --print-architecture) \
+    signed-by=/usr/share/keyrings/docker-archive-keyring.asc] \
+    https://download.docker.com/linux/debian \
+    $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
+  RUN apt-get update && apt-get install -y docker-ce-cli
+  
+  USER jenkins
+  
+  RUN jenkins-plugin-cli --plugins "blueocean docker-workflow"
+  ```
+
+  - Jenkins container를 생성한다.
+    - `path1`에는 `docker-node1`에서 `/certs/client`와 bind mount한 host의 path를 입력한다.
+    - `path2`에는 `docker-node1`에서 `/var/jenkins_home`과 bind mount한 host의 path를 입력한다.
+    - `path2`의 경우 `sudo chown 1000 <path2>`와 같이 소유자를 변경해줘야한다.
+
+  ```bash
+  $ docker run \
+  --name jenkins \
+  --network jenkins \
+  --env DOCKER_HOST=tcp://docker:2376 \
+  --env DOCKER_CERT_PATH=/certs/client \
+  --env DOCKER_TLS_VERIFY=1 \
+  --publish 8080:8080 \
+  --publish 49999:50000 \
+  --volume <path1>:/certs/client:ro \
+  --volume <path2>:/var/jenkins_home \
+  jenkins-blueocean:latest
+  ```
+
+  - 필요한 plugin들을 다운 받는다.
+    - 초기 화면에서 suggested pluin을 설치한다.
+    - `Build Authorization Token Root` plugin을 설치한다.
+
+
+
+- ServerB에 Docker container를 생성한다.
+
+  - `docker:dind` image를 받고
+
+  ```bash
+  $ docker pull docker:dind
+  ```
+
+  - `daemon.json` 파일을 작성한다.
+
+  ```json
+  {
+      "insecure-registries" : ["http://<ServerA_host>:5000"]
+  }
+  ```
+
+  - Container를 생성한다.
+    - ServerA에 띄운 Docker container와는 달리 외부에서 daemon에 접근할 일도 없고, Docker registry도 ServerA의 것을 사용할 것이므로 port는 app에서 사용할 port만 열어주면 된다.
+
+  ```bash
+  $ docker run \
+  --name docker-node2 \
+  --privileged \
+  --publish 8021:8021 \
+  -v ./daemon.json:/etc/docker/daemon.json \
+  docker:dind
+  ```
+
+
+
+- Application 생성하기
+
+  - 아래와 같이 같단한 application을 생성한다.
+    - App을 실행하기 위한 requirements 파일도 생성한다.
+
+  ```python
+  from fastapi import FastAPI
+  import uvicorn
+  
+  
+  app = FastAPI()
+  
+  
+  @app.get("/")
+  def hello_world():
+      return "Hello World!"
+  
+  if __name__ == "__main__":
+      uvicorn.run(app, host="0.0.0.0", port=8021)
+  ```
+
+  - App을 build하기 위한 Dockerfile을 작성한다.
+
+  ```dockerfile
+  FROM python:3.8.0
+  
+  COPY . /app
+  WORKDIR /app
+  
+  RUN pip install --upgrade pip
+  RUN pip install -r requirements.txt
+  
+  CMD ["python", "main.py"]
+  ```
+
+  - Jenkinsfile을 작성한다.
+
+  ```groovy
+  pipeline {
+      agent any
+  
+      stages {
+          stage('Build') {
+              steps {
+                  sh 'docker build -t <ServerA_host>:5000/app .'
+                  sh 'docker push <ServerA_host>:5000/app'
+              }
+          }
+          stage('Deploy') {
+              steps {
+                  sh 'docker service create --name app --replicas=2 --publish=8021:8021 <ServerA_host>:5000/app'
+              }
+          }
+      }
+  }
+  ```
+
+  - 만일 bind mount가 필요하다면 위 jenkinsfile에서 service를 생성하는 부분을 아래와 같이 수정하거나, service를 update해주면 된다.
+    - 이 경우에는 ServerA의 Docker container와 ServerB의 docker container에 저장된다.
+
+  ```bash
+  $ docker service create --name app --replicas=2 --mount type=bind,source=<container 내부 경로>,destination=<host 경로> --publish=8021:8021 <ServerA_host>:5000/app
+  
+  # 혹은 아래와 같이 service를 update한다.
+  docker service update --mount type=bind,source=<container 내부 경로>,destination=<host 경로> app
+  ```
+
+  - 전체 디렉터리 구조는 아래와 같다.
+
+  ```
+  app
+  ├── main.py
+  ├── requirements.txt
+  ├── Jenkinsfile
+  └── Dockerfile
+  ```
+
+  - 위 directory를 github에 push한다.
+
+
+
+- Jenkins pipeline을 생성한다.
+  - `FirstPipeline`이라는 이름으로 Pipeline을 생성한다.
+  - Github 연동
+    - Pipeline의 Definition을 `Pipeline script from SCM`으로 변경하고 SCM에서 `Git`을 설정한다.
+    - 위에서 app을 push했던 github repository의 url과 Credientials를 입력한다.
+    - `Branch to build`에 branch를 설정한다.
+  - Github과 연동할 경우 build시에 pull을 받지 않아도 자동으로 실행된다.
+
+
+
+- Docker swarm 생성하기
+
+  - ServerA의 Docker container 내부에서 아래 명령어를 실행한다.
+
+  ```bash
+  $ docker swarm init
+  ```
+
+  - ServerB의 Docker container 내부에서 아래 명령어를 실행한다.
+
+  ```bash
+  $ docker swarm join --token <token> <ServerA_host>:2378
+  ```
+
+  - 잘 연결되었는지 확인한다.
+    - ServerA의 Docker container에서 아래 명령어를 실행한다.
+    - 만일 두 개의 node가 보인다면 성공한것이다.
+
+  ```bash
+  $ docker node ls
+  ```
+
+
+
+- Jenkins에 접속해서 build를 실행하면 ServerA와 ServerB 모두 app container가 생성된 것을 확인할 수 있다.
+
+  - 만일 bind mount 혹은 volume이 필요하다면 jenkinsfile 내에서 Docker service를 아래와 같이 생성하거나, service를 update해주면 된다.
+
+  ```bash
+  $ docker service create --name app --replicas=2 --mount type=bind,source=/data,destination=/app/files # ...
+  ```
+
 
 
 
