@@ -1,10 +1,8 @@
-
-
 # Analyzer와 inverted index
 
 > 아래의 내용은 모두 text type에 대한 것이다. keyword type은 analyze 과정을 거치지 않는다.
 
-- inverted index(역색인)
+- Inverted index(역색인)
 
   - "I am a boy", "You are a girl" 이라는 두 문자열이 있다고 가정한다.
     - 위 두 개의 문자열을 공백을 기준으로 나누면 각각의 문자열은 4개의 단어로 나뉜다.
@@ -128,23 +126,23 @@
 
 
 
-- analyzer 
-  - analyzer는 역색인을 만들어주는 것이다.
+- Analyzer 
+  - Analyzer는 역색인을 만들어주는 것이다.
     - analyzer는 운영 중에 동적으로 변경할 수 없다. 
     - 따라서 기존 인덱스에 설정한 analyzer를 바꾸고 싶을 때는 인덱스를 새로 만들어서 재색인(reindex)해야 한다.
-  - ES의 analyzer는 다음과 같이 구성된다.
+  - ES의 analyzer는 다음과 같이 구성되며, 아래 순서로 실행된다.
     - character filter
     - tokenizer
     - token filter
-  - character filter
-    - analyzer를 통해 들어온 문자열들은 character filter가 1차로 변형한다.
+  - Character filter
+    - Analyzer를 통해 들어온 문자열들은 character filter가 1차로 변형한다.
     - 예를 들어 <, >, ! 등과 같은 의미 없는 특수 문자들을 제거한다거나 HTML 태그들을 제거하는 등 문자열을 구성하고 있는 문자들을 특정한 기준으로 변경한다.
-  - tokenizer
-    - tokenizer는 일정한 기준(공백이나 쉼표)에 의해 문자열은 n개의 토큰으로 나눈다.
-    - analyzer를 구성할 때는 tokenizer를 필수로 명시해야 하며, 하나의 tokenizer만 설정할 수 있다.
+  - Tokenizer
+    - Tokenizer는 일정한 기준(공백이나 쉼표)에 의해 문자열은 n개의 토큰으로 나눈다.
+    - Analyzer를 구성할 때는 tokenizer를 필수로 명시해야 하며, 하나의 tokenizer만 설정할 수 있다.
     - 반면 character filter와 token filter는 필요하지 않을 경우 기술하지 않거나, 여러 개의 character filter와 token filter를 기술할 수 있다.
-  - token filter
-    - tokenizer에 의해 분리된 각각의 텀들을 지정한 규칙에 따라 처리해주는 필터들이다.
+  - Token filter
+    - Tokenizer에 의해 분리된 각각의 텀들을 지정한 규칙에 따라 처리해주는 필터들이다.
     - `filter` 항목에 배열로 나열해서 지정하며, 나열된 순서대로 처리되기에 순서를 잘 고려해서 입력해야한다.
     - 토큰을 전부 소문자로 바꾸는 lowercase token filter가 대표적인 token filter이다.
 
@@ -153,12 +151,12 @@
 - standard analyzer
 
   - 아무 설정을 하지 않을 경우 디폴트로 적용되는 애널라이저
-  - filter
-    - character filter가 정의되어 있지 않다.
-    - standard tokenizer가 정의되어 있다.
-    - lowercase token filter가 정의되어 있다.
-    - stopwords로 지정한 단어가 토큰들 중에 존재 한다면 해당 토큰을 없애는 stop token filter가 존재하지만 기본값으로 비활성화 되어 있다.
-  - standard tokenizer 요청
+  - Filter
+    - Character filter가 정의되어 있지 않다.
+    - Standard tokenizer가 정의되어 있다.
+    - Lowercase token filter가 정의되어 있다.
+    - Stopwords로 지정한 단어가 토큰들 중에 존재 한다면 해당 토큰을 없애는 stop token filter가 존재하지만 기본값으로 비활성화 되어 있다.
+  - Standard tokenizer 요청
     - `analyzer`가 아닌 `tokenizer`를 입력한다.
     - 아직 token filter를 거치지 않았기에 I가 대문자이다.
 
@@ -205,18 +203,18 @@
 
 
 
-- custom analyzer
+- Custom analyzer
 
   > https://esbook.kimjmin.net/06-text-analysis/6.3-analyzer-1/6.4-custom-analyzer
   >
   > https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-custom-analyzer.html
 
-  - 내장 애널라이저로 충분하지 않을 경우 직접 애널라이저를 만들 수 있다.
-  - 애널라이저 정의 하기
-    - type: `custom`을 입력하거나 아예  type 자체를 입력하지 않는다.
-    - tokenizer: 애널라이저에 사용할 토크나이저를 입력한다(필수).
-    - char_filter: 사용할 character filter들을 입력한다.
-    - filter: 사용할 token filter들을 입력한다.
+  - 내장 analyzer로 충분하지 않을 경우 직접 애널라이저를 만들 수 있다.
+  - Analyzer 정의 하기
+    - `type`: `custom`을 입력하거나 아예  type 자체를 입력하지 않는다.
+    - `tokenizer`: 애널라이저에 사용할 토크나이저를 입력한다(필수).
+    - `char_filter`: 사용할 character filter들을 입력한다.
+    - `filter`: 사용할 token filter들을 입력한다.
 
   ```bash
   $ curl -XPUT "localhost:9200/my_index" -H 'Content-type:application/json' -d '{
@@ -287,10 +285,10 @@
 
 
 
-- analyzer와 검색의 관계
+- Analyzer와 검색의 관계
 
-  - analyze의 중요성
-    - analyzer를 통해 생성한 토큰들이 역색인에 저장되고, 검색할 때는 이 역색인에 저장된 값을 바탕으로 문서를 찾는다.
+  - Analyze의 중요성
+    - Analyzer를 통해 생성한 토큰들이 역색인에 저장되고, 검색할 때는 이 역색인에 저장된 값을 바탕으로 문서를 찾는다.
     - 따라서 검색 니즈를 잘 파악해서 적합한 analyzer를 설정해야 한다.
   - 테스트 인덱스 생성
 
@@ -547,14 +545,6 @@
 
 
 
-
-
-
-
-
-
-
-
 ## Token filter
 
 - stopword(불용어)
@@ -710,9 +700,470 @@
 
 
 
-- nori
 
-  > https://lucene.apache.org/core/9_1_0/analysis/nori/org/apache/lucene/analysis/ko/POS.Tag.html
+
+### synonym
+
+- synonym(유의어)
+
+  - 분석 과정에서 유의어들을 보다 쉽게 처리할 수 있도록 도와주는 token filter이다.
+    - 예를 들어 "Elasticsearch"를 누군가는 "ES"라고 쓰고, 누군가는 "엘라스틱서치"라고 쓴다고 하면, Elasticsearch라는 term으로 검색했을 때, ES나 엘라스틱서치라고 작성된 내용은 검색되지 않을 것이다.
+    - synonym token filter를 사용하여 Elasticsearch와 ES, 엘라스틱서치를 유의어로 묶으면, Elasticsearch를 검색했을 때 다른 두 개의 용어도 검색되게 할 수 있다.
+  - 유의어 명시 규칙
+    - `A, B`: A와 B 각 term이 서로를 모두 저장하여, A와 B 모두 서로의 term으로 검색이 된다.
+    - `A => B`: A 대신 B의 term을 저장하여 A로는 B의 검색이 가능하지만, B로는 A의 검색이 불가능하다.
+
+
+
+
+- synonym token filter 설정 방법
+
+  - settings에 직접 설정하는 방법.
+    - synonym token filter 생성시에 `synonyms`에 배열 형태로 유의어를 등록한다.
+
+  ```json
+  // PUT synonym-test
+  PUT synonym-test
+  {
+      "settings": {
+          "index": {
+              "analysis": {
+                  "filter": {
+                      "my_synonym": {
+                          "type": "synonym",
+                          "synonyms": [ 
+                              "foo, bar => baz",
+                              "qux, qux"
+                          ]
+                      }
+                  },
+                  "analyzer": {
+                      "synonym": {
+                          "tokenizer": "whitespace",
+                          "filter": [
+                              "my_synonym"
+                          ]
+                      }
+                  }
+              }
+          }
+      }
+  }
+  ```
+
+  - 유의어 사전 파일을 만들어 설정하는 방법.
+    - `synonyms_path`에 유의서 사전 파일의 경로를 설정하며, 경로는 `<ES_HOME>/config` 폴더를 기준으로 한다.
+
+  ```json
+  // <ES_HOME>/config/dict/my_synonym_dict.txt 유의어 사전 파일을 아래와 같이 작성한다.
+  // foo, bar => baz
+  // qux, quux
+  
+  // PUT synonym-test
+  {
+      "settings": {
+          "index": {
+              "analysis": {
+                  "filter": {
+                      "synonym": {
+                          "type": "synonym",
+                          "synonyms_path": "dict/my_synonym_dict.txt"
+                      }
+                  },
+                  "analyzer": {
+                      "synonym": {
+                          "tokenizer": "whitespace",
+                          "filter": [
+                              "synonym"
+                          ]
+                      }
+                  }
+              }
+          }
+      }
+  }
+  ```
+
+
+
+- 유의어 사전 파일을 만들어 유의어를 관리하기 위해서는 data node 역할을 하는 모든 node에 유의어 사전 파일이 등록되어 있어야한다.
+  - 테스트 결과 data node 역할을 하지 않는 node에는 유의어 사전이 없어도 index가 정상적으로 생성된다.
+  - 만일 각 data node에 내용이 다른 유의어 사전이 있을 경우 어떻게 되는지 테스트하기 위해서 아래와 같이 cluster를 구성한다.
+    - node1, node2, node3 세 개의 node를 생성한다.
+    - node1에는 master 역할만 주어 유의어 사전을 등록하지 않아도 되도록한다.
+    - node2, node3에 각기 다른 내용으로 유의어 사전을 작성한다(두 file의 이름은 동일해야한다).
+  
+  ```yaml
+  # node2에 들어갈 사용자사전
+  foo, bar => baz
+  qux, quux
+  
+  # node3에 들어갈 사용자사전
+  foo, bar => baz
+  ```
+  
+  - Primary shard를 2로 설정하고 synonym token filter를 설정한 뒤 index를 생성한다.
+  
+  ```json
+  PUT test
+  {
+      "settings": {
+          "number_of_shards": 2, 
+          "index": {
+              "analysis": {
+                  "filter": {
+                      "synonym": {
+                          "type": "synonym",
+                          "synonyms_path": "dict/my_synonym_dict.txt"
+                      }
+                  },
+                  "analyzer": {
+                      "synonym": {
+                          "tokenizer": "whitespace",
+                          "filter": [
+                              "synonym"
+                          ]
+                      }
+                  }
+              }
+          }
+      },
+      "mappings": {
+          "properties": {
+              "text":{
+                  "type": "text",
+                  "analyzer": "synonym"
+              }
+          }
+      }
+  }
+  ```
+  
+  - node2와 node3에 primary shard가 하나씩 배치되었는지 확인한다. 
+  
+  ```json
+  // GET _cat/shards
+  test                                                          0 p STARTED  0   node2
+  test                                                          1 p STARTED  0   node3
+  ```
+  
+  - 그 후 유의어 사전에 포함된 term들을 가지고 있는 문서들을 색인한다.
+    - 아래와 같이 routing 값을 다르게 줘 각기 다른 shard에 색인되도록한다.
+  
+  ```json
+  PUT test/_doc/1?routing=A
+  {
+    "text":"foo bar qux"
+  }
+  
+  PUT test/_doc/2?routing=B
+  {
+    "text":"foo bar qux"
+  }
+  ```
+  
+  - 두 문서의 token을 확인해본다.
+    - 둘 중 한 문서만 qux와 quux가 유의어로 등록된 것을 확인할 수 있다.
+  
+  ```json
+  // POST test/_termvectors/1?fields=text&routing=A
+  "terms": {
+      "baz": {
+          "term_freq": 2,
+          "tokens": [
+              {
+                  "position": 0,
+                  "start_offset": 0,
+                  "end_offset": 3
+              },
+              {
+                  "position": 1,
+                  "start_offset": 4,
+                  "end_offset": 7
+              }
+          ]
+      },
+      "qux": {
+          "term_freq": 1,
+          "tokens": [
+              {
+                  "position": 2,
+                  "start_offset": 8,
+                  "end_offset": 11
+              }
+          ]
+      }
+  }
+  
+  // POST test/_termvectors/2?fields=text&routing=B
+  "terms": {
+      "baz": {
+          "term_freq": 2,
+          "tokens": [
+              {
+                  "position": 0,
+                  "start_offset": 0,
+                  "end_offset": 3
+              },
+              {
+                  "position": 1,
+                  "start_offset": 4,
+                  "end_offset": 7
+              }
+          ]
+      },
+      "quux": {
+          "term_freq": 1,
+          "tokens": [
+              {
+                  "position": 2,
+                  "start_offset": 8,
+                  "end_offset": 11
+              }
+          ]
+      },
+      "qux": {
+          "term_freq": 1,
+          "tokens": [
+              {
+                  "position": 2,
+                  "start_offset": 8,
+                  "end_offset": 11
+              }
+          ]
+      }
+  }
+  ```
+  
+  - 위에서 확인한 것과 같이 여러 node 사이에 유의어 사전이 불일치할 경우 각 문서들이 같은 내용이라도 다르게 분석되어 검색 결과에 문제가 생길 수 있다.
+    - 따라서 유의어 사전이 각 node들 사이에 일치하도록 해야한다.
+  
+  ```json
+  // GET test/_search
+  {
+      "query": {
+          "match": {
+              "text": "quux"
+          }
+      }
+  }
+  
+  // response
+  // qux와 quux를 유의어로 등록한 2번 문서만 검색 된다.
+  "hits": [
+      {
+          "_index": "test",
+          "_id": "2",
+          "_score": 0.42547938,
+          "_routing": "B",
+          "_source": {
+              "text": "foo bar qux"
+          }
+      }
+  ]
+  ```
+
+
+
+- stopword로 설정된 token이 synonym에 포함될 경우
+
+  - 아래와 같이 stopword에 bar를 넣고, bar를 synonym에도 포함시키면 Index자체가 생성되지 않는다.
+    - foo, bar, baz가 유의어로 설정되어 있는데, bar를 stopword 처리할 경우 foo, bar, baz가 모두 stopword로 처리되기 때문이다.
+
+  ```json
+  PUT test
+  {
+      "settings": {
+          "index": {
+              "analysis": {
+                  "filter": {
+                      "stop_word":{
+                          "type":"stop",
+                          "stopwords":[
+                              "bar"
+                          ]
+                      },
+                      "synonym": {
+                          "type": "synonym",
+                          "expand":false,
+                          "synonyms": [
+                              "foo,bar,baz"
+                          ]
+                      }
+                  },
+                  "analyzer": {
+                      "synonym": {
+                          "tokenizer": "whitespace",
+                          "filter": [
+                              "stop_word",
+                              "synonym"
+                          ]
+                      }
+                  }
+              }
+          }
+      }
+  }
+  ```
+
+  - 단, 아래의 `lenient` 설정을 true로 주면 생성이 가능하다.
+
+
+
+- 관련 설정
+
+  - `expand`(bool, 기본값은 true)
+    - 기본적으로 synonym은 아래와 같이 저장된다.
+    - `foo, bar`와 같이 설정할 경우 `foo,bar => foo,bar`와 같이 foo로 bar가 검색되고, bar로 foo가 검색된다.
+    - 그러나 expand를 false로 주면 `foo, bar`와 같이 설정할 경우 `foo, bar => foo`와 같이 맨 앞에 있는 token하나만 확장한다.
+    - 즉 foo와 bar로는 foo가 검색되지만 bar로는 foo가 검색되지 않는다.
+
+  - 예를 들어 아래와 같이 index를 생성하면, `expand`를 false로 줬으므로 `"foo, bar, baz"`는 `foo, bar, baz => foo, bar, baz`로 확장되는 것이 아니라 `foo, bar, baz => foo`와 같이 mapping된다.
+
+  ```json
+  // PUT test
+  {
+      "settings": {
+          "index": {
+              "analysis": {
+                  "filter": {
+                      "synonym": {
+                          "type": "synonym",
+                          "expand":false,
+                          "synonyms": [
+                              "foo, bar, baz"
+                          ]
+                      }
+                  },
+                  "analyzer": {
+                      "my_analyzer": {
+                          "tokenizer": "standard",
+                          "filter": [
+                              "synonym"
+                          ]
+                      }
+                  }
+              }
+          }
+      },
+      "mappings": {
+          "properties": {
+              "text":{
+                  "type":"text",
+                  "analyzer": "my_analyzer"
+              }
+          }
+      }
+  }
+  ```
+
+  - 따라서 아래와 같은 data를 색인하고
+
+  ```json
+  // PUT test/_doc/1
+  {
+    "text":"foo bar baz"
+  }
+  ```
+
+  - Token들을 확인해보면 아래와 같다.
+    - foo라는 token 하나로만 mapping된 것을 볼 수 있다.
+
+  ```json
+  // POST test/_termvectors/1?fields=text
+  "terms": {
+      "foo": {
+          "term_freq": 3,
+          "tokens": [
+              {
+                  "position": 0,
+                  "start_offset": 0,
+                  "end_offset": 3
+              },
+              {
+                  "position": 1,
+                  "start_offset": 4,
+                  "end_offset": 7
+              },
+              {
+                  "position": 2,
+                  "start_offset": 8,
+                  "end_offset": 11
+              }
+          ]
+      }
+  }
+  ```
+
+  - 그럼에도 검색은 foo, bar, baz라는 keyword로 모두 가능한데, 그 이유는 검색 analyzer를 따로 설정해주지 않을 경우 색인 analyzer와 동일하게 설정되기 때문이다.
+    - 즉 foo, bar, baz 중 어떤 것으로 검색을 하더라도, 결국에는 foo라는 검색어로 변환되므로, foo, bar, baz중 어떤 것으로든 검색은 가능하다.
+    - 그러나 만일 검색 analyzer를 synonym이 포함되어 있지 않은 다른 analyzer를 쓴다면 검색이 되지 않는다.
+
+  - `lenient`(bool, 기본값은 false)
+    - true로 설정할 경우 synonym 설정에 오류가 있어도 오류를 무시하고 실행한다.
+  - `updateable`(bool, 기본값은 false)
+    - true로 줄 경우 search analyzer를 reloading한다.
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Token graphs
+
+> 모든 내용 및 그림의 출처는 [Elasticsearch 공식 문서](https://www.elastic.co/guide/en/elasticsearch/reference/current/token-graphs.html)
+
+- Token graph
+
+  - Tokenizer가 text를 token stream으로 변환할 때, 아래의 것들도 token에 함께 기록한다.
+    - `position`: stream 내에서 token의 위치
+    - `positionLength`: token이 걸쳐 있는 position들의 숫자
+  - 이들을 사용하여, 유향 비순환 그래프(directed acyclic graph)를 만들 수 있다.
+    - 이 유향 비순환 그래프를 token graph라 부른다.
+    - Token graph에서 각 position들이 node가 되고, 각 token은 다음 position을 가리키는 edge가 된다.
+
+  ![image-20230516174529569](Elasticsearch_part9.assets/image-20230516174529569.png)
+
+  - Synonym
+    - 어떤 token filter들은 이미 존재하는 token stream에 새로운 token을 추가할 수 있다(즉, position과 position 사이에 새로운 간선을 추가할 수 있다).
+    - Synonym filter가 대표적인데, 이를 통해 생성된 synonym들은 종종 이미 존재하는 token들과 같은 position에 걸쳐있게 된다.
+    - 아래 그림에서와 같이 quick과 그 synonym인 fast는 같은 position에 걸쳐있다.
+
+  ![image-20230516174419365](Elasticsearch_part9.assets/image-20230516174419365.png)
+
+  - Multi-position tokens
+    - 어떤 token filter들은 여러 position에 걸쳐 있는 token들을 추가하기도 한다.
+    - 그러나 graph token filters라고 알려진 일부 token filter들(`synonym_graph`, `word_delimiter_graph`) 만이 multi-position token들의 positionLength를 정확히 기록한다.
+    - 또한 `nori_tokenizer`와 같은 일부 tokenizer만이 합성어 token을 multi-position token들로 정확히 분해한다.
+    - 아래 그래프에서 domain name system과 그 synonym인 dns는 둘 다 position은 0이지만, dns의 positionLength는 3이다.
+    - 그래프 내의 다른 token들의 positionLength는 기본 값인 1이다.
+
+  ![image-20230516175304101](Elasticsearch_part9.assets/image-20230516175304101.png)
+
+  - Token graph를 검색에 활용하기
+    - 색인시에는 `postionLength`가 무시되고, multi-position token을 포함하는 multi-position tokens를 사용할 수 없다.
+    - 그러나 match나 match_phrase 등의 query들은 단일 query string으로부터 여러 개의 sub query들을 만들기위해 token graph를 사용할 수 있다.
+    - 예를 들어 "domain name system is fragile"을 검색어로 match_phrase query를 활용하여 검색하려한다고 가정해보자.
+    - 검색시에 analyzer는 "domain name system"을 유의어로 등록된 dns로 변경하고, dns를 query string의 token stream에 아래 그림과 같이 추가한다.
+    - dns token은 3의 `positionLength`를 가지므로, match_phrase query는 dns is fragile이라는 phrase를 가지는 sub query를 생성한다.
+
+  ![image-20230516175732819](Elasticsearch_part9.assets/image-20230516175732819.png)
+
+  - Invalid token graph
+
+    - `synonym`, `word_delimiter`와 같은 token filter들은 multiple positions에 걸친 token을 추가 할 수는 있지만, `positionLength`는 정확히 기록하지 못하고, 기본 값인 1로만 저장한다.
+
+    - 이는 위 두 개의 filter들은 위 두 filter로 추가된 token을 포함하는 token stream의 경우, 유효하지 않은 token graph를 생성한다는 의미이다.
+    - 아래 그래프에서, dns는 multi-postiion synonym이지만, dns는 기본 positionLength인 1을 가지게 되고, 그 결과 유효하지 않은 token graph가 생성된다.
+
+  ![image-20230516180603316](Elasticsearch_part9.assets/image-20230516180603316.png)
 
 
 

@@ -1125,14 +1125,6 @@
 
 
 
-
-
-# Stopword
-
-- stopword 파일을 수정한 후 적용하려면 index를 close, open해줘야 한다.
-
-
-
 # Collapse
 
 - 검색 결과에서 중복되는 문서를 하나로 묶고 싶을 때 사용하는 parameter이다.
