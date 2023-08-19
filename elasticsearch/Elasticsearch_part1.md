@@ -541,12 +541,12 @@
     - 프라이머리 샤드와 달리 레플리카 샤드는 인덱스를 생성한 이후에도 개수를 조정할 수 있다.
     - 기존 개수보다 줄이면 줄어든 만큼 기존의 레플리카 샤드를 삭제하며, 늘리면 늘어난 만큼 레플리카 샤드를 생성한다.
 
-  ```bash
-  # 인덱스를 생성하면서 프라이머리 샤드는 2개로, 레플리카 샤드는 5개로 설정하는 명령어
-  $ curl -XPUT 'localhost:9200/shard_index/_settings?pretty' -H 'Content-Type:application/json' -d '{
-  "index.number_of_shards":2,
-  "index.number_of_replicas":5
-  }'
+  ```json
+  // PUT <index_name>/_settings
+  {
+      "index.number_of_shards":2,
+      "index.number_of_replicas":5
+  }
   ```
 
   - 문서를 색인할 때 문서를 저장할 프라이머리 샤드는 어떻게 결정되는가?
@@ -592,8 +592,8 @@
   - 모든 인덱스는 settings와 mappings라는 두 개의 정보 단위를 가지고 있다.
   - 두 정보는 아래 명령어로 확인이 가능하다.
 
-  ```bash
-  $ curl 'localhost:9200/인덱스명?pretty'
+  ```http
+  GET <index_name>?pretty
   ```
 
   - 응답
@@ -647,11 +647,16 @@
   }
   ```
 
-  - settings 또는 mappings 정보만 따로 보고싶으면 아래와 같이 인덱스명 뒤에 보고자 하는 정보를 추가할 수 있다.
+  - settings만 확인
 
-  ```bash
-  $ curl 'localhost:9200/인덱스명/_settings?pretty'
-  $ curl 'localhost:9200/인덱스명/_mappings?pretty'
+  ```http
+  GET <index_name>/_settings?pretty
+  ```
+  
+  - mappings만 확인
+  
+  ```http
+  GET <index_name>/_mappings?pretty
   ```
 
 
@@ -663,18 +668,25 @@
     - `refresh_interval`
     - 애널라이저, 토크나이저, 토큰 필터
   - 샤드의 수는 인덱스를 처음 생성할 때 한 번 지정하면 바꿀 수 없지만 레플리카 샤드의 수는 동적으로 변경이 가능하다.
+    - 인덱스명 뒤에 _settings API로 접근해서 변경할 설정을 입력하면 변경이 가능하다.
   
-  ```bash
-  # 레플리카 샤드의 수를 2개로 변경하는 명령어
-  # 인덱스명 뒤에 _settings API로 접근해서 변경할 설정을 입력하면 변경이 가능하다.
-  $ curl -XPUT 'localhost:9200/인덱스명/_settings?pretty' -H 'Content-Type: application/json' -d '{"number_of_replicas":2}'
+  
+  ```json
+  // 레플리카 샤드의 수를 2개로 변경하는 명령어 
+  // PUT <index_name>/_settings
+  {
+      "number_of_replicas":2
+  }
   ```
-
+  
   - `refresh_interval`: ES에서 세그먼트가 만들어지는 리프레시 타임을 설정하는 값으로 기본 값은 1초(1s)이다. 동적으로 변경이 가능하다.
   
-  ```bash
+  ```json
   # refresh_interval을 30초로 변경하는 명령어
-  $ curl -XPUT 'localhost:9200/company/_settings?pretty' -H 'Content-Type: application/json' -d '{"refresh_interval":30s}'
+  // PUT <index_name>/_settings
+  {
+      "refresh_interval":"30s"
+  }
   ```
   
   - analyzer는 동적으로 추가가 불가능하다.
@@ -689,47 +701,6 @@
   - 정적 매핑과 동적 매핑
     - 정적 매핑: 매핑 정보를 미리 정의해 놓고 사용.
     - 동적 매핑: 매핑 정보를 정의하지 않고 사용. 색인된 문서를 바탕으로 ES가 자동으로 매핑을 생성해주는 방식.
-  - 매핑 확인
-    - mapping API를 활용하여 인덱스의 매핑 정보를 확인할 수 있다.
-  
-  ```bash
-  $ curl 'localhost:9200/인덱스명/_mapping?pretty'
-  ```
-  
-  - 응답
-    - properties 필드 아래에 매핑 정보가 나온다.
-  
-  ```json
-  {
-    "colleague" : {
-      "mappings" : {
-        "properties" : {
-          "age" : {
-            "type" : "long"
-          },
-          "email" : {
-            "type" : "text",
-            "fields" : {
-              "keyword" : {
-                "type" : "keyword",
-                "ignore_above" : 256
-              }
-            }
-          },
-          "name" : {
-            "type" : "text",
-            "fields" : {
-              "keyword" : {
-                "type" : "keyword",
-                "ignore_above" : 256
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  ```
   
   - 매핑이 생성되면 이후부터 생성되는 문서는 기존 매핑 정보에 따라 색인되어야 한다.
     - 예를 들어 long 타입으로 매핑이 생성된 필드에 문자열 데이터가 들어오면 색인되지 않는다.
@@ -743,29 +714,31 @@
 
     - 미리 인덱스의 매핑을 정의해 놓으면 정의해 놓은 매핑에 맞추어 데이터가 입력된다.
   
-  ```bash
-  $ curl -XPUT 'localhost:9200/인덱스명' -H 'Content-Type: application/json' -d '{
+  ```json
+  // PUT <index_name>
+  {
       "mappings":{
           "properties":{
-              "필드명":{
+              "<field_name>":{
                   "type":"필드 타입"
-                  ...필드 설정
+                  // ...필드 설정
               }
           }
       }
-  }'
+  }
   ```
   
   - 미리 정의 된 매핑에 필드 추가하기
     
     - 당연히 기존 필드명과 추가할 필드명이 같으면 오류가 발생한다.
   
-  ```bash
-  $ curl -XPUT 'localhost:9200/인덱스명/_mapping' -H 'Content-Type: application/json' -d '{
+  ```json
+  // PUT <index_name>/_mapping
+  {
   	"properties":{
-      	"필드명":{
-        		"type":"필드 타입"
-        		...필드 설정
+      	"<field_name>":{
+        		"type":"<필드 타입>"
+        		// ...필드 설정
       	}
     	}
   }'
@@ -780,21 +753,22 @@
     - 동적 매핑으로 새로운 필드를 추가할 경우 기존 문서들에는 해당 필드가 추가되지 않는다.
   - 기존에 없던 rating 필드를 추가
 
-  ```bash
-  $ curl -XPUT 'localhost:9200/recipes/_doc/2' -H 'Content-Type: application/json' -d '{
+  ```json
+  // PUT <index_name>/_doc/1
+  {
     "rating":4
-  }'
+  }
   ```
-
+  
   - 확인
-
-  ```bash
-  $ curl 'localhost:9200/recipes/_mappings?pretty'
+  
+  ```http
+  GET <index_name>/_mappings?pretty
   ```
-
+  
   - 응답
       - rating 필드가 새로 추가 된 것을 확인 가능하다.
-
+  
   ```json
   {
     "recipes" : {
@@ -884,23 +858,6 @@
 
 ## 새로운 데이터 색인
 
-- curl 명령의 기본 형식
-
-  ```bash
-  curl -X 메소드 'http://연결할 일레스틱 서치 노드의 호스트명:연결할 포트/색인명/_doc/문서id'
-  ```
-
-  - `-X` 
-    - request시 사용할 메소드의 종류를 기술한다. 메소드와 띄어 써도 되지만 붙여 써도 된다.
-    - 새로운 문서 입력은 PUT, 기존 문서의 수정은 POST, 삭제는 DELETE, 조회는 GET을 사용한다.
-    - `-XGET`의 경우 생략이 가능하다.
-
-  - _doc
-    - ES5 버전 이하에서는 멀티 타입을 지원해서 하나의 인덱스 안에 다양한 타입의 데이터를 저장할 수 있었다.
-    - ES6  버전부터는 하나의 인덱스에 하나의 타입만 저장할 수 있게 되었기에 본래 타입이 올 자리에 _doc을 입력한다.
-
-
-
 - 삽입
 
   - curl을 활용하여 삽입
@@ -908,16 +865,17 @@
     - `-H` 옵션은 header를 지정한다.
     - `-d` 옵션은 body를 지정한다.
 
-  ```bash
-  $ curl -XPUT 'localhost:9200/company/_doc/1?pretty' -H 'Content-Type: application/json' -d '{
-  "name":"Theo",
-  "age":"28"
-  }'
+  ```json
+  // PUT <index_name>/_doc/1
+  {
+      "name":"foo",
+      "age":"28"
+  }
   ```
-
+  
   - 응답
     - 응답은 색인, 타입, 색인한 문서의 ID를 포함한다.
-
+  
   ```json
   {
     "_index" : "company",
@@ -934,19 +892,19 @@
     "_primary_term" : 1
   }
   ```
-
+  
   - POST 메서드로도 추가가 가능하다.
     - 둘의 차이는 **POST의 경우 document_id를 입력하지 않아도 자동으로 생성**하지만 PUT은 자동으로 생성하지 않는다는 것이다.
-
+  
   - 실수로 기존 도큐먼트가 덮어씌워지는 것을 방지하기 위해 입력 명령어에 `_doc` 대신 `_create`를 사용해서 새로운 도큐먼트의 입력만 허용하는 것이 가능하다.
     - 이 경우 이미 있는 도큐먼트id를 추가하려 할 경우 오류가 발생한다.
     - 이미 위에서 도큐먼트id가 1인 도큐먼트를 추가했으므로 아래 예시는 오류가 발생한다. 
-
+  
   ```json
   PUT company/_create/1
   
   {
-      "nickname":"Theo",
+      "nickname":"foo",
       "message":"안녕하세요!"
   }
   ```
@@ -962,17 +920,14 @@
 
 - 색인 생성과 매핑 이해하기(ES6부터는 하나의 인덱스에 하나의 타입만 저장할 수 있도록 변경)
 
-  - curl 명령은 색인과 매핑타입을 자동으로 생성한다.
-    - 위 예시에서 company라는 색인과 colleague라는 매핑 타입을 생성한 적이 없음에도 자동으로 생성되었다.
-    - 수동으로 생성하는 것도 가능하다.
   - 색인을 수동으로 생성하기
-
-  ```bash
-  $ curl -XPUT 'localhost:9200/new-index'
+  
+  ```http
+  PUT <index_name>
   ```
-
+  
   - 수동 생성의 응답
-
+  
   ```json
   {
     "acknowledged" : true,
@@ -980,15 +935,15 @@
     "index" : "test-index"
   }
   ```
-
+  
   - 스키마 확인
     - 스키마를 보기 위해 url에 `_mapping`을 추가한다.
     - ES 6.x 이상의 경우 _doc타입이 아닌 타입을 따로 지정했을 경우 아래와 같이 `include_type_name=true` 또는 `include_type_name`을 파라미터로 넣어야 한다.
-
-  ```bash
-  $ curl 'localhost:9200/company/_mapping/colleague?include_type_name&pretty'
+  
+  ```http
+  GET company/_mapping/colleague?include_type_name&pretty
   ```
-
+  
   - 응답
     - 색인 명, 타입, 프로퍼티 목록, 프로퍼티 옵션 등의 데이터가 응답으로 넘어 온다.
 
@@ -1034,16 +989,20 @@
   - `index`로 설정할 경우, 색인하려는 문서가 이미 인덱스에 있으면 해당 문서를 업데이트한다.
     - `<인덱스명>/_doc/<doc_id>`와 같이 보낼 경우 `op_type`은 `index`로 설정된다.
 
-  ```bash
-  # 아래 두 명령은 동일하게 동작한다.
-  $ curl -XPUT my-index/_create/1
-  $ crul -XPUT my-index/_doc/1?op_type=create
+  ```http
+  PUT my-index/_create/1
+  ```
+  
+  - 위 명령어는 아래와 같다.
+
+  ```http
+  PUT my-index/_doc/1?op_type=create
   ```
 
   - data stream의 경우  `op_type`이 `create`여야만 색인이 가능하다.
     - 따라서 `?op_type=create`와 같이 명시하거나 `_create` API를 사용해야 한다.
     - bulk의 경우에도 create라는 action을 명시해줘야한다.
-
+  
   ```bash
   # 단 건 색인
   $ curl -XPUT my-data-stream/_create/1
