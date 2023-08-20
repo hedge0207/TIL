@@ -1003,12 +1003,12 @@
     - 따라서 `?op_type=create`와 같이 명시하거나 `_create` API를 사용해야 한다.
     - bulk의 경우에도 create라는 action을 명시해줘야한다.
   
-  ```bash
+  ```json
   # 단 건 색인
-  $ curl -XPUT my-data-stream/_create/1
+  // PUT my-data-stream/_create/1
   
-  # bulk
-  $ curl -XPUT my-data-stream/_bulk?refresh
+  // bulk
+  // my-data-stream/_bulk?refresh
   {"create":{ }}
   {"message": "Login attempt failed" }
   {"create":{ }}
@@ -1031,30 +1031,35 @@
 
   - 검색을 위해 데이터를 더 추가
 
-  ```bash
-  $ curl -XPUT 'localhost:9200/company/colleague/2?pretty' -H 'Content-Type: application/json' -d '{
-  "name":"Kim",
-  "age":"26"
-  }'
-  $ curl -XPUT 'localhost:9200/company/colleague/3?pretty' -H 'Content-Type: application/json' -d '{
-  "name":"Lee",
-  "age":"27"
-  }'
-  $ curl -XPUT 'localhost:9200/company/colleague/4?pretty' -H 'Content-Type: application/json' -d '{
-  "name":"An",
-  "age":"27"
-  }'
+  ```json
+  // PUT /company/colleague/2
+  {
+  	"name":"Kim",
+  	"age":"26"
+  }
+  
+  // PUT /colleague/3?pretty
+  {
+      "name":"Lee",
+      "age":"27"
+  }
+  
+  // PUT /colleague/4
+  {
+      "name":"An",
+      "age":"27"
+  }
   ```
-
+  
   - 데이터 검색하기
     - `q`파라미터는 검색할 내용이 들어간다.
     - 특정 필드에서만 찾고자 할 때는 `q=name:Kim`과 같이 작성하면 된다.
     - 아래와 같이 필드를 지정해주지 않을 경우 `_all`이라는 모든 필드의 내용을 색인하는 필드가 자동으로 들어가게 된다.
     - `_source` 파라미터는 특정 필드만 반환되도록 한다(유사한 파라미터로 `stored_fileds`가 있다).
     - `size` 파라미터는 일치하는 데이터들 중 반환할 데이터의 수를 지정한다(기본값은 10이다).
-
-  ```json
-  $ curl "localhost:9200/company/colleague/_search?q=Kim&_source=name&size=1&pretty"
+  
+  ```http
+  GET /company/colleague/_search?q=Kim&_source=name&size=1
   ```
 
 
@@ -1065,36 +1070,42 @@
     - url에서 타입을 콤마로 구분하여 검색하면 된다.
     - ES 6.X 부터 매핑 타입이 사라짐에 따라 쓸 일이 없는 기능이 되었다.
 
-  ```bash
-  $ curl "localhost:9200/company/colleague, department/_search?q=Kim&_source=name&size=1&pretty"
+  ```http
+  GET /company/colleague,department/_search?q=Kim&_source=name&size=1
   ```
 
   - 모든 타입에서 검색하기
     - 타입을 지정하지 않고 검색하면 된다.
     - 역시 ES 6.X 부터 매핑 타입이 사라짐에 따라 쓸 일이 없는 기능이 되었다.
 
-  ```bash
-  $ curl "localhost:9200/company/_search?q=Kim&_source=name&size=1&pretty"
+  ```http
+  GET /company/_search?q=Kim&_source=name&size=1
   ```
 
   - 다수의 색인을 검색하기
     - url에서 인덱스를 콤마로 구분하여 검색하면 된다.
     - 만일 검색하려는 색인이 없는 경우 에러가 발생하는데 에러를 무시하려면 `ignore_unavailable` 플래그를 주면 된다.
 
-  ```bash
-  $ curl "localhost:9200/company,fruits/_search?q=Kim&_source=name&size=1&pretty"
+  ```http
+  GET /company,fruits/_search?q=Kim&_source=name&size=1
+  ```
   
-  # 없는 인덱스도 포함해서 검색하기
-  $ curl "localhost:9200/company,fruits/_search?q=Kim&_source=name&size=1&pretty&ignore_unavailable"
+  - 없는 인덱스도 포함해서 검색하기
+  
+  ```http
+  GET /company,fruits/_search?q=Kim&_source=name&size=1&ignore_unavailable
   ```
 
+  
+  
   - 모든 색인을 검색하기
     - url의 색인이 올 자리에 `_all`을 입력하거나 아예 색인을 빼면 모든 색인에서 검색한다.
-
-  ```bash
-  $ curl "localhost:9200/_all/_search?q=Kim&_source=name&size=1&pretty"
   
-  $ curl "localhost:9200/_search?q=Kim&_source=name&size=1&pretty"
+  ```http
+  GET /_all/_search?q=Kim&_source=name&size=1
+  
+  # 위 요청은 아래와 같다.
+  GET /_search?q=Kim&_source=name&size=1
   ```
 
 
@@ -1103,8 +1114,8 @@
 
   - 요청
 
-  ```bash
-  $ curl "localhost:9200/company/colleague/_search?q=Kim&_source=name&size=1&pretty"
+  ```http
+  HET /company/colleague/_search?q=Kim&_source=name&size=1
   ```
 
   - 응답
@@ -1175,20 +1186,21 @@
     - 위 두 옵션(`default_field`, `default_operator`)을 다음과 같이 쿼리 스트링 자체에 설정하는 것도 가능하다.
     - `"query":"name:Kim AND name:Lee"`
 
-  ```bash
-  $ curl 'localhost:9200/company/colleague/_search?pretty' -H 'Content-Type: application/json' -d '{
-    "query":{
+  ```json
+  // GET /company/colleague/_search
+  {
+      "query":{
       "query_string":{
-        "query":"Kim",
-        "default_field":"name",
-        "default_operator":"AND"
+            "query":"Kim",
+            "default_field":"name",
+            "default_operator":"AND"
+          }
       }
-    }
-  }'
+  }
   ```
-
+  
   - 응답
-
+  
   ```json
   {
     "took" : 1,
@@ -1230,8 +1242,9 @@
     - 필터는 오직 키워드가 일치하는지만 판단하여 일치하는 값들을 반환한다.
   - 필터 검색
 
-  ```bash
-  $ curl 'localhost:9200/_search?pretty' -H 'Content-Type: application/json' -d '{
+  ```json
+  // /_search?pretty
+  {
     "query":{
     	"filtered":{
     	  "filter":{
@@ -1253,17 +1266,16 @@
     - 그러나 타입은 현재 사라졌기 때문에 type 자리에 `_doc`을 입력하여 검색한다.
     - 타입을 입력해도 검색은 되지만 경고문이 뜬다.
 
-  ```json
-  // _doc 사용
-  $ curl 'localhost:9200/company/_doc/1?pretty'
+  ```http
+  GET /company/_doc/1
   
   // 타입 사용
-  $ curl 'localhost:9200/company/colleague/1?pretty'
+  GET /company/colleague/1
   ```
-
+  
   - 응답
     - 만일 찾는 문서가 존재하지 않으면 아래 `found`는 false가 된다.
-
+  
   ```json
   {
     "_index" : "company",
@@ -1295,7 +1307,7 @@
 
   - 도큐먼트를 삭제하는 경우
 
-  ```json
+  ```http
   DELETE office/_doc/1
   ```
 
@@ -1320,7 +1332,7 @@
 
   - 삭제된 도큐먼트를 조회
 
-  ```json
+  ```http
   GET office/_doc/1
   ```
 
@@ -1337,7 +1349,7 @@
 
   - 인덱스를 삭제
 
-  ```json
+  ```http
   DELETE office
   ```
 
@@ -1384,8 +1396,8 @@
   - 전체 도큐먼트 삭제하기
     - `_delete_by_query`를 이용하여 모든 도큐먼트가 매치되도록해서 삭제한다.
 
-  ```bash
-  POST <인덱스명>/_delete_by_query
+  ```json
+  // POST <인덱스명>/_delete_by_query
   {
     "query": {
       "match_all": {}
@@ -1401,16 +1413,15 @@
   - 수정 요청
 
   ```json
-  POST 인덱스이름/_delete_by_query
-  
+  // POST 인덱스이름/_delete_by_query
   {
       "nickname":"Oeht",
       "message":"!요세하녕안"
   }
   ```
-
+  
   - 응답
-
+  
   ```json
   {
       "_index": "office",
@@ -1427,14 +1438,12 @@
       "_primary_term": 1
   }
   ```
-
+  
   - 수정할 때 특정 필드를 뺄 경우 해당 필드가 빠진 채로 수정된다.
     - POST 메서드로도 수정이 가능한데 POST 메서드를 사용해도 마찬가지다.
-
-  ```json
-  // 요청
-  POST office/_doc/1
   
+  ```json
+  // POST office/_doc/1
   {
       "nickname":"Theo"
   }
@@ -1454,24 +1463,23 @@
       }
   }
   ```
-
+  
   - `_update`
     - `_update`를 활용하면 일부 필드만 수정하는 것이 가능하다.
     - 업데이트 할 내용에 `"doc"`이라는 지정자를 사용한다.
-
+  
   ```json
   // 도큐먼트id가 2인 새로운 도큐먼트를 생성했다고 가정
-  POST office/_update/2
-  
+  // POST office/_update/2
   {
       "doc":{
-          "message":"반갑습니다.!"
+          "message":"반갑습니다!"
       }
   }
   ```
-
+  
   - 응답
-
+  
   ```json
   {
       "_index": "office",

@@ -405,8 +405,8 @@
   - 아래 명령어를 통해 현재 클러스터 정보를 확인할 수 있다.
     - cat API는 JSON을 반환하지 않는다.
 
-  ```bash
-  $ curl 'localhost:9200/_cat/shards?v'
+  ```http
+  GET /_cat/shards?v
   ```
 
   - 새로운 노드를 추가한 적이 없으므로 오직 하나의 노드만 존재한다.
@@ -469,8 +469,8 @@
     - 따라서 노드가 멈추더라도 재할당을 하지 않도록 설정을 변경해줘야 한다.
     - 아래와 같이 설정을 완료하고 노드를 정지하면, 정지된 노드의 샤드들은 다른 샤드로 재할당되지 않고 unassigned 상태가 된다.
 
-  ```bash
-  $ curl -XPUT "localhost:9200/_cluster/settings?pretty" -H 'Content-type:application/json' -d '
+  ```json
+  // PUT /_cluster/settings
   {
   	"persistent":{
   		"cluster.routing.allocation.enable":"none"
@@ -482,8 +482,8 @@
     - 프라이머리 샤드와 레플리카 샤드 간의 데이터를 동일하게 맞춰줘야 한다.
     - 두 샤드가 가지고 있는 문서가 완벽히 동일해야 클러스터에서 노드가 제외되더라도 데이터의 정합성을 보장할 수 있기 때문이다.
 
-  ```bash
-  $ curl -XPUT "localhost:9200/_flush/synced?pretty"
+  ```http
+  PUT /_flush/synced
   ```
 
   - 노드 한 대 버전 업그레이드 이후 클러스터 합류 확인
@@ -493,13 +493,13 @@
     - 샤드 할당 기능을 활성화하여 unassigned 상태인 샤드들이 업그레이드한 노드에 할당될 수 있도록 한다.
     - null은 기본 설정으로 되돌리겠다는 의미이다.
 
-  ```bash
-  $ curl -XPUT "localhost:9200/_cluster/settings?pretty" -H 'Content-type:application/json' -d '
+  ```json
+  PUT _cluster/settings?pretty
   {
   	"persistent":{
   		"cluster.routing.allocation.enable":null
   	}
-  }'
+  }
   ```
 
   - 클러스터 그린 상태(모든 샤드가 할당 된 상태) 확인
@@ -525,10 +525,10 @@
   - ES는 노드마다 균등하게 샤드를 배치하기에 수작업으로 샤드를 하나 이동하면 균형을 맞추기 위해 자동으로 다른 샤드 하나를 이동시킨다.
   - 샤드 이동(move) 명령
 
-  ```bash
-  $ curl -XPUT "localhost:9200/_cluster/reroute?pretty" -H 'Content-type:application/json' -d '
+  ```json
+  // PUT _cluster/reroute
   {
-  	# list 형태로, 여러 명령을 동시에 실행하는 것이 가능하다.
+  	// list 형태로, 여러 명령을 동시에 실행하는 것이 가능하다.
   	"command":[
   		{
               "move":{
@@ -544,8 +544,8 @@
 
   - 이동 취소(cancel) 명령
 
-  ```bash
-  $ curl -XPUT "localhost:9200/_cluster/reroute?pretty" -H 'Content-type:application/json' -d '
+  ```json
+  // PUT _cluster/reroute
   {
   	"command":[
   		{
@@ -562,8 +562,8 @@
   - 레플리카 샤드 배치(allocate_replica) 명령
     - 이미 배치된 레플리카 샤드에는 사용할 수 없다(unassigned 상태인 레플리카 샤드에만 사용이 가능하다).
 
-  ```bash
-  $ curl -XPUT "localhost:9200/_cluster/reroute?pretty" -H 'Content-type:application/json' -d '
+  ```json
+  // PUT _cluster/reroute?pretty
   {
   	"command":[
   		{
@@ -581,8 +581,8 @@
     - 샤드 배치가 모두 자동으로 이루어진다.
     - 특정 노드에 배치하고자 한다면 `allocate_replica` 명령을 사용하여 하나씩 배치해야 한다.
 
-  ```bash
-  $ curl -XPOST "localhost:9200/_cluster/reroute?retry_failed?pretty" -H 'Content-type:application/json'
+  ```http
+  POST /_cluster/reroute?retry_failed
   ```
 
 
@@ -593,13 +593,13 @@
     - reroute는 인덱스의 특정 샤드를 대상으로 하는 재배치
     - 위에서 살펴본 Rolling Restart 방식에서 일시적으로 모든 샤드의 재할당을 중지하는 것이 allocation을 활용한 것이다.
 
-  ```bash
-  $ curl -XPUT "localhost:9200/_cluster/settings?pretty" -H 'Content-type:application/json' -d '
+  ```json
+  // PUT _cluster/settings?pretty
   {
   	"persistent":{
-  		# 옵션에 아래 5개 중 하나를 넣으면 된다.
-  		# all, primaries, new_primaries, none, null
-  		"cluster.routing.allocation.enable":"옵션" # null은 예외적으로 따옴표로 감싸지 않는다.
+  		// 옵션에 아래 5개 중 하나를 넣으면 된다.
+  		// all, primaries, new_primaries, none, null
+  		"cluster.routing.allocation.enable":"옵션" // null은 예외적으로 따옴표로 감싸지 않는다.
   	}
   }'
   ```
@@ -623,11 +623,11 @@
     - 기본값은 2이다.
     - 너무 많은 샤드를 동시에 복구하면 노드에 부하를 줄 수 있기 떄문에 클러스터의 성능을 고려해서 설정하는 것이 좋다.
 
-  ```bash
-  $ curl -XPUT "localhost:9200/_cluster/settings?pretty" -H 'Content-type:application/json' -d '
+  ```json
+  // PUT _cluster/settings?pretty
   {
   	"persistent":{
-  		"cluster.routing.allocation.node_concurrent_recoveries":샤드의 수
+  		"cluster.routing.allocation.node_concurrent_recoveries":<shard의 수>
   	}
   }'
   ```
@@ -639,8 +639,8 @@
   - 클러스터 내의 샤드가 배치된 후에 특정 노드에 샤드가 많다거나 배치가 고르지 않을 때의 동작과 관련된 설정이다.
     - allocation은 노드가 증설되거나 클러스터에서 노드가 이탈했을 때의 동작과 관련된 설정이다.
 
-  ```bash
-  $ curl -XPUT "localhost:9200/_cluster/settings?pretty" -H 'Content-type:application/json' -d '
+  ```json
+  // PUT _cluster/settings?pretty
   {
   	"persistent":{
   		"cluster.routing.rebalance.enable":"옵션"
@@ -664,14 +664,14 @@
     - `cluster.routing.allocation.disk.watermark.flood_stage`: 전체 노드가 임계치를 넘어서면 인덱스를 read only 모드로 변경(기본값은 95%)
     - `cluster.info.update.interval`: 임계치 설정을 체크할 주기(기본값은 30s)
 
-  ```bash
-  $ curl -XPUT "localhost:9200/_cluster/settings?pretty" -H 'Content-type:application/json' -d '
+  ```json
+  // PUT _cluster/settings?pretty
   {
   	"persistent":{
   		"cluster.routing.allocation.disk.watermark.low":"n%",
   		"cluster.routing.allocation.disk.watermark.high":"n%",
   		"cluster.routing.allocation.disk.watermark.flood_stage":"n%",
-  		"cluster.info.update.interval":"ns" # ns 또는 nm
+  		"cluster.info.update.interval":"ns" // ns 또는 nm
   	}
   }'
   ```
@@ -682,9 +682,10 @@
     - 그러나 읽기 전용 모드는 flood_stage에 의해 다수의 인덱스에 설정되므로 가능한 아래 코드와 같이 `_all`을 통해 모든 인덱스에 동시 적용하는 것이 좋다.
   
   
-  ```bash
-  $ curl -XPUT "localhost:9200/_all/_settings?pretty" -H 'Content-type:application/json' -d'{
-  "index.block.read_only_allow_delete":null
+  ```json
+  // PUT _all/_settings?pretty
+  {
+  	"index.block.read_only_allow_delete":null
   }'
   ```
 
@@ -708,8 +709,8 @@
   - 예시
     - node02 라는 이름의 노드를 샤드 배치에서 제외하는 curl
 
-  ```bash
-  $ curl -XPUT "localhost:9200/_cluster/settings?pretty" -H 'Content-type:application/json' -d '
+  ```json
+  // PUT cluster/settings
   {
   	"persistent":{
   		"cluster.routing.allocation.exclude._name":"node02"
@@ -774,8 +775,8 @@
   - `_cluster/settings`와 같이 `_cluster`가 붙은 API를 클러스터 API라 부른다.
   - 현재 클러스터에 적용된 설정 확인
 
-  ```bash
-  $ curl -XGET "localhost:9200/_cluster/settings?pretty"
+  ```http
+  GET /_cluster/settings
   ```
 
   - 응답
@@ -813,8 +814,8 @@
     - `discovery.zen.minimum_master_nodes` 설정은 7.0부터 사라졌다.
   
   
-  ```bash
-  $ curl -X PUT "localhost:9200/_cluster/settings?pretty" -H 'Content-type:application/json' -d'
+  ```json
+  // PUT _cluster/settings?pretty
   {
   	"persistent":{
   		"cluster.routing.allocation.disk.watermark.low":"90%",
@@ -833,8 +834,8 @@
   - `explain`을 사용한다.
     - 더 자세한 내용은 master node의 로그를 확인해보면 된다.
 
-  ```bash
-  $ curl -XGET _cluster/allocation/explain?pretty
+  ```http
+  GET _cluster/allocation/explain
   ```
 
   - 위에서 살펴본 샤드 reroute의 `retry_failed` 옵션과 함께 유용하게 사요된다.
@@ -855,18 +856,18 @@
     - 와일드카드와 같은 정규식을 사용하는 것도 가능하다(`user*`를 넣으면 user로 시작하는 모든 인덱스가 대상이 된다.)
   - 조회
 
-  ```bash
-  $ -XGET "localhost:9200/인덱스명/_settings"
+  ```http
+  GET <인덱스명>/_settings
   ```
 
   - 수정
     - 아래 curl은 레플리카 샤드의 수를 0개로 줄이는 요청이다.
 
-  ```bash
-  $ -XPUT "localhost:9200/인덱스명/_settings" -H 'Content-type:application/json' -d'
+  ```json
+  // PUT <인덱스명>/_settings
   {
   	"index.number_of_replicas":0
-  }
+  }j
   ```
 
 
@@ -877,60 +878,70 @@
     - 인덱스를 사용 가능/불가능한 상태로 만드는 API
     - close 상태일 경우 색인과 검색이 모두 불가능해진다.
 
-  ```bash
-  # close
-  $ curl -XPOST "localhost:9200/인덱스명/_close" -H 'Content-type:application/json' -d'
+  ```http
+  POST <인덱스명>/_close
   
-  # open
-  $ curl -XPOST "localhost:9200/인덱스명/_open" -H 'Content-type:application/json' -d'
+  POST <인덱스명>/_open
   ```
-
+  
   - aliases
     - 인덱스에 별칭을 부여하는 API
     - 인덱스의 이름뿐만 아니라 별칭으로도 인덱스에 접근할 수 있게 된다.
     - 배열에 넣거나 패턴 매칭을 통해 여러 인덱스에 하나의 alias를 설정할 수 있다.
     - 주의할 점은 단일 인덱스에 설정된 alias는 별칭을 통해 색인과 검색이 모두 가능하지만, 여러 인덱스에 설정된 하나의 alias의 경우 별칭을 통해서는 검색만 가능하다는 점이다.
     - 또한 여러 개의 인덱스에 하나의 alias를 설정한 경우 인덱스가 하나라도 close 상태라면 alias를 통핸 검색 요청이 불가능해진다.
-
-  ```bash
+  
+  ```json
   # 하나의 인덱스에만 alias를 설정
-  $ curl -XPOST "localhost:9200/_aliases" -H 'Content-type:application/json' -d'
+  // POST _aliases
   {
   	"actions":[
-  		# alias를 설정할 인덱스와 alias의 이름을 입력한다.
-  		# remove를 통해 제거가 가능하다.
-  		{"add":{"index":"test1","alias":"alias1"}}
+  		// alias를 설정할 인덱스와 alias의 이름을 입력한다.
+  		// remove를 통해 제거가 가능하다.
+  		{
+  			"add":{
+  				"index":"test1",
+  				"alias":"alias1"
+  			}
+  		}
   	]
   }
   
-  # 여러 개의 인덱스에 alias를 설정
-  $ curl -XPOST "localhost:9200/_aliases" -H 'Content-type:application/json' -d'
+  // 여러 개의 인덱스에 alias를 설정
+  // POST _aliases
   {
   	"actions":[
-  		{"add":{"index":["test2","test3"],"alias":"alias2"}}
-  		# 패턴 매칭 사용(test로 시작하는 모든 인덱스에 적용)
-  		# {"add":{"index":["test*"],"alias":"alias2"}}
+  		{
+              "add":{
+                  "index":["test2","test3"],
+                  "alias":"alias2"
+              }
+          }
+  		// 패턴 매칭 사용(test로 시작하는 모든 인덱스에 적용)
+  		// {"add":{"index":["test*"],"alias":"alias2"}}
   	]
   }
   ```
-
+  
   - rollover
     - 인덱스에 특정 조건을 설정하여 해당 조건을 만족하면 인덱스를 새로 만들고, 새롭게 생성된 인덱스로 요청을 받는 API
     - aliases API를 통해 별칭 설정이 반드시 필요한  API이다.
     - 예를 들어 index01이라는 인덱스에 aliases API로 user라는 별칭을 붙이고 user를 통해 인덱스에 접근하고 있었다고 가정했을 때, index01 인덱스에 많은 문서가 색인되는 등의 이유로 인덱스를 하나 더 생성해야 한다면 rollover API를 통해서 index02라는 인덱스를 생성하고 user라는 별칭이 가리키는 인덱스를 index02로 변경한다. 이렇게 함으로써 사용자는 user라는 별칭을 계속 사용하여 색인과 검색이 가능해진다.
     - `dry_run` 옵션을 통해 모의 실행이 가능하다. 이 경우 실제 변경이 적용되지는 않고, 변경이 적용되면 어떻게 되는지를 보여준다.
-
-  ```bash
-  # index01이라는 인덱스에 user라는 별칭 설정
-  $ curl -XPOST "localhost:9200/index01/_aliases" -H 'Content-type:application/json' -d'
+  
+  ```json
+  // index01이라는 인덱스에 user라는 별칭 설정
+  // POST index01/_aliases
   {
-  	"aliases":{"user":{}}
+  	"aliases":{
+  		"user":{}
+  	}
   }
   
-  # rollover API를 호출하고 조건을 설정한다.
-  $ curl -XPOST "localhost:9200/user/_rollover?pretty" -H 'Content-type:application/json' -d'
+  // rollover API를 호출하고 조건을 설정한다.
+  // POST user/_rollover?pretty
   {
-  	# 생성된 지 7일이 지나거나, 문서의 수가 2개 이상이거나, 인덱스의 크기(프라이머리 샤드 기준)가 5GB가 넘으면 롤오버한다.
+  	// 생성된 지 7일이 지나거나, 문서의 수가 2개 이상이거나, 인덱스의 크기(프라이머리 샤드 기준)가 5GB가 넘으면 롤오버한다.
   	"contitions":{
   		"max_age":"7d",
   		"max_docs":2,
@@ -938,38 +949,38 @@
   	}
   }
   
-  # 새로 생성될 index의 이름(new_index)을 아래와 같이 직접 지정해주는 것이 가능하다.
-  $ curl -XPOST "localhost:9200/user/_rollover/new_index?pretty" -H 'Content-type:application/json' -d'
+  // 새로 생성될 index의 이름(new_index)을 아래와 같이 직접 지정해주는 것이 가능하다.
+  // POST user/_rollover/new_index
   {
   	...
   }
   
-  # dry_run 적용
-  $ curl -XPOST "localhost:9200/user/_rollover?dry_run&pretty" -H 'Content-type:application/json' -d'
+  // dry_run 적용
+  // POST user/_rollover?dry_run
   {
   	...
   }
   ```
-
+  
   - refresh API
     - `refresh_interval` 설정은 메모리 버퍼 캐시에 있는 문서들을 세그먼트로 저장해주는 주기를 의미한다.
     - refresh API는 `refresh_interval`에서 설정한 주기를 기다리지 않고 바로 메모리 버퍼 캐시에 있는 문서들을 세그먼트로 저장해준다.
-
-  ```bash
-  $ curl -XPOST "localhost:9200/인덱스명/_refresh?pretty" -H 'Content-type:application/json'
+  
+  ```http
+  POST <인덱스명>/_refresh
   ```
-
+  
   - forcemerge API
     - 샤드를 구성하는 세그먼트를 강제로 병합하는 API.
     - `max_num_segments` 옵션으로 샤드 내 세그먼트들을 몇 개의 세그먼트로 병합할 것인지 설정한다.
     - 병합의 대상이 되는 세그먼트들은 샤드의 개수에 비례해서 증가하고 떄어 따라서 많은 양의 디스크 I/O 작업을 일으킨다.
     - 따라서 너무 많은 세그먼트를 대상으로 forcemerge API 작업을 진행하면 성능 저하를 일으킬 수 있다.
     - 또한 계속 문서의 색인이 일어나고 있는 인덱스라면 세그먼트에 대한 변경 작업이 계속되기 때문에 forcemerge 작업을 하지 않는 것이 좋다.
-
-  ```bash
-  $ curl -XPOST "localhost:9200/인덱스명/_forcemerge?max_num_segments=10&pretty" -H 'Content-type:application/json'
+  
+  ```http
+  POST <인덱스명>/_forcemerge?max_num_segments=10
   ```
-
+  
   - reindex API
     - 인덱스를 복제하는 API
     - 인덱스의 analyzer 변경이나 클러스터의 마이그레이션 등 인덱스를 마이그레이션해야 할 경우 사용한다.
@@ -977,12 +988,12 @@
     - 목적지 클러스터의 elasticsearch.yml 파일에서 `reindex.remote.whitelist:"호스트:9200,127.0.0.*:9200`과 같이 원본 클러스터의 주소를 whitelist에 설정해주면 되는데, 도메인이나 IP를 기준으로 예시처럼 와일드카드 패턴 매칭도 지원한다.
     - 데이터만 복제하는 것이기에 미리 settings와  mappings를 동일하게 맞춰줘야 한다.
   
-  ```bash
-  # 클러스태 내 reindex
-  $ curl -XPOST "localhost:9200/_reindex?pretty" -H 'Content-type:application/json' -d'
+  ```json
+  // 클러스태 내 reindex
+  // POST _reindex
   {
   	"source":{
-  		"index":"test",	# 원본 인덱스
+  		"index":"test",	// 원본 인덱스
   		"query": {
               "match": {
               "test": "data"
@@ -990,12 +1001,12 @@
           }
   	},
   	"dest":{
-  		"index":"new_index"	# 목적지 인덱스
+  		"index":"new_index"	// 목적지 인덱스
   	}
   }
   
-  # 클러스터 간 reindex(목적지 클러스터에서 수행)
-  $ curl -XPOST "localhost:9200/인덱스명/_reindex?pretty" -H 'Content-type:application/json' -d'
+  // 클러스터 간 reindex(목적지 클러스터에서 수행)
+  // POST <인덱스명>/_reindex
   {
   	"source":{
   		"remote":{
@@ -1037,8 +1048,8 @@
 
   - 아래와 같이 템플릿을 생성한 후 test1이라는 인덱스를 생성하면, 아래 템플릿이 적용되어 생성된다.
 
-  ```bash
-  $ curl -XPUT "localhost:9200/_template/my_template?pretty" -H 'Content-type:application/json' -d'
+  ```json
+  // PUT _template/my_template?pretty
   {
   	"index_patterns":["test*"],
   	"order":1,
@@ -1056,7 +1067,7 @@
   		}
   	},
   	"aliases":{
-  		"alias_test":{} # alias_test라는 별칭을 붙인다.
+  		"alias_test":{} // alias_test라는 별칭을 붙인다.
   	}
   }'
   ```
@@ -1074,14 +1085,14 @@
 
   - 모든 템플릿 확인하기
 
-  ```bash
-  $ curl -XPUT "localhost:9200/_cat/template?pretty"
+  ```http
+  PUT _cat/template
   ```
 
   - 특정 템플릿 확인하기
 
-  ```bash
-  $ curl -XPUT "localhost:9200/_template/my_template?pretty"
+  ```http
+  PUT _template/my_template
   ```
 
 
