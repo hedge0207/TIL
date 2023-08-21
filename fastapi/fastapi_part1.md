@@ -50,6 +50,22 @@
       return {"item_id": item_id, "q": q}
   ```
   
+  - 아래와 같이 lambda 형식으로도 추가할 수 있다.
+  
+  ```python
+  from fastapi import FastAPI
+  import uvicorn
+  
+  
+  app = FastAPI()
+  
+  
+  app.get("/")(lambda :"ok")
+  
+  if __name__ == "__main__":
+      uvicorn.run(app)
+  ```
+  
   - 서버 실행하기
     - 위 코드에서 `app = FastAPI()`로 생성된 app을 명령어로 넣는다.
     - `--reload`는 코드가 변경된 후 서버를 재시작하는 명령어이다.
@@ -118,9 +134,9 @@
 
 # 매개변수
 
-## 경로 매개변수
+## Path Parameter
 
-- fastapi에서는 매개변수 또는 변수를 경로에 선언할 수 있다.
+- Fastapi에서는 매개변수 또는 변수를 경로에 선언할 수 있다.
 
   - 경로 매개변수의 값은 함수의 파라미터로 전달된다.
   - 예시
@@ -285,7 +301,7 @@
 - 경로를 포함하는 경로 매개변수
 
   - `/files/{file_path}`와 같이 파일 경로를 경로 매개변수로 받아야 하는 경우가 있을 수 있다.
-  - fastapi는 `/home/theo/workspace/test.txt`와 같이 파일 경로를 포함하는 경로 매개변수를 내부에 선언할 수 없게 해놨다.
+  - Fastapi는 `/home/theo/workspace/test.txt`와 같이 파일 경로를 포함하는 경로 매개변수를 내부에 선언할 수 없게 해놨다.
   - 그러나 다음과 같은 방법을 사용하면 가능하다.
     - 경로를 선언하는 부분에 `:path`를 추가하면 파일 경로도 경로 매개변수로 사용이 가능하다.
     - 주의할 점은 경로 매개변수로 받은 파일 경로가 반드시 `/`로 시작해야 한다는 것이다.
@@ -312,13 +328,13 @@
     - 따라서 required로 만들기 위해 첫 번째 인자에 Ellipsis(`...`)를 줘야 한다.
     - None을 포함한 다른 값을 첫 번째 인자로 줘도 실행에 영향을 미치지는 않는다.
   - 아래 옵션들을 사용 가능하다.
-    - alias: 매개변수의 이름이 Python의 규칙과 맞지 않을 때(e.g. user-name)이를 Python의 규칙에 맞는 이름과 연결하기 위해 사용.
-    - title: 파라미터에 title을 메타데이터로 주기 위해 사용
-    - description: 파라미터에 description을 메타데이터로 주기 위해 사용
-    - gt, ge, lt, te: 숫자의 대소 비교
-    - min_length, max_length: 최소 길이, 최대 길이 비교
-    - regex: 정규표현식
-    - depreacted: docs에 더 이상 사용하지 않을 것이라는 표시를 해준다. 이 옵션이 True인 파라미터를 줘도 정상적으로 동작한다.
+    - `alias`: 매개변수의 이름이 Python의 규칙과 맞지 않을 때(e.g. user-name)이를 Python의 규칙에 맞는 이름과 연결하기 위해 사용.
+    - `title`: 파라미터에 title을 메타데이터로 주기 위해 사용
+    - `description`: 파라미터에 description을 메타데이터로 주기 위해 사용
+    - `gt`, `ge`, `lt`, `te`: 숫자의 대소 비교
+    - `min_length`, `max_length`: 최소 길이, 최대 길이 비교
+    - `regex`: 정규표현식
+    - `depreacted`: docs에 더 이상 사용하지 않을 것이라는 표시를 해준다. 이 옵션이 True라 하더라도 정상적으로 동작은 한다.
   - metadata 추가하기
 
   ```python
@@ -371,7 +387,7 @@
   ```
 
   - FastAPI는 `Annotated`를 사용할 것을 권장하는데, 그 이유는 아래와 같다.
-    - Parameter를 `q: Annotated[str | None, Query(max_length=3)] = None`와 같이 작성하는 것이 Python에서 일반적인 default value를 주는 방식이다.
+    - Parameter를 `q: Annotated[str | None, Query(max_length=3)] = None`과 같이 작성하는 것이 Python에서 일반적인 default value를 주는 방식이다.
     - `q: str | None = Query(default=None, max_length=3)`와 같이 parameter를 선언하여 기본값을 설정하는 것은 오직 FastAPI라는 맥락 내에서만 유효한 방식이며, 만일 이런 방식으로 parameter를 선언한 함수를 FastAPI가 아닌 다른 곳에서 그대로 쓰려 한다면, 기본값을 추가해줘야할 것이다.
     - 즉 FastAPI라는 맥락 내에서는 두 방식이 정확히 동일하게 동작하지만, 다른 곳에서 사용될 때는 그렇지 않다.
     - 따라서 다른 곳에서 사용하게 될 경우에 대비하여 `Annotated` 방식을 사용하는 것을 권장한다.
@@ -396,13 +412,12 @@
       print(q)
   ```
 
-  
 
 
 
 
 
-## 쿼리 매개변수
+## Query parameter
 
 - 쿼리 매개변수
 
@@ -452,8 +467,8 @@
   ```
 
   - 필수 쿼리 매개변수
-    - 쿼리 매개변수에 기본값을 추가하면 해당 값은 필수적이지 않다.
-    - 특정 매개변수를 필수적으로 받도록 하기 위해서는 기본값을 지정해주지 않으면 된다.
+    - 쿼리 매개변수에 기본값을 추가하면 해당 값은 optional한 값이다.
+    - 특정 매개변수를 필수로 받도록 하기 위해서는 기본값을 지정하지 않으면 된다.
     - 아래의 경우 verb를 입력하지 않으면 error가 발생한다.
 
   ```python
@@ -1143,6 +1158,8 @@
 
 
 
+
+
 ## Request Header
 
 - Header parameter는 Query, Path 등과 같은 방식으로 정의할 수 있다.
@@ -1239,6 +1256,8 @@
   def get_items():
       pass
   ```
+
+
 
 
 
