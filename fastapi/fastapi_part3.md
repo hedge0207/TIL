@@ -1043,6 +1043,51 @@
 
 
 
+# Nginx + FastAPI
+
+- Uvicorn
+
+  - 아래와 같이 web server로 nginx를 사용할 간단한 FastAPI app을 생성하고 uvicorn으로 실행한다.
+
+  ```python
+  from fastapi import FastAPI
+  import uvicorn
+  
+  app = FastAPI()
+  
+  
+  @app.get("/foo")
+  def foo():
+      print("foo")
+      return "foo"
+  
+  
+  if __name__ == "__main__":
+      uvicorn.run(app, host="123.456.7.890", port=8090)
+  ```
+
+  - `nginx.conf`의 `http` block에 아래와 같은 설정을 추가한다.
+    - 아래에서 설정한 `proxy_pass` 외에도 다양한 설정이 있지만, 필수 설정은 `proxy_pass` 뿐이다.
+  
+  
+  ```nginx
+  # ...
+  
+  http {
+      # ...
+      server {
+          listen 80;
+          server_name 123.456.7.890;
+  
+          location / {
+              proxy_pass http://123.456.7.890:8090;
+          }
+      }
+  
+      include /etc/nginx/conf.d/*.conf;
+  }
+  ```
+
 
 
 

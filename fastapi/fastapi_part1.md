@@ -76,6 +76,27 @@
     
   $ uvicorn main:app --reload
   ```
+  
+  - 혹은 아래와 같이 script 내에 실행 코드를 넣을 수도 있다.
+  
+  ```python
+  from fastapi import FastAPI
+  import uvicorn
+  
+  app = FastAPI()
+  
+  
+  @app.get("/foo")
+  async def async_func():
+      print("foo")
+      return "foo"
+  
+  
+  if __name__ == "__main__":
+      uvicorn.run(app, host=192.160.1.567, port=8080)
+  ```
+  
+  
 
 
 

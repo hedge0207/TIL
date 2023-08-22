@@ -89,9 +89,11 @@
 - nginx.conf
 
   - 위치는 설치 방식에 따라 다를 수 있으나 일반적으로 `/etc/nginx/conf`에 있다.
+    - Nginx Docker image의 경우 `/etc/nginx`에 있다.
+  
   - Nginx의 동작 방식을 설정해 놓은 파일이다.
   - root 권한이 있어야 수정이 가능하다.
-
+  
   ```nginx
   user  nginx;
   worker_processes  auto;
@@ -236,7 +238,7 @@
 
 
 
-- http server block
+- Nginx의 `access.log`와 `error.log`는 Nignx Docker image의 경우 `/var/log/nginx`에 저장된다.
 
 
 
