@@ -310,18 +310,20 @@
   ```
 
   - docker 컨테이너 생성 및 실행
-
+    - 기본 port는 6379이다.
+  
+  
   ```bash
   $ docker run --network <network 이름> -p <port 번호>:<port 번호> redis
   ```
-
+  
   - redis-cli로 redis 접속하기
     - `--rm` 옵션을 주면 컨테이너가 내려갈 시에 컨테이너도 함께 삭제되며, 컨테이너를 띄울 때에도 같은 이름의 컨테이너가 있으면 해당 컨테이너를 삭제하고 띄운다.
-
+  
   ```bash
   $ docker run -it --network <network 이름> --rm redis-cli -h <redis 컨테이너 이름>
   ```
-
+  
   - redis-cli를 docker로 띄우지 않고도 접속이 가능하다.
     - 아래와 같이 설치 후 사용하면 된다.
     - `-a`의 경우 `requirepass`를 설정해줬으면 해당 password를 입력하면 된다.
@@ -401,17 +403,21 @@
 
 
 
-## cli
+## CLI
 
-- redis-cli 접속
+- redis-cli 실행
+
+  - 아래 명령어로 redis-cli를 실행시킨다.
+    - 기본 port는 6379이다.
+  
 
   ```bash
   $ redis-cli [-h 호스트 주소] [-p 포트] [-n db 번호] [-s 소켓] [-a 비밀번호] [-u 서버 url]
   ```
-
+  
   - 비밀번호 입력
     - redis-cli를 실행할 때 `-a`를 입력하지 않았으면 아래 명령어를 통해 인증이 가능하다.
-
+  
   ```bash
   > auth <password>
   ```
@@ -419,7 +425,7 @@
 
 
 
-- redis 정보 확인
+- Redis 정보 확인
 
   ```bash
   > info
@@ -450,40 +456,6 @@
   > monitor
   ```
 
-  - 모든 key 확인
-    - redis는 single thread이다.
-    - 이 명령을 처리하기 위해 뒤의 작업들은 멈춰버리므로 가급적 사용을 자제하는 것이 좋다.
-    - scan을 사용하는 것이 좋다.
-
-  ```bash
-  > keys *
-  ```
-
-  - scan
-    - cursor 기반으로 key들을 출력한다.
-    - 첫 번째 응답(`1)`)으로 다음번 cursor가 오는데 다시 이 것을 cursor애 넣고 명령어를 입력하는 것을 반복하다 0이 나오면 모든 key를 조회했다는 뜻이 된다.
-    - 첫 scan에서 아무것도 안 나온다고 결과가 없는 것이 아닐 수도 있다.
-
-  ```bash
-  > scan <cursor> [Match pattern] [Count]
-  
-  # 예시
-  > scan 0
-  
-  #응답
-  1) "88"
-  2)  1) "key62"
-      2) "key71"
-      3) "key85"
-      4) "key19"
-      5) "key92"
-      6) "key84"
-      7) "key20"
-      8) "key40"
-      9) "key34"
-     10) "key21"
-     11) "key2"
-  ```
 
 
 
@@ -552,6 +524,45 @@
   4) "World"
   5) "Hello"
   ```
+  
+  - 모든 key 확인
+    - redis는 single thread이다.
+    - 이 명령을 처리하기 위해 뒤의 작업들은 멈춰버리므로 가급적 사용을 자제하는 것이 좋다.
+    - scan을 사용하는 것이 좋다.
+  
+  ```bash
+  > keys *
+  ```
+  
+  - scan
+    - cursor 기반으로 key들을 출력한다.
+    - 첫 번째 응답(`1)`)으로 다음번 cursor가 오는데 다시 이 것을 cursor애 넣고 명령어를 입력하는 것을 반복하다 0이 나오면 모든 key를 조회했다는 뜻이 된다.
+    - 첫 scan에서 아무것도 안 나온다고 결과가 없는 것이 아닐 수도 있다.
+  
+  ```bash
+  > scan <cursor> [Match pattern] [Count]
+  
+  # 예시
+  > scan 0
+  
+  #응답
+  1) "88"
+  2)  1) "key62"
+      2) "key71"
+      3) "key85"
+      4) "key19"
+      5) "key92"
+      6) "key84"
+      7) "key20"
+      8) "key40"
+      9) "key34"
+     10) "key21"
+     11) "key2"
+  ```
+  
+  
+  
+  
 
 
 
