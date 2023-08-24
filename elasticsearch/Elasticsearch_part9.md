@@ -124,12 +124,11 @@
 
 
 
-
-
 - Analyzer 
   - Analyzer는 역색인을 만들어주는 것이다.
-    - analyzer는 운영 중에 동적으로 변경할 수 없다. 
+    - Analyzer는 운영 중에 동적으로 변경할 수 없다.
     - 따라서 기존 인덱스에 설정한 analyzer를 바꾸고 싶을 때는 인덱스를 새로 만들어서 재색인(reindex)해야 한다.
+    - 단, close 상태인 index에 새로운 analyzer를 추가하는 것은 가능하다.
   - ES의 analyzer는 다음과 같이 구성되며, 아래 순서로 실행된다.
     - character filter
     - tokenizer
@@ -704,14 +703,25 @@
 
 ### synonym
 
+> https://www.elastic.co/blog/boosting-the-power-of-elasticsearch-with-synonyms
+
 - synonym(유의어)
 
   - 분석 과정에서 유의어들을 보다 쉽게 처리할 수 있도록 도와주는 token filter이다.
     - 예를 들어 "Elasticsearch"를 누군가는 "ES"라고 쓰고, 누군가는 "엘라스틱서치"라고 쓴다고 하면, Elasticsearch라는 term으로 검색했을 때, ES나 엘라스틱서치라고 작성된 내용은 검색되지 않을 것이다.
     - synonym token filter를 사용하여 Elasticsearch와 ES, 엘라스틱서치를 유의어로 묶으면, Elasticsearch를 검색했을 때 다른 두 개의 용어도 검색되게 할 수 있다.
+    
   - 유의어 명시 규칙
     - `A, B`: A와 B 각 term이 서로를 모두 저장하여, A와 B 모두 서로의 term으로 검색이 된다.
     - `A => B`: A 대신 B의 term을 저장하여 A로는 B의 검색이 가능하지만, B로는 A의 검색이 불가능하다.
+    
+  - 대부분의 경우 index analyzer가 아닌 search analyzer로 활용한다.
+  
+    - Index analyzer로 적용할 경우 synonym들도 함께 색인해야 하므로 index의 크기가 커지고, 검색 점수 계산시에 synonym들도 계산에 포함시켜야 하므로 계산이 왜곡될 수 있으며, 무엇보다 synonym을 변경할 경우 재색인을 해야한다.
+  
+    - Index analyzer만 사용할 때의 유일한 장점은 매 query시마다 유의어를 확장하는 과정을 거치지 않아도 되기에 검색 속도가 향상될 수 있다는 것 뿐인데, 이는 이론상으로만 그렇지 살제로 이를 통해 향상되는 속도는 미미하다.
+    - 반면에 search analyzer에 적용하는 것은 index의 크기에 영향를 미치지 않고, 점수 계산에도 영향을 미치지 않으며, synonym을 변경해도 재색인을 하지 않아도 된다.
+    - 무엇보다 보다 정교한 `synonym_graph` token filter를 사용하게 해준다.
 
 
 
@@ -783,6 +793,13 @@
       }
   }
   ```
+  
+  - 아래와 같은 이유로 synonym을 settings에 직접 작성하는 대신 file로 작성하는 것을 권장한다.
+    - File로 작성해야 close, open 없이 reload search analyzer API로 변경사항을 적용할 수 있다.
+    - File로 작성하는 것이 version 관리가 더 간편한다.
+    - Index가 삭제되더라도 synonym file은 남아있으므로 유실될 일이 없다.
+    - 다른 여러 filter에서 동일한 synonym file을 공유할 수 있다.
+    - Synonym을 settings에 직접 작성할 경우 index의 settings에 대한 meta 정보를 저장하는 cluster state가 더 많은 memory를 사용하게 된다.
 
 
 
@@ -1010,7 +1027,7 @@
 
 
 
-- 관련 설정
+- 설정
 
   - `expand`(bool, 기본값은 true)
     - 기본적으로 synonym은 아래와 같이 저장된다.
@@ -1102,7 +1119,381 @@
   - `lenient`(bool, 기본값은 false)
     - true로 설정할 경우 synonym 설정에 오류가 있어도 오류를 무시하고 실행한다.
   - `updateable`(bool, 기본값은 false)
-    - true로 줄 경우 search analyzer를 reloading한다.
+    - true로 줄 경우 reload search analyzer API를 통해 search analyzer를 reload할 수 있게 해준다.
+    - 이를 통해 synonym의 변경사항을 close, open이 아닌 reload API를 호출하여 적용할 수 있게 된다.
+    - Search analyzer에만 적용된다.
+
+
+
+#### Synonym 추가하기
+
+- Index를 생성한 후에도 synonym을 추가할 수 있다.
+  - 일반적으로 synonym token filter는 index analyzer가 아닌 search analyzer로 사용하기에 재색인 없이 적용이 가능하다.
+    - 만일 index analyzer로도 사용하고자 한다면, 재색인을 해야한다.
+    - 단 search analyzer에 적용하더라도 synonym이 변경된다면, 이를 search analyzer에 적용하기 위해 index를 close 했다 다시 open해야한다.
+  - Elasticsearch 7.3 부터는 reload API와 `updateable` 옵션을 제공하여 close, open하지 않아도 적용되도록 변경되었다.
+
+
+
+- settings로 index analyzer에 적용된 synonym token filter update하기
+
+  - 이 방식은 불가능하며, 아래는 불가능하다는 것을 보여주기 위한 예시이다.
+  - Index 생성
+    - `"foo, bar"`만 synonym으로 등록하고, 이를 `text` field의 analyzer에 적용한다.
+
+  ```json
+  // PUT test
+  {
+    "settings": {
+      "index": {
+        "analysis": {
+          "filter": {
+            "synonym": {
+              "type": "synonym",
+              "synonyms": [
+                "foo, bar"
+              ]
+            }
+          },
+          "analyzer": {
+            "my_analyzer": {
+              "tokenizer": "standard",
+              "filter": [
+                "synonym"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "mappings": {
+      "properties": {
+        "text":{
+          "type":"text",
+          "analyzer": "my_analyzer"
+        }
+      }
+    }
+  }
+  ```
+
+  - 문서 색인하기
+
+  ```json
+  // PUT test/_doc/1
+  {
+    "text":"foo quz"
+  }
+  ```
+
+  - Token 확인하기
+    - foo와 synonym으로 설정된 bar도 token이 생성된 것을 볼 수 있다.
+
+  ```json
+  // GET test/_termvectors/1?fields=text
+  {
+      // ...
+      "terms": {
+          "bar": {
+            // ...
+          },
+          "foo": {
+            // ...
+          },
+          "quz": {
+            // ...
+          }
+        }
+  }
+  ```
+
+  - Index close하기
+    - synonym token filter를 update하기 위해 index를 close한다.
+
+  ```http
+  POST test/_close
+  ```
+
+  - Synonym update하기
+    - 기존의 foo, bar에 baz까지 추가하고, quz, qux를 새로운 synonym으로 설정한다.
+
+  ```json
+  PUT test/_settings
+  {
+    "analysis": {
+      "filter": {
+        "synonym": {
+          "type": "synonym",
+          "synonyms": [
+            "foo, bar, baz",
+            "quz, qux"
+          ]
+        }
+      }
+    }
+  }
+  ```
+
+  - Index open하기
+
+  ```http
+  POST test/_open
+  ```
+
+  - Token 확인
+    - 기존에 synonym으로 등록된 bar token마저 사라진 것을 볼 수 있다.
+
+  ```json
+  // GET test/_termvectors/1?fields=text
+  {
+      "terms": {
+          "foo": {
+            // ...
+          },
+          "quz": {
+            // ...
+          }
+        }
+  }
+  ```
+
+
+
+- settings로 search analyzer에 적용된 synonym token filter update하기
+
+  - Index 생성
+    - 이번에는 search_analyzer에 적용한다.
+
+  ```json
+  {
+      // settings는 위와 동일
+      "mappings": {
+          "properties": {
+              "text":{
+                  "type":"text",
+                  "search_analyzer": "my_analyzer"
+              }
+          }
+      }
+  }
+  ```
+
+  - 문서 색인
+
+  ```json
+  // PUT test/_doc/1
+  {
+    "text":"foo quz"
+  }
+  ```
+
+  - 검색
+    - 아래와 같이 검색하면 synonym으로 등록된 bar로 foo가 포함된 1번 문서가 검색되는 것을 볼 수 있다.
+
+  ```json
+  GET test/_search
+  {
+      "query": {
+          "match": {
+              "text": "bar"
+          }
+      }
+  }
+  ```
+
+  - 그 후, 위에서 했던 것과 같이 close, update, open을 진행한다.
+
+  - 다시 검색하기
+    - 기존에 synonym 으로 등록된 bar와 새롭게 추가된 baz와 qux로 1번 문서가 검색 되는 것을 볼 수 있다.
+
+  ```json
+  // GET test/_search
+  {
+      "query": {
+          "bool": {
+              "filter": [
+                  {
+                      "match":{
+                          "text":"bar"
+                      }
+                  },
+                  {
+                      "match":{
+                          "text":"baz"
+                      }
+                  },
+                  {
+                      "match":{
+                          "text":"qux"
+                      }
+                  }
+              ]
+          }
+      }
+  }
+  ```
+
+
+
+- File로 등록된 synonym token filter update하기
+
+  - Index analyzer에 적용한 경우 위와 마찬가지로 재색인을 하지 않으면 변경 사항이 적용되지 않으므로 따로 test하지 않는다.
+  - Synonym 사전 생성하기
+    - (Elasticsearch official image로 생성한 Docker container 기준) `/usr/share/elasticsearch/config/dict`에 아래와 같이 `my_synonym_dict.txt` 파일을 작성한다.
+    - 모든 node에 작성해야한다.
+
+  ```
+  foo, bar
+  ```
+
+  - Index를 생성한다.
+    - `synonyms_path`에 위에서 synonym 사전을 생성한 경로를 넣는다.
+
+  ```json
+  PUT test
+  {
+      "settings": {
+          "index": {
+              "analysis": {
+                  "filter": {
+                      "synonym": {
+                          "type": "synonym",
+                          "synonyms_path": "dict/my_synonym_dict.txt"
+                      }
+                  },
+                  "analyzer": {
+                      "synonym": {
+                          "tokenizer": "whitespace",
+                          "filter": [
+                              "synonym"
+                          ]
+                      }
+                  }
+              }
+          }
+      },
+      "mappings": {
+          "properties": {
+              "text": {
+                  "type": "text",
+                  "search_analyzer": "synonym"
+              }
+          }
+      }
+  }
+  ```
+
+  - 문서 색인
+
+  ```json
+  PUT test/_doc/1
+  {
+    "text":"foo quz"
+  }
+  ```
+
+  - 검색
+    - Synonym 사전이 정상적으로 등록 되었다면 아래와 같이 검색했을 때 1번 문서가 검색될 것이다.
+
+  ```json
+  GET test/_search
+  {
+      "query": {
+          "match":{
+              "text": "bar"
+          }
+      }
+  }
+  ```
+
+  - Synonym 사전 수정하기
+    - 위에서 작성한 `/usr/share/elasticsearch/config/dict/my_synonym_dict.txt` 파일을 아래와 같이 수정한다.
+    - 마찬가지로 모든 node에서 수정해야한다.
+
+  ```
+  foo, bar, baz
+  quz, qux
+  ```
+
+  - 변경된 사전을 적용하기 위해 index를 reopen한다.
+
+  ```http
+  POST test/_close
+  
+  POST test/_open
+  ```
+
+  - 다시 검색하기
+    - 기존에 synonym 으로 등록된 bar와 새롭게 추가된 baz와 qux로 1번 문서가 검색 되는 것을 볼 수 있다.
+
+  ```json
+  // GET test/_search
+  {
+      "query": {
+          "bool": {
+              "filter": [
+                  {
+                      "match":{
+                          "text":"bar"
+                      }
+                  },
+                  {
+                      "match":{
+                          "text":"baz"
+                      }
+                  },
+                  {
+                      "match":{
+                          "text":"qux"
+                      }
+                  }
+              ]
+          }
+      }
+  }
+  ```
+
+
+
+- reload search analyzer API 활용하기
+
+  - 위에서 close, open을 했는데, 대신 아래와 같이 reload search analyzer API를 사용해도 된다.
+  - Index 생성하기
+    - 나머지는 위와 동일하며, `updateable`만 true로 추가해준다.
+
+  ```json
+  PUT test
+  {
+      "settings": {
+          "index": {
+              "analysis": {
+                  "filter": {
+                      "synonym": {
+                          "type": "synonym",
+                          "updateable":true,
+                          "synonyms_path": "dict/my_synonym_dict.txt"
+                      }
+                  },
+                  // ...
+              }
+          }
+      },
+      // ...
+  }
+  ```
+
+  - 나머지 과정을 위와 동일하게 거친 후 close, open만 `_reload_search_analyzers` API로 변경한다.
+    - Reload한 후에는 request cache를 clear해 이전 버전의 analyzer의 응답이 오지 않도록 해야한다.
+
+  ```http
+  POST test/_reload_search_analyzers
+  
+  POST test/_cache/clear?request=true
+  ```
+
+  
+
+
 
 
 
