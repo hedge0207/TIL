@@ -1,4 +1,4 @@
-## MongoDB 소개
+# MongoDB 소개
 
 - MongoDB
   - 기존에는 MySQL, OracleDB, PostgreSQL 같은 RDBMS(관계형 데이터베이스)를 자주 사용했다.
@@ -46,7 +46,7 @@
 
 
 
-## mongo shell
+# Mongo Shell
 
 - mongodb cli 실행
 
@@ -135,9 +135,78 @@
   $ db.books.deleteMany({name:"foo"})
   ```
   
+
+
+
+# MongoDB 상태 확인
+
+- mongostat
+
+  - 현재 실행중인 mongod 혹은 mongos의 상태를 보여주는 tool이다.
+    - MongoDB 4.4부터 MongoDB와 독립적으로 versioning을 한다.
+    - MongoDB Database Tools package의 일부로 별도의 설치 없이 사용할 수 있다.
   
+  - 아래의 명령어로 실행시킨다.
+  
+  ```bash
+  $ mongostat <options> <connection-string> <polling interval in seconds>
+  
+  # mongostat -u foo -p bar --authenticationDatabase=admin
+  ```
+
+  - Options
+    - `-o`: 출력할 field들을 `field=출력할 field명` 형식으로 `,`로 구분하여 입력한다.
+    - `-O`: 기본으로 출력되는 field들 외에 `serverStatus` [command](https://www.mongodb.com/docs/manual/reference/command/serverStatus/#serverstatus)에서 확인할 수 있는 field들을 추가하여 볼 수 있다.
+  
+  - Fields
+    - `inserts`: 매 초마다 database에 insert되는 object의 개수.
+    - `query`: 매 초마다 실행되는 query의 개수
+    - `command`: 매 초마다 실행되는 command의 개수
+    - `qrw`: `|`로 구분하여 왼쪽은 data를 읽기 위해 대기하는 queue의 길이, 오른쪽은 data를 쓰기 위해 대기하는 queue의 길이.
+    - `arw`: `|`로 구분하여 왼쪽은 data를 읽기를 수행하고 있는 client의 수, 오른쪽은 data 쓰기를 수행하고 있는 client의 수.
+    - `netIn`: MongoDB로 들어온 network traffic의 양(bytes)
+    - `netOut`: MongoDB에서 나간 network traffic의 양(bytes)
+    - `conn`: 열려 있는 connection의 개수
 
 
+
+- mongo shell 명령어들
+  - `db.adminCommand({lockInfo:1}).lockInfo`
+    - 현재 hold 상태거나 pending되고 있는 lock들의 목록을 보여준다.
+  - `db.<collection_name>.stats()`
+    - Collection과 관련된 여러 상태 정보를 보여준다.
+
+
+
+
+
+
+
+# MongoDB Connection Pool
+
+- Connection Pool이란
+  - 사용할 준비가 완료된 open 상태의 database connection들의 cache이며, driver에 의해 관리된다.
+    - Driver란 application에서 database에 접근하기 위한 tool로 Python의 PyMongo나 Motor등이 이에 해당한다.
+    - 즉, MongoDB instance와 application 사이의 connection들의 집합이다.
+  - Application은 connection pool로부터 connection을 받아 DB에 접근하고, 작업이 완료된 후에는 connection을 pool에 반납한다.
+
+
+
+- Connection Pool의 장점
+  - Application의 지연 시간을 줄여주고, 새로운 connection이 생성되는 횟수를 줄여준다.
+  - Application은 connection pool에 connection을 수동으로 반납할 필요 없으며, 자동으로 반납된다.
+  - 만약 가용한 connection이 있을 때 application이 connection을 요청할 경우 새로운 connection을 생성하지 않고 connection pool에서 connection을 가져다 쓰면 된다.
+
+
+
+- Connection Pool 사용하기
+  - 대부분의 driver들은 `MongoClient`라는 object를 제공한다.
+    - 하나의 application이 여러개의 MongoDB cluster에 연결되어있는 것이 아니라면, 하나의 application당 하나의 `MongoClient` instance를 사용한다.
+    - 대부분의 driver에서 `MongoClient`는 thread-safe하다.
+  - Connection Pool 관련 설정들
+    - `maxPoolSize`: pool 내에 open될 connection들의 최대 개수를 설정하며, 만일 이 값 이상의 connection을 필요로 할 경우 `waitQueueTimeoutMS`에 설정한 시간만큼 대기한다.
+    - `minPoolSize`: pool 내에 open 될 connection들의 최소 개수를 설정한다.
+    - `connectionTimeoutMS`: Timeout을 설정한다.
 
 
 
