@@ -455,6 +455,108 @@
 
 
 
+
+## Cluster에 새로운 node 추가하기
+
+- Cluster에 새로운 node 추가
+
+  - 아래와 같은 cluster가 이미 운영중인 상황이다.
+    - 2개의 node를 하나의 server에 Docker container로 생성했다.
+
+  ```yaml
+  version: '3.2'
+  
+  
+  services:
+    node1:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.6.0
+      container_name: node1
+      environment:
+        - node.name=node1
+        - node.roles=[master, voting_only]
+        - cluster.name=es-docker-cluster
+        - discovery.seed_hosts=<server1_host>:9301
+        - network.publish_host=<server1_host>
+        - cluster.initial_master_nodes=node1,node2
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      ports: 
+        - 9205:9200
+        - 9300:9300
+  
+    node2:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.6.0
+      container_name: node2
+      environment:
+        - node.name=node2
+        - cluster.name=es-docker-cluster
+        - discovery.seed_hosts=<server1_host>:9300
+        - network.publish_host=<server1_host>
+        - transport.publish_port=9301
+        - cluster.initial_master_nodes=node1,node2
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      ports: 
+        - 9301:9300
+  ```
+
+  - 이 때 서버 1대를 증설하여 증설한 서버에 node 하나를 더 생성하려고한다.
+    - `discovery.seed_hosts`에 연결하려는 cluster에 속한 node들 중 아무 node나 입력하거나, 모든 node를 다 입력하면 된다.
+    - Master node는 포함되도 되고, 포함되지 않아도 된다.
+    - 심지어는 잘못된 값이 들어가더라도 값을 순회하면서 다음에 입력된 주소로 요청을 보내므로 하나만 제대로 입력되도 cluster에 등록이 가능하다.
+    - 예를 들어 `discovery.seed_hosts=<server3>:9305,<server1>:9300`과 같이 개중에 유효하지 않은 값이 끼어 있어도 `<server3>:9305`에 요청을 보내고 handshake이 실패하면, 다음 주소인 `<server1>:9300`로 요청을 보내기 때문에, 여러 값들 중 하나만 유효한 값이 있어도 cluster에 등록된다.
+
+  ```yaml
+  version: '3.2'
+  
+  
+  services:
+    node3:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.6.0
+      container_name: node3
+      environment:
+        - node.name=node3
+        - cluster.name=es-docker-cluster
+        - discovery.seed_hosts=<server1_host>:9300
+        - network.publish_host=<server2_host>
+        - transport.publish_port=9302
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      ports: 
+        - 9302:9300
+  ```
+
+  - 기본적으로는 `discovery.seed_hosts`값만 제대로 설정하면 되지만, 위 예시의 경우 사실 같은 서버에 설치 했고, Docker container로 실행했기에 부가적인 설정이 들어갔다.
+
+    - `network.publish_host` 설정의 경우에는 Docker container로 설정하여 추가해야했던 설정이다.
+    - `transport.publish_port`의 경우 같은 서버에 설치했기에, node들 간의 통신에 사용하는 9300 port를 node마다 다르게 설정해야 했어서 설정한 것이다.
+    - 만일 다른 서버에 설치하는 것이고, Docker가 아닌 환경에서 설치한다면, `discovery.seed_hosts`값만 제대로 설정해도 된다.
+
+    - 보다 자세한 내용은 상단의 [각기 다른 서버에 설치된 node들로 클러스터 구성하기] 참조
+
+
+
+
+
+
 # Security 활성화 한 상태로 생성하기
 
 - docker-compose로 띄우기
