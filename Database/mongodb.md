@@ -46,6 +46,20 @@
 
 
 
+
+
+# MongoDB 설치하기
+
+- Docker compose로 cluster 설치하기
+
+  > https://www.mongodb.com/compatibility/deploying-a-mongodb-cluster-with-docker
+  >
+  > https://velog.io/@minchoi/docker-compose-%EC%9D%B4%EC%9A%A9%ED%95%B4%EC%84%9C-MongoDB-Cluster-%EA%B5%AC%EC%A1%B0-%EA%B5%AC%EC%84%B1%ED%95%98%EA%B8%B0
+
+
+
+
+
 # Mongo Shell
 
 - mongodb cli 실행
@@ -138,6 +152,8 @@
 
 
 
+
+
 # MongoDB 상태 확인
 
 - mongostat
@@ -180,8 +196,6 @@
 
 
 
-
-
 # MongoDB Connection Pool
 
 - Connection Pool이란
@@ -212,9 +226,40 @@
 
 
 
+# PyMongo
+
+- pymongo
+
+  > https://pymongo.readthedocs.io/en/stable/
+
+  - mongodb 공식 라이브러리
+  - Python에서 mongodb를 보다 쉽게 사용할 수 있게 해주는 라이브러리.
+  - 설치
+
+  ```bash
+  $ pip install pymongo
+  ```
 
 
 
+- 사용해보기
+
+  - mongodb에 연결하기 위한 클라이언트를 생성한다.
+
+  ```python
+  import pymongo
+  
+  # 방법1
+  clinet = MongoClient('<mongodb host>', '<mongodb port>')
+  
+  # 방법2
+  clinet = MongoClient('mongodb://<mongodb host>:<mongodb port>/')
+  
+  # 인증이 필요할 경우
+  client = MongoClient("<mongodb host>:<mongodb port>",username="<username>",password="<password>",authSource="admin")
+  ```
+
+  
 
 
 
