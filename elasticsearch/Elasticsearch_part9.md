@@ -396,51 +396,153 @@
 
 
 
-## Analyzer
+## Analyze
 
-### nori analyzer
+### Nori anlayzer
 
-- Elasticsearch에서 plugin 형태로 제공하는 한글용 analyzer로, 아래와 같은 기능을 제공한다.
+> https://elsboo.tistory.com/44
+>
+> https://www.elastic.co/kr/blog/nori-the-official-elasticsearch-plugin-for-korean-language-analysis
 
-  - nori_tokenizer
-    - 한글용 tokenizer이다.
-  - nori_part_of_speech token filter
-    - Part-of-speech tag에 매치되는 토큰들을 tokenizing 결과에서 제외한다.
+- Elasticsearch에서 제공하는 한글 형태소 분석기이다.
+  - 프랑스인인 [Jim Ferenczi](https://github.com/jimczi)에 의해 개발되었다.
+    - Elasticsearch의 직원이며 Lucene commiter이기도 하다.
+    - 일본어 형태소 분석기인 Kuromoji도 처음으로 개발했다.
+    - 본래 생각한 이름은 godori였으나, 이름을 변경하여 nori(일본어로 김, 행운)가 되었다.
+  - 처음에는 Lucene의 기능으로 개발되었다.
+  - 은전한닢
+    - Mecab이라는 일본에서 개발한 형태소 분석 엔진을 기반으로 개발되었다.
+    - 특정 말뭉치에 의존하지 않도록 설계되어 한글 말뭉치를 널어서 한글용 형태소 분석기를 만들 수 있었다.
+    - Mecab에 한글 말뭉치를 넣어서 만든것이 [은전한닢](https://eunjeon.blogspot.com/)(또는 mecab-ko) 형태소 분석기이다.
+    - 약 81만개 단어를 학습시켜 만들었으며, mecab-ko-dic이라 불리는 사전의 크기는 약 200MB이다.
+  - Nori는 은전한닢에서 사용하는 mecab-ko-dic을 사용한다.
+    - 200MB라는 크기는 Elasticsearch에 넣기에는 부담스러운 크기이기에 본래 csv file이었던 mecab-ko-dic을 dat 형태의 바이너리로 변환시켰다.
+    - 또한 자주 출현하는 단어를 숫자 형태로 부호화해 중복 출현을 최소화하고, 기존 mecab-ko-dic에서 숫자로 작성된 값들의 type을 int에서 short로 변경했다.
+    - 이 결과 사전 크기가 88%정도 감소한 24MB가 됐다.
 
-  | Tag  | Description                 | Example                                   |
-  | ---- | --------------------------- | ----------------------------------------- |
-  | E    | 동사 어미                   | 먹다 → ["먹"]                             |
-  | IC   | 감탄사                      | 와 정말? → ["정말"]                       |
-  | J    | 조사                        | 밥을 → ["밥"]                             |
-  | MAG  | 부사                        | 상당히 많은 → ["많", "은"]                |
-  | MAJ  | 문장과 문장을 연결하는 부사 | 하지만 내일은 → ["내일", "은"]            |
-  | MM   | 관형사                      | 저 사람 → ["사람"]                        |
-  | NNG  | 일반명사                    | 귀여운 강아지 → ["귀엽", "ㄴ"]            |
-  | NNP  | 고유명사                    | 한국의 수도는 서울 → ["의", "수도", "는"] |
-  | NNB  | 의존명사                    | 얼마 만큼→ ["얼마"]                       |
-  | NNBC | 단위명사                    | 사과 두 개 → ["사과", "두"]               |
-  | NP   | 대명사                      | 그것 → [ ]                                |
-  | NR   | 수사                        | 다섯 명 → ["명"]                          |
-  | SF   | 마침표, 물음표, 느낌표      | 와! → ["와"]                              |
-  | SH   | 한자                        | 漢字 → [ ]                                |
-  | SL   | 영어                        | English → [ ]                             |
-  | SN   | 숫자                        | 3개  → ["개"]                             |
-  | SP   | 공백                        | 나와 너 → ["나", "와", "너"]              |
-  | SSC  | 닫는 괄호                   | 밥) → ["밥"]                              |
-  | SSO  | 여는 괄호                   | (밥 → ["밥"]                              |
-  | SC   | 가운데점, 콜론, 빗금        | 이름:철수 → ["이름", "철수"]              |
-  | SE   | 말줄임표                    | 아... → ["아"]                            |
-  | VA   | 형용사                      | 예쁜 꽃 → ["ㄴ", "꽃"]                    |
-  | VCN  | 부정지정사                  | 아니다 → ["다"]                           |
-  | VCP  | 긍정지정사                  | 사람이다 → ["사람", "다"]                 |
-  | VV   | 동사                        | 가다 → ["다"]                             |
-  | VX   | 보조용언                    | 가고 싶다 → ["갈", "고", "다"]            |
-  | XPN  | 체언접두사                  | 불가능 → ["가능"]                         |
-  | XR   | 어근                        | 복잡한 → ["하", "ㄴ"]                     |
-  | XSA  | 형용사 파생 접미사          | 새삼스러운 → ["새삼", "ㄴ"]               |
-  | XSN  | 명사 파생 접미사            | 사람들 → ["사람"]                         |
-  | XSV  | 동사 파생 접미사            | 공부하다 → ["공부", "다"]                 |
+
+
+- 형태소 분석 기준
+
+  - Nori는 형태소를 분석할 때 단어 비용과 연결 비용을 고려하여 최종 비용이 더 적게 드는 쪽을 선택한다.
+    - 단어 비용: 어떤 단어가 가지는 비용으로, 단어 비용이 높을수록 우선 순위가 낮아진다.
+    - 연접 비용: 단어와 단어를 연결하는 비용으로 한 단어의 끝과 다음 단어의 시작이 연결되는 비용을 의미한다.
+  - 말뭉치에서 모든 단어는 좌문맥 id와, 우문맥 id, 그리고 단어 비용을 가진다.
+    - 좌문맥 id와 우문맥 id는 matrix.def이라는 별도의 파일에서 연접 비용을 설정하기 위해 사용된다.
+
+  ```txt
+  예를 들어 아래와 같은 말뭉치가 있다고 가정해보자(실제로는 훨씬 많은 field들이 있다).
+  단어, 좌문맥ID, 우문맥ID, 단어비용
+  세종, 1117, 	 2878, 	  -210
+  시,	 1172,    2878,    3415
+  장,   1172,    2834,    4379
   
+  이 때 단어 사이의 연접 비용을 설정하는 matrix.def file은 아래와 같이 작성된다.
+  좌문맥ID, 우문맥ID, 연접비용
+  1117	 2878	  261	 
+  ```
+
+
+
+- 형태소 분석 예시
+
+  - 아래와 같은 말뭉치가 있고 가정해보자.
+
+  ```
+  단어, 좌문맥ID, 우문맥ID, 단어비용
+  세종, 1117, 	 2878, 	  -210
+  시,	 1172,    2878,    3415
+  장,   1172,    2834,    4379
+  ```
+
+  - 해당 단어에 대한 연접 비용은 matrix.def에 아래와 같이 정리되어 있다.
+    - 문장의 처음일 경우 좌문맥 ID는 0이다.
+
+  ```
+  좌문맥ID, 우문맥ID, 연접비용
+  0        1117     -1475
+  1117	 2878	  261
+  1172     2834     241
+  ```
+
+  - "세종시장"이라는 단어의 최종 비용은 아래와 같이 계산된다.
+    - 괄호로 묶은 것은 두 단어 사이의 연접 비용을 나타내고, 괄호로 묶이지 않은 것은 단어 비용을 나타낸다.
+    - (문장의 처음 + 세종) + 세종 + (세종 + 시) + 시 + (시 + 장) + 장
+    - -1475 + (-210) + 261 + 3415 + 241 + 4379 = 6611이 된다.
+
+
+
+- `nori_tokenizer`에는 아래와 같은 설정이 가능하다.
+
+  - `discard_punctuation`
+    - true일 경우 문장 부호를 token으로 생성하지 않는다.
+    - 기본값은 true.
+  - `decompound_mode`
+    - 합성어를 어떻게 tokenize할지 설정한다.
+    - `none`: 합성어의 어근을 분리하지 않고 완성된 합성어만 저장한다.
+    - `discard`(default): 합성어를 분리하여 어근만 저장한다.
+    - `mixed`: 어근과 합성어를 모두 저장한다.
+  - `user_dictionary`
+    - Nori tokenizer는 기본적으로 [mecab-ko-dict dictionary](https://bitbucket.org/eunjeon/mecab-ko-dic/src)를 사용하는데, `user_dictionary` 옵션을 줄 경우 여기에 포함된 단어들이 기본 dictionary에 추가된다.
+    - Synonym과 마찬가지로 dictionary file을 생성한뒤, `user_dictionary` option에 Elasticsearch 내부의 config directory로 부터 상대 경로를 입력하여 설정할 수 있다.
+    - (search analizer로 사용하는 경우)설정을 변경한 뒤에는 close/open해야 적용된다.
+    - 파일은 `<token> [<token 1> ... <token n>]` 형식으로 작성하는데, 각 token은 공백으로 구분하여 작성한다.
+    - 예를 들어 `세종시 세종 시`와 같이 작성했다면 "세종시"를 "세종"과 "시"로 분리하겠다는 의미이다.
+    - 만일 `decompound_mode`가 mixed라면 `세종시, 세종, 시`와 같이 token이 생성된다.
+
+  ```json
+  PUT nori_sample
+  {
+    "settings": {
+      "index": {
+        "analysis": {
+          "tokenizer": {
+            "nori_user_dict": {
+              "type": "nori_tokenizer",
+              "decompound_mode": "mixed",
+              "discard_punctuation": "false",
+              "user_dictionary": "userdict_ko.txt"
+            }
+          },
+          "analyzer": {
+            "my_analyzer": {
+              "type": "custom",
+              "tokenizer": "nori_user_dict"
+            }
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  - `user_dictionary_rules`
+    - `user_dictionary`이 file로 사용자 사전을 작성하는 방식이라면, `user_dictionary_rules`는 settings에 사용자 사전을 작성하는 방식이다.
+
+  ```json
+  PUT nori_sample
+  {
+    "settings": {
+      "index": {
+        "analysis": {
+          "tokenizer": {
+            "nori_user_dict": {
+              "type": "nori_tokenizer",
+              "decompound_mode": "mixed",
+              "user_dictionary_rules": ["세종", "세종시 세종 시"]
+            }
+          },
+          "analyzer": {
+            "my_analyzer": {
+              "type": "custom",
+              "tokenizer": "nori_user_dict"
+            }
+          }
+        }
+      }
+    }
+  }
+  ```
 
 
 
@@ -541,6 +643,48 @@
 
   - `elasticsearch.index.query.IntervalBuilder`에도 유사한 코드가 있다.
     - `analyzeText()` 메서드도 유사한 과정을 거친다.
+
+
+
+- `nori_part_of_speech` token filter
+
+  - Part-of-speech tag에 매치되는 토큰들을 tokenizing 결과에서 제외한다.
+
+  | Tag  | Description                 | Example                                   |
+  | ---- | --------------------------- | ----------------------------------------- |
+  | E    | 동사 어미                   | 먹다 → ["먹"]                             |
+  | IC   | 감탄사                      | 와 정말? → ["정말"]                       |
+  | J    | 조사                        | 밥을 → ["밥"]                             |
+  | MAG  | 부사                        | 상당히 많은 → ["많", "은"]                |
+  | MAJ  | 문장과 문장을 연결하는 부사 | 하지만 내일은 → ["내일", "은"]            |
+  | MM   | 관형사                      | 저 사람 → ["사람"]                        |
+  | NNG  | 일반명사                    | 귀여운 강아지 → ["귀엽", "ㄴ"]            |
+  | NNP  | 고유명사                    | 한국의 수도는 서울 → ["의", "수도", "는"] |
+  | NNB  | 의존명사                    | 얼마 만큼→ ["얼마"]                       |
+  | NNBC | 단위명사                    | 사과 두 개 → ["사과", "두"]               |
+  | NP   | 대명사                      | 그것 → [ ]                                |
+  | NR   | 수사                        | 다섯 명 → ["명"]                          |
+  | SF   | 마침표, 물음표, 느낌표      | 와! → ["와"]                              |
+  | SH   | 한자                        | 漢字 → [ ]                                |
+  | SL   | 영어                        | English → [ ]                             |
+  | SN   | 숫자                        | 3개  → ["개"]                             |
+  | SP   | 공백                        | 나와 너 → ["나", "와", "너"]              |
+  | SSC  | 닫는 괄호                   | 밥) → ["밥"]                              |
+  | SSO  | 여는 괄호                   | (밥 → ["밥"]                              |
+  | SC   | 가운데점, 콜론, 빗금        | 이름:철수 → ["이름", "철수"]              |
+  | SE   | 말줄임표                    | 아... → ["아"]                            |
+  | VA   | 형용사                      | 예쁜 꽃 → ["ㄴ", "꽃"]                    |
+  | VCN  | 부정지정사                  | 아니다 → ["다"]                           |
+  | VCP  | 긍정지정사                  | 사람이다 → ["사람", "다"]                 |
+  | VV   | 동사                        | 가다 → ["다"]                             |
+  | VX   | 보조용언                    | 가고 싶다 → ["갈", "고", "다"]            |
+  | XPN  | 체언접두사                  | 불가능 → ["가능"]                         |
+  | XR   | 어근                        | 복잡한 → ["하", "ㄴ"]                     |
+  | XSA  | 형용사 파생 접미사          | 새삼스러운 → ["새삼", "ㄴ"]               |
+  | XSN  | 명사 파생 접미사            | 사람들 → ["사람"]                         |
+  | XSV  | 동사 파생 접미사            | 공부하다 → ["공부", "다"]                 |
+
+
 
 
 
