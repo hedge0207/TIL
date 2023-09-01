@@ -838,8 +838,9 @@
     - source, target(혹은 destination, dst), type, readonly 등의 옵션을 지정 가능하다.
     - type에 volume, bind, tmpfs를 사용 가능하다.
     - readonly 옵션을 줄 경우 readonly 상태로 마운트된다.
-
-
+  - `-v`로 설정한다고 volume이 되는 것이 아니며, `--mount`로 설정한다고 bind mount가 되는 것이 아니다.
+    - 두 설정은 단지 설정 format이 다른 것일 뿐 `-v`로도 bind mount가 가능하고 `--mount`로도 volume을 설정하는 것이 가능하다.
+    - 예를 들어 `-v <volume>:<container_path>`와 같이 설정하면 volume이 설정되는 것이고, `-v <host_path>:<container_path>`와 같이 설정하면 bind mount가 되는 것이다.
 
 
 
