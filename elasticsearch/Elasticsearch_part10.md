@@ -529,6 +529,128 @@
 
 
 
+# Sniffing
+
+> https://www.elastic.co/kr/blog/elasticsearch-sniffing-best-practices-what-when-why-how
+
+- Sniffing이란
+
+  > Sniff는 "코를 킁킁 거리며 냄새를 맡다", "코를 훌쩍이다" 등의 뜻을 가지고 있다.
+
+  - Elasticsearch와 application 사이의 연결은 대부분의 경우에 Elasticsearch client를 통해서 이루어진다.
+    - Python을 예로 들면 `elasticsearch package`를 사용한다.
+    - Elasticsearch는 Elasticsearch와 application 사이의 연결을 최적화하는 다양한 방식을 제공하며, sniffing 역시 그 중 하나다.
+  - Elasticsearch는 분산 시스템이다.
+    - 여러 node에 data를 분산하여 저장하는 것의 장점은 고가용성뿐이 아니다.
+    - 여러 노드에 shard가 분산되어 저장되어 거대한 단일 노드에 검색하는 것 보다 훨씬 빠른 검색이 가능하게 해준다.
+  - Client와 Elasticsearch 사이의 연결과 관련된 가장 일반적인 설정 방식은 cluster의 노드들 중 하나의 node의 URL만 입력하는 것이다.
+    - 이는 가장 간단한 방법이긴 하지만, 단점도 있다.
+    - 가장 중요한 단점은 client에서 보내는 모든 요청이 URL을 통해 설정된 하나의 coordination node로만 향한다는 것이다.
+    - 이는 해당 node에 부하가 가해지도록 하고, 전체 성능에 영향을 주게 된다.
+    - 이를 해결하는 방법은 모든 node의 URL을 입력하여 각 node에 돌아가면서 요청이 전달되도록 하는 것이다.
+    - 문제는 이 방식을 사용하기 위해서는 node 중 하나라도 내려가선 안 된다는 것이다.
+    - Sniffing을 사용할 경우 한 node가 내려가더라도 요청이 나머지 node에 고르게 전달되도록 할 수 있다.
+  - Sniffing
+    - Sniffing을 활성화하면 client는 `_nodes/_all/http` endpoint를 호출한다.
+    - 위 endpoint는 cluster에 속한 각 node들의 IP 주소가 포함된 정보를 반환한다.
+    - Client는 이 정보를 가지고 connection pool을 update하여 cluster에 속한 node의 정보와 connection pool을 동기화한다.
+    - 단, 모든 node에 대한 정보를 가져온다고 해서, master_only node에게도 요청을 보내는 것은 아니다.
+
+
+
+- Sniffing은 양날의 검이다.
+
+  - 아래와 같은 경우에 문제가 생길 수 있다.
+    - Elasticsearch cluster가 자신만의 network를 사용할 경우.
+    - Elasticsearch cluster가 load balancer 뒤에 있을 경우.
+    - Cloud provider를 사용하는 경우.
+    - Elasticsearch client가 `_nodes` API에 접근할 수 있는 권한(monitoring_user)이 없을 경우.
+  - 앞의 세 경우는 모두 `_nodes/_all/http`가 반환하는 IP address로는 node에 접근할 수 없기 때문이다.
+    - 예를 들어 Docker를 사용하여 cluster를 구성하는 경우를 생각해보자(첫 번째 경우에 해당).
+    - Docker container 내부에서는 host machie과는 다른 network를 사용하여 통신이 이루어진다.
+    - 아래와 같이 Python client에서 확인해보면 `_nodes/_all/http` endpoint에 해당하는 `nodes.info()` 요청을 보냈을 때, 각 node에 담겨온 `publish_address`의 정보가 host mahcine의 address와 다른 것을 확인할 수 있다.
+    - 단 7.17 version 기준으로 `_nodes/_all/http`의 반환값으로 `bound_address` 값이 함께 넘어오는데 client가 이 값을 사용하는지는 확인이 필요하다.
+
+  ```python
+  from elasticsearch import Elasticsearch
+  
+  # 10.11.12.13는 host machine의 IP
+  es_client = Elasticsearch("http://10.11.12.13:9200", sniff_on_start=True)
+  node_info = es_client.nodes.info(node_id="_all", metric="http")
+  print(json.dumps(node_info, indent="\t"))
+  ```
+
+  - 단 첫 번째 경우는 `http.publish_host`를 설정함으로써 해결할 수 있다.
+    - `http.publish_host`에 host machine의 host를 입력하면,  `_nodes/_all/http`의 반환값에 `http.publish_host`에 설정된 host가 함께 반환된다.
+    - 공식 client 7.0 version 이상부터는  `_nodes/_all/http`의 반환값에 `http.publish_host`에 설정된 host가 함께 반환될 경우, 이 host를 가지고 sniffing을 실행한다.
+
+
+
+- Sniffing 사용 방법
+  - 시작시에 sniffing하기
+    - Client가 initialize 될 때 단 한 번만 sniffing을 실행하는 방식이다.
+  - Connection이 실패할 경우 sniffing하기
+    - Node에 요청이 실패했을 경우에만 sniffing을 실행한다.
+    - 즉, node가 내려가거나 node와의 connection이 끊어졌을 경우에 sniffing을 실행한다.
+  - 일정 간격을 두고 sniffing하기
+    - 일정 간격을 두고 sniffing을 실행하는 방식이다.
+    - Cluster에 노드가 빈번히 추가되거나 제거되는 경우에 유용한데, 시작시에만 sniffing을 하거나 connection이 실패했을 경우에만 sniffing을 할 경우 cluster에 node가 추가되어도 알지 못하기 때문이다.
+  - Custom한 방식으로 sniffing하기
+    - 사용자가 원하는 방식으로 sniffing하는 방법이다.
+
+
+
+- Elasticsearch Python client의 sniffing
+
+  > https://www.elastic.co/guide/en/elasticsearch/client/python-api/current/config.html
+
+  - Elasticsearch Python client도 sniffing과 관련된 다양한 옵션을 제공한다.
+  - `sniff_on_start`(bool, default:False)
+    - Client가 instantiation될 때 단 한 번만 sniffing을 실행하는 방식이다.
+  - `sniff_before_requests`(bool, default:False)
+    - Elasticsearch에 request를 보내기 전에 sniffing을 실행하는 방식이다.
+  - `sniff_on_node_failure`(bool, default:False)
+    - Connection이 실패했을 경우 sniffing을 실행하는 방식이다.
+  - `sniff_on_connection_fail`(deprecate 될 예정)
+    - Connection이 실패했을 경우 sniffing을 실행하는 방식이다.
+    - `sniff_on_node_failure`로 대체된다.
+  - `sniff_timeout`(float)
+    - 8 version부터는 기본값이 0이며, 그 전 version에서는 0.2이다.
+    - Sniffing을 위해  `_nodes/_all/http`을 보낼 때의 timeout을 설정한다.
+    - `sniff_on_start`이 설정됐을 경우, 첫 sniffing은 이 값을 무시한다.
+  - `sniffer_timeout`(float)
+    - 8 version에서 deprecated 예정이며, `min_delay_between_sniffing`로 대체될 예정이다.
+    - sniffing과 sniffing 사이의 시간 간격을 설정한다.
+  - `sniffed_node_callback`
+    - 기본적으로 master_only 역할을 가진 node는 사용되지 않는다.
+    - 만일, 추가적으로 사용하지 않을 node를 설정하고자 한다면 `sniffed_node_callback`에 관련 logic을 구현한 함수를 넣어주면 된다.
+
+  ```python
+  from typing import Optional, Dict, Any
+  from elastic_transport import NodeConfig
+  from elasticsearch import Elasticsearch
+  
+  
+  def filter_master_eligible_nodes(
+      node_info: Dict[str, Any],
+      node_config: NodeConfig
+  ) -> Optional[NodeConfig]:
+      # 예를 들어 이 callback은 node eligible한 모든 node를 요청 대상 node에서 제외시킨다.
+      if "master" in node_info.get("roles", ()):
+          return None
+      return node_config
+  
+  client = Elasticsearch(
+      "https://localhost:9200",
+      sniffed_node_callback=filter_master_eligible_nodes
+  )
+  ```
+
+
+
+
+
+
 # Snapshot
 
 - Snapshot
