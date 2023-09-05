@@ -7,7 +7,7 @@
   > https://steve-mushero.medium.com/elasticsearch-search-data-flow-2a5f799aac6a
 
   - Coordinator 역할을 수행하는 node에 검색 요청이 도착한다.
-  - Coordinator는 적절한 shard로 해당 quert를 routing시킨다.
+  - Coordinator는 적절한 shard로 해당 query를 routing시킨다.
     - Routing을 위해 Coordinator는 요청에 담겨서 온 index pattern 혹은 alias를 기반으로 검색 대상 index의 목록을 생성한다.
     - 그 후 target index들의 shard들의 목록을 생성하는데, 여기에 포함되는 shard들은 고유해야한다(primary일 수도 있고, replica일 수도 있다.).
     - 예를 들어 2개의 primary shard와 2개의 replica shard가 있다면 총 shard의 개수는 6개이지만, 고유한 shard의 개수는 2개 뿐이고, shard의 목록에는 고유한 shard들만 있어야한다.

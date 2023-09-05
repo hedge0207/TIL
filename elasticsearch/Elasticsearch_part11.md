@@ -2,6 +2,8 @@
 
 ## 색인 성능 최적화
 
+> https://luis-sena.medium.com/the-complete-guide-to-increase-your-elasticsearch-write-throughput-e3da4c1f9e92
+
 - 색인 성능 최적화의 필요성
   - ES는 클러스터 환경으로 구축할 수 있기 때문에 노드 추가를 통해 색인 성능을 더 높일 수 있다.
   - 그러나 ES 설정을 변경함으로써 불필요한 리소스를 줄일 수 있고, 이를 통해 색인 성능을 향상시킬 수 있다.
@@ -252,6 +254,49 @@
     - 클러스터를 운영하는 환경에 복제본이 꼭 필요하지 않거나 하둡과 같은 별도의 저장소에 사용자의 문서를 복제하는 경우라면 고려해 볼 만 하다.
 
 
+
+- Client의 최적화 전략
+  - Bulk API 사용
+    - Bulk API를 사용하여 색인하는 것이 문서를 한 건씩 색인하는 것 보다 훨씬 빠르다.
+    - 단, benchmark를 통해 최적의 batch size를 정해야한다.
+  - 병렬화
+    - 여러 개의 worker를 통해 색인을 한다.
+    - 단, Elasticsearch의 thread pool queue가 전부 차면 발생하는 `TOO_MANY_REQUESTS(429)` error등은 주의해야한다.
+
+
+
+- Index 전략
+  - `refresh_interval`을 조정한다.
+    - 기본적으로 Elasticsearch는 매 초 refresh를 실행한다.
+    - 만일 바로 검색될 필요가 없는 데이터라면, `refresh_interval`을 길게 줌으로써 색인 성능을 향상시킬 수 있다.
+    - 색인 전에 `refresh_interval`을 늘린 후, 색인 후에 다시 돌려 놓는다.
+  - 자동으로 생성되는 `_id`를 사용.
+    - 자동으로 생성되는 `_id`를 사용할 경우 Elasticsearch가 `_id`의 고유성을 확인할 필요가 없으므로 색인 속도가 빨라질 수 있다.
+    - 만약 Lucene friendly한 format으로 `_id`를 사용한다면, 자동 생성되는 `_id`를 사용하지 않아도 색인 속도가 크게 느려지지는 않는다.
+  - Replica shard를 비활성화한다.
+    - Replica shard가 있을 경우, primary에 색인이 완료된 후 replica에 복사까지 해야하므로 색인 속도가 느려진다.
+    - 따라서 색인 전에 replica shard를 비활성화 한 후 색인이 완료되면 다시 활성화시킨다.
+
+
+
+- Node 전략
+
+  - Indexing Buffer size 관련 옵션을 조정한다.
+
+    > https://www.elastic.co/guide/en/elasticsearch/reference/current/indexing-buffer.html
+
+    - Elasticsearch가 색인을 위해 얼마만큼의 memory를 확보하고 있을지를 설정하는 옵션이다.
+    - 기본값은 노드에 할당된 전체 heap memory의 10%이다.
+    - 노드의 모든 shard들이 공유하는 값이다.
+
+  - Translog 관련 옵션을 조정한다.
+
+    > https://www.elastic.co/guide/en/elasticsearch/reference/current/index-modules-translog.html#_translog_settings
+
+    - Elasticsearch에서 flush가 실행되는 주기는 trasnlog의 size에 의해서 결정된다.
+    - Translog가 일정 크기에 도달하면 flush가 실행되는데, flush가 실행되면 memory에 저장되어 있던 여러 개의 segment들이 하나로 병합되면서 disk에 저장된다.
+    - 이는 비용이 많이 드는 작업이므로, 빈번하게 발생할 경우 색인 속도가 감소할 수 있다.
+    - 따라서 trasnlog의 크기를 늘림으로써 색인 속도를 향상시킬 수 있다.
 
 
 
@@ -662,7 +707,7 @@
   - Force merge API는 아래와 같은 query parameter들을 받는다.
     - `flush`: Force merge 이후에 flush를 실행할지 여부를 설정하며, 기본값은 true이다.
     - `wait_for_completion`: Force merge request가 완료될 때 까지 block될지 여부를 설정하며, 기본값은 true이다.
-    - `max_num_segments`: 몇 개의 segment로 병합할지를 설정하며, 기본값은 merge를 수행해야하면 수행하고, 그렇지 않다면 수행하지 않는 것이다. 완전한 최적화를 하고자 한다면 1로 설정하면 된다.
+    - `max_num_segments`: 몇 개의 segment로 병합할지를 설정하며, 기본값은 merge를 수행해야하면 수행하고, 그렇지 않다면 수행하지 않는 것이다. 완전한 최적화를 하고자 한다면 1로 설정하면 된다. 1로 주면 shard 당 최대 segment의 개수를 1로 제한하겠다는 것이다(인덱스 전체의 segment가 1이 되는 것이 아니다). 예를 들어 primary shard가 2, replica shard가 2일 때, `max_num_segments`를 1로 설정하면, shard 당 1개씩 4개의 segment로 병합된다.
     - `only_expunge_deletes`: `index.merge.policy.expunge_deletes_allowed`에서 설정해준 값(기본값은 10) 이상의 비율로 삭제된 document를 저장하고 있는 segment들을 삭제할지를 설정하며, 기본값은 false이다.
     - `max_num_segments`와 `only_expunge_deletes`는 동시에 줄 수 없다.
   - Force merge API는 읽기 전용 index(현재 뿐만 아니라 추후에도 더 이상 색인이 이루어지지 않는 index)에만 사용하는 것을 추천한다.
@@ -785,50 +830,232 @@
 
 
 
+### 검색 속도에 영향을 주지 않는 것들
 
-## 색인 최적화
+- Node 개수만 늘리면 검색 속도가 증가하는가?
 
-> https://luis-sena.medium.com/the-complete-guide-to-increase-your-elasticsearch-write-throughput-e3da4c1f9e92
+  - Node가 하나뿐인 cluster를 구성
 
-- Client의 최적화 전략
-  - Bulk API 사용
-    - Bulk API를 사용하여 색인하는 것이 문서를 한 건씩 색인하는 것 보다 훨씬 빠르다.
-    - 단, benchmark를 통해 최적의 batch size를 정해야한다.
-  - 병렬화
-    - 여러 개의 worker를 통해 색인을 한다.
-    - 단, Elasticsearch의 thread pool queue가 전부 차면 발생하는 `TOO_MANY_REQUESTS(429)` error등은 주의해야한다.
+  ```yaml
+  version: '3.2'
+  
+  
+  services:
+    node1:
+      image: elasticsearch:latest
+      container_name: node1
+      environment:
+        - node.name=node1
+        - cluster.name=es-docker-cluster
+        - cluster.initial_master_nodes=node1
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      ports: 
+        - 9200:9200
+      restart: always
+      networks:
+        - elastic
+  
+  networks:
+    elastic:
+      driver: bridge
+  ```
+
+  - Test용 index 생성
+    - Node가 하나뿐이라 replica가 많아도 할당되지 않을 것이므로 1개만 생성한다.
+
+  ```json
+  // PUT search_performance_test
+  {
+    "settings": {
+      "number_of_replicas": 0
+    }
+  }
+  ```
+
+  - 임의의 data를 색인한다.
+
+  ```python
+  from elasticsearch import Elasticsearch, helpers
+  from faker import Faker
+  
+  
+  es_client = Elasticsearch("http://localhost:9200")
+  INDEX_NAME = "search_performance_test"
+  fake = Faker()
+  
+  cnt = 0
+  for i in range(100):
+      bulk_data = []
+      for _ in range(10000):
+          content = ""
+          for _ in range(30):
+              content += fake.text()
+          
+          bulk_data.append({"_index":INDEX_NAME, "_source":{"title":fake.sentence(), "content":content, "num":cnt}})
+          cnt += 1
+      helpers.bulk(es_client, bulk_data)
+  ```
+
+  - Segment의 개수를 1로 조정한다.
+
+  ```http
+  POST search_performance_test/_forcemerge?max_num_segments=1
+  ```
+
+  - Segment의 개수가 1로 조정되면 아래와 같이 검색 속도를 측정한다.
+
+  ```python
+  from faker import Faker
+  from elasticsearch import Elasticsearch
+  
+  
+  fake = Faker()
+  es_client = Elasticsearch("http://localhost:9200")
+  INDEX_NAME = "search_performance_test"
+  
+  N = 1000
+  total = 0
+  for i in range(N):
+      body = {
+          "query":{
+              "bool":{
+                  "should":[
+                      {
+                          "match":{
+                              "title":fake.word()
+                          }
+                      },
+                      {
+                          "match":{
+                              "content":" ".join([fake.word() for _ in range(2)])
+                          }
+                      },
+                      {
+                          "match_phrase_prefix": {
+                              "content": "{}.*".format(fake.word())
+                          }
+                      }
+                  ]
+              }
+          }
+      }
+      res = es_client.search(index=INDEX_NAME, body=body)
+      total += res["took"]
+  print(total//N)
+  ```
+
+  - 그 후 아래와 같이 node의 개수를 늘려서 다시 cluster를 구성한다.
+
+  ```yaml
+  version: '3.2'
+  
+  
+  services:
+    node1:
+      image: tmp-elasticsearch:latest
+      container_name: node1
+      environment:
+        - node.name=node1
+        - cluster.name=es-docker-cluster
+        - discovery.seed_hosts=node2,node3
+        - cluster.initial_master_nodes=node1,node2,node3
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      ports: 
+        - 9200:9200
+      restart: always
+      networks:
+        - elastic
+  
+    node2:
+      image: tmp-elasticsearch:latest
+      container_name: node2
+      environment:
+        - node.name=node2
+        - node.attr.my_attr=bar
+        - cluster.name=es-docker-cluster
+        - discovery.seed_hosts=node1,node3
+        - cluster.initial_master_nodes=node1,node2,node3
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      restart: always
+      networks:
+        - elastic
+  
+    node3:
+      image: tmp-elasticsearch:latest
+      container_name: node3
+      environment:
+        - node.name=node3
+        - node.attr.my_attr=baz
+        - cluster.name=es-docker-cluster
+        - discovery.seed_hosts=node1,node2
+        - cluster.initial_master_nodes=node1,node2,node3
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      restart: always
+      networks:
+        - elastic
+  
+  networks:
+    elastic:
+      driver: bridge
+  ```
+
+  - 기존 index를 대상으로 다시 검색 속도를 측정한다.
+    - 측정을 해보면 단순히 node의 개수를 늘리는 것 만으로는 검색 속도에 차이가 없는 것을 확인할 수 있다.
 
 
 
-- Index 전략
-  - `refresh_interval`을 조정한다.
-    - 기본적으로 Elasticsearch는 매 초 refresh를 실행한다.
-    - 만일 바로 검색될 필요가 없는 데이터라면, `refresh_interval`을 길게 줌으로써 색인 성능을 향상시킬 수 있다.
-    - 색인 전에 `refresh_interval`을 늘린 후, 색인 후에 다시 돌려 놓는다.
-  - 자동으로 생성되는 `_id`를 사용.
-    - 자동으로 생성되는 `_id`를 사용할 경우 Elasticsearch가 `_id`의 고유성을 확인할 필요가 없으므로 색인 속도가 빨라질 수 있다.
-    - 만약 Lucene friendly한 format으로 `_id`를 사용한다면, 자동 생성되는 `_id`를 사용하지 않아도 색인 속도가 크게 느려지지는 않는다.
-  - Replica shard를 비활성화한다.
-    - Replica shard가 있을 경우, primary에 색인이 완료된 후 replica에 복사까지 해야하므로 색인 속도가 느려진다.
-    - 따라서 색인 전에 replica shard를 비활성화 한 후 색인이 완료되면 다시 활성화시킨다.
+- Replica shard를 늘리면 검색 속도가 증가하는가?
+
+  - 위에서는 primary1, replica 0, segment 1로 test를 했었다.
+  - node가 3개이기 때문에 아래와 같이 replica shard의 개수를 2개로 늘린다.
+
+  ```json
+  // PUT search_performance_test/_settings
+  {
+    "index" : {
+      "number_of_replicas" : 2
+    }
+  }
+  ```
+
+  - 다시 검색 속도를 측정해본다.
+    - Replica shard를 늘리기 전과 후에 검색 속도 차이가 없는 것을 확인할 수 있다.
+  - 차이가 없는 이유
+    - Elasticsearch에서 검색이 이루어지는 과정은 고유한 shard들의 목록을 생성하는 것에서부터 시작한다.
+    - 고유한 shard들의 목록을 생성하고, 해당 목록에 있는 shard를 대상으로 query를 실행한다.
+    - 따라서 replica를 늘린다고 해도 고유한 shard의 개수가 늘어나는 것은 아니므로 검색 속도가 증가하지는 않는다.
 
 
 
-- Node 전략
 
-  - Indexing Buffer size 관련 옵션을 조정한다.
 
-    > https://www.elastic.co/guide/en/elasticsearch/reference/current/indexing-buffer.html
 
-    - Elasticsearch가 색인을 위해 얼마만큼의 memory를 확보하고 있을지를 설정하는 옵션이다.
-    - 기본값은 노드에 할당된 전체 heap memory의 10%이다.
-    - 노드의 모든 shard들이 공유하는 값이다.
 
-  - Translog 관련 옵션을 조정한다.
-
-    > https://www.elastic.co/guide/en/elasticsearch/reference/current/index-modules-translog.html#_translog_settings
-
-    - Elasticsearch에서 flush가 실행되는 주기는 trasnlog의 size에 의해서 결정된다.
-    - Translog가 일정 크기에 도달하면 flush가 실행되는데, flush가 실행되면 memory에 저장되어 있던 여러 개의 segment들이 하나로 병합되면서 disk에 저장된다.
-    - 이는 비용이 많이 드는 작업이므로, 빈번하게 발생할 경우 색인 속도가 감소할 수 있다.
-    - 따라서 trasnlog의 크기를 늘림으로써 색인 속도를 향상시킬 수 있다.
