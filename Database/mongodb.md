@@ -50,11 +50,116 @@
 
 # MongoDB 설치하기
 
+> https://www.mongodb.com/compatibility/deploying-a-mongodb-cluster-with-docker
+
 - Docker compose로 cluster 설치하기
 
-  > https://www.mongodb.com/compatibility/deploying-a-mongodb-cluster-with-docker
-  >
-  > https://velog.io/@minchoi/docker-compose-%EC%9D%B4%EC%9A%A9%ED%95%B4%EC%84%9C-MongoDB-Cluster-%EA%B5%AC%EC%A1%B0-%EA%B5%AC%EC%84%B1%ED%95%98%EA%B8%B0
+  - MongoDB 공식 image를 pull 받는다.
+  
+  ```bash
+  $ docker pull mongo[:version]
+  ```
+  
+  - 아래와 같이 docker-compose.yml 파일을 작성한다.
+  
+  ```yaml
+  version: '3.2'
+  
+  
+  services:
+    my-mongo1:
+      image: mongo:latest
+      container_name: my-mongo1
+      command: mongod --replSet myReplicaSet --bind_ip localhost,my-mongo1
+      ports: 
+        - 27017:27017
+      restart: always
+      networks:
+        - mongo-network
+    
+    my-mongo2:
+      image: mongo:latest
+      container_name: my-mongo2
+      command: mongod --replSet myReplicaSet --bind_ip localhost,my-mongo2
+      ports: 
+        - 27018:27017
+      restart: always
+      networks:
+        - mongo-network
+    
+    my-mongo3:
+      image: mongo:latest
+      container_name: my-mongo3
+      command: mongod --replSet myReplicaSet --bind_ip localhost,my-mongo3
+      ports: 
+        - 27019:27017
+      restart: always
+      networks:
+        - mongo-network
+  
+  networks:
+    mongo-network:
+      driver: bridge
+  ```
+  
+  - 아래 명령어를 통해 container를 생성하고 실행한다.
+  
+  ```bash
+  $ docker compose up
+  ```
+  
+  - 아래 명령어를 실행하여 replica set을 initiate한다.
+    - `_id`에는 위 docker compose file에서 command의 `--replSet`에 적어준 값(이 경우 myReplicaSet)을 적어준다.
+    - `members.host`에는 각 MongoDB node의 container name을 적어준다.
+    - 만일 client가 docker network를 사용하지 않을 경우 각 node의 `host:port`를 적어준다.
+  
+  ```bash
+  $ docker exec -it mongo1 mongosh --eval "rs.initiate({
+   _id: \"myReplicaSet\",
+   members: [
+     {_id: 0, host: \"my-mongo1\"},
+     {_id: 1, host: \"my-mongo2\"},
+     {_id: 2, host: \"my-mongo3\"}
+   ]
+  })"
+  
+  # 성공적으로 끝날 경우 { ok: 1 }가 출력된다.
+  ```
+
+
+
+- 새로운 replicaSet 추가하기
+
+  - 아래와 같이 docker-compose file을 작성하여 MongoDB container를 생성한다.
+    - 다른 서버에 해도 되고, 같은 서버에서 진행해도 된다.
+
+  ```yaml
+  version: '3.2'
+  
+  
+  services:
+    mongo4:
+      image: mongo:7.0.0
+      container_name: theo-mongo4
+      command: mongod --replSet myReplicaSet --bind_ip localhost,mongo4
+      ports: 
+        - 27018:27017
+      restart: always
+  ```
+
+  - 기존 primary node의 mongo shell에 접속해서 아래 명령어를 수행한다.
+
+  ```bash
+  > rs.add({host:"<새로 생성한 node의 host>:<port>"})
+  ```
+
+  - 잘 추가되었는지 확인한다.
+
+  ```bash
+  > rs.status()
+  ```
+
+  
 
 
 
@@ -77,6 +182,12 @@
 
 - 조회
 
+  - MongoDB status 조회
+
+  ```bash
+  > rs.status()
+  ```
+
   - DB 목록 조회
 
   ```bash
@@ -96,7 +207,7 @@
   ```
 
   - collection 목록 조회
-
+  
   ```bash
   $ show collections
   ```
@@ -106,7 +217,7 @@
     - `.pretty()`는 결과를 json 형식에 맞게 출력한다.
     - 출력할 필드는 `{필드명: 0 or 1}` 형식으로 들어가며, 1일 경우에만 출력한다(아예 작성하지 않을 경우 모든 필드를 출력한다.).
     - `_id`의 경우 명시적으로 지정하지 않더라도 출력한다.
-
+  
   ```bash
   $ db.<collection 명>.find([조건], [{출력할 필드들}])[.pretty()]
   
@@ -119,6 +230,38 @@
   
   # 위 예시는 sql문으로 다음과 같다.
   select name, author. published_date from books where price > 5000 and price <=8000
+  ```
+
+
+
+- 삽입
+
+  - Database 생성
+    - Mongo shell에는 create command가 따로 있지는 않고, 아래와 같이 `use`를 사용하여 context를 switching하면 된다.
+
+  ```bash
+  > use <database_name>
+  ```
+
+  - 위 명령어만 입력했을 경우 `show dbs`를 통해 database들을 확인하더라도 아직 추가되지 않은 것을 볼 수 있다.
+    - 이는 context만 변경된 것이기 때문이다.
+    - Database의 실제 생성은 database에 첫 data가 저장될 때 이루어진다.
+  - Document 삽입하기
+
+  ```bash
+  > db.<collection_name>.insert(<json_data>)
+  
+  # db.book.insert({title:"foo", content:"bar"})
+  ```
+
+  - Collection 생성
+    - Collection은 위와 같이 존재하지 않는 collection에 data를 삽입하면 자동으로 생성된다.
+    - 만일 수동으로 생성하고자 한다면 아래와 같이 하면 된다.
+
+  ```bash
+  db.createCollection("<name>"[, options])
+  
+  # db.createCollection("book")
   ```
 
 
@@ -247,13 +390,13 @@
   - mongodb에 연결하기 위한 클라이언트를 생성한다.
 
   ```python
-  import pymongo
+  from pymongo import MongoClient
   
   # 방법1
-  clinet = MongoClient('<mongodb host>', '<mongodb port>')
+  client = MongoClient('<mongodb host>', '<mongodb port>')
   
   # 방법2
-  clinet = MongoClient('mongodb://<mongodb host>:<mongodb port>/')
+  client = MongoClient('mongodb://<mongodb host>:<mongodb port>/')
   
   # 인증이 필요할 경우
   client = MongoClient("<mongodb host>:<mongodb port>",username="<username>",password="<password>",authSource="admin")
