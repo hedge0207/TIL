@@ -1135,16 +1135,95 @@
 
 #### Join field type
 
-- 한 인덱스의 documents 내부에서 부모/자식 관계를 생성하는 필드
+- Join field type
 
-  - `relations` 부분은 문서 내부의 관계를 설정하는 부분이다.
-    - 각각의 관계는 `<부모 이름>:<자식 이름>`의 형태로 정의된다.
-    - 만일 복수의 자식을 설정 할 경우 `<부모 이름>:<[자식 이름1, 자식 이름2, ...]>`와 같이 정의한다.
-  - parent-join은 인덱스에 필드를 하나 생성한다(하나의 관계 당 하나의 필드가 생성된다).
-    - 생성되는 필드의 이름은 `<관계 이름>#<부모 이름>` 형식이다.
-    - 자식 문서의 경우, 필드는 해당 문서와 연결된 parent `_id` 값을 포함한다.
+  - 한 index 내의 document들 사이에 parent/child 관계를 생성하는 field이다.
+  - `relations` section에 `"parent_name":"child_name"` 형태로 parent/child 관계들을 넣는 방식으로 설정할 수 있다.
+    - 복수의 관계를 설정하는 것도 가능하다.
 
-  - 예시
+  ```json
+  PUT my-index-000001
+  {
+    "mappings": {
+      "properties": {
+        // join_field의 이름을 설정하고
+        "my_join_field": { 
+          "type": "join",
+          // "parent_name":"child_name" 형태로 관계를 설정한다.
+          "relations": {
+            "question": "answer" 
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  - 부모 문서 생성하기
+    - 위에서 부모 문서의 이름을 question으로 설정했으므로, 아래와 같이 `name`에 question을 주면 부모 문서가 된다.
+    - 아래 두 가지 방식은 모두 사용이 가능하지만, 
+
+  ```json
+  PUT my-index-000001/_doc/1?refresh
+  {
+    "my_join_field": {
+      "name": "question" 
+    }
+  }
+  
+  PUT my-index-000001/_doc/2?refresh
+  {
+    "my_join_field": "question"
+  }
+  ```
+
+  - 위와 같이 서로 다른 방식으로 등록한 문서를 검색해보면 아래와 같이 나온다.
+
+  ```json
+  // GET my-index-000001/_search
+  {
+      // ...
+      "hits": [
+        {
+          "_index": "my-index-000001",
+          "_id": "1",
+          "_score": 1,
+          "_source": {
+            "my_join_field": {
+              "name": "question"
+            }
+          }
+        },
+        {
+          "_index": "my-index-000001",
+          "_id": "2",
+          "_score": 1,
+          "_source": {
+            "my_join_field": "question"
+          }
+        }
+     ]
+  }
+  ```
+
+  - 자식 문서 생성하기
+    - 위에서 자식 문서의 이름을 answer로 설정했으므로, 아래와 같이 `name`에 answer를 주면 자식 문서가 된다.
+    - 부모 문서와 달리 `parent`라는 값을 추가로 줘야 하는데, 여기에는 부모 문서의 `_id` 값을 주면 된다. 
+    - 자식 문서는 부모 문서와 반드시 같은 shard에 색인되어야 하므로 `routing` 값을 줘야 하며, 부모 document의 `_id`값을 사용한다.
+    - `routing`을 주지 않을 경우 기본적으로 document의 `_id` 값을 기반으로 routing하는데, 위에서 부모 document를 생성할 때 `routing` 값을 주지 않았으므로, 부모 document는 routing value로 자신의 `_id` 값을 사용했다.
+    - 따라서 자식 문서 생성시에 부모 document의 `_id` 값을 주면 같은 shard에 색인되도록 할 수 있다.
+
+  ```json
+  PUT my-index-000001/_doc/3?routing=1&refresh 
+  {
+    "my_join_field": {
+      "name": "answer", 
+      "parent": "1"
+    }
+  }
+  ```
+
+  - Depth를 더 줄 수도 있다.
 
   ```bash
   # 하나의 부모와 하나의 자식
@@ -1206,46 +1285,6 @@
 
 
 
-- 색인
-
-  - 부모 문서를 색인하기 위해서는 관계의 이름과 부모의 이름을 입력해야 한다.
-    - 아래 예시는 2 개의 부모 문서를 색인하는 예시이다.
-    - 부모 문서를 색인할 때에는 축약하는 것이 가능하다.
-
-  ```bash
-  $ curl -XPUT "http://localhost:9200/my-index/_doc/1" -H 'Content-Type: application/json' -d'
-  {
-    "my_id": "1",
-    "text": "This is a question",
-    # 관계의 이름을 입력
-    "my_join_field": {
-      "name": "question" # 부모를 입력
-    }
-    # 아래와 같이 축약하는 것이 가능하다.
-    # "my_join_field": "question"
-  }'
-  
-  $ curl -XPUT "http://localhost:9200/my-index/_doc/1" -H 'Content-Type: application/json' -d'
-  {
-    "my_id": "2",
-    "text": "This is another question",
-    # 관계의 이름을 입력
-    "my_join_field": {
-      "name": "question" # 부모를 입력
-    }
-  }'
-  ```
-
-  - 자식 문서를 색인할 때는 관계의 이름과 부모 문서의 parent id, 그리고 자식의 이름이 입력되어야 한다.
-    - 또한 부모 문서와 같은 샤드에 할당되어야 하므로 `routing=`을 통해 같은 샤드에 할당될 수 있도록 설정해준다.
-    - 아래 예시는 두 개의 자식 문서를 색인하는 예시이다.
-
-  ```bash
-  $ curl -XPUT "http://localhost:9200/my-index/_doc/3?routing=1" -H 'Content-Type: application/json' -d'{  "my_id": "3",  "text": "This is an answer",  "my_join_field": {    "name": "answer",     "parent": "1" # parent id를 입력  }}'$ curl -XPUT "http://localhost:9200/my-index/_doc/4?routing=1" -H 'Content-Type: application/json' -d'{  "my_id": "4",  "text": "This is another answer",  "my_join_field": {    "name": "answer",    "parent": "1"  }}'
-  ```
-
-
-
 - Join filed 와 성능
 
   - 관계형 DB의 join과  동일하게 사용하는 것이 아니다.
@@ -1258,10 +1297,20 @@
 
 - Parent-join의 제약사항
   - 한 인덱스에 오직 하나의 join field만 정의해야한다.
-  - 이미 존재하는 join 필드에 새로운 관계를 추가하는 것은 가능하다.
+  - 이미 존재하는 join field에 새로운 관계를 추가하는 것은 가능하다.
+  - Parent인 요소에 child를 추가하는 것은 가능하지만, parent가 아닌 문서에 child를 넣어서 parent/child 관계를 형성하는 것은 불가능하다.
   - 부모 문서와 자식 문서는 반드시 같은 샤드에 색인되어야 한다. 따라서 자식 문서를 색인, 조회, 삭제, 수정시에 같은 routing value가 입력되어야 한다.
   - 각 요소는 여러 자식을 가질 수 있지만, 부모는 오직 하나만 지닐 수 있다.
-  - 부모 요소에 자식 요소를 추가하는 것이 가능하다.
+
+
+
+- Parent-join 검색
+  - Parent-join은 document 내의 relation name을 index의 field에 추가한다.
+  - 또한 Parent/child 관계 당 field 하나를 생성한다.
+    - 이 field의 이름은 `<join_field_name>#<parent_name>` 형식이다.
+    - 예를 들어 위에서 색인한 예시의 경우 `my_join_field#question` 형태로 생성된다.
+    - 만일 document가 child document라면 이 field에는 document의 parent document의 `_id`값을 저장하고, parent document라면, 자신의 `_id` 값을 저장한다.
+  - Join field가 포함된 index를 대상으로 검색할 때 위 두 field는 검색 결과에서 항상 반환된다.
 
 
 
@@ -1335,6 +1384,12 @@
   ```bash
   $ curl -XGET "http://localhost:9200/my-index/_search" -H 'Content-Type: application/json' -d'{  "query": {    "parent_id": {       "type": "answer",      "id": "1"    }  },  "aggs": {    "parents": {      "terms": {        "field": "my_join_field#question",         "size": 10      }    }  },  "runtime_mappings": {    "parent": {      "type": "long",      "script": """        emit(Integer.parseInt(doc['my_join_field#question'].value))      """    }  },  "fields": [    { "field": "parent" }  ]}'
   ```
+
+
+
+
+
+
 
 
 
