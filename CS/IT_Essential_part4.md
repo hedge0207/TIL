@@ -1049,3 +1049,24 @@
   - PTS(Pseudo Terminal Slave)
     - `ssh` 등으로 서버에서 원격으로 접속했을 때 열리는 TTY이다.
 
+
+
+- Loopback, localhost, 0.0.0.0
+
+  > https://velog.io/@lky9303/127.0.0.1-%EA%B3%BC-localhost%EC%9D%98-%EC%B0%A8%EC%9D%B4
+
+  - 네트워크 통신이란 인터넷 상에 존재하는 호스트와 서로 패킷을 주고 받는 것이다.
+  - Loopback
+    - 자신의 local PC을 서버로 만들고, local PC 내에서 요청을 보내고 응답을 받을 수 있는 것이다.
+    - 127.0.0.1로 표현하며, 만약 목적지 IP 주소를 127.0.0.1로 설정하면 이는 패킷을 외부로 전송하지 않고 자신에게 전송한다.
+    - 즉 자신이 송신한 패킷을 자신이 수신하게 된다.
+    - 자기 자신을 가리키는 주소라고 보면 된다.
+  - localhost
+    - 127.0.0.1이 ip주소라면 localhost는 domain name이라고 보면 된다.
+    - www.naver.com이라는 domain name이 DNS를 통해서 IP 주소로 변환되듯이, localhost가 127.0.0.1이라는 ip주소로 변환되는 것이다.
+    - 그러나 localhost가 항상 127.0.0.1을 가리키는 것은 아닐 수 있다.
+    - 정확히는 localhost는 OS hosts 파일의 redirect rule에 정의된 ip로 변환된다.
+    - 따라서 OS host file의 redirect rule에서 localhost의 redirecting IP 값을 다르게 입력했다면, 127.0.0.1이 아닌 설정된 IP로 변환된다.
+    - Ubuntu의 경우 `/etc/hosts`에서 확인할 수 있다.
+  - 0.0.0.0
+    - 지정한 IP 주소가 없다는 것이며, 내 컴퓨터에 연결된 모든 IPv4 address를 의미한다.
