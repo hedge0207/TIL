@@ -82,6 +82,24 @@
 
 
 
+- Python 설치 후 기본 Python을 새로 설치한 버전으로 변경
+
+  - 설정 변경
+
+  ```bash
+  $ vi ~/.bashrc
+  
+  # alias python="<Python 설치 경로>" 추가
+  ```
+
+  - 적용
+
+  ```bash
+  source ~/.bashrc
+  ```
+
+
+
 
 - 심볼릭 링크 설정하기
 

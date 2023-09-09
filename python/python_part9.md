@@ -1252,6 +1252,27 @@
       for p in processes:
           p.join()
   ```
+  
+  - Python multiprocessing의 Event 사용시 주의점
+  
+    - Event의 flag는 기본적으로 False 상태로 시작한다.
+    - 따라서 이를 원치 않을 경우 생성 이후 바로 True로 변경해줘야한다.
+  
+  
+  ```python
+  from multiprocessing import Event
+  
+  
+  event = Event()
+  print(event.is_set())
+  event.set()
+  ```
+  
+  
+  
+  
+  
+  
 
 
 
