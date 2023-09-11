@@ -1409,90 +1409,178 @@
 
 - 수정
 
-  - 위에서 삭제한 데이터를 다시 생성했다고 가정
-  - 수정 요청
+  - PUT method를 사용하여 문서 전체를 교체하는 방식과 `_update` API를 사용하여 일부 필드만 변경하는 방식이 있다.
+  - 문서 색인
 
   ```json
-  // POST 인덱스이름/_delete_by_query
+  // PUT test/_doc/1
   {
-      "nickname":"Oeht",
-      "message":"!요세하녕안"
+    "name":"John Doe",
+    "company":"Jeil"
   }
   ```
-  
-  - 응답
-  
+
+  - PUT method로 문서 전체를 교체
+
   ```json
+  // PUT test/_doc/1
   {
-      "_index": "office",
-      "_type": "_doc",
-      "_id": "1",
-      "_version": 2,
-      "result": "updated",
-      "_shards": {
-          "total": 2,
-          "successful": 1,
-          "failed": 0
-      },
-      "_seq_no": 1,
-      "_primary_term": 1
+      "foo":"bar",
+      "baz":"qux"
   }
   ```
-  
-  - 수정할 때 특정 필드를 뺄 경우 해당 필드가 빠진 채로 수정된다.
-    - POST 메서드로도 수정이 가능한데 POST 메서드를 사용해도 마찬가지다.
-  
+
+  - 확인
+    - 완전히 새로운 문서로 교체된 것을 확인할 수 있다.
+    - 이 경우에도 `_version`은 올라가게 된다.
+
   ```json
-  // POST office/_doc/1
+  // GET test/_doc/1
   {
-      "nickname":"Theo"
-  }
-  
-  // 응답
-  {
-      "_index": "office",
-      "_type": "_doc",
-      "_id": "1",
+      // ...
       "_version": 2,
-      "_seq_no": 9,
-      "_primary_term": 1,
-      "found": true,
+      // ...
       "_source": {
-          // message 필드가 사라졌다.
-          "nickname": "Theo"
-      }
+          "foo": "bar",
+          "baz":"qux"
+        }
   }
   ```
-  
-  - `_update`
-    - `_update`를 활용하면 일부 필드만 수정하는 것이 가능하다.
-    - 업데이트 할 내용에 `"doc"`이라는 지정자를 사용한다.
-  
+
+  - `_update` API를 사용하여 일부 field만 변경
+    - `_update` API를 사용할 경우, 이미 있는 필드면 해당 필드의 값을 변경하고, 없는 필드일 경우 필드를 추가한다.
+
   ```json
-  // 도큐먼트id가 2인 새로운 도큐먼트를 생성했다고 가정
-  // POST office/_update/2
+  // POST test/_update/1
   {
-      "doc":{
-          "message":"반갑습니다!"
-      }
+    "doc": {
+      "foo":"barrr",
+      "name":"Jim Carrey"
+    }
   }
   ```
-  
-  - 응답
-  
+
+  - 확인
+    - 이 경우에도 마찬가지로 `_version`이 올라간다.
+
   ```json
+  // POST test/_update/1
   {
-      "_index": "office",
-      "_type": "_doc",
-      "_id": "2",
-      "_version": 2,
-      "_seq_no": 0,
-      "_primary_term": 1,
-      "found": true,
+    "doc": {
+      "foo":"barrr",
+      "name":"Jim Carrey"
+    }
+  }
+  ```
+
+  - `script`로 update하는 것도 가능하다.
+
+  ```json
+  // POST test/_update/1
+  {
+    "script": {
+      "source": "ctx._source.foo = params.new_value",
+      "lang": "painless",
+      "params": {
+        "new_value": "baz"
+      }
+    }
+  }
+  ```
+
+  - `upsert` 사용
+    - `upsert`의 경우 만일 update하려는 document가 있을 경우 upsert에 script에 정의한 내용이 실행되고, 없을 경우 `upsert`에 정의한대로 새로운 문서가 생성된다.
+    - 아래 예시의 경우 2번 문서는 생성한 적이 없으므로 `upsert`에 정의한대로 문서가 생성된다.
+
+  ```json
+  // POST test/_update/2
+  {
+    "script": {
+      "source": "ctx._source.foo = params.new_value",
+      "lang": "painless",
+      "params": {
+        "new_value": "baz"
+      }
+    },
+    "upsert": {
+      "foo":"bar"
+    }
+  }
+  ```
+
+  - 확인
+
+  ```json
+  // GET test/_doc/2
+  {
+      // ...
       "_source": {
-          "nickname": "Oeht",
-          "message": "반갑습니다!"
+          "foo": "bar"
+        }
+  }
+  ```
+
+  - 반면에 이미 있는 문서일 경우 sciprt의 내용이 실행된다.
+
+  ```json
+  // POST test/_update/2
+  {
+    "script": {
+      "source": "ctx._source.foo = params.new_value",
+      "lang": "painless",
+      "params": {
+        "new_value": "baz"
       }
+    },
+    "upsert": {
+      "foo":"bar"
+    }
+  }
+  ```
+
+  - 확인
+
+  ```json
+  // GET test/_doc/2
+  {
+      // ...
+      "_source": {
+          "foo": "baz"
+        }
+  }
+  ```
+
+  - `scripted_upsert`
+    - `scripted_upsert` 값을 true로 줄 경우, document가 없더라도 script를 실행한다.
+    - 예를 들어 아래의 경우 3번 문서가 없으므로 일단 `upsert`가 실행되어 `foo:bar`가 색인되고, sciprt가 실행되어 `baz:qux`도 추가된다.
+
+  ```json
+  POST test/_update/3
+  {
+    "script": {
+      "source": "ctx._source.baz = params.new_value",
+      "lang": "painless",
+      "params": {
+        "new_value": "qux"
+      }
+    },
+    "upsert": {
+      "foo":"bar"
+    },
+    "scripted_upsert": true
+  }
+  ```
+
+  - `doc_as_upsert`
+    - 이 값을 true로 줄 경우 문서가 없을 경우 `doc`의 내용으로 새로운 문서를 생성한다.
+
+  ```json
+  POST test/_update/4
+  {
+    "doc": {
+      "name": "John Doe"
+    },
+    "doc_as_upsert": true
   }
   ```
 
