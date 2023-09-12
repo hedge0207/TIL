@@ -803,9 +803,17 @@
 
 ### Filter Context
 
-- filter context
+- Filter context
   - 단순히 해당 값이 해당 필드에 존재하는지 여부만 확인하고 스코어링은 하지 않는다(score는 1로 고정).
-  - filter context는 검색 결과를 캐싱하지만 Query context는 검색 결과를 캐싱하지 않는다.
+  - Filter context는 검색 결과를 캐싱하지만 Query context는 검색 결과를 캐싱하지 않는다.
+  - 아래와 같은 것들이 filter context에 속한다.
+    - bool query의 filter와 must_not parameter.
+    - constant_score query의 filter parameter.
+    - filter aggregation
+  - Exact value query
+    - 아래서에서 소개하는 term, terms, terms_set, range, wildcard 등은 단순히 검색어가 일치하는지 여부만을 판단한다.
+    - 기본적으로 검색어를 analyzing하지 않지만, filter context가 아닌 곳에서 사용할 경우 score 값은 반환한다.
+    - 그러나 문서의 일치 여부를 yes/no로만 판단하므로 모두 같은 점수가 나오게 된다.
 
 
 
@@ -1134,7 +1142,7 @@
 
 - must_not
 
-  - 쿼리에 일치하지 않눈 문서를 검색하는 쿼리
+  - 쿼리에 일치하지 않는 문서를 검색하는 쿼리
   - 특징
     - filter 절과 마찬가지로 Filter Context에서 실행되어 score 계산을 하지 않는다.
     - 문서 캐싱의 대상이 된다.
@@ -1267,7 +1275,8 @@
   }
   ```
   
-  
+
+
 
 
 

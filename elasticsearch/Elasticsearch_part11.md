@@ -300,6 +300,57 @@
 
 
 
+## Indexing pressure
+
+- Lucene은 문서 하나의 크기를 2GB로 제한하고 있다.
+  - Elasticsearch는 `http.max_content_length` 설정을 통해 간접적으로 문서의 최대 크기를 조정한다.
+  - 2GB 제한이 걸려있다고 하더라도, 큰 document는 일반적으로 비효율적이다.
+    - Network에 더 많은 부하를 주고, 더 많은 메모리와 더 많은 disk를 사용한다.
+
+
+
+- 하나의 문서가 색인되기 위해서는 3 단계를 거쳐야 한다.
+  - Coordinating
+    - Document id를 기반(기본값)으로 어떤 replication group에 routing될지 결정된다.
+    - Replication group이란 primary shard와 replica shard가 모두 포함되어 있는 group을 의미한다.
+    - 어떤 replication group에 색인될지 선택되면 선택된 replication group 내의 primary shard에 색인 요청을 전달한다.
+  - Primary
+    - 색인 관련 동작(색인 혹은 삭제)을 검증하고, 이를 replica shard에 전달하는 단계이다.
+    - 먼저 색인 동작을 검증하고, 검증 결과 유효하지 않은 형식이면 색인을 거절한다(예를 들어 datetime field에 integer를 색인하는 경우 등).
+    - 색인 관련 동작을 실행하는데, 이전 단계에서 동작의 형식을 검증한다면, 이 단계에서는 내용을 검증하고, 유효하지 않은 내용(keyword field에 너무 긴 text를 색인하려 하는 등)이면 색인을 거절한다.
+    - Replica shard에 색인 관련 동작을 전송한다.
+    - 일부 replica shard가 offline 상태일 수 있기에 primary가 모든 replica shard에 데이터를 복제할 필요는 없다.
+    - Elasticsearch는 색인 동작을 받을 수 있는 상태인 shard들의 목록을 master node에 저장하고 있는데, 이 목록을 in-sync copies라 부른다.
+    - Primary shard는 이 목록에 있는 shard들에만 복제 동작을 전송한다.
+  - Replica
+    - Primary shard에게 전달 받은 색인 관련 동작을 수행한다.
+    - 색인이 완료되면 primary shard에게 완료되었다는 응답을 보낸다.
+
+
+
+- Memory limit
+  - `indexing_pressure.memory.limit`
+    - 아직 색인되지 않은 data를 위해 전체 heap memory에서 몇 %의 메모리를 사용할지를 설정한다.
+    - Node 단위로 설정하며, 기본값 보다 더 큰 값을 설정하려는 경우 매우 주의깊게 설정해야 한다.
+    - 기본값은 10%이다.
+  - 색인의 각 단계가 시작될 때 Elasticsearch는 색인 request에 필요한 memory를 차지하고 있다.
+    - 이는 오직 색인이 종료될 때만 release 된다.
+    - 이는 앞선 단계는 아랫 단계가 모두 종료될 때 까지 memory를 차지하고 있다는 의미이다.
+    - 예를 들어 coordinating stage는 primary, replica stage가 완료될 때 까지 memory를 차지하고 있다.
+  - Node는 coordinating, primary, replica 단계에서 색인 memory가 `indexing_pressure.memory.limit`를 초과할 경우 새로운 색인 요청을 거절한다.
+    - coordinating, primary, replica 단계에서 색인 memory가 `indexing_pressure.memory.limit`를 초과할 경우, coordinating, primary 단계에서 새로운 색인 요청을 거절한다.
+    -  replica 단계에서 색인 memory가 `indexing_pressure.memory.limit`의 1.5배를 초과할 경우, replica 단계에서 새로운 색인 요청을 거절한다.
+  - `_nodes/stats` API의 `indexing_pressure`를 통해 관련 지표를 확인할 수 있다.
+
+
+
+- `es_rejected_execution_exception`
+  - Elasticsearch가 memory상의 이유로 새로운 색인을 거절할 경우 발생하는 exception이다.
+  - 즉, request body의 제한인 100mb를 지킨다고 해도, 색인이 실패할 수 있는 것이다.
+  -  `http.max_content_length`의 기본값을 초과하는 요청에 대해서는 413 status code(Content Too Large)를 반환하지만, `indexing_pressure.memory.limit`를 초과하여 색인할 수 없는 경우 429 status code(Too Many Requests)와 함께 `es_rejected_execution_exception`을 반환한다.
+
+
+
 
 
 ## 검색 성능 최적화

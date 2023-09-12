@@ -1340,21 +1340,6 @@
 
 - 검색
 
-  - 일반적인 쿼리로 검색
-
-  ```bash
-  $ curl -XGET "http://localhost:9200/my-index/_search" -H 'Content-Type: application/json' -d'{  "query": {    "match_all": {}  }}'# 응답{  (...),    "hits" : [      {        "_index" : "test-join-field",        "_type" : "_doc",        "_id" : "2",        "_score" : null,        "_source" : {          "my_id" : "1",          "text" : "This is another question",          "my_join_field" : {            "name" : "question"  # question join에 속해 있다.          }        }      },      {(...)},      {        "_index" : "test-join-field",        "_type" : "_doc",        "_id" : "3",        "_score" : null,        "_routing" : "1",        "_source" : {          "my_id" : "3",          "text" : "This is a answer",          "my_join_field" : {            "name" : "answer",	# answer join에 속해 있다.            "parent" : "1"		# parent id          }        }      },      {(...)}    ]  }}
-  ```
-
-  - Parent ID query
-    - 특정 parent document와 연결되어 있는 child documents를 반환하는 쿼리
-    - `type`에는 자식의 이름을, `id`에는 부모 문서의 id를 적는다.
-    - `ignore_unmapped` 파라미터를 줄 수 있는데(선택), 만일 이를 True로 줄 경우 `type`에 자식의 이름이 아닌 값을 줄 경우 error가 발생하고, False로 줄 경우에는 아무 문서도 반환하지 않는다(기본값은 False)
-
-  ```bash
-  $ curl -XGET "http://localhost:9200/my-index/_search" -H 'Content-Type: application/json' -d'{  "query": {      "parent_id": {          "type": "answer",          "id": "1"      }  }}'
-  ```
-
   - Has child query
     - 쿼리에 일치하는 child documents와 연결 된 부모 document를 반환한다.
     - `type`, `ignore_unmapped`는 Parent ID query와 동일하다.
@@ -1362,25 +1347,25 @@
     - `min_children`: 쿼리와 일치하는 child documents의 최솟값을 지정, 만일 이 값보다 쿼리와 일치하는 child documents의 수가 적다면, 해당 child documents의 parent document는 반환되지 않는다.
     - `score_mode`: 쿼리에 매칭된 child documents들의 점수가 어떻게 parent documents들의 관련성 점수에 영향을 줄 것인지를 결정한다. 기본 값은 None으로, avg, sum, min, max 등을 설정 가능하다.
     - `has_child` 쿼리는 일반적인 정렬로는 정렬할 수 없고, function_score를 사용하여 정렬해야 한다.
-
+  
   ```bash
   $ curl -XGET "http://localhost:9200/my-index/_search" -H 'Content-Type: application/json' -d'{  "query": {    "has_child": {      "type": "answer",      "query": {        "match_all": {}      },      "max_children": 10,      "min_children": 2,      "score_mode": "min"    }  }}'
   ```
-
+  
   - Has parent  query
     - 쿼리와 일치하는 parent document와 연결된 child documents를 반환한다.
     - `parent_type`에는 부모의 이름을 입력한다.
     - `ignore_unmapped`는 Parent ID query와 동일하다.
     - `score`: 쿼리와 일치하는 parent document의 관련성 점수가 child documents에서 집계 될지를 결정한다(기본값은 False)
     - 마찬가지로 일반적인 정렬로는 정렬할 수 없고, function_score를 사용하여 정렬해야 한다.
-
+  
   ```bash
   $ curl -XGET "http://localhost:9200/my-index/_search" -H 'Content-Type: application/json' -d'{  "query": {    "has_parent": {      "parent_type": "question",      "query": {        "match_all": {}      }    }  }}
   ```
 
   - Parent-join 쿼리와 집계
     - join 필드의 값은 aggs와 scripts에서 접근이 가능하다.
-
+  
   ```bash
   $ curl -XGET "http://localhost:9200/my-index/_search" -H 'Content-Type: application/json' -d'{  "query": {    "parent_id": {       "type": "answer",      "id": "1"    }  },  "aggs": {    "parents": {      "terms": {        "field": "my_join_field#question",         "size": 10      }    }  },  "runtime_mappings": {    "parent": {      "type": "long",      "script": """        emit(Integer.parseInt(doc['my_join_field#question'].value))      """    }  },  "fields": [    { "field": "parent" }  ]}'
   ```
