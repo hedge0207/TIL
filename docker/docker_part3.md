@@ -847,7 +847,8 @@
   - Service 생성
     - Docker container를 생성할 때 사용하는 명령어를 대부분 공유한다.
     - `--volume` option은 사용할 수 없으며, volume 또는 bind bount를 추가하려면 `--mount` option을 사용해야한다.
-
+    - `mount`시에는 모든 node에 mount하려는 source 파일이 있어야한다.
+  
   ```bash
   $ docker service create [options] <image> [command] [args]
   
@@ -858,66 +859,67 @@
     --mount type=volume,source=my-volume,destination=/path/in/container,volume-label="color=red",volume-label="shape=round" \
     my-image
   ```
-
+  
   - Service 조회
-
+  
   ```bash
   $ docker service ls
   ```
-
+  
   - Service의 task 조회
     - Service에서 실행중인 task들의 목록을 보여준다.
-
+  
   ```bash
   $ docker service ps <service>
   ```
-
+  
   - Service 삭제
     - 삭제를 실행하면 service로 생성된 모든 container가 삭제된다.
     - 예를 들어 service를 update하거나 rollback하면 새로운 container가 생성되는데, service를 삭제하면, 이러한 container 들도 함께 삭제된다.
     - 정말 삭제할 것인지를 묻지 않으므로 신중하게 사용해야한다.
-
+  
   ```bash
   $ docker service rm <service>
   ```
-
+  
   - Service log 확인
     - Docker service 또는 service의 task를 확인하기 위해 사용한다.
-
+  
   ```bash
   $ docker service logs <service | task> 
   ```
-
+  
   - Service 상세 정보 확인
-
+  
   ```bash
   $ docker service inspect <service>
   ```
-
+  
   - Service update하기
-    - `--mount-add`/`--mount-rm`: service 생성시에 미처 추가하지 못한 volume 혹은 bind mount를 추가/삭제 할 수 있다(추가 방식은 create 할 때와 동일하다).
+    - `--mount-add`/`--mount-rm`: service 생성시에 미처 추가하지 못한 volume 혹은 bind mount를 추가/삭제 할 수 있다(추가 방식은 create 할 때와 동일하며, 삭제시에는 target_path를 입력하면 된다).
+    - `mount-add`시에는 모든 node에 mount하려는 source 파일이 있어야한다.
     - 이 외에도 publish할 port의 추가/삭제, network의 추가/삭제 등도 가능하다.
     - `--image` option을 통해 update에 사용할 image를 지정할 수 있다.
     - 기본적으로 task에 영향을 주지 않는 옵션은 task를 재생성하지 않는데, 예를 들어 `--update-parallelism`를 변경하더라도 이는 task에 영향을 주는 setting은 아니므로 task가 재생성되지는 않는다.
     - 그럼에도 task를 재생성 시키고자 한다면 `--force` flag를 주면 task가 무조건 재생성된다.
     - `--update-parallelism`: update를 동시에 실행할 최대 task의 개수를 설정한다(기본값은 0).
     - `--update-parallelism`를 적당한 값으로 주고, `--force` flag를 주면, 아무 변경 사항이 없더라도, `update` 명령어를 rolling restart에 사용할 수 있다.
-
+  
   ```bash
   $ dockr service update [options] <service>
   ```
-
+  
   - Service rollback하기
     - Service를 이전 버전(마지막으로 `docker service update`를 실행한 이전 version)으로 되돌린다.
     - 특정 version을 지정할 수는 없고, 바로 직전 version으로 돌아가게 되는데, 직전 version에 대한 정보는 `docker service inspect` 명령어를 입력하여 확인할 수 있다.
-
+  
   ```bash
   $ docker service rollback [options] <service>
   ```
-
+  
   - Service scale하기
     - `docker service update` 명령어를 통해서도 가능하다.
-
+  
   ```bash
   $ docker service scale <service>=<replicas> [<service>=<replicas> ...]
   

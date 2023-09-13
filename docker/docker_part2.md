@@ -299,12 +299,26 @@
 
 
 
-## docker-compose.yml 파일의 구성
+- Compose 파일의 이름
+  - 이전 버전에서는 `docker-compose.yaml`, `docker-compose.yml`을 사용했다.
+    - 최신 버전에서도 사용은 가능하다.
+  - 최신 버전에서는 `compose.yaml`, `compose.yml`을 사용한다.
+    - `compose.yaml`이 더 권장되는 파일명이다.
 
-- 맨 앞에는 docker-compose의 버전을 지정한다.
-  - 버전에 따라 기술할 수 있는 항목이 다르므로 주의해야 한다.
 
 
+## Compose 파일의 구성
+
+- `version`
+  - 최상단에는 `version`을 기술한다.
+    - `version`은 필수 값이 아니다.
+
+  - Docker는 Compose file의 유효성 검사를 위해 `version`을 사용하지는 않지만, 만약 `version`이 명시되어 있다면, 가장 최근 버전을 사용한다.
+
+
+
+
+### services
 
 - image
 
@@ -355,6 +369,44 @@
         va2:"true"
         va3:foo
   ```
+
+
+
+- deploy
+
+  - Service의 배포와 lifecycle을 설정한다.
+  - `endpoint_mode`
+    - 외부 client가 service에 연결하기 위해 serivce를 탐색하는 방식을 설정한다.
+    - 기본값은 platform에 따라 다르지만 Compose Deploy Specification은 표준으로서 `vip`와 `dnsrr`을 정의해 두었다.
+    - `vip`로 설정할 경우 service에 network상에서 sesrvice에 도달하기 위해 front end처럼 동작하는 virtual IP(VIP)를 할당하는데, platform은 client와 service 사이의 요청을 route시킨다.
+    - `dnsrr`로 설정할 경우 platform은 DNS entry들을 생성하고, client는 이들 중 하나로 요청을 보낸다.
+
+  - `mode`
+    - Replication model을 설정한다.
+    - `global`로 설정할 경우 service 하나 당 하나의 container 만을 생성한다.
+    - `replicated`(기본값)으로 설정할 경우 `replicas`에 설정된 값 만큼의 container를 생성한다.
+  - `replicas`
+    - Service가 `replicated` mode일 경우, 생성될 container의 개수를 지정한다.
+
+  ```yaml
+  services:
+    fronted:
+      image: awesome/webapp
+      deploy:
+        mode: replicated
+        replicas: 6
+  ```
+
+  - `update_config`
+    - Service가 어떻게 update될지를 설정한다.
+    - `parallelism`: 동시에 update될 container의 개수를 설정한다.
+    - `delay`: 한 번의 update 이후에 다음 update까지의 간격을 설정한다.
+    - `failure_action`: update가 실패했을 때, `continue`, `rollback`, `pause` 중 어떤 행동을 할지 설정한다(기본값은 `pause`)
+    - `monitor`: 한 번의 update 이후에 update가 정상적으로 실행되었는지를 확인하기 위해 얼마간(`ns|us|ms|s|m|h`) 대기할 것인지를 설정한다(기본값은 0s)
+    - `max_failure_ratio`: 전체 update 중 어느 정도 비율로 update가 실패했을 때 update를 실패로 볼 것인지를 설정한다.
+    - `order`: update의 순서를 설정하며 `stop-first`(새로운 task를 시작하기 전에 기존 task 정지), `start-first`(이전 task가 실행되는 상태에서 새로운 task 시작) 중 하나의 값을 입력한다(기본값은 `stop-first`).
+  - `rollback_config`
+    - `update_config`와 모든 option을 공유한다.
 
 
 
@@ -461,23 +513,68 @@
 
 
 
-- volumes/volumes_from
+- volumes
 
   - 컨테이너에 볼륨을 마운트할 때 사용한다.
-    - 호스트 측에서 마운트할 경로를 지정하려면 `호스트의 디렉토리 경로:컨테이너의 디렉토리 경로`
+
+  - Access mode
+    - 아래 4개의 access mode를 설정할 수 있다.
+    - `rw`: 읽기와 쓰기 모두 가능한 모드(기본값).
+    - `ro`: 읽기만 가능한 모드
+    - `z`: bind mount된 host의 data를 여러 container들이 공유할 수 있다는 의미이다.
+    - `Z`: bind mount된 host의 data를 다른 container들이 공유할 수 없다는 의미이다.
 
   ```yaml
   volumes:
-    - <마운트할 경로>
-    - <호스트의 디렉토리 경로>:<컨테이너의 디렉토리 경로>
+    - <호스트의 디렉토리 경로>:<컨테이너의 디렉토리 경로>:ro
   ```
 
-  - 볼륨 지정 뒤에 ro를 지정하면 볼륨을 읽기 전용으로 마운트할 수 있다.
+  - Short syntax
+    - 아래와 같이 `<volume>:<container_path>[:<access_mode>]` 형식으로 간단하게 volume을 지정하 수 있다.
+    - Access mode를 따로 지정하지 않을 경우 기본 값인 `rw`로 설정된다.
+    - `volume`을 입력하는 곳에 host의 경로를 입력할 경우 volume type은 bind가 되며, volume을 입력할 경우 volume type은 volume이 된다.
 
   ```yaml
   volumes:
-    - <호스트의 디렉토리 경로>:<컨테이너의 디렉토리 경로>/:ro
+    - <호스트의 디렉토리 경로>:<컨테이너의 디렉토리 경로>:<access_mode>
+    - <volume_name>:<컨테이너의 디렉토리 경로>:<access_mode>
   ```
+
+  - Long syntax
+    - `type`: `volume`, `bind`, `tmpfs`, `npipe`, `cluster` 중 하나의 type을 입력한다.
+    - `source`: `bind`의 경우 host의 경로, `volume`의 경우 volume의 이름을 입력하며, `tmpfs`의 경우 입력하지 않는다.
+    - `target`: container 내부의 경로를 입력한다.
+    - `read_only`: volume을 read-only로 설정할지를 입력한다.
+    - `volume`
+      - `nocopy`: volume이 생성될 때, container의 data를 복사해올지를 설정한다.
+    - `bind`
+      - `create_host_path`: source path에 설정된 directory가 없다면 directory를 설정할지 여부를 입력한다(short syntax로 생성할 경우 true가 기본값이다).
+      - `selinux`: `z`나 `Z` 중 하나를 입력한다.
+
+  ```yaml
+  services:
+    backend:
+      image: awesome/backend
+      volumes:
+        - type: volume
+          source: db-data
+          target: /data
+          volume:
+            nocopy: true
+        - type: bind
+          source: /var/run/postgres/postgres.sock
+          target: /var/run/postgres/postgres.sock
+          bind:
+            create_host_path: true
+  
+  volumes:
+    db-data:
+  ```
+
+
+
+
+- volumes_from
 
   - 다른 컨테이너로부터 모든 볼륨을 마운트할 때는 volumes_from에 컨테이너명을 지정한다.
 
@@ -485,6 +582,7 @@
   volumes_from:
     - 컨테이너명
   ```
+
 
 
 
@@ -561,6 +659,97 @@
       external:
         name: backend
   ```
+
+
+
+### volumes
+
+- 여러 service들에서 함께 사용할 수 있는 volume을 정의한다.
+
+  - 예시
+    - `db-data`라는 volume을 서로 다른 두 container에 mount하는 예시이다.
+
+  ```yaml
+  services:
+    backend:
+      image: awesome/database
+      volumes:
+        - db-data:/etc/data
+  
+    backup:
+      image: backup-service
+      volumes:
+        - db-data:/var/lib/backup/data
+  
+  volumes:
+    db-data:
+  ```
+
+  - 위와 같이 `volumes`에 volume 이름 만을 설정할 경우 container engine의 기본 설정대로 volume을 생성한다.
+
+
+
+- 관련 설정
+
+  - `name`
+    - Volume의 이름을 설정한다.
+
+  ```yaml
+  volumes:
+    db-data:
+      name: "my-app-data"
+  ```
+
+  - `driver`
+    - 어떤 volume driver를 사용할지를 설정한다.
+    - Platform에 따라 어떤 값을 사용할 수 있는지가 달라지며, 만일 platform에서 사용할 수 없는 driver를 입력할 경우 error가 발생한다.
+  - `driver_opts`
+    - `driver`에 설정된 driver가 사용할 옵션들을 key-value 형태로 된 배열 형태로 설정한다.
+    - 당연하게도, `driver`에 따라 설정할 수 있는 option들이 달라진다.
+  - `external`
+    - true로 설정된 경우 만약 volume이 이미 존재하고, application 밖에서 관리되고 있다는 것을 의미한다.
+    - 이 경우 Compose는 새로운 volume을 생성하지 않는다.
+    - 만약 true로 설정됐음에도 volume이 존재하지 않는다면 error가 발생한다.
+    - 이 경우 `name`을 제외한 다른 모든 설정 값들은 무시된다.
+
+  ```yaml
+  services:
+    backend:
+      image: awesome/database
+      volumes:
+        - db-data:/etc/data
+  
+  volumes:
+    db-data:
+      external: true
+  ```
+
+  - `labels`
+    - Volume에 metadata를 추가하기 위해 사용한다.
+    - 배열 형태나 dictionary 형태를 사용 할 수 있따.
+    - 다른 software에서 사용하는 label과 충돌되지 않도록 resverse-DNS 표기법을 사용하는 것이 권장된다.
+
+  ```yaml
+  # 아래 방식과 같이 사용하거나
+  volumes:
+    db-data:
+      labels:
+        com.example.description: "Database volume"
+        com.example.department: "IT/Ops"
+        com.example.label-with-empty-value: ""
+  
+  # 아래 방식과 같이 사용할 수 있다.
+  volumes:
+    db-data:
+      labels:
+        - "com.example.description=Database volume"
+        - "com.example.department=IT/Ops"
+        - "com.example.label-with-empty-value"
+  ```
+
+  
+
+
 
 
 
