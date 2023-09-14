@@ -1338,41 +1338,88 @@
 
 
 
-- 검색
+- `has_parent` query
 
-  - Has child query
-    - 쿼리에 일치하는 child documents와 연결 된 부모 document를 반환한다.
-    - `type`, `ignore_unmapped`는 Parent ID query와 동일하다.
+  - 주어진 query에 match되는 parent document들의 child document들을 반환한다.
+    - Join을 수행하기에 다른 query와 비교했을 때 느리며 matching되는 parent document의 개수가 증가할 수록 속도가 감소한다.
+  - index 생성
+
+  ```json
+  // PUT test-index
+  {
+    "mappings": {
+      "properties": {
+        "my-join-field": {
+          "type": "join",
+          "relations": {
+            "parent": "child"
+          }
+        },
+        "name":{
+          "type": "keyword"
+        }
+      }
+    }
+  }
+  ```
+
+  - 검색 예시
+    - `name`이 foo인 document들의 child document들을 반환한다.
+
+  ```json
+  // GET test-index/_search
+  {
+    "query": {
+      "has_parent": {
+        "parent_type": "parent",
+        "query": {
+          "term": {
+            "name": "foo"
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  - Parameter
+    - `parent_type`: join field에 mapping된 parent의 이름을 입력한다.
+    - `query`: child document들을 반환할 parent document들을 검색하기 위한 query를 작성한다.
+  - 정렬
+    - 일반적인 방식으로는 정렬할 수 없으며, function_score query를 `query` 내부에서 사용하여 parent document의 field로 정렬하는 것은 가능하다.
+
+
+
+- `has_child` query
+
+  - 주어진 query에 match되는 child document들의 parent document들을 반환한다.
+    - `has_parent` query와 마찬가지 이유로, 다른 query와 비교해서 느리다.
+  - 검색 예시
+
+  ```json
+  // GET test-index/_search
+  {
+    "query": {
+      "has_child": {
+        "type": "child",
+        "query": {
+          "match_all": {}
+        },
+        "max_children": 10,
+        "min_children": 2,
+        "score_mode": "min"
+      }
+    }
+  }
+  ```
+
+  - Parameter
+    - `type`: join field에 mapping된 child의 이름을 입력한다.
+    - `query`: parent document들을 반환할 child document들을 검색하기 위한 query를 작성한다.
     - `max_children`: 쿼리와 일치하는 child documents의 최댓값을 지정, 만일 이 값보다 쿼리와 일치하는 child documents의 수가 많다면, 해당 child documents의 parent document는 반환되지 않는다.
     - `min_children`: 쿼리와 일치하는 child documents의 최솟값을 지정, 만일 이 값보다 쿼리와 일치하는 child documents의 수가 적다면, 해당 child documents의 parent document는 반환되지 않는다.
     - `score_mode`: 쿼리에 매칭된 child documents들의 점수가 어떻게 parent documents들의 관련성 점수에 영향을 줄 것인지를 결정한다. 기본 값은 None으로, avg, sum, min, max 등을 설정 가능하다.
     - `has_child` 쿼리는 일반적인 정렬로는 정렬할 수 없고, function_score를 사용하여 정렬해야 한다.
-  
-  ```bash
-  $ curl -XGET "http://localhost:9200/my-index/_search" -H 'Content-Type: application/json' -d'{  "query": {    "has_child": {      "type": "answer",      "query": {        "match_all": {}      },      "max_children": 10,      "min_children": 2,      "score_mode": "min"    }  }}'
-  ```
-  
-  - Has parent  query
-    - 쿼리와 일치하는 parent document와 연결된 child documents를 반환한다.
-    - `parent_type`에는 부모의 이름을 입력한다.
-    - `ignore_unmapped`는 Parent ID query와 동일하다.
-    - `score`: 쿼리와 일치하는 parent document의 관련성 점수가 child documents에서 집계 될지를 결정한다(기본값은 False)
-    - 마찬가지로 일반적인 정렬로는 정렬할 수 없고, function_score를 사용하여 정렬해야 한다.
-  
-  ```bash
-  $ curl -XGET "http://localhost:9200/my-index/_search" -H 'Content-Type: application/json' -d'{  "query": {    "has_parent": {      "parent_type": "question",      "query": {        "match_all": {}      }    }  }}
-  ```
-
-  - Parent-join 쿼리와 집계
-    - join 필드의 값은 aggs와 scripts에서 접근이 가능하다.
-  
-  ```bash
-  $ curl -XGET "http://localhost:9200/my-index/_search" -H 'Content-Type: application/json' -d'{  "query": {    "parent_id": {       "type": "answer",      "id": "1"    }  },  "aggs": {    "parents": {      "terms": {        "field": "my_join_field#question",         "size": 10      }    }  },  "runtime_mappings": {    "parent": {      "type": "long",      "script": """        emit(Integer.parseInt(doc['my_join_field#question'].value))      """    }  },  "fields": [    { "field": "parent" }  ]}'
-  ```
-
-
-
-
 
 
 
