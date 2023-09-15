@@ -1070,3 +1070,29 @@
     - Ubuntu의 경우 `/etc/hosts`에서 확인할 수 있다.
   - 0.0.0.0
     - 지정한 IP 주소가 없다는 것이며, 내 컴퓨터에 연결된 모든 IPv4 address를 의미한다.
+
+
+
+- NAS(Network-Attached Storage)
+  - 컴퓨터 네트워크에 연결된 file-level의 컴퓨터 기억 장치
+    - File-level이란 file storage를 의미한다.
+    - 네트워크로 연결된 기기들 사이에 data를 공유할 수 있게 해주는 기술이다.
+  - NAS와 클라우드는 다르다.
+    - 클라우드는 네트워크 전체에서 확장 가능한 resource들을 추상화하고 공유하는 것이다.
+
+
+
+
+
+- 방어적 프로그래밍(Defensive programming)
+  - 예상치 못한 입력에도 소프트웨어가 계속적 기능 수행을 보장할 수 있도록 고안된 방어적 설계의 한 형태.
+
+
+
+- DT(Digital Transformation, DX)
+  - DT와 DX 모두 디지털 전환을 의미한다.
+    - DT는 digital transformation의 약어이며, DX는 Digital의 D와 Transformation의 의미를 갖고 있는 X로 만들어진 합성어이다.
+    - 둘 다 의미는 같다.
+  - 디지털 전환
+    - 기업 및 조직이 디지털 기술과 도구를 활용하여 비즈니스 모델과 프로세스를 혁신하는 과정이다.
+    - 요즘에는 SI라는 말 보다는 DT, DX라는 용어를 더 선호한다.
