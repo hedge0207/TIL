@@ -159,7 +159,6 @@
   > rs.status()
   ```
 
-  
 
 
 
@@ -402,7 +401,8 @@
   client = MongoClient("<mongodb host>:<mongodb port>",username="<username>",password="<password>",authSource="admin")
   ```
 
-  
+
+
 
 
 
