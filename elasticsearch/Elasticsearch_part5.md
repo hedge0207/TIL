@@ -483,6 +483,21 @@
     - 만약, field 사이에 and를 적용시키고자 한다면 `type`을 `cross_field`로 주면 된다.
   - `minimum_shoud_match`
     - `operator`와 마찬가지로 동작한다.
+  
+  - `^` field명 뒤에 `^n`과 같이 특정 필드에 가중치를 줄 수 있다.
+  
+  ```json
+  // GET <index_name>/_doc/_search
+  {
+      "query": {
+            "multi_match":{
+                  "query": "term1 term2",
+                  "fields": ["field1^3", "field2"] 
+        }
+  }
+  ```
+  
+  
 
 
 
