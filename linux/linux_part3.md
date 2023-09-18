@@ -1,4 +1,4 @@
-## system 등록하기
+# systemd
 
 > centos:7 기준
 
@@ -112,6 +112,71 @@
   ```bash
   setfacl -m u:<사용자명>:rw <service 파일 경로>
   ```
+
+
+
+- journald
+
+  - systemd의 log를 확인할 수 있게 해주는 daemon.
+  - `/etc/systemd/journald.conf`를 수정하여 설정을 변경할 수 있다.
+  - journalctl
+    - systemd 로그를 보여주는 유틸리티이다.
+    - 아무 옵션 없이 입력할 경우 모든 systemd의 log를 보여준다.
+
+  ```bash
+  $ journalctl
+  ```
+
+  - `--since`
+    - 특정 시간 이후의 항목을 볼 수 있다.
+
+  ```bash
+  $ journalctl --since "2023-09-15 08:15:00"
+  $ journalctl --since today
+  $ journalctl --since yesterday
+  ```
+
+  - `-n`
+    - 최근 n개의 log를 볼 수 있다.
+
+  ```bash
+  $ journalctl -n 20
+  ```
+
+  - `-u`
+    - 특정 service의 log를 볼수 있다.
+
+  ```bash
+  $ journalctl -u docker.service
+  ```
+
+  - `-f`
+    - Log를 실시간으로 볼 수 있다.
+  
+  ```bash
+  $ journalctl -f
+  ```
+  
+  - `-b`
+    - 현재 부팅이후의 log 만을 보여준다.
+    - 만일 이전 booting을 보려면 뒤에 음의 정수를 입력하면 된다.
+  
+  ```bash
+  $ journalctl -b
+  ```
+  
+  - `--no-pager`
+    - Terminal의 너비가 짧을 경우 terminal의 너비를 넘어가는 log는 짤리게 되는데, 이 옵션을 줄 경우 개행을 해서 전부 보여준다.
+  
+  ```bash
+  $ journalctl --no-pager
+  ```
+  
+  
+  
+  
+
+
 
 
 
