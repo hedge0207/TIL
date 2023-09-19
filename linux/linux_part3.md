@@ -2,6 +2,26 @@
 
 > centos:7 기준
 
+- systemd
+  - Linux의 init system이자 system 관리를 위한 software이다.
+    - Init system의 주요 목적은 Linux kernel이 booting되고 나서 반드시 시작되어야 하는 component들을 실행시키는 것이다.
+    - 본래 Linux 계열 OS에서는 init이라는 process가 pid 1번으로 실행되어 정해진 service 및 script들을 실행했다.
+    - 그러나 이제는 이러한 작업을 systemd가 실행하도록 변경되었다.
+  - Unit
+    - systemd가 관리하는 resource를 unit이라 부른다.
+    - Unit은 resource의 종류에 따라 분류되고, unit file이라 불리는 file로 정의할 수 있다.
+    - 각 unit file의 suffix로 해당 file이 어떤 unit에 관해 정의한 것인지를 추론할 수 있다.
+    - 예를 들어 service를 관리한다면, unit은 service가 되고, 해당 unit의 unit file은 `.service`라는 suffix가 붙게 된다.
+  - Unit file
+    - Unit을 정의하기 위해 작성하는 file이다.
+    - `/etc/systemd/system`이나 `/usr/lib/systemd/system`에 작성한다.
+    - 두 directory의 차이는, `/usr/lib/systemd/system`의 경우 package관리자(apt, rpm 등)에 의해 설치된 unit들이 위치하는 directory고,  `/etc/systemd/system`는 package 형태가 아닌 unit들이 저장되는 directory라는 것이다.
+    - 작성 방식은 [링크](https://www.freedesktop.org/software/systemd/man/systemd.service.html) 참고
+  - systemctl
+    - systemd를 위한 CLI이다.
+
+
+
 - 시스템 등록하기
 
   - 실행할 스크립트를 작성한다.
@@ -22,6 +42,7 @@
   - 시스템에 등록한다.
     - `/usr/lib/systemd/system` 디렉터리로 이동한다.
     - `service명.service`라는 파일을 아래와 같이 작성한다.
+    - `Restart` 설정시 주의할 점은, 이는 service가 실행 중에 종료될 시 재실행할지를 설정하는 옵션이지, OS자체 reboot 될 경우 service를 재실행할지를 설정하는 옵션이 아니라는 점이다.
 
   ```bash
   [Unit]
@@ -36,32 +57,84 @@
   WantedBy=multi-user.target
   ```
 
+
+
+
+- systemctl
+
+  - systemctl 명령어 사용시 서비스명을 입력할 때 뒤에 `.service`라는 suffix는 붙여도 되고 붙이지 않아도 된다.
+    - Suffix를 붙이지 않아도 systemd가 알아서 어떤 종류의 unit인지를 판단한다.
   - 아래 명령어로 등록 된 서비스들을 확인 가능하다.
 
   ```bash
   $ systemctl list-units --type=service
+  
+  # 또는
+  $ systemctl list-unit-files
   ```
-  
+
   - `.service` 파일을 수정했을 경우 아래 명령어로 변경 사항을 적용한다.
-  
+    - 이 명령어를 실행한다고 실행중인 service가 정지되진 않는다.
+    - unit file을 수정하거나 unit file을 새로 생성하거나 삭제했을 경우, 아래 명령어를 실행해야 변경사항이 systemd에 반영된다.
+
+
   ```bash
   $ systemctl daemon-reload
   ```
-  
+
+  - `reload`
+    - Service와 관련된 설정 file들을 reload한다.
+    - 이는 unit file(`.service` file)을 reload하는 것이 아니라는 것에 주의해야한다.
+    - 예를 들어 `systemctl reload apache`라는 명령어는 `apache.service` file을 reload하는 것이 아니라 `httpd.conf` 같은 apache에서 사용하는 configuration file을 reload한다.
+
+  ```bash
+  $ systemctl reload <서비스명>
+  ```
+
   - 등록된 service를 실행한다.
-  
+
   ```bash
   $ systemctl start <서비스명>
   ```
-  
+
+  - service를 정지한다.
+
+  ```bash
+  $ systemctl stop <서비스명>
+  ```
+
+  - 실행중인 service를 재시작한다.
+
+  ```bash
+  $ systemctl restart <서비스명>
+  ```
+
   - 특정 서비스의 상태 확인
-  
+
   ```bash
   $ systemctl status <서비스명>
   ```
-  
 
+  - 부팅시에 자동으로 실행되도록 설정
+    - 이 명령어를 실행시 `/etc/systemd/system`에 symbolic link를 생성한다.
+    - 이 경로는 booting시에 systemd가 자동으로 시작시킬 file들을 찾는 위치이다.
 
+  ```bash
+  $ systemctl enable <서비스명>
+  ```
+
+  - 부팅시에 자동으로 실행되지 않도록 설정
+    - 이 명령어를 실행시 `/etc/systemd/system`에 생성된 symbolic link를 제거한다.
+
+  ```bash
+  $ systemctl disable <서비스명>
+  ```
+
+  - 부팅시 자동으로 실행되도록 설정되어 있는지 확인
+
+  ```bash
+  $ systemctl is-enabled <서비스명>
+  ```
 
 
 
