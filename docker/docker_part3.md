@@ -326,6 +326,84 @@
   ```bash
   $ docker pull localhost:5000/myfirstimage
   ```
+  
+  - registry에 등록된 image들 확인하기
+    - 명령어가 따로 있지는 않고, API를 호출해야한다.
+  
+  ```bash
+  $ curl http://localhost:5000/v2/_catalog
+  ```
+
+
+
+- Registry에 등록된 image로 container 생성하기
+
+  - 위에서 본 것과 같이 registry에 등록한 image를 pull 받아서 container를 생성해도 되고, 아래와 같이 pull 받지 않고 바로 생성해도 된다.
+  - Test용 app을 생성한다.
+
+  ```python
+  import time
+  import logging
+  
+  
+  logger = logging.getLogger("simple_example")
+  logger.setLevel(logging.DEBUG)
+  
+  sh = logging.StreamHandler()
+  sh.setLevel(logging.DEBUG)
+  
+  formatter = logging.Formatter("[%(asctime)s] - [%(levelname)s] - %(message)s")
+  sh.setFormatter(formatter)
+  
+  logger.addHandler(sh)
+  
+  
+  try:
+      while True:
+          logger.info("Hello World!")
+          time.sleep(1)
+  except (KeyboardInterrupt, SystemExit):
+      logger.info("Bye!")
+  ```
+
+  - 위에서 생성한 app을 docker image로 build하기 위해 dockerfile을 생성한다.
+
+  ```dockerfile
+  FROM python:3.8.0
+  
+  COPY ./main.py /app/main.py
+  WORKDIR /app
+  
+  ENTRYPOINT ["python", "main.py"]
+  ```
+
+  - Image를 build한다.
+
+  ```bash
+  $ docker build -t localhost:5000/test-image .
+  ```
+
+  - Image를 registry에 push한다.
+
+  ```bash
+  $ docker push localhost:5000/test-image
+  ```
+
+  - 이후 host에선 image를 삭제한다.
+
+  ```bash
+  $ docker rmi localhost:5000/test-image:latest
+  ```
+
+  - Docker registry에 등록한 test image로 바로 container를 생성한다.
+
+  ```bash
+  $ docker run localhost:5000/test-image
+  ```
+
+  - 수동으로 pull을 받지 않아도, 자동으로 위에서 upload한 `test-image`를 pull 받은 후 해당 image로 container를 생성한다.
+    - Registry에 등록된 image를 바로 사용하는 것이 아니라, Docker hub와 마찬가지로 저장소에 있는 image를 pull을 통해 받아와서 실행하는 것이다.
+    - 따라서 registry container가 종료되더라도 registry에 등록된 image로 실행시킨 container에는 영향을 미치지 않는다.
 
 
 
