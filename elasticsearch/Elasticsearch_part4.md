@@ -1437,7 +1437,9 @@
 
 
 
-# Elasticsearch의 색인 처리 과정
+# 데이터 색인
+
+## 색인 처리 과정
 
 - Lucene의 색인 처리 과정
   -  In-memory buffer에 데이터 적재
@@ -1497,6 +1499,148 @@
     - 이러한 결정에는 translog에 얼마나 많은 transaction log가 적재되었는지, data의 크기, 마지막 flush 시점 등이 영향을 미친다.
 
 
+
+## Reindex
+
+- `_reindex`
+
+  - 한 index로 부터 다른 index로 문서들을 복제할 때 사용하는 API이다.
+    - Reindex가 실행되는 순간의 source index의 snapshot을 생성하여 이 snapshot의 문서들을 복제하는 방식이다.
+    - 오직 document만 복사하며, mapping, setting은 복제되지 않는다.
+
+  - 기본적인 예시
+
+  ```json
+  // POST _reindex
+  {
+    "source": {
+      "index": "my-index"
+    },
+    "dest": {
+      "index": "my-new-index"
+    }
+  }
+  ```
+
+  - 여러 source에서 reindexing하는 것도 가능하다.
+
+  ```json
+  // POST _reindex
+  {
+    "source": {
+      "index": ["my-index-1", "my-index-2"]
+    },
+    "dest": {
+      "index": "my-new-index"
+    }
+  }
+  ```
+
+
+
+- `source`의 옵션들
+  - `_source`
+    - 복사할 field들을 입력한다.
+  - `query`
+    - Source index에서 query에 matching되는 document들만 복사할 수 있다.
+
+
+
+- `dest`의 옵션들
+
+  - `op_type`
+    - `index`와 `create` 중 하나를 받는다.
+    - `index`: dest index에 동일한 id를 가진 문서가 있을 경우 덮어쓴다.
+    - `create`: dest index에 동일한 id를 가진 문서가 있을 경우 덮어쓰지 않는다. 
+    - data stream의 경우 append-only이기 때문에 data stream에 reindexing 할 경우 반드시 `create`로 줘야한다.
+
+  - `version_type`
+    - `internal`, `external`, `external_gt`, `external_gte` 중 하나의 값을 받는다.
+    - `internal`: 문서의 version과 무관하게 무조건 덮어쓴다.
+    - `external`, `external_gt`: source index의 document version이 dest index의 document version보다 클 경우에만 기존 dest index의 document를 덮어쓰며, dest index의 document의 version이 source index에 있는 document의 version으로 변경된다.
+    - `external_gte`: source index의 document version이 dest index의 document version보다 크거나 같을 경우에만 기존 dest index의 document를 덮어쓰며, dest index의 document의 version이 source index에 있는 document의 version으로 변경된다.
+  - `pipeline`
+    - Pipeline의 이름을 설정한다.
+
+
+
+- 다른 cluster로부터 reindexing하기
+
+  - 다른 cluster로부터 reindexing하기 위해선 dest cluster의 `elasticsearch.yml`에 `reindex.remote.whitelist` 설정이 되어 있어야한다.
+    - Source cluster의 host:port를 입력하면 된다.
+
+  ```yaml
+  reindex.remote.whitelist: "otherhost:9200, another:9200, 127.0.10.*:9200, localhost:*"
+  ```
+
+  - Reindex 예시
+    - 만약 source cluster의 secuirty가 disable 되어 있다면 username, password는 입력하지 않아도 된다.
+
+  ```json
+  POST _reindex
+  {
+    "source": {
+      "remote": {
+        "host": "http://otherhost:9200",
+        "username": "user",
+        "password": "pass"
+      },
+      "index": "my-index",
+    },
+    "dest": {
+      "index": "my-new-index"
+    }
+  }
+  ```
+
+
+
+
+
+## Split index
+
+- 이미 존재하는 index를 shard를 증가시켜 새로운 index로 생성한다.
+
+  - Index의 primary shard를 늘리기 위해 사용한다.
+    - `num_of_shards`는 static한 setting으로 index를 생성한 이후에는 변경할 수 없다.
+    - 따라서 primary shard를 늘리기 위해서는 primary shard를 늘린 index를 생성 후 해당 index에 재색인 해야 하는데, split index API를 사용하여 상대적으로 간편하게 실행이 가능하다.
+  - 기본 예시
+
+  ```json
+  // POST my-index/_split/split-my-index
+  {
+    "settings": {
+      "index.number_of_shards": 2
+    }
+  }
+  ```
+
+
+
+- 기존 index의 shard를 split하여 새로운 index의 shard를 생성한다.
+  - Index가 분할될 수 있는 횟수와 원본 shard가 분할 될 수 있는 회수는 `index.number_of_routing_shards`에 의해 결정된다.
+    - 이 값은 documents들을 여러 shard에 고정된 hashing을 가지고 분배하기 위해 사용하는 hashing space를 설정한다.
+    - 예를 들어 `number_of_routing_shard`가 30이고, index의 shard가 5이라고 할 때, 30은 `5*2*3`이므로, 5개의 shard를 가진 shard는 2 또는 3을 기준으로 분할 될 수 있다.
+    - 즉 `5 → 10 → 30`(2로 분할 후 3으로 분할) 또는 `5 → 15 → 30`(3으로 분할 후 2로 분할) 또는 `5 → 30`(6으로 분할)와 같이 분할될 수 있다.
+  - 아래 과정을 거쳐 split이 일어난다.
+    - 먼저 source index와 동일한 definition을 가진 dest index를 생성한다.
+    - Source index의 segment를 target index에 hard-link시킨다(만약 file system이 hard link를 지원하지 않을 경우, segment를 복제는데, 이 경우 시간이 더 오래 걸린다).
+    - 모든 문서를 hashing하여 다른 shard에 속한 문서들을 삭제한다.
+    - Target index를 recorver한다(close 상태의 index를 open 상태로 전환).
+
+
+
+- Elasticsearch가 primary shard를 동적으로 증가시키지 못하게 막아놓은 이유.
+  - 많은 key-value 저장소들은 incremental resharding을 지원한다.
+    - 즉 shard의 개수를 동적으로 늘리는 기능을 지원한다.
+  - shard의 크기가 일정 이상이 되면 새로운 shard를 생성하고, 새로운 shard에 새로운 data를 추가하는 방식은 좋지 않을 수 있다.
+    - 하나의 shard에만 색인이 이루어지게 되므로 병목이 발생하기 쉽다.
+    - Document들이 아무 기준 없이 색인되는 순서대로 shard에 들어가게 되므로 찾는데 시간이 오래 걸린다.
+    - 따라서 이 방식을 사용했을 경우 일정한 hashing scheme에 따라 document들을 각 shard에 재배치하는 작업이 필요하다.
+  - 다른 key-value 저장소들은 incremental sharding을 위해 일반적으로 consistent hashing을 사용한다.
+    - 이 방식은 shard의 개수가 N에서 N+1로 증가했을 때 오직 1/N 번째 key만 재배치하면 된다. 
+  - Elasticsearch의 저장 단위는 검색에 적합한 data 구조를 가진 Lucene index를 기반으로 만들어졌다.
+    - 따라서 다른 key-value 저장소에 비해 매우 많은 비용이 든다.
 
 
 
