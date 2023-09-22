@@ -38,6 +38,24 @@
     - 2번 문서도 사과, 효능이 모두 일치한다 - 2개가 일치
     - 3번 문서는 사과만 일치한다 - 1개만 일치
     - 이제 문서별로 일치도가 높은 순으로 정렬(1,2,3) 후 사용자에게 출력한다.
+  - 문서의 개수가 증가하더라도, 각 keyword에 문서 번호가 추가될 뿐이기에 큰 속도 저하 없이 검색이 가능하다.
+  - Inverted index는 Elasticsearch segment로 disk에 저장된다.
+    - 검색시에 disk에 저장된 모든 inverted index(segment)를 읽어 검색을 수행한다.
+    - 빈번하게 접근하는 inverted index를 cache memory에 저장하여 보다 빠르게 읽을 수 있도록 한다.
+  - Elasticsearch의 모든 data가 inverted index에 저장되는 것은 아니다.
+    - Elasticsearch의 모든 data는 각 field에 최적화된 자료구조에 저장된다.
+    - 예를 들어 text field의 data는 inverted index에 저장되지만, numeric이나 geo field는 BKD tree 형태로 저장된다.
+  - Term Dictionary
+    - 특정 field에 대한 고유한 모든 term을 저장하고 있는 정렬된 skip list이다.
+    - Skip list란 linked list와 유사하지만, 하나의 node가 다음 노드를 가리키는 pointer를 여러 개 가지고 있는 자료구조로 바로 다음 node만을 가리키는 pointer만 가지고 있는 linked list와 달리 여러 포인터를 가지고 있기에 중간에 있는 node를 skip할 수 있어 빠른 속도로 검색이 가능하다는 장점있다.
+    - 모든 유일한 term을 저장하기 위한 자료구조이다.
+    - Term과 해당 term 대한 meta data(예: 문서 빈도, 문서 위치 등)를 매핑하는 역할을 한다.
+  - Posting List
+    - Term dictionary와 마찬가지로 정렬된 skip list이다.
+    - term과 관련된 document id들을 저장하고 있다.
+    - 검색된 term들의 document id를 반환하기 위해 사용한다.
+
+
 
 
 
@@ -1343,10 +1361,6 @@
     - Elastic Stack에서 사용자의 인입점을 맡게 된다.
 
 
-
-- Elastic Stack의 이중화
-  - Elastic Stack의 어느 한 구성 요소에 장애가 발생하더라도 나머지 요소들이 정상적으로 동작할 수 있도록 이중화하는 작업이 반드시 필요하다.
-  - 추후 추가
 
 
 
