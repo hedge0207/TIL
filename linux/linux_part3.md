@@ -247,9 +247,81 @@
   
   
   
+
+# umask
+
+- Linux umask
+
+  - 새로 생성되는 파일이나 directory의 권한을 제어하는 명령어.
+    - root뿐 아니라 일반 사용자도 제어할 수 있다.
+    - 이 값은 계정마다 별도로 적용된다.
+  - 계산 방식은 아래와 같다.
+    - 기본적으로 umask가 적용되지 않았을 때, file은 0666, directory는 0777권한으로 생성된다.
+    - umask 값은 위 기본 권한에서 적용하고자 하는 값을 얻기 위해 빼야 하는 수를 입력하면 된다.
+    - 예를 들어 directory의 기본 권한을 755로 설정하고자 한다면 umask 값을 0022로 설정하여, directory의 기본 권한 `0777`에서 umask 값`0022`를 빼면 `0777-0022=0755`가 되어 directory의 기본 권한을 0755로 설정할 수 있다.
+    - File의 경우 file의 기본 권한 `0666`에서 umask 값 `0022`를 빼면 `0666-0022=0644`가 되어 file의 기본 권한은 0644가 된다.
+  - umask 값 확인하기
+    - 일반적으로 0002가 기본값으로 설정되어 있으며, 이 경우 directory는 775, file은 664로 권한이 설정된다.
+
+  ```bash
+  $ umask
+  ```
+
+  - 권한을 상세하게 확인하기
+
+  ```bash
+  $ umask -S
+  ```
+
+  - 임시로 umask 설정하기
+    - 아래 방법은 임시로 설정하는 방식으로, 명령어를 실행한 셸이 종료되면 초기화된다.
+
+  ```bash
+  $ umask <mask>
   
+  # e.g.
+  $ mask 0002
+  ```
+
+  - 영구 적용하기
+    - `.bashrc` 혹은 `.bash_profile`을 수정한다.
+
+  ```bash
+  $ vi ~/.bashrc
+  
+  # 아래와 같이 추가한다.
+  umask 0002
+  ```
 
 
+
+- 모든 사용자에게 적용하기(ubuntu 기준)
+
+  - `/etc/login.defs`에서 기본 umask를 설정할 수 있다.
+
+  ```bash
+  # If USERGROUPS_ENAB is set to "yes", that will modify this UMASK default value
+  # for private user groups, i. e. the uid is the same as gid, and username is
+  # the same as the primary group name: for these, the user permissions will be
+  # used as group permissions, e. g. 022 will become 002.
+  
+  # ...
+  
+  UMASK           022
+  
+  # ...
+  
+  USERGROUPS_ENAB yes
+  ```
+
+  - `USERGROUPS_ENAB`
+    - 만약 yes로 설정되어 있으면, `userdel`을 통해 user를 삭제할 때, 해당 user가 속해 있던 group에 더 이상 user가 남아있지 않으면 해당 group도 삭제한다.
+    - 또한 `useradd`를 통해 user를 생성할 때 user name과 같은 이름으로 group을 생성한다.
+
+  - 위 설명에 나와 있듯이 `USERGROUPS_ENAB`값이 `yes`로 설정되어 있을 경우 기본 값이 group permission에 맞춰지게 된다.
+    - 즉 uid가 gid와 같고 username이 group name과 같으면 user permission을 group permission으로 사용하게 된다.
+    - 예를 들어, 기본 umask가 022일 때, directory의 permission은 755가 된다. 그런데 이 때 `USERGROUPS_ENAB`값이 `yes`로 설정되어 있고, 어떤 user의 uid와 gid가 같고, user name과 group name이 같으면 user permission인 7을 group permision으로 사용하게 되므로 directory의 permission은 775가 되고, 이는 umask가 002인 것과 동일하다. 
+    - 당연히 file에도 마찬가지로 적용된다.
 
 
 
