@@ -1,3 +1,84 @@
+# Cluster 구성 시 discovery가 발생하는 과정
+
+https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-discovery.html
+
+- Cluster는 아래의 과정을 거치며 구성된다.
+  - Discovery
+    - Cluster를 구성할 node들이 서로를 찾는 과정이다.
+    - Cluster를 처음 시작하거나, 기존의 master node가 내려갈 경우 실행된다.
+  - 정족수 기반 master node 선출
+    - Cluster 내의 node들은 정족수에 기반해서 master node를 선출한다.
+  - Bootstraping
+    - Cluster가 맨 처음 시작할 때 실행되는 과정이다.
+
+
+
+- Discovery
+
+  - Cluster를 구성하기 위해 각 node들이 함께 cluster를 구성할 다른 node들을 찾는 과정이다.
+    - Elasticsearch를 처음으로 실행하거나 어떤 node가 master node가 내려갔다고 생각할 때 실행된다.
+    - Master node를 찾거나 새로운 master node를 선출할 때까지 계속된다.
+  - Discovery는 두 단계로 실행된다.
+    - 먼저 각 node는 seed address들을 하나씩 연결해보면서 연결이 잘 되는지, 연결된 노드가 master 후보 노드인지를 확인하고, 만약 master 후보 노드들을 찾는데 성공하면 다음 단계로 넘어간다.
+    - 다음 단계에서 각 node들은 자신들이 찾은 master 후보 노드들의 정보를 다른 노드들과 공유한다.
+    - 만약 master 후보 노드라면 master로 선출된 node를 찾거나, master node를 선출하기에 충분한 master 후보 노드를 찾을 때 까지 이 과정을 반복한다.
+    - 만약 master 후보 노드가 아니라면, 선출된 master node를 찾을 때 까지 이 과정을 반복한다.
+  - Seed hosts providers
+    - Seed hosts provider는 `elasticsearch.yml`에 직접 host와 port를 입력하는 settings 기반의 provier와 file 경로만을 입력하고 별도의 file을 관리하는 file 기반의 provider가 있다.
+    - host와 port를 입력하며, port를 입력하지 않을 경우 `transport.port`에 설정된 port가 자동으로 설정된다.
+    - 둘 다 줄경우 둘 다 사용한다.
+
+  ```yaml
+  # settings 기반
+  discovery.seed_hosts:
+      - 192.168.1.10:9300
+      - 192.168.1.11
+      
+  # file 기반
+  discovery.seed_providers: /file/path
+  ```
+
+
+
+- 정족수(quorum) 기반 master 선출
+  - Master 후보 노드들은 master node이 선출과 cluster state 변경에 참여해야한다.
+    - 이는 매우 중요한 과정이며, 실패 없이 처리되어야 하므로 Elasticsearch는 정족수의 개념을 사용하여 이를 처리한다.
+    - 정족수란 마스터 후보 노드들의 부분집합을 의미한다.
+    - 전체 마스터 후보 노드가 아닌 그 부분집합에서만 Master node 선출과 cluster 상태 변경을 수행함으로써, 일부 master 후보 노드에 문제가 있어도 정상적인 master 후보 node들 만으로 작업을 완료할 수 있게 된다.
+  - Elasticsearch는 master 후보 node가 추가되거나 제거될 때 마다 voting configuration을 update하여 장애 허용성을 유지한다.
+    - Voting configuration이란 cluster와 관련된 의사결정에 참여하는 master 후보 node들의 집합이다.
+    - 모든 결정은 voting configuration에 속한 node들 중 절반 이상이 응답을 줘야 이루어진다.
+    - 일반적으로 voting configuration은 cluster 내의 전체 master 후보 노드들로 구성되지만, 때때로 아닐 수도 있다.
+  - Voting configuration에 속한 node 들 중 절반 이상을 동시에 종료시킬 경우 cluster를 사용할 수 없게 된다.
+  - Master node 선출
+    - Cluster가 처음 시작되거나, master node가 내려가게 되면, 새로운 master node의 선출이 시작된다.
+    - 모든 master 후보 node는 선출을 시작할 수 있으며, 대부분의 경우 첫 번째 선출에서 master node가 선출된다.
+    - 간혹 두 node가 동시에 선출을 시작하면 선출이 실패할 수도 있다.
+    - 이러한 상황을 방지하기 위해 선출은 무선적으로 스케줄링 된다.
+    - 선출이 실패하더라도 node들은 master node를 선출할 때 까지 이 과정을 반복한다.
+  - Master 후보 노드가 짝수일 경우
+    - Elasticsearch는 voting configuration에서 하나의 node를 제외시켜 voting configutaion이 홀수가 되도록 유지한다.
+
+
+
+- Bootstraping
+  - Elasticsearch cluster를 처음 실행시킬 때, 하나 이상의 master 후보 node에 master 후보 node들이 분명하게 규정되어야하는데, 이를 실행하는 과정을 bootstraping이라 부른다.
+  - Master 후보 node들의 집합은 `cluster.initial_master_nodes`에 정의되는데, 여기에는 각 node들에 대한 아래 정보들 중하나가 포함되어야한다.
+    - Node의 이름
+    - Node의 hostname
+    - `network.host`에 설정된 node의 IP address
+    - Node의 IP address와 port
+  - `cluster.initial_master_nodes` 주의사항
+    - `cluster.initial_master_nodes`는 cluster가 구성된 후에는 각 node의 설정에서 제거해야한다.
+    - Master 노드가 될 수 없는 node에는 설정해선 안 된다.
+    - 이미 구성된 cluster에 새로 합류하는 master 후보 노드에는 설정하면 안 된다.
+    - Cluster에 속한 node 중 재시작 하는 node에는 설정하면 안 된다.
+    - 위 사항들을 어길 경우 bootstraping이 꼬여 이미 cluster가 존재함에도 새로운 cluster에 대한 bootstraping이 시작될 수 있으며, 이 경우 data 손실이 일어날 수 있다.
+
+
+
+
+
 # Docker로 ES, Kibana 설치하기
 
 - image 받기
