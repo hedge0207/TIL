@@ -929,5 +929,174 @@
   print(job.id)	# 123
   ```
   
-  
 
+
+
+
+
+# Linter & formmater
+
+- Linter와 formmater의 차이
+  - Linter
+    - 소스 코드를 분석하여 bug가 발생할 수 있는 code를 찾아주는 기능을 하는 도구.
+    - 잠재적 bug분석 뿐 아니라 bad practice도 표기해준다.
+    - Python의 경우 Pylint, Flake8, Ruff 등이 있으며, Rust-Pyhon으로 개발된 Ruff가 매우 빠른 속도로 인기를 얻고 있다.
+  - Formmater
+    - 소스 코드가 일정한 스타일을 준수하여 작성되었는지르 검사해주는 도구.
+    - Python으로 예시를 들면 PEP8을 준수하여 코드를 작성했는지를 검사해준다.
+    - Python의 경우 CPython 개발자들이 개발한 Black 등이 있다.
+
+
+
+- python poetry
+  - 의존성 관리 툴
+  - pip 대체제
+
+
+
+- mypy
+  - Python의 static type check 도구.
+
+
+
+- Black
+
+  > https://github.com/psf/black
+  >
+  > https://black.readthedocs.io/en/stable/
+
+  - CPython을 개발한Python Software Foundation에서 개발한 code formmater이다.
+    - Python community에서 가장 널리 쓰는 formmater 중 하나이다.
+    - 사용자가 설정할 여지가 거의 없어 Black이 정한 규칙을 그대로 따라야한다.
+    - 오히려 custom이 불가능하다는 점이 장점으로, 작업자들 사이에 코드 style을 정하는 것이 굉장히 힘들고 소모적인 논쟁을 불러올 수 있기 때문이다.
+    - Black은 Python community의 다양한 의견을 수렴하고, 여러 프로젝트를 통해 실험하여 대부분의 프로젝트에 무난히 적용할 수 있는 style을 선택했다.
+  - Black 설치하기
+
+  ```bash
+  $ pip install black
+  ```
+
+  - 사용해보기
+    - 기존 file의 내용이 변경되므로 주의가 필요하다.
+
+  ```bash
+  $ black <source_file 또는 directory>
+  
+  # 또는
+  $ python -m black source_file 또는 directory>
+  ```
+
+  - 아래와 같은 code가 있을 때
+
+  ```python
+  from seven_dwwarfs import Grumpy, Happy, Sleepy, Bashful, Sneezy, Dopey, Doc
+  x = {  'a':37,'b':42,
+  
+  'c':927}
+  
+  x = 123456789.123456789E123456789
+  
+  if very_long_variable_name is not None and \
+   very_long_variable_name.field > 0 or \
+   very_long_variable_name.is_debug:
+   z = 'hello '+'world'
+  else:
+   world = 'world'
+   a = 'hello {}'.format(world)
+   f = rf'hello {world}'
+  if (this
+  and that): y = 'hello ''world'#FIXME: https://github.com/psf/black/issues/26
+  class Foo  (     object  ):
+    def f    (self   ):
+      return       37*-2
+    def g(self, x,y=42):
+        return y
+  def f  (   a: List[ int ]) :
+    return      37-a[42-u :  y**3]
+  def very_important_function(template: str,*variables,file: os.PathLike,debug:bool=False,):
+      """Applies `variables` to the `template` and writes to `file`."""
+      with open(file, "w") as f:
+       ...
+  # fmt: off
+  custom_formatting = [
+      0,  1,  2,
+      3,  4,  5,
+      6,  7,  8,
+  ]
+  # fmt: on
+  regular_formatting = [
+      0,  1,  2,
+      3,  4,  5,
+      6,  7,  8,
+  ]
+  ```
+
+  - black을 적용하면, 아래와 같이 바뀐다.
+
+  ```python
+  from seven_dwwarfs import Grumpy, Happy, Sleepy, Bashful, Sneezy, Dopey, Doc
+  
+  x = {"a": 37, "b": 42, "c": 927}
+  
+  x = 123456789.123456789e123456789
+  
+  if (
+      very_long_variable_name is not None
+      and very_long_variable_name.field > 0
+      or very_long_variable_name.is_debug
+  ):
+      z = "hello " + "world"
+  else:
+      world = "world"
+      a = "hello {}".format(world)
+      f = rf"hello {world}"
+  if this and that:
+      y = "hello " "world"  # FIXME: https://github.com/psf/black/issues/26
+  
+  
+  class Foo(object):
+      def f(self):
+          return 37 * -2
+  
+      def g(self, x, y=42):
+          return y
+  
+  
+  def f(a: List[int]):
+      return 37 - a[42 - u : y**3]
+  
+  
+  def very_important_function(
+      template: str,
+      *variables,
+      file: os.PathLike,
+      debug: bool = False,
+  ):
+      """Applies `variables` to the `template` and writes to `file`."""
+      with open(file, "w") as f:
+          ...
+  
+  
+  # fmt: off
+  custom_formatting = [
+      0,  1,  2,
+      3,  4,  5,
+      6,  7,  8,
+  ]
+  # fmt: on
+  regular_formatting = [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+  ]
+  ```
+
+  - [Black Playground](https://black.vercel.app/)에서 test해볼 수 있다.
+  - Pycharm, Visual Studio Code, Vim 등의 editor에서 자동으로 실행되도록 설정이 가능하다.
+    - 각 editor별 설정 방법은 [공식문서](https://black.readthedocs.io/en/stable/integrations/editors.html#)참고
