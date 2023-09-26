@@ -2,18 +2,262 @@
 
 ## Exact Match 구현
 
-- Test용 data 색인
+- Test용 data 색인 및 일반 검색 test
 
+  - 아래와 같이 test용 index를 생성한다.
 
+  ```json
+  // PUT exact-search-test
+  {
+    "settings": {
+      "analysis": {
+        "filter": {
+          "synonym": {
+            "type": "synonym",
+            "synonyms": []
+          }
+        },
+        "tokenizer": {
+          "mixed_nori_tokenizer": {
+            "type": "nori_tokenizer",
+            "decompound_mode": "mixed"
+          }
+        },
+        "analyzer": {
+          "nori_analyzer": {
+            "type": "custom",
+            "tokenizer": "mixed_nori_tokenizer",
+            "filter": [
+              "synonym"
+            ]
+          }
+        }
+      }
+    },
+    "mappings": {
+      "properties": {
+        "title":{
+          "type":"text",
+          "analyzer": "nori_analyzer",
+          "fields": {
+            "keyword":{
+              "type":"keyword"
+            }
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  - Python의 `faker` package를 사용하여 무작위 data를 생성한 후 색인한다.
+
+  ```python
+  from faker import Faker
+  import json
+  
+  from elasticsearch import Elasticsearch, helpers
+  
+  fake = Faker("ko-KR")
+  
+  bulk_data = []
+  for i in range(10000):
+      bulk_data.append({
+          "_index":"exact-search-test",
+          "_source":{"title":fake.catch_phrase()}
+      })
+  helpers.bulk(Elasticsearch("http://localhost:9200"), bulk_data)
+  ```
+
+  - `match` query를 사용하여 "비즈니스 중점적 다이나믹 융합"을 검색하면 아래와 같은 결과가 나온다.
+    - 모든 token이 다 들어있는 문서가 가장 위에 노출되긴 하지만, 다른 문서들도 함께 검색된다.
+
+  ```json
+  // GET exact-search-test/_search
+  {
+      "size":3,
+      "query": {
+          "match": {
+              "title": "비즈니스 중점적 다이나믹 융합"
+          }
+      }
+  }
+  
+  // response
+  "hits": [
+      {
+          "_index": "exact-search-test",
+          "_id": "wQPmyooBe-YwzRmmNUVd",
+          "_score": 19.411142,
+          "_source": {
+              "title": "비즈니스 중점적 다이나믹 융합"
+          }
+      },
+      {
+          "_index": "exact-search-test",
+          "_id": "_1",
+          "_score": 19.411142,
+          "_source": {
+              "title": "다이나믹 비즈니스 중점적 융합"
+          }
+      },
+      {
+          "_index": "exact-search-test",
+          "_id": "5",
+          "_score": 16.317135,
+          "_source": {
+              "title": "새로운 비즈니스 중점적 다이나믹 융합 모델"
+          }
+      }
+  ]
+  ```
 
 
 
 - 정확히 동일한 검색어가 정확히 동일한 순서로 나와야 하는 기능을 구현해야 하는 경우 아래의 방법들을 사용할 수 있다.
 
-  - 만일 검색 대상 field의 값이 단어 2~3개로 짧을 경우, keyword field를 대상으로 검색하거나 term query를 사용하여 검색하면 된다.
-    - 이 두 방식의 공통점은 analyzing하지 않은 text를 대상으로 검색한다는 점이다.
+  - Analyzing하지 않은 text를 대상으로 검색하는 방식.
+    - 만일 검색 대상 field의 값이 단어 2~3개로 짧을 경우, keyword field를 대상으로 검색하면 된다.
+  - `keyword` field를 대상으로 검색
+
+  ```json
+  // GET exact-search-test/_search
+  {
+    "query": {
+      "match": {
+        "title.keyword": "비즈니스 중점적 다이나믹 융합"
+      }
+    }
+  }
+  
+  // 응답
+  // 검색어와 정확히 일치하는 문서 1개만 검색된다.
+  "hits": [
+      {
+          "_index": "exact-search-test",
+          "_id": "wQPmyooBe-YwzRmmNUVd",
+          "_score": 8.8049755,
+          "_source": {
+              "title": "비즈니스 중점적 다이나믹 융합"
+          }
+      }
+  ]
+  ```
 
 
+
+- 정확히 일치하지는 않는 방식
+
+  > 순서까지 맞는 검색어가 높은 score로 상단에 노출되기만 하면 되는 경우, 아래의 방법들 중 match_phrase를 사용하는 것을 고려해 볼 수 있다.
+
+  - `and` operator를 활용하는 방식.
+    - Elasticsearch에서 operator는 다양한 검색식에 들어가는데, 대부분의 경우 default 값은 `or`이다.
+    - 이 값을 `and`로 변경할 경우 모든 token이 포함된 문서만 대상으로 검색한다.
+    - 아래 결과에 볼 수 있듯이, token의 순서와 무관하게 token이 모두 포함되어 있기만 하면 검색되기에 token의 순서도 일치해야하는 경우 사용할 수 없다.
+
+  ```json
+  // GET exact-search-test/_search
+  {
+      "query": {
+          "match": {
+              "title": {
+                  "query": "비즈니스 중점적 다이나믹 융합",
+                  "operator": "and"
+              }
+          }
+      }
+  }
+  
+  // 응답
+  "hits": [
+      {
+          "_index": "exact-search-test",
+          "_id": "wQPmyooBe-YwzRmmNUVd",
+          "_score": 19.483356,
+          "_source": {
+              "title": "비즈니스 중점적 다이나믹 융합"
+          }
+      },
+      {
+          "_index": "exact-search-test",
+          "_id": "_1",
+          "_score": 19.458757,
+          "_source": {
+              "title": "다이나믹 비즈니스 중점적 융합"
+          }
+      }
+  ]
+  ```
+
+  - `match_phrase` query 사용
+    - 입력된 검색어들이 정확히 같은 순서로 배치된 문서들을 대상으로 검색하지만, 아래와 같이 앞이나 뒤에 다른 token이 있어도 검색된다.
+
+  ```json
+  // GET exact-search-test/_search
+  {
+      "query": {
+          "match_phrase": {
+              "title": "비즈니스 중점적 다이나믹 융합"
+          }
+      }
+  }
+  
+  // 응답
+  "hits": [
+      {
+          "_index": "exact-search-test",
+          "_id": "wQPmyooBe-YwzRmmNUVd",
+          "_score": 19.411144,
+          "_source": {
+              "title": "비즈니스 중점적 다이나믹 융합"
+          }
+      },
+      {
+          "_index": "exact-search-test",
+          "_id": "5",
+          "_score": 16.317135,
+          "_source": {
+              "title": "새로운 비즈니스 중점적 다이나믹 융합 모델"
+          }
+      }
+  ]
+  ```
+
+  - `query_string` query 사용
+    - 위의 `match_phrase`와 동일한 query가 생성되며, 따라서 동일한 문제를 공유한다.
+
+  ```json
+  // GET exact-search-test/_search
+  {
+      "profile": true, 
+      "query": {
+          "query_string": {
+              "default_field": "title",
+              "query": "\"비즈니스 중점적 다이나믹 융합\""
+          }
+      }
+  }
+  
+  // 응답
+  "hits": [
+      {
+          "_index": "exact-search-test",
+          "_id": "wQPmyooBe-YwzRmmNUVd",
+          "_score": 19.411144,
+          "_source": {
+              "title": "비즈니스 중점적 다이나믹 융합"
+          }
+      },
+      {
+          "_index": "exact-search-test",
+          "_id": "5",
+          "_score": 16.317135,
+          "_source": {
+              "title": "새로운 비즈니스 중점적 다이나믹 융합 모델"
+          }
+      }
+  ]
+  ```
 
 
 
