@@ -1499,6 +1499,190 @@
 
 
 
+
+
+# Elasticsearch multi-match
+
+- `best_fields`(default)
+
+  - 모든 field들을 대상으로 검색을 하지만 가장 높은 점수가 나온 field의 점수를 최종 점수로 사용한다.
+    - 따라서 여러 개의 term이 하나의 field에 많이 나올수록 점수가 높아진다.
+    - 예를 들어 "brown fox"라는 term이 있을 때 "brown"과 "fox"가 하나의 field에 나오는 것이 "brown", "fox"가 각기 다른 field에 나오는 것 보다 높은 점수를 받게 된다.
+  - 각각의 field에 대해 `match` query를 생성하고, 생성된 `match` query들을 `dix_max` query로 묶는다.
+    - 이는 가장 많은 term이 matching된 field를 찾기 위함이다.
+
+  ```json
+  // 예를 들어 아래와 같이 best_fields를 사용한 query는
+  {
+      "query": {
+          "multi_match" : {
+              "query":      "brown fox",
+              "type":       "best_fields",
+              "fields":     [ "subject", "message" ],
+              "tie_breaker": 0.3
+          }
+      }
+  }
+  
+  // 아래와 같은 dis_max query로 변환된다.
+  {
+      "query": {
+          "dis_max": {
+              "queries": [
+                  { "match": { "subject": "brown fox" }},
+                  { "match": { "message": "brown fox" }}
+              ],
+              "tie_breaker": 0.3
+          }
+      }
+  }
+  ```
+
+  - `tie_breaker`
+    - 기본적으로, `best_fields`는 가장 검색어가 matching이 많이 된 하나의 field의 점수를 사용한다.
+    - 그러나 `tie_breaker`를 줄 경우, 다른 모든 matching filed의 점수에 `tie_breaker`의 값을 곱한 값을 가장 검색어가 matching이 많이 된 하나의 field의 점수에 더해 결과를 계산한다.
+
+  - 점수 계산 방식 확인을 위한 data 색인
+
+  ```json
+  // PUT score-test/_doc/1
+  {
+    "field1":"foo bar",
+    "field2":"foo",
+    "field3":"bar"
+  }
+  ```
+
+  - Test data를 대상으로 type이 `best_fields`인 `multi_match` query를 실행한다.
+
+  ```json
+  GET score-test/_search
+  {
+      "explain": true, 
+      "query": {
+          "multi_match": {
+              "query": "foo bar",
+              "fields": [
+                  "field1",
+                  "field2",
+                  "field3"
+              ],
+              "tie_breaker": 0.5
+          }
+      }
+  }
+  ```
+
+  - 응답
+    - 검색어 "foo"와 "bar"가 모두 포함되어 있는 `field1`의 점수가 최고 점수(0.5753642)가 되며, `tie_breaker`를 주지 않았을 경우 이 점수가 최종 점수가 된다.
+    - 그러나 위 query에서는 `tie_breaker`를 줬으므로 다른 matching된 다른 field들의 점수에 `tie_breaker` 값을 곱한 값을 더해야한다.
+    - "foo"가 matching된 `field2`의 점수 0.2876821에 `tie_breaker` 값을 곱한 0.14384105과 "bar"가 matching된 `field1`의 점수 0.2876821에 `tie_breaker` 값을 곱한 0.14384105를 더해준다.
+    - 결국 최종 점수는 `0.5753642 + 0.14384105 + 0.14384105=0.8630463`가 된다.
+
+  ```json
+  {
+  	"_explanation": {
+  		"value": 0.8630463,
+  		"description": "max plus 0.5 times others of:",
+  		"details": [
+  			{
+  				"value": 0.2876821,
+  				"description": "sum of:",
+  				"details": [
+  					{
+  						"value": 0.2876821,
+  						"description": "weight(field3:bar in 0) [PerFieldSimilarity], result of:",
+  						// ...
+  					}
+  				]
+  			},
+  			{
+  				"value": 0.2876821,
+  				"description": "sum of:",
+  				"details": [
+  					{
+  						"value": 0.2876821,
+  						"description": "weight(field2:foo in 0) [PerFieldSimilarity], result of:",
+  						// ...
+  					}
+  				]
+  			},
+  			{
+  				"value": 0.5753642,
+  				"description": "sum of:",
+  				"details": [
+  					{
+  						"value": 0.2876821,
+  						"description": "weight(field1:foo in 0) [PerFieldSimilarity], result of:",
+  						// ...
+  					},
+  					{
+  						"value": 0.2876821,
+  						"description": "weight(field1:bar in 0) [PerFieldSimilarity], result of:",
+  						// ...
+  					}
+  				]
+  			}
+  		]
+  	}
+  }
+  ```
+
+
+
+- `most_fields`
+
+  - 모든 field들을 대상으로 검색을 하고, 각 field들의 점수를 결합한다.
+    - 각기 다른 analyzer로 분석된 같은 text를 대상으로 검색할 때 유용하게 사용할 수 있다.
+    - 예를 들어 어떤 field의 한 sub field는 synonym과 stemming으로 analyzing했고, 다른 sub field는 standard tokenizer만 사용하여 색인한 경우 이들 두 sub field의 점수를 결합하여 검색어가 여러 field에서 종합적으로 matching된 문서를 상단으로 올릴 수 있다.
+  - `should`와 동일하게 동작한다고 생각하면 된다.
+
+  ```json
+  // 예를 들어 아래와 같은 query는
+  {
+      "query": {
+          "multi_match" : {
+              "query":      "quick brown fox",
+              "type":       "most_fields",
+              "fields":     [ "title", "title.original", "title.shingles" ]
+          }
+      }
+  }
+  
+  // 아래의 should query와 동일하다.
+  {
+      "query": {
+          "bool": {
+              "should": [
+                  { "match": { "title":          "quick brown fox" }},
+                  { "match": { "title.original": "quick brown fox" }},
+                  { "match": { "title.shingles": "quick brown fox" }}
+              ]
+          }
+      }
+  }
+  ```
+
+
+
+- `cross_fields`
+
+  - 같은 analyzer를 사용하는 field들을 하나의 field처럼 처리하여, 각 term이 어떤 field에 있던 검색한다.
+    - Term들이 여러 field에서 matching되는 것이 나을 때 유용하게 사용할 수 있다.
+    - 얘를 들어 "George Washington"이라는 검색어가 있고, `first_name`, `last_name`이라는 field들이 있을 때, "George"가 `first_name`에 "Washington"이 `last_name`에서 검색되는 것이 더 자연스럽다.
+
+  - 그냥 `most_fields`를 쓰면 되는 것 아닌가?
+    - `cross_fields` 대신 `most_fields`를 쓰기에는 두 가지 문제가 있다.
+    - 첫 번째 문제는 `most_fields`의 경우  `operator`와 `minium_should_match`는 각 field마다 적용된다는 점이다.
+    - 두 번째 문제는 각 field의 서로 다른 term frequency가 예상치 못한 결과를 반환할 수 있다는 점이다.
+    - 예를 들어 각기 "George Washington"과 "Washington Irving"에 대한 문서가 있다고 가정해보자. 
+    - "Washington"은 매우 흔한 last name이므로, `last_name`에 "Washington"이 들어가는 경우 term frequency가 높아 높은 점수를 받지 못할 것이다.
+    - 반면에, first name으로 쓰이는 "Washington"은 그리 흔하지 않으므로, `first_name`에 "Washington"이 들어가는 경우 term frequency가 낮아 높은 점수를 받게 될 것이다.
+    - 따라서 "George Washington"을 검색할 경우 `last_name`에 "Washington"이 들어간 문서보다 `first_name`에 "Washington"이 들어간 문서가 더 높은 점수를 받을 것이다.
+    - 즉, `first_name:George last_name:Washington`이라는 보다 더 많은 term이 matching되는 문서가 있음에도, `first_name:Washington`인 문서가 더 높은 점수로 검색 결과의 상단에 올라올 위험이 있다.
+
+
+
 ## Count API
 
 - 쿼리와 일치하는 문서의 개수를 셀 때 사용하는  API
