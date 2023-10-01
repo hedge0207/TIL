@@ -556,3 +556,72 @@
 
 
 
+# Shard routing
+
+- `_routing`
+
+  - Elasticsearch에서 document는 아래 방식에 따라 특정 shard에 routing된다.
+    - `routing_factor = num_routing_shards / num_primary_shards`
+    - `shard_num = (hash(_routing) % num_routing_shard) / routing_factor`
+    - 여기서 `num_routing_shards `의 값은 index settings의 `index.number_of_routing_shards`의 값이고, `num_primary_shards`는 index settings의 `index.number_of_shards`의 값이다.
+    - `_routing`의 기본 값은 문서의 `_id`이다.
+  - 기본적으로 routing에 문서의 `_id` 값을 사용하지만, 문서 색인시에 이 값을 변경할 수 있다.
+    - 이 경우 문서를 get, update, delete 할 때 동일한 routing 값을 넣어줘야한다.
+
+  ```json
+  // 아래와 같이 routing 값을 설정할 수 있다.
+  // PUT my-index/_doc/1?routing=foo1
+  {
+    "title": "This is a document"
+  }
+  
+  // 동일한 routing 값을 넣어줘야한다.
+  // GET my-index/_doc/1?routing=foo1
+  ```
+
+  - 검색시에도 활용할 수 있다.
+    - 아래와 같이 검색할 때 routing 값을 주면 해당 routing value와 일치하는 shard에만 검색을 수행하여 검색 비용을 줄일 수 있다.
+
+  ```json
+  // GET my-index/_search?routing=foo1,foo2
+  {
+    "query": {
+      "match": {
+        "title": "document"
+      }
+    }
+  }
+  ```
+
+  - Index 생성시에 `mappings`에 아래와 같이 설정할 경우 문서 CRUD시에 routing 값을 반드시 주도록 강제할 수 있다.
+    - 만일 `mappings._routing.required`를 true로 설정했는데, CRUD시에 routing을 주지 않으면 `routing_missing_exception`를 throw한다.
+
+  ```json
+  // 아래와 같이 설정하고
+  // PUT my-index
+  {
+      "mappings": {
+          "_routing": {
+              "required": true 
+          }
+      }
+  }
+  
+  // 아래와 같이 routing 값 없이 CRUD를 실행하려 할 경우 
+  // PUT my-index/_doc/1 
+  {
+    "text": "No routing value provided"
+  }
+  ```
+
+  - Custom한 `_routing` 값을 사용할 경우 `_id` 값의 고유함이 보장되지 않는다.
+    - 따라서 같은 `_id`를 가진 서로 다른 document가 각기 다른 shard에 저장되어 있을 수 있다.
+  - `_routing` value가 특정한 하나의 shard가 아니라 전체 shard들 중 일부 부분 집합을 가리키도록 할 수 있다.
+    - 이를 통해 shard들 간의 불균형 문제를 완화시킬수 있다.
+    - Index 생성시에 `index.routing_partition_size`를 설정하면 된다.
+    - `index.routing_partition_size` 값이 증가할수록 문서들이 여러 shard에 더 고르게 분배되지만, 검색시에 더 많은 shard들을 검색하게 돼 검색 비용이 증가한다.
+    - 이 값을 줄 경우 shard를 결정하는 방식은 아래와 같이 변경된다.
+    - `routing_factor = hash(_routing) + hash(_id) % routing_partition_size`
+    - `shard_num = (routing_value % num_routing_shards) / routing_factor`
+    - 단, 이 기능을 활성화 할 경우 join field를 사용할 수 없으며, `mappings._routing.required`이 true로 설정된다.
+
