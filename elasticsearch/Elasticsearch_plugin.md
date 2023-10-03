@@ -315,3 +315,343 @@
   }
   ```
 
+
+
+# Elasticsearch plugin 개발
+
+- Elasticsearch plugin
+  - Elasticsearch는 Elasticsearch에 기능을 추가할 수 있게 해주는 모듈이다.
+  - Elasticsearch source code에 정의되어 있는 Java interface를 구현하는 방식으로 개발한다.
+  - JAR file과 metadata file들로 구성되며, zip file로 압축하여 배포한다.
+  - Plugin을 개발하는 방식은 2가지가 있다.
+    - Stable plugin API를 통해 text analysis plugin을 개발하는 방식(8.7.0부터 지원).
+    - Classic plugin API를 통해 custom authentication, autorization, scoring mechanisms 등을 개발하는 방식.
+
+
+
+## Text analysis plugin 개발
+
+- Stable plugin API를 사용하여 Text analysis plugin을 개발할 수 있다.
+
+  - Classic plugin으로도 text analysis plugin을 개발할 수는 있다.
+    - 그러나 classic plugin은 Elasticsearch의 특정 version에 종속되게 된다.
+    - 이는 classic plugin이 변경 가능한  internal API를 가지고 구현하는 것이기 때문이다.
+    - 따라서 Elasticsearch를 update할 때 마다 plugin을 recompile해야한다.
+  - Stable plugin API로 개발한 plugin은 같은 Elasticsearch major version 내에서 호환이 가능하다.
+    - 따라서 major version만 같다면 Elasticsearch를 update했다고 해도 plugin을 recompile할 필요가 없다.
+  - Stable plugin API는 아래와 같은 dependency를 가지고 있다.
+    - `plugin-api`: Elasticsearch plugin을 구현하기 위해 사용하는 API
+    - `plugin-analysis-api`: analysis plugin을 개발하고 이를 Elasticsearch에 통합하기 위해 사용하는 API.
+    - `lucene-analysis-common`: `plugin-analysis-api`의 dependency이며, `Tokenizer`, `Analyzer`, `TokenStream` 등 Lucene analysis interface를 포함하고 있다.
+  - Text analysis plugin은 anaysis plugin API에 정의된 아래 4개의 factory class를 구현하는 방식으로 개발한다.
+    - `AnalyzerFactory`: Lucene analyzer를 생성하기 위한 factory.
+    - `CharFilterFactory`: Character filter를 개발하기 위한 factory.
+    - `TokenFilterFactory`: Lucene token filter를 개발하기 위한 factory.
+    - `TokenizerFactory`: Lucene tokenizer를 개발하기 위한 factory.
+
+  - `@NamedComponent` annotation
+    - Stable plugin 구현의 핵심이다.
+    - Elasticsearch의 많은 component들은 configuration에서 사용하는 이름이 있다.
+    - 예를 들어 keyword analyzer는 configuration에서 `"keyword"`라는 이름으로 참조된다.
+    - Custom plugin이 cluster에 설치되면, named component는 configuration에서 이름으로 참조된다.
+  - Stable plugin의 file 구조
+    - Stable plugin은 JAR file들과 두 개의 metadata로 구성된 ZIP file이다.
+    - 두 metadata file은 아래와 같다. 
+    - `stable-plugin-descriptor.properties`: plugin에 대해 묘사한 Java properties file.
+    - ``named_components.json`: component name들을 key로 구현 class들을 value로 하는 JSON file이다.
+    - Plugin의 root에 있는 JAR file들만 plugin의 classpath에 추가된다는 점을 유의해야한다.
+
+
+
+- 개발 과정
+
+  - Elasticsearch는 plugin을 보다 쉽게 개발하고 packaging할 수 있도록 `elasticsearch.stable-esplugin`라는 Gradle plugin을 제공한다.
+    - 꼭 plugin을 사용해야하는 것은 아니지만, 사용하면 보다 편하게 plugin을 개발할 수 있다.
+  - Project를 위한 directory를 생성한다.
+  - Project directory에 `build.gradle` 파일을 생성하고 작성한다.
+    - 아래는 가장 기본적인 `build.gradle`의 예시이다.
+    - `pluginApiVersion`과 `luceneVersion`을 정의해야한다.
+    - `esplugin` section을 작성하면, `elasticsearch.stable-esplugin` Gradle plugin이 plugin descriptor file을 자동으로 작성하는데, 만일 해당 plugin을 사용하지 않는다면 수동으로 작성해야한다.
+
+  ```groovy
+  apply plugin: 'elasticsearch.stable-esplugin'
+  apply plugin: 'elasticsearch.yaml-rest-test'
+  
+  esplugin {
+    name 'stable-analysis-plugin'
+    description 'An example analysis plugin using stable plugin api'
+  }
+  //TODO write module-info
+  
+  dependencies {
+  
+    // 아래 3개의 dependency들은 compile-time에만 사용되는데, 이는 runtime에는 Elasticsearch가 이 library들을 제공해주기 때문이다.
+    compileOnly "org.elasticsearch.plugin:elasticsearch-plugin-api:${pluginApiVersion}"
+    compileOnly "org.elasticsearch.plugin:elasticsearch-plugin-analysis-api:${pluginApiVersion}"
+    compileOnly "org.apache.lucene:lucene-analysis-common:${luceneVersion}"
+  
+    // Test를 위한 dependency도 작성해준다.
+    testImplementation "org.elasticsearch.plugin:elasticsearch-plugin-api:${pluginApiVersion}"
+    testImplementation "org.elasticsearch.plugin:elasticsearch-plugin-analysis-api:${pluginApiVersion}"
+    testImplementation "org.apache.lucene:lucene-analysis-common:${luceneVersion}"
+  
+    testImplementation ('junit:junit:4.13.2'){
+      exclude group: 'org.hamcrest'
+    }
+    testImplementation 'org.mockito:mockito-core:4.4.0'
+    testImplementation 'org.hamcrest:hamcrest:2.2'
+  
+  }
+  ```
+
+  - Analysis plugin API의 interface를 구현하고 `Namedcomponent` annotation을 붙인다.
+  - 아래 명령어를 실행하여 plugin을 ZIP file로 생성한다.
+    - 결과 file은 `build/distributions`에 생성된다.
+
+  ```bash
+  $ gradle bundlePlugin
+  ```
+
+
+
+- YAML REST test
+  - `elasticsearch.yaml-rest-test` Gradle plugin은 Elasticsearch yamlRestTest framework를 사용하여 plugin을 테스트할 수 있게 해준다.
+  - Test는 새로 개발한 plugin이 설치된 Elasticsearch cluster에 REST request를 보내고, 응답을 검사하는 방식으로 실행된다.
+    - REST request는 YAML format으로 작성한다.
+  - YAML REST test의 directory 구조는 아래와 같다.
+    - `src/yamlRestTest/java`에 test suit class를 작성하며, 이 class들은 `ESClientYamlSuiteTestCase`를 extend해야한다.
+    - `src/yamlRestTest/resources/test`에 YAML test를 작성한다.
+
+
+
+- 간단한 plugin 개발해보기
+
+  - foo와 bar를 제외한 모든 token을 제외시키는 Lucene token filter를 개발할 것이다.
+    - Elasticsearch version: 8.7.0
+    - Lucene version: 9.5.0
+    - Java version: 17.0.7
+    - Gradle vesion: 7.4
+  - 새로운 project를 생성하고 file 구조를 잡는다.
+
+  ```
+  ├── src
+  │   ├── main/java/org/example
+  |   |           	  ├── FooBarTokenFilter.java
+  |   |                 ├── FooBarTokenFilterFactory.java
+  │   └── yamlRestTest
+  |       ├── java/org/example/FooBarPluginClientYamlTestSuiteIT.java
+  └── build.gralde
+  ```
+
+  - build.gradle file을 아래와 같이 작성한다.
+
+  ```groovy
+  ext.pluginApiVersion = '8.7.0'
+  ext.luceneVersion = '9.5.0.'
+  
+  buildscript {
+    ext.pluginApiVersion = '8.7.0'
+    repositories {
+      mavenCentral()
+    }
+    dependencies {
+      classpath "org.elasticsearch.gradle:build-tools:${pluginApiVersion}"
+    }
+  }
+  
+  // gradle plugin을 적용한다.
+  apply plugin: 'elasticsearch.stable-esplugin'
+  apply plugin: 'elasticsearch.yaml-rest-test'
+  
+  esplugin {
+    name 'my-first-plugin'
+    description 'My first analysis plugin'
+  }
+  
+  group 'org.example'
+  version '1.0-SNAPSHOT'
+  
+  repositories {
+    mavenLocal()
+    mavenCentral()
+  }
+  
+  dependencies {
+  
+    compileOnly "org.elasticsearch.plugin:elasticsearch-plugin-api:${pluginApiVersion}"
+    compileOnly "org.elasticsearch.plugin:elasticsearch-plugin-analysis-api:${pluginApiVersion}"
+    compileOnly "org.apache.lucene:lucene-analysis-common:${luceneVersion}"
+  
+    testImplementation "org.elasticsearch.plugin:elasticsearch-plugin-api:${pluginApiVersion}"
+    testImplementation "org.elasticsearch.plugin:elasticsearch-plugin-analysis-api:${pluginApiVersion}"
+    testImplementation "org.apache.lucene:lucene-analysis-common:${luceneVersion}"
+  
+    testImplementation ('junit:junit:4.13.2'){
+      exclude group: 'org.hamcrest'
+    }
+    testImplementation 'org.mockito:mockito-core:4.4.0'
+    testImplementation 'org.hamcrest:hamcrest:2.2'
+  
+  }
+  ```
+
+  - `FooBarTokenFilter.java` file을 아래와 같이 작성한다.
+
+  ```java
+  package org.example;
+  
+  import org.apache.lucene.analysis.FilteringTokenFilter;
+  import org.apache.lucene.analysis.TokenStream;
+  import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+  
+  import java.util.Arrays;
+  
+  public class FooBarTokenFilter extends FilteringTokenFilter {
+      private final CharTermAttribute term = addAttribute(CharTermAttribute.class);
+  
+      public FooBarTokenFilter(TokenStream input) {
+          super(input);
+      }
+  
+      @Override
+      public boolean accept() {
+          if (term.length() != 3) return false;
+          return Arrays.equals(term.buffer(), 0, 3, "foo".toCharArray(), 0, 3)
+                  || Arrays.equals(term.buffer(), 0, 3, "bar".toCharArray(), 0, 3);
+      }
+  
+  }
+  ```
+
+  - `FooBarTokenFilterFactory.java` file을 아래와 같이 작성한다.
+    - `@NamedComponent` annotation을 사용하여 filter의 이름을 설정한다.
+
+  ```java
+  package org.example;
+  
+  import org.apache.lucene.analysis.TokenStream;
+  import org.elasticsearch.plugin.analysis.TokenFilterFactory;
+  import org.elasticsearch.plugin.NamedComponent;
+  
+  @NamedComponent(value = "foo_bar")
+  public class FooBarTokenFilterFactory implements TokenFilterFactory {
+  
+      @Override
+      public TokenStream create(TokenStream tokenStream) {
+          return new FooBarTokenFilter(tokenStream);
+      }
+  
+  }
+  ```
+
+  - `src/test` directory에 test code를 추가한다(optional)
+  - 아래 명령어를 실행한다.
+    - JAR file을 build하고, metadata file을 생성하며, 이들을 ZIP file로 묶는다.
+    - 결과 file은 `build/dstributions`에 생성된다.
+
+  ```bash
+  $ gradle bundlePlugin
+  ```
+
+  - Elasticsearch에 plugin을 설치한다.
+    - Plugin file이 Elasticsearch가 plugin을 보관하는 `${es_home}/plugins`(Elasticsearch Docker 공식 image 기준 `/usr/share/elasticsearch/plugins`)에 저장되어 있으면 설치 도중 error가 발생한다.
+
+  ```bash
+  $ elasticsearch-plugin install file:///<path>/<to>/<plugin_file>.zip
+  ```
+
+  - Plugin이 잘 설치 되었는지 확인.
+    - 잘 설치 되었다면 `build.gradle` file의 `version`에 작성한 version 정보와 `esplugin`에 작성한 `name`이 보이게 된다.
+
+  ```http
+  GET _cat/plugins
+  ```
+
+  - 사용해보기
+
+  ```json
+  // GET /_analyze
+  {
+    "text": "foo bar baz qux",
+    "tokenizer": "standard",
+    "filter":  ["foo_bar"]
+  }
+  
+  // output
+  {
+      "tokens": [
+          {
+              "token": "foo",
+              "start_offset": 0,
+              "end_offset": 3,
+              "type": "<ALPHANUM>",
+              "position": 0
+          },
+          {
+              "token": "bar",
+              "start_offset": 4,
+              "end_offset": 7,
+              "type": "<ALPHANUM>",
+              "position": 1
+          }
+      ]
+  }
+  ```
+
+
+
+- YAML REST test
+
+  - `elasticsearch.stable-esplugin` Gradle plugin을 사용한다면, Elasticsearch의 YAML Rest Test framework를 사용할 수 있다.
+    - 실행 중인 test 용 cluster에 custom plugin을 load 하여 REST API query를 test해 볼 수 있다.
+  - `FooBarPluginClientYamlTestSuiteIT.java` file을 아래와 같이 작성한다.
+
+  ```java
+  package org.example;
+  
+  import com.carrotsearch.randomizedtesting.annotations.Name;
+  import com.carrotsearch.randomizedtesting.annotations.ParametersFactory;
+  import org.elasticsearch.test.rest.yaml.ClientYamlTestCandidate;
+  import org.elasticsearch.test.rest.yaml.ESClientYamlSuiteTestCase;
+  
+  public class FooBarPluginClientYamlTestSuiteIT {
+  
+      public FooBarPluginClientYamlTestSuiteIT(
+              @Name("yaml") ClientYamlTestCandidate testCandidate
+      ) {
+          super(testCandidate);
+      }
+  
+      @ParametersFactory
+      public static Iterable<Object[]> parameters() throws Exception {
+          return ESClientYamlSuiteTestCase.createParameters();
+      }
+  }
+  ```
+
+  - `src/yamlRestTest/resources/rest-api-spec/test/plugin`에  `10_token_filter.yml` file을 아래와 같이 작성한다.
+
+  ```yaml
+  ---
+  "foo_bar plugin test - removes all tokens except foo and bar":
+    - do:
+        indices.analyze:
+          body:
+            text: foo bar baz qux
+            tokenizer: standard
+            filter:
+              - type: "foo_bar"
+    - length: { tokens: 2 }
+    - match:  { tokens.0.token: "foo" }
+    - match:  { tokens.1.token: "bar" }
+  ```
+
+  - 아래 명령어를 통해 test를 수행한다.
+
+  ```bash
+  $ gradle yamlRestTest
+  ```
+
+  
+
+  
