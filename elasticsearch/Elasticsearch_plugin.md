@@ -614,7 +614,7 @@
   import org.elasticsearch.test.rest.yaml.ClientYamlTestCandidate;
   import org.elasticsearch.test.rest.yaml.ESClientYamlSuiteTestCase;
   
-  public class FooBarPluginClientYamlTestSuiteIT {
+  public class FooBarPluginClientYamlTestSuiteIT extends ESClientYamlSuiteTestCase {
   
       public FooBarPluginClientYamlTestSuiteIT(
               @Name("yaml") ClientYamlTestCandidate testCandidate
@@ -652,6 +652,6 @@
   $ gradle yamlRestTest
   ```
 
-  
 
-  
+
+
