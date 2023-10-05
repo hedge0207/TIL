@@ -261,6 +261,180 @@
 
 
 
+- 공백과 특수 문자가 제거된 하나의 token만 생성하여 검색
+
+  - Analyzer 사용
+    - Tokenizer 중 `keyword` tokenizer를 사용하여 하나의 token만을 생성할 수 있도록 한다.
+    - `pattern_replace` character filter를 사용하여 특수 문자를 모두 제거한다.
+
+  ```json
+  // PUT
+  {
+      "settings": {
+          "analysis": {
+              "char_filter": {
+                  "remove_special_char": {
+                      "type": "pattern_replace",
+                      "pattern": "[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅑ가-힣]",
+                      "replacement": ""
+                  }
+              },
+              "analyzer": {
+                  "single_token_analyzer": {
+                      "type": "custom",
+                      "tokenizer": "keyword",
+                      "char_filter": [
+                          "remove_special_char"
+                      ]
+                  }
+              }
+          }
+      },
+      "mappings":{
+          "properties":{
+              "title":{
+                  "type":"text",
+                  "analyzer":"single_token_analyzer"
+              }
+          }
+      }
+  }
+  ```
+
+  - 위에서 설정한 analyzer를 통해 형태소 분석을 하면 결과는 아래와 같다.
+
+  ```json
+  [
+      {
+  
+          "source": "비즈니스 중점적 다이나믹 융합",
+          "result": "비즈니스중점적다이나믹융합"
+  
+      },
+      {
+  
+          "source": "비즈니스 중점적 다이나믹 융합!",
+          "result":"비즈니스중점적다이나믹융합"
+  
+      },
+      {
+  
+          "source": "새로운! 비즈니스 중점적, 다이나믹 융합 모델",
+          "result":"새로운비즈니스중점적다이나믹융합모델"
+      }
+  ]
+  ```
+
+  - 이제 title field를 대상으로 검색하면, 결과는 아래와 같다.
+    - "비즈니스 중점적 다이나믹 융합"라는 검색어 역시 "비즈니스중점적다이나믹융합"라는 하나의 token으로 분석된다.
+    - 특수문자, 공백을 제외한 문자들이 완전히 일치하면 검색되게 된다.
+
+  ```json
+  // GET exact-search-test/_search
+  {
+      "query": {
+          "match":{
+              "title":"비즈니스 중점적 다이나믹 융합"
+          }
+      }
+  }
+  
+  // 검색 결과
+  "hits": [
+      {
+          "_index": "exact-search-test",
+          "_id": "YgiV0IoBe-YwzRmmOag4",
+          "_score": 8.294649,
+          "_source": {
+              "title": "비즈니스 중점적 다이나믹 융합"
+          }
+      },
+      {
+          "_index": "exact-search-test",
+          "_id": "hwiV0IoBe-YwzRmmRKiu",
+          "_score": 8.294649,
+          "_source": {
+              "title": "비즈니스 중점적 다이나믹 융합!"
+          }
+      }
+  ]
+  ```
+
+  - Normalizer 사용
+    - 아래와 같이 normalizer를 정의하고, 검색 대상 field를 keyword type으로 설정 후, normalizer를 적용한다.
+
+  ```json
+  // PUT exact-search-test
+  {
+      "settings": {
+          "analysis": {
+              "char_filter": {
+                  "remove_special_char": {
+                      "type": "pattern_replace",
+                      "pattern": "[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅑ가-힣]",
+                      "replacement": ""
+                  }
+              },
+              "normalizer": {
+                  "my_normalizer": {
+                      "type": "custom",
+                      "char_filter": [
+                          "remove_special_char"
+                      ]
+                  }
+              }
+          }
+      },
+      "mappings":{
+          "properties":{
+              "title":{
+                  "type":"keyword",
+                  "normalizer":"my_normalizer"
+              }
+          }
+      }
+  }
+  ```
+
+  - 검색
+    - 검색 결과는 analyzer를 사용한 것과 같다.
+
+  ```json
+  // GET exact-search-test/_search
+  {
+      "query": {
+          "match":{
+              "title":"비즈니스 중점적 다이나믹 융합"
+          }
+      }
+  }
+  
+  // 검색 결과
+  "hits": [
+      {
+          "_index": "exact-search-test",
+          "_id": "YgiV0IoBe-YwzRmmOag4",
+          "_score": 8.294649,
+          "_source": {
+              "title": "비즈니스 중점적 다이나믹 융합"
+          }
+      },
+      {
+          "_index": "exact-search-test",
+          "_id": "hwiV0IoBe-YwzRmmRKiu",
+          "_score": 8.294649,
+          "_source": {
+              "title": "비즈니스 중점적 다이나믹 융합!"
+          }
+      }
+  ]
+  ```
+
+  - `keyword` field를 대상으로 검색하는 것과의 차이
+    - `keyword` field를 대상으로 검색할 때 보다 유연하게 적용이 가능하다.
+    - `keyword` field의 경우 특수 문자나 공백이 하나라도 다를 경우 검색이 안 되는데 반해, 이 방식은 보다 유연한 적용이 가능하다.
+    - 또한 요구사항에 따라 숫자를 빼거나, 영어를 빼는 등 유연하게 대응할 수 있다.
+
 
 
 
