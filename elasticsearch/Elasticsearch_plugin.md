@@ -436,15 +436,16 @@
   ```
   ├── src
   │   ├── main/java/org/example
-  |   |           	  ├── FooBarTokenFilter.java
-  |   |                 ├── FooBarTokenFilterFactory.java
+  |   |   ├── FooBarTokenFilter.java
+  |   |   └── FooBarTokenFilterFactory.java
   │   └── yamlRestTest
   |       ├── java/org/example/FooBarPluginClientYamlTestSuiteIT.java
+  |       └── resources/rest-api-spec/test/plugin/10_token_filter.yml
   └── build.gralde
   ```
-
+  
   - build.gradle file을 아래와 같이 작성한다.
-
+  
   ```groovy
   ext.pluginApiVersion = '8.7.0'
   ext.luceneVersion = '9.5.0.'
@@ -494,9 +495,9 @@
   
   }
   ```
-
+  
   - `FooBarTokenFilter.java` file을 아래와 같이 작성한다.
-
+  
   ```java
   package org.example;
   
@@ -522,10 +523,10 @@
   
   }
   ```
-
+  
   - `FooBarTokenFilterFactory.java` file을 아래와 같이 작성한다.
     - `@NamedComponent` annotation을 사용하여 filter의 이름을 설정한다.
-
+  
   ```java
   package org.example;
   
@@ -543,32 +544,32 @@
   
   }
   ```
-
+  
   - `src/test` directory에 test code를 추가한다(optional)
   - 아래 명령어를 실행한다.
     - JAR file을 build하고, metadata file을 생성하며, 이들을 ZIP file로 묶는다.
     - 결과 file은 `build/dstributions`에 생성된다.
-
+  
   ```bash
   $ gradle bundlePlugin
   ```
-
+  
   - Elasticsearch에 plugin을 설치한다.
     - Plugin file이 Elasticsearch가 plugin을 보관하는 `${es_home}/plugins`(Elasticsearch Docker 공식 image 기준 `/usr/share/elasticsearch/plugins`)에 저장되어 있으면 설치 도중 error가 발생한다.
-
+  
   ```bash
   $ elasticsearch-plugin install file:///<path>/<to>/<plugin_file>.zip
   ```
-
+  
   - Plugin이 잘 설치 되었는지 확인.
     - 잘 설치 되었다면 `build.gradle` file의 `version`에 작성한 version 정보와 `esplugin`에 작성한 `name`이 보이게 된다.
-
+  
   ```http
   GET _cat/plugins
   ```
-
+  
   - 사용해보기
-
+  
   ```json
   // GET /_analyze
   {
@@ -602,10 +603,18 @@
 
 - YAML REST test
 
+  > 테스트 해봤으나 제대로 실행되지 않는다.
+  >
+  >  `gradle yamlRestTest` 실행시 gradle에서 unable to find method error가 발생하면서 build가 실패한다.
+  >
+  > gradle과 jdk 사이의 version이 맞지 않아 발생하는 문제로 추정되는데, 둘의 version을 변경해봐도 계속 실패한다.
+  >
+  > 추후 다시 시도해볼것.
+  
   - `elasticsearch.stable-esplugin` Gradle plugin을 사용한다면, Elasticsearch의 YAML Rest Test framework를 사용할 수 있다.
     - 실행 중인 test 용 cluster에 custom plugin을 load 하여 REST API query를 test해 볼 수 있다.
   - `FooBarPluginClientYamlTestSuiteIT.java` file을 아래와 같이 작성한다.
-
+  
   ```java
   package org.example;
   
@@ -628,11 +637,10 @@
       }
   }
   ```
-
+  
   - `src/yamlRestTest/resources/rest-api-spec/test/plugin`에  `10_token_filter.yml` file을 아래와 같이 작성한다.
-
+  
   ```yaml
-  ---
   "foo_bar plugin test - removes all tokens except foo and bar":
     - do:
         indices.analyze:
@@ -645,13 +653,12 @@
     - match:  { tokens.0.token: "foo" }
     - match:  { tokens.1.token: "bar" }
   ```
-
+  
   - 아래 명령어를 통해 test를 수행한다.
-
+  
   ```bash
   $ gradle yamlRestTest
   ```
-
 
 
 
