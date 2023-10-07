@@ -662,3 +662,190 @@
 
 
 
+
+
+## REST API plugin 개발
+
+- Elasticsearch에 REST endpoint를 추가하는 plugin 개발하기
+  - Test analysis plugin과는 달리 class plugin이므로 Elasticsearch version이 변경될 때 마다 plugin도 update해야한다.
+
+
+
+- 간단한 REST API plugin 개발하기.
+
+  - 개발 환경
+    - Elasticsearch 8.7.0
+    - jdk 19.0.2
+    - gradle 8.3
+
+  - 프로젝트 구조
+
+  ```
+  ├── src
+  │   └── main/java/org/example/resthandler
+  |       ├── ExampleCatAction.java
+  |       └── ExampleRestHandler.java
+  └── build.gralde
+  ```
+
+  - `build.gradle` file을 아래와 같이 작성한다.
+
+  ```groovy
+  buildscript {
+      repositories {
+          mavenCentral()
+      }
+      dependencies {
+          classpath "org.elasticsearch.gradle:build-tools:8.7.0"
+      }
+  }
+  
+  repositories {
+      mavenCentral()
+  }
+  
+  version '1.0-SNAPSHOT'
+  
+  apply plugin: 'elasticsearch.esplugin'
+  
+  esplugin {
+      name 'first-rest-handler'
+      description 'My first plugin'
+      classname 'org.elasticsearch.example.resthandler.ExampleRestHandlerPlugin'
+  }
+  ```
+
+  - `ExampleCatAction.java` file을 아래와 같이 작성한다.
+    - 주의할 점은 한글로 작성된 주석이 있으면 안되므로, 아래에서 주석은 제거해야한다.
+
+  ```java
+  package org.elasticsearch.example.resthandler;
+  
+  import org.elasticsearch.client.internal.node.NodeClient;
+  import org.elasticsearch.common.Table;
+  import org.elasticsearch.rest.RestRequest;
+  import org.elasticsearch.rest.RestResponse;
+  import org.elasticsearch.rest.action.cat.AbstractCatAction;
+  import org.elasticsearch.rest.action.cat.RestTable;
+  
+  import java.util.List;
+  
+  import static org.elasticsearch.rest.RestRequest.Method.GET;
+  import static org.elasticsearch.rest.RestRequest.Method.POST;
+  
+  public class ExampleCatAction extends AbstractCatAction {
+  
+      @Override
+      public List<Route> routes() {
+          // 새로운 route를 등록한다.
+          return List.of(
+                  new Route(GET, "/_cat/ping"),
+                  new Route(POST, "/_cat/ping"));
+      }
+  
+      @Override
+      public String getName() {
+          return "rest_handler_ping_pong";
+      }
+  
+      @Override
+      protected RestChannelConsumer doCatRequest(final RestRequest request, final NodeClient client) {
+          // 위에서 등록한 endpoint로 요청을 보낼 시 "pong"이라는 message가 반환되도록 한다.
+          final String message = request.param("message", "pong");
+  
+          Table table = getTableWithHeader(request);
+          table.startRow();
+          table.addCell(message);
+          table.endRow();
+          return channel -> {
+              try {
+                  channel.sendResponse(RestTable.buildResponse(table, channel));
+              } catch (final Exception e) {
+                  channel.sendResponse(new RestResponse(channel, e));
+              }
+          };
+      }
+  
+      @Override
+      protected void documentation(StringBuilder sb) {
+          sb.append(documentation());
+      }
+  
+      public static String documentation() {
+          return "/_cat/ping\n";
+      }
+  
+      @Override
+      protected Table getTableWithHeader(RestRequest request) {
+          final Table table = new Table();
+          table.startHeaders();
+          table.addCell("test", "desc:test");
+          table.endHeaders();
+          return table;
+      }
+  }
+  ```
+
+  - `ExampleRestHandler.java` file을 아래와 같이 작성한다.
+    - `ExampleRestHandlerPlugin`은 `ActionPlugin` interface를 구현한다.
+    - `getRestHandlers()` method를 override한다. 
+
+  ```java
+  package org.elasticsearch.example.resthandler;
+  
+  import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
+  import org.elasticsearch.cluster.node.DiscoveryNodes;
+  import org.elasticsearch.common.settings.ClusterSettings;
+  import org.elasticsearch.common.settings.IndexScopedSettings;
+  import org.elasticsearch.common.settings.Settings;
+  import org.elasticsearch.common.settings.SettingsFilter;
+  import org.elasticsearch.plugins.ActionPlugin;
+  import org.elasticsearch.plugins.Plugin;
+  import org.elasticsearch.rest.RestController;
+  import org.elasticsearch.rest.RestHandler;
+  
+  import java.util.List;
+  import java.util.function.Supplier;
+  
+  import static java.util.Collections.singletonList;
+  
+  public class ExampleRestHandlerPlugin extends Plugin implements ActionPlugin {
+  
+      @Override
+      public List<RestHandler> getRestHandlers(final Settings settings,
+                                               final RestController restController,
+                                               final ClusterSettings clusterSettings,
+                                               final IndexScopedSettings indexScopedSettings,
+                                               final SettingsFilter settingsFilter,
+                                               final IndexNameExpressionResolver indexNameExpressionResolver,
+                                               final Supplier<DiscoveryNodes> nodesInCluster) {
+  
+          return singletonList(new ExampleCatAction());
+      }
+  }
+  ```
+
+  - 아래 명령어를 통해 plugin을 build한다.
+
+  ```bash
+  $ gradle bundlePlugin
+  ```
+
+  - Elasticsearch에 plugin을 설치한다.
+
+  ```bash
+  $ elasticsearch-plugin install file:///<path>/<to>/<plugin_file>.zip
+  ```
+
+  - Plugin이 잘 설치 되었는지 확인한다.
+
+  ```http
+  GET _cat/plugins
+  ```
+
+  - Plugin을 실행해본다.
+
+  ```http
+  GET _cat/ping
+  ```
+
