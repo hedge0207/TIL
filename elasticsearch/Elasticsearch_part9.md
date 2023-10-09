@@ -1641,7 +1641,171 @@
 
 
 
+## Tokenizer
 
+### N-gram & Edge n-gram tokenizer
+
+#### ngram tokenizer
+
+- `ngram` tokenizer
+
+  - ngram tokeninzer의 동작 방식
+    - 우선 text를 `token_chars`에 지정되지 않은 character들을 기준으로 word 단위로 쪼갠다.
+    - 그 후 각 word를 정해진 길이 만큼의 token으로 다시 쪼갠다.
+  - 예시
+    - 아래 예시에서 `token_chars`에는 `letter`만 지정했으므로, `letter`에 속하지 않은 character를 기준으로 text가 word로 쪼개진다.
+    - `hello!world`에서 `!`는 `letter`에 속하지 않으므로, `hello!world`는 `["hello", "world"]`로 쪼개지고, 쪼개진 `hello`와 `world`를 각각 ngram으로 쪼개면 아래와 같은 결과가 나오게 된다.
+
+  ```json
+  // PUT ngram-test
+  {
+    "settings": {
+      "analysis": {
+        "tokenizer": {
+          "my_tokenizer": {
+            "type": "ngram",
+            "min_gram": 3,
+            "max_gram": 4,
+            "token_chars":[
+              "letter"
+            ]
+          }
+        }
+      }
+    }
+  }
+  
+  // GET ngram-test/_analyze
+  {
+    "tokenizer": "my_tokenizer",
+    "text":"hello!world"
+  }
+  
+  // out
+  // 공백을 포함한 모든 문자가 ngram으로 분할된다.
+  // ['hel', 'hell', 'ell', 'ello', 'llo', 'wor', 'worl', 'orl', 'orld', 'rld']
+  ```
+
+  - 일반적으로 아래와 같은 용도로 사용한다.
+    - 검색어에 오타가 포함된 경우에도 결과가 나오도록 하기 위해서.
+    - 자동완성 기능을 구현하기 위해서.
+    - Prefix, suffix, infix 검색을 구현하기 위해서.
+
+
+
+- 옵션들
+
+  - `min_gram`
+
+    - token의 최소 길이를 설정하며, 기본 값은 1이다.
+
+  - `max_gram`
+
+    - token의 최대 길이를 설정하며, 기본 값은 2이다.
+
+  - `token_chars`
+
+    - token에 포함시킬 character class들을 설정한다. 기본값은 빈 array로 모든 character들을 포함시킨다.
+
+    - `letter`: 알파벳, 한글, 한자 등의 문자.
+    - `digit`: 숫자
+    - `whitespace`: 공백 혹은 개행 문자(`\n`)
+    - `punctuation`: `!`, `"` 등의 문장부호
+    - `symbol`: `$` 등의 기호
+    - `custom`: `custom_token_chars` option을 통해 설정된 character들
+
+  ```json
+  // PUT ngram-test
+  {
+    "settings": {
+      "analysis": {
+        "tokenizer": {
+          "my_tokenizer": {
+            "type": "ngram",
+            "min_gram": 3,
+            "max_gram": 4,
+            "token_chars": [
+              "letter"
+            ]
+          }
+        }
+      }
+    }
+  }
+  
+  // 위에서 my_tokenizer 생성시 token_chars를 letter만 줬으므로 아래 text에서 ?, 공백, ! 등은 token에 포함되지 않는다.
+  // GET ngram-test/_analyze
+  {
+    "tokenizer": "my_tokenizer",
+    "text":"hello? world!!"
+  }
+  ```
+
+  - `custom_token_chars`
+    - token의 일부로 처리되어야 하는 문자들을 입력한다.
+
+  ```json
+  // PUT ngram-test
+  {
+    "settings": {
+      "analysis": {
+        "tokenizer": {
+          "my_tokenizer": {
+            "type": "ngram",
+            "min_gram": 1,
+            "max_gram": 2,
+            "token_chars": [
+              "custom"
+            ],
+            "custom_token_chars":"h"
+          }
+        }
+      }
+    }
+  }
+  
+  // GET ngram-test/_analyze
+  {
+    "tokenizer": "my_tokenizer",
+    "text":"hello? world!!"
+  }
+  
+  // output
+  // 위에서 설정한 것 처럼 오직 h만 token으로 생성한다.
+  {
+    "tokens": [
+      {
+        "token": "h",
+        "start_offset": 0,
+        "end_offset": 1,
+        "type": "word",
+        "position": 0
+      }
+    ]
+  }
+  ```
+
+
+
+- `min_gram`과 `max_gram`
+  - 일반적으로 `min_gram`과 `max_gram`을 동일한 값으로 사용한다.
+    - 이 두 값의 차이는 기본적으로 1보다 커질 수 없다.
+    - `index.max_ngram_diff` setting을 통해 두 값이 차이의 최대치를 설정할 수 있다.
+  - 이 값들이 작아질 수록 재현율은 올라가지만 정확률이 떨어지며, 이 값들이 커질수록 재현율은 낮아지지만 정확률이 올라간다.
+
+
+
+- `ngram` tokenizer는 가급적 사용을 지양하는 것이 좋다.
+  - 매우 많은 token이 생생된다.
+    - 이로 인해 검색이나 색인시에 보다 많은 자원을 사용한다.
+    - 또한 많은 token을 모두 저장해야 하므로 index의 크기도 커지게 된다.
+  - 지나치게 많은 문서가 검색된다.
+    - 재현율이 높아지지만 정확률이 매우 떨어지게 된다.
+    - 또한 검색시 점수 계산에도 많은 영향을 미쳐 찾고자 하는 문서의 점수가 낮아지는 경우가 있을 수 있다.
+  - 아래와 같은 경우에 문제는 특히 심해진다.
+    - `min_gram`과 `max_gram`의 차이를 크게 사용할 경우 token의 개수는 폭발적으로 증가하게 된다.
+    - 색인시와 검색시에 모두 ngram tokenizer를 사용하는 경우 검색 성능은 물론이고 검색의 정확도도 떨어지게 된다.
+    - `token_chars`를 별다른 고민 없이 설정할 경우.
 
 
 
