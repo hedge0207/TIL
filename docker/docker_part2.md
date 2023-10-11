@@ -645,7 +645,7 @@
   ```
 
   - 이미 생성된 네트워크 사용하기
-    - 아래와 같이 `external`로 외부 network를 불러온다.
+    - 아래와 같이 `external: true`를 줘서 이미 생성된 network를 설정해줄 수 있다.
 
   ```yaml
   version: '3.2'
@@ -656,8 +656,15 @@
   
   networks:
     default:
-      external:
-        name: backend
+      name: backend
+      external: true
+  
+      
+  # 기존에는 아래와 같이 설정했으나, 위와 같이 설정하는 것이 권장된다.
+  networks:
+    default:
+        external:
+          name: backend
   ```
 
 
@@ -747,7 +754,6 @@
         - "com.example.label-with-empty-value"
   ```
 
-  
 
 
 

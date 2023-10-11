@@ -821,8 +821,6 @@
 
 
 
-
-
 - `docker history`
 
   - Docker image가 만들어지기까지의 과정 전체를 보여주는 명령어이다.
@@ -844,6 +842,26 @@
   ```
 
 
+
+- `docker top`
+
+  - Container 내에서 실행 중인 process들을 보여준다.
+
+  ```bash
+  $ docker top <container>
+  ```
+
+
+
+- `docker stats`
+
+  - Container 별 resource 사용량을 보여준다.
+
+  ```bash
+  $ docker stats
+  ```
+
+  
 
 
 
@@ -1150,6 +1168,24 @@
   
   $ docker unpause <컨테이너명 또는 ID>
   ```
+
+
+
+- 컨테이너 log 확인
+
+  - `--details`: log를 보다 상세하게 출력한다.
+  - `-f(--follow)`: log를 출력하고 종료하지 않고, log output을 지속적으로 follow한다.
+  - `--since`, `--until`
+    - Timestamp(e.g. 2023-10-11T10:17:23Z) 혹은 상대적 시간(e.g. 15m)을 받아 해당 시간 부터/까지의 log를 출력한다.
+  - `-t(--timestamps)`: timestamp를 함께 출력한다.
+  - `-n(--tail)`: 가장 최근 log부터 몇 개의 log를 보여줄지를 설정한다.
+
+  ```bash
+  $ docker logs [options] <container>
+
+
+
+
 
 
 
