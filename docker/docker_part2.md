@@ -634,19 +634,17 @@
   
   networks:
     frontend:
-      # Use a custom driver
       driver: custom-driver-1
     backend:
-      # Use a custom driver which takes special options
       driver: custom-driver-2
       driver_opts:
         foo: "1"
         bar: "2"
   ```
-
+  
   - 이미 생성된 네트워크 사용하기
     - 아래와 같이 `external: true`를 줘서 이미 생성된 network를 설정해줄 수 있다.
-
+  
   ```yaml
   version: '3.2'
   
@@ -659,7 +657,7 @@
       name: backend
       external: true
   
-      
+  
   # 기존에는 아래와 같이 설정했으나, 위와 같이 설정하는 것이 권장된다.
   networks:
     default:

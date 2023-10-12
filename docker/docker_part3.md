@@ -92,9 +92,46 @@
 
 
 
+# DinD DooD
+
+- Docker achitecture
+
+  > https://docs.docker.com/get-started/overview/
+
+  - Docker는 client-server 구조를 사용한다.
+    - Docker client가 빌드, 컨테이너 실행, 컨테이너 배포 등을 수행하는 Docker daemon와 통신한다.
+    - Docker client와 daemon은 같은 system에서 실행될 수도 있고, 서로 다른 시스템이서 실행되어 원격으로 통신할 수도 있다.
+    - Docker client와 daemon은 UNIX socket 혹은 network interface를 통해 REST API를 사용하여 통신한다.
+  - Docker daemon
+    - Docker daemon(`dockerd`)은 Docker API로 들어오는 요청을 처리한다.
+    - Image, container, network, volume 등의 docker object들을 관리한다.
+    - 또한 Docker service를 관리하기 위해서 다른 daemon들과도 상호작용한다.
+  - Docker client(Docker CLI)
+    - Docker client(`docker`)는 Docker와 상호작용하는 주요 방법이다.
+    - Docker 명령어(e.g. `docker run`)를 입력하면, Docker client는 dockerd로 해당 명령을 전송한다.
+    - 하나 이상의 Docker daemon과 통신할 수 있다.
+  - Docker registries
+    - Docker image를 저장하기 위한 저장소이다.
+    - Docker Hub는 누구나 사용할 수 있는 공개 저장소이며, private registry도 존재한다.
+  - Docker desktop
+    - Windows, Mac, Linux 등에서 Docker를 보다 쉽게 사용할 수 있게 해주는 application이다.
+    - Docker Client(`docker`)와 Docker daemon(`dockerd`), Docker compose 등을 모두 포함하고 있다.
 
 
-# DooD
+
+## DooD
+
+- DooD(Docker out of Docker)
+
+  - Docker container 내부에서 host machine의 Docker daemon을 사용하는 방식이다.
+    - DooD라는 용어 자체는 DinD처럼 널리 쓰이는 것은 아닌 듯 하고, DooD 방식 자체를 DinD의 하나로 보는 사람들도 있다.
+  - `docker.sock` 파일을 bind-mount해서 사용한다.
+
+  ```bash
+  $ docker run -v /var/run/docker.sock:/var/run/docker.sock ...
+  ```
+
+
 
 
 - Docker container 내부에서 host의 Docker daemon에 요청 보내기(DooD)
@@ -155,32 +192,26 @@
 
 
 
-# DinD DooD
+- DooD 사용시 `/var/run/docker.sock`에 대한 권한 문제가 생길 수 있는데, 아래와 같이 해결이 가능하다.
 
-- Docker achitecture
+  - Host machine의 docker group id를 확인한다.
 
-  > https://docs.docker.com/get-started/overview/
+  ```bash
+  $ cat /etc/group | grep docker
+  ```
 
-  - Docker는 client-server 구조를 사용한다.
-    - Docker client가 빌드, 컨테이너 실행, 컨테이너 배포 등을 수행하는 Docker daemon와 통신한다.
-    - Docker client와 daemon은 같은 system에서 실행될 수도 있고, 서로 다른 시스템이서 실행되어 원격으로 통신할 수도 있다.
-    - Docker client와 daemon은 UNIX socket 혹은 network interface를 통해 REST API를 사용하여 통신한다.
-  - Docker daemon
-    - Docker daemon(`dockerd`)은 Docker API로 들어오는 요청을 처리한다.
-    - Image, container, network, volume 등의 docker object들을 관리한다.
-    - 또한 Docker service를 관리하기 위해서 다른 daemon들과도 상호작용한다.
-  - Docker client(Docker CLI)
-    - Docker client(`docker`)는 Docker와 상호작용하는 주요 방법이다.
-    - Docker 명령어(e.g. `docker run`)를 입력하면, Docker client는 dockerd로 해당 명령을 전송한다.
-    - 하나 이상의 Docker daemon과 통신할 수 있다.
-  - Docker registries
-    - Docker image를 저장하기 위한 저장소이다.
-    - Docker Hub는 누구나 사용할 수 있는 공개 저장소이며, private registry도 존재한다.
-  - Docker desktop
-    - Windows, Mac, Linux 등에서 Docker를 보다 쉽게 사용할 수 있게 해주는 application이다.
-    - Docker Client(`docker`)와 Docker daemon(`dockerd`), Docker compose 등을 모두 포함하고 있다.
+  - Docker image build시 아래와 같이 docker group을 추가해주고, container 내부의 user를 해당 group에 추가해준다.
+    - 주의할 점은 docker group의 group id를 host machine의 docker group id와 동일하게 생성해야한다는 점이다.
+
+  ```dockerfile
+  RUN groupadd -g <host machine의 docker group id> docker
+  
+  RUN usermod -aG docker <container 내부 user>
+  ```
 
 
+
+## DinD
 
 - DinD(Docker in Docker)
 
@@ -206,6 +237,56 @@
 
 
 
+- DinD 실행하기
+
+  - Docker hub에서 `docker:dind` image를 pull 받는다.
+
+  ```bash
+  $ docker image pull docker:dind
+  ```
+
+  - `docker:dind` image를 아래와 같이 실행한다.
+    - `--privileged`: DinD를 위해서는 privileged 옵션을 줘야한다.
+    - `--env DOCKER_TLS_CERTDIR`: DinD를 위해 `--privileged` 옵션을 줬으므로, 보안을 위해 TLS를 사용해야 한다. 따라서 `DOCKER_TLS_CERTDIR` 환경 변수로 Docker TLS 인증서들의 root directory를 설정한다.
+    - 다른 container에서 `docker-in-docker` container의 docker deamon을 사용할 수 있도록 client용 인증서를 호스트 머신에 복사한다.
+    - 2376 port는 docker daemon과 통신을 위한 port이다.
+
+  ```bash
+  $ docker run \
+  --name docker-in-docker \
+  --privileged \
+  --env DOCKER_TLS_CERTDIR=/certs \
+  --volume /path/docker-certs:/certs/client \
+  --publish 2376:2376 \
+  docker:dind
+  ```
+
+  - Docker compose로 실행하기
+
+  ```yaml
+  version: '3.2'
+  
+  services:
+    dind:
+      image: docker:dind
+      container_name: docker-in-docker
+      privileged: true
+      environment:
+        - DOCKER_TLS_CERTDIR=/certs
+      volumes:
+        - ./certs:/certs/client
+      ports:
+        - 2376:2376
+      restart: always
+  ```
+
+  - 확인하기
+
+  ```bash
+  $ docker exec -it docker-in-docker docker --version
+
+
+
 - DinD 방식의 문제점
 
   - AppArmour나 SELinus 등의 LSM(Linux Security Modules)들이 내부 container와 외부 container 간에 충돌을 일으킬 수 있다.
@@ -219,43 +300,6 @@
     - 그들 중 일부는 Docker image들이 모여있는 외부 Docker의 `/var/lib/docker` directory를 내부 Docker에 bind-mount하기도 한다.
     - 그러나 이는 container들 사이에 같은 data를 사용하여 data 손상이 발생할 수 있으므로 매우 위험한 행동이다.
     - 또한 만약 위 처럼 `/var/lib/docker`가 volume이 잡혀있는 상태에서 내부 container에서 build를 한다면, 이는 build cache에 지대한 영향을 끼치게 된다.
-
-
-
-- DooD(Docker out of Docker)
-
-  - Docker container 내부에서 host machine의 Docker daemon을 사용하는 방식이다.
-    - DooD라는 용어 자체는 DinD처럼 널리 쓰이는 것은 아닌 듯 하고, DooD 방식 자체를 DinD의 하나로 보는 사람들도 있다.
-  - `docker.sock` 파일을 bind-mount해서 사용한다.
-
-  ```bash
-  $ docker run -v /var/run/docker.sock:/var/run/docker.sock ...
-  ```
-
-
-
-## DooD 사용시 permission denied 문제
-
-- DooD 사용시 `/var/run/docker.sock`에 대한 권한 문제가 생길 수 있는데, 아래와 같이 해결이 가능하다.
-
-  - Host machine의 docker group id를 확인한다.
-
-  ```bash
-  $ cat /etc/group | grep docker
-  ```
-
-  - Docker image build시 아래와 같이 docker group을 추가해주고, container 내부의 user를 해당 group에 추가해준다.
-    - 주의할 점은 docker group의 group id를 host machine의 docker group id와 동일하게 생성해야한다는 점이다.
-
-  ```dockerfile
-  RUN groupadd -g <host machine의 docker group id> docker
-  
-  RUN usermod -aG docker <container 내부 user>
-  ```
-
-
-
-
 
 
 
@@ -727,10 +771,26 @@
 - Load balancing
   - Swarm manager는 ingress load balancing을 사용한다.
     - 이를 통해 service를 swarm 외부에서 접근할 수 있게 된다.
-  - Swarm manager는 service에 자동으로 PublishedPort를 할당할 수 있으며, 사용자가 수종으로 설정할 수도 있다.
+    - 또한 하나의 port로 service 내의 모든 task에 접근할 수 있게 된다.
+  - Ingress network를 사용하기 위해서는 swarm node들 사이에 아래의 port들이 열려있어야한다.
+    - `7946` TCP/UDP: container network discovery에 사용된다.
+    - `4789` UDP: container의 ingress network에 사용된다.
+  - Swarm manager는 service에 자동으로 PublishedPort를 할당할 수 있으며, 사용자가 수동으로 설정할 수도 있다.
     - Port를 설정하지 않을 경우 30000에서 32767 사이의 port를 자동으로 할당한다.
+    - 아래와 같이 수동으로 설정할 수 있다.
+    - 기존에는 `-p <PUBLISHED-PORT>:<CONTAINER-PORT>`와 같이 설정했으나, 아래와 같이 설정하는 것이 보다 직관적이고 유연성이 높으므로 아래와 같이 설정하는 것이 권장된다.
+  
+  ```bash
+  $ docker service create \
+    --name <SERVICE-NAME> \
+    --publish published=<PUBLISHED-PORT>,target=<CONTAINER-PORT> \
+    <IMAGE>
+  ```
+  
   - Cloud load balancer 등의 외부 컴포넌트는 cluster에 속한 아무 node의 PublishedPort를 통해 service에 접근할 수 있다.
     - 해당 node가 task를 실행 중이 아니라도 접근할 수 있다.
+    - 예를 들어 3개의 node가 있고, 아래와 같이 service를 실행하여 task가 3개의 node 중 2개에만 할당되었다고 할 때, task가 할당되지 않은 node로도 PublishedPort를 통해 service에 접근할 수 있다.
+  
   - Swarm mode는 각 service마다 자동적으로 부여할 internal DNS component를 가지고 있다.
     - 이는 DNS entry에서 하나씩 빼서 부여하는 방식이다.
     - Swarm manager는 cluster 내의 service들에 request를 분산하기 위해서 service의 DNS name을 기반으로 internal load balancing를 사용한다.
@@ -793,12 +853,6 @@
   ```
 
 
-
-
-
-## Swarm 관련 명령어
-
-> https://seongjin.me/docker-swarm-introduction-nodes/
 
 - Docker swarm 시작하기
 
@@ -946,6 +1000,7 @@
   
   - Service의 task 조회
     - Service에서 실행중인 task들의 목록을 보여준다.
+    - Swarm manager가 유지해야 할 task의 상태(`DESIRED STATE`)와 현재 상태(`CURRENT STATE`)를 확인할 수 있으며 각 상태는 [Docker 공식 문서](https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/?ref=seongjin.me)에서 확인할 수 있다.
   
   ```bash
   $ docker service ps <service>
@@ -1007,6 +1062,8 @@
   ```
 
 
+
+- 
 
 
 
