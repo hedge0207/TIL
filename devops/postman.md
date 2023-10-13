@@ -1,5 +1,7 @@
 # Postman으로 API 테스트하기
 
+> ctrl + alt + c를 누르면 console 창이 나오며, test script, pre-request script에서 실행한 `console.log` 등이 출력된다.
+
 - Postman
 
   - Postman에는 아래와 같이 `Pre-request Script`와  `Tests`라는 탭이 존재한다.

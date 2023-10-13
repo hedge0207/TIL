@@ -500,6 +500,28 @@
 
 # Shorts
 
+- 어떤 data를 header에 담고, 어떤 data를 body이 담을 것인가.
+
+  > https://datatracker.ietf.org/doc/html/rfc2616#section-5.3
+  >
+  > https://codeal.medium.com/headers-vs-body-1d3e754020b2
+  >
+  > https://softwareengineering.stackexchange.com/questions/277343/what-belongs-in-an-http-request-header-vs-the-request-body
+
+  - Header
+    - HTTP request, response에 대한 metadata를 담고 있다.
+    - Client는 custom header를 추가할 수 있다.
+  - Body
+    - HTTP 통신을 통해 전달하고자 하는 data를 담고 있다.
+    - HTTP spec 상으로 Body에 어떤 data를 담아야 한다는 규정이나 제한은 없다.
+  - 어디에 무엇을 담아야하는가?
+    - 전송하고자 하는 data가 metadata라면 header에 담는다.
+    - HTTP가 규정한 reserved header에 속하는 data라면, 해당 header에 담는다(e.g. Authorization header에 token을 담는 것).
+    - API의 대부분의 endpoint에서 사용하는 data라면 header에 담는다.
+    - 만약 위 세 경우 중 어디에도 해당하지 않는다면 body에 담는다.
+
+
+
 - Path variable과 Query parameter
 
   > https://medium.com/@fullsour/when-should-you-use-path-variable-and-query-parameter-a346790e8a6d
