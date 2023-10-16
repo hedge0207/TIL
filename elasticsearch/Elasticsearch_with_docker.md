@@ -187,18 +187,21 @@ https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-discover
         - 9300:9300
   ```
 
-  - `discovery.type=single-node`를 명시적으로 주는 것 과의 차이
-    - `discovery.type=single-node`를 명시적으로 주면 다른 node와 cluster를 구성할 수 없다.
-    - 그러나 위와 같이 node를 생성하면, 추후에 다른 node와 cluster를 구성할 수 있다.
-    - 즉, 둘의 차이는 오직 single-node로만 cluster를 구성할 것인지, 일단 single node로 구성하되, 추후에 다른 node와 clustering을 할 가능성을 남겨 두는지이다.
-    - 얼핏 보면 추후에 다른 node와 clustering도 할 수 있는 위 방식이 더 효율적으로 보이지만, 사실 두 방식은 용도가 다르다.
+
+
+
+- `discovery.type=single-node`를 명시적으로 주는 것 과의 차이
+  - `discovery.type=single-node`를 명시적으로 주면 다른 node와 cluster를 구성할 수 없다.
+  - 그러나 위와 같이 node를 생성하면, 추후에 다른 node와 cluster를 구성할 수 있다.
+  - 즉, 둘의 차이는 오직 single-node로만 cluster를 구성할 것인지, 일단 single node로 구성하되, 추후에 다른 node와 clustering을 할 가능성을 남겨 두는지이다.
+  - 얼핏 보면 추후에 다른 node와 clustering도 할 수 있는 위 방식이 더 효율적으로 보이지만, 사실 두 방식은 용도가 다르다.
     - `discovery.type=single-node`를 명시적으로 주는 방식은 주로 test용으로 사용된다.
     - 설정에 따라서 각기 독립적인 cluster를 구성해야 하는 두 node가 하나의 cluster로 묶이는 상황이 발생할 수 있다.
     - 그런데 이 때 한 노드에 `discovery.type=single-node` 설정을 줬다면, 두 노드는 절대 하나의 cluster에 묶일 수 없게 되어, 보다 간단한 설정으로 test가 가능해진다.
 
 
 
-## Docker-compose로 설치하기
+# Docker-compose로 설치하기
 
 - docker-compose.yml 파일에 아래와 같이 작성
 
@@ -632,6 +635,223 @@ https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-discover
     - 만일 다른 서버에 설치하는 것이고, Docker가 아닌 환경에서 설치한다면, `discovery.seed_hosts`값만 제대로 설정해도 된다.
 
     - 보다 자세한 내용은 상단의 [각기 다른 서버에 설치된 node들로 클러스터 구성하기] 참조
+
+
+
+
+
+# Docker stack으로 설치하기
+
+- Test 환경 구성
+
+  - Docker network 생성
+
+  ```bash
+  $ docker network create dind
+  ```
+
+  - DinD container 생성
+    - Swarm을 구성하기 위한 dind container 2개를 생성한다.
+    - 위에서 생성한 Docker network를 사용한다.
+
+  ```yaml
+  version: '3.2'
+  
+  services:
+    dind1:
+      image: docker:dind
+      container_name: dind1
+      privileged: true
+      environment:
+        - DOCKER_TLS_CERTDIR=/certs
+      networks:
+        - dind
+    
+    dind2:
+      image: docker:dind
+      container_name: dind2
+      privileged: true
+      environment:
+        - DOCKER_TLS_CERTDIR=/certs
+      networks:
+        - dind
+  
+  networks:
+    dind:
+      name: dind
+      external: true
+  ```
+
+  - dind1 container에서 swarm mode를 시작한다.
+
+  ```bash
+  $ docker swarm init
+  ```
+
+  - dind2 container를 swarm node로 합류시킨다.
+
+  ```bash
+  $ docker swarm join --token <token> dind1:2377
+  ```
+
+  - dind1 container에서 swarm이 잘 구성되었는지 확인한다.
+
+  ```bash
+  $ docker node ls
+  ```
+
+
+
+- Docker stack을 사용하여 Elasticsearch cluster 구성하기
+
+  - 각각의 dind container 내에 elasticsearch image를 pull 받는다.
+
+  ```bash
+  $ git pull docker.elastic.co/elasticsearch/elasticsearch:<version>
+  ```
+
+  - 아래와 같이 `docker-compose.yml` file을 작성한다.
+    - Swarm의 경우 network driver를 overlay로 생성해야한다.
+    - Stack에서 사용하지 않는 `container_name`, `restart` 등의 옵션은 설정하지 않는다.
+
+  ```yaml
+  version: '3.2'
+  
+  
+  services:
+    node1:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.7.0
+      hostname: node1
+      environment:
+        - node.name=node1
+        - cluster.name=es-docker-cluster
+        - discovery.seed_hosts=node2
+        - cluster.initial_master_nodes=node1
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      networks:
+        - elastic
+  
+    node2:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.7.0
+      hostname: node2
+      environment:
+        - node.name=node2
+        - cluster.name=es-docker-cluster
+        - discovery.seed_hosts=node1
+        - cluster.initial_master_nodes=node1
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      networks:
+        - elastic
+  
+  networks:
+    elastic:
+      driver: overlay
+  ```
+
+  - Stack을 배포한다.
+
+  ```bash
+  $ docker stack deploy --compose-file <docker-compose.yml file path> <stack name>
+  ```
+
+
+
+- Label을 사용하여 node가 실행될 server 지정하기.
+
+  - 두 Docker node에 label을 추가한다.
+
+  ```bash
+  $ docker node update --label-add server=foo <node1>
+  $ docker node update --label-add server=bar <node2>
+  ```
+
+  - Docker compose file을 아래와 같이 수 정한다.
+    - `deploy.placement.constraints`에 위에서 설정한 label을 추가한다.
+    - 위에서 설정한 label은 `node.labels`를 통해 접근하면 된다.
+
+  ```yaml
+  version: '3.2'
+  
+  
+  services:
+    node1:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.7.0
+      hostname: node1
+      environment:
+        - node.name=node1
+        - cluster.name=es-docker-cluster
+        - discovery.seed_hosts=node2
+        - cluster.initial_master_nodes=node1
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      networks:
+        - elastic
+      deploy:
+        placement:
+          constraints:
+            - node.labels.server==foo
+  
+    node2:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.7.0
+      hostname: node2
+      environment:
+        - node.name=node2
+        - cluster.name=es-docker-cluster
+        - discovery.seed_hosts=node1
+        - cluster.initial_master_nodes=node1
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      networks:
+        - elastic
+      deploy:
+        placement:
+          constraints:
+            - node.labels.server==bar
+  
+  networks:
+    elastic:
+      driver: overlay
+  ```
+
+  - Stack을 배포한다.
+    - Docker node1에 Elasticsearch node1이 배포되고, Docker node2에 Elasticsearch node2가 배포된다.
+
+
+  ```bash
+  $ docker stack deploy --compose-file <docker-compose.yml file path> <stack name>
+  ```
+
+
+
+
+
+
 
 
 
