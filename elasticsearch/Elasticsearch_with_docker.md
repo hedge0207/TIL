@@ -721,7 +721,6 @@ https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-discover
   services:
     node1:
       image: docker.elastic.co/elasticsearch/elasticsearch:8.7.0
-      hostname: node1
       environment:
         - node.name=node1
         - cluster.name=es-docker-cluster
@@ -740,7 +739,6 @@ https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-discover
   
     node2:
       image: docker.elastic.co/elasticsearch/elasticsearch:8.7.0
-      hostname: node2
       environment:
         - node.name=node2
         - cluster.name=es-docker-cluster
@@ -761,7 +759,7 @@ https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-discover
     elastic:
       driver: overlay
   ```
-
+  
   - Stack을 배포한다.
 
   ```bash

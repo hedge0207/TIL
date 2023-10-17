@@ -838,7 +838,7 @@
   ```
 
   - 만일 ServerA에서 `docker swarm init` 실행시에 token을 확인하지 못했다면 아래 명령어를 입력하여 token을 확인할 수 있다.
-    - Worker node용 token과 manager용 token이 따로 생성되므로, worker를 입력해줘야한다.
+    - Worker node용 token과 manager용 token이 따로 생성되므로, worker를 입력해줘야한다.fㄹ
 
   ```bash
   $ docker swarm join-token worker
@@ -971,6 +971,8 @@
 
   - 만일 제외하려는 node가 manager node일 경우 매우 주의해서 제외시켜야한다.
     - Manager node를 강제로 제거하려 할 경우 cluster가 기능을 멈출 수 있다.
+  
+  - Cluster에서 모든 node가 제외되면 swarm mode가 종료된다.
 
 
 
@@ -1060,12 +1062,6 @@
   $ docker service scale frontend=50
   $ docker service update --replicas=50 frontend
   ```
-
-
-
-- 
-
-
 
 
 

@@ -28,7 +28,7 @@
     - 새로운 stack을 배포하거나, 기존 stack을 update하기 위해 사용한다.
 
   ```bash
-  $ docker stack deploy --compose-file docker-compose.yml
+  $ docker stack deploy --compose-file docker-compose.yml <stack_name>
   ```
 
   - `ls`
@@ -43,7 +43,7 @@
     - `--filter` 혹은 `-f` 옵션을 사용하여 filtering이 가능하다.
 
   ```bash
-  $ docker stack ps <stack>
+  $ docker stack ps <stack_name>
   ```
 
   - `services`
@@ -51,7 +51,7 @@
     - `--filter` 혹은 `-f` 옵션을 사용하여 filtering이 가능하다.
 
   ```bash
-  $ docker stack services search42
+  $ docker stack services <stack_name>
   ```
 
   - `rm`

@@ -1129,6 +1129,111 @@
 
 
 
+
+
+# Docker network
+
+- Docker network
+  - Docker network는 Docker container 들 사이의 통신이나 Docker container와 Docker 외부 application 사이의 통신에 사용된다.
+    - Docker container는 자신이 어떤 종류의 network에 attach되어 있는지 모르며, 자신이 통신하는 대상이 Docker container인지, Docker 외부 application인지도 모른다.
+    - Container가 `none` network driver를 사용하지 않는 한 container는 오직 network interface만 볼 수 있다.
+  - Container는 자신이 attach한 Docker network로부터 IP address를 받아온다.
+  - Container는 둘 이상의 network에 동시에 연결할 수 있다.
+
+
+
+- Port 공개하기
+
+  - 기본적으로 Docker container는 어떤 port도 container 밖으로 노출시키지 않는다.
+  - 그러나 compose file이나 stack file, 혹은 `docker run`, `docker create` 등의 명령어 실행 시에 특정 port를 container외부에서 접근할수 있도록 설정할 수 있다.
+  - 아래와 같은 형식을 따른다.
+    - `/udp`를 주지 않을 경우 기본적으로 TCP port가 되며, 명시적으로 `/tcp`와 같이 주는 것도 가능하다.
+
+  ```bash
+  -p [host:]<port>[/udp]:[host:]<port>[/udp]
+  ```
+
+  - 주의사항
+    - Container port를 공개하면 host machine뿐 아니라 host machine에 접근할 수 있는 모든 곳에서 공개된 container port를 통해 container에 접근이 가능하다.
+    - 만약 오직 host machine에서만 container의 공개된 port에 접근하도록 하고 싶다면 port를 공개할 때, 아래와 같이 container의 localhost IP를 함께 설정해주면 된다.
+
+  ```bash
+  -p 127.0.0.1:8080:80
+  ```
+
+  - 만약 container 내부와 container 외부의 통신이 목적이 아니라 container 들 사이의 통신이 목적이라면 굳이 port를 공개하지 않아도 된다.
+    - 이 경우 두 container를 같은 Docker network로 묶으면 된다.
+
+
+
+## Network driver
+
+- Network driver 개요
+
+  - `bridge`
+    - 기본 network driver로 driver를 설정하지 않을 경우 자동으로 bridge driver로 설정된다.
+    - 일반적으로 같은 host에 실행중인 container들 사이의 통신에 사용된다.
+  - `host`
+    - Docker container가 host machine의 network를 바로 사용하게 하는 driver이다.
+  - `overlay`
+    - 각기 다른 daemon에서 실행중인 container 사이의 통신에 사용된다.
+
+  - `none`
+    - Container의 network를 host machine과 다른 container부터 완전히 격리시킨다.
+    - Swarm service에서는 사용할 수 없다.
+
+
+
+- Bridge
+
+  - Bridge network는 network에 속한 이들 사이의 traffic을 전달해주는 Link Layer device이다.
+    - Bridge는 hardware device일 수도 있고 host machine의 kernel에서 동작하는 software device일 수도 있다.
+    - Docker의 경우 software bridge를 사용하며, 같은 bridge network에 연결된 container들 사이의 통신을 가능하게 하기 위해 사용한다.
+    - Docker bridge driver는 host machine에 규칙을 설정하여 다른 bridge network에 속한 container들끼리는 직접적으로 통신을 할 수 없게 막는다.
+  - Bridge network는 같은 Docker daemon에서 실행중인 container 사이에만 적용된다.
+    - 다른 daemon에서 실행중인 container들 사이에 통신을 하기 위해서는 OS level에서 routing을 관리하던가 overlay driver를 사용해야한다.
+
+  - Docker를 처음으로 실행할 때 자동으로 bridge라는 network가 생성된다.
+    - 만약 container를 생성할 때 network를 설정해 주지 않으면 bridge network에 연결된다.
+    - 그러나 bridge network를 직접 생성하여 사용하는 것이 자동으로 생성된 bridge network를 사용하는 것 보다 나으므로, 직접 생성하는 것이 권장된다.
+
+
+
+- Overlay
+
+  - 서로 다른 Docker daemon에서 실행중인 container들 사이의 통신에 사용하는 network driver이다.
+  - Swarm mode를 initialize하거나 이미 존재하는 Swarm cluster에 합류할 경우 `ingress`와 `docker_gwbridge`라는 2개의 docker network가 새로 생성된다.
+    - `ingress`는 swarm service와 관련된 data traffic을 처리하는 overlay network이다.
+    - Swarm service를 생성하면서 service를 별도의 overlay network에 연결시키지 않을 경우 `ingress`에 연결된다.
+    - `docker_gwbridge`는 Swarm으로 묶인 각기 다른 Docker daemon들을 연결해주는 역할을 하는 bridge network이다.
+  - Overlay network를 사용하고자 하는 Docker daemon은 아래의 port가 열려있어야 한다.
+    - TCP port 2377: Swarm cluster 관리를 위한 의사소통에 사용.
+    - TCP, IDP port 7946: node들 사이의 의사소통에 사용.
+    - UDP port 4789: overlay network의 traffic에 사용.
+
+  - Overlay network 생성하기
+
+  ```bash
+  $ docker network create -d overlay <network name>
+  ```
+
+  - `--attachable`
+    - Docker network를 생성할 때  `--attachable` option을 줄 수 있다.
+    - Swarm service에서 사용할 overlay network를 생성하거나, standalone container에서 다른 Docker daemon 위에서 실행중인 standalone container에 접근하기 위해서는 `--attachable` flag를 추가해야한다.
+    - 수동으로 실행한 container가 Swarm으로 실행된 service의 overlay network에 접근할 수 있게 해준다.
+    - 기본적으로 수동으로 실행된 container는 Swarm에서 사용하는 network에 접근할 수 없다.
+    - 이는 non-manager node에 접근할 수 있는 사람이 non-manager node에서 수동으로 container를 실행 시켜 Swarm service network에 접근하는 것을 방지하기 위한 제한이다.
+
+  ```bash
+  $ docker network create -d overlay --attachable <network name>
+  ```
+
+
+
+
+
+
+
 # Docker health check
 
 - health check
