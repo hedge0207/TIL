@@ -1031,3 +1031,21 @@
 
 
 
+- State Machine
+  - 컴퓨터 프로그램과 전자 논리 회로를 설계하는 데 사용하는 수학적 모델.
+    - 특정한 상태를 가질 수 있는 오토마타(추상 기계)이다.
+    - 한 번에 오로지 한 개의 상태만을 가진다.
+  - 유한 개의 state로 구성된 Finite State Machine(FSM)과 무한 개의 state로 구성되는 Infinite State Machine(ISM)으로 나뉜다.
+    - 실제 세계는 대부분 FSM으로 구성되어 있다.
+    - 그러므로 일반적으로 state machine이라 하면 FSM을 가리킨다.
+  - 개념
+    - State: Object의 상태를 의미한다.
+    - Transition: 한 state에서 다른 state로의 전이를 의미한다.
+    - Event(Transition Condition): Transition을 발생시키는 사건이다.
+    - Entry Action: 새로운 state로 transition 될 때 행해지는 동작이다.
+  - 장점
+    - Transition 이후 action에 의해서만 state가 변경되기에 안정성이 높다.
+    - 직관적이다.
+
+
+
