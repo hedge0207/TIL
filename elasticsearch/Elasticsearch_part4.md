@@ -296,22 +296,11 @@
 
 - `_source` 
 
-  - elasticsearch에서 색인과 저장은 다르다.
-    - 색인은 들어온 데이터로 역색인 구조를 만드는 것이다.
-    - 저장은 들어온 데이터를 그대로 저장하는 것이다.
-    - elasticsearch는 indexing 요청이 들어올 때 모든 필드를 역색인구조로 색인한다.
-    - 기본적으로 필드들은 색인되지만, 개별적으로 저장되지 않고 `_source`라 불리는 필드에 일괄적으로 저장된다.
-  - elasticsearch는 index된 데이터에 검색을 실행하고, store된 데이터를 반환한다.
-    - 즉, 실제 검색은 `_source` 필드에 행해지는 것이 아니라 역색인 테이블에 행해진다.
-  - `_source` 필드는 overhead를 불러올 수 있지만 아래와 같은 이유로 저장이 필요하다.
-    - response에 원본 데이터를 함께 반환하기 위해서(response의 `_source` 필드에 담아 보낸다)
-    - reindexing, update, update_by_query 등을 사용하기 위해서(당연하게도 원본 데이터가 없다면 reindexing, update 등이 불가능하다).
-    - highlight 기능을 사용하기 위해서.
   - `_source` 필드에 original data를 저장할지 저장하지 않을지 설정이 가능하다.
     - 아래와 같이 `_source.enabled`를 false로 주면 `_source` 필드를 저장하지 않는다.
     - 저장은 되지 않지만 색인은 진행되므로 검색은 가능하다.
     - 그러나 get이나 search를 했을 때 response에 `_source`필드, 즉 original data는 반환되지 않는다.
-
+  
   ```json
   // PUT test
   {
@@ -327,10 +316,10 @@
     }
   }
   ```
-
+  
   - 일부 데이터만 저장하거나, 일부 데이터를 저장하지 않는 것도 가능하다.
     - `_source.includes`, `_source.exclude`를 사용한다.
-
+  
   ```json
   // PUT test
   {
@@ -348,7 +337,7 @@
     }
   }
   ```
-
+  
   - `_source` field에 통으로 저장하지 않고 개별 field를 저장하는 것도 가능하다.
     - `store: true`로 주면 개별 필드를 저장할 수 있다.
     - 아래에서 title field는 field를 저장하고, content filed는 저장하지 않았다.
