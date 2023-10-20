@@ -439,6 +439,8 @@
 
 ## Query Auto Completion
 
+> https://staff.fnwi.uva.nl/m.derijke/wp-content/papercite-data/pdf/cai-survey-2016.pdf
+
 - Query Auto Completion(QAC)
   - 검색어의 prefix가 주어졌을 때, prefix를 확장시켜 full query를 제안하는 기능이다.
     - QAC는 두 가지 방식으로 사용자 경험을 향상시킨다.
@@ -490,6 +492,61 @@
     - 이는 거리를 한 손을 기준으로 계산했기 때문인 것으로 보이며, 양손을 기준으로 할 경우 결과가 달라질 수 있다.
 
 
+
+- QAC와 시간 사이의 관계
+  - QAC의 단계중 ranking 단계를 구현하는 가장 단순하면서도 직관적인 model은 most popular completion(MPC) model이다.
+    - 이 model은 자동 완성된 검색어 후보군들 중에서 검색 로그를 기반으로 가장 많이 검색된 query에 높은 rank를 매기는 방식이다.
+    - 이 모델은 현재의 query popularity가 과거나 현재나 변하지 않을 것이라는 가정 하에 rank를 매긴다.
+  - Query의 popularity는 시간에 따라 변화한다.
+    - 예를 들어 "movie"라는 query는 금~일요일에 가장 많이 검색 될 것이고, "new year"라는 검색어는 연말연시에 가장 많이 검색 될 것이며, 큰 지진이 발생한다면 지진과 관련된 검색어가 많이 검색될 것이다.
+    - Web이 점차 platform에 가까워질 수록 실시간으로 일어나는 사건에 영향을 많이 받으므로, 자연스럽게 검색에서 시간이 미치는 영향도 증가하게 된다.
+    - 예를 들어 도서관의 소장 도서를 검색하는 검색 시스템은 Naver나 Google 등의 검색 platform에 비해서 시간에 따른 영향을 덜 받는다.
+    - 실제로 Google의 경우 매일 가장 많이 검색 된 query 중 15%는 이전에는 검색된 적 없는 query이며, 이러한 query들은 대부분 그 날 발생한 사건들의 영향을 받는다.
+  - 따라서 자동 완성 후보군의 ranking 역시 시간에 따라 변화하는 query popularity를 고려해서 이루어져야한다.
+    - 이는 보통 검색 log에서 자동 완성된 검색어 후보군을 집계할 때 기간을 조정하는 식으로 이루어진다.
+    - 특히 변화하는 정보를 빨리 반영하는 것이 중요한 news 검색이나 상품 검색의 경우 집계 기간을 더 짧게 설정하는 것이 좋다.
+
+
+
+- 사용자 중심 QAC model
+  - 사용자가 검색한 검색어를 분석함으로써 사용자가 원하는 것을 보다 잘 파악할 수 있다.
+  - 사용자 중심 QAC model은 크게 두 종류로 나눌 수 있다.
+    - 사용자가 현재 session에서 검색한 log들만 고려하는 방법(short-term).
+    - 사용자가 검색한 모든 log들을 고려하난 방법(long-term).
+    - 일반적으로 short-term search log가 long-term search log에 비해 더 정확한 후보를 제시할 수 있다.
+  - 두 방법 모두 방식은 유사하며, 두 방식을 조합하여 사용하는 것도 가능하다.
+    - 먼저 사용자가 입력한 prefix에 대한 후보군을 추출하고 vector화한다.
+    - 사용자가 검색한 query들(session내 혹은 전체)을 vector화 하고 후보군을 vector화 한 값과 cosine similarity를 구해서 높은 순으로 ranking을 매긴다.
+    - 만약 두 방식을 조합한다면 기본적으로 모든 검색 log를 대상으로 하되, session 내에서 검색한 query인 경우 가중치를 주는 방식을 사용할 수 있을 것이다.
+
+
+
+- QAC 평가 지표
+
+  - Mean Reciprocal Rank(MRR)
+    - QAC 평가뿐 아니라 특정 순위가 올바르게 매겨졌는지를 평가하는데 널리 사용되는 지표이다.
+  - Reciprocal Rank(RR)은 아래와 같이 구한다.
+    - $p$가 사용자가 입력한 prefix, $q$가 전체 query set $Q$의 원소일 때, $Q_I(p)$는 $p$에 대한 QAC 후보이다.
+    - $q'$는 사용자가 최종적으로 선택한 query이다.
+
+  $$
+  RR = 
+  \begin{cases}
+  1 \over rank\ \ of \ \ q'\ in\ \ Q_I(p), & \mbox{if }q'\in Q_I(p)\\
+  0, & \mbox{otherwise.}
+  \end{cases}
+  $$
+
+  - MRR은 전체 RR 값의 합을 시행 횟수로 나눠서 구한다.
+    - 예를 들어 총 4번의 시행의 결과가 아래와 같았다고 가정해보자.
+    - 사용자가 세 번째로 제시된 자동 완성 검색어를 선택했다. → RR은 1/3
+    - 사용자가 네 번째로 제시된 자동 완성 검색어를 선택했다. → RR은 1/4
+    - 사용자가 첫 번째로 제시된 자동 완성 검색어를 선택했다. → RR은 1
+    - 사용자가 두 번째로 제시된 자동 완성 검색어를 선택했다. → RR은 1/2
+    - MRR은 $(1/3+1/4+1+1/2) / 4$가 된다.
+  - MRR 방식의 문제점
+    - MRR은 특정 prefix로 후보군을 만드는 난이도는 고려하지 않고, 모든 prefix를 동일하게 취급한다.
+    - 예를 들어 "c"라는 prefix로 후보군을 만드는 것이 "z"라는 prefix로 후보군을 만드는 것 보다 더 어려운데, 이는 "c"가 "z"보다 더 흔한 prefix이기 때문에 보다 많은 후보군을 가질 것이기 때문이다.
 
 
 

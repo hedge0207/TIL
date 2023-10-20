@@ -156,19 +156,19 @@
     - 또한 text type에는 사용할 수 없는 doc_values와 달리 fielddata는 text type에도 사용할 수 있다.
   - 구조 예시
     - key-value 기반이 아닌 column 기반임을 명심해야한다.
-  
+
   | fieldA | fieldB |
   | ------ | ------ |
   | value1 | value1 |
   | value2 | value2 |
   | value3 | value3 |
-  
+
   - Doc-value-only-fields
     - numeric, date, boolean, ip, geo_point, keyword type등은 index되지 않아도 doc values가 활성화 되었다면 검색이 가능하다.
     - 단, 검색 속도는 index되었을 때 보다 훨씬 느리다.
     - 그러나 disk 사용량은 훨씬 줄어든다는 장점이 있다.
     - 따라서 거의 검색되지 않는 필드를 대상으로는 아래와 같이 index는 false로 주고 doc value만 활성화(아무 옵션을 주지 않으면 기본적으로 활성화 된다)하여 사용하는 것도 좋은 선택이다.
-  
+
   ```json
   PUT my-index-000001
   {
@@ -182,11 +182,11 @@
     }
   }
   ```
-  
+
   - doc values 비활성화하기
     - doc values를 지원하는 모든 field는 기본적으로 doc values가 활성화되어있다.
     - 만일 비활성화 시키고자 한다면 아래와 같이 하면 된다.
-  
+
   ```json
   PUT my-index-000001
   {
@@ -198,6 +198,45 @@
         }
       }
     }
+  }
+  ```
+
+  - `doc_values`를 disable한 상태로 field를 생성하면 aggregation과 sorting이 불가능하다.
+
+  ```json
+  // PUT test
+  {
+    "mappings": {
+      "properties": {
+        "foo":{
+          "type":"keyword",
+          "doc_values": false
+        }
+      }
+    }
+  }
+  
+  // GET test/_search
+  {
+    "aggs": {
+      "my_terms": {
+        "terms": {
+          "field": "foo",
+          "size": 10
+        }
+      }
+    }
+  }
+  
+  // GET test/_search
+  {
+    "sort": [
+      {
+        "foo": {
+          "order": "desc"
+        }
+      }
+    ]
   }
   ```
 
