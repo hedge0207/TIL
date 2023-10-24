@@ -1065,6 +1065,79 @@
 
 
 
+- Label 설정
+
+  - Service 실행시 label을 따로 설정하지 않으면 service의 container들은 자동으로 각 node에 고르게 분배되어 실행된다.
+  - Node에 아래와 같이 label을 설정한다.
+    - `key=value` 형태로 설정할 수 있으며, key만 넣을 수도 있다(key만 넣을 경우 value는 빈 문자열이 된다).
+    - `--label-rm`을 통해 삭제가 가능하다.
+  
+  ```bash
+  $ docker node update --label-add foo=bar <node ID>
+  ```
+  
+    - node에 label이 잘 설정 됐는지 확인하기
+      - `Spec.Labels`에서 확인할 수 있다.
+  
+  ```bash
+  $ docker node inspect <node>
+  ```
+  
+    - Service 생성시 아래와 같이 `--constraint` 옵션을 통해 task를 실행할 node를 설정할 수 있다.
+      - `==`를 통해 배포할 node를 설정할 수 있고, `!=`를 통해 배포하지 않을 node를 설정할 수 있다.
+      - Service의 label을 설정하는`--label` option이나 container의 label을 설정하는 `--container-label`이 아닌 `--constraint` option을 사용한다는 것에 주의해야 한다.
+  
+  ```bash
+  $ docker service create --constraint node.labels.foo==bar <image>
+  ```
+  
+  - Compose file에서는 아래와 같이 설정하면 된다.
+  
+  ```yaml
+    version: '3.2'
+  
+    services:
+      service_name:
+  
+      # ...
+  
+      deploy:
+        placement:
+          constraints:
+            - node.labels.foo==bar
+  ```
+  
+    - Service에 constraint가 잘 설정되었는지 확인
+      - `Spec.TaskTemplate.Placement.Constraints`에서 확인할 수 있다.
+  
+  ```bash
+  $ docker service inspect <service>
+  ```
+  
+    - Service 실행시 node에 설정되지 않은 label을 설정할 경우 service는 생성되지만 task는 아무 node에도 할당되지 않은 상태가 된다.
+      - 만약 service 생성시 label을 잘못 입력했다면 아래와 같이 constraint를 update해준다.
+  
+  ```bash
+  # 기존 constraint를 삭제하고
+  $ docker service update --constraint-rm node.labels.foo==bar
+  
+  # 새로운 constraint를 추가한다.
+  $ docker service update --constraint-add node.labels.foo==baz
+  ```
+  
+    - Task가 분배된 이후에 constraint를 변경할 경우, constraint에 맞게 task가 재분배된다.
+      - **정확히는 재분배가 아니라 기존 task를 종료하고 새로운 task를 실행하는 것이다.**
+      - 예를 들어 node1에 foo라는 label에 bar 값이 설정되어 있었고, node2에 foo라는 label에 baz라는 값이 설정되어 있다.
+      - Service를 생성할 때 constraint를 bar로 설정하면 모든 task가 node1에 분배될 것이다.
+      - 만일 추후에 아래와 같이 contraint를 update하면, 모든 task가 node2에서 재실행된다(node1의 모든 task가 종료되고, node2에서 새로운 task가 실행된다).
+      - 단, 이 경우 기존 node1에 생성된 task(container)는 삭제되지는 않고 정지되기만 한다.
+  
+  ```bash
+  $ docker service update --constraint-add node.labels.foo==baz
+  ```
+
+
+
 
 
 

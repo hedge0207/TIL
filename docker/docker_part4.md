@@ -14,6 +14,72 @@
 
 
 
+- Test 환경 구성
+
+  - Docker network 생성
+
+  ```bash
+  $ docker network create dind
+  ```
+
+  - DinD container 생성
+    - Swarm을 구성하기 위한 dind container 2개와 image를 공유하기 위한 Docker registry 1개를 생성한다.
+    - 위에서 생성한 Docker network를 사용한다.
+
+  ```yaml
+  version: '3.2'
+  
+  services:
+    dind1:
+      image: docker:dind
+      container_name: dind1
+      privileged: true
+      environment:
+        - DOCKER_TLS_CERTDIR=/certs
+      networks:
+        - dind
+    
+    dind2:
+      image: docker:dind
+      container_name: dind2
+      privileged: true
+      environment:
+        - DOCKER_TLS_CERTDIR=/certs
+      networks:
+        - dind
+    
+    registry:
+      image: registry:latest
+      container_name: docker-registry
+      networks:
+        - dind
+  
+  networks:
+    dind:
+      name: dind
+      external: true
+  ```
+
+  - dind1 container에서 swarm mode를 시작한다.
+
+  ```bash
+  $ docker swarm init
+  ```
+
+  - dind2 container를 swarm node로 합류시킨다.
+
+  ```bash
+  $ docker swarm join --token <token> dind1:2377
+  ```
+
+  - dind1 container에서 swarm이 잘 구성되었는지 확인한다.
+
+  ```bash
+  $ docker node ls
+  ```
+
+
+
 - Stack 관련 명령어
 
   - `config`
@@ -64,5 +130,6 @@
   
   
   
-  
+
+
 
