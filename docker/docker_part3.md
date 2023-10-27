@@ -976,6 +976,10 @@
 
 
 
+
+
+# Docker service
+
 - Docker service 관련 명령어
 
   - Service 생성
@@ -1031,6 +1035,7 @@
   ```
   
   - Service update하기
+    - 기존 task(container)를 정지시키고 변경 사항을 반영한 새로운 task(container)를 생성하는 방식으로 동작한다.
     - `--mount-add`/`--mount-rm`: service 생성시에 미처 추가하지 못한 volume 혹은 bind mount를 추가/삭제 할 수 있다(추가 방식은 create 할 때와 동일하며, 삭제시에는 target_path를 입력하면 된다).
     - `mount-add`시에는 모든 node에 mount하려는 source 파일이 있어야한다.
     - 이 외에도 publish할 port의 추가/삭제, network의 추가/삭제 등도 가능하다.
@@ -1039,9 +1044,10 @@
     - 그럼에도 task를 재생성 시키고자 한다면 `--force` flag를 주면 task가 무조건 재생성된다.
     - `--update-parallelism`: update를 동시에 실행할 최대 task의 개수를 설정한다(기본값은 0).
     - `--update-parallelism`를 적당한 값으로 주고, `--force` flag를 주면, 아무 변경 사항이 없더라도, `update` 명령어를 rolling restart에 사용할 수 있다.
+    
   
   ```bash
-  $ dockr service update [options] <service>
+  $ docker service update [options] <service>
   ```
   
   - Service rollback하기
@@ -1284,17 +1290,26 @@
 
 
 
+- Volume 관리
 
+  - Docker service를 생성할 때나, update할 때 volume을 추가하고, 제거할 수 있다.
+    - `--mount-add`의 `type`이 volume일 경우 src에는 volume의 이름을 받고, bind일 경우 host의 경로를 받는다.
+    - `--mount-rm`은 `type`이 volume일 때나 bind일 때나 모두 container 내부의 경로를 받는다.
 
+  ```bash
+  $ docker service update --mount-add type=bind,src=./test,dest=/app/test my-app
+  $ docker service update --mount-rm /app/test my-app
+  ```
 
-
-
-
-
-
-
-
-
+  - Docker service의 volume 관리시에 유의해야 할 점은 `docker service update` 명령어는 기존 container를 정지 시키고 새로운 container를 생성한다는 점이다.
+    - 따라서 만약 기존에 container 내에 없던 data를 대상으로 volume을 생성했다면 container 내에서 해당 data가 사라지게 된다.
+    - 또한 container 내에 이미 있던 data를 대상으로 volume을 생성했다 하더라도, 변경 사항이 모두 초기화된다.
+    - volume, bind-mount 모두 동일하다.
+  - Volume을 service 단위로 설정하더라도 volume의 관리는 swarm을 구성하는 개별 node들이 한다.
+    - 따라서 service를 제거하더라도 service에서 사용하던 volume은 제거되지 않으며, 이는 service를 생성하면서 함께 생성된 volume일 경우에도 마찬가지다.
+    - 또한 같은 service를 구성하는 task라 하더라도 각기 다른 docker daemon에서 실행 중이라면 volume의 sync가 맞지 않을 수 있다.
+    - 예를 들어 `--replicas`를 3으로 설정하고 volume을 설정하여 service를 생성했다고 가정해보자.
+    - Task 2개는 A서버에, task 1개는 B서버에 할당이 됐다고 할 때, A서버에 할당된 task 2개는 같은 volume을 사용하므로 data의 sync가 맞지만, B 서버에 할당된 task는 다른 volume을 사용하므로 sync가 맞지 않게 된다.
 
 
 

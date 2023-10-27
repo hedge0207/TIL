@@ -1449,10 +1449,15 @@
   - `-m(--message)`: 메시지를 지정한다.
   - `-c(--change)`:  커밋 할 때 Dockerfile 명령을 지정한다.
   - `-p(--pause)`: 컨테이너를 일시 정지하고 커밋한다.
-
+    - 기본값은 true로 commit시에 container를 일시 정지시킨다.
+    - 만약 정지를 원하지 않으면 명시적으로 false를 줘야한다.
+  
+  
   ```bash
   $ docker commit [옵션] <컨테이너 식별자> [이미지명[:태그명]]
   ```
+  
+  - Commit시에 volume이 설정되어 있는 data들은 포함되지 않는다.
 
 
 
