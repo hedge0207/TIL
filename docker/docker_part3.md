@@ -935,13 +935,13 @@
     - Node에 부여된 label은 이후에 스케줄링에 사용된다.
 
   ```bash
-  $ docker node update --label-add <key=value | key> <node 식별자>
+  $ docker node update --label-add <(key=value) | key> <node 식별자>
   ```
 
   - Label 삭제하기
 
   ```bash
-  $ docker node update --label-rm <key=value | key> <node 식별자>
+  $ docker node update --label-rm <(key=value) | key> <node 식별자>
   ```
 
 
@@ -975,6 +975,10 @@
   - Cluster에서 모든 node가 제외되면 swarm mode가 종료된다.
 
 
+
+
+
+# Docker service
 
 - Docker service 관련 명령어
 
@@ -1031,6 +1035,7 @@
   ```
   
   - Service update하기
+    - 기존 task(container)를 정지시키고 변경 사항을 반영한 새로운 task(container)를 생성하는 방식으로 동작한다.
     - `--mount-add`/`--mount-rm`: service 생성시에 미처 추가하지 못한 volume 혹은 bind mount를 추가/삭제 할 수 있다(추가 방식은 create 할 때와 동일하며, 삭제시에는 target_path를 입력하면 된다).
     - `mount-add`시에는 모든 node에 mount하려는 source 파일이 있어야한다.
     - 이 외에도 publish할 port의 추가/삭제, network의 추가/삭제 등도 가능하다.
@@ -1039,14 +1044,17 @@
     - 그럼에도 task를 재생성 시키고자 한다면 `--force` flag를 주면 task가 무조건 재생성된다.
     - `--update-parallelism`: update를 동시에 실행할 최대 task의 개수를 설정한다(기본값은 0).
     - `--update-parallelism`를 적당한 값으로 주고, `--force` flag를 주면, 아무 변경 사항이 없더라도, `update` 명령어를 rolling restart에 사용할 수 있다.
+    
   
   ```bash
-  $ dockr service update [options] <service>
+  $ docker service update [options] <service>
   ```
   
   - Service rollback하기
     - Service를 이전 버전(마지막으로 `docker service update`를 실행한 이전 version)으로 되돌린다.
-    - 특정 version을 지정할 수는 없고, 바로 직전 version으로 돌아가게 되는데, 직전 version에 대한 정보는 `docker service inspect` 명령어를 입력하여 확인할 수 있다.
+    - 특정 version을 지정할 수는 없고, 바로 직전 version으로 돌아가게 되는데, 직전 version에 대한 정보는 `docker service inspect` 명령어를 입력하여 확인할 수 있다(`PreviousSpec`을 확인하면 된다).
+    - Rollback은 이전 상태로 돌아가는 명령어로, rollback 자체도 다른 상태로 넘어가는 명령어이다.
+    - 따라서 rollback을 실행한 이후에 다른 상태 변화 없이 다시 rollback을 실행하면 rollback 이전의 상태로 다시 돌아갈 수 있다.
   
   ```bash
   $ docker service rollback [options] <service>
@@ -1064,6 +1072,244 @@
   ```
 
 
+
+- Label 설정
+
+  - Service 실행시 label을 따로 설정하지 않으면 service의 container들은 자동으로 각 node에 고르게 분배되어 실행된다.
+  - Node에 아래와 같이 label을 설정한다.
+    - `key=value` 형태로 설정할 수 있으며, key만 넣을 수도 있다(key만 넣을 경우 value는 빈 문자열이 된다).
+    - `--label-rm`을 통해 삭제가 가능하다.
+  
+  ```bash
+  $ docker node update --label-add foo=bar <node ID>
+  ```
+  
+    - node에 label이 잘 설정 됐는지 확인하기
+      - `Spec.Labels`에서 확인할 수 있다.
+  
+  ```bash
+  $ docker node inspect <node>
+  ```
+  
+    - Service 생성시 아래와 같이 `--constraint` 옵션을 통해 task를 실행할 node를 설정할 수 있다.
+      - `==`를 통해 배포할 node를 설정할 수 있고, `!=`를 통해 배포하지 않을 node를 설정할 수 있다.
+      - Service의 label을 설정하는`--label` option이나 container의 label을 설정하는 `--container-label`이 아닌 `--constraint` option을 사용한다는 것에 주의해야 한다.
+  
+  ```bash
+  $ docker service create --constraint node.labels.foo==bar <image>
+  ```
+  
+  - Compose file에서는 아래와 같이 설정하면 된다.
+  
+  ```yaml
+    version: '3.2'
+  
+    services:
+      service_name:
+  
+      # ...
+  
+      deploy:
+        placement:
+          constraints:
+            - node.labels.foo==bar
+  ```
+  
+    - Service에 constraint가 잘 설정되었는지 확인
+      - `Spec.TaskTemplate.Placement.Constraints`에서 확인할 수 있다.
+  
+  ```bash
+  $ docker service inspect <service>
+  ```
+  
+    - Service 실행시 node에 설정되지 않은 label을 설정할 경우 service는 생성되지만 task는 아무 node에도 할당되지 않은 상태가 된다.
+      - 만약 service 생성시 label을 잘못 입력했다면 아래와 같이 constraint를 update해준다.
+  
+  ```bash
+  # 기존 constraint를 삭제하고
+  $ docker service update --constraint-rm node.labels.foo==bar
+  
+  # 새로운 constraint를 추가한다.
+  $ docker service update --constraint-add node.labels.foo==baz
+  ```
+  
+    - Task가 분배된 이후에 constraint를 변경할 경우, constraint에 맞게 task가 재분배된다.
+      - **정확히는 재분배가 아니라 기존 task를 종료하고 새로운 task를 실행하는 것이다.**
+      - 예를 들어 node1에 foo라는 label에 bar 값이 설정되어 있었고, node2에 foo라는 label에 baz라는 값이 설정되어 있다.
+      - Service를 생성할 때 constraint를 bar로 설정하면 모든 task가 node1에 분배될 것이다.
+      - 만일 추후에 아래와 같이 contraint를 update하면, 모든 task가 node2에서 재실행된다(node1의 모든 task가 종료되고, node2에서 새로운 task가 실행된다).
+      - 단, 이 경우 기존 node1에 생성된 task(container)는 삭제되지는 않고 정지되기만 한다.
+  
+  ```bash
+  $ docker service update --constraint-add node.labels.foo==baz
+  ```
+
+
+
+- 가급적 특정 node에만 task 할당하기
+
+  - 위 예시에서 `--constraint` option을 통해 label을 설정할 경우, 해당 label이 설정된 node에만 task가 할당된다.
+    - 따라서 만약 일치하는 label이 설정된 node가 없을 경우 task는 할당되지 않은 상태로 남게 된다.
+  - `--placement-pref` option을 사용하면 label에 일치하는 node가 있을 경우 해당 node에 task를 할당하고, 없을 경우 아무 node에나 할당하도록 할 수 있다.
+    - `--placement-pref` option은 `<strategy>=<arg>`의 형태로 설정한다.
+    - 현재는 `spread` strategy만 사용할 수 있으며, `agr`에는 node에 설정한 label의 key를 입력하면 된다.
+    - `spread`는 인자로 받은 label key를 가진 모든 node에 균등하게 task를 분배하고, 더 이상 조건에 맞는 node가 없을 경우 나머지 node에 균등하게 분배하는 방식이다.
+
+  ```bash
+  $ docker service create --replicas 3 --placement-pref spread=foo <image>
+  ```
+
+  - Label의 value가 아닌 key만을 지정하지만 분배는 label의 value에 따라 이루어진다.
+
+    - 예를 들어 Docker swarm이 아래와 같이 구성되어 있다고 가정해보자.
+
+    - datacenter=east와 같은 label을 가진 node가 3대 있다.
+    - datacenter=west와 같은 label을 가진 node가 2대 있다.
+    - datacenter=south와 같은 label을 가진 node가 1대 있다.
+    - 이 경우 `replicas`가 9인 service를 아래와 같이 생성하면, task는 east라는 value를 가진 node group에 3개, west라는 value를 가진 node group에 3대, south라는 value를 가진 node group에 3대로 고르게 분배된다.
+    - 그리고 east라는 value를 가진 node 3대에는 task가 1개씩 분배되고, west라는 value를 가진 node 2대 중 1대에는 2개의 task가, 나머지 1대의 node에는 1개의 task가 분배되며 south라는 value를 가진 node 1대에는 3개의 task가 분배된다.
+
+  ```bash
+  $ docker service create --replicas 9 --placement-pref spread=node.labels.datacenter <image>
+  ```
+
+  - 상기했듯 균등하게 분배하고 난 후 더 이상 조건에 맞는 node가 없을 경우 조건이 맞지 않는 node들에 균등하게 분배한다.
+    - 예를 들어 `foo`라는 label을 가진 node 1대와, 갖지 않는 node 1대가 있다고 가정해보자.
+    - Replica의 개수를 4로 설정하고, `--placement-pref`를 `node.labels.foo`로 설정하여 service를 생성할 경우, 4개의 task는 label을 가진 node와 갖지 않은 node에 각 2개씩 배치된다.
+    - 즉 `--placement-pref`를 설정했다고 특정 label을 가진 node에 모두 task를 할당하는 것이 아니라, 특정 label을 가진 node에 최대한 균등하게 할당하고, 남는 task를 label을 갖지 않은 node에 다시 균등하게 할당한다.
+  
+  - Service update
+    - `--placement-pref-add`를 통해 추가가 가능하고, `--placement-pref-rm`을 통해 삭제가 가능하다.
+
+  ```bash
+  $ docker service update --placement-pref-add node.labels.foo <service>
+  $ docker service update --placement-pref-rm node.labels.foo <service>
+  ```
+  
+
+
+
+- Image update와 rollback
+
+  - `docker service rollback` 명령어는 Docker service를 마지막 `docker service update` 명령어를 실행하기 이전의 상태로 돌리는 명령어이다.
+  - Image의 경우 image의 id가 아닌 image의 이름을 기반으로 rollback이 실행되기 때문에, update 전후에 image의 내용이 달라졌더라도 이름이 같으면 rollback이 예상대로 동작하지 않을 수 있다.
+  - 예를 들어 아래와 같은 app을 만든다.
+
+  ```python
+  import time
+  import logging
+  
+  
+  logger = logging.getLogger("simple_example")
+  logger.setLevel(logging.DEBUG)
+  
+  sh = logging.StreamHandler()
+  sh.setLevel(logging.DEBUG)
+  
+  formatter = logging.Formatter("[%(asctime)s] - [%(levelname)s] - %(message)s")
+  sh.setFormatter(formatter)
+  
+  logger.addHandler(sh)
+  
+  
+  try:
+      while True:
+          logger.info("Foo")
+          time.sleep(1)
+  except (KeyboardInterrupt, SystemExit):
+      pass
+  ```
+
+  - 이를 Docker image로 build한다.
+    - 생성시에 version을 명시하지 않았기 때문에 latest로 생성된다.
+
+  ```bash
+  $ docker build -t my-app .
+  ```
+
+  - 위에서 build한 image로 service를 생성한다.
+
+  ```bash
+  $ docker service create --replicas 2 --name my-service my-app
+  ```
+
+  - 의도한 대로 1초에 1번씩 "Foo"가 출력되는지 확인한다.
+
+  ```bash
+  $ docker logs <container_name>
+  ```
+
+  - App이 "Foo"가 아닌 "Bar"를 출력하도록 아래와 같이 app을 수정한다.
+
+  ```python
+  # ...
+  try:
+      while True:
+          logger.info("Bar")
+          time.sleep(1)
+  except (KeyboardInterrupt, SystemExit):
+      pass
+  ```
+
+  - 수정한 app을 다시 build한다.
+    - 마찬가지로 version을 명시하지 않았기 때문에 latest로 생성된다.
+
+  ```bash
+  $ docker build -t my-app .
+  ```
+
+  - 새로 build한 image로 service를 update한다.
+    - image의 이름이 변경되지 않았으므로, docker service 입장에서는 변경 사항이 있는지 알 수 없고, 따라서 그냥 update를 실행하면 변경 사항이 없다고 판단하여 task들을 재실행 시키지 않는다.
+    - 따라서 `--force` option을 주어 강제적으로 task들을 재시작 시킨다.
+
+  ```bash
+  $ docker service upcate --image my-app --force my-service
+  ```
+
+  - 의도한 대로 1초에 1번씩 "Bar"가 출력되는지 확인한다.
+
+  ```bash
+  $ docker logs <container_name>
+  ```
+
+  - 다시 "Foo"가 출력되도록 rollback을 시키려고 하는데, rollback 전에 `PreviousSpec`을 확인한다.
+    - Service를 update하기 이전에 사용하던 image의 이름은 `my-app:latest`였고, update 후에 사용하는 image의 이름도 `my-app:latest`이다.
+    - 두 image는 각기 "Foo", "Bar"를 출력하는, 다른 내용을 가진 image이지만 이름은 완전히 동일하다.
+    - Rollback을 실행하면 `PreviousSpec.TaskTemplate.ContainerSpec.Image` 부분에 적혀 있는 image를 사용하여 task들을 재실행한다.
+    - `PreviousSpec.TaskTemplate.ContainerSpec.Image` 부분을 확인해보면 `my-app:latest`라고 적혀 있는 것을 확인할 수 있다.
+    - 따라서 rollback을 해도 `my-app:latest`라는 이름의 image를 찾아 task를 재실행하므로 "Foo"를 출력하는 상태로는 돌아갈 수 없다.
+
+  ```bash
+  $ docker inspect my-service
+  ```
+
+  - 결론
+    - Service에서 사용중인 image의 tag와 update할 image의 tag는 다르게 설정하는 것이 좋다.
+    - 두 image의 이름이 같을 경우 image를 update할 때도 `--force` option을 주어야 하며, 이전 image로 service를 되돌리는 rollback도 불가능하기 때문이다.
+    - 만약 위 예시에서 update 전에 사용한 image의 이름과 update에 사용한 image의 이름을 각기 `my-app:1.0.0`, `my-app:2.0.0`과 같이 다르게 줬으면, update시에 `--force` option을 줄 필요도 없고, rollback도 예상대로 동작하게 된다.
+
+
+
+- Volume 관리
+
+  - Docker service를 생성할 때나, update할 때 volume을 추가하고, 제거할 수 있다.
+    - `--mount-add`의 `type`이 volume일 경우 src에는 volume의 이름을 받고, bind일 경우 host의 경로를 받는다.
+    - `--mount-rm`은 `type`이 volume일 때나 bind일 때나 모두 container 내부의 경로를 받는다.
+
+  ```bash
+  $ docker service update --mount-add type=bind,src=./test,dest=/app/test my-app
+  $ docker service update --mount-rm /app/test my-app
+  ```
+
+  - Docker service의 volume 관리시에 유의해야 할 점은 `docker service update` 명령어는 기존 container를 정지 시키고 새로운 container를 생성한다는 점이다.
+    - 따라서 만약 기존에 container 내에 없던 data를 대상으로 volume을 생성했다면 container 내에서 해당 data가 사라지게 된다.
+    - 또한 container 내에 이미 있던 data를 대상으로 volume을 생성했다 하더라도, 변경 사항이 모두 초기화된다.
+    - volume, bind-mount 모두 동일하다.
+  - Volume을 service 단위로 설정하더라도 volume의 관리는 swarm을 구성하는 개별 node들이 한다.
+    - 따라서 service를 제거하더라도 service에서 사용하던 volume은 제거되지 않으며, 이는 service를 생성하면서 함께 생성된 volume일 경우에도 마찬가지다.
+    - 또한 같은 service를 구성하는 task라 하더라도 각기 다른 docker daemon에서 실행 중이라면 volume의 sync가 맞지 않을 수 있다.
+    - 예를 들어 `--replicas`를 3으로 설정하고 volume을 설정하여 service를 생성했다고 가정해보자.
+    - Task 2개는 A서버에, task 1개는 B서버에 할당이 됐다고 할 때, A서버에 할당된 task 2개는 같은 volume을 사용하므로 data의 sync가 맞지만, B 서버에 할당된 task는 다른 volume을 사용하므로 sync가 맞지 않게 된다.
 
 
 

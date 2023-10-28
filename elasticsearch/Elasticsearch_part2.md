@@ -1028,6 +1028,149 @@
 
 
 
+## Shard allocation awareness
+
+- 같은 custom attribute 값을 가지는 node들에 shard를 할당하지 않고는 모든 shard를 할당할 수 없는 상태라면, Elasticsearch는 같은 custom attribute를 가진 node라 할지라도 shard를 할당한다.
+  - 예를 들어 node1과 node2는 같은 server에 위치한다.
+  - Primary는 node1, replica는 node2에 저장되어 있다.
+  - 이 상황에 node1가 node2가 실행되고 있는 server에 문제가 생겨 server가 종료될 경우, 모든 data를 사용할 수 없게 된다.
+  - 따라서 node1과 node2에 같은 data가 저장되지 않도록 둘의 custom attribute 값을 동일하게 설정했다.
+  - 그런데, cluster에는 node1과 node2 두 개의 node 밖에 없어 둘 중 하나에 replica를 저장하지 않으면, replica는 미할당 상태로 남게 된다.
+  - 이 경우 Elasticsearch는 어쩔 수 없이 replica shard를 둘 중 하나의 node에 저장한다.
+
+
+
+- Shard allocation awareness 사용해보기
+
+  - Docker container용 network를 생성한다.
+
+  ```bash
+  $ docker network create elasticsearch
+  ```
+
+  - 아래와 같이 cluster를 구성한다.
+    - `server`라는 custom attribute에 두 node 다 A라는 값을 설정한다.
+
+  ```yaml
+  version: '3.2'
+  
+  
+  services:
+    node_a:
+      image: elasticsearch:8.7.0
+      container_name: node_a
+      environment:
+        - node.name=node_a
+        - node.attr.server=A      # custom attr 설정
+        - cluster.name=test-cluster
+        - cluster.initial_master_nodes=node_a
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      ports: 
+        - 9206:9200
+      restart: always
+      networks:
+        - elasticsearch
+    
+    node_b:
+      image: elasticsearch:8.7.0
+      container_name: node_b
+      environment:
+        - node.name=node_b
+        - node.attr.server=A      # custom attr 설정
+        - cluster.name=test-cluster
+        - discovery.seed_hosts=node_a
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      restart: always
+      networks:
+        - elasticsearch
+  
+  networks:
+    elasticsearch:
+        external:
+          name: elasticsearch
+  ```
+
+  - Cluster의 setting을 아래와 같이 변경한다.
+
+  ```json
+  // PUT /_cluster/settings
+  {
+    "persistent" : {
+      "cluster.routing.allocation.awareness.attributes": "server"
+    }
+  }
+  ```
+
+  - Index를 생성한다.
+
+  ```json
+  // PUT test
+  {
+    "settings": {
+      "number_of_replicas": 1,
+      "number_of_shards": 1
+    }
+  }
+  ```
+
+  - Shard를 확인한다.
+    - 결과를 보면 같은 `server` custom attribute 값을 가진 두 노드에 각기 primary와 replica가 할당된 것을 볼 수 있다.
+    - 이는 같은 custom attribute 값을 가진 node에 shard를 할당하지 않고는 모든 shard를 할당할 수 없기 때문이다.
+
+  ```http
+  GET _cat/shards
+  ```
+
+  - 확인을 위해 새로운 node를 아래와 같이 추가한다.
+    - node_c는 node_a, node_b와 달리 `node.attr.server`의 값을 B로 설정한다.
+
+  ```yaml
+  version: '3.2'
+  
+  
+  services:
+    node_c:
+      image: elasticsearch:8.7.0
+      container_name: node_c
+      environment:
+        - node.name=node_c
+        - node.attr.server=B
+        - cluster.name=test-cluster
+        - discovery.seed_hosts=node_a
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      restart: always
+      networks:
+        - elasticsearch
+  
+  networks:
+    elasticsearch:
+        name: elasticsearch
+        external: true
+  ```
+
+  - 다시 한 번 shard를 확인해보면 Elasticsearch가 기존에 node_a나 node_b에 있던 shard들을 node_c로 재할당하여 같은 custom attribute 값을 가진 node_a와 node_b가 같은 shard를 같지 않게 하는 것을 확인할 수 있다.
+
 
 
 ## Circuit Breaker Settings

@@ -29,7 +29,7 @@
   - ES는 4개의 프로퍼티를 expose한다.
 
     - `${sys:es.logs.base_path}`: log파일의 위치, `config/elasticsearch.yml`에 설정해준 `path.logs` 값으로 설정된다.
-    - `${sys:es.logs.cluster_name}`: 클러스터명, 
+    - `${sys:es.logs.cluster_name}`: 클러스터명
     - `${sys:es.logs.node_name}`: 노드명
     - `${sys:file.separator}`: `/`
 
@@ -80,7 +80,7 @@
 
 
 
-# Slow Log
+## Slow Log
 
 - 개요
   - ES를 사용하다보면 모든 검색, 색인 로그가 아닌 일정 시간 이상 걸린 검색, 색인 로그만 보고 싶을 때가 있다.
@@ -94,9 +94,9 @@
 - 구성
 
   - 크게 search-query, search-fetch, indexing의 세 개로 나눌 수 있다.
-  - search-query는 query 검색 시에 속도 별 로그를 남기는 것이다.
+  - search-query는 각 shard에서 query를 검색할 때 속도 별 로그를 남기는 것이다.
     - `index.search.slowlog.threshold.query.<level>: <시간>`
-  - search-fetch는 fetch 검색 시에 속도 별 로그를 남기는 것이다.
+  - search-fetch는 fetch(각 shard 별로 검색 후 검색 결과를 종합)할 때 속도 별 로그를 남기는 것이다.
     - `index.search.slowlog.threshold.fetch.<level>: <시간>`
   - indexing은 indexing시에 속도 별 로그를 남기는 것이다.
     - `index.indexing.slowlog.threshold.index.<level>: <시간>`
@@ -137,12 +137,19 @@
     "index.indexing.slowlog.source": "1000"
   }
   ```
+  
+  - `index.indexing.slowlog.source` option
+    - 기본적으로 Elasticsearch는 slowlog에 _source를 최대 1000자까지만 저장한다.
+    - `index.indexing.slowlog.source` option을 통해 저장할 최대 character의 개수를 변경할 수 있다.
+    - 만일 이 값을 0이나 false로 줄 경우 _source를 저장하지 않는다.
+  - `index.indexing.slowlog.reformat`
+    - Elasticsearchs는 
 
 
 
 - 테스트
 
-  - 아래에서 search-fetch에 소요되는 시간이 0ms이상이면 info로 로그가 뜨도록 설정했으므로 어떤 fetch 검색을 해도 info로 로그가 뜨게 된다.
+  - 아래에서 search-fetch에 소요되는 시간이 0ms이상이면 info로 로그가 기록되도록 설정했으므로 어떤 fetch 검색을 해도 info로 로그가 뜨게 된다.
   - 로그의 형태는 운영체제에 따라 다른데 docker로 ES를 띄워서 사용할 경우 stdout으로 출력된다.
 
   ```bash
@@ -207,13 +214,14 @@
   - ES 공식 이미지로 Docker Container를 생성했을 경우 slowlog를 파일로 저장하지 않고 stdout으로 출력한다.
     - slowlog뿐 아니라 gc를 제외한 대부분의 로그를 파일로 저장하지 않는다.
     - 로그의 type이 운영체제마다 다른데 Docker를 제외한 대부분의 경우에는 File로 저장한다.
-
-  - 파일로 저장되도록 수정하기
-
+  - 파일로 저장되도록`log4j2.properties` file을 수정해야한다.
+    - Inline으로 주석을 달면 실행되지 않으므로 주의해야한다.
+  
+  
   ```properties
   # 기존
   ######## Search slowlog JSON ####################
-  appender.index_search_slowlog_rolling.type = Console	# 콘솔로 출력하게 설정되어 있다.
+  appender.index_search_slowlog_rolling.type = Console
   appender.index_search_slowlog_rolling.name = index_search_slowlog_rolling
   appender.index_search_slowlog_rolling.layout.type = ESJsonLayout
   appender.index_search_slowlog_rolling.layout.type_name = index_search_slowlog
@@ -221,10 +229,9 @@
   
   #################################################
   
-  
   # 파일로 저장하도록 수정
   ######## Search slowlog JSON ####################
-  appender.index_search_slowlog_rolling.type = RollingFile	# 파일로 저장하도록 수정한다.
+  appender.index_search_slowlog_rolling.type = RollingFile
   appender.index_search_slowlog_rolling.name = index_search_slowlog_rolling
   appender.index_search_slowlog_rolling.fileName = ${sys:es.logs.base_path}${sys:file.separator}${sys:es.logs\
     .cluster_name}_index_search_slowlog.json
@@ -241,11 +248,11 @@
   appender.index_search_slowlog_rolling.strategy.max = 4
   #################################################
   ```
-
+  
   - `.log` 파일로 저장하기
     - 위 설정은 json파일로 저장하도록 설정한 것이고 `.log` 파일로 저장하는 것도 가능하다.
     - 둘 중 하나를 선택해야 하는 것은 아니고, 둘 다 사용이 가능하다.
-
+  
   ```properties
   # json 파일로 저장
   ######## Search slowlog JSON ####################
@@ -285,6 +292,59 @@
   ```
 
 
+
+- Indexing log
+
+  - 아래와 같이 `log4j2.properties` file을 수정한다.
+
+  ```properties
+  ######## Indexing slowlog JSON ##################
+  appender.index_indexing_slowlog_rolling.type = RollingFile
+  appender.index_indexing_slowlog_rolling.name = index_indexing_slowlog_rolling
+  appender.index_indexing_slowlog_rolling.fileName = ${sys:es.logs.base_path}${sys:file.separator}${sys:es.logs.cluster_name}_index_slowlog.json
+  appender.index_indexing_slowlog_rolling.layout.type = ESJsonLayout
+  appender.index_indexing_slowlog_rolling.layout.type_name = index_indexing_slowlog
+  appender.index_indexing_slowlog_rolling.filePattern = ${sys:es.logs.base_path}${sys:file.separator}${sys:es.logs.cluster_name}_index_slowlog-%i.json.gz
+  appender.index_indexing_slowlog_rolling.policies.type = Policies
+  appender.index_indexing_slowlog_rolling.policies.size.type = SizeBasedTriggeringPolicy
+  appender.index_indexing_slowlog_rolling.policies.size.size = 1GB
+  appender.index_indexing_slowlog_rolling.strategy.type = DefaultRolloverStrategy
+  appender.index_indexing_slowlog_rolling.strategy.max = 4
+  
+  #################################################
+  ```
+
+  - Index를 생성하고 slow log setting을 변경한다.
+
+  ```json
+  // PUT index_test
+  
+  // PUT index_test/_settings
+  {
+    "index.indexing.slowlog.threshold.index.info": "0ms"
+  }
+  ```
+
+  - 아래와 같이 bulk로 색인을 실행한다.
+
+  ```json
+  from elasticsearch import Elasticsearch, helpers
+  from faker import Faker
+  
+  
+  es_client = Elasticsearch("http://localhost:9200")
+  fake = Faker("ko_KR")
+  
+  docs = [{"_index":"index_test", "_source":{"text":fake.catch_phrase()}} for _ in range(100)]
+  helpers.bulk(es_client, docs)
+  ```
+
+  - Log file을 확인해보면 bulk로 색인한 모든 문서가 log로 남아있는 것을 볼 수 있다.
+    - 색인 대상 index의 shard를 가지고 있는 node에만 log가 기록된다.
+
+  
+
+  
 
 
 
