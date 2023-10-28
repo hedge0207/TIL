@@ -46,6 +46,33 @@
 
 
 
+- Cluster
+  - MongoDB는 고가용성과 확장성을 위해 clustering을 지원한다.
+  - Replica set
+    - Data를 서로 공유하는 MongoDB node들을 의미한다.
+    - 하나의 primary node와 0개 이상의 secondary node로 구성된다.
+    - Primary node는 모든 쓰기 요청을 받는 역할을 하며, primary node의 모든 변경사항은 operaion log(oplog)라 불리는 collection에 기록된다.
+    - Secondary node는 primary node의 operation log를 복제하여 primary node의 data와 동일한 data를 유지하는 역할을 한다.
+    - Primary와 secondary node의 data 복제 작업은 비동기적으로 동작하기에 동일하지 않은 상태가 발생할 수도 있다.
+    - 만약 primary node가 사용 불가능한 상태가 되면 secondary node들 중에서 새로운 primary node를 선출한다.
+    - Arbiter node는 primary나 secondary node의 역할은 수행하지 않고 오직 선출에만 관여하는 node이다.
+  - Replica set election이 발생하는 경우
+    - Replica set이 시작 될 때.
+    - Primary node가 사용 불가 상태일 때.
+    - Replica set에 새로운 node가 합류할 때.
+    - Secondary node가 primary node와 연결이 끊겼을 때.
+  - Read preference
+    - 기본적으로 모든 읽기 작업은 primary node로 전달되지만 어떤 node로 전달할지 선택할 수도 있는데, 이를 read preference라 한다.
+    - primary, secondary, primary preferred, secondary preferred 등을 설정할 수 있다.
+    - 그러나 primary와 secondary 사이의 데이터 복제는 비동기적으로 발생하기에 secondary에서 read할 경우 최신 data가 아닐 수 있다는 점은 주의해야한다.
+  - Write concern
+    - Data를 작성할 때, 작성한 data가 cluster에 제대로 전파되는를 확인하기 위해서 write concern 옵션을 줄 수 있다.
+    - `w`에는 숫자를 설정하며, 이는 primary를 포함하여 몇 개의 node에서 쓰기 작업이 잘 되었는지 확인할지를 설정한다.
+    - 만약 0일 경우 쓰기 작업이 잘 되었는지 확인하지 않겠다는 의미이고, 1이면 쓰기 작업이 잘 되었는지 primary node에서만 확인하겠다는 의미이다.
+    - 만약 4라면 primary node + 3개의 secondary node에서 확인하겠다는 의미이다.
+    - `j`에는 journal이라 불리는 disk 내의 특수 구역에 data를 저장할지를 설정하며, journal에 저장된 data는 MongoDB를 복구할 때 사용한다.
+    - `wtimeout`은 응답이 올 때 까지 기다리는 시간을 설정한다.
+
 
 
 # MongoDB 설치하기
@@ -400,7 +427,6 @@
   # 인증이 필요할 경우
   client = MongoClient("<mongodb host>:<mongodb port>",username="<username>",password="<password>",authSource="admin")
   ```
-
 
 
 
