@@ -1232,6 +1232,213 @@
 
 
 
+## Docker overlay network
+
+- Overlay network도 마찬가지로 network 내에서 container name 혹은 service name으로 통신이 가능하다.
+
+
+
+- Standalone container들을 overlay network를 통해 통신시키는 방법
+
+  > 아래 예시는 dind들 간에 dind_network라는 network를 통해 통신해서 port를 따로 열어둘 필요가 없었지만 실제로 사용할 때는 위에서 설명한 port들이 열려있어야한다.
+
+  - 먼저 test를 위해 dind를 사용하여 2개의 Docker daemon을 실행시킨다.
+
+  ```yaml
+  version: '3.2'
+  
+  services:
+    dind1:
+      image: docker:dind
+      container_name: dind1
+      privileged: true
+      environment:
+        - DOCKER_TLS_CERTDIR=/certs
+      volumes:
+        - ./stack:/home/stack
+      networks:
+        - dind
+    
+    dind2:
+      image: docker:dind
+      container_name: dind2
+      privileged: true
+      environment:
+        - DOCKER_TLS_CERTDIR=/certs
+      volumes:
+        - ./stack:/home/stack
+      networks:
+        - dind
+  
+  networks:
+    dind:
+      name: dind_network
+  ```
+
+  - `dind1` container내부에서 아래 명령어를 실행하여 Swarm을 시작한다.
+
+  ```bash
+  $ docker swarm init
+  ```
+
+  - `dind2` container 내부에서 아래 명령어를 실행하여 Swarm에 node를 합류시킨다.
+
+  ```bash
+  $ docker swarm join --token <token> dind1:2377
+  ```
+
+  - 아래와 같이 server 역할을 할 app을 작성한다.
+
+  ```python
+  import logging
+  
+  from fastapi import FastAPI
+  import uvicorn
+  
+  logger = logging.getLogger("simple_example")
+  logger.setLevel(logging.DEBUG)
+  
+  sh = logging.StreamHandler()
+  sh.setLevel(logging.DEBUG)
+  
+  formatter = logging.Formatter("[%(asctime)s] - [%(levelname)s] - %(message)s")
+  sh.setFormatter(formatter)
+  
+  logger.addHandler(sh)
+  
+  app = FastAPI()
+  
+  @app.get("/")
+  def read_root():
+      logger.info("Hello World!")
+      return {"message":"Hello World!"}
+  
+  if __name__=="__main__":
+      uvicorn.run(app, host="0.0.0.0", port=8010)
+  ```
+
+  - 위 app을 build하기 위한 Dockerfile을 아래와 같이 작성한다.
+
+  ```dockerfile
+  FROM python:3.8.0
+  
+  COPY ./main.py /app/main.py
+  WORKDIR /app
+  
+  RUN pip install requests
+  
+  ENTRYPOINT ["python", "-u", "main.py"]
+  ```
+
+  - `dind1` container내부에서 build한다.
+
+  ```bash
+  $ docker build -t server:1.0.0 .
+  ```
+
+  - Client 역할을 할 app을 작성한다.
+    - `requests`를 사용하여 server container에서 실행 중인 app으로 요청을 보낸다.
+    - 요청을 보낼 host는 server 역할을 하는 app을 실행하는 container의 이름(`server`)을 적어준다.
+
+  ```python
+  import time
+  import logging
+  
+  import requests
+  
+  
+  logger = logging.getLogger("simple_example")
+  logger.setLevel(logging.DEBUG)
+  
+  sh = logging.StreamHandler()
+  sh.setLevel(logging.DEBUG)
+  
+  formatter = logging.Formatter("[%(asctime)s] - [%(levelname)s] - %(message)s")
+  sh.setFormatter(formatter)
+  
+  logger.addHandler(sh)
+  
+  
+  try:
+      while True:
+          logger.info(requests.get("http://server:8010").json())
+          time.sleep(1)
+  except (KeyboardInterrupt, SystemExit):
+      logger.info("Bye!")
+  ```
+
+  - 마찬가지로 Dockerfile을 작성하고
+
+  ```dockerfile
+  FROM python:3.8.0
+  
+  COPY ./main.py /app/main.py
+  WORKDIR /app
+  
+  RUN pip install requests
+  
+  ENTRYPOINT ["python", "-u", "main.py"]
+  ```
+
+  - Build한다.
+
+  ```bash
+  $ docker build -t client:1.0.0 .
+  ```
+
+  - `dind1`에서 overlay network를 생성한다.
+    - 이 때 `--attachable` option을 줘서 생성한다.
+    - 아직까지는 `dind1`에만 생성되고, `dind2`에는 생성되지 않는다.
+
+  ```bash
+  $ docker network create --driver=overlay --attachable my-network
+  ```
+
+  - `dind1`에서 container를 생성한다.
+
+  ```bash
+  $ docker run -d --network my-network --name server server:1.0.0
+  ```
+
+  - `dind2`에서 container를 실행한다.
+
+  ```bash
+  $ docker run -d --name client --network my-network client:1.0.0
+  ```
+
+  - 실행결과를 확인하면 `{'message':'Hello World'}`이 출력되는 것을 확인할 수 있다.
+
+  ```bash
+  $ docker logs client
+  ```
+
+  - `dind1`과 `dind2`에서 모두 network를 확인하면 `my-network`의 ID가 동일한 것을 확인할 수 있다.
+
+  ```bash
+  $ docker network ls
+  ```
+
+
+
+- Service와 standalone container 사이의 통신
+
+  - 위에서 standalone container로 생성했던 server를 service로 생성하고, client는 그대로 standalone으로 생성하여 둘 사이를 통신시키는 방법을 알아볼 것이다.
+  - 아래와 같이 server service를 생성한다.
+
+  ```bash
+  $ docker service create --name server --network my-network --replicas 2 server:1.0.0
+  ```
+
+  - Client는 기존과 동일하게 실행한다.
+
+  ```bash
+  $ docker run -d --name client --network my-network client:1.0.0
+  ```
+
+  - Service의 task로 생성된 두 개의 container들의 log를 확인해보면 두 container에 돌아가면서 요청이 들어오는 것을 확인할 수 있다.
+
+
+
 
 
 # Docker health check
