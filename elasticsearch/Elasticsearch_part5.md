@@ -1680,6 +1680,164 @@
     - 반면에, first name으로 쓰이는 "Washington"은 그리 흔하지 않으므로, `first_name`에 "Washington"이 들어가는 경우 term frequency가 낮아 높은 점수를 받게 될 것이다.
     - 따라서 "George Washington"을 검색할 경우 `last_name`에 "Washington"이 들어간 문서보다 `first_name`에 "Washington"이 들어간 문서가 더 높은 점수를 받을 것이다.
     - 즉, `first_name:George last_name:Washington`이라는 보다 더 많은 term이 matching되는 문서가 있음에도, `first_name:Washington`인 문서가 더 높은 점수로 검색 결과의 상단에 올라올 위험이 있다.
+  
+  - best_fields와 most_fields는 field-centric한 접근법을 취한다.
+    - 각 field마다 `match` query를 생성한다.
+  
+  - `cross_fields`는 term-centric한 접근법이다.
+    - 위 문제를 해결하는 가장 간단한 방법은 index시에 `first_name`과 `last_name`을 `full_name`이라는 하나의 field에 색인하는 것이다.
+    - 이는 `best_fields`나 `most_fields`가 취하는 field-centric한 접근법이다.
+    - 반면에 `cross_fields`는 term-centric한 접근법으로 index time이 아니라 query time에 이를 해결할 수 있게 해준다.
+  - `cross_fields`는 검색어를 여러 개의 term으로 쪼갠 후 각 term이 여러 field들 중 어디에든 포함되어 있는지를 살핀다.
+    - 즉 여러 field들을 하나의 field인 것 처럼 취급한다.
+    - `best_fields`의 경우 `operator`를 `and`로 줄 경우 한 field에 모든 term이 들어가 있는 문서를 검색한다(field-centric).
+    - `cross_fields`의 경우 `operator`를 `and`로 줄 경우 모든 term이 검색 대상 field들 중 어디에든 들어가 있는 문서를 검색한다(term-centric).
+  
+  ```json
+  // 아래와 같이 cross_fields를 적용한 query는
+  {
+      "query": {
+          "multi_match" : {
+              "query":      "George Washington",
+              "type":       "cross_fields",
+              "fields":     [ "first_name", "last_name" ],
+              "operator":   "and"
+          }
+      }
+  }
+  
+  // 아래와 같이 처리된다.
+  +(first_name:george last_name:george) +(first_name:washington last_name:washington)
+  
+  // 만약 위에서 cross_fields가 아닌 best_fields를 사용했다면, 아래와 같이 처리된다.
+  (+first_name:george +last_name:washington) | (first_name:george last_name:washington)
+  ```
+  
+  - 위와 같이 query를 생성함으로써 `cross_fields`는 term frequency가 달라지는 문제를 해결한다.
+    - 모든 field들의 term frequency를 혼합한다.
+    - 위 예시에서 `first_name:washington`는  `last_name:washington`와 동일한 frequency를 갖는 것 처럼 처리된다.
+    - 물론 이 경우에도 `last_name:washington`이 약간 더 점수를 높이긴 한다.
+    - 다만, 이처럼 `cross_fields`를 사용하여 term frequency를 조정하는 방식은 `boost`가 1인 짧은 string field에만 유효하다는 점을 기억해야한다.
+    - `boost`나 length normalization은 모든 field들의 term frequency를 혼합하여 term frequency를 조정하는 방식을 의미 없게 만든다.
+  - `cross_fields`는 같은 analyzer를 사용한 field들 끼리만 하나의 field로 취급한다.
+    - 즉 같은 analyzer를 사용하는 field들을 하나의 group으로 묶어 이들을 하나의 field처럼 취급한다.
+  
+  ```json
+  // 예를 들어 아래와 같이 index를 생성하고
+  // PUT score-test
+  {
+      "settings": {
+          "analysis": {
+              "analyzer": {
+                  "nori_analyzer":{
+                      "type":"custom",
+                      "tokenizer":"nori_tokenizer"
+                  }
+              }
+          }
+      },
+      "mappings": {
+          "properties": {
+              "A":{
+                  "type":"text"
+              },
+              "B":{
+                  "type":"text",
+                  "analyzer": "nori_analyzer"
+              },
+              "C":{
+                  "type":"text",
+                  "analyzer": "nori_analyzer"
+              }
+          }
+      }
+  }
+  
+  // 아래와 같이 검색을 하면
+  // GET score-test/_search
+  {
+      "query": {
+          "multi_match": {
+              "query": "안녕 세상",
+              "type":"cross_fields", 
+              "fields": [
+                  "A",
+                  "B",
+                  "C"
+              ],
+              "operator": "and"
+          }
+      }
+  }
+  
+  // 아래와 같이 같은 analyzer를 사용한 field들끼리 묶인다.
+  ((+A:안녕 +A:세상) | (+(C:안녕 | B:안녕) +(B:세상 | C:세상)))
+  ```
+  
+  - 위와 같이 각기 다른 analyzer들을 같은 analyzer를 사용하는 field들끼리 묶는 방식 자체는 별 문제가 되지 않지만, `operator`나 `minimum_should_match`를 사용할 때는 `most_fields`나 `best_fields`에서 `operator`나 `minimum_should_match`를 사용할 때 겪는 문제를 동일하게 겪을 수 있다.
+    - 따라서 `operator`나 `minimum_should_match`를 사용해야 할 때는 같은 analyzer를 사용하는 fields들 끼리 묶어서 아래와 같이 `dis_max` query를 사용하는 것이 권장된다.
+  
+  ```json
+  {
+      "query": {
+          "dis_max": {
+              "queries": [
+                  {
+                      "multi_match" : {
+                          "query":      "안녕 세상",
+                          "type":       "cross_fields",
+                          "fields":     [ "A" ],
+                          "minimum_should_match": "50%" 
+                      }
+                  },
+                  {
+                      "multi_match" : {
+                          "query":      "안녕 세상",
+                          "type":       "cross_fields",
+                          "fields":     [ "B", "C" ]
+                      }
+                  }
+              ]
+          }
+      }
+  }
+  ```
+
+
+
+- `multi_match` query의 type을 `phrase`나 `phrase_prefix`로 줄 경우.
+
+  - 기본적으로 `best_field` 같이 동작한다.
+    - 다만 `match_query` 대신 `match_phrase` 혹은 `match_phrase_prefix` query를 사용한다는 차이가 있다.
+
+  ```json
+  // 아래와 같은 query는
+  {
+      "query": {
+          "multi_match" : {
+              "query":      "quick brown f",
+              "type":       "phrase_prefix",
+              "fields":     [ "subject", "message" ]
+          }
+      }
+  }
+  
+  // 아래와 같이 실행된다.
+  {
+      "query": {
+          "dis_max": {
+              "queries": [
+                  { "match_phrase_prefix": { "subject": "quick brown f" }},
+                  { "match_phrase_prefix": { "message": "quick brown f" }}
+              ]
+          }
+      }
+  }
+  ```
+
+  - 둘 다 `slop` parameter를 사용할 수 있으며, `phrase_prefix`의 경우 추가적으로 `max_expansions`를 사용할 수 있다.
+
+
 
 
 
