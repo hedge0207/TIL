@@ -1426,6 +1426,29 @@
 
 
 
+- Field의 최대 개수 설정하기
+
+  - `index.mapping.total_fields.limit` 설정을 통해 field의 최대 개수를 제한할 수 있다.
+    - Dynamic 설정으로 index 생성 후에도 변경 가능하다.
+    - 기본값은 1000으로 field를 999개 까지 생성할 수 있다.
+
+  ```json
+  // PUT test/_settings
+  {
+    "index": {
+      "mapping": {
+        "total_fields": {
+          "limit": 2
+        }
+      }
+    }
+  }
+  ```
+
+  
+
+
+
 # 데이터 색인
 
 ## 색인 처리 과정
