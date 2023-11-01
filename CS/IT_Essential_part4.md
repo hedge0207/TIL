@@ -854,6 +854,90 @@
 
 
 
+# API Gateway
+
+> https://bcho.tistory.com/1006
+
+- API Gateway
+  - API server 앞단에 위치하여 모든 API server들의 endpoint들을 묶고, API server들의 공통 로직을 처리하는 기능을 담당하는 middleware이다.
+    - 일반적으로 로깅, 인증/인가, 라우팅, 프로토콜 변환 등의 기능을 수행한다.
+    - 공통된 기능을 처리함으로써 중복 개발을 방지하고, 표준을 설정하고 이를 준수하기가 보다 수월해진다.
+  - 여러 API server로 구성되는 MSA(Micro Service Architecture)에서 주로 사용한다.
+    - Client아 독립적으로 service들을 확장할 수 있다.
+    - 제어 지점이 단일화되어 관리가 편리해진다.
+
+
+
+- 인증/인가와 관련된 Gateway의 기능
+  - Gateway의 가장 기본적인 기능이다.
+    - 인증은 client의 신분을 확인하는 것이다.
+    - 인가는 client가 API를 호출할 권한이 있는지를 확인하는 것이다.
+  - API token 발급
+    - 인증이 완료된 client를 대상으로 API token을 발급하는 역할을 한다.
+    - 일반적인 흐름은 아래와 같다.
+    - Client는 gateway에 인증을 위한 정보(ID/PW, 인증서, OTP 등)를 전송한다.
+    - Gateway는 인증 정보를 인증 server로 전송한다.
+    - 인증 server에서는 gateway가 보낸 인증 정보를 가지고 인증을 수행하고 그 결고를 gateway에 반환한다.
+    - 인증 server에서 인증이 정상적으로 완료됐다는 응답을 받은 gateway는 API token을 생성하고 이를 client에 반환한다.
+  - API token 검증
+    - API token을 발급 받은 client는 발급 받은 token을 사용하여 API를 호출한다.
+    - Gateway는 API token이 유효한지 검증 후, 유효한 경우에만 API를 호출한다.
+  - Endpoint별 API 요청 인가
+    - 사용자의 권한을 확인하고, 사용자가 요청을 보낸 API가 사용자의 권한으로 호출할 수 있는지를 확인한다.
+    - 사용자가 해당 API를 호출할 권한이 있는 경우에먼 API server에 요청을 전달한다.
+
+
+
+- API routing
+  - Load balancing.
+    - 여러 개의 API 서버로 부하를 분산하는 역할을 수행한다.
+    - 부하 분산 방식, server 중 일부에 장애 발생시 요청을 어떻게 routing할지, 장애가 발생한 server가 다시 복구 됐을 때 어떻게 routing할지 등을 고려해야한다.
+  - Client별 endpoint 제공.
+    - 같은 API를 여러 개의 endpoint로 제공할 수 있다.
+    - Gateway에서 같은 API로 요청을 보내더라도 endpoint이름을 다르게 하여 routing하는 것이 가능하다.
+  - Message 혹은 header 기반 routing.
+    - HTTP request의 message 혹은 header에 따라 각기 다른 API로 routing되도록 할 수 있다.
+
+
+
+- 공통 로직 처리
+  - Gateway는 모든 API server의 앞쪽에 위치하기 때문에 모든 API 호출이 gateway를 거쳐간다.
+    - 따라서 모든 API가 공통으로 처리해야하는 공통 기능을 gateway에서 처리하면 API server에서는 이러한 기능을 개발할 필요가 없어진다.
+  - Gateway에서 공통 로직을 처리함으로써 API server에서는 비즈니스 로직 구현에만 집중할 수 있게 된다.
+
+
+
+- Mediation
+  - Client가 원하는 API spec과 API server가 제공하는 API spec이 다를 때, gateway에서 이를 중재할 수 있다.
+  - Message format 변환
+    - Client의 요청을 다른 format으로 변환하여 API server로 전송한다. 
+    - API server의 응답을 다른 format으로 변환하여 client로 반환한다.
+  - Protocol 변환
+    - API gateway에서 client로 들어온 요청의 protocol을 변환하여 API server로 전송한다.
+
+
+
+- Aggregation
+  - 여러 개의 API를 묶어서 하나의 API로 만드는 작업이다.
+    - 여러 개의 API를 순차적으로 호출해야 할 경우 유용하게 사용할 수 있다.
+    - 예를 들어 은행 서비스에서 현금을 송금하는 기능은 잔액 확인, 출금, 입금으로 나눌 수 있다.
+    - 만일 aggregation을 하지 않을 경우 client는 잔액을 확인하는 API, 출금하는 API, 입급하는 API를 모두 호출해야 할 것이다.
+    - 반면에 aggregation 할 경우 이들 세 API를 하나의 API로 묶어 client가 세 API를 별도로 호출하는 것이 아니라, gateway를 통해 하나의 API만 호출하면 gateway 내에서 위 3가지 API를 호출하여 처리하도록 할 수 있다.
+  - 단점
+    - Gateway에서 여러 API를 호출하게 될 경우 gateway에 가해지는 부하가 커질 수 있다.
+    - 따라서 aggregation 로직은 Mediator API server라는 별도의 계층을 만들어 gateway 밖에서 따로 처리하는 것이 권장된다.
+
+
+
+- Logging, metering
+  - API 호출 logging
+    - 모든 API 호출은 gateway를 거쳐 가기에 gateway에 API호출에 대한 log를 수집하는 기능을 넣는 것이 좋다.
+  - API metering & charging
+    - Metering은 유료 API를 제공할 경우 과금을 위한 API 호출 횟수, client IP 등을 기록하는 기능이다.
+    - Charging은 metering된 자료를 기반으로 요금을 계산하는 기능이다.
+
+
+
 
 
 # Shorts
