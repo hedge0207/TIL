@@ -157,7 +157,7 @@
   ```python
   # 단어 집합을 저장할 dictionary
   vocabulary = defaultdict(int)
-  preprocessed_setences = []
+  preprocessed_sentences = []
   # stopword를 생성한다.
   stop_words = set(stopwords.words("english"))
   
@@ -174,7 +174,7 @@
               valid_tokens.append(word)
               vocabulary[word] += 1
       
-      preprocessed_setences.append(valid_tokens)
+      preprocessed_sentences.append(valid_tokens)
   ```
 
   - `vocabulary`를 빈도 순으로 정렬하고, 빈도에 따라 정수를 부여한다.
@@ -201,7 +201,7 @@
   ```python
   OOV = len(word_to_index)
   encoded_sentences = []
-  for sentence in preprocessed_setences:
+  for sentence in preprocessed_sentences:
       encoded_sentence = []
       for word in sentence:
           if word_to_index.get(word):
@@ -213,4 +213,163 @@
 
 
 
-- nltk를 사용하면 보다 간단하게 수행할 수 있다.
+- `nltk` package의 `FreqDist`를 사용하면 보다 간편하게 각 token의 빈도를 구할 수 있다.
+
+  - 코드
+
+  ```python
+  from nltk.tokenize import sent_tokenize, word_tokenize
+  from nltk.corpus import stopwords
+  from nltk import FreqDist
+  
+  import numpy as np
+  
+  
+  class IntegerEncoder:
+      def __init__(self, raw_text: str):
+          self.raw_text = raw_text
+          self.preprocessed_sentences = []
+          self._preprocess_text()
+  
+      def _preprocess_text(self):
+          setences = sent_tokenize(self.raw_text)
+          stop_words = set(stopwords.words("english"))
+  
+          for sentence in setences:
+              words = word_tokenize(sentence)
+              
+              valid_tokens = []
+              for word in words:
+                  word = word.lower()
+                  if word not in stop_words and len(word) > 2:
+                      valid_tokens.append(word)
+              
+              self.preprocessed_sentences.append(valid_tokens)
+      
+      def _map_token(self):
+          vocabulary = FreqDist(np.hstack(self.preprocessed_sentences))
+          word_to_index = {}
+          for i, word in enumerate(vocabulary, 1):
+              frequency = vocabulary[word]
+              if frequency > 1:
+                  word_to_index[word] = i
+          
+          return word_to_index
+      
+      def encode(self):
+          word_to_index = self._map_token()
+          OOV = len(word_to_index) + 1
+          encoded_sentences = []
+          for sentence in self.preprocessed_sentences:
+              encoded_sentence = []
+              for word in sentence:
+                  if word_to_index.get(word):
+                      encoded_sentence.append(word_to_index[word])
+                  else:
+                      encoded_sentence.append(OOV)
+              encoded_sentences.append(encoded_sentence)
+          
+          return encoded_sentences
+      
+      def show_result(self, encoded_sentences):
+          for i, sentence in enumerate(self.preprocessed_sentences):
+              for word in sentence:
+                  print("|", word, end=" ")
+              print("|")
+  
+              for i, encoded_value in enumerate(encoded_sentences[i]):
+                  print("|", encoded_value, end=" "*len(sentence[i]))
+              print("|")
+              print("-"*150)
+  
+          return encoded_sentences
+  
+  
+  if __name__ == "__main__":
+      raw_text = """Python is a high-level, general-purpose programming language. Its design philosophy emphasizes code readability with the use of significant indentation.
+                  Python is dynamically typed and garbage-collected. It supports multiple programming paradigms, including structured (particularly procedural), 
+                  object-oriented and functional programming. It is often described as a "batteries included" language due to its comprehensive standard library."""
+      integer_encoder = IntegerEncoder(raw_text)
+      integer_encoder.show_result(integer_encoder.encode())
+  ```
+
+  - `FreqDist(np.hstack(self.preprocessed_sentences))`
+    - `FreqDist`는 `collections.Counter` 객체를 반환한다.
+    - `np.hstack()`은 중첩된 list를 일차원 list로 변경해서 반환하는 함수이다.
+
+
+
+- Keras를 사용한 encoding
+
+  - Keras는 기본적인 text 전처리를 위한 도구들을 제공한다.
+    - 아래와 같이 `Tokenizer`객체의 `fit_on_texts()` method를 실행하고, `word_index` attribute를 확인하면, 빈도수가 높은 순으로 index가 부여되는 것을 볼 수 있다.
+    - `word_counts` attribute에는 각 token이 몇 번 등장했는지가 저장되어 있다.
+
+  ```python
+  tokenizer = Tokenizer()
+  tokenizer.fit_on_texts(preprocessed_sentences)
+  print(tokenizer.word_index)
+  print(tokenizer.word_counts)
+  
+  
+  """
+  {'programming': 1, 'python': 2, 'language': 3, 'high-level': 4, 'general-purpose': 5, ...}
+  OrderedDict([('python', 2), ('high-level', 1), ('general-purpose', 1), ('programming', 3), ...])
+  """
+  ```
+
+  - `texts_to_sequences()`는 입력으로 들어온 corpus를 index로 변환까지 해준다.
+
+  ```python
+  tokenizer = Tokenizer()
+  tokenizer.fit_on_texts(preprocessed_sentences)
+  print(tokenizer.texts_to_sequences(preprocessed_sentences))
+  
+  """
+  [[2, 4, 5, 1, 3], [6, 7, 8, 9, 10, 11, 12, 13], [2, 14, 15, 16], ...]
+  """
+  ```
+
+  - `Tokenizer` 객체 생성시에 `num_words` parameter로 빈도수로 정렬한 token 중 상위 몇 개의 token을 사용할 것인지를 지정할 수 있다.
+    - 주의할 점은 사용하려는 숫자에 1을 더해야 한다는 점으로, 상위 5개를 사용할 것이라면 아래와 같이 6을 넣어야 1~5번 단어를 사용한다.
+    - 이는 Keras tokenizer가 0번을 padding에 사용하기 때문이다.
+    - 또한 `num_words` 값은 `texts_to_sequences()` method를 사용할 때만 적용되고, `word_index`, `word_counts` 등에는 적용되지 않는다.
+
+  ```python
+  vocab_size = 5
+  tokenizer = Tokenizer(num_words=vocab_size+1) # 상위 5개 단어만 사용
+  tokenizer.fit_on_texts(preprocessed_sentences)
+  print(tokenizer.texts_to_sequences(self.preprocessed_sentences))
+  ```
+
+  - Keras tokenizer는 기본적으로 OOV를 아예 제거한다.
+    - 만약 OOV를 보존하고 싶다면 `oov_token` parameter를 추가해야한다.
+    - OOV의 index는 기본적으로 1이다.
+
+  ```python
+  vocab_size = 5
+  tokenizer = Tokenizer(num_words=vocab_size+1, oov_token = 'OOV')
+  tokenizer.fit_on_texts(preprocessed_sentences)
+  print(tokenizer.texts_to_sequences(preprocessed_sentences))
+  
+  """
+  [[3, 5, 1, 2, 4], [1, 1, 1, 1, 1, 1, 1, 1], [3, 1, 1, 1], [1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2], [1, 1, 1, 1, 4, 1, 1, 1, 1]]
+  """
+  ```
+
+
+
+
+
+## Padding
+
+- Padding
+  - 길이가 전부 동일한 문장들은 하나의 행렬로 보고 묶어서 한 번에 처리가 가능하다.
+  - 문장들을 한 번에 처리하기 위해 문장들의 길이를 동일하게 맞추는 작업을 padding이라 한다.
+
+
+
+- Numpy를 사용하여 padding하기
+
+
+
