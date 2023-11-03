@@ -133,3 +133,149 @@
 
 
 
+# Docker volume과 권한, 소유자, 소유 그룹
+
+- Docker container 내에서의 uid와 gid
+
+  > https://medium.com/@mccode/understanding-how-uid-and-gid-work-in-docker-containers-c37a01d01cf
+
+  - 아무런 option을 주지 않을 경우 container 내의 모든 process는 root로 실행된다.
+  - Linux kernel은 모든 process를 실행할 때 프로세스를 실행한 user의 uid와 gid를 검사한다.
+    - User name과 group name이 아닌 uid와 gid를 사용한다는 것이 중요하다.
+  - Docker container 역시 kernel을 가지고 있으므로 container 내부에서 process 실행시 uid와 gid를 검사한다.
+
+
+
+- Container 실행시 user 설정하는 방법
+
+  - Docker run 명령어 실행시 container 내의 default user를 설정할 수 있다.
+
+  ```bash
+  $ docker run --user=[ user | user:group | uid | uid:gid | user:gid | uid:group ]
+  ```
+
+  - Docker compose file의 service 아래에 아래와 같이 설정할 수 있다.
+
+  ```yaml
+  services:
+    test:
+      user: [ user | user:group | uid | uid:gid | user:gid | uid:group ]
+  ```
+
+  - 만약 존재하지 않는 user name을 옵션으로 줘서 container를 실행하려 할 경우 아래와 같은 error가 발생한다.
+
+  ```bash
+  $ docker run -it --name my-ubuntu --user foo ubuntu:20.04 /bin/bash
+  # docker: Error response from daemon: unable to find user foo: no matching entries in passwd file.
+  ```
+
+  - 반면에 존재하지 않는 uid를 줄 경우 error가 발생하지 않는다.
+    - 다만 container에 attach할 경우 `I have no name!`이라는 user name이 보이게 된다.
+
+  ```bash
+  $ docker run -it --name my-ubuntu --user 1010 ubuntu:20.04 /bin/bash
+  ```
+
+
+
+- Bind-mount volume의 소유자
+
+  - Docker compose file
+
+  ```yaml
+  version: '3.2'
+  
+  
+  services:
+    ubuntu:
+      user: 1200:1200
+      container_name: my_ubuntu
+      image: ubuntu:20.04
+      volumes:
+        - ./dir:/home/dir
+      command: "/bin/bash"
+      tty: true
+  ```
+
+  - Container 내부의 file 소유자
+    - Container 내부에는 서는 bind mount 대상인 file의 유무와 무관하게 host에 있는 file의 소유자, 그룹이 소유자와 소유 그룹이 된다.
+    - 예를 들어 host에서 foo라는 사용자가 dir을 만들었다면 container 내부에 `/home/dir`이 원래 있었는지와 무관하게 container 내부의 `/home/dir`의 소유자, 소유 그룹은 foo와 foo의 그룹이 된다.
+  - Host machine의 file 소유자
+    - Bind mount를 통해 volume을 설정하더라도 소유자는 변경되지 않는다.
+    - 예를 들어 위에서 `dir`을 foo라는 사용자가 만들었다면, bind mount를 하더라도 해당 file의 소유자는 foo이다.
+    - Host machine에 없는 file을 대상으로 bind mount할 경우 Docker가 해당 file을 생성하는데, 이 때는 root 권한으로 생성된다.
+
+
+
+- 기본 umask 설정
+
+  - 예를 들어 아래와 같이 5초 마다 umask 값을 출력하는 python code가 있다고 가정해보자.
+
+  ```python
+  # main.py
+  
+  import os
+  import time
+  
+  try:
+      while True:
+          os.system("umask")
+          time.sleep(5)
+  except (KeyboardInterrupt, SystemExit):
+      logger.info("Bye!")
+  ```
+
+  - Dockerfile을 아래와 같이 설정한다.
+    - `.bashrc`은 user의 home directory에 생성되므로, user 추가시 `-m` option을 줘야한다.
+
+
+  ```dockerfile
+FROM python:3.8.0
+
+RUN useradd -m -u 1005 foo
+
+USER foo
+
+# .bashrc에 umask 0002 명령어를 추가한다.
+RUN echo "umask 0002" >> ~/.bashrc
+
+COPY ./main.py /main.py
+
+ENTRYPOINT ["python", "main.py"]
+  ```
+
+  - 위 예시의 경우 0002를 출격할 것 같지만, 0002를 출력한다. 즉, 의도한 대로 동작하지 않는다.
+    - 반면에 `docker exec -it <container> /bin/bash`와 같이 입력하여 직접 `python main.py`를 실행시키면 0002가 제대로 출력된다.
+
+  - 아래와 같이 dockefile을 작성한다.
+    - `umask 0002`와 python script 실행이 한 세션에서 실행될 수 있도록 한다.
+
+  ```dockerfile
+FROM python:3.8.0
+
+RUN useradd -m -u 1005 foo
+
+USER foo
+
+COPY ./main.py /main.py
+
+ENTRYPOINT ["/bin/bash", "-c", "umask 0002 && python main.py"]
+  ```
+
+
+
+- Dockerfile에서 `COPY` 명령어 실행시 소유권과 권한을 아래와 같이 설정할 수 있다.
+
+  - 설정하지 않을 경우 기본적으로 소유권은 root,  file의 권한은 334, directory의 권한은 755로 설정된다.\
+  - 단 `--chown`와 `--chmod` 옵션은 linux container에만 적용되며, windows container에는 적용되지 않는다.
+
+  ```bash
+  COPY [--chown=<user>:<group>] [--chmod=<perms>] <src> <dest>
+  COPY [--chown=<user>:<group>] [--chmod=<perms>] ["<src>" "<dest>"]
+  ```
+
+
+
+- Docker compose options
+  - tty:true로 주면 docker run 실행시에 -t option을 준 것과 동일하다.
+  - stdin_open:true로 주면 docker run 실행시에 -i option을 준 것과 동일하다.
