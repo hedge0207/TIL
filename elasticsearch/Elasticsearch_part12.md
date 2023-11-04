@@ -621,6 +621,83 @@
 
 
 
+## Search shard routing
+
+- Search shard routing
+  - Elasticsearch는 검색시에 검색 대상 index의 data를 저장하고 있는 node를 선택하고 해당 node의 shard들에게 search request를 전달한다. 
+  - 이 과정을  search shard routing 혹은 routing이라 부른다.
+
+
+
+- Adaptive replica selection
+  - Elasticsearch가 search request를 route하기 위해 기본값으로 사용하는 방식이다.
+  - 이 방식은 shard allocation awareness와 함께 아래 기준들을 고려하여 적합한 node를 선택한다.
+    - 이전 request에서 대상 node가 coordinator node에 응답을 반환한 시간.
+    - 대상 node가 이전 검색을 수행하는 데 걸린 시간.
+    - 대상 node의 search threadpool의 queue size.
+  - Adaptive replica selection은 빠른 검색 속도를 위해 고안되었다. 
+    - `cluster.routing.use_adaptive_replica_selection`값을 false로 줄 경우 비활성화 시킬 수 있다.
+    - 비활성화 시킬 경우 Elasticsearch는 search request를 round-robin 방식으로 routing하며, 따라서 검색 속도가 느려질 수 있다.
+  - 기본적으로 adaptive replica selection은 모든 검색 대상 node와 shard들을 대상으로 선택을 수행한다.
+
+
+
+- `preference` 설정하기
+
+  - 특정 node로 routing을 수행하고자 할 때 사용하는 옵션이며, 보통 아래와 같은 경우 사용한다.
+    - Local에 있는 node로 routing하고자 할 경우.
+    - Hardware를 기반으로 특정 node에 routing하고자 할 경우(우수한 hardware를 가진 node에 비용이 많이 드는 검색을 routing하고자 하는 경우 등).
+    - Caching을 위해 같은 shard에 반복적으로 검색을 수행하고자 하는 경우.
+  - 아래의 값들 중 하나를 주면 된다.
+    - `_only_local`: local에 있는 node의 shard들만 대상으로 검색을 routing한다.
+    - `_local`: 가능하면 local에 있는 node의 shard들만 대상으로 검색을 routing하며, 만약 local node에 검색 대상 index의 shard가 없을 경우 adaptive replica selection을 사용하여 routing할 node를 정한다.
+    - `_only_nodes:<node_id>,<node_id>`: 입력된 node들만 대상으로 검색을 routing하며, 만일 검색 대상 shard가 여러 입력된 여러 node들에 동시에 있을 경우 adaptive replica selection을 사용하여 routing하며, 어떤 node에도 검색 대상 shard가 없을 경우에도 adaptive replica selection를 사용하여 routing할 node를 선택한다.
+    - `_prefer_nodes:<node_id>,<node_id>`: 입력된 node들만 대상으로 검색을 routing하며, 만일 검색 대상 index의 shard가 없을 경우 adaptive replica selection을 사용하여 routing할 node를 정한다.
+    - `_shards:<shard>,<shard>`: 입력된 shard들만 대상으로 검색을 routing하며, 다른 routing value와 결합하여 사용하는 것이 가능하지만, 반드시 `_shards`가 맨 앞에 와야 한다(e.g. `_shards:1,2|_local`)
+    - `<custom-string>`: `_`로 시작하지 않는 아무 string이나 주며, cluster state와 선택된 shard가 변하지 않으면, 같은 custom string를 설정하여 수행한 검색은 항상 같은 shard에 routing된다.
+  - 예시
+
+  ```json
+  // GET /my-index/_search?preference=_local
+  {
+      "query": {
+          "match": {
+              "title": "foo"
+          }
+      }
+  }
+  ```
+
+
+
+- routing value 설정하기
+
+  - Index에 document를 색인할 때 routing value를 준 경우, 색인시에 사용한 routing value를 검색시에 동일하게 주면, document가 색인된 shard로 검색을 routing할 수 있다.
+
+  - 예를 들어 문서 색인시에 아래와 같이 routing value를 줬다면
+
+  ```json
+  // POST /my-index/_doc?routing=my-routing-value
+  {
+    "title": "foo"
+  }
+  ```
+
+  - 검색시에 색인에 사용했던 것과 동일한 routing value를 주면 document가 색인된 shard로 검색을 routing할 수 있다.
+
+  ```json
+  // GET /my-index/_search?routing=my-routing-value
+  {
+    "query": {
+      "match": {
+        "title": "foo"
+      }
+    }
+  }
+  ```
+
+
+
 
 
 # Mapping explosion
