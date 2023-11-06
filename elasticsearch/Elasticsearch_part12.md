@@ -700,6 +700,359 @@
 
 
 
+# Suggester
+
+- Suggester
+  - 유사해 보이는 term을 제안하는 기능이다.
+  - 아래와 같은 네 종류의 suggester 를 제공한다.
+    - Term suggester: 편집거리에 기반하여 주어진 term과 유사한 term을 제안한다.
+    - Phrase suggester: 주어진 term과 가장 유사한 phrase를 제안한다.
+    - Completion suggester: 주어진 term의 자동 완성 결과를 제안한다.
+    - Context suggester: 주어진 term과 가장 유사한 context를 제안한다.
+  - 모든 suggester는 아래와 같은 공통 option을 받는다.
+    - `text`: 제안을 받을 대상 text를 받는다.
+    - `field`: 제안 후보를 생성할 field를 받는다.
+    - `analyzer`: `text`로 들어온 값을 분석할 analyzer를 받는다.
+    - `size`: 각 text token 당 최대 제안 결과수를 받는다.
+    - `sort`: 제안 목록을 어떻게 정렬할지를 받는다(`score`, `frequency` 둘 중 하나의 값).
+    - `suggest_mode`: 어떤 경우에 suggestion을 반환할지를 받는다.
+  - `suggest_mode`
+    - `missing`:`text`로 받은 값이 index에 없을 경우에만 suggestion을 반환한다. 
+    - `popular`:`text`로 주어진 값이 문서들에 등장하는 빈도보다 많은 문서에 등장하는 suggestion들만 반환한다(예를 들어 `text`로 주어진 term이 3개 의 문서에서 등장하고, suggestion 후보 중 하나인 term A가 2개의 문서에서 등장한다면, A는 제안되지 않는다, 반면에 suggestion 후보 중 하나인 term B가 4개의 문서에서 등장한다면, B는 제안된다).
+    - `always`: 항상 suggestion을 반환한다.
+
+
+
+- Term Suggester
+
+  - 편집거리를 사용하여 비슷하 단어를 제안한다.
+  - Option들
+    - `max_edits`: edit distance의 최댓값을 받는다(기본값은 2).
+    - `prefix_length`: suggestion에 포함되기 위해 일치해야 하는 prefix character 개수의 최솟값을 받는다(기본값은1).
+    - `min_word_length`: suggestion에 포함되기 위한 term의 최소 길이를 받는다(기본 값은 4).
+    - `min_doc_freq`: suggestion에 포함되기 위해 term이 전체 문서들 중 몇 개의 문서에 포함되어야 하는지를 지정한다. 정수를 주면 문서의 개수, 0~1 사이의 소수를 주면 percent가 설정된다.
+    - `max_term_freq`: suggestion에 포함되기 위해 term이 전체 문서들 중 몇 개 미만의 문서에 포함되어야 하는지를 지정한다. 정수를 주면 문서의 개수, 0~1 사이의 소수를 주면 percent가 설정된다.
+    - `string_distance`: edit distance를 구하는 방식을 선택한다.
+  - `string_distance`는 아래 5가지 중 하나를 선택할 수 있다.
+    - `internal`: `damerau_levenshtein`를 최적화한 방식이다.
+    - `damerau_levenshtein`: Damerau-Levenshtein algorithm 기반의 방식이다.
+    - `levenshtein`: Levenshtein edit distance algorithm 기반의 방식이다.
+    - `ngram`: n-gram 기반의 방식이다.
+  - Test data 색인하기
+
+  ```json
+  // PUT term_suggest_test/_doc/1
+  {
+    "text":"adapt"
+  }
+  
+  // PUT term_suggest_test/_doc/2
+  {
+    "text":"adept"
+  }
+  
+  // PUT term_suggest_test/_doc/3
+  {
+    "text":"adopt"
+  }
+  
+  // PUT term_suggest_test/_doc/4
+  {
+    "text":"child"
+  }
+  ```
+
+  - Suggest 기능을 사용하여 유사한 단어를 제안 받는다.
+    - response의 `options`에 제안된 단어들이 담겨 있다.
+
+  ```json
+  // GET term_suggest_test/_search
+  {
+    "suggest": {
+      "my_suggestion": {
+        "text": "adwpt",
+        "term": {
+          "field": "text"
+        }
+      }
+    }
+  }
+  
+  // response
+  {
+      // ...
+      "suggest": {
+      "my_suggestion": [
+        {
+          "text": "adwpt",
+          "offset": 0,
+          "length": 5,
+          "options": [
+            {
+              "text": "adapt",
+              "score": 0.8,
+              "freq": 1
+            },
+            {
+              "text": "adept",
+              "score": 0.8,
+              "freq": 1
+            },
+            {
+              "text": "adopt",
+              "score": 0.8,
+              "freq": 1
+            }
+          ]
+        }
+      ]
+    }
+  }
+  ```
+
+  - 여러 token으로 구성된 term이 들어올 경우 각 token에 대한 제안을 반환한다.
+
+  ```json
+  // GET term_suggest_test/_search
+  {
+    "suggest": {
+      "my_suggestion": {
+        "text": "adopted chil",
+        "term": {
+          "field": "text"
+        }
+      }
+    }
+  }
+  
+  // response
+  {
+      // ...
+      "suggest": {
+      "my_suggestion": [
+        {
+          "text": "adopted",
+          "offset": 0,
+          "length": 7,
+          "options": [
+            {
+              "text": "adopt",
+              "score": 0.6,
+              "freq": 1
+            }
+          ]
+        },
+        {
+          "text": "chil",
+          "offset": 8,
+          "length": 4,
+          "options": [
+            {
+              "text": "child",
+              "score": 0.75,
+              "freq": 1
+            }
+          ]
+        }
+      ]
+    }
+  }
+  ```
+
+
+
+- Completion Suggest API
+
+  - 자동 완성 기능을 제공하기 위한 suggester이다.
+    - 사용자가 typing을 하면 가능한 빨리 결과를 반환해야하기 때문에 속도가 중요하다.
+    - 따라서 Elasticsearch는 memory를 많이 사용하지만 속도가 빠른 FST(Finite State Transducer)라는 자료구조를 사용한다.
+    - FST는 검색어가 모두 메모리에 로드되는 구조이며, 색인 중에 FST를 작성한다.
+  - Completion suggester를 사용하려면 대상 field의 type을 `completion` type으로 설정해야한다.
+
+  ```json
+  // PUT completion_suggest_text
+  {
+    "mappings": {
+      "properties": {
+        "term":{
+          "type":"completion"
+        }
+      }
+    }
+  }
+  ```
+
+  - 문서를 색인한다.
+
+  ```json
+  // PUT completion_suggest_text/_doc/1
+  {
+    "term":"hell"
+  }
+  
+  // PUT completion_suggest_text/_doc/2
+  {
+    "term":"hello"
+  }
+  
+  // PUT completion_suggest_text/_doc/3
+  {
+    "term":"hello world"
+  }
+  
+  // PUT completion_suggest_text/_doc/4
+  {
+    "term":"say hello"
+  }
+  ```
+
+  - 자동 완성 결과를 확인한다.
+
+  ```json
+  // GET completion_suggest_text/_search
+  {
+    "suggest": {
+      "my_suggestion": {
+        "text":"hel",
+        "completion": {
+          "field": "term"
+        }
+      }
+    }
+  }
+  
+  // response
+  {
+      // ...
+      "suggest": {
+      "my_suggestion": [
+        {
+          "text": "hel",
+          "offset": 0,
+          "length": 3,
+          "options": [
+            {
+              "text": "hell",
+              "_index": "completion_suggest_text",
+              "_id": "1",
+              "_score": 1,
+              "_source": {
+                "term": "hell"
+              }
+            },
+            {
+              "text": "hello",
+              "_index": "completion_suggest_text",
+              "_id": "2",
+              "_score": 1,
+              "_source": {
+                "term": "hello"
+              }
+            },
+            {
+              "text": "hello world",
+              "_index": "completion_suggest_text",
+              "_id": "3",
+              "_score": 1,
+              "_source": {
+                "term": "hello world"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+  ```
+
+  - Prefix에 해당하지 않아도 검색되게 하기 위해선 배열 형태로 색인해야한다.
+    - 위 결과를 보면 "hello"가 포함되어 있지만, "hello"로 시작하지는 않는 "say hello"는 포함되지 않은 것을 볼 수 있다.
+    - 만약 "say hello"도 검색되게 하고자 한다면 아래와 같이 배열로 색인해야한다.
+
+  ```json
+  // PUT completion_suggest_text/_doc/1
+  {
+    "term":{
+      "input":["hell"]
+    }
+  }
+  
+  // PUT completion_suggest_text/_doc/2
+  {
+    "term":{
+      "input":["hello"]
+    }
+  }
+  
+  // PUT completion_suggest_text/_doc/3
+  {
+    "term":{
+      "input":["hello", "world"]
+    }
+  }
+  
+  // PUT completion_suggest_text/_doc/4
+  {
+    "term":{
+      "input":["say", "hello"]
+    }
+  }
+  ```
+
+  - 자동 완성 결과 확인
+    - 아까와는 달리 say hello도 포함된 것을 볼 수 있다.
+
+  ```json
+  // GET completion_suggest_text/_search
+  {
+    "suggest": {
+      "my_suggestion": {
+        "text":"hel",
+        "completion": {
+          "field": "term"
+        }
+      }
+    }
+  }
+  
+  // response
+  {
+      // ...
+      "suggest": {
+      "my_suggestion": [
+        {
+          "text": "hel",
+          "offset": 0,
+          "length": 3,
+          "options": [
+            // ...
+            {
+              "text": "hello",
+              "_index": "completion_suggest_text",
+              "_id": "4",
+              "_score": 1,
+              "_source": {
+                "term": {
+                  "input": [
+                    "say",
+                    "hello"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+  ```
+
+
+
+
+
+
+
 # Mapping explosion
 
 > https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-explosion.html
