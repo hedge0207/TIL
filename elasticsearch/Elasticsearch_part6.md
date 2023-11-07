@@ -619,7 +619,7 @@
     - `word`: highlight된 fragment들을 다음 word boundary에서 끊는다.
   - `fields`
     - Highlights할 field들을 설정한다.
-    - Wildcard를 사용할 수 있다.
+    - Wildcard를 사용할 수 있으며, 이 경우 `query`에 포함된 모든 field들을 대상으로 highlighting한다.
   - `matched_fields`
     - 여러 field들에서 match된 결과를 하나의 field에 highlighting 할 수 있도록 해준다.
     - 같은 string을 서로 다르게 analyze하는 경우에 특히 유용하다.
@@ -638,7 +638,7 @@
     - english analyzer에서 running은 run, scissors는 scissor로 tokenizing된다.
 
   ```json
-  PUT highlight-test
+  // PUT highlight-test
   {
     "mappings": {
       "properties": {
@@ -658,12 +658,12 @@
     }
   }
   
-  PUT highlight-test/_doc/1
+  // PUT highlight-test/_doc/1
   {
     "comment":"run with scissors"
   }
   
-  PUT highlight-test/_doc/2
+  // PUT highlight-test/_doc/2
   {
     "comment":"running with scissors"
   }
@@ -673,7 +673,7 @@
     - "scissors"는 복수형 그대로 들어간 문서만 검색 됐으면 하고, `running`은 원형인 run이 들어가 있는 문서도 검색 됐으면 한다.
 
   ```json
-  GET highlight-test/_search
+  // GET highlight-test/_search
   {
       "query": {
           "bool": {
@@ -783,7 +783,7 @@
   - 테스트에 필요한 data를 색인한다.
 
   ```json
-  PUT highlight-test/_doc/1
+  // PUT highlight-test/_doc/1
   {
     "text":"foo bar baz"
   }
@@ -792,7 +792,7 @@
   - 아래와 같이 검색 query에서는 "foo"가 포함된 문서를 검색하고, `highlight_qurey`에서는 bar를 검색하도록 query를 작성한 후 검색하면
 
   ```json
-  GET highlight-test/_search
+  // GET highlight-test/_search
   {
       "query": {
           "match": {
@@ -826,6 +826,81 @@
   ```
 
   - 주로 여러 fragments들 중 어떤 fragment를 상단으로 올릴지 결정하기 위해 사용한다.
+
+
+
+- `query`에 포함되지 않은 field, 즉 검색 대상이 아닌 field는 `highlight.fields`에 명시하더라도 highlight가 되지 않는다.
+
+  - 아래와 같이 색인을 했을 때.
+
+  ```json
+  // PUT highlight_test/_doc/1
+  {
+    "title":"foo",
+    "content":"foo bar baz"
+  }
+  ```
+
+  - 다음과 같이 검색하면
+
+  ```json
+  // GET highlight_test/_search
+  {
+    "query": {
+      "term": {
+        "title": "foo"
+      }
+    },
+    "highlight": {
+      "fields":{
+        "content": {}
+      }
+    }
+  }
+  ```
+
+  - 아래와 같은 결과가 나온다.
+    - `content` field에도 foo가 포함되어 있음에도 highlight가 반환되지 않는다.
+
+  ```json
+  {
+      // ...
+      "hits": [
+        {
+          "_index": "highlight_test",
+          "_id": "1",
+          "_score": 0.18232156,
+          "_source": {
+            "title": "foo",
+            "content": "foo bar baz"
+          }
+        }
+      ]
+  }
+  ```
+
+  - 따라서 아래와 같이 `highlight_query`를 사용해야한다.
+
+  ```json
+  {
+    "query": {
+      "term": {
+        "title": "foo"
+      }
+    },
+    "highlight": {
+      "fields":{
+        "content": {
+          "highlight_query": {
+            "match": {
+              "content": "foo"
+            }
+          }
+        }
+      }
+    }
+  }
+  ```
 
 
 
@@ -923,6 +998,92 @@
       }
   }
   ```
+
+
+
+- 아래와 같이 synonym을 사용해도 highlighting이 가능하다.
+
+  - Synonym filter를 사용하는 index를 생성한다.
+
+  ```json
+  // PUT highlight_test
+  {
+      "settings": {
+          "index": {
+              "analysis": {
+                  "analyzer": {
+                      "synonym": {
+                          "tokenizer": "standard",
+                          "filter": [
+                              "synonym"
+                          ]
+                      }
+                  },
+                  "filter": {
+                      "synonym": {
+                          "type": "synonym",
+                          "lenient": true,
+                          "synonyms": [
+                              "foo => bar"
+                          ]
+                      }
+                  }
+              }
+          }
+      },
+      "mappings": {
+          "properties": {
+              "title":{
+                  "type": "text",
+                  "analyzer": "synonym"
+              }
+          }
+      }
+  }
+  ```
+
+  - 검색한다.
+    - 응답으로 synonym이 적용된 결과가 오는 것을 볼 수 있다.
+
+  ```json
+  // GET highlight_test/_search
+  {
+      "query": {
+          "term": {
+              "title": "bar"
+          }
+      },
+      "highlight": {
+          "fields":{
+              "title": {}
+          }
+      }
+  }
+  
+  // response
+  {
+      // ...
+      "hits": [
+          {
+              "_index": "highlight_test",
+              "_id": "1",
+              "_score": 0.2876821,
+              "_source": {
+                  "title": "foo"
+              },
+              "highlight": {
+                  "title": [
+                      "<em>foo</em>"
+                  ]
+              }
+          }
+      ]
+  }
+  ```
+
+  
+
+
 
 
 

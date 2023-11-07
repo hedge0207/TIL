@@ -31,10 +31,13 @@
     - 검색 결과를 얻기 위해서는 토큰이 대소문자까지 정확하게 일치해야 한다.
     - 역색인에 대문자 I만 존재할 뿐 소문자 i는 존재하지 않는다.
     - 따라서 소문자 i로 검색하면 아무런 검색 결과를 얻지 못한다.
+  - 한 field 내에 중복된 token이 많다고 해서 index의 size가 증가하는 것은 아니다.
+    - Elasticsearch의 inverted index에는 unique한 token만이 저장된다.
+    - 만약 중복된 token이 있다고 해도 해당 token의 위치에 관한 정보와 등작 빈도 등만 추가적으로 저장될 뿐 token자체를 중복하여 저장하지 않는다.
 
 
 
-- ES는 어떻게 토크나이징을 하는가
+- ES는 어떻게 tokenizing을 하는가
 
   - ES는 `_analyze`라는 API를 제공한다.
     - analyzer에는 토크나이징에 사용할 analyzer를 입력한다.
