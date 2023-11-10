@@ -938,21 +938,201 @@
 
 
 
+- Rate limiting and throttling
+  - API gateway를 통해 모든 request가 이루이지므로 throttling을 하기 매우 적합하다.
+  - Client의 요청을 제한하여 application에 과한 부하가 가해지는 것을 방지하고 악의적으로 과한 요청을 보내는 것을 막을 수 있다.
 
 
-## API Gateway vs. Load Balancer vs. Reverse proxy
+
+- Caching
+  - Microservice들에서 받아온 요청을 cache하여 다음 번에 동일한 request가 들어왔을 때 server를 거치지 않고 응답을 반환할 수 있다.
+  - 이를 통해 응답 속도를 향상시킬 수 있다.
+
+
+
+- Circuit breaker
+  - Circuit breaker pattern을 구현하기 위해 사용할 수 있다.
+  - 단일 지점 장애가 system의 전체 장애로 이어지지 않도록 할 수 있다.
+
+
+
+# Load balancing
+
+- Load balancing
+  - Traffic을 여러 server로 고르게 분산하는 역할을 한다.
+    - 이를 통해 고가용성을 보장하고 신뢰도를 높이며, 한 server에 과도하게 부하가 가해지는 것을 방지해 성능을 높일 수 있다.
+  - 일반적으로 load balancer는 client와 server 사이에 위치한다.
+    - 그러나 부하를 분산시켜야 하는 곳이라면 어디에든 위치시킬 수 있다.
+    - client와 web server 사이, web server와 application server 사이, application server와 DB server 사이 등 부하를 분산시킬 필요가 있는 곳에 배치할 수 있다.
+  - 동작 방식
+    - Client로 부터 요청을 받는다.
+    - Request를 평가하고 어느 server에서 request를 처리해야하는지를 결정한다.
+    - Server로 request를 전달한다.
+    - Server는 request를 처리하고 response를 다시 load balancer로 전달한다.
+    - Load balancer는 응답을 받아 client에게 전달한다.
+
+
+
+- Load balancing을 하는 이유
+  - 성능 향상
+    - Traffic을 여러 server로 분산시켜 각 server에 가해지는 부하를 감소시킨다.
+    - 이를 통해 보다 빠른 속도로 response를 전달할 수 있게 된다.
+  - 고가용성(high availability)과 신뢰성(reliability)을 보장한다.
+    - 여러 server에 부하를 분산시켜 단일 지점에서 failure가 발생하는 것을 방지한다.
+    - 한 server가 실패하거나 장애가 발생하도, traffic을 다른 서버로 redirect하여 요청을 처리하게 할 수 있다.
+  - 확장성
+    - Traffic이 증가할 때 보다 쉽게 확장이 가능하다.
+    - 추가된 server를 load balancing pool에 추가하기만 하면 된다.
+  - 지리적 분산이 가능해진다.
+    - 국제적인 service의 경우 여러 위치에 server를 두는 경우가 많은데, load balancer는 가장 적절한 위치에 있는 server로 요청을 분산할 수 있다.
+    - 이를 통해 가장 가깝거나 최고의 성능을 낼 수 있는 server로 요청을 전송하여 응답 속도를 증가시킬 수 있다.
+  - 보안
+    - DDoS(Distributed Denial-of-Service) 공격을 막는데 도움을 준다.
+    - Traffic을 분산하여 공격자가 단일 target에 과한 요청을 보내는 것을 막을 수 있다.
+  - 비용 절감
+    - 보다 효율적으로 traffic을 분산하여 비용 절감이 가능하다.
+    - Hardware와 infrastructure에 드는 비용과 에너지 소비도 줄일 수 있다.
+  - Caching
+    - Image나 video 같은 정적 content를 caching 할 수도 있다.
+    - 이렇게 cache된 content들은 server를 거치지 않고 load balancer가 바로 응답을 반환함으로써 응답 속도를 줄일 수 있다.
+
+
+
+
+
+## Load Balancing algorithm
+
+> https://www.designgurus.io/course-play/grokking-system-design-fundamentals/doc/641db0dec48b4f7de900fd04
+
+- Round Robin
+  - 가용한 server에 request를 순차적으로 분산하는 방식이다.
+    - 가장 단순한 load balancing algorithm 중 하나이다.
+  - 장점
+    - 구현이 쉽다.
+    - Server들의 처리 능력이 비슷할 경우 잘 동작한다.
+  - 단점
+    - Server들의 처리 능력이 각기 다를 경우 잘 동작하지 않을 수 있다.
+    - Server health나 response time에 대해서는 고려하지 않는다.
+
+
+
+- Least Connections
+  - Request가 들어왔을 때 활성화된 connection이 가장 적은 server로 요청을 보내는 방식이다.
+    - 예를 들어 A, B 두 개의 server가 있다고 가정하자.
+    - 새로운 request가 들어왔을 때, A에는 2개의 connection이, B에는 1개의 connection이 연결되어 있다.
+    - 이 경우 connection이 가장 적은 B에 새로운 request를 전달한다.
+  - 장점
+    - Server마다 처리 능력이 다를 때 사용하기 좋다.
+    - Request를 처리하는 데 걸리는 시간이 다양할 때 보다 효과적으로 부하를 분산할 수 있다.
+  - 단점
+    - 각 server마다 활성화된 connection의 수를 추적해야한다.
+    - Server health나 상태를 고려하지 않는다.
+
+
+
+- Weighted Round Robin
+  - Round Robin algorithm을 확장한 것으로 각 서버의 처리 능력에 따라 server마다 다른 가중치를 부여하고, 이 가중치에 비례하여 request를 분산한다.
+  - 장점
+    - 구현이 쉽다.
+    - 각 server의 각기 다른 처리량을 고려한다.
+  - 단점
+    - 가중치를 수동으로 할당하고 관리해야한다.
+    - Server health나 response time을 고려하지 않는다.
+
+
+
+- Weighted Least Connection
+  - 할당된 가중치에 따라 활성 연결 비율이 가장 낮은 server로 request를 전달한다.
+    - Least Connection과 Weighted Round Robin을 결합한 방식이다.
+  - 장점
+    - Server의 처리량과 활성 연결의 수를 모두 고려하므로, 부하 분산이 효율적으로 이루어진다.
+    - 할당된 가중치에 따라 활성 연결 비율이 가장 낮은 server로 request를 전달한다.
+  - 단점
+    - 활성화된 connection 수와 가중치를 모두 추적해야한다.
+    - Server health나 response time을 고려하지 않는다.
+
+
+
+- IP Hash
+  - Source IP 주소 혹은 destination IP 주소를 기반으로 어떤 server로 보낼지 결정한다.
+    - 이 방식은 session 지속성(persistence)를 유지한다.
+    - 즉 특정 IP에서 온 request는 같은 server로 전송된다.
+  - 장점
+    - Session 지속성을 유지할 수 있으므로, 특정 client와 특정 server가 반복적으로 연결되어야 하는 경우 유용하다.
+    - Hash 함수만 잘 구현한다면 부하를 고르게 분산할 수 있다.
+  - 단점
+    - 적은 수의 client가 많은 수의 요청을 보내는 상황에서는 부하가 잘 분산되지 않을 수 있다.
+    - Server health나 response time, 그리고 server마다 각기 다른 처리 능력을 고려하지 않는다.
+
+
+
+- Least Response Time
+
+  - 응답 시간이 가장 짧고, 활성화된 connection의 개수가 가장 적은 server로 request를 전달한다.
+    - 가장 빨리 응답을 줄 수 있는 server에 우선 순위를 주기에 사용자 경험을 최적화하는데 도움을 준다.
+  - 장점
+    - Server의 response time을 고려하여 사용자 경험을 향상시킬 수 있다.
+    - 활성 connection과 response time을 모두 고려하므로 효율적인 부하 분산이 가능하다.
+
+  - 단점
+    - Server의 response time을 추적하고 monitoring해야한다.
+    - Server health나 server 마다 각기 다른 처리 능력을 고려하지 않는다.
+
+
+
+- Random
+  - 무선적으로 아무 server에나 request를 전송한다.
+    - 모든 server가 비슷한 처리 능력을 가지고 있고 session persistence가 필요하지 않을 때 유용하다.
+  - 장점
+    - 구현이 쉽다.
+    - Server들의 처리 능력이 비슷할 경우 잘 동작한다.
+  - 단점
+    - Server health나 response time, 그리고 server마다 각기 다른 처리 능력을 고려하지 않는다.
+    - Session persistence가 요구되는 경우 사용할 수 없다.
+
+
+
+- Least Bandwidth
+
+  - Request가 들어왔을 때, 가장 가장 적은 대역폭을 사용하는 server로 request를 전달한다.
+
+  - 장점
+    - Network 대역폭을 고려하므로, network 자원을 관리하는 데 도움을 준다.
+    - Server들이 각기 다른 대역폭을 가지고 있을 때 유용하다.
+  - 단점
+    - Server의 대역폭을 추적하고 monitoring해야한다.
+    - Server health나 response time, 그리고 server마다 각기 다른 처리 능력을 고려하지 않는다.
+
+
+
+- Custom Load
+  - 특정 요구사항이나 조건에 따라 직접 구현한 load balancing algorithm을 사용하는 방식이다.
+    - Server health, 위치, 처리 능력 등을 고려할 수 있다.
+  - 장점
+    - 커스터마이징이 가능하므로 특정 use case에 맞는 부하 분산이 가능하다.
+    - 여러 요소를 고려하여 구현할 수 있다.
+  - 단점
+    - 직접 개발하고 유지보수 해야 하므로 시간이 많이 든다.
+    - 성능 최적화를 위해 많은 광범위한 test가 필요하다.
+
+
+
+
+
+# API Gateway vs. Load Balancer vs. Reverse proxy
 
 > https://medium.com/geekculture/load-balancer-vs-reverse-proxy-vs-api-gateway-e9ec5809180c
 
-- 식당의 비유
-  - 만약 application이 식당이라면 아래와 같은 비유가 가능하다.
-  - Load Balancer는 headwaiter이다.
-    - 모든 고객들이 식탁에 고르게 앉을 수 있도록한다.
-  - Reverse proxy는 숙련된 waiter이다.
-    - 주문을 처리한다.
-    - 모든 고객들이 최상의 경험을 할 수 있도록 돕는다.
-  - API Gateway는 식당의 관리인이다.
-    - 식당의 모든 과정을 감독하고 통제하는 역할을 한다.
+- Load Balancer, Reverse Proxy, API Gateway는 software architecture에서 매우 중요한 역할을 담당하는 component들이다.
+  - 이들은 고유한 목적을 가지고 있으므로, 이들을 잘 구분하여 필요에 따라 적절한 component를 선택할 수 있어야한다.
+    - 그러나 이들은 비슷한 역할을 공유하기도 해서 이들을 구분하는 것이 쉽지 않을 수 있다.
+
+  - 식당의 비유
+    - 만약 application이 식당이라면 아래와 같은 비유가 가능하다.
+    - Load Balancer는 headwaiter로써 모든 고객들이 식탁에 고르게 앉을 수 있도록한다.
+    - Reverse proxy는 숙련된 waiter로써 주문을 처리하고, 모든 고객들이 최상의 경험을 할 수 있도록 돕는다.
+    - API Gateway는 식당의 관리인으로써 식당의 모든 과정을 감독하고 통제하는 역할을 한다.
+
 
 
 
@@ -991,12 +1171,39 @@
   - Microservice 기반의 application에서 service들을 관리하기 위한 방식이다.
     - 여러 개의 service들을 중앙 집중화 하여 관리한다.
     - 모든 API의 호출에 대한 단일 entry point처럼 동작한다.
-
   - 기능
+    - Request와 response를 필요에 따라 수정하여 유연성을 향상시킬 수 있다.
+    - 모든 요청이 gateway를 거쳐가므로, 전체 application에 대한 monitoring 기능을 개발하기 수월하다.
   - 보안
     - Authentication을 담당한다.
-    - 중앙 집중화된 authentication과 authorization을 구현하여 API gateway는 각 service마다 이들을 중복하여 구현해야 하는 번거로움을 제거해준다.
-    - 
+    - 중앙 집중화된 authentication과 authorization을 구현하여 각 service마다 이들을 중복하여 구현해야 하는 번거로움을 제거해준다.
+
+
+
+- Load Balancer, Reverse Proxy, API Gateway의 핵심적인 차이
+  - Load balacner와 reverse proxy의 차이
+    - 둘 다 요청을 분산한다는 공통첨이 있다.
+    - 그러나 load balancer는 여러 backend server에 traffic을 분산하여 성능과 가용성, 그리고 장애 허용성을 향상시키는 데 초점이 맞춰져있다.
+    - 반면에 reverse proxy는 application layer에 위치하여 URL rewriting, content compression, access control과 같은 추가적인 기능을 제공하는 데 초점이 맞춰져있다.
+  - API gateway의 경우에는 다른 두 component와 달리 요청을 분산하는 역할을 하지는 않는다.
+    - 정확히는 API gateway는 request를 routing하고, 다른 두 component는 요청을 distributing한다.
+    - API gateway의 주요 목적은 microservice architecture에서 여러 API들을 중앙집중화하여 관리하는 것이다.
+    - Loac balancer나 reverse proxy와는 달리 인증, rate limiting, request/response 변환, monitoring과 같은 향상된 기능을 제공한다.
+
+
+
+- 많이 사용되는 tool과 solution
+  - Load balancer
+    - HAProxy, Nginx, Amazon ELB(Elastic Load Balaning) 등이 있다.
+    - 이중 HAProxy는 Github이나 Stack Overflow 등이 사용하는 신뢰도 높은 open source load banacer이다.
+  - Reverse proxy
+    - Nginx, Apache HTTP Server, Microsoft IIS 등이 있다.
+    - Nginx는 web server, reverse proxy, load balancer의 역할을 모두 할 수 있는 open source로 개발된 tool이다.
+  - API gateway
+    - Kong, Amazon API Gateway, Apigee 등이 있다.
+    - Kong은 Nginx 기반으로 만들어진 open source API gateway이다.
+
+
 
 
 
