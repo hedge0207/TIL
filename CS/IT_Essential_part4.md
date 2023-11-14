@@ -998,6 +998,75 @@
 
 
 
+- Stateless load balancing & stateful load balancing
+  - Stateless load balancer는 client의 session이나 client와의 연결 상태에 대한 어떠한 정보도 유지하지 않는다.
+    - 오직 client의 IP나 request URL, headers 등의 request에 포함된 정보만을 가지고 request를 sever로 전달한다.
+    - Session 정보를 저장하지 않기에 빠르고 효율적인 traffic 분산이 가능하다.
+  - Stateful load balancer는 client의 session 정보를 보존한다.
+    - 특정 server에 cleint를 할당하고 같은 client에서 오는 모든 순차적인 request가 같은 server로 전달되도록 보장한다.
+  - Stateful load balancing은 크게 두 개의 type으로 나뉜다.
+    - Source IP Affinity: client IP에 기반하여 client를 특정 sever에 할당하는 방식이다.
+    - Session Affinity: cookie나 URL 등의 session identifier에 기반하여 client를 특정 server에 할당하는 방식이다.
+
+
+
+- 고가용성과 장애허용성
+
+  - 고가용성을 보장하기 위해서 load balancer는 복제본이 함께 배포되어야 한다.
+
+    - 즉 복수의 load balancer instance들이 실행되어야 한다는 것이다.
+    - 크게 아래와 같은 전략이 있다.
+    - Active-passive configuration:하나의 load balancer가 정상 동작하는 동안 다른 load balancer는 대기하고 있다가, 요청을 처리하던 load balancer에 문제가 생기면 대기하던 load balancer가 활성화되어 요청을 처리하는 방식이다.
+    - Active-active configuration: 복수의 load balancer가 모두 활성화 상태로 traffic을 동시에 처리하는 방식이다.
+
+  - Health check와 monitoring
+
+    - Health check는 일정 주기 마다 load balancer가 server들의 가용성과 성능을 확인하는 작업이다.
+    - Server들의 상태를 monitoring함으로써 load balancer는 응답을 줄 수 없는 server들을 server pool에서 제거하여 해당 server로 요청이 가지 않도록 한다.
+
+    - Monitoring은 load balancer 자체를 확인하는 작업으로, load balancer를 monitoring하여 잠재적인 실패를 방지할 수 있다.
+
+
+
+- Load balancer 도입시 고려할 사항.
+
+  - Single point of failure
+
+    - 만약 load balancer를 단일 instance만 사용하거나 장애허용성을 염두에 두지 않으면, load balacer는 단일 장애점이 될 수도 있다.
+    - 만약 load balancer에 문제가 생길 경우 전체 application에 영향을 주게 될 수 있다.
+    - 따라서 이러한 위험을 완화시키기 위해 고가용성이나 장애허용성을 염두에 두고 load balancer를 운용해야한다.
+
+  - 설정의 복잡함
+
+    - Load balancer는 떄로 algorithm, timeout, health check 정책 등 광범위한 설정 값들을 필요로한다.
+
+    - 또한 잘 못 설정할 경우 load balancer의 성능이 떨어지거나 traffic을 고르게 분산하지 못 하게 되거나, 최악의 경우 service가 중단될 수도 있다.
+    - Load balancer를 운용하기 위해서는 적절한 설정값들로 설정하고 꾸준한 유지보수가 필요하며, 전문적인 지식을 갖춰야한다.
+
+  - 확장성의 한계
+
+    - Traffic이 증가함에 따라 load balancer는 bottleneck이 될 수 있다.
+    - 특히 수직 혹은 수평 확장에 적합하게 설정되어 있지 않을 경우 더욱 그렇다.
+    - 따라서 traffic 증가에 따라 load balander의 수용량을 잘 monitoring하고 조정해야한다.
+
+  - Latency
+
+    - Request-response 사이에 load balancer가 추가되면 추가적인 network hop이 생기는 것이므로 latency를 증가시킬 수 있다.
+    - 일반적으로 이는 매우 미미한 수치이긴 하지만, load balancer가 latency를 증가시킬 수도 있다는 점은 항상 생각해야한다.
+
+  - Sticky sessions
+
+    - 어떤 application은 session이 유지되거나, 요청들 사이의 user context가 유지되어야한다.
+    - 그러한 경우에 load balancer는 session persistence 혹은 sticky session을 고려하여 운용해야한다.
+    - 그러나 이는 request가 고르게 분산되지 못하게 만들수도 있다.
+
+  - 비용
+
+    - Load balancer를 구축하고 관리하는데는 비용이 든다.
+    - Hardware나 software license 비용등과 더불어, 이를 관리하는 데도 비용이 든다.
+
+
+
 
 
 ## Load Balancing algorithm
