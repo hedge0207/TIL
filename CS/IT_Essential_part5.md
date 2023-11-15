@@ -238,3 +238,9 @@
   - 디지털 전환
     - 기업 및 조직이 디지털 기술과 도구를 활용하여 비즈니스 모델과 프로세스를 혁신하는 과정이다.
     - 요즘에는 SI라는 말 보다는 DT, DX라는 용어를 더 선호한다.
+
+
+
+- Sticky session
+  - 특정 session의 요청을 처음 처리한 server로만 전송하는 것을 의미한다.
+  - Load balancer 등으로 인해 client의 request가 어떤 server로 갈지 알 수 없는 상황에서 연속된 request를 한 server에서 처리해야 할 경우 사용한다.

@@ -1186,6 +1186,117 @@
 
 
 
+## Load balncing의 유형
+
+- Hardware Load Balancing
+  - 물리적 장치를 통해 load balancing을 수행하는 것이다.
+    - Application-Specific Integrated Circuits(ASICs) 혹은 Field-Programmable Gate Arrays(FPGAs)와 같은 특수 hardware component를 사용한다.
+  - 장점
+    - Load balancing에 특화된 장비들을 사용하므로 높은 성능을 보인다.
+    - 종종 보안, monitoring 등의 부가적인 기능이 추가된 장비들도 있다.
+  - 단점
+    - 가격이 비쌀 수 있다.
+    - 초기에 구성하고 사용하는데 전문적인 지식을 필요로한다.
+    - 확장시에 추가적인 장비 구입이 필요할 수 있다.
+
+
+
+- Software Load Balancing
+  - Software를 사용하여 load balancing을 하는 것이다.
+  - 장점
+    - 일반적으로 hardware load balancer 보다 구축하기 쉽다.
+    - 확장이 쉽다.
+    - 클라우드 환경을 비롯한 다양한 platform에 배포가 가능하다.
+  - 단점
+    - Hardware load balancer에 비해 낮을 성능을 보일 수 있다.
+    - Host system의 자원을 소비하므로, 같은 host system을 사용하는 다른 application에 영향을 줄 수 있다.
+    - 지속적인 software update가 필요할 수 있다.
+
+
+
+- Cloud-based Load Balancing
+
+  - Cloud 제공자가 제공하는 load balancer이다.
+
+  - 장점
+    - 확장성이 높다.
+    - Cloud 제공자가 관리에 필요한 기능과 update를 제공하므로 관리가 쉽다.
+    - 사용한 만큼만 비용을 지불하면 된다.
+  - 단점
+    - Cloud 제공자에게 의존할 수 밖에 없다.
+    - Custom이 제한적이다.
+
+
+
+- DNS Load Balancing
+
+  - DNS infrastructure를 사용하여 load balancing하는 방식이다.
+    - 예를 들어 CDN(Content Delivery Network)은 DNS load balancing을 사용하여 사용자와 가장 가까운 지리적 위치에 있는 server로 요청을 보낸다.
+
+  - 장점
+    - 상대적으로 구현하기 쉬우며 전문적인 hardware나 software를 필요로하지 않는다.
+    - 지리적 정보에 기반하여 요청을 분산할 수 있다.
+  - 단점
+    - DNS resolution time이 제한되므로 다른 load balancing 기법에 비해 update 속도가 느릴 수 있다.
+    - Server의 상태나 response time 등에 대해 고려하지 않는다.
+    - Session persistence 요구되거나 섬세한 부하 분산에는 적절하지 않다.
+
+
+
+- Global Server Load Balancing(GSLB)
+
+  - 지리적으로 분산된 data center로 부하를 분산하는 방식이다.
+
+    - DNS load balancing 방식에 server health check 등 보다 향상된 기능을 추가한 방식이다.
+
+  - 장점
+
+    - 여러 지리적 위치에 있는 data center로 요청을 분산시킬 수 있다.
+
+    - 사용자의 요청을 가장 가까운 곳으로 분산시켜 응답 속도를 높일 수 있다.
+    - Server 상태 확인, session persistence, custom routing 정책 등을 설정할 수 있다.
+
+  - 단점
+
+    - 초기 구성과 이후의 유지보수가 상대적으로 복잡하다.
+    - 전문적인 hardware나 software가 필요할 수 있다.
+    - 느린 update나 caching 문제 등 DNS의 제한 사항이 문제가 된다.
+
+
+
+- Layer 4 Load Balancing
+  - Transport layer라고 불리는 4 계층에서 load balancing을 수행한다.
+    - Traffic을 TCP 또는 UDP header의 정보(IP 주소나 port)를 기반으로 분산시킨다.
+  - 장점
+    - 제한된 정보만을 가지고 결정을 내리기 때문에 빠르고 효율저이다.
+    - 광범위한 protocol과 traffic type을 처리할 수 있다.
+    - 상대적으로 구현과 관리가 쉽다.
+  - 단점
+    - Application 수준의 정보는 사용하지 않으므로 특정 시나리오에서 효율성이 떨어질 수 있다.
+    - Server 상태, response time 등을 고려하지 않는다.
+    - Session persistence가 요구되거나 fine-grained 작업을 처리해야 하는 상황에서는 부적절 할 수 있다.
+
+
+
+- Layer 7 Load Balancing
+
+  - Application layer라 불리는 7계층에서 load balancing을 수행한다.
+    - Application과 관련된 정보(HTTP header, cookies, URL 경로 등)를 기반으로 load balancing을 수행한다.
+
+  - 장점
+
+    - Application 수준의 정보를 고려하므로 보다 섬세한 load balancing이 가능하다.
+    - Session persistence나 content-based routing, SSL offloading 등의 기능을 제공할 수 있다.
+
+    - 특정 application의 요구사항이나 protocol에 적합하도록 수정이 가능하다.
+
+  - 단점
+    - Layer 4 load balancing과 비교했을 때 보다 많은 정보를 고려하므로, 상대적으로 느리고 자원 집약적이다.
+    - 전문적인 software나 hardware가 필요할 수 있다.
+    - 상대적으로 복잡도가 높아 관리가 힘들 수 있다.
+
+
+
 
 
 # API Gateway vs. Load Balancer vs. Reverse proxy
