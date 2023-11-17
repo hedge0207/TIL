@@ -1,3 +1,97 @@
+# API Throttling
+
+> https://learn.microsoft.com/en-us/azure/architecture/patterns/throttling
+
+- Throttling
+  - Hardware에서 사용될 경우 hardware가 과열되어 손상되는 것을 방지하기 위해 클럭과 전압을 낮추거나 전원을 종료하여 발열을 줄이는 기능을 의미한다.
+  - API throttling은 application에 가해지는 traffic의 양을 조절하여 application에 과도한 부하가 가해지는 것을 막는 기법을 의미한다.
+    - 이 경우 rate limiting이라고도 불린다.
+
+
+
+- 문제
+  - Application에 가해지는 부하는 활성 유저수 혹은 수행되는 활동의 유형에 따라 달라진다.
+    - 예를 들어 일과 시간이 새벽 시간 보다 활성 유저수가 많을 것이므로 일과 시간에 부하가 더 클 것이다.
+    - 또한 매달 말에 비용이 많이 드는 분석을 수행해야 하는 service라면 매달 말에 부하가 커질 것이다.
+  - 위 처럼 어느 정도 예측할 수 있는 부하의 변화도 있지만, 때로는 예측할 수 없는 부하의 변화도 있다.
+  - 만약 예상치 못한 부하의 증가가 발생할 경우 application은 허용치 보다 많은 부하량을 감당하지 못 해 종료될 수도 있다.
+
+
+
+- API Throttling 방식
+  - Application이 가용한 자원에 한계를 설정하고, 한계에 도달할 경우 조절하는 방식을 사용한다.
+    - 임계치는 시스템의 최대 수용량보다 낮게 설정되어야한다.
+    - Application이 얼마만큼의 resource를 사용하는지 monitoring하다가 임계점을 넘어갈 경우 들어오는 request를 조절한다.
+    - Request를 조절하는 방법으로는 아래와 같은 것들이 있다.
+  - 특정 기간 동안에 n번 이상 API에 접근한 user들이 보내는 request를 거절하는 방법.
+    - 사용자별 resource 사용량을 측정해야 가능한 방법이다.
+  - 중요하지 않은 service들을 비활성화 하거나 속도를 늦춤으로써 필수적인 service들이 지속적으로 수행될 수 있도록 하는 방법
+
+
+
+- Token Bucket Algorithm
+  - Throttling에 가장 많이 사용되는 algorithm이다.
+    - Token이 들어 있는 bucket에서 token을 하나씩 빼서 사용하는 것이 client가 request를 보낼 때 마다 server에서 token을 하나씩 빼가는 것과 비슷하여 이런 이름이 붙었다.
+    - 만약 bucket에 더 이상 token이 남아있지 않으면 token이 다시 채워지기 전까지 throttling을 수행한다.
+    - Burst와 refill이라는 개념을 사용한다.
+  - Burst
+    - Client가 사용할 수 있는 token 수에 해당한다.
+    - 매 request마다 token이 소비된다.
+  - Refill(Sustain)
+    - Bucket에 token을 다시 채우는 것을 의미한다.
+    - Refill이 빠르게 이루어질 수록 token이 바닥날 확률도 내려가게 된다.
+
+
+
+- Token Bucket Algorithm외에도 아래와 같은 algorithm들이 있다.
+  - Leaky Bucket
+  - Fixed Window
+  - Sliding Window
+
+
+
+- Throttling 도입시 고려할 사항
+  - Throttling은 신속하게 수행되어야한다.
+    - 임계치에 도달하는 즉시 실행되어 시스템의 부하를 조절해야한다.
+  - Client에게 요청을 거절할 수 밖에 없는 이유를 잘 설명해야한다.
+    - 주로 429, 503 response code를 반환하는 방식으로 이루어진다.
+    - 429는 특정 client가 특정 시간 동안 너무 많은 요청을 보낼 경우에 반환한다.
+    - 503은 server에서 요청을 처리할 준비가 되지 않았을 때 반환한다.
+
+
+
+
+
+# Circuit Breaker
+
+> https://martinfowler.com/bliki/CircuitBreaker.html
+
+- Circuit Breaker
+
+  - 원격 접속의  성공/실패를 카운트하여 에러율(failure rate)이 임계치를 넘었을 때 자동적으로 접속을 차단하는 시스템이다.
+    - 서비스가 여러 개의 component들고 구성되어 있을 때, 한 component에서 문제가 생길 경우 해당 component에 의존하는 다른 component들에서도 연속적으로 문제가 발생할 수 있다.
+    - 이 경우 시스템 전체가 마비될 수 있으며, 어떤 컴포넌트가 에러의 원인인지를 파악하는 것도 쉽지 않다.
+    - 따라서 이러한 연쇄적인 에러를 막을 수 있도록 의존하는 컴포넌트에서 에러가 일정 비율 이상으로 발생할 경우 더 이상 해당 컴포넌트에 접속하지 않도록 해야한다.
+
+  - State Machine으로 나타낼 수 있다.
+
+    - 접속 성공과 실패 이벤트가 발생할 때 마다 내부 상태를 업데이트하여 자동적으로 장애를 검출하고 복구 여부를 판단한다.
+
+    - CLOSED: 초기 상태로 모든 접속은 평소와 같이 실행 된다.
+    - OPEN: 에러율이 임계치를 넘은 상태로 보든 접속은 차단(fail fast)된다.
+    - HALF_OPEN: OPEN 후 일정 시간이 지난 상태로 접속을 시도하여 성공하면 CLOSED, 실패하면 OPEN으로 되돌아간다.
+
+  ![img](IT_Essential_part5.assets/00Zf8RD1TOzFLGX3L.png)
+
+
+
+
+- 함수로 구현할 수도 있고, 하나의 component가 될 수 도 있다.
+  - 함수로 구현할 경우 주로 decorator를 사용한다.
+  - [Python으로 circuit breaker를 구현한 package](https://github.com/fabfuel/circuitbreaker/tree/develop)가 있다.
+
+
+
 # Data Flow Diagram(DFD)
 
 > https://cjmyun.tripod.com/Knowledgebase/DFD.htm
