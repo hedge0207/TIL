@@ -1,3 +1,169 @@
+# API Throttling
+
+> https://learn.microsoft.com/en-us/azure/architecture/patterns/throttling
+
+- Throttling
+  - Hardware에서 사용될 경우 hardware가 과열되어 손상되는 것을 방지하기 위해 클럭과 전압을 낮추거나 전원을 종료하여 발열을 줄이는 기능을 의미한다.
+  - API throttling은 application에 가해지는 traffic의 양을 조절하여 application에 과도한 부하가 가해지는 것을 막는 기법을 의미한다.
+    - 이 경우 rate limiting이라고도 불린다.
+
+
+
+- 문제
+  - Application에 가해지는 부하는 활성 유저수 혹은 수행되는 활동의 유형에 따라 달라진다.
+    - 예를 들어 일과 시간이 새벽 시간 보다 활성 유저수가 많을 것이므로 일과 시간에 부하가 더 클 것이다.
+    - 또한 매달 말에 비용이 많이 드는 분석을 수행해야 하는 service라면 매달 말에 부하가 커질 것이다.
+  - 위 처럼 어느 정도 예측할 수 있는 부하의 변화도 있지만, 때로는 예측할 수 없는 부하의 변화도 있다.
+  - 만약 예상치 못한 부하의 증가가 발생할 경우 application은 허용치 보다 많은 부하량을 감당하지 못 해 종료될 수도 있다.
+
+
+
+- API Throttling 방식
+  - Application이 가용한 자원에 한계를 설정하고, 한계에 도달할 경우 조절하는 방식을 사용한다.
+    - 임계치는 시스템의 최대 수용량보다 낮게 설정되어야한다.
+    - Application이 얼마만큼의 resource를 사용하는지 monitoring하다가 임계점을 넘어갈 경우 들어오는 request를 조절한다.
+    - Request를 조절하는 방법으로는 아래와 같은 것들이 있다.
+  - 특정 기간 동안에 n번 이상 API에 접근한 user들이 보내는 request를 거절하는 방법.
+    - 사용자별 resource 사용량을 측정해야 가능한 방법이다.
+  - 중요하지 않은 service들을 비활성화 하거나 속도를 늦춤으로써 필수적인 service들이 지속적으로 수행될 수 있도록 하는 방법
+
+
+
+- Token Bucket Algorithm
+  - Throttling에 가장 많이 사용되는 algorithm이다.
+    - Token이 들어 있는 bucket에서 token을 하나씩 빼서 사용하는 것이 client가 request를 보낼 때 마다 server에서 token을 하나씩 빼가는 것과 비슷하여 이런 이름이 붙었다.
+    - 만약 bucket에 더 이상 token이 남아있지 않으면 token이 다시 채워지기 전까지 throttling을 수행한다.
+    - Burst와 refill이라는 개념을 사용한다.
+  - Burst
+    - Client가 사용할 수 있는 token 수에 해당한다.
+    - 매 request마다 token이 소비된다.
+  - Refill(Sustain)
+    - Bucket에 token을 다시 채우는 것을 의미한다.
+    - Refill이 빠르게 이루어질 수록 token이 바닥날 확률도 내려가게 된다.
+
+
+
+- Token Bucket Algorithm외에도 아래와 같은 algorithm들이 있다.
+  - Leaky Bucket
+  - Fixed Window
+  - Sliding Window
+
+
+
+- Throttling 도입시 고려할 사항
+  - Throttling은 신속하게 수행되어야한다.
+    - 임계치에 도달하는 즉시 실행되어 시스템의 부하를 조절해야한다.
+  - Client에게 요청을 거절할 수 밖에 없는 이유를 잘 설명해야한다.
+    - 주로 429, 503 response code를 반환하는 방식으로 이루어진다.
+    - 429는 특정 client가 특정 시간 동안 너무 많은 요청을 보낼 경우에 반환한다.
+    - 503은 server에서 요청을 처리할 준비가 되지 않았을 때 반환한다.
+
+
+
+
+
+# Circuit Breaker
+
+> https://martinfowler.com/bliki/CircuitBreaker.html
+
+- Circuit Breaker
+
+  - 원격 접속의  성공/실패를 카운트하여 에러율(failure rate)이 임계치를 넘었을 때 자동적으로 접속을 차단하는 시스템이다.
+    - 서비스가 여러 개의 component들고 구성되어 있을 때, 한 component에서 문제가 생길 경우 해당 component에 의존하는 다른 component들에서도 연속적으로 문제가 발생할 수 있다.
+    - 이 경우 시스템 전체가 마비될 수 있으며, 어떤 컴포넌트가 에러의 원인인지를 파악하는 것도 쉽지 않다.
+    - 따라서 이러한 연쇄적인 에러를 막을 수 있도록 의존하는 컴포넌트에서 에러가 일정 비율 이상으로 발생할 경우 더 이상 해당 컴포넌트에 접속하지 않도록 해야한다.
+
+  - State Machine으로 나타낼 수 있다.
+
+    - 접속 성공과 실패 이벤트가 발생할 때 마다 내부 상태를 업데이트하여 자동적으로 장애를 검출하고 복구 여부를 판단한다.
+
+    - CLOSED: 초기 상태로 모든 접속은 평소와 같이 실행 된다.
+    - OPEN: 에러율이 임계치를 넘은 상태로 보든 접속은 차단(fail fast)된다.
+    - HALF_OPEN: OPEN 후 일정 시간이 지난 상태로 접속을 시도하여 성공하면 CLOSED, 실패하면 OPEN으로 되돌아간다.
+
+  ![img](IT_Essential_part5.assets/00Zf8RD1TOzFLGX3L.png)
+
+
+
+
+- 함수로 구현할 수도 있고, 하나의 component가 될 수 도 있다.
+  - 함수로 구현할 경우 주로 decorator를 사용한다.
+  - [Python으로 circuit breaker를 구현한 package](https://github.com/fabfuel/circuitbreaker/tree/develop)가 있다.
+
+
+
+# Data Flow Diagram(DFD)
+
+> https://cjmyun.tripod.com/Knowledgebase/DFD.htm
+>
+> https://www.lucidchart.com/pages/data-flow-diagram
+
+- Data Flow Diagram(DFD)
+  - DFD는 데이터가 소프트웨어 내의 각 프로세스를 따라 흐르면서 변환되는 모습을 타나내는 그림이다.
+    - 데이터 흐름도 혹은 자료 흐름도라고 부르기도 한다.
+  - 구조적 방법론과 DFD
+    - DFD는 구조적 방법론을 대표하는 diagram이다.
+    - 다익스트라가 GOTO 문의 해로움을 들어 구조적 프로그래밍의 개념을 소개하면서 시작된 구조적 방법에서 데이터는 프로세스 사이에 주고 받는 형태로 나타난다.
+    - 다만 OOP의 등장으로 프로세스에 따른 데이터의 흐름 보다는 데이터의 분석이 더 중요해지게 되었고, DFD보다는 ERD가 더 널리 사용되게 되었다.
+
+
+
+- DFD의 구성 요소
+
+  - 표기법
+    - Yourdon and Coad, Gane and Sarson 등의 창작자의 이름을 붙인 다양한 표기법이 있다.
+    - 아래는 Yourdon and Coad를 기준으로 설명한다.
+    - 이 방식들은 표기법만 다를 뿐 모두 같은 구성 요소(process, data flow, data store, external entity)를 공유한다.
+  - Process
+    - 입력되는 데이터를 원하는 데이터로 변환하여 출력시키기 위한 과정으로 원과 원 내부의 이름으로 표현한다.
+    - 원 안에는 프로세스가 수행하는 일 또는 프로세스를 수행하는 행위자를 기록한다.
+    - 프로세스는 항상 새로운 가치를 부가해야한다.
+  - Data Flow
+    - DFD의 구성 요소들 간의 인터페이스를 나타낸다.
+    - 대부분의 경우 process들 사이를 연결하지만 data store로부터의 흐름을 나타내기도 한다.
+    - 명칭이 부여되거나 부여되지 않은 화살표로 표시한다.
+    - 서로 다른 데이터 흐름에는 동일한 이름을 부여하지 않는다.
+  - Data Store
+    - 데이터의 저장이나 조회에 반응하는 수동적 객체를 의미한다.
+    - 오른쪽에 선이 없는 직사각형으로 표기하며, 직사각형 내부에 저장소의 이름을 기록한다.
+  - External Entity
+    - 데이터를 생성, 소비함으로써 데이터 흐름도를 주도하는 활성 객체이다.
+    - 보통 데이터 흐름도의 경계에 놓이게 되며 DFD 범위 밖에 사각형의 형태로 표시한다.
+
+  ![img](IT_Essential_part5.assets/dfd5.jpeg)
+
+
+
+- 작성 규칙
+  - 데이터 보존의 원칙
+    - 어떤  process의 출력은 반드시 입력 data flow를 사용하여 생성된 것이어야 한다.
+    - 즉 입력으로 사과를 받았는데 오렌지 쥬스를 출력해선 안 된다.
+  - 최소 데이터 입력의 원칙
+    - 어떤 프로세스가 출력 데이터 흐름을 산출하는데 반드시 필요한 최소한의 데이터 흐름만 입력해야 한다.
+  - 지속성의 원칙
+    - 프로세스는 데이터 흐름이 들어오면 항상 수행이 가능해야한다.
+  - 순차처리의 원칙
+    - 데이터 흐름을 통해 입력되는 데이터는 반드시 도착하는 순서대로 처리해야 한다.
+    - 그러나 데이터 저장소에서 입력되는 데이터는 어떤 순서에 의해 접근해도 무방하다.
+  - 영구성의 원칙
+    - 데이터 흐름의 처리는 처리된 후 없어지지만 데이터 저장소의 데이터는 아무리 읽어도 없어지지 않는다.
+  - 데이터 변환의 원칙
+    - 어떤 종류의 프로세스가 DFD 상에 나타나야 하는지를 규정하는 원칙으로, 아래와 같은 경우 DFD에 프로세스를 나타내야한다.
+    - 데이터 본질의 변환: 입력 받은 데이터를 다른 데이터로 변환하여 출력하는 경우.
+    - 데이터 합성의 변환: 둘 이상의 데이터를 입력받아 이들을 합성하여 하나의 출력으로 변환하는 경우.
+    - 데이터 관점의 변환: 입력 데이터가 프로세스의 처리에 따라 각기 다른 data flow를 형성할 경우.
+    - 데이터 구성의 변환: 데이터 자체는 동일하지만 데이터의 구성이 변경될 경우.
+
+
+
+
+
+
+
+
+
+
+
 # Shorts
 
 - Type system
@@ -238,3 +404,9 @@
   - 디지털 전환
     - 기업 및 조직이 디지털 기술과 도구를 활용하여 비즈니스 모델과 프로세스를 혁신하는 과정이다.
     - 요즘에는 SI라는 말 보다는 DT, DX라는 용어를 더 선호한다.
+
+
+
+- Sticky session
+  - 특정 session의 요청을 처음 처리한 server로만 전송하는 것을 의미한다.
+  - Load balancer 등으로 인해 client의 request가 어떤 server로 갈지 알 수 없는 상황에서 연속된 request를 한 server에서 처리해야 할 경우 사용한다.

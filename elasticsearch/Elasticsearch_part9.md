@@ -1812,7 +1812,191 @@
 
 
 
+#### edge_ngram tokenizer
 
+- `edge_ngram` tokenizer
+
+  - Term 가장 앞쪽의 ngram만 token으로 생성하는 tokenizer이다.
+    - 우선 text를 `token_chars`에 지정되지 않은 character들을 기준으로 word 단위로 쪼갠다.
+    - 그 후 각 word의 시작부터 정해진 길이 만큼의 token으로 다시 쪼갠다.
+  - 자동 완성 기능을 구현할 때 유용하게 사용할 수 있다.
+  - 예시
+    - 아래 예시에서 `token_chars`에는 `letter`와 `digit`을 지정했으므로,  이 두 class에 속하지 않은 character를 기준으로 text가 word로 쪼개진다.
+    - `3 Quick Foxes`는 `token_chars`에 속하지 않은 공백을 기준으로 `["3", "Quick", "Foxes"]`로 쪼개지고, 각각의 단어들은 시작점부터 ngram으로 분할된다.
+    - 그런데 `3`의 경우 `min_gram`인 2에 미치지 못하므로 token이 생성되지 않고, 나머지 두 단어만 token이 생성된다.
+
+  ```json
+  // PUT edge_ngram_test
+  {
+    "settings": {
+      "analysis": {
+        "tokenizer": {
+          "my_tokenizer": {
+            "type": "edge_ngram",
+            "min_gram": 2,
+            "max_gram": 3,
+            "token_chars": [
+              "letter",
+              "digit"
+            ]
+          }
+        }
+      }
+    }
+  }
+  
+  // POST edge_ngram_test/_analyze
+  {
+    "tokenizer": "my_tokenizer",
+    "text": "3 Quick Foxes."
+  }
+  
+  // output
+  // ['Qu', 'Qui', 'Fo', 'Fox']
+  ```
+
+  - `edge_ngram` tokenizer를 사용한 field는 index시와 search시에 각기 다른 analyzer를 사용하는 것이 권장된다.
+    - 일반적으로 Elasticsearch는 하나의 field에 대하여 동일한 index analyzer와 search analyzer를 사용하는 것을 권장한다.
+    - 그러나 이는 `edge_ngram`을 사용할 때는 예외로, `edge_ngram` token은 index 할 때만 사용하는 것을 권장한다.
+    - 주로 자동완성을 위해 사용하는 `edge_ngram` tokenizer의 특성상 검색어는 `edge_ngram`으로 tokenizing하지 않는 것이 좋다.
+
+
+
+- 옵션들
+  - 모든 옵션을 `ngram` tokenizer와 공유한다.
+  - 다만, `ngram` tokenizer와는 달리 `min_gram`과 `max_gram`의 차이에 제한이 없다.
+
+
+
+- truncate token filter와 결합
+
+  - 상기했듯 `edge_ngram` tokenizer를 사용할 경우 search analyzer는 다른 analyzer를 사용하는 것이 권장된다.
+    - 그런데, 이는 검색 term이 `max_gram`보다 클 경우 문제가 될 수 있다.
+  - 예를 들어 `max_gram`이 3으로 edge_ngram으로 tokenizing된 field가 있다고 하자.
+    - 해당 field에 "hello world"를 색인하면 `["h", "he", "hel"]`과 같이 token이 생성된다.
+    - 이제 해당 field에 hello라는 검색어로 standard analyzer를 사용하여 검색하면, hello는 그냥 `hello`라는 token으로 분석된다.
+    - 색인시에 생성된 token들 중 hello와 일치하는 것은 하나도 없으므로 hello로 hello world를 검색할 수 없는 상황이 생긴다.
+
+  ```json
+  // edge_ngram tokenizer를 사용하는 index를 생성한다.
+  // PUT edge_ngram_test
+  {
+    "settings": {
+      "analysis": {
+        "tokenizer": {
+          "my_tokenizer": {
+            "type": "edge_ngram",
+            "min_gram": 1,
+            "max_gram": 3
+          }
+        },
+        "analyzer": {
+          "my_analyzer":{
+            "type":"custom",
+            "tokenizer":"my_tokenizer"
+          }
+        }
+      }
+    },
+    "mappings": {
+      "properties": {
+        "text":{
+          "type":"text",
+          "analyzer": "my_analyzer"
+        }
+      }
+    }
+  }
+  
+  // data를 색인하고
+  // PUT edge_ngram_test/_doc/1
+  {
+    "text":"hello world"
+  }
+  
+  // 다른 search analyzer를 사용하여 hello로 검색하면, 아무 결과도 나오지 않게 된다.
+  // GET edge_ngram_test/_search
+  {
+    "query": {
+      "match": {
+        "text": {
+          "query": "hello",
+          "analyzer": "standard"
+        }
+      }
+    }
+  }
+  ```
+
+  - `truncate` token filter는 token이 일정 길이 이상을 넘어가면, 넘어가는 부분을 잘라내는 token filter이다.
+    - 예를 들어 위 예시에서 검색 analyzer에 `truncate` token filter를 3으로 적용했다면, 최종 token은 hello가 아닌 hel이 되어 hello로 hello world가 검색 가능해진다.
+
+  ```json
+  // PUT edge_ngram_test
+  {
+    "settings": {
+      "analysis": {
+        "tokenizer": {
+          "my_tokenizer": {
+            "type": "edge_ngram",
+            "min_gram": 1,
+            "max_gram": 3
+          }
+        },
+        // 검색 analyzer에 사용할 truncate token filter를 정의한다.
+        "filter": {
+          "3_char_trunc": {
+            "type": "truncate",
+            "length": 3
+          }
+        },
+        "analyzer": {
+          "my_analyzer":{
+            "type":"custom",
+            "tokenizer":"my_tokenizer"
+          },
+          "3_char": {
+            "type":"custom",
+            "tokenizer":"whitespace",
+            "filter": [ "3_char_trunc" ]
+          }
+        }
+      }
+    },
+    "mappings": {
+      "properties": {
+        "text":{
+          "type":"text",
+          "analyzer": "my_analyzer",
+          "search_analyzer": "3_char"	// 검색 analyzer로 설정한다.
+        }
+      }
+    }
+  }
+  
+  // data를 색인하고
+  // PUT edge_ngram_test/_doc/1
+  {
+    "text":"hello world"
+  }
+  
+  // 다른 search analyzer를 사용하여 hello로 검색하면, 정상적으로 결과가 나오게 된다.
+  // GET edge_ngram_test/_search
+  {
+    "query": {
+      "match": {
+        "text": {
+          "query": "hello",
+          "analyzer": "standard"
+        }
+      }
+    }
+  }
+  ```
+
+  - 문제점
+    - 당연하게도 위 예시를 기준으로 hello, hell, hel이 모두 같은 검색어로 취급되므로 정확률이 떨어지게 된다.
+    - 검색 결과가 아예 나오지 않는 것 보다는 일부 일치하는 결과라도 나오는 것이 나을 경우에는 고려해볼만하다.
 
 
 
