@@ -1,3 +1,155 @@
+# More Like This Query
+
+- More like this query(MLT query)
+  - 주어진 문서들의 집합과 가장 유사한 문서를 찾는 기능이다.
+  - 동작 방식
+    - Input으로 들어온 문서들에서 모든 text를 추출하고, text를 analyzer로 분석 한 뒤, 가장 높은 tf-idf 값을 가지는 term들을 선택한다.
+    - 이 term들로 query를 생성하고, 생성한 query로 검색을 수행한다.
+    - 사용자는 어떤 문서들을 input으로 사용할지, 어떤 term들로 집합을 구성할지, query가 어떻게 구성될지를 설정할 수 있다.
+  - MLT query 제약사항
+    - 검색 대상 필드는 반드시 text나 keyword type이어야한다.
+    - `_source`,  `stored`, `term_vector` 중 하나는 enable 되어있어야한다.
+    - 분석 속도를 높이기 위해서는 term_vector를 저장하는 것이 좋다.
+
+
+
+- 실행 예시
+
+  - 아래와 같이 단순히 text만 입력하는 것도 가능하다.
+
+  ```json
+  // GET /_search
+  {
+      "query": {
+          "more_like_this" : {
+              "fields" : ["title", "description"],
+              "like" : "Once upon a time",
+              "min_term_freq" : 1,
+              "max_query_terms" : 12
+          }
+      }
+  }
+  ```
+
+  - 혹은 아래와 같이 document와 text를 함께 주는 것도 가능하다.
+    - 아래와 같이 `_index`와 `_id`(특정 index를 대상으로 검색 할 경우에는 `_id`만)를 줄 경우 해당 문서의 field들 중 `fields`에 정의된 field들의 값을 가지고 유사 문서를 찾는다.
+    - 아래 query는 imdb index의 1번 문서와 2번 문서의 title과 description과 유사한 title과 description값을 가지거나 title이나 description field에 input으로 주어진 text("and potentially some more text here as well")와 유사한 값을 가지는 문서를 찾는다.
+
+  ```json
+  // GET /_search
+  {
+      "query": {
+          "more_like_this": {
+              "fields": [ "title", "description" ],
+              "like": [
+                  {
+                      "_index": "imdb",
+                      "_id": "1"
+                  },
+                  {
+                      "_index": "imdb",
+                      "_id": "2"
+                  },
+                  "and potentially some more text here as well"
+              ],
+              "min_term_freq": 1,
+              "max_query_terms": 12
+          }
+      }
+  }
+  ```
+
+  - 마지막으로, 아래와 같이 특정 색인 내에서만 text를 함께 검색하는 것도 가능하다.
+    - 혹은 `doc`을 통해 임의의 문서를 만들어서 유사한 문서를 찾는 것도 가능하다.
+    - 이 경우 `doc`에 정의된 field들을 가지고 유사 문서를 찾는다.
+    - 아래 query는 imdb index의 문서 중에서 genre가 horror인 문서나 전체 인덱스 중에서 title이나 description의 값이 input으로 주어진 text("and potentially some more text here as well")와 유사한 문서를 찾는다.
+
+  ```json
+  GET /_search
+  {
+      "query": {
+          "more_like_this": {
+              "fields": [ "title", "description" ],
+              "like": [
+                  {
+                      "_index": "imdb",
+                      // 가상의 문서를 생성한다.
+                      "doc": {
+                          "genre":"horror"
+                      }
+                  },
+                  "and potentially some more text here as well"
+              ],
+              "min_term_freq": 1,
+              "max_query_terms": 12
+          }
+      }
+  }
+  ```
+
+
+
+- Parameters
+
+  - `like`
+    - 유일한 required field이다.
+    - 이 parameter에 설정된 문서 집합 혹은 텍스트 집합 혹은 이 둘을 합한 집합과 가장 유사한 문서를 찾는다.
+    - 위에서 살펴본대로 다양한 형식으로 설정하는 것이 가능하다.
+
+  - `unlike`
+    - 이 parameter에 설정된 문서 집합 혹은 텍스트 집합 혹은 이 둘을 합한 집합과 유사하지 않은 문서를 찾는다.
+    - 형식은 `like`와 동일하다.
+  - `fields`
+    - Text를 분석할 field들의 list이다.
+    - 기본값은 `index.query.default_field` setting에 설정 된 값이다(`index.query.default_field`의 기본 값은 모든 field이다).
+  - `max_query_terms`
+    - 선택될 term의 최대 개수를 설정한다.
+    - 이 값을 증가시킬수록 정확도는 올라가지만, query 실행 속도는 감소한다.
+    - 기본값은 25이다.
+  - `min_term_freq`
+    - 문서에서 이 값 보다 적게 등장하는 term은 문서를 대표하는 term으로 선정되지 못한다.
+    - 기본값은 2이다.
+  - `min_doc_freq`
+    - 전체 문서 중에서 이 값 보다 적은 수의 문서에서 등장하는 term은 문서를 대표하는 term으로 선정되지 못한다.
+    - 기본 값은 5이다.
+  - `max_doc_freq`
+    - 문서에서 이 값 보다 많이 등장하는 term은 문서를 대표하는 term으로 선정되지 못한다.
+    - 조사와 같이 매우 빈번하게 등장하는 term 들을 무시하기 위한 설정이다.
+    - 기본값은 Intger type의 max 값인 2147483647(2^31-1)이다.
+  - `min_word_length`
+    - 문서를 대표하는 term으로 선택되기 위한 term의 최소 길이를 설정한다.
+    - 기본값은 0이다.
+  - `max_word_length`
+    - 문서를 대표하는 term으로 선택되기 위한 term의 최대 길이를 설정한다.
+    - 0으로 줄 경우 제한이 없다는 것을 의미하며, 기본값이 0이다.
+  - `stop_words`
+    - Stop word로 사용할 것들을 배열 형태로 줄 수 있다.
+    - 여기에 설정된 term들은 문서를 대표하는 term으로 선택되지 않는다.
+  - `analyzer`
+    - Text를 분석하기 위한 analyzer를 설정한다.
+    - 기본값은 `fields`에 설정된 첫 번째 field의 analyzer이다.
+  - `minimum_should_match`
+    - 추출한 term들로 생성된 query 중 최소 몇 개의 query가 맞아야 유사한 문서로 판단할지를 설정한다.
+    - 기본값은 30%이다.
+  - `fail_on_unsupported_field`
+    - 만약 검색 대상 field들 중 text나 keyword type이 아닌 field가 있을 경우 exception을 throw할지를 설정한다.
+    - 기본값은 true로, 부적절한 field가 포함되어 있을 경우 exception이 발생한다.
+  - `boost_terms`
+    - 생성된 query의 각 term들을 boosting하기 위한 옵션이다.
+    - 기본값은 0으로 boosting하지 않는다.
+  - `include`
+    - Input으로 받은 document들을 결과에 포함시킬지를 설정한다.
+    - 기본값은 false이다.
+  - `boost`
+    - 전체 query의 boost value를 설정한다.
+    - 기본값은 1.0이다.
+
+
+
+
+
+
+
 # minimum_should_match
 
 - mininum_should_match는 반드시 matching되어야 하는 should 절의 개수를 변경하는 것이다.
