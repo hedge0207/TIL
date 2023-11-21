@@ -493,18 +493,52 @@
 
 
 
-- QAC와 시간 사이의 관계
-  - QAC의 단계중 ranking 단계를 구현하는 가장 단순하면서도 직관적인 model은 most popular completion(MPC) model이다.
-    - 이 model은 자동 완성된 검색어 후보군들 중에서 검색 로그를 기반으로 가장 많이 검색된 query에 높은 rank를 매기는 방식이다.
-    - 이 모델은 현재의 query popularity가 과거나 현재나 변하지 않을 것이라는 가정 하에 rank를 매긴다.
+- 시간 기반 QAC model
+
+  - MPC(Most Popular Completion)
+    - QAC에서 순위 매기기 단계를 구현하는 가장 직관적인 방법은 query의 인기도(빈도)를 기반으로 하는 Maximum Likelihood Extimation(MLE)이다.
+    - 이러한 유형의 ranking model을 MPC라 부른다.
+    - MPC model에서는 현재의 query popularity 분포가 과거에 관찰된 것과 같을 것이라고 가정한다.
+    - 즉 현재의 query popularity가 과거나 현재나 변하지 않을 것이라는 가정 하에 rank를 매긴다.
+  - MPC 계산 방식
+    - $f(q)$는 전체 검색 로그 집합 $Q$에서 query $q$가 등장한 횟수(frequency)를 의미한다.
+    - $C(p)$는 prefix $p$로 시작하는 자동완성 후보군들의 집합을 의미한다.
+
+  $$
+  MPC(p)\ = \ arg\ \underset{q\in C(p)}{max}\ w(q),\ \ where\ w(q)={f(q) \over \sum_{q_i \in Q} f(q_i)}
+  $$
+
   - Query의 popularity는 시간에 따라 변화한다.
     - 예를 들어 "movie"라는 query는 금~일요일에 가장 많이 검색 될 것이고, "new year"라는 검색어는 연말연시에 가장 많이 검색 될 것이며, 큰 지진이 발생한다면 지진과 관련된 검색어가 많이 검색될 것이다.
     - Web이 점차 platform에 가까워질 수록 실시간으로 일어나는 사건에 영향을 많이 받으므로, 자연스럽게 검색에서 시간이 미치는 영향도 증가하게 된다.
     - 예를 들어 도서관의 소장 도서를 검색하는 검색 시스템은 Naver나 Google 등의 검색 platform에 비해서 시간에 따른 영향을 덜 받는다.
-    - 실제로 Google의 경우 매일 가장 많이 검색 된 query 중 15%는 이전에는 검색된 적 없는 query이며, 이러한 query들은 대부분 그 날 발생한 사건들의 영향을 받는다.
+    - 실제로 Google의 경우 매일 가장 많이 검색 된 query 중 15%는 이전에는 거의 검색된 적 없는 query이며, 이러한 query들은 대부분 그 날 발생한 사건들의 영향을 받는다.
+
   - 따라서 자동 완성 후보군의 ranking 역시 시간에 따라 변화하는 query popularity를 고려해서 이루어져야한다.
     - 이는 보통 검색 log에서 자동 완성된 검색어 후보군을 집계할 때 기간을 조정하는 식으로 이루어진다.
     - 특히 변화하는 정보를 빨리 반영하는 것이 중요한 news 검색이나 상품 검색의 경우 집계 기간을 더 짧게 설정하는 것이 좋다.
+
+  - 시간을 고려한(Time-Sensitive) 계산 방식
+
+    - 위에서 살펴본 MPC 계산 방식은 현재의 query popularity 분포가 과거에 관찰된 것과 같을 것이라고 가정한 것이다.
+    - 그러나 시간에 따라 query popularity는 변화하므로 시간을 고려해야 하며, 아래와 같이 구할 수 있다.
+
+    - $C(p)$는 prefix $p$로 시작하는 자동완성 후보군들의 집합을 의미한다.
+    - $\hat{f_t}(q)$는 특정 시간 $t$에  전체 query log 집합 $Q$에서 query $q$의 추정된 빈도를 의미한다.
+
+  $$
+  TS(p, t)\ = \ arg\ \underset{q\in C(p)}{max}\ w(q|t),\ \ where\ w(q|t)={\hat{f_t}(q) \over \sum_{q_i \in Q} \hat{f_t}(q_i)}
+  $$
+
+  - Query의 미래의 frequncy인 $\hat{y}_{t+1}$은 아래와 같은 방식으로 예측할 수 있다.
+    - 이전에 관찰된 $y_t$와 smooth된 output인 $\bar{y}_{t-1}$을 기반으로 단일 지수 평활법(single exponential smoothing method)를 사용하여 구한다.
+    - $λ$는 0에서 1 사이의 trade-off parameter이다.
+
+  $$
+  \hat{y}_{t+1} = \bar{y}_t=λ \cdot y_t + (1-λ) \cdot \bar{y}_{t-1}
+  $$
+
+
 
 
 
@@ -512,18 +546,30 @@
   - 사용자가 검색한 검색어를 분석함으로써 사용자가 원하는 것을 보다 잘 파악할 수 있다.
   - 사용자 중심 QAC model은 크게 두 종류로 나눌 수 있다.
     - 사용자가 현재 session에서 검색한 log들만 고려하는 방법(short-term).
-    - 사용자가 검색한 모든 log들을 고려하난 방법(long-term).
+    - 사용자가 검색한 모든 log들을 고려하는 방법(long-term).
     - 일반적으로 short-term search log가 long-term search log에 비해 더 정확한 후보를 제시할 수 있다.
+  
   - 두 방법 모두 방식은 유사하며, 두 방식을 조합하여 사용하는 것도 가능하다.
     - 먼저 사용자가 입력한 prefix에 대한 후보군을 추출하고 vector화한다.
     - 사용자가 검색한 query들(session내 혹은 전체)을 vector화 하고 후보군을 vector화 한 값과 cosine similarity를 구해서 높은 순으로 ranking을 매긴다.
     - 만약 두 방식을 조합한다면 기본적으로 모든 검색 log를 대상으로 하되, session 내에서 검색한 query인 경우 가중치를 주는 방식을 사용할 수 있을 것이다.
+  - Context를 고려한 자동완성 결과는 아래와 같이 구할 수 있다.
+    - 사용자가 현재 session에서 이전에 검색한 query들을 context라고 본다.
+    - Prefix $p$에 대한 자동 완성 결과의 집합을 $q_c$라 한다.
+    - $v_q$는 $q_c$를 vector화 한 값이며, $v_C$는 content $C$와 가장 높은 cosine similarity를 의미한다.
+    - $Q_I(p)$는 $p$를 확장한 자동완성 후보들의 집합이다.
+  
+  $$
+  q_c ← arg\ \underset{q\in Q_I(p)}{max} {v_q \cdot v_C \over ||v_q|| \cdot ||v_C||}
+  $$
+  
+  
 
 
 
-- QAC 평가 지표
+- Mean Reciprocal Rank(MRR)
 
-  - Mean Reciprocal Rank(MRR)
+  - QAC를 평가하기 위한 지표이다.
     - QAC 평가뿐 아니라 특정 순위가 올바르게 매겨졌는지를 평가하는데 널리 사용되는 지표이다.
   - Reciprocal Rank(RR)은 아래와 같이 구한다.
     - $p$가 사용자가 입력한 prefix, $q$가 전체 query set $Q$의 원소일 때, $Q_I(p)$는 $p$에 대한 QAC 후보이다.
@@ -547,6 +593,38 @@
   - MRR 방식의 문제점
     - MRR은 특정 prefix로 후보군을 만드는 난이도는 고려하지 않고, 모든 prefix를 동일하게 취급한다.
     - 예를 들어 "c"라는 prefix로 후보군을 만드는 것이 "z"라는 prefix로 후보군을 만드는 것 보다 더 어려운데, 이는 "c"가 "z"보다 더 흔한 prefix이기 때문에 보다 많은 후보군을 가질 것이기 때문이다.
+    - 그러나 MRR은 모든 prefix를 동일하게 취급하므로 QAC에 대한 정확한 평가에 제한이 있을 수 있다.
+
+
+
+- pSaved, eSaved
+
+  -  MRR과 마찬가지로 QAC를 평가하기 위한 지표이다.
+    - MRR과 달리 사용자의 만족도를 반영하여 평가한다.
+    - Log로 기록한 사용자의 행동으로 QAC를 평가한다.
+  - pSaved
+    - Query를 작성하는 동안 query suggestion 결과를 사용할 가능성으로 정의된다.
+    - 사용자가 입력한 query를 $q$라 하고, $q$의 길이를 $|q|$라 하며, 길이가 $i$인 $q$의 prefix를 $q[1, ..., i]$라 한다.
+    - $S_{ij}$는 사용자가 prefix $q[1, ..., i]$에 대해 주어진 suggestion 중 $j$번째 suggestion에 만족했는 지를 표현한다.
+    - 예를 들어 $S_{ij}$에서 $i=5$, $j=3$이라면 사용자는 query의 5번째 prefix까지 입력했을 때, 제안된 자동완성 결과중 3번째 결과를 선택했다는 의미이다.
+    - $I(S_{ij})$는 만약 사용자가 query suggestion을 click했으면 1, 아닐 경우 0의 값을 가진다.
+    - $P(S_{ij})$는 사용자가 만족했을 가능성을 정의하며, user model에 따라 달라진다.
+    - $\sum_jP(S_{ij}=1)$는 $q[1..i]$까지만 query를 작성할 확률과 같다(즉 $i$번째 까지만 작성하고 자동 완성 결과를 선택할 확률과 같다).
+
+  $$
+  pSaved(q)=\sum_{i=1}^{|q|} \sum_j I(S_{ij})P(S_{ij}=1)=\sum_{i=1}^{|q|} \sum_jP(S_{ij}=1)
+  $$
+
+  - eSaved
+    - Query suggestion mechanism으로 인해 사용자가 누르지 않아도 되는 keypress의 정규화된 양을 의미한다.
+
+  $$
+  eSaved(q)=\sum_{i=1}^{|q|}(1-{i \over |q|}) \sum_jP(S_{ij}=1)
+  $$
+
+  
+
+
 
 
 
