@@ -437,6 +437,246 @@
 
 
 
+
+
+## 오타 교정
+
+- 한글과 term suggester
+  - 영문의 경우 term suggester를 사용하여 간단하게 오타 교정이 가능하다.
+  - 그러나 한글의 경우 영문에 비해 유니코드 체계가 복잡하기 때문에 편집거리 기반의 term suggester를 사용하여 오타 교정을 하는 것이 쉽지 않다.
+  - 따라서 한글로 이루어진 query를 편집거리 기반의 term suggester로 오타 교정을 하기 위해서는 한글을 자모 단위로 끊어야 한다.
+  - 이를 위해 [javacafe에서 개발한 plugin](https://github.com/javacafe-project/elasticsearch-plugin)을 설치해야 한다.
+
+
+
+- 한글 오타 교정
+
+  - Index를 생성한다.
+
+  ```json
+  // PUT test-index
+  {
+    "settings": {
+      "analysis": {
+        "analyzer": {
+          "jamo-analyzer": {
+            "type": "custom",
+            "tokenizer": "standard",
+            "filter": [
+              "javacafe_jamo"
+            ]
+          }
+        }
+      }
+    },
+    "mappings": {
+      "properties": {
+        "text": {
+          "type": "text",
+          "analyzer": "jamo-analyzer"
+        }
+      }
+    }
+  }
+  ```
+
+  - 문서를 색인한다.
+
+  ```json
+  // PUT test-index/_doc/1
+  {
+    "text":"논현역"
+  }
+  ```
+
+  - `text` field를 대상으로 오타가 포함된 query로 검색을 실행해본다.
+    - 아무 결과도 나오지 않는 것을 볼 수 있다.
+
+  ```json
+  // GET test-index/_search
+  {
+    "query": {
+      "match": {
+        "text":"논현역"
+      }
+    }
+  }
+  ```
+
+  - Term suggester를 사용해 오타 교정을 실행한다.
+
+  ```json
+  // GET test-index/_search
+  {
+    "suggest": {
+      "my-suggestion": {
+        "text": "넌현역",
+        "term": {
+          "field": "text"
+        }
+      }
+    }
+  }
+  ```
+
+  - 결과는 아래와 같다.
+
+  ```json
+  {
+      // ...
+      "suggest" : {
+      "my-suggestion" : [
+        {
+          "text" : "ㄴㅓㄴㅎㅕㄴㅇㅕㄱ",
+          "offset" : 0,
+          "length" : 3,
+          "options" : [
+            {
+              // 논현역이 반환된다.
+              "text" : "ㄴㅗㄴㅎㅕㄴㅇㅕㄱ",
+              "score" : 0.8888889,
+              "freq" : 1
+            }
+          ]
+        }
+      ]
+    }
+  }
+  ```
+
+  - 반환 결과를 query로 사용하여 다시 검색하면 원하는 결과가 잘 나오는 것을 볼 수 있다.
+
+  ```json
+  // GET test-index/_search
+  {
+    "query": {
+      "match": {
+        "text":"ㄴㅗㄴㅎㅕㄴㅇㅕㄱ"
+      }
+    }
+  }
+  ```
+
+
+
+- 한영/영한 오타 교정
+
+  - javacafe plugin의 `kor2eng`, `eng2kor` filter를 사용하여 한영/영한 오타 교정이  가능하다.
+  - Index를 생성한다.
+    - 보다 간편하게 사용하기 위해 `copy_to`를 사용하여 색인한다.
+    - 두 filter는 검색시에만 동작하고 색인시에는 동작하지 않는 것으로 보인다.
+    - 따라서 "논현역"을 입력해도 `kor2eng` filter에 의해 "shsgusdur"으로 token이 생성되는 일은 없으므로 `search_analyzer`와 `analyzer`를 구분해서 정의할 필요는 없을 듯 하다. 
+
+  ```json
+  // PUT test-index
+  {
+    "settings": {
+      "analysis": {
+          "analyzer": {
+          "kor2eng_analyzer": {
+            "type": "custom",
+            "tokenizer": "standard",
+            "filter": [
+              "lowercase",
+              "javacafe_kor2eng"
+            ]
+          },
+          "eng2kor_analyzer": {
+            "type": "custom",
+            "tokenizer": "standard",
+            "filter": [
+              "lowercase",
+              "javacafe_eng2kor"
+            ]
+          }
+        }
+      }
+    },
+    "mappings": {
+      "properties": {
+        "text":{
+          "type":"text",
+          "copy_to": ["kor2eng", "eng2kor"]
+        },
+        "kor2eng":{
+          "type":"text",
+          "search_analyzer": "kor2eng_analyzer"
+        },
+        "eng2kor":{
+          "type":"text",
+          "search_analyzer": "eng2kor_analyzer"
+        }
+      }
+    }
+  }
+  ```
+
+  - 문서를 색인한다.
+
+  ```json
+  // PUT test-index/_doc/1
+  {
+    "text":"논현역"
+  }
+  
+  // PUT test-index/_doc/2
+  {
+    "text":"Elasticsearch"
+  }
+  ```
+
+  - 한영, 영한이 전환된 상태로 검색을 실행한다.
+    - 둘 다 검색 결과가 나오지 않는다.
+
+  ```json
+  // GET test-index/_search
+  {
+    "query": {
+      "match": {
+        "text": "shsgusdur"
+      }
+    }
+  }
+  
+  // GET test-index/_search
+  {
+    "query": {
+      "match": {
+        "text": "shsgusdur"
+      }
+    }
+  }
+  ```
+
+  - 한영, 영한 오타 교정 field를 대상으로 검색한다.
+    - 한영, 영한이 변환되어 검색 결과가 제대로 나오게 된다.
+
+  ```json
+  // GET test-index/_search
+  {
+    "query": {
+      "match": {
+        "eng2kor":"shsgusdur"
+      }
+    }
+  }
+  
+  // GET test-index/_search
+  {
+    "query": {
+      "match": {
+        "kor2eng":"딤ㄴ샻ㄴㄷㅁㄱ초"
+      }
+    }
+  }
+  ```
+
+
+
+
+
+
+
 ## Query Auto Completion
 
 > https://staff.fnwi.uva.nl/m.derijke/wp-content/papercite-data/pdf/cai-survey-2016.pdf
@@ -563,7 +803,8 @@
   q_c ← arg\ \underset{q\in Q_I(p)}{max} {v_q \cdot v_C \over ||v_q|| \cdot ||v_C||}
   $$
   
-  
+
+
 
 
 
@@ -622,7 +863,8 @@
   eSaved(q)=\sum_{i=1}^{|q|}(1-{i \over |q|}) \sum_jP(S_{ij}=1)
   $$
 
-  
+
+
 
 
 
@@ -803,7 +1045,7 @@
 
 - Term Suggester
 
-  - 편집거리를 사용하여 비슷하 단어를 제안한다.
+  - 편집거리를 사용하여 비슷한 단어를 제안한다.
   - Option들
     - `max_edits`: edit distance의 최댓값을 받는다(기본값은 2).
     - `prefix_length`: suggestion에 포함되기 위해 일치해야 하는 prefix character 개수의 최솟값을 받는다(기본값은1).
@@ -936,6 +1178,9 @@
     }
   }
   ```
+  
+  - 한글의 경우 영문보다 복잡한 유니코드 체계를 가지고 있어 일반적인 방법으로는 오타 교정을 할 수 없다.
+    - 한글을 자소 단위로 분해해주는 플러그인을 설치하여 이를 통해 형태소 분석을 해야 한다.
 
 
 
