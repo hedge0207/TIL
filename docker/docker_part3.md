@@ -754,17 +754,25 @@
 
 
 
-- Services와 tasks
+- Services와 tasks와 container
   - Service
     - Manager node 혹은 worker node에서 실행될 작업들을 의미한다.
     - Swarm system의 중심 구조이면서 사용자가 swarm과 상호작용하는데 가장 근본이 되는 요소이다.
     - Service를 생성할 때, 어떤 image를 사용하여 container를 생성할 것이고 해당 container가 어떤 명령어를 실행할지를 지정해줘야한다.
     - Replicated service model에서 swarm manager는 특정 수의 replica task들을 node들에게 뿌려준다.
     - Global service에서 swarm은 cluster 내의 모든 가용한 node들에게 하나의 task만을 실행하도록 한다.
+    - Swarm manager는 service의 이상적인 상태를 받아 이상적인 상태를 실현하기 위해 replica task들을 node에서 실행시킨다.
   - Task
     - Docker container와 container 내에서 실행할 명령을 의미한다.
     - Manager node가 worker node들에게 task를 할당하면, task들은 다른 node로 이동할 수 없다.
     - 오직 할당 받은 node에서 실행되거나 실패될 뿐이다.
+  - Container
+    - Task는 container를 담을 수 있는 slot에 비유될 수 있다.
+    - Container가 살아 있는 동안은 해당 task가 `running` 상태에 있다고 본다.
+    - 그러나 container가 종료되면 task도 함께 종료된다.
+  - 아래 그림은 service가 생성되는 과정을 보여준다.
+  
+  ![Services flow](docker_part3.assets/service-lifecycle.webp)
 
 
 
@@ -776,7 +784,7 @@
     - `7946` TCP/UDP: container network discovery에 사용된다.
     - `4789` UDP: container의 ingress network에 사용된다.
   - Swarm manager는 service에 자동으로 PublishedPort를 할당할 수 있으며, 사용자가 수동으로 설정할 수도 있다.
-    - Port를 설정하지 않을 경우 30000에서 32767 사이의 port를 자동으로 할당한다.
+    - `published`값을 설정하지 않을 경우 30000에서 32767 사이의 port를 자동으로 할당한다.
     - 아래와 같이 수동으로 설정할 수 있다.
     - 기존에는 `-p <PUBLISHED-PORT>:<CONTAINER-PORT>`와 같이 설정했으나, 아래와 같이 설정하는 것이 보다 직관적이고 유연성이 높으므로 아래와 같이 설정하는 것이 권장된다.
   
