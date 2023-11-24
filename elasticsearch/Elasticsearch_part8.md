@@ -1516,7 +1516,7 @@
 
 
 
-# APIs
+# API
 
 - Clone API
 

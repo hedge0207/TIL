@@ -270,7 +270,7 @@
 
   - 요청
 
-  ```json
+  ```http
   GET _cat/shards/test*?v&h=i,n&s=i:desc
   ```
 
@@ -304,7 +304,7 @@
 
   - 다시 확인해보면
 
-  ```json
+  ```http
   GET _cat/shards/test*?v&h=i,n&s=i:desc
   ```
 
@@ -1359,6 +1359,105 @@
 
 
 
+
+
+
+# Bootstrap check
+
+- Bootstrap check
+  - Elasticsearch가 실행될 때 Elasticsearch와 system이 Elasticsearch를 안정적으로 실행할 수 있도록 설정되어 있는지를 확인하는 작업이다.
+    - 만약 이상한 점이 발견되면 개발 모드에서는 warning log를 남기기만 한다.
+    - 그러나 운영 모드에서는 이상한 점이 발견될 경우 Elasticsearch를 실행시키지 않는다.
+  - Bootstrap check를 하는 이유
+    - 이전 version에서는 Elasticsearch의 중요 설정들을 설정하지 않은 경우, warning으로 log를 남겼다.
+    - 그러나 이 log를 놓치는 사용자들이 많았고, 이런 상황을 방지하기 위해 Elasticsearch는 최초 실행시에 bootstrap check를 실행한다.
+  - 개발 모드와 운영 모드
+    - 기본적으로 Elasticsearch는 IP주소를 loopback으로 설정한다.
+    - `network.host`값이 loopback 주소로 설정되거나 `discovery.type`이 `single-node`일 경우 Elasticsearch가 개발 모드로 실행된다.
+    - 개발 모드로 실행되면 bootstrap check에 실패해도 Elasticsearch가 실행된다.
+    - 반면에 둘 다 아닐 경우 운영 모드로 실행된다.
+
+
+
+- Bootstrap check 과정
+
+  > Bootstrap을 실행하는 code는 [github](https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/bootstrap/BootstrapChecks.java)에서 볼 수 있다.
+
+  - Heap size check
+    - JVM의 기본 힙 크기(`-Xms`)와 최대 힙 크기(`-Xmx`)의 값이 같은지 확인한다.
+    - Elasticsearch는 많은 memory를 사용하기 때문에 처음부터 기본 힙 크기(`-Xms`)와 최대 힙 크기(`-Xmx`)의 값을 같게 설정하는 것이 좋다.
+    - 운영 중에 힙 크기 조정이 발생할 경우 시스템이 일시 정지할 위험이 있기 때문이다.
+    - 또한 이는 Memory Lock과도 관련이 있는데, Elasticsearch는 swapping을 최소화하기 위해 전체 힙 메모리에 대해 Memory Lock을 숭행하는데, 두 기본 힙 크기와 최대 힙 크기가 다를 경우 기본 힙 크기만큼만 Memory Lock 대상으로 잡는다.
+    - 따라서 나중에 늘어난 힙 크기만큼의 메모리는 swapping의 대상이 될 수 있다.
+  - File descriptor check
+    - Elasticsearch가 사용할 file descriptor가 충분히 있는지 검사한다.
+    - Linux에서는 소켓, 시스템 콜 등 모든 것이 file로 처리된다.
+    - 따라서 file을 처리하는 데 사용되는 file descriptor의 수가 매우 중요한 요소이다.
+    - Elasticsearch는 통신도 많이 발생하고 I/O도 많이 사용하며, 특히 Lucene의 경우 inverted index를 구성하는  정보를 모두 file로 처리하기 땜누에 더더욱 많은 수의 file descriptor를 필요로한다.
+  - Memory Lock check
+    - Elasitcsearch에 할당된 heap memory의 Memory Lock 여부를 검사한다.
+    - JVM은 memory 관리를 위해 주기적으로 garbage collection을 수행한다.
+    - 이 과정에서 메모리를 확보하기 위해 불필요하 객체를 찾게 되고, 이러한 객체들을 힙 영역에서 제거함으로써 메모리를 확보한다.
+    - Garbage collection이 수행될 경우 모든 heap memory를 검사해야하는데, 이 때 heap을 구성하는 memory page 조각 중 단 하나라도 swap-out 되어 있다면 이를 memory에 다시 올리는 swap-in 작업을 반드시 해야한다.
+    - 이러한 swap-in, swap-out 작업은 JVM 기반 application에 큰 부담을 주기에, Elasticsearch는 swapping을 최대한 사용하지 않는 것을 권장하며, heap에 할당된 memory는 swapping의 대상이 되지 않도록 Memory Lock을 이용해 잠그도록 안내한다.
+    - `bootstrap.memory_lock` option이 enable 되었을 때만 검사한다.
+  - Maximum numbeor of threads check
+    - Elasticsearch process가 생성할 수 있는 최대 thread 수를 검사한다.
+    - 대량의 요청을 빠르게 처리하기 위해 내부를 기능별로 나눠 여러 단계의 모듈로 구성되어 있다.
+    - 각 모듈은 queue와 thread pool을 가지고 있기 때문에 요청에 대한 throughput을 조절하면서 탄력적으로 처리하는 것이 가능하다.
+    - 모듈 내부에는 Thread Pool Excecuter가 있어 많은 수의 thread를 생성하고 관리한다.
+    - Thread Pool Exceutor가 여유롭게 thread를 생성할 수 있도록 Elasticsearch가 최소 4096개 이상의 thread를 생성할 수 있도록 설정하는 것이 좋다.
+    - `/etc/security/limits.conf` file에서 `nproc`(max number of processes) 값을 설정하여 변경할 수 있다.
+  - Max file size check
+    - Elasticsearch가 생성할 수 있는 최대 file 크기가 충분한지(unlimited) 검사한다.
+    - Segment file과 translog file은 상황에 따라 매우 커질 수도 있다.
+    - 따라서 Elasticsearch를 안정적으로 운영하기 위해서는 최대 파일 크기를 무제한으로 설정하는 것이 좋다.
+    - `/etc/security/limits.conf` file에서 `fsize`값을 `unlimited`로 설정하면 된다.
+  - Maximum size virtual memory check
+    - Elasticsearch process가 무한한 address space를 가지고 있는지 확인한다.
+    - Elasticsearch와 Lucene은 index를 효율적으로 관리하기 위해 mmap을 사용하여 memory를 mapping한다.
+    - mmap을 사용하면 JVM을 통하지 않고도 linux kernel로 직접 SystemCall을 실행할 수 있어 고성능 Java application에서 많이 사용한다.
+    - mmap은 kernel 수준의 memory를 직접 할당 받아 application의 가상 memory 주소에 mapping해서 동작하기 때문에 가상 memory 크기에 제한이 없는 것이 좋다.
+    - Elasticsearch에서는 mmap을 효율적으로 활용하기 위해 application의 가상 memory를 무제한으로 설정하도록 한다.
+    - `/etc/security/limits.conf` file에 `<user> - as unlimited`를 추가하면 된다.
+  - Maximum map count check
+    - Elasticsearch process가 최소 262,144 개의 memory-mapped area를 가질 수 있는지 검사한다.
+    - mmap을 효율적으로 사용하기 위해서 Elasticsearch는 또한 많은 memory-mapped areas를 생성할 수 있어야한다.
+    - [Store module](https://www.elastic.co/guide/en/elasticsearch/reference/current/index-modules-store.html) 중 `mmapfs` 또는 `hybridfs`를 사용할 때만 check하면 된다.
+  - Client JVM check
+    - Elasticsearch가 Server JVM으로 실행되는지를 확인한다.
+    - JVM은 server에서 동작하는 program을 위한 Server JVM과 client에서 동작하는 program을 위한 Client JVM으로 나뉘어져 있다.
+    - Server JVM은 고성능 처리를 위해 최적화 되어 있고, Client JVM은 빠른 실행과 적은 memory 사용에 최적화 되어 있다.
+    - Elasticsearch는 고성능으로 동작해야 하기 때문에 Server JVM에서 실행해야한다.
+  - Use serial collector check
+    - Elasticsearch가 serail collector를 사용하여 GC를 수행하는지 검사한다.
+    - JVM을 위한 다양한 garbage collector가 있는데, serial collector는 예전 version의 JVM에서 사용되던 garbage collector로 극히 작은 heap이나 single logical CPU등에 맞는 garbage collector였다.
+    - Elasticsearch는 많은 양의 memory와 CPU를 사용하므로 serial collector와는 맞지 않으므로 사용해선 안 된다.
+    - Elasticsearch는 G1GC를 사용한다.
+  - System call filter check
+    - System call filter(seccomp 등)가 설치되어 있고, 활성화 되어 있는지 검사한다.
+    - 운영체제들은 보안을 위해 user mod와 kernel mode로 메모리 공간을 분리해서 관리하며, 각 memory 간의 data 공유를 위해 system call을 이용해 통신을 수행한다.
+    - Linux의 경우 user mode에서 kernel mode로 접근하는 system call을 제한하는 방식으로 Sandbox를 구현하고 있으며, 임의 코드 공격을 막기 위한 목적으로 System Call Filter를 제공한다.
+  - OnError and OnOutOfMemoryError check
+    - `-XX:OnError="<명령어>"`, `-XX:OnOutOfMemoryError="<명령어>"` flag가 설정되었는지 확인한다.
+    - JVM 실행시 `-XX:OnError="<명령어>"`, `-XX:OnOutOfMemoryError="<명령어>"` flag가 있다.
+    - Application에서 error가 발생하거나 OOM error가 발생할 경우 지정한 명령어나 script가 실행되도록 지원하는 flag이다.
+    - 다만, Elasticsearch는 system call filter를 사용하는데, 위 두 옵션은 system call filter를 사용하는 application에서는 사용할 수 없다.
+    - 따라서 두 flag가 설정되어 있으면 이 단계를 통과할 수 없다.
+  - Early-access check
+    - JVM의 release version을 사용하고 있는지 확인한다.
+    - JDK는 test 목적으로 다음 version의 release snapshot을 미리 제공한다.
+    - 다음 버전의 기능을 미리 사용할 수 있다는 장점이 있지만, 안정화 된 것은 아니기에 실제 서비스에 적용하는 것은 부적절하다.
+  - All permission check
+    - Bootstrap 중에 사용된 보안 정책이 Elasticsearch에게 `java.security.AllPermission`을 주지는 않았는지 확인한다.
+    - Java로 작성된 application은 운영체제의 resource를 사용하기 위해 security manager를 통해 필요한 권한을 선택적으로 부여 받는다.
+    - 이 중 모든 권한을 부여하는 `java.security.AllPermission` 옵션도 있는데, 이는 매우 위험할 수 있다.
+    - 모든 권한을 부여 받은 채로 실행되는 것은 security manager를 비활성화 하는 것과 마찬가지다.
+  - Discovery configuration check
+    - Bootstrap check가 기본 값으로 설정되어 있지는 않은지 확인한다.
+    - 기본적으로 discovery 관련 설정을 하지 않았을 경우 Elasticsearch는 최초로 실행될 때, 같은 host에서 실행 중인 다른 node들을 탐색하고, 수 초 내에 선출 된 master를 찾지 못하면, 발견한 node들로 cluster를 구성한다.
+    - 이는 개발 환경에서 별 다른 설정 없이 cluster를 간편하게 구성할 수 있게 해주지만, 운영 환경에서 이렇게 사용하는 것은 위험할 수 있다.
+    - `discovery.seed_hosts`, `discovery.seed_providers`, `cluster.inital_master_node` 셋 중 하나라도 설정 되어 있어야한다.
 
 
 

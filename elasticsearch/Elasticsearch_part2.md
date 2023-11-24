@@ -236,6 +236,7 @@
     - 클러스터가 최초 실행 될 때 명시된 노드들을 대상으로 마스터 노드를 선출한다.
     - 7.0부터 추가 된 옵션으로, 이전 버전에서는 `discovery.zen.minmum_master_nodes`를 사용했다.
     - `discovery.type` 옵션과 동시에 사용할 수 없다.
+    - Cluster가 구성되고 난 후에는 이 옵션을 삭제해야하며, node들을 재시작할 때나 cluster에 새로운 node를 추가할 때 이 옵션을 설정해선 안 된다.
   - `discovery.type`
     - single-node라는 값을 줄 경우 단일 노드로 클러스터가 생성된다.
 
