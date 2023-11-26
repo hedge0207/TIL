@@ -867,6 +867,49 @@
 
 
 
+## QAC와 관련된 기능들
+
+- Query suggestion(=query recommendation)
+  - 사용자의 input(query의 일부)이 주어졌을 때, 이와 관련된 query를 추천해주는 기능이다.
+    - 사용자가 자신이 원하는 정보를 찾기 위한 query를 작성하기 어려울 때 도움이 된다.
+
+  - QAC와의 차이
+    - QAC는 사용자가 입력한 query를 prefix로 사용하여 해당 prefix로 시작하는 query들을 제안한다.
+    - Query suggestion은 사용자가 입력한 query와 의미가 유사한 query를 제안한다.
+    - 일반적으로 QAC에는 엄격한 matching 정책을 적용하지만, query suggestion은 그렇지 않다.
+    - 또한 자동완성은 일반적으로 사용자가 query를 입력하고 있는 중에만 표출되지만, query suggestion은 사용자가 query를 모두 입력한 뒤에도 표출된다.
+
+  - Query suggestion은 일반적으로 아래의 두 가지 접근법을 따른다.
+    - 검색 결과 기반으로 query를 제안
+    - 검색 log 기반으로 query를 제안(이 경우 session 내에서 발생한 click 등의 사용자의 행동도 고려한다).
+
+
+
+
+- Query expansion
+  - 원본 query를 확장하여 query에 사용된 term들을 사용자의 의도를 더 정확히 드러내는 term들로 확장하는 기법이다.
+    - Term들을 유의어나 다의어, 동음이의어 등으로 확장한다.
+    - 일반적으로 query expansion은 사용자에게 노출되지는 않는다.
+  - 일반적으로 검색 log를 분석하여 확장할 term들을 추출하는 방식을 사용한다.
+
+
+
+- Query correction(=query spelling correction)
+
+  - 철자가 틀리게 입력된 query를 교정해주는 기능이다.
+
+    - 단순히 철자 뿐 아니라 띄어쓰기 등도 검사해준다.
+
+  - 일반적으로 machine learning에 기반한 기법들이 많이 사용된다.
+
+    - 대량의 text 집합이나 검색 log 집합을 가지고 학습시킨다.
+
+    
+
+
+
+
+
 
 
 
