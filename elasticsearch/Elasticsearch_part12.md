@@ -867,7 +867,433 @@
 
 
 
-## QAC와 관련된 기능들
+
+
+- QAC의 구현상의 효율성
+  - QAC는 기능의 특성상 빠른 속도가 매우 중요하다.
+    - 따라서 효율적인 알고리즘과 자료구조를 사용해야한다.
+  - Trie
+    - 자동 완성 후보군들을 저장하기 위해서 일반적으로 사용하는 자료구조이다.
+    - Character들을 tree 형태로 저장하여 상대적으로 빠른 속도로 prefix로부터 자동 완성 후보군들을 찾아낼 수 있다.
+    - 일반적으로 root node는 빈 character를 저장하고, leaf node에는 마지막 node라는 표시와 함께 query frequency 등의 정보를 저장한다.
+  - Copletion Trie, RMQ Trie, Score-Decomposed Trie
+    - 자동 완성 set이 너무 커서 메모리에 올리기 위해 압축이 필요한 경우 사용하기 위해 Hsu와 Ottaviano가 trie를 기반으로 고안한 자료구조이다.
+    - 각각은 공간과 속도, 복잡도에서 trade-off 관계이다.
+
+
+
+- Completion suggester 사용하여 구현하기
+
+  - Index를 생성한다.
+    - 자동 완성 대상 filed를 `completion` type으로 생성한다.
+
+  ```json
+  // PUT qac-index
+  {
+    "mappings": {
+      "properties": {
+        "text":{
+          "type":"completion"
+        }
+      }
+    }
+  }
+  ```
+
+  - 자동 완성을 위한 data를 색인한다.
+
+  ```json
+  // PUT qac-index/_doc/1
+  {
+    "text":"붕어빵"
+  }
+  
+  // PUT qac-index/_doc/2
+  {
+    "text":"잉어빵"
+  }
+  
+  // PUT qac-index/_doc/3
+  {
+    "text":"황금붕어빵"
+  }
+  
+  // PUT qac-index/_doc/4
+  {
+    "text":"붕어빵가게"
+  }
+  ```
+
+  - Completion suggester를 사용하여 자동 완성 후보군을 받아온다.
+    - "붕어빵"과 "붕어빵가게"만 반환되는 것을 확인할 수 있다.
+
+  ```json
+  // GET qac-index/_search
+  {
+    "suggest": {
+      "my_suggestion": {
+        "text": "붕어",
+        "completion": {
+          "field": "text"
+        }
+      }
+    }
+  }
+  
+  // response
+  {
+      // ...
+      "suggest" : {
+      "my_suggestion" : [
+        {
+          "text" : "붕어",
+          "offset" : 0,
+          "length" : 2,
+          "options" : [
+            {
+              "text" : "붕어빵",
+              "_index" : "qac-index",
+              "_type" : "_doc",
+              "_id" : "1",
+              "_score" : 1.0,
+              "_source" : {
+                "text" : "붕어빵"
+              }
+            },
+            {
+              "text" : "붕어빵가게",
+              "_index" : "qac-index",
+              "_type" : "_doc",
+              "_id" : "4",
+              "_score" : 1.0,
+              "_source" : {
+                "text" : "붕어빵가게"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+  ```
+
+  - Completion suggester를 사용하는 방식의 한계
+    - Prefix 방식의 매칭만 지원하기 때문에 시작 부분이 반드시 일치해야한다.
+    - 이로 인해 위 예시에서 황금붕어빵은 검색되지 않았다.
+    - 또한 "빵"으로 검색하면 어떤 결과도 반환되지 않는다.
+
+
+
+- Ngram tokenizer와 filter를 사용하여 구현하기
+
+  - 전방 일치, 부분 일치, 후방 일치가 모두 가능하도록 할 것이다.
+    - 후방 일치를 위해서 ngram filter와 [reverse filter](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-reverse-tokenfilter.html)를 함께 사용할 것이다.
+  - 아래와 같이 index를 생성하고, data는 위와 동일하게 색인한다.
+
+  ```json
+  // PUT qac-index
+  {
+    "settings": {
+      "index":{
+        "max_ngram_diff":50
+      },
+      "analysis": {
+        "analyzer": {
+          "ngram_analyzer":{
+            "type":"custom",
+            "tokenizer":"standard",
+            "filter":[
+              "ngram_filter"
+            ]
+          }
+        }, 
+        "filter": {
+          "ngram_filter":{
+            "type":"ngram",
+            "min_gram":2,
+            "max_gram":50
+          }
+        }
+      }
+    },
+    "mappings": {
+      "properties": {
+        "text":{
+          "type":"text",
+          "fields":{
+            "ngram":{
+              "type":"text",
+              "analyzer":"ngram_analyzer"
+            }
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  - 검색한다.
+    - 전방, 부분, 후방 일치 모두 잘 동작하는 것을 확인할 수 있다.
+
+  ```json
+  // GET qac-index/_search
+  {
+    "query": {
+      "match": {
+        "text": "붕어빵"
+      }
+    }
+  }
+  
+  // GET qac-index/_search
+  {
+    "query": {
+      "match": {
+        "text": "어빵"
+      }
+    }
+  }
+  
+  // GET qac-index/_search
+  {
+    "query": {
+      "match": {
+        "text": "가게"
+      }
+    }
+  }
+  ```
+
+  - 한계
+    - ngram을 사용하여 형태소 분석을 하면 매우 많은 token이 생성되게 된다.
+    - 이는 색인 시간, index 크기, 검색 시간을 모두 증가시킬 수 있으므로 주의해서 사용해야한다.
+
+
+
+- 한글 자모 대상으로 자동 완성 하기
+
+  - 한글의 경우 초성, 중성, 종성이 결합되어 하나의 글자를 이루는 형태로 자동완성을 완벽하게 구현하기가 영문에 비해 까다롭다.
+    - 예를 들어 사용자가 각시탈을 검색하기 위해 "부"까지 검색할 경우 자모 단위로 token이 분리되지 않으면 븡어빵을 자동완성 결과로 제안해 줄 수 없다.
+    - 붕어빵은 ngram으로 자른다고 하더라도 ["붕", "붕어", "붕어빵", "어", "어빵", "빵"]으로 분할된다.
+    - 따라서 최소한 "붕"까지는 입력해야 붕어빵을 제안할 수 있다.
+    - 또 다른 문제는 자음이 종성으로 온 것인지 다음 글자의 초성으로 온 것인지 알 수 없다는 것이다.
+    - 예를 들어 가게를 검색하기 위해서는 ㄱ-가-각-가게의 과정을 거치게 된다.
+    - 가게는 ["가","가게"]로 분할된다.
+    - 이 때 "가"까지 입력하면 "가게"가 자동 완성으로 제안되겠지만, 마저 입력하기 위해 "ㄱ"을 추가로 입력하면 각"이 되어 "가게"는 자동 완성으로 제안되지 못하게 된다.
+    - 위와 같은 문제들로 인해 정확한 한글 자동 완성 기능을 위해서는 반드시 자모단위로 끊어야 한다.
+
+  - Index 생성하기
+    - ngram filter를 사용한다.
+    - java-cafe plugin을 사용하여 색인시에 token들을 자모로 변환한다.
+
+  ```json
+  // PUT ko-qac-index
+  {
+    "settings": {
+      "index":{
+        "max_ngram_diff":8
+      },
+      "analysis": {
+        "analyzer": {
+          "my_analyzer": {
+            "type": "custom",
+            "tokenizer": "standard",
+            "filter": [
+              "javacafe_jamo",
+              "ngram"
+            ]
+          }
+        },
+        "filter": {
+          "ngram":{
+            "type":"ngram",
+            "min_gram":2,
+            "max_gram":10
+          }
+        }
+      }
+    },
+    "mappings": {
+      "properties": {
+        "text": {
+          "type": "text",
+          "analyzer": "my_analyzer"
+        }
+      }
+    }
+  }
+  ```
+
+  - 검색하기
+    - "부"만 검색해도 붕어빵이 포함된 모든 문서가 반환된다.
+    - "각"을 입력해도 "붕어빵 가게"가 반환된다.
+
+  ```json
+  // GET ko-qac-index/_search
+  {
+    "query": {
+      "match": {
+        "text": "부"
+      }
+    }
+  }
+  
+  // GET ko-qac-index/_search
+  {
+    "query": {
+      "match": {
+        "text": "각"
+      }
+    }
+  }
+  ```
+
+  - 순서 문제
+    - 아래와 같이 두 개의 문서가 있다고 가정해보자.
+
+  ```json
+  // PUT ko-qac-index/_doc/7
+  {
+    "text":"붕어빵 기계"
+  }
+  
+  // PUT ko-qac-index/_doc/8
+  {
+    "text":"기계 붕어빵"
+  }
+  ```
+
+  - 위에서 검색한 것 처럼 검색할 경,우 "기계 붕어빵"이 순서까지 정확함에도 둘의 점수가 같아 "붕어빵 기계"가 더 상단에 노출된다.
+
+  ```json
+  // GET ko-qac-index/_search
+  {
+    "query": {
+      "match": {
+        "text": "기계 붕어빵"
+      }
+    }
+  }
+  
+  // response
+  {
+      // ...
+      "hits" : [
+        {
+          "_index" : "ko-qac-index",
+          "_type" : "_doc",
+          "_id" : "7",
+          "_score" : 0.7749381,
+          "_source" : {
+            "text" : "붕어빵 기계"
+          }
+        },
+        {
+          "_index" : "ko-qac-index",
+          "_type" : "_doc",
+          "_id" : "8",
+          "_score" : 0.7749381,
+          "_source" : {
+            "text" : "기계 붕어빵"
+          }
+        }
+      ]
+  }
+  ```
+
+  - `match_phrase_prefix` query를 사용한다.
+    - `match_phrase_prefix`로 순서까지 일치하는 "기계 붕어빵"이 더 상단에 노출된다.
+
+  ```json
+  // GET ko-qac-index/_search
+  {
+    "query": {
+      "bool": {
+        "should": [
+          {
+            "match":{
+              "text":"기계 붕어빵"
+            }
+          },
+          {
+            "match_phrase_prefix": {
+              "text": "기계 붕어빵"
+            }
+          }
+        ]
+      }
+    }
+  }
+  ```
+
+  - 사용자의 요구에 따라 query나 analyzer 등을 변경해서 적용하면 되며, 정답은 없다.
+
+
+
+- 초성 검색하기
+
+  - 방식은 한글 자모를 대상으로 자동완성 기능을 구현하는 것과 동일하다.
+
+  - Index를 생성하고 위와 같은 data를 색인한다.
+
+  ```json
+  // PUT chosung-index
+  {
+    "settings": {
+      "index": {
+        "max_ngram_diff": 8
+      },
+      "analysis": {
+        "analyzer": {
+          "my_analyzer": {
+            "type": "custom",
+            "tokenizer": "standard",
+            "filter": [
+              "javacafe_chosung",
+              "edge_ngram"
+            ]
+          }
+        },
+        "filter": {
+          "edge_ngram": {
+            "type": "edge_ngram",
+            "min_gram": 2,
+            "max_gram": 10
+          }
+        }
+      }
+    },
+    "mappings": {
+      "properties": {
+        "text": {
+          "type": "text",
+          "analyzer": "my_analyzer"
+        }
+      }
+    }
+  }
+  ```
+
+  - 검색한다.
+
+  ```json
+  // GET chosung-index/_search
+  {
+    "query": {
+      "match": {
+        "text": "ㅂㅇㅃ"
+      }
+    }
+  }
+  ```
+
+
+
+
+
+
+
+### QAC와 관련된 기능들
 
 - Query suggestion(=query recommendation)
   - 사용자의 input(query의 일부)이 주어졌을 때, 이와 관련된 query를 추천해주는 기능이다.
