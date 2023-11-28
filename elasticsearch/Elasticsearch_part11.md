@@ -373,21 +373,37 @@
 
 - Node Query Cache
 
-  - filter context에 의해 검색된 문서의 결과가 캐싱되는 영역
-    - 사용자가 filter context로 구성된 쿼리로 검색하면 내부적으로 각 문서에 0과 1로 설정할 수 있는 bitset을 설정한다.
-    - filter context로 호출한 적이 있는 문서는 bitset을 1로 설정하여 사용자가 호출한적이 있다는 것을 문서에 표시해둔다.
+  - Filter context에 의해 검색된 문서의 결과가 캐싱되는 영역
+    - 사용자가 filter context로 구성된 쿼리로 검색하면 내부적으로 각 문서에 0과 1로 설정할 수 있는 bitset을 생성한다.
+    - Bitset은 segment마다 생성되며, segment가 병합되면 다시 생성해야한다.
+    - Filter context로 호출한 적이 있는 문서는 bitset을 1로 설정하여 사용자가 호출한적이 있다는 것을 문서에 표시해둔다.
     - ES는 문서별로 bitset을 설정하면서, 사용자의 쿼리 횟수와 bitset이 1인 문서들 사이에 연관 관계를 지속적으로 확인한다.
-    - bitset이 1인 문서들 중에 자주 호출되었다고 판단한 문서들을 노드의 메모리에 캐싱한다.
-    - 다만 세그먼트 하나에 저장된 문서의 수가 1만개 미만이거나, 검색 쿼리가 인입되고 있는 인덱스가 전체 인덱스 사이즈의 3% 미만일 경우에는 filter context를 사용하더라도 캐싱되지 않는다.
+    - Bitset이 1인 문서들 중에 자주 호출되었다고 판단한 문서들을 노드의 메모리에 캐싱한다.
+  - Caching되는 조건들
+    - Lucene의 `TermQuery`, `DocValuesFieldExistsQuery`, `MatchAllDocsQuery` 등의 query는 cache 없이도 충분히 빠르기 때문에 caching되지 않는다([코드 참고](https://github.com/apache/lucene/blob/releases/lucene-solr/8.8.1/lucene/core/src/java/org/apache/lucene/search/UsageTrackingQueryCachingPolicy.java#L57-L94)).
+    - Lucene의 `MatchNoDocsQuery` 역시 문서가 없을 때 사용하는 query이므로 caching되지 않는다.
+    - Segment 하나에 저장된 문서의 수가 1만개 미만이거나, segment에 저장된 문서의 개수가 shard에 저장된 전체 문서의 개수의 3% 미만일 경우에는 filter context를 사용하더라도 캐싱되지 않는다.
+    - 또한 잘 사용되지 않는 filter를 caching하는 것은 비효율 적이므로 일정 횟수 이상 사용된 filter만 caching하며, 횟수는 query에 따라 달라진다.
+    - Script query의 경우 Lucene에서는 사용되지 않기 때문에 caching이 되지 않는 것으로 보인다.
+    - `profile`을 추가하면 caching이 되지 않는 것으로 보인다.
+    - 이 외에도 다양한 조건이 있다.
   - 아래 명령어로 Query Cache Memory의 용량을 확인 가능하다.
-
+  
   ```bash
+  # node별 query cache 확인
   $ curl -XGET "http://localhost:9200/_cat/nodes?v&h=name,qcm"
+  $ curl -XGET "http://localhost:9200/_nodes/stats/indices/query_cache?human&pretty"
+  
+  # query cache 확인
+  $ curl -XGET "http://localhost:9200/_stats/query_cache?human&pretty"
+  
+  # 특정 index의 query cache 확인
+  $ curl -XGET "http://localhost:9200/<index_name>/_stats/query_cache?human&pretty"
   ```
-
+  
   - 기본적으로 활성화되어 있으며, 아래와 같이 변경이 가능하다.
-    - dynamic setting이 아니기에 인덱스를 close로 바꾸고 설정해줘야 한다.
-
+    - Dynamic setting이 아니기에 인덱스를 close로 바꾸고 설정해줘야 한다.
+  
   ```bash
   # 인덱스를 close 상태로 변경하고
   $ curl -XGET "http://localhost:9200/my_index/_close" -H 'Content-Type: application/json'
@@ -400,12 +416,61 @@
   # 인덱스를 다시 open 상태로 변경한다.
   $ curl -XGET "http://localhost:9200/my_index/_open" -H 'Content-Type: application/json'
   ```
-
+  
   - 많은 문서가 캐싱되어 허용된 캐시 메모리 영역이 가득 차면 LRU(Least Recently Used Algorithm) 알고리즘에 의해 캐싱된 문서를 삭제한다.
     - LRU: 캐시 영역에 저장된 내용들 중 가장 오래된 내용을 지우는 알고리즘
     - elasticsearch.yml 파일에서 `indices.queries.cache.size: 10%`와 같이 수정하여 Node Query Cache 영역을 조정할 수 있다.
     - 위와 같이 비율로도 설정할 수 있고, 512mb처럼 절댓값을 주는 것도 가능하다.
     - 수정 후 노드를 재시작해야한다.
+  - 서로 다른 query라 할지라도 공통된 filter context query를 사용하면 cache 결과를 재사용한다.
+    - 각 query들에 공통으로 들어간 filter context query의 결과로 생성된 문서들을 먼저 추린다.
+    - 그 후에 추려진 문서들을 대상으로 filter context에 속하지 않는 부분으로 마저 검색을 수행한다.
+
+
+
+- Node Query Cache 예시
+
+  - 아래에서 `match` query는 Lucene query로 변환 될 때 `TermQuery`로 변환되므로 caching이 발생하지 않는다.
+
+  ```json
+  // GET cache_test/_search
+  {
+      "query": {
+          "bool": {
+              "filter": [
+                  {
+                      "match": {
+                          "text": "모니터링"
+                      }
+                  }
+              ]
+          }
+      }
+  }
+  ```
+
+  - 반면에 같은 `match` query라고 하더라도 아래와 같이 term을 2개 이상 주면 Lucene query로 변환될 때 `BooleanQuery`로 변환되어 caching이 된다.
+
+  ```json
+  // GET cache_test/_search
+  {
+      "query": {
+          "bool": {
+              "filter": [
+                  {
+                      "match": {
+                          "text": "모니터링 기반의"
+                      }
+                  }
+              ]
+          }
+      }
+  }
+  ```
+
+
+
+
 
 
 
@@ -413,7 +478,7 @@
 
   - Node Query Cache가 노드에 할당된 캐시 영역이라면 Shard Request Cache는 샤드를 대상으로 캐싱되는 영역이다.
     - 특정 필드에 의한 검색이기 때문에 전체 샤드에 캐싱된다.
-    - Node Query Cache와 달리 문서의 내용을 캐싱하는 것이 아니라, 집계 쿼리의 집계 결과 혹은 ReqeustBody의 파라미터 중 size를 0으로 설정했을 때의 쿼리 응답 결과에 포함되는 매칭된 문서의 수(total hits)에 대해서만 캐싱한다.
+    - Node Query Cache와 달리 문서의 내용을 캐싱하는 것이 아니라, aggregation query의 집계 결과 혹은 ReqeustBody의 파라미터 중 size를 0으로 설정했을 때의 쿼리 응답 결과에 포함되는 매칭된 문서의 수(total hits)에 대해서만 캐싱한다.
     - Node Query Cache가 검색 엔진에 활용하기 적합한 캐시 영역이라면 Shard Request Cache는 분석 엔진에서 활용하기 적합한 캐시 영역이라고 할 수 있다.
     - 다만 이 영역은 refresh 동작을 수행하면 캐싱된 내용이 사라진다.
     - 즉, 문서 색인이나 업데이트를 한 후 refresh를 통해 샤드의 내용이 변경되면 기존에 캐싱된 결과가 초기화 된다.

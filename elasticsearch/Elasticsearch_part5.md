@@ -401,7 +401,7 @@
 
 
 
-### Query Context
+## Query Context
 
 - match 쿼리
 
@@ -496,7 +496,6 @@
         }
   }
   ```
-  
   
 
 
@@ -688,8 +687,6 @@
 
 
 
-
-
 - query string syntax
 
   - query string은 일련의 term들과 operator들로 파싱된다.
@@ -756,69 +753,9 @@
 
 
 
+## Filter context
 
-
-- Elasticsearch는 mapping되어 있는 field에 값을 넣지 않는 것이 가능하다.
-
-  - Elasticsearch를 사용하다 보면 특정 필드에 값이 있는 문서의 개수가 몇 개인지 알아야 할 때가 있음에도 불구하고, 이러한 특성 때문에 특정 필드의 값을 가진 문서의 개수를 정확히 알 수 업는 경우가 많다.
-
-  ```json
-  PUT test-index
-  {
-      "mappings":{
-          "properties":{
-              "foo":{
-                "type": "text"
-              },
-              "bar":{
-                "type": "text"
-              },
-              "baz":{
-                "type":"integer"
-              }
-          }
-      }
-  }
-  
-  PUT test-index/_doc/1
-  {
-    "foo":"hello world!"
-  }
-  
-  PUT test-index/_doc/2
-  {
-    "bar":"goodbye world!"
-  }
-  
-  PUT test-index/_doc/3
-  {
-    "baz":0
-  }
-  ```
-
-  - 이 때 query string query를 사용하면 쉽게 구할 수 있다.
-    - query string syntax 중 `_exists_`를 사용한다.
-
-  ```json
-  GET test-index/_search
-  {
-    "query": {
-      "query_string": {
-        // foo 필드에 값이 있는 문서만 반환한다.
-        "query": "_exists_:foo"
-      }
-    }
-  }
-  ```
-
-
-
-
-
-
-### Filter Context
-
-- Filter context
+- Filter Context
   - 단순히 해당 값이 해당 필드에 존재하는지 여부만 확인하고 스코어링은 하지 않는다(score는 1로 고정).
   - Filter context는 검색 결과를 캐싱하지만 Query context는 검색 결과를 캐싱하지 않는다.
   - 아래와 같은 것들이 filter context에 속한다.
@@ -829,6 +766,7 @@
     - 아래서에서 소개하는 term, terms, terms_set, range, wildcard 등은 단순히 검색어가 일치하는지 여부만을 판단한다.
     - 기본적으로 검색어를 analyzing하지 않지만, filter context가 아닌 곳에서 사용할 경우 score 값은 반환한다.
     - 그러나 문서의 일치 여부를 yes/no로만 판단하므로 모두 같은 점수가 나오게 된다.
+    - 그러나 filter context에서 검색하는 것은 아니므로 결과를 caching하지는 않는다.
 
 
 
@@ -837,12 +775,12 @@
   - ES에서 term은 검색어를 말한다.
   - 역색인에 있는 토큰들 중 정확하게 일치하는 값을 찾는다.
     -  match 쿼리와 달리 검색어를 analyze하지 않는다.
-    - analyze를 하지 않기 때문에 당연히 대소문자를 구분한다.
+    -  analyze를 하지 않기 때문에 당연히 대소문자를 구분한다.
   - 필드와 term을 지정해서 도큐먼트 내에서 검색할 수 있다.
     - 검색한 텀이 분석되지 않았기 때문에 완전히 일치하는 도큐먼트 결과만 찾는다.
   - 예제
     - 특정 term이 특정 필드에 있으면 해당 도큐먼트의 name과 tags를 반환한다.
-  
+
   ```bash
   $ curl 'localhost:9200/인덱스명/_doc/_search' -H 'Content-Type: application/json' -d '{
   "query":{
@@ -862,7 +800,7 @@
     - 여러 개의 term 중 하나라도 일치하면 검색 된다.
 
   - 예제
-  
+
   ```bash
   $ curl 'localhost:9200/인덱스명/_doc/_search' -H 'Content-Type: application/json' -d '{
   "query":{
@@ -920,6 +858,63 @@
             "source": "1"
           }
         }
+      }
+    }
+  }
+  ```
+
+
+
+
+
+- Elasticsearch는 mapping되어 있는 field에 값을 넣지 않는 것이 가능하다.
+
+  - Elasticsearch를 사용하다 보면 특정 필드에 값이 있는 문서의 개수가 몇 개인지 알아야 할 때가 있음에도 불구하고, 이러한 특성 때문에 특정 필드의 값을 가진 문서의 개수를 정확히 알 수 업는 경우가 많다.
+
+  ```json
+  PUT test-index
+  {
+      "mappings":{
+          "properties":{
+              "foo":{
+                "type": "text"
+              },
+              "bar":{
+                "type": "text"
+              },
+              "baz":{
+                "type":"integer"
+              }
+          }
+      }
+  }
+  
+  PUT test-index/_doc/1
+  {
+    "foo":"hello world!"
+  }
+  
+  PUT test-index/_doc/2
+  {
+    "bar":"goodbye world!"
+  }
+  
+  PUT test-index/_doc/3
+  {
+    "baz":0
+  }
+  ```
+
+  - 이 때 query string query를 사용하면 쉽게 구할 수 있다.
+    - query string syntax 중 `_exists_`를 사용한다.
+
+  ```json
+  GET test-index/_search
+  {
+    "query": {
+      "query_string": {
+        // foo 필드에 값이 있는 문서만 반환한다.
+        "query": "_exists_:foo"
       }
     }
   }
@@ -1037,8 +1032,6 @@
   }
   ```
   
-
-
 
 
 
