@@ -674,11 +674,11 @@
 
 
 
-### 그 외의 방법들
 
-- 적절한 샤드 배치
 
-  > 샤드 배치를 적절히 하지 못할 경우 아래와 같은 문제들이 발생할 수 있다.
+### Shard
+
+- 샤드 배치를 적절히 하지 못할 경우 아래와 같은 문제들이 발생할 수 있다.
 
   - 데이터 노드 간 디스크 사용량 불균형
     - 노드는 3대이고 프라이머리 샤드는 4개로 설정했다고 가정
@@ -699,113 +699,71 @@
     - 따라서 데이터 노드의 사용량에는 큰 문제가 없는데 클러스터의 성능이 제대로 나오지 않는 문제가 발생할 수 있다.
     - 하나의 노드에서 조회할 수 있는 샤드의 개수를 제한하는 것도 방법이다.
 
-  ```bash
-  $ curl -XPUT "localhost:9200/cluster/settings?pretty" -H 'Content-type:application/json' -d'
+  ```json
+  // PUT cluster/settings
   {
   	"transient":{
-  		"cluster.max_shards_per_node":2000	# 노드당 검색 요청에 응답할 수 있는 최대 샤드 개수를 2000개로 설정
+  		"cluster.max_shards_per_node":2000	// 노드당 검색 요청에 응답할 수 있는 최대 샤드 개수를 2000개로 설정
   	}
+  }
+  
+  // index 단위로는 아래와 같이 설정할 수 있다.
+  // PUT my-index-000001/_settings
+  {
+    "index" : {
+      "routing.allocation.total_shards_per_node" : 5
+    }
   }
   ```
 
 
 
-- forcemerge API
-
-  - 세그먼트
-    - 인덱스는 샤드로 나뉘고, 샤드는 다시 세그먼트로 나눌 수 있다.
-    - 사용자가 색인한 문서는 최종적으로 가장 작은 단위인 세그먼트에 저장된다.
-    - 또한 세그먼트는 작은 단위로 시작했다가 특정 시점이 되면 다수의 세그먼트들을 하나의 세그먼트로 합친다.
-    - 세그먼트가 잘 병합되어 있으면 검색 성능도 올라간다.
-
-  - forcemerge API와 검색 성능
-    - 샤드에 여러 개의 세그먼트가 있다면 해당 세그먼트들이 모두 검색 요청에 응답을 주어야 한다.
-    - 쿼리마다 많은 세그먼트에 접근해야 한다면 이는 곧 I/O를 발생시켜 성능 저하로 이어질 것이다.
-    - 하지만 세그먼트가 하나로 합쳐져 있다면, 사용자의 검색 요청에 응답해야 하는 세그먼트가 하나이기 떄문에 성능이 더 좋아질 수 있다.
-    - forcemerge를 통해 세그먼트를 병합하면 검색 성능이 더 좋아질 수 있다.
-  - 가이드라인
-    - 무조건 세그먼트가 적다고 좋은 것은 아니다.
-    - 샤드 하나의 크기가 100GB 정도인데 세그먼트가 하나라면 작은 크기의 문서를 찾을 때에도 100GB 전체를 대상으로 검색해야 해서 병합 전보다 성능이 떨어질 수 있다.
-    - 세그먼트를  병합했는데 이후에 색인이 발생하면 다시 세그먼트가 늘어나게 되어 병합 작업의 효과를 보기 어렵다.
-    - 색인이 모두 끝난 인덱슨는 병합 작업을 진행하고 난 이후 readonly 모드로 설정하여 더 이상 세그먼트가 생성되지 못하게 하는 것이 좋다.
-
-
-
-- ES 권고사항
-
-  - 문서를 모델링할 때 가급적이면 간결하게 구성하도록 권고한다.
-    - Parent/Child 구조의 join 구성이나, nested 타입 같이 문서를 처리할 때 문서 간의 연결 관계 처리를 필요로 하는 구성은 권장하지 않는다.
-
-  - painless script를 사용하여 하나의 문서를 처리할 때마다 부가적으로 리소스를 사용하지 않도록 하는 것도 권고사항이다.
-    - painless script: 쿼리만으로 원하는 데이터를 조회할 수 없을 때 사용하는 ES 전용 스크립트 언어
-
-  - 레플리카 샤드를 가능한 한 충분히 두는 것이 좋다.
-    - 노드 1에 프라이머리 샤드 0과 레플리카샤드 1이 있고, 노드 2에 프라이머리샤드 1과 레플리카샤드 0이 있다고 가정
-    - 두 개의 검색 요청이 들어왔고 두 요청에 대한 응답을 줄 데이터가 모두 샤드 0번에 있을 경우
-    - 한 요청을 노드1로, 다른 요청은 노드 2로 들어왔을 때, 두 노드 모두 0번 샤드를 지니고 있으므로 동시에 들어온 검색 요청에  서로 다른 노드가 응답해 줄 수 있다.
-    - 다만 레플리카 샤드는 인덱싱 성능과 볼륨 사용량의 낭비가 발생하니 클러스터 용량을 고려해서 추가하는 것이 좋다.
+- Shard의 개수 조절
+  - Shard의 개수를 증가시키면 검색 속도가 빨라진다.
+    - 정확히는 일정 개수 까지는 shard의 개수와 검색 속도가 정비례하지만 일정 개수 부터는 shard가 증가할 수록 검색 속도가 감소하게 된다.
+  - Elasticsearch에서 query는 shard당 단일 thread로 실행된다.
+    - 따라서 shard의 개수가 증가할 경우 multi-thread로 query를 수행할 수 있게 되어 검색 속도가 빨라지게 된다.
+    - 많은 개수의 작은 shard에 대한 query 작업은 shard당 처리 속도는 빨라질 수 있지만 search thread pool을 고갈시킬 수 있으므로 더 적은 개수의 큰 shard를 검색하는 것 보다 반드시 빠르다고는 할 수 없다.
+    - 일반적으로 천 개의 50MB짜리 shard들을 대상으로 검색하는 것이 50GB짜리 shard하나에 검색하는 것 보다 상당히 많은 resource를 필요로 한다.
+  - 너무 많은 shard 개수를 설정하는 것은 overhead를 크게 증가시킬 수 있다.
+    - 모든 index와 index 내부의 shard들은 memory와 CPU를 필요로한다.
+    - 대부분의 경우에 적은 수의 큰 shard들이 많은 수의 작은 shard들 보다 더 적은 resource를 사용한다.
+  - Segment와 shard
+    - Elasticsearch는 빠른 검색을 위해서 segment들의 metadata를 heap memory에 저장한다.
+    - Shard의 크기가 커질수록 segment들은 보다 적은 수로 병합되면서 크기가 점차 증가한다.
+    - 이를 통해 segment의 개수가 감소하게 되고, heap memory에 저장해야 하는 metadata의 크기도 감소하게 된다.
+  - Segment와 field
+    - 모든 segment는 mapping된 field의 이름을 저장하기 위해서도 heap memory를 사용한다.
+    - 일반적으로 여기에 사용되는 heap memory는 매우 적은 양이지만, field의 개수가 많아지거나, field의 이름이 길 경우 이로 인한 overhead도 고려해야한다.
 
 
 
-- `_id` field를 retrieve하지 않기
+- Shard의 적절한 크기
+  - Shard의 물리적 크기에 대한 hard limit은 없다.
+    - 각각의 shard는 이론적으로 20억 개 이상의 문서를 저장할 수 있다.
+  - 그러나 경험적으로는 적절한 크기가 있다.
+    - 2억개 미만의 문서
+    - 10GB에서 50GB사이의 크기
 
-  > https://luis-sena.medium.com/stop-using-the-id-field-in-elasticsearch-6fb650d1fbae
 
-  - Elasticsearch의 모든 document는 `_id` field를 갖는다.
-    - `_id` field는 stored_fields를 통해 저장되는데, stored_fields는 doc_values와 비교했을 때 읽어올 때 overhead가 더 크다.
-    - 따라서 `_id` field를 retrieve하지 않는 것 만으로도 검색 성능을 향상시킬 수 있다.
-  - 테스트용 data 색인
-    - `_id` 값과 동일한 값을 저장할 `my_id` field도 함께 색인한다.
 
-  ```python
-  from elasticsearch import Elasticsearch, helpers
-  from faker import Faker
-  
-  INDEX_NAME = "test-index"
-  es_client = Elasticsearch("http://localhost:9200")
-  fake = Faker()
-  
-  bulk_data = [
-      {
-          "_index":INDEX_NAME, 
-          "_id": i, 
-          "_source":{"title":fake.sentence(), "content":fake.text(), "my_id":i}
-      }
-      for i in range(1_000_000)]
-  helpers.bulk(es_client, bulk_data)
-  ```
+- 적절한 샤드 수를 찾기 위한 테스트
+  - 구성
+    - 먼저 데이터 노드 한 대로 클러스터를 구성하고, 해당 노드에 데이터를 저장한 후 사용자의 검색 쿼리에 대한 응답을 100ms 이하로 줄 수 있는지 테스트한다.
+    - 이때 클러스터 구성은 데이터 노드 한 대, 레플리카 샤드 없이 프라이머리 샤드만 1개로 구성한다.
+    - 그리고 해당 샤드에 데이터를 계속 색인하면서 샤드의 크기가 커짐에 따라 검색 성능이 어떻게 변화하는지를 측정한다.
+    - 이렇게 구성해야 데이터 노드가 샤드 하나로 검색 요청을 처리할 때의 성능을 측정할 수 있다.
+    - 샤드 하나당 하나의 검색 스레드만 사용해야 검색 스레드 큐에 검색 쿼리가 너무 많이 쌓이지 않아서 하나의 샤드에서 측정된 검색 성능을 보장할 수 있기 때문이다.
+  - 테스트
+    - 쿼리에 대한 응답 데이터 중 took 필드를 통해 확인할 수 있다.
+    - 이 값이 100ms 이하로 나오면 사용자의 검색 엔진 요구에 맞는 엔진이 되는 것이다.
+    - 색인과 검색을 반복하다가 사용자가 원하는 응답 속도인 100ms에 근접한 값이 나오면 색인을 멈춘다.
+    - 테스트에 사용한 인덱스는 단일 샤드로 구성되었기 때문에 이 시점에서의 인덱스의 크기가 곧 단일 샤드의 크기가 된다.
+    - 이렇게 노드 한 대가 사용자의 요구인 100ms의 속도로 검색 결과를 리턴해줄 수 있는 샤드의 적정 크기를 측정한다.
+    - 실제 서비스할 전체 데이터의 크기를 테스트를 통해 산정한 인덱스의 크기로 나누면 그 값이 사용자가 원하는 응답 속도를 보여줄 수 있는 프라이머리 
+    - 샤드의 개수가 된다.
 
-  - 검색 속도 비교
-    - `_id`를 반환 받지 않고, `_id`와 동일한 값을 doc_values를 사용하여 retrieve 하는 쪽이 훨씬 빠른 것을 확인할 수 있다.
-    - 현재는 비교적 크기가 작은 document를 대상으로 했지만, document의 크기가 커질수록 차이가 커질 수 있다.
 
-  ```python
-  from elasticsearch import Elasticsearch, helpers
-  from faker import Faker
-  
-  N = 10000
-  without_id = 0
-  with_id = 0
-  for i in range(N):
-      query = {
-          "match":{
-              "content":fake.word()
-          }
-      }
-      es_client.indices.clear_cache(index=INDEX_NAME)
-      res = es_client.search(index=INDEX_NAME, stored_fields="_none_", docvalue_fields=["my_id"], query=query)
-      without_id += res["took"]
-  
-      es_client.indices.clear_cache(index=INDEX_NAME)
-      res = es_client.search(index=INDEX_NAME, _source=False, query=query)
-      with_id += res["took"]
-  
-  print(without_id / N)	# 1.1176
-  print(with_id / N)		# 2.3076
-  ```
-
-  - `_id`를 제외시켰을 때 속도가 빨라지는 이유
-    - `_id`가 저장되는 stored fields는 row 형태로 저장되기에 column 형태로 저장되는 doc_values에 비해 retrieve 속도가 느리다.
 
 
 
@@ -813,7 +771,11 @@
 
 - Segment의 개수가 늘어날수록 읽어야 하는 segment의 개수가 많아지기에 검색 속도가 감소하게 된다.
 
-  - 따라서 검색 속도를 증가시키기 위해서는 segment의 개수를 줄여야한다.
+  - 샤드에 여러 개의 세그먼트가 있다면 해당 세그먼트들이 모두 검색 요청에 응답을 주어야 한다.
+    - 쿼리마다 많은 세그먼트에 접근해야 한다면 이는 곧 I/O를 발생시켜 성능 저하로 이어질 것이다.
+    - 하지만 세그먼트가 하나로 합쳐져 있다면, 사용자의 검색 요청에 응답해야 하는 세그먼트가 하나이기 떄문에 성능이 더 좋아질 수 있다.
+    - 따라서 검색 속도를 증가시키기 위해서는 segment의 개수를 줄여야한다.
+
   - Force merge API를 통해 segment들을 병합시킬 수 있다.
 
   ```http
@@ -834,6 +796,10 @@
     - 따라서 한 segment의 크기가 5GB가 넘어가게 되면 더 이상 병합이 발생하지 않게된다.
     - 만약 이 segment에 저장된 문서들의 대부분이 삭제된다고 해도, 이 segment는 병합 대상이 아니므로 해당 문서들은 영원히 삭제되지 않은채로 남아있게 된다.
     - 이는 disk의 사용량을 증가시킬뿐만 아니라 검색 속도도 느리게 만들 수 있다.
+  - 무조건 세그먼트가 적다고 좋은 것은 아니다.
+    - 샤드 하나의 크기가 100GB 정도인데 세그먼트가 하나라면 작은 크기의 문서를 찾을 때에도 100GB 전체를 대상으로 검색해야 해서 병합 전보다 성능이 떨어질 수 있다.
+    - 세그먼트를  병합했는데 이후에 색인이 발생하면 다시 세그먼트가 늘어나게 되어 병합 작업의 효과를 보기 어렵다.
+    - 색인이 모두 끝난 인덱슨는 병합 작업을 진행하고 난 이후 readonly 모드로 설정하여 더 이상 세그먼트가 생성되지 못하게 하는 것이 좋다.
   - ILM policy를 사용하여 자동으로 segment의 개수와 크기를 최적화할 수 있다.
 
 
@@ -939,6 +905,88 @@
   | 10           | 11.17                        |
   | 5            | 10.23                        |
   | 1            | 9.41                         |
+
+
+
+
+
+### 그 외의 방법들
+
+- ES 권고사항
+
+  - 문서를 모델링할 때 가급적이면 간결하게 구성하도록 권고한다.
+    - Parent/Child 구조의 join 구성이나, nested 타입 같이 문서를 처리할 때 문서 간의 연결 관계 처리를 필요로 하는 구성은 권장하지 않는다.
+
+  - painless script를 사용하여 하나의 문서를 처리할 때마다 부가적으로 리소스를 사용하지 않도록 하는 것도 권고사항이다.
+    - painless script: 쿼리만으로 원하는 데이터를 조회할 수 없을 때 사용하는 ES 전용 스크립트 언어
+
+  - 레플리카 샤드를 가능한 한 충분히 두는 것이 좋다.
+    - 노드 1에 프라이머리 샤드 0과 레플리카샤드 1이 있고, 노드 2에 프라이머리샤드 1과 레플리카샤드 0이 있다고 가정
+    - 두 개의 검색 요청이 들어왔고 두 요청에 대한 응답을 줄 데이터가 모두 샤드 0번에 있을 경우
+    - 한 요청을 노드1로, 다른 요청은 노드 2로 들어왔을 때, 두 노드 모두 0번 샤드를 지니고 있으므로 동시에 들어온 검색 요청에  서로 다른 노드가 응답해 줄 수 있다.
+    - 다만 레플리카 샤드는 인덱싱 성능과 볼륨 사용량의 낭비가 발생하니 클러스터 용량을 고려해서 추가하는 것이 좋다.
+
+
+
+- `_id` field를 retrieve하지 않기
+
+  > https://luis-sena.medium.com/stop-using-the-id-field-in-elasticsearch-6fb650d1fbae
+
+  - Elasticsearch의 모든 document는 `_id` field를 갖는다.
+    - `_id` field는 stored_fields를 통해 저장되는데, stored_fields는 doc_values와 비교했을 때 읽어올 때 overhead가 더 크다.
+    - 따라서 `_id` field를 retrieve하지 않는 것 만으로도 검색 성능을 향상시킬 수 있다.
+  - 테스트용 data 색인
+    - `_id` 값과 동일한 값을 저장할 `my_id` field도 함께 색인한다.
+
+  ```python
+  from elasticsearch import Elasticsearch, helpers
+  from faker import Faker
+  
+  INDEX_NAME = "test-index"
+  es_client = Elasticsearch("http://localhost:9200")
+  fake = Faker()
+  
+  bulk_data = [
+      {
+          "_index":INDEX_NAME, 
+          "_id": i, 
+          "_source":{"title":fake.sentence(), "content":fake.text(), "my_id":i}
+      }
+      for i in range(1_000_000)]
+  helpers.bulk(es_client, bulk_data)
+  ```
+
+  - 검색 속도 비교
+    - `_id`를 반환 받지 않고, `_id`와 동일한 값을 doc_values를 사용하여 retrieve 하는 쪽이 훨씬 빠른 것을 확인할 수 있다.
+    - 현재는 비교적 크기가 작은 document를 대상으로 했지만, document의 크기가 커질수록 차이가 커질 수 있다.
+
+  ```python
+  from elasticsearch import Elasticsearch, helpers
+  from faker import Faker
+  
+  N = 10000
+  without_id = 0
+  with_id = 0
+  for i in range(N):
+      query = {
+          "match":{
+              "content":fake.word()
+          }
+      }
+      es_client.indices.clear_cache(index=INDEX_NAME)
+      res = es_client.search(index=INDEX_NAME, stored_fields="_none_", docvalue_fields=["my_id"], query=query)
+      without_id += res["took"]
+  
+      es_client.indices.clear_cache(index=INDEX_NAME)
+      res = es_client.search(index=INDEX_NAME, _source=False, query=query)
+      with_id += res["took"]
+  
+  print(without_id / N)	# 1.1176
+  print(with_id / N)		# 2.3076
+  ```
+
+  - `_id`를 제외시켰을 때 속도가 빨라지는 이유
+    - `_id`가 저장되는 stored fields는 row 형태로 저장되기에 column 형태로 저장되는 doc_values에 비해 retrieve 속도가 느리다.
 
 
 
