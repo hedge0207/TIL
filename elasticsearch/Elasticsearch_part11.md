@@ -765,6 +765,223 @@
 
 
 
+- Primary shard의 개수를 증가시켰을 때, thread pool이 고갈되어 오히려 전체 검색 속도는 감소할 수 있다.
+
+  - Elasticsearch에서 검색은 shard 하나 당 thread 하나에서 실행된다.
+    - Shard의 개수를 늘릴수록 검색 속도가 증가하는 것도 이 때문으로, shard가 하나일 경우 single thread로 검색이 실행되지만, shard가 여러 개면 multi thread로 검색이 실행되기 때문이다.
+  - 위와 같은 동작 방식으로 인해 primary shard를 늘리면 검색 속도가 증가하지만, 지나치게 늘리면 오히려 검색 속도가 감소하게 된다.
+  - 테스트를 위해 아래와 같이 동일한 구성에 primary shard의 개수만 다른 index 2개를 생성한다.
+    - Cluster에 속한 모든 node의 `search_worker` thread pool의 size는 5로 설정했다.
+    - Node 3개로 구성된 cluster에서 test했기에 replica shard의 개수를 2로 줬다.
+    - 만일 node가 3개인데, replica shard가 0일 경우, primary shard의 개수를 1로 설정한 index의 경우 shard를 할당 받지 못 한 node가 생길 수 있다.
+    - 이로 인한 전체 검색 속도의 차이가 생길 수 있으므로 primary shard가 1이라 할지라도 모든 node에 replica shard가 분배되도록 replica shard의 개수를 조정해야한다.
+
+  ```json
+  // PUT single_shard
+  {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 2, 
+      "analysis": {
+        "analyzer": {
+          "nori_analyzer":{
+            "tokenizer":"nori_tokenizer"
+          }
+        }
+      }
+    },
+    "mappings": {
+      "properties": {
+        "name":{
+          "type": "text",
+          "fields": {
+            "keyword":{
+              "type":"keyword"
+            }
+          }
+        },
+        "address":{
+          "type":"text",
+          "analyzer": "nori_analyzer"
+        },
+        "gender":{
+          "type":"keyword"
+        },
+        "age":{
+          "type":"integer"
+        },
+        "content":{
+          "type":"text",
+          "analyzer": "nori_analyzer"
+        }
+      }
+    }
+  }
+  
+  // primary shard가 5개인 index는 number_of_shards를 제외한 모든 구성이 위와 동일하다.
+  // PUT five_shard
+  {
+    "settings": {
+      "number_of_shards": 5,
+      // ...
+    },
+    // ...
+  }
+  ```
+
+  - 테스트용 data를 색인한다.
+    - 아래에서 replica shard 개수 증가에 따른 전체 검색 처리 속도 증가를 테스트 하기 위한 test data를 만드는 code와 동일하다.
+    - 한 index에 먼저 색인 후 다른 index에 reindex 한다.
+
+  ```python
+  import random
+  
+  from faker import Faker
+  from elasticsearch import Elasticsearch, helpers
+  
+  
+  class Bulker:
+      def __init__(self):
+          self.es_client = Elasticsearch("http://localhost:9200")
+  
+      def bulk_ko_data(self):
+          fake = Faker("ko-KR")
+          gender = ["남", "여", "무"]
+          for i in range(100):
+              bulk_data = []
+              for _ in range(10000):
+                  text = ""
+                  for _ in range(50):
+                      text += fake.catch_phrase() + " "
+                  bulk_data.append({
+                      "_index":"search_test",
+                      "_source":{
+                          "name":fake.name(),
+                          "address":fake.address(),
+                          "gender":random.choice(gender),
+                          "age":random.randrange(20, 100),
+                          "content":text.rstrip()
+                      }
+                  })
+              helpers.bulk(self.es_client, bulk_data)
+  
+      
+  if __name__ == "__main__":
+      bulker = Bulker()
+      bulker.bulk_ko_data()
+  ```
+
+  - 아래와 같이 두 index 각각의 단일 검색 요청의 평균 시간을 구한다.
+
+  ```python
+  from elasticsearch import Elasticsearch
+  
+  
+  def search(index_name):
+      es_client = Elasticsearch("localhost:9200")
+      total = 0
+      N = 100
+      for i in range(N):
+          query = {
+              "bool": {
+                  "must": [
+                      {
+                          "script": {
+                              "script": "doc['name.keyword'].value.length() > 2"
+                          }
+                      },
+                      {
+                          "match": {
+                              "content": "분석"
+                          }
+                      },
+                      {
+                          "match_phrase": {
+                              "content": "휴리스틱"
+                          }
+                      }
+                  ]
+              }
+          }
+          total += es_client.search(index=index_name, query=query)["took"]
+      print(total/N)
+  
+  if __name__ == "__main__":
+      search("single_shard")
+      search("five_shard")
+  ```
+
+  - 아래와 같이 여러 검색 요청을 동시에 처리했을 때 두 index의 총 소요 시간을 구한다.
+
+  ```python
+  import time
+  import asyncio
+  
+  from elasticsearch import AsyncElasticsearch
+  
+  
+  async def search(index_name):
+      es_client = AsyncElasticsearch("http://localhost:9200")
+      N = 500
+      query = {
+          "bool": {
+              "must": [
+                  {
+                      "script": {
+                          "script": "doc['name.keyword'].value.length() > 2"
+                      }
+                  },
+                  {
+                      "match": {
+                          "content": "분석"
+                      }
+                  },
+                  {
+                      "match_phrase": {
+                          "content": "휴리스틱"
+                      }
+                  }
+              ]
+          }
+      }
+      for i in range(N):
+          await es_client.search(index=index_name, query=query)
+      await es_client.close()
+  
+  
+  async def main(index_name):
+      await asyncio.wait([asyncio.create_task(search(index_name)) for _ in range(30)])
+  
+  
+  if __name__ == "__main__":
+      st = time.time()
+      asyncio.run(main("single_shard"))
+      print(time.time()-st)
+  
+      st = time.time()
+      asyncio.run(main("five_shard"))
+      print(time.time()-st)
+  ```
+
+  - 단일 검색일 때와 아래 script를 통해서 여러 개의 검색 요청을 연속해서 보냈을 때 두 index의 시간 차이는 아래와 같다.
+    - 단일 검색 요청은 shard가 5개인 쪽이 훨씬 빠르지만, 여러 개의 검색 요청이 들어왔을 때 이들을 처리하는 것은 shard가 1개인 쪽이 더 빠른 것을 확인할 수 있다.
+
+  | shard의 개수 | 단일 검색 요청 | 전체 검색 요청 |
+  | ------------ | -------------- | -------------- |
+  | 1            | 148.52         | 146.331        |
+  | 5            | 70.91          | 266.603        |
+
+  - 위와 같은 결과가 나오는 이유.
+    - Primary shard가 1이고 replica가 2라고 하더라도, 결국 검색은 고유한 shard 하나에서만 이루어지므로, 실제 검색은 저 세 shard들 중 한 곳에서만 실행되므로 single thread로 실행된다.
+    - 반면에 primary shard가 5라면 5개의 thread로 실행되므로 단일 검색 속도는 더 빠르다.
+    - 그러나 이는 바꿔 말하면, 한 번의 검색에 5개의 thread가 필요하다는 의미이다.
+    - Thread pool의 size가 5인 상태에서 primary shard의 개수가 1인 index에 15개의 검색 요청이 동시에 들어올 경우, 15개의 shard만 보면 되므로 각 node들은 5개의 thread를 모두 사용하여 queue에 대기하는 shard 조회 task 없이 15개의 검색 요청을 동시에 처리할 수가 있다.
+    - 그러나 primary shard의 개수가 5인 index에 15개의 검색 요청이 동시에 들어올 경우, 각 요청 당 5개의 shard를 봐야 하므로 총 75개의 shard를 봐야 하지만, thread 당 shard 1개씩 밖에 볼 수 없으므로 동시에 최대 15개의 shard밖에 볼 수 없다.
+    - 따라서 남은 60개의 shard를 조회하는 task는 queue에 들어가게 된다.
+    - 위와 같은 이유로 인해, primary shard의 개수가 증가할 수록 thread pool의 고갈이 발생하게 되고, 전체적인 검색 속도 저하가 발생하게 된다.
+
+
+
 
 
 ### Number of Segments
@@ -1193,6 +1410,9 @@
 
   - 기존 index를 대상으로 다시 검색 속도를 측정한다.
     - 측정을 해보면 단순히 node의 개수를 늘리는 것 만으로는 검색 속도에 차이가 없는 것을 확인할 수 있다.
+  - 단, node를 추가하면서, 새롭게 추가된 node에 replica shard를 할당할 경우, 검색 요청이 많을 때에 한해서는 node의 추가로 전체 검색 처리 속도는 증가할 수 있다.
+    - 다만, 문서를 검색하는 속도 자체가 증가하는 것은 아니다.
+    - 자세한 내용은 아래 replica shard 부분 참고
 
 
 
@@ -1216,6 +1436,169 @@
     - Elasticsearch에서 검색이 이루어지는 과정은 고유한 shard들의 목록을 생성하는 것에서부터 시작한다.
     - 고유한 shard들의 목록을 생성하고, 해당 목록에 있는 shard를 대상으로 query를 실행한다.
     - 따라서 replica를 늘린다고 해도 고유한 shard의 개수가 늘어나는 것은 아니므로 검색 속도가 증가하지는 않는다.
+
+
+
+- Replica shard를 늘렸을 때 처리 속도가 증가할 수도 있다.
+
+  - 위에서 확인했듯이 replica shard의 수를 늘려도 검색 속도가 증가하지는 않는다.
+  - 그러나 replica의 개수를 늘리는 것이 전반적인 처리 속도를 증가시킬 수는 있다.
+    - 예를 들어 아래와 같은 상황에서는 replica shard를 늘리는 것이 처리 속도를 증가시켜 줄 수 있다.
+    - 3개의 node로 구성된 cluster에 primary shard와 replica shard를 각각 1개씩 가지고 있는 index가 있다.
+    - 해당 index를 대상으로 검색을 실행할 경우, primary 혹은 replica shard를 가지고 있는 node에서만 검색을 실행하게 된다.
+    - 즉, node가 3대 임에도 실제 검색은 두 대에서만 이루어지게 된다.
+    - 이 때 replica의 개수를 2로 변경하여 모든 node가 shard를 갖게 할 경우 단일 검색에서 검색 속도에는 처리가 없지만, 전체적인 검색 처리 속도는 증가할 수 있다.
+  - 즉 어떤 index가 replica shard를 할당할 수 있는 node가 남아 있고, shard를 할당 받은 node들로만 검색 요청을 처리하는 것이 버거운 상황이라면 replica 개수를 늘리는 것이 전체적인 검색 처리 속도를 증가시킬 수 있다.
+    - 정확히 해야 할 것은 replica를 늘려서 검색 속도가 빨라지는 것이 아니라는점이다.
+    - Replica를 추가함으로써 해당 replica를 할당 받은 node가 추가적으로 검색에 참여하게 되고, 검색 처리 요청이 더 많은 node로 분산되어 전체적인 검색 처리 속도가 증가하게 된다는 것이다.
+
+  - Test를 위해 아래와 같은 구성으로 cluster를 생성한다.
+    - node1, node2, node3
+    - 세  노드의 구성은 모두 완전히 동일하게 한다.
+    - 보다 간단한 test를 위해서 아래와 같이 search_worker의 thread 개수를 조정한다.
+
+  ```yaml
+  network.host: 0.0.0.0
+  
+  thread_pool:
+      search_worker:
+          size: 5
+  ```
+
+  - Test를 위한 index를 생성하고 data를 색인한다.
+    - Primary와 replica shard의 개수를 각각 1로 설정한다.
+    - Replica shard 수 변경에 따른 전체 처리 속도의 변화를 보기 위해 100만 건의 data를 색인한다.
+
+  ```python
+  import random
+  
+  from faker import Faker
+  from elasticsearch import Elasticsearch, helpers
+  
+  
+  class Bulker:
+      def __init__(self):
+          self.es_client = Elasticsearch("http://localhost:9200")
+  
+      def bulk_ko_data(self):
+          fake = Faker("ko-KR")
+          gender = ["남", "여", "무"]
+          for i in range(100):
+              bulk_data = []
+              for _ in range(10000):
+                  text = ""
+                  for _ in range(50):
+                      text += fake.catch_phrase() + " "
+                  bulk_data.append({
+                      "_index":"search_test",
+                      "_source":{
+                          "name":fake.name(),
+                          "address":fake.address(),
+                          "gender":random.choice(gender),
+                          "age":random.randrange(20, 100),
+                          "content":text.rstrip()
+                      }
+                  })
+              helpers.bulk(self.es_client, bulk_data)
+  
+      
+  if __name__ == "__main__":
+      bulker = Bulker()
+      bulker.bulk_ko_data()
+  ```
+
+  - 검색 속도 측정을 위한 스크립트를 작성한다.
+    - 단일 검색의 속도 차이가 없다는 건 위에서 확인했으므로, 여기서는 1만 5천 번을 검색하는 데 걸리는 전체 시간을 확인해 볼 것이다.
+    - 검색을 test하기 위한 quey는 검색 결과가 너무 빠르게 나오지는 않는 걸로 설정한다.
+
+  ```python
+  import time
+  import asyncio
+  
+  from elasticsearch import AsyncElasticsearch
+  
+  
+  async def search():
+      es_client = AsyncElasticsearch("http://localhost:9200")
+      N = 500
+      query = {
+          "bool": {
+              "must": [
+                  {
+                      "script": {
+                          "script": "doc['name.keyword'].value.length() > 2"
+                      }
+                  },
+                  {
+                      "match": {
+                          "content": "분석"
+                      }
+                  },
+                  {
+                      "match_phrase": {
+                          "content": "휴리스틱"
+                      }
+                  }
+              ]
+          }
+      }
+      for _ in range(N):
+          await es_client.search(index="search_test", query=query)
+      await es_client.close()
+  
+  
+  async def main():
+      await asyncio.wait([asyncio.create_task(search()) for _ in range(30)])
+  
+  
+  if __name__ == "__main__":
+      st = time.time()
+      asyncio.run(main())
+      print(time.time()-st)
+  ```
+
+  - 예상
+    - 위 script는 30개의 검색 요청을 비동기적으로 거의 동시에 보낸다.
+    - Cluster를 구성할 때 모든 node의 search_worker thread의 개수를 5로 설정했다.
+    - 따라서 하나의 node에서 동시에 처리할 수 있는 검색 요청은 5개 뿐이므로, 두 node가 처리하는 10개의 검색 요청을 제외한 20개의 검색 요청은 queue에 쌓일 것이다.
+
+  - 테스트를 실행한다.
+    - 위 script가 실행되는 동안 아래 API를 통해 `search_worker`의 thread pool을 확인해보면 아래와 같은 결과가 나오는 것을 볼 수 있다.
+    - `psz`는 thread pool 내의 thread의 개수, `a`는 현재 사용하고 있는 thread의 개수, q는 queue에서 대기 중인 검색 요청의 개수를 의미한다.
+    - Shard를 가지고 있는 node1과 node2의 모든 thread가 활성화 되어 각각 5개씩 검색 요청을 처리하고 있고, 남은 20개의 요청이 queue에서 대기 중인 것을 확인할 수 있다.
+    - node3은 shard를 할당 받지 않았으므로 아무 thread도 활성화 되지 않았고, queue에도 대기중인 요청도 없는 것을 확인할 수 있다.
+
+  ```http
+  GET _cat/thread_pool/search_worker?h=nn,n,t,psz,a,q&v
+  
+  nn    n             t     psz a  q
+  node1 search_worker fixed   5 5 12
+  node2 search_worker fixed   5 5  8
+  node3 search_worker fixed   5 0  0
+  ```
+
+  - 이번에는 replica shard의 개수를 늘려 기존에는 shard를 할당 받지 않았던 node3도 shard를 할당 받아 검색에 참여하도록 한다.
+    - 아래와 같이 replica shard의 개수를 변경한 후, 위와 동일한 script로 test를 실행한다.
+
+  ```json
+  // PUT search_test/_settings
+  {
+    "index" : {
+      "number_of_replicas" : 2
+    }
+  }
+  ```
+
+  - 결과
+    - Replica가 1개일 때 보다 2개일 때 전체 검색에 소요된 시간이 감소한 것을 확인할 수 있다.
+
+  | replica의 개수 | 1    | 2    |
+  | -------------- | ---- | ---- |
+  | 시간           | 212  | 149  |
+
+  - 주의
+    - 상기했듯 이는 검색 속도 자체가 빨라지는 것은 아니다. 
+    - 따라서 shard를 할당 받은 node들 만으로 검색을 처리하는 데 무리가 없다면(queue에 요청이 거의 쌓이지 않는다면) replica를 늘리더라도 별 효과는 없을 것이다.
 
 
 
