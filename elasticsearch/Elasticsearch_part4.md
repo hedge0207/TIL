@@ -1122,6 +1122,94 @@
 
 
 
+- `dense_vector`
+
+  - Float 값으로 된 dense vector들을 저장하기 위한 field이다.
+    - 7.3 version에 추가되었다.
+    - 원래 최대 dimension 값이 2048이었으나 8.11 version부터는 4096까지 가능해졌다.
+    - 이 field는 정렬과 집계의 대상이 될 수 없다.
+    - 주로 kNN search에 사용한다.
+  - 아래와 같이 색인하면 된다.
+    - 별도로 mapping을 설정하지 않은 채 float으로 구성된 128에서 4096 사이의 크기를 가지는 array 값을 색인할 경우 자동으로 `dense_vector` field로 색인된다.
+    - 아래에서 설명할 parameter들 중 `dims`를 제외하면 전부 8.0에서 추가됐다.
+
+  ```json
+  // PUT my-index
+  {
+    "mappings": {
+      "properties": {
+        "my_vector": {
+          "type": "dense_vector",
+          "dims": 3
+        }
+      }
+    }
+  }
+  
+  // PUT my-index/_doc/1
+  {
+    "my_vector" : [0.5, 10, 6]
+  }
+  ```
+
+  - `element_type`
+    - Vector를 encoding하기 위한 type을 지정한다.
+    - float과 byte를 지원하며, 기본 값은 `float`이다.
+    - float은 각 차원 마다 4-byte의 부동소수점으로 색인을 실행하고, byte는 각 차원 마다 1-byte의 integer로 색인을 진행한다.
+    - byte로 색인을 하면 정확도는 낮아지지만 index의 크기를 상당히 줄일 수 있다.
+    - byte로 색인할 경우 dimension은 -128에서 127 사이의 값이어야한다.
+  - `dims`
+    - Vector의 dimension을 설정한다.
+    - 최대 값은 4096이며, 기본 값은 처음 색인 된 vector의 길이이다.
+  - `index`
+    - 만약 true일 경우 kNN search API를 사용할 수 있으나 색인 시간이 상당히 증가한다.
+    - 기본 값은 true이다.
+  - `index_options`
+    - HNSW algorithm은 자료 구조가 어떻게 생성될지 결정하는 두 개의 parameter를 가지고 있다.
+    - 이들은 결과의 정확성과 검색 속도 사이의 trade-off를 조절한다.
+    - `index`가 true일 때만 설정이 가능하다.
+    - `m`: HNSW graph에서 각 node가 연결될 이웃의 수를 설정한다(기본값은 16).
+    - `ef_construction`: 각 새 노드에 대한 최근접 이웃 목록을 수집하는 동안 추적할 후보 수를 설정한다(기본값은 100).
+  - `similarity`
+    - kNN search에서 vector 유사도를 판단하는 데 사용할 지표를 설정한다.
+    - 각 document의 `_score` 값은 similarity 값으로 대체된다.
+    - `index`가 true로 설정되었을 때만 설정이 가능하다.
+    - 기본값은 `cosine`이다.
+
+
+
+- `dense_vector` field의 `similarity` parameter에 설정할 수 있는 값들
+  - `l2_norm`
+    - L<sup>2</sup> distance(Euclidean distance)에 기반하여 유사도를 판단한다.
+    - `_score`를 계산하는 식은 아래와 같다. 
+    - $1/(1 + l2\_norm(query, vector)^2)$
+  - `dot_product`
+    - Dot product에 기반하여 유사도를 판단한다.
+    - Cosine similarity를 계산하기 위한 최적화된 방식을 제공한다.
+    - `element_type`의 값에 따라 score를 계산하는 방식이 달라진다.
+    - `element_type`이 float일 경우 모든 vector들은 unit length여야 하며, `_score`는 아래와 같이 계산된다.
+    - $(1+dot\_product(query,vector))/2$
+    - `element_type`이 byte일 경우 모든 vector들이 같은 길이를 가지지 않을 경우 결과가 부정확해 질 수 있으며, `_score`는 아래와 같이 계산된다.
+    - $0.5+(dot\_product(query,vector)/(32768*dims))$이고, dims는 각 vector 당 dimension의 수를 의미한다.
+  - `cosine`
+    - Cosine similarity를 사용하여 유사도를 판단한다.
+    - 모든 vector를 unit length로 nornalize한 뒤 `dot_product`를 사용하는 것이 보다 효율적이다.
+    - `cosine`은 원본 vector를 보존해야 하거나 normalize를 할 수 없을 때 사용하는 것이 좋다.
+    - `_score`는 아래와 같이 계산된다.
+    - $(1+cosine(query, vector))/2$
+    - Magnitude가 0일 경우 cosine을 정의할 수 없기 때문에, magnitude가 0인 vector를 대상으로는 사용할 수 없다.
+  - `max_inner_product`
+    - Inner product의 최대값으로 유사도를 판단한다.
+    - `dot_product`와 유사하지만 vector를 normalize 할 필요흔 없다.
+    - 각 vector의 magnitude가 score에 중대한 영향을 미친다.
+    - `_score`는 음수가 나오지 않도록 조정된다.
+    - `max_inner_product`가 음수일 경우 `_score`는 아래와 같이 계산하고
+    - $1 / (1+-1*max\_inner\_product(query,vector))$
+    - 0 이상일 경우 아래와 같이 계산한다.
+    - $max\_inner\_product(query,vector)+1$
+
+
+
 #### Join field type
 
 - Join field type
