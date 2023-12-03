@@ -2984,3 +2984,193 @@
     - 따라서 ES에서는 검색 속도를 높이기 위해서 전부 count하는 대신 10000개만 count하는 방식을 사용한다.
   - 검색시에 request body에 `track_total_hits` 값을 true로 주면 실제 일치하는 모든 문서를 count한다.
   - boolean 값이 아닌 integer도 줄 수 있는데, 해당 숫자 만큼만 count한다.
+
+
+
+
+
+## Script score query
+
+- Script score query
+
+  - 검색 결과로 반환된 document들의 점수를 script를 사용하여 변경하는 query이다.
+    - 아래와 같이 `script_score` 내부의 `query`로 문서들을 검색하고, `script`로 검색된 문서들의 점수를 조정한다.
+    - 주의할 점은 최종 점수가 음수일 수는 없다는 것인데, 이는 Lucene이 score를 0 미만으로 설정할 수 없게 되어있기 때문이다.
+    - `min_score`는 여기에 설정한 점수 보다 낮은 점수를 가진 document는 반환되지 않게 하기 위한 option이다.
+    - `boost`는 `script`에 의해 계산 된 점수에 곱해 최종 점수를 구할 때 사용한다(즉, 최종 점수는 `script가 산출한 점수 * boost`가 된다).
+
+  ```json
+  // GET /_search
+  {
+      "query": {
+          "script_score": {
+              "query": {
+                  "match": { "message": "elasticsearch" }
+              },
+              "script": {
+                  "source": "doc['my-int'].value / 10 "
+              },
+              "min_score":0.1
+          }
+      }
+  }
+  ```
+
+  - 아래와 같이 `_score`를 사용하여 document의 원래 `_score` 값에 접근하는 것이 가능하다.
+
+  ```json
+  // GET /_search
+  {
+      "query": {
+          "script_score": {
+              "query": {
+                  "match": { "message": "elasticsearch" }
+              },
+              "script": {
+                  "source": "_score / 10 "
+              }
+          }
+      }
+  }
+  ```
+
+  - 주의 사항
+
+    - 비용이 많이 드는 query이므로 `search.allow_expensive_queries`가 false로 설정되어 있다면 사용할 수 없다.
+
+    - `script`를 변경할 때 마다 다시 컴파일해야 하므로, `script`내에서 빈번히 변경되는 값은 `params`로 따로 빼 놓으면 불필요한 컴파일을 막을 수 있다.
+    - 특정 document에 script에 사용하는 field의 값이 없는 경우를 check하고자 한다면, 아래와 같이 작성하면 된다.
+
+  ```json
+  "script" : {
+      "source" : "doc['field'].size() == 0 ? 1 : doc['field'].value() * 2",
+  }
+  ```
+
+ 
+
+- `script_score` query에서 사용할 수 있는 함수들
+
+  - Elasticsearch는 `script_score`에서 사용할 수 있도록 미리 몇 개의 함수를 만들어 두었다.
+    - 이 함수들과 동일한 방식을 가진 script를 직접 작성하는 것 보다 미리 정의된 함수를 사용하는 것이 더 효율적이다.
+    - 이 함수들은 Elasticsearch 내부적으로 최적화가 되어 있기 때문이다.
+  - `saturation`
+    - `saturation(value, k) = value/(k + value)`
+  - `sigmoid`
+    - `sigmoid(value, k, a) = value^a / (k^a + value^a)`
+  - `randomScore`
+    - 0이상 1미만의 점수를 고르게 분배하여 무선적인 점수를 생성한다.
+    - `randomScore(<seed>[,field_name])` 형태로 사용한다.
+    - 만약 `field_name`이 생략된 경우 내부적으로 Lucene document id를 사용하는데, merge로 인해 document id가 변경될 경우 값이 점수가 달라질 수 있다는 점에 유의해야 한다.
+    - 또한 설정한 `field_name`에 해당하는 값이 같고, 같은 shard에 속해 있는 문서들 끼리는 같은 점수를 받게 되므로, 고유한 값을 가지는 field를 `field_name`의 값으로 사용하는 것이 좋다.
+
+  - `decay`
+    - 숫자 field, geo field, date field 마다 사용 방법이 다르다.
+    - 각 field별 사용법은 공식문서 참고
+  - 그 밖에 `dense_vector` field에만 사용할 수 있는 함수들이 있는데, 이는 아래에서 설명한다.
+
+
+
+- `dense_vector` field에서 사용할 수 있는 함수들.
+
+  - Script 내에서 아래와 같이 vector에 접근할 수 있다.
+    - `doc[<field>].vectorValue`: vector의 값을 반환한다.
+    - `doc[<field>].magnitude`: vector의 magnitude를 반환한다.
+  - `cosineSimilarity`
+    - 주어진 query vector와 document vector 사이의 cosine similarity를 계산한다.
+
+  ```json
+  "script": {
+      "source": "cosineSimilarity(params.query_vector, 'my_dense_vector_field') + 1.0", 
+      "params": {
+          "query_vector": [4, 3.4, -0.2]  
+      }
+  }
+  ```
+
+  - `dotProduct`
+    - 주어진 query vector와 document vector 사이의 dot product를 계산한다.
+
+  ```json
+  "script": {
+      "source": """
+          double value = dotProduct(params.query_vector, 'my_dense_vector');
+     		return sigmoid(1, Math.E, -value); 
+  	""",
+      "params": {
+          "query_vector": [4, 3.4, -0.2]
+      }
+  }
+  ```
+
+  - `l1norm`
+    - 주어진 query vector와 document vector 사이의 L<sup>1</sup> distance (Manhattan distance)를 계산한다.
+    - `_score`에 두 vector 사이의 거리값이 오기 때문에, `_score`가 클수록 두 vector 사이의 연관성이 없다는 것을 의미한다.
+    - 따라서, 1을 L<sup>1</sup> distance로 나눠서 L<sup>1</sup> distance의 역수를 `_score`로 사용한다.
+
+  ```json
+  "script": {
+          "source": "1 / (1 + l1norm(params.queryVector, 'my_dense_vector'))", 
+          "params": {
+            	"queryVector": [4, 3.4, -0.2]
+          }
+  }
+  ```
+
+  - `l2norm`
+    - 주어진 query vector와 document vector 사이의 L<sup>2</sup> distance (Euclidean distance)를 계산한다.
+    - L<sup>1</sup> distance와 마찬가지 이유로 L<sup>2</sup> distance의 역수를 `_score`로 사용한다.
+
+  ```json
+  "script": {
+      "source": "1 / (1 + l2norm(params.queryVector, 'my_dense_vector'))",
+      "params": {
+          "queryVector": [4, 3.4, -0.2]
+      }
+  }
+  ```
+
+  - 주의사항
+    - `cosineSimilarity`, `dotProduct`, `l1norm`,  `l2norm` 함수들은 script 내에서 한 번만 호출하는 것이 권장된다.
+    - 만일 이들을 loop 내에서 여러번 호출해야하는 경우가 있을 경우, 위 함수들을 사용하지 말고 `doc[<field>].vectorValue` 등을 사용하여 script를 직접 작성하는 것을 권장한다.
+
+
+
+- `function_score` query를 `script_score` query로 변환하기.
+
+  - `script_score` query가 `function_score` query보다 단순하므로, 가능하면 `script_score`를 쓰는 사용하는 것이 권장된다.
+    - 아래와 같은 `function_score`query의 function들을 `script_score` query로 변환하는 것이 가능하다.
+  - `weight`
+    - `weight` function은 `script_score`로 아래와 같이 변환할 수 있다.
+
+  ```json
+  "script" : {
+      "source" : "params.weight * _score",
+      "params": {
+          "weight": 2
+      }
+  }
+  ```
+
+  - `random_score`
+    - `script_score`의 `randomScore`로 변환이 가능하다.
+  - `field_value_factor`
+    - 아래와 같이 `script_score`로 변환이 가능하다.
+
+  ```json
+  "script" : {
+      "source" : "Math.log10(doc['field'].value * params.factor)",
+      "params" : {
+          "factor" : 5
+      }
+  }
+  ```
+
+
+
+## Function score query
+
+- Function score query
+  - `script_score` query가 보다 단순하므로, 가능하면 `script_score` query를 쓰는 것이 권장된다.
+  - Script score와 달리 여러 개의 함수를 사용할 수 있다.
+
