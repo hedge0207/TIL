@@ -761,3 +761,126 @@
 
 
 
+
+
+## 카운트 기반의 단어 표현(Count Based word Representation)
+
+- 단어의 표현 방법
+  - 국소 표현(Local Representation, 이산 표현(Discrete Representation))
+    - 해당 단어 그 자체만 보고 특정 값을 mapping하여 단어를 표현하는 방법.
+    - 예를 들어 강아지, 귀여운 이라는 단어 각각에 1번, 2번 과 같은 숫자를 mapping하는 방식이다.
+  - 분산 표현(Distributed Representation, 연속 표현(Continuous Representation))
+    - 단어를 표현하고자 주변을 참고하여 단어를 표현하는 방법.
+    - 예를 들어 강아지라는 단어 주변에 주로 귀여운이라는 단어가 자주 등장하므로 강아지라는 단어는 귀여운 느낌이다로 단어를 정의한다.
+    - 국소 표현과 달리 분산 표현은 단어의 뉘앙스를 표현할 수 있게 된다.
+  - 앞에서 살펴본 One-hot vector, N-gram과 뒤에서 살펴볼 BoW와 그 확장인 DTM은 국소 표현에 속한다.
+
+
+
+- Bag of Words(BoW)
+
+  - 단어들의 순서는 전혀 고려하지 않고 단어들의 출현 빈도만 고려하는 텍스트 데이터의 수치화 방법이다.
+    - 가방에 물건들이 순서 없이 들어가 있는 모습을 생각하면 된다.
+    - 각 단어가 등장한 횟수를 수치화하는 표현 방법이므로 어떤 단어가 얼마나 등장했는지를 통해 문서가 어떤 종류의 문서인지를 판단하는 작업에 주로 쓰인다.
+  - BoW 만들기
+
+  ```python
+  from konlpy.tag import Okt
+  
+  okt = Okt()
+  
+  def build_bag_of_words(sentence):
+      # 온점 제거
+      sentence = sentence.replace('.', '')
+      # 형태소 분석
+      tokens = okt.morphs(sentence)		# ['우리', '집', '강아지', '가', '옆', '집', '강아지', '보다', '순하다']
+      print(tokens)
+  
+      word_to_index = {}
+      bow = []
+  
+      for word in tokens:  
+          if word not in word_to_index.keys():
+              index = len(word_to_index)
+              word_to_index[word] = index
+              # BoW에 전부 기본값 1을 넣는다.
+              bow.insert(index - 1, 1)
+          else:
+              # 만약 이미 bow에 포함된 단어일 경우
+              index = word_to_index.get(word)
+              # 단어에 해당하는 인덱스의 위치에 1을 더한다.
+              bow[index] = bow[index] + 1
+  
+      return word_to_index, bow
+  
+  
+  vocabulary, bow = build_bag_of_words("우리 집 강아지가 옆 집 강아지 보다 순하다.")
+  print(vocabulary)		# {'우리': 0, '집': 1, '강아지': 2, '가': 3, '옆': 4, '보다': 5, '순하다': 6}
+  print(bow)				# [1, 2, 2, 1, 1, 1, 1]
+  ```
+
+  - `sklearn`의 `CountVectorizer`을 사용하면 보다 간단하게 BoW를 만들 수 있다.
+    - 단, 띄어쓰기로만 tokenizing을 하는 수준이므로 한글 문장을 가지고는 사용할 수 없다.
+
+  ```python
+  from sklearn.feature_extraction.text import CountVectorizer
+  
+  def build_bag_of_words_by_sklearn(sentence):
+      vector = CountVectorizer()
+      # list 형태로 넘겨야한다.
+      bow = vector.fit_transform([sentence]).toarray()
+      print(bow)						# [[2 1 2 1 1 1]]
+      print(vector.vocabulary_)		# {'my': 2, 'dog': 0, 'is': 1, 'nicer': 4, 'than': 5, 'neighbor': 3}
+  
+  build_bag_of_words_by_sklearn("My dog is nicer than my neighbor's dog.")
+  ```
+
+  - 불용어를 제거하고 BoW 만들기
+    - `CountVectorizer`에 임의의 불용어를 설정하거나, 자체적으로 내장된 불용어를 사용할 수 있다.
+    - `nltk`에서 제공하는 불용어를 사용하는 방법도 있다.
+
+  ```python
+  from sklearn.feature_extraction.text import CountVectorizer
+  from nltk.corpus import stopwords
+  
+  def build_bag_of_word_with_stopword(sentence, stopwords):
+      vector = CountVectorizer(stop_words=stopwords)
+      bow = vector.fit_transform([sentence]).toarray()
+      print(bow)
+      print(vector.vocabulary_)
+      
+  
+  # 사용자 지정 불용어 사용
+  build_bag_of_word_with_stopword("My dog is nicer than my neighbor's dog.", ["neighbor"])
+  
+  # CountVectorizer가 제공하는 stopword 사용
+  build_bag_of_word_with_stopword("My dog is nicer than my neighbor's dog.", "english")
+  
+  # nltk에서 지원하는 stopword 사용
+  build_bag_of_word_with_stopword("My dog is nicer than my neighbor's dog.", stopwords.words("english"))
+  ```
+
+
+
+- 문서 단어 행렬(Document-Term Matrix, DTM)
+
+  - 다수의 문서에 등장하는 각 단어들의 빈도를 행렬로 표현한 것이다.
+    - 문서 각각의 BoW를 하나의 table 형태로 만든 것이라고 생각하면 된다.
+    - 행과 열을 반대로 선택할 경우 TDM이라 부르기도 한다.
+  - DTM의 표기법
+    - 아래와 같은 문서들은 아래 표와 같은 DTM으로 표기할 수 있다.
+    - 문서1: 귀여운 비숑.
+    - 문서2: 귀여운 포메.
+    - 문서3: 귀여운 비숑 귀여운 포메
+
+  |       | 귀여운 | 비숑 | 포메 |
+  | ----- | ------ | ---- | ---- |
+  | 문서1 | 1      | 1    | 0    |
+  | 문서2 | 1      | 0    | 1    |
+  | 문서3 | 2      | 1    | 1    |
+
+  - 희소 표현(Sparse representation)
+    - 수 많은 문서들 중 단 한 문서에만 등장하는 단어가 있다고 할 때, 그 단어를 위해서 열을 하나 추가해야하고, 다른 모든 문서에 0을 채워 넣어야 한다.
+    - 원-핫 벡터나 DTM 등에서 대부분의 값이 0인 표현을 희소 벡터 또는 희소 행렬이라 부른다.
+    - 희소 벡터는 저장 공간 증가와 계산의 복잡도를 증가시킨다.
+
