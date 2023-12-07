@@ -37,6 +37,129 @@
 
 
 
+- 한 field 내에 중복된 token이 많다고 해서 index의 size가 증가하는 것은 아니다.
+
+  - Elasticsearch의 inverted index에는 unique한 token만이 저장된다.
+    - 따라서 중복된 token이 있다고 해도 이 token이 inverted index에 추가적으로 저장되지는 않는다.
+    - 다만 해당 token의 위치에 관한 정보와 등작 빈도 등만 추가적으로 저장되므로 약간은 크기가 증가하게 된다.
+  - 아래와 같이 index를 생성한다.
+
+  ```json
+  // PUT same_token
+  {
+    "settings": {
+      "number_of_shards": 1, 
+      "number_of_replicas": 0
+    }
+  }
+  ```
+
+  - 문서를 1건만 색인한다.
+
+  ```json
+  // PUT same_token/_doc/1
+  {
+    "text":"foo bar baz qux"
+  }
+  ```
+
+  - 색인의 크기를 확인한다.
+    - 4.6kb인 것을 볼 수 있다.
+
+  ```json
+  // GET _cat/indices?h=h,i,p,r,dc,cds,ss&s=cds:desc&v
+  green same_token    1 0       1 2023-12-06T04:27:04.297Z  4.6kb
+  ```
+
+  - 아래 스크립트로 같은 내용의 문서를 9999건을 더 색인한다.
+
+  ```python
+  from elasticsearch import Elasticsearch, helpers
+  
+  
+  es_client = Elasticsearch("http://localhost:9200")
+  bulk_data = []
+  for _ in range(9999):
+      text = "foo bar baz qux"
+      bulk_data.append({
+          "_index":"same_token",
+          "_source":{
+              "text":text
+          }
+      })
+  helpers.bulk(es_client, bulk_data)
+  ```
+
+  - 다시 index의 크기를 확인해본다.
+    - 1건일 때는 4.6kb였다가 10000건일 때는 177.3kb가 된 것을 확인할 수 있다.
+
+  ```json
+  // GET _cat/indices?h=h,i,p,r,dc,cds,ss&s=cds:desc&v
+  green same_token    1 0       1 2023-12-06T04:27:04.297Z  177.3kb
+  ```
+
+  - 이번에는 다른 token을 색인하기 위한 index를 생성한다.
+
+  ```json
+  // PUT diff_token
+  {
+    "settings": {
+      "number_of_shards": 1, 
+      "number_of_replicas": 0
+    }
+  }
+  ```
+
+  - 문서를 1건만 색인한다.
+
+  ```json
+  // PUT diff_token/_doc/1
+  {
+    "text":"foo bar baz qux"
+  }
+  ```
+
+  - 색인의 크기를 확인한다.
+    - 4.6kb인 것을 볼 수 있다.
+
+  ```json
+  // GET _cat/indices?h=h,i,p,r,dc,cds,ss&s=cds:desc&v
+  green diff_token    1 0       1 2023-12-06T04:27:04.297Z  4.6kb
+  ```
+
+  - 아래 script로 다른 내용의 문서를 9999건을 더 색인한다.
+
+  ```python
+  from elasticsearch import Elasticsearch, helpers
+  from faker import Faker
+  
+  
+  fake = Faker()
+  es_client = Elasticsearch("http://localhost:9200")
+  bulk_data = []
+  for _ in range(9999):
+      text = " ".join(fake.name()[:3] for _ in range(4))
+      bulk_data.append({
+          "_index":"diff_token",
+          "_source":{
+              "text":text
+          }
+      })
+  helpers.bulk(es_client, bulk_data)
+  ```
+
+  - 다시 index의 크기를 확인해본다.
+    - 1건일 때는 4.6kb였다가 10000건일 때는 670.8kb가 된 것을 확인할 수 있다.
+
+  ```json
+  // GET _cat/indices?h=h,i,p,r,dc,cds,ss&s=cds:desc&v
+  green diff_token   1 0   10000 2023-12-06T04:35:56.575Z 670.8kb
+  ```
+
+
+
+
+
 - ES는 어떻게 tokenizing을 하는가
 
   - ES는 `_analyze`라는 API를 제공한다.
