@@ -884,3 +884,257 @@
     - 원-핫 벡터나 DTM 등에서 대부분의 값이 0인 표현을 희소 벡터 또는 희소 행렬이라 부른다.
     - 희소 벡터는 저장 공간 증가와 계산의 복잡도를 증가시킨다.
 
+
+
+
+
+### TF-IDF
+
+- TF-IDF(Term Frequency-Inverse Document Frequency)
+
+  - 모든 문서에 자주 등장하는 단어는 중요도가 낮은 것으로, 특정 문서에만 자주 등장하는 단어는 중요도가 높은 것으로 판단하는 중요도 계산 방식이다.
+    - 문서 사이의 유사도 계산하거나 검색 시스템에서 검색 결과의 점수를 계산 하거나 문서 내에서 특정 단어의 중요도를 계산 할 때 사용한다.
+  - tf(d, t)
+    - d는 문서, t는 단어를 의미하며 tf(d, t)는 특정 문서 d에서 특정 단어 t가 등장하는 횟수를 의미한다.
+    - DTM의 각 cell의 숫자 값들이 이에 해당한다.
+    - 예를 들어 tf(문서3, 귀여운)의 값은 2가 된다.
+  - df(t)
+    - df(t)는 전체 문서 중에서 특정 단어 t가 등장한 문서의 개수이다.
+    - t가 문서에 등장했는지 여부만 따지며, 문서에 몇 번 등장했는지는 고려하지 않는다.
+    - 예를 들어 위 예시에서 "귀여운"이라는 t는 3개의 문서에 4번 등장하는데, 이 경우 df(귀여운)의 값은 3이다.
+  - idf(t)
+    - df(t)에 반비례하는 수이다.
+    - 아래 식에서 n은 전체 문서의 개수를 의미한다.
+    - log를 취하지 않으면 총 문서의 개수 n이 커질수록 값이 기하급수적으로 커지기 때문에 log를 취한다.
+    - log의 밑은 사용자가 임의로 정할 수 있으나 대부분의 경우 자연 로그를 사용한다.
+    - 분모에 1을 더해주는 이유는 특정 단어가 어떤 문서에도 등장하지 않을 경우 분모가 0이 될 수 있기에 이를 방지하기 위함이다.
+
+  $$
+  idf(t)=log({n \over 1+df(t)})
+  $$
+
+  
+
+  - 주의사항
+    - TF-IDF 구현을 제공하는 여러 패키지들이 있으며 이들의 구현 방식이 약간씩 다르다.
+    - 위 식은 TF-IDF의 가장 기본적인 식이지만 위 기본 식을 바탕으로 구현할 경우 몇 가지 문제가 발생할 수 있다.
+    - 예를 들어 n이 4인데 df(t)의 값이 3일 경우 로그의 진수값이 1이 되어 idf(d, t)의 값이 0이 된다.
+    - 따라서 더 이상 가중치의 역할을 수행할 수 없게 된다.
+
+
+
+- Python으로 TF-IDF 직접 계산하기
+
+  - 먼저 `DataFrame`을 사용하여 DTM을 저장한다.
+    - tf(t, d)를 사용하여 DTM에 값을 채워 넣는다.
+
+  ```python
+  import pandas as pd
+  from math import log
+  
+  
+  def tf(t, d):
+    return d.count(t)
+  
+  def idf(t):
+      df = 0
+      for doc in docs:
+          df += t in doc
+      return log(N/(df+1))
+  
+  def tfidf(t, d):
+    return tf(t,d)* idf(t)
+  
+  def build_dtm(vocabulary):
+      result = []
+      for i in range(N):
+          result.append([])
+          d = docs[i]
+          for j in range(len(vocabulary)):
+              t = vocabulary[j]
+              # tf 함수를 사용하여 DTM에 값을 채워 넣는다.
+              result[-1].append(tf(t, d))
+      return pd.DataFrame(result, columns = vocabulary)
+  
+  
+  docs = [
+      "귀여운 비숑",
+      "귀여운 포메",
+      "귀여운 비숑 귀여운 포메",
+      "깜찍한 아기 사슴"
+  ]
+  
+  N = len(docs)
+  vocabulary = list(set(word for doc in docs for word in doc.split()))
+  print(vocabulary)		# ['깜찍한', '귀여운', '아기', '사슴', '포메', '비숑']
+  
+  dtm = build_dtm(vocabulary)
+  print(dtm)
+  """
+     깜찍한  귀여운  아기  사슴  포메  비숑
+  0    0    1      0    0    0    1
+  1    0    1      0    0    1    0
+  2    0    2      0    0    1    1
+  3    1    0      1    1    0    0
+  """
+  ```
+
+  - 각 단어에 대한 IDF 값을 구한다.
+
+  ```python
+  idf_result = [idf(t) for t in vocabulary]
+  idf_ = pd.DataFrame(idf_result, index=vocabulary, columns=["IDF"])
+  print(idf_)
+  """
+            IDF
+  깜찍한  0.693147
+  귀여운  0.000000
+  아기   0.693147
+  사슴   0.693147
+  포메   0.287682
+  비숑   0.287682
+  """
+  ```
+
+  - TF-IDF 행렬을 출력한다.
+
+  ```python
+  result = []
+  for i in range(N):
+      result.append([])
+      d = docs[i]
+      for j in range(len(vocabulary)):
+          t = vocabulary[j]
+          result[-1].append(tfidf(t,d))
+  
+  tfidf_ = pd.DataFrame(result, columns = vocabulary)
+  print(tfidf_)
+  """
+          깜찍한        비숑        아기  귀여운        사슴        포메
+  0  0.000000  0.287682  0.000000  0.0  0.000000  0.000000
+  1  0.000000  0.000000  0.000000  0.0  0.000000  0.287682
+  2  0.000000  0.287682  0.000000  0.0  0.000000  0.287682
+  3  0.693147  0.000000  0.693147  0.0  0.693147  0.000000
+  """
+  ```
+
+  - 전체 code
+
+  ```python
+  import pandas as pd
+  from math import log
+  
+  
+  def tf(t, d):
+    return d.count(t)
+  
+  def idf(t):
+      df = 0
+      for doc in docs:
+          df += t in doc
+      return log(N/(df+1))
+  
+  def tfidf(t, d):
+    return tf(t,d)* idf(t)
+  
+  def build_dtm(vocabulary):
+      result = []
+      for i in range(N):
+          result.append([])
+          d = docs[i]
+          for j in range(len(vocabulary)):
+              t = vocabulary[j]
+              # tf 함수를 사용하여 DTM에 값을 채워 넣는다.
+              result[-1].append(tf(t, d))
+      return pd.DataFrame(result, columns = vocabulary)
+  
+  
+  docs = [
+      "귀여운 비숑",
+      "귀여운 포메",
+      "귀여운 비숑 귀여운 포메",
+      "깜찍한 아기 사슴"
+  ]
+  N = len(docs)
+  vocabulary = list(set(word for doc in docs for word in doc.split()))
+  print(vocabulary)
+  
+  dtm = build_dtm(vocabulary)
+  print(dtm)
+  
+  idf_result = [idf(t) for t in vocabulary]
+  idf_ = pd.DataFrame(idf_result, index=vocabulary, columns=["IDF"])
+  print(idf_)
+  
+  result = []
+  for i in range(N):
+      result.append([])
+      d = docs[i]
+      for j in range(len(vocabulary)):
+          t = vocabulary[j]
+          result[-1].append(tfidf(t,d))
+  
+  tfidf_ = pd.DataFrame(result, columns = vocabulary)
+  print(tfidf_)
+  ```
+
+
+
+- Scikit-Learn으로 DTM과 TF-IDF 구하기
+
+  - DTM 생성하기
+
+  ```python
+  from sklearn.feature_extraction.text import CountVectorizer
+  
+  corpus = [
+      "귀여운 비숑",
+      "귀여운 포메",
+      "귀여운 비숑 귀여운 포메",
+      "깜찍한 아기 사슴"
+  ]
+  
+  vector = CountVectorizer()
+  
+  # corpus부터 각 단어의 빈도수를 기록한다.
+  print(vector.fit_transform(corpus).toarray())
+  
+  # 각 단어와 맵핑된 인덱스를 출력한다.
+  print(vector.vocabulary_)
+  
+  """
+  [[1 0 1 0 0 0]
+   [1 0 0 0 0 1]
+   [2 0 1 0 0 1]
+   [0 1 0 1 1 0]]
+  {'귀여운': 0, '비숑': 2, '포메': 5, '깜찍한': 1, '아기': 4, '사슴': 3}
+  """
+  ```
+
+  - TF-IDF 계산하기
+    - 위에서 계산한 DTM을 사용하지는 않는다.
+
+  ```python
+  from sklearn.feature_extraction.text import TfidfVectorizer
+  
+  
+  corpus = [
+      "귀여운 비숑",
+      "귀여운 포메",
+      "귀여운 비숑 귀여운 포메",
+      "깜찍한 아기 사슴"
+  ]
+  
+  tfidfv = TfidfVectorizer().fit(corpus)
+  print(tfidfv.transform(corpus).toarray())
+  print(tfidfv.vocabulary_)
+  
+  """
+  [[0.62922751 0.         0.77722116 0.         0.         0.        ]
+   [0.62922751 0.         0.         0.         0.         0.77722116]
+   [0.75316704 0.         0.46515557 0.         0.         0.46515557]
+   [0.         0.57735027 0.         0.57735027 0.57735027 0.        ]]
+  {'귀여운': 0, '비숑': 2, '포메': 5, '깜찍한': 1, '아기': 4, '사슴': 3}
+  """
+  ```
+
