@@ -1,5 +1,18 @@
 # Shorts
 
+- faker
+
+  - 언어를 한국어로 설정하고 `catch_phrase()`를 사용하면 무작위로 생성된 짧은 문자열을 얻을 수 있다.
+
+  ```python
+  from faker import Faker
+  
+  fake = Faker("ko-KR")
+  print(fake.catch_phrase())
+  ```
+
+
+
 - Python StateMachine
 
   - Python을 사용하여 직관적으로 finite state machine(FSM)을 구현할 수 있게 해주는 package

@@ -917,6 +917,41 @@
 
 
 
+- `all`, `any`
+
+  - `all`
+    - 인자로 받은 모든 요소가 True면 True를 반환하고, 하나라도 False면 False를 반환한다.
+    - 인자로 iterable한 type을 받으며, 만일 비어 있을 경우 **True를 반환**한다.
+
+  ```python
+  print(all([1,1,1]))			# True
+  print(all([0,1,1]))			# False
+  print(all([[],[1,2,3]]))	# False
+  print(all([]))				# True
+  ```
+
+  - `any`
+    - 인자로 받은 요소 중 하나라도 True가 있으면 True를 반환하고, 모두 False면 False를 반환한다.
+    - 인자로 iterable한 type을 받으며, 만일 비어 있을 경우 **False를 반환**한다.
+
+  ```python
+  print(any([0,0,1]))			# True
+  print(any([0,0,0]))			# False
+  print(any([]))				# False
+  ```
+
+  - 활용
+    - 아래와 같이 활용이 가능하다.
+
+  ```python
+  num = 3
+  lst = [4,5,6]
+  print(all(num > i for i in lst))	# True
+  print(all(num < i for i in lst))	# False
+  ```
+
+
+
 
 
 # Python의 동작 방식
