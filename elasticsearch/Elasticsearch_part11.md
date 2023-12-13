@@ -279,6 +279,69 @@
 
 
 
+- Primary shard의 개수와 색인 속도
+
+  - Primary shard의 개수를 늘리면 색인 속도도 함께 증가한다.
+    - 검색과 마찬가지로 shard의 개수가 증가하면 색인 요청을 처리하는 thread도 증가하게 되므로 보다 빠른 속도로 색인이 가능해진다.
+    - Shard의 개수 증가로 인한 색인 속도의 증가는 요청을 처리하는 thread의 개수 외에도 요청을 처리하는 node 수의 증가도 영향을 미친다.
+    - 만일 primary shard가 1개일 경우 해당 shard가 할당된 node에서만 모든 indexing을 처리하겠지만, 여러 개의 primary shard가 각 node에 분산된 경우 shard를 할당 받은 모든 node가 색인에 참여하므로 색인 속도가 더 빨라지게 된다.
+  - 아래와 같이 색인 test용 data를 생성한다.
+
+  ```python
+  fake = Faker()
+  bulk_data = []
+  
+  for i in range(100000):
+      text = " ".join([fake.text() for _ in range(10)])
+      bulk_data.append({
+          "_index":"indexing_test",
+          "_id":i,
+          "_source":{
+              "text":text
+          }
+      })
+  
+  with open("test.json", "w") as f:
+      json.dump(f, bulk_data, indent="\t")
+  ```
+
+  - 아래와 같이 primary shard의 개수를 설정하여 index를 생성한다.
+
+  ```json
+  // PUT indexing_test
+  {
+    "settings": {
+      "number_of_shards": 1
+    }
+  }
+  ```
+
+  - 색인을 실행한다.
+
+  ```python
+  es_client = Elasticsearch("http://localhost:9200")
+  
+  with open("test.json", "r") as f:
+      bulk_data = json.load(f)
+  
+  st = time.time()
+  helpers.bulk(es_client, bulk_data)
+  print(time.time()-st)
+  ```
+
+  - Primary shard의 개수를 늘릴수록 색인 속도가 증가하는 것을 확인할 수 있다.
+
+  | Primary shard 개수 | 색인 시간 |
+  | ------------------ | --------- |
+  | 1                  | 49.85     |
+  | 2                  | 35.80     |
+  | 5                  | 25.47     |
+  | 10                 | 19.24     |
+
+  - 위에서는 document의 `_id` 값을 지정했는데, 지정하든 지정하지 않든 primary shard가 증가할 수록 색인 속도는 증가한다.
+
+
+
 - Node 전략
 
   - Indexing Buffer size 관련 옵션을 조정한다.
@@ -467,10 +530,6 @@
       }
   }
   ```
-
-
-
-
 
 
 
