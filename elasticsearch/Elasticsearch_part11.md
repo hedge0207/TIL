@@ -252,6 +252,8 @@
   - 레플리카 샤드 갯수를 0으로 설정하기
     - 프라이머리 샤드에 색인 된 후 레플리카에 복제하는 시간을 줄일 수 있다.
     - 클러스터를 운영하는 환경에 복제본이 꼭 필요하지 않거나 하둡과 같은 별도의 저장소에 사용자의 문서를 복제하는 경우라면 고려해 볼 만 하다.
+  - 더 빠른 hardware를 사용하기
+    - SSD를 사용하면 색인 속도가 보다 빨라질 수 있다.
 
 
 
@@ -281,12 +283,14 @@
 
 - Primary shard의 개수와 색인 속도
 
+  > 아래에서는 node 3개로 구성된 cluster로 test를 진행했으나 single node에서도 결과는 마찬가지다.
+  
   - Primary shard의 개수를 늘리면 색인 속도도 함께 증가한다.
     - 검색과 마찬가지로 shard의 개수가 증가하면 색인 요청을 처리하는 thread도 증가하게 되므로 보다 빠른 속도로 색인이 가능해진다.
     - Shard의 개수 증가로 인한 색인 속도의 증가는 요청을 처리하는 thread의 개수 외에도 요청을 처리하는 node 수의 증가도 영향을 미친다.
     - 만일 primary shard가 1개일 경우 해당 shard가 할당된 node에서만 모든 indexing을 처리하겠지만, 여러 개의 primary shard가 각 node에 분산된 경우 shard를 할당 받은 모든 node가 색인에 참여하므로 색인 속도가 더 빨라지게 된다.
   - 아래와 같이 색인 test용 data를 생성한다.
-
+  
   ```python
   fake = Faker()
   bulk_data = []
@@ -306,7 +310,7 @@
   ```
 
   - 아래와 같이 primary shard의 개수를 설정하여 index를 생성한다.
-
+  
   ```json
   // PUT indexing_test
   {
@@ -317,7 +321,7 @@
   ```
 
   - 색인을 실행한다.
-
+  
   ```python
   es_client = Elasticsearch("http://localhost:9200")
   
@@ -330,15 +334,86 @@
   ```
 
   - Primary shard의 개수를 늘릴수록 색인 속도가 증가하는 것을 확인할 수 있다.
-
+  
   | Primary shard 개수 | 색인 시간 |
   | ------------------ | --------- |
   | 1                  | 49.85     |
   | 2                  | 35.80     |
   | 5                  | 25.47     |
   | 10                 | 19.24     |
-
+  
   - 위에서는 document의 `_id` 값을 지정했는데, 지정하든 지정하지 않든 primary shard가 증가할 수록 색인 속도는 증가한다.
+
+
+
+- Hot spotting 피하기
+
+  - Hot spotting은 node의 자원이나 shard 또는 request가 cluster 내에서 고르게 분배되지 않을 때 발생한다.
+
+    - Elasticsearch는 cluster의 상태를 node 사이에 최대한 sync를 맞추는 방식으로 동작하기에, 지속적으로 hot spot이 되는 node가 있을 경우 전체 cluster의 성능을 저하시킬 수 있다.
+
+    - 일시적인 hot spotting이 발상해는 것은 문제가 되지 않을 수 있지만, 반복적으로 혹은 긴 기간 동안 발생한다면 cluster 전체의 성능을 저하시킬 수 있으므로 주의 깊게 관찰해야한다.
+
+  - Hot spotting 탐지하기
+
+    - Hot spotting은 일반적으로 resource의 사용(`disk.percent`, `heap.percent`, `cpu`)이 상당히 높아질 때 발생한다.
+    - 아래와 같이 `_cat/nodes` API를 사용하여 각 node들의 resource 사용량을 확인하거나, 별도의 monitoring tool을 사용하여 확인이 가능하다.
+
+  ```http
+  GET _cat/nodes?v&s=master,name&h=name,master,node.role,heap.percent,disk.used_percent,cpu
+  ```
+
+  - `_cat/thread_pool` API로 hot spot 탐지하기
+    - 아래와 같이 node들의 thread_pool을 확인하여 hot spot을 탐지할 수 있다.
+    - 예를 들어 아래 예시에서 node_1은 다른 node들에 비해 많은 수의 쓰기 요청이 queue에서 대기중인 것을 확인할 수 있다.
+    - 또한 node_3은 다른 node들에 비해서 처리를 완료한 쓰기 요청이 압도적으로 많은 것을 확인할 수 있다.
+
+  ```http
+  GET _cat/thread_pool/write,search?v=true&s=n,nn&h=n,nn,q,a,r,c
+  
+  n      nn       q a r    c
+  search node_1   3 1 0 1287
+  search node_2   0 2 0 1159
+  search node_3   0 1 0 1302
+  write  node_1 100 3 0 4259
+  write  node_2   0 4 0  980
+  write  node_3   1 5 0 8714
+  ```
+
+  - Hardware의 문제로 인해 발생하는 hot spotting
+
+    - Resource가 균등하게 분배되지 않을 경우 발생할 수 있다. Elasticsearch는 모든 data node의 hardware가 같은 spec을 가질 것이라 예상하기 때문이다.
+    - Elasticsearch는 node가 실행중인 host에 다른 service들을 실행시키는 것을 권장하지 않는다. 만약 host에 node 이외의 service가 함께 실행중일 경우 해당 service도 resource를 소비하게 되므로, 다른 service들과 함께 실행중인 node는 hot spot이 될 수 있다.
+
+    - Node들 간에 network나 disk throughput이 고르게 분배되지 않을 경우 더 많은 throughput을 받는 node가 hot spot이 될 수 있다.
+    - 31GB를 초과하는 JVM heap이 설정된 node는 hot spot이 될 수 있다.
+    - Memory swapping을 사용하는 node는 hot spot이 될 수 있다.
+
+  - Shard가 고르게 분배되지 못 할 경우에도 hot spot이 될 수 있다.
+
+    - 예를 들어 아래 표와 같이 3개의 node가 있다고 가정해보자.
+    - node2는 최근에 추가되어 아직 많은 shard들을 할당 받지는 못했다.
+    - Elasticsearch는 index의 shard들을 최대한 고르게 분배하려고 하기에, rollover 등이 발생할 경우 가장 적은 shard를 할당 받은 node2에 새로운 shard가 많이 생성될 것이다.
+    - 따라서 이 경우 node2가 hot spot이 될 수 있다.
+    - Shard들이 고르게 분배되지 못하는 것도 문제지만, 고르게 분배된다고 하더라도 shard들의 크기에서 차이가 나는 것도 문제이다.
+    - 예를 들어 아래 표에서 node1과 node2는 shard의 개수는 크게 차이가 나지 않지만, disk 사용량은 2배 이상 차이가 난다.
+
+    | node | shards | disk.indices |
+    | ---- | ------ | ------------ |
+    | 1    | 231    | 100.2gb      |
+    | 2    | 22     | 30gb         |
+    | 3    | 232    | 210.3gb      |
+
+  - Task load가 잘 못 될 경우에도 hot spotting이 발생할 수 있다.
+
+    - Shard가 고르게 분배되지 못 할 경우 일반적으로 task도 고르게 분배되지 못한다.
+    - 따라서 task를 고르게 분배하기 위해서는 우선 shard를 고르게 분배해야한다.
+
+    - 아래와 같이 `_cat/task` 명령어를 통해 task들을 monitoring하여 어떤 node에서 어떤 task들이 실행되고 있는지 모니터링이 가능하다.
+
+  ```http
+  GET _cat/tasks?v&s=time:desc&h=type,action,running_time,node,cancellable
+  ```
 
 
 
@@ -363,7 +438,7 @@
 
 
 
-## Indexing pressure
+### Indexing pressure
 
 - Lucene은 문서 하나의 크기를 2GB로 제한하고 있다.
   - Elasticsearch는 `http.max_content_length` 설정을 통해 간접적으로 문서의 최대 크기를 조정한다.
@@ -1623,7 +1698,7 @@
 
   - 테스트를 실행한다.
     - 위 script가 실행되는 동안 아래 API를 통해 `search_worker`의 thread pool을 확인해보면 아래와 같은 결과가 나오는 것을 볼 수 있다.
-    - `psz`는 thread pool 내의 thread의 개수, `a`는 현재 사용하고 있는 thread의 개수, q는 queue에서 대기 중인 검색 요청의 개수를 의미한다.
+    - `psz`는 thread pool 내의 thread의 개수, `a`는 현재 사용하고 있는 thread의 개수, `q`는 queue에서 대기 중인 검색 요청의 개수를 의미한다.
     - Shard를 가지고 있는 node1과 node2의 모든 thread가 활성화 되어 각각 5개씩 검색 요청을 처리하고 있고, 남은 20개의 요청이 queue에서 대기 중인 것을 확인할 수 있다.
     - node3은 shard를 할당 받지 않았으므로 아무 thread도 활성화 되지 않았고, queue에도 대기중인 요청도 없는 것을 확인할 수 있다.
 
