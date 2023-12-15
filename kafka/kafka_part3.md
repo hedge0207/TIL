@@ -1238,7 +1238,8 @@
   | `GET`    | /connector-plugins                                    | Connect에 존재하는 connector 플러그인 목록 확인 |
   | `PUT`    | /connector-plugins/<플러그인 이름>/validate           | Connector 생성 시 설정값 유효성 확인            |
 
-  
+
+
 
 
 
