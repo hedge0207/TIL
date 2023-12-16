@@ -1731,6 +1731,293 @@
 
 
 
+# 여러 index 대상 검색
+
+- 여러 index를 대상으로 검색하기
+
+  - Elasticsearch는 여러 index 혹은 data stream을 대상으로 검색하는 기능을 제공한다.
+    - 아래와 같이 검색 API 요청시에 검색하고자 하는 index 혹은 data stream들을 콤마(`,`)로 구분하여 넘기면 된다.
+    - 혹은 asterisk(`*`)를 사용하여 pattern matching 방식도 사용할 수 있다.
+
+  ```json
+  // GET foo,bar/_search
+  {
+    "query": {
+      "match": {
+        "title": "world"
+      }
+    }
+  }
+  
+  // GET test-*/_search
+  {
+    "query": {
+      "match": {
+        "title": "world"
+      }
+    }
+  }
+  ```
+
+  - Cluster 내의 모든 index를 대상으로 검색하려면 아래와 같은 방법들을 사용하면 된다.
+    - Search API에서 index를 뺀다.
+    - Index를 입력하는 위치에 `*` 혹은 `_all`을 입력한다.
+
+  ```json
+  // GET /_search
+  {
+    "query": {
+      "match": {
+        "title": "world"
+      }
+    }
+  }
+  
+  // GET _all/_search
+  {
+    "query": {
+      "match": {
+        "title": "world"
+      }
+    }
+  }
+  
+  // GET */_search
+  {
+    "query": {
+      "match": {
+        "title": "world"
+      }
+    }
+  }
+  ```
+
+  - 특정 index에 boost를 주는 것도 가능하다.
+    - 아래 index에도 pattern matching을 사용할 수 있다.
+
+  ```json
+  // GET /_search
+  {
+    "indices_boost": [
+      { "foo": 1.4 },
+      { "bar": 1.3 }
+    ]
+  }
+  ```
+
+
+
+- 여러 index를 대상으로 검색할 때 일부 index에서만 검색에 실패할 경우
+
+  - 아래와 같이 2개의 index를 준비한다.
+    - `foo` index는 아무런 mapping도 설정하지 않고 그대로 설정하고, `bar` index는 text field를 keyword type으로 설정하여 생성한다.
+
+  ```json
+  // PUT foo
+  
+  // PUT bar
+  {
+    "mappings": {
+      "properties": {
+        "text":{
+          "type":"keyword"
+        }
+      }
+    }
+  }
+  ```
+
+  - 두 index에 동일한 data를 색인한다.
+
+  ```json
+  // PUT foo/_doc/1
+  {
+    "text":"hello"
+  }
+  
+  // PUT bar/_doc/1
+  {
+    "text":"hello"
+  }
+  ```
+
+  - 두 index를 대상으로 aggregation을 실행한다.
+    - `terms` aggregation은 keyword field에만 실행이 가능하다.
+    - `bar` index의 경우 text field를 keyword type으로 설정하여 생성했으므로 aggregation이 가능하지만, `foo` field의 경우 text field가 text type으로 동적으로 설정되어 aggregation이 불가능하다.
+
+  ```json
+  // GET foo,bar/_search
+  {
+    "aggs": {
+      "qwe": {
+        "terms": {
+          "field": "text"
+        }
+      }
+    }
+  }
+  ```
+
+  - 결과
+    - Aggregation이 가능한 `bar` index만을 대상으로 aggregation이 실행된 것을 확인할 수 있다.
+    - Aggregation으로 인해 error가 발생했지만, foo index는 검색 결과도 반환하지 않는다.
+
+  ```json
+  {
+    "took": 16,
+    "timed_out": false,
+    "_shards": {
+      "total": 2,
+      "successful": 1,
+      "skipped": 0,
+      "failed": 1,
+      "failures": [
+        {
+          "shard": 0,
+          "index": "foo",
+          "node": "3g2e2-er2-er323gweg33g",
+          "reason": {
+            "type": "illegal_argument_exception",
+            "reason": "Fielddata is disabled on [text] in [foo]. Text fields are not optimised for operations that require per-document field data like aggregations and sorting, so these operations are disabled by default. Please use a keyword field instead. Alternatively, set fielddata=true on [text] in order to load field data by uninverting the inverted index. Note that this can use significant memory."
+          }
+        }
+      ]
+    },
+    "hits": {
+      "total": {
+        "value": 1,
+        "relation": "eq"
+      },
+      "max_score": 1,
+      "hits": [
+        {
+          "_index": "bar",
+          "_id": "1",
+          "_score": 1,
+          "_source": {
+            "text": "hello"
+          }
+        }
+      ]
+    },
+    "aggregations": {
+      "qwe": {
+        "doc_count_error_upper_bound": 0,
+        "sum_other_doc_count": 0,
+        "buckets": [
+          {
+            "key": "hello",
+            "doc_count": 1
+          }
+        ]
+      }
+    }
+  }
+  ```
+
+
+
+- 여러 index를 대상으로 검색할 때 aggregation
+
+  - 여러 index를 대상으로 검색할 때 aggregation 결과도 합쳐지는지 확인하기 위해 아래와 같이 3개의 index를 동일한 mapping으로 생성한다.
+
+  ```json
+  // PUT index1
+  {
+    "mappings": {
+      "properties": {
+        "text":{
+          "type":"keyword"
+        }
+      }
+    }
+  }
+  
+  // PUT index2
+  {
+    "mappings": {
+      "properties": {
+        "text":{
+          "type":"keyword"
+        }
+      }
+    }
+  }
+  
+  // PUT index3
+  {
+    "mappings": {
+      "properties": {
+        "text":{
+          "type":"keyword"
+        }
+      }
+    }
+  }
+  ```
+
+  - 3개의 index에 data를 색인한다.
+
+  ```json
+  // PUT index1/_doc/1
+  {
+      "text":"foo"
+  }
+  
+  // PUT index2/_doc/1
+  {
+      "text":"foo"
+  }
+  
+  // PUT index3/_doc/1
+  {
+      "text":"foo"
+  }
+  ```
+
+  - 세 개의 index를 대상으로 aggregation을 실행한다.
+
+  ```json
+  // GET index*/_search
+  {
+    "size": 0,
+    "aggs": {
+      "my_terms": {
+        "terms": {
+          "field": "text"
+        }
+      }
+    }
+  }
+  ```
+
+  - 결과 확인
+    - 아래와 같이 세 개의 index를 대상으로 aggregation이 실행된 것을 확인할 수 있다.
+
+  ```json
+  {
+      // ...
+      "aggregations": {
+      "my_terms": {
+        "doc_count_error_upper_bound": 0,
+        "sum_other_doc_count": 0,
+        "buckets": [
+          {
+            "key": "foo",
+            "doc_count": 3
+          }
+        ]
+      }
+    }
+  }
+  ```
+
+  
+
+  
+
+
+
 # 엘라스틱서치 모니터링
 
 ## Head
