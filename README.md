@@ -1,6 +1,6 @@
 # CS
 
-## [IT Essential](https://github.com/hedge0207/TIL/blob/master/CS/IT_Essential.md)
+## [IT Essential_part1](https://github.com/hedge0207/TIL/blob/master/CS/IT_Essential_part1.md)
 
 - 프레임워크와 라이브러리
 - 아키텍처 설계하기
@@ -14,6 +14,94 @@
 - 캐싱
 - 소프트웨어 테스팅
 - 쿠키, 세션, 웹 스토리지, IndexedDB
+- SSL과 TLS
+- 프로세스와 스레드
+- 동시성 병렬성
+
+<br/>
+
+<br/>
+
+## [IT Essential_part2](https://github.com/hedge0207/TIL/blob/master/CS/IT_Essential_part2.md)
+
+- RPC
+- Session과 JWT
+- Text Encoding
+- REST
+- Memory
+
+<br/>
+
+<br/>
+
+## [IT Essential_part3](https://github.com/hedge0207/TIL/blob/master/CS/IT_Essential_part3.md)
+
+- CORS
+- 왜 숫자는 0부터 세는가?
+- Data processing
+- Monorepo vs. Polyrepo
+- 보안
+- Data의 단위
+- IP
+- 진수
+- Shorts
+
+<br/>
+
+<br/>
+
+## [IT Essential_part4](https://github.com/hedge0207/TIL/blob/master/CS/IT_Essential_part4.md)
+
+- Semantic Versioning Specification
+- CNCF
+- Stream Backpressure
+- Standard Stream, Standard Input, Output
+- 2진수 음수 표현
+- DI
+- CI/CD
+- API Gateway
+- Load balancing
+- API Gateway vs. Load Balancer vs. Reverse Proxy
+
+<br/>
+
+<br/>
+
+## [IT Essential_part5](https://github.com/hedge0207/TIL/blob/master/CS/IT_Essential_part5.md)
+
+- API Throttling
+- Circuit Breaker
+- Data Flow Diagram
+- Shorts
+
+<br/>
+
+<br/>
+
+## [Operating_System_part1](https://github.com/hedge0207/TIL/blob/master/CS/Operating_System_part1.md)
+
+- 운영체제 개요
+- 컴퓨터의 구조
+
+<br/>
+
+<br/>
+
+## [Operating_System_part2](https://github.com/hedge0207/TIL/blob/master/CS/Operating_System_part2.md)
+
+- 프로세스와 스레드
+- 유니온 마운트
+- CPU 스케줄링
+
+<br/>
+
+<br/>
+
+## [Operating_System_part3](https://github.com/hedge0207/TIL/blob/master/CS/Operating_System_part3.md)
+
+- 프로세스 동기화
+- 교착 상태
+- 물리 메모리 관리
 
 <br/>
 
@@ -579,7 +667,21 @@
 
 ## [Python_part9](https://github.com/hedge0207/TIL/blob/master/python/python_part9.md)
 
+- Python의 memory 관리 방식
+- Python의 Garbage Collection
+- Python은 왜 느린가?
 - GIL
+- Multi processing
+
+<br/>
+
+<br/>
+
+## [Python_part10](https://github.com/hedge0207/TIL/blob/master/python/python_part10.md)
+
+- Logging
+- Interface
+- Python Bytecode
 
 <br/>
 
