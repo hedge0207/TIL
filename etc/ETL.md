@@ -1,3 +1,96 @@
+# 사전지식
+
+- Data 저장소의 간략한 역사
+
+  > https://www.dataversity.net/brief-history-data-lakes/
+
+  - Data Mart
+    - 1970년대 초 ACNielen이라는 회사는 data를 디지털화 해서 저장할 수 있는 data mart라는 개념을 소개했다.
+    - 일반적으로 구조화된 data를 저장했으며, data들은 특정 community나 부서가 관리했다.
+    - 일반적으로 후에 소개할 data warehouse보다 작은 규모였다.
+    - Data warehouse나 data lake의 시초라고 볼 수 있다.
+  - Data Silos
+    - Data warehouse의 일부로 data mart와 유사하다.
+    - 그러나 data mart보다 더 고립된 저장소로, 다른 system과 공동 작업이 불가능하다.
+    - Data silos는 한 부서에서 관리하는 고정된 data를 저장하고 있다.
+    - 다른 부서와 data를 공유하지 않는다는 점에서 보안성은 높았지만, 전체 조직의 생산성과 data 무결성을 저해한다는 단점이 있었다.
+  - Data Warehouse
+    - 1970년대 Bill Inmon이 제안했으나 구체적인 구조는 1980년대까지 고안되지 않았다.
+    - 광범위한 source로부터 수집된 data들을 중앙 집중화하여 저장하는 저장소이다.
+    - Staging layer, integration layer, access layer로 data를 계층화한다.
+    - Staging layer에서는 여러 source로부터 수집된 다양한 raw data를 저장한다.
+    - Integration layer에서는 data들을 병합하고 변환한 뒤 data를 사용하고자 하는 곳으로 전달한다(좁은 의미에서는 이 부분만을 data warehouse라고 부르기도 한다).
+    - Access layer는 사용자들이 변환된 data에 접근할 수 있도록 한다(access layer를 data mart라고 부르기도 한다).
+  - Data Lake
+    - 2010년 Pentaho의 공동 창업자이자 CTO인 James Dixon이 제안했다.
+    - 모든 규모의 정형 및 비정형 raw data를 원래의 format으로 저장하는 중앙 집중식 단일 저장소이다.
+    - 원래의 format으로 저장한다는 특성으로 인해 비정형 data를 필요로하는 machine learning에서 널리 사용된다.
+    - 잘 관리하지 못 할 경우 data swamp이 될 수 있다.
+
+
+
+- Data lake와 Data warehouse의 차이
+
+  > https://datafortune.com/data-lake-vs-data-warehouse-choosing-the-right-solution/
+
+  - Data type
+    - Data lake는 raw data를 원래의 형태로 저장한다.
+    - Data warehouse는 raw data를 변환하여 정형화된 data를 저장한다.
+  - Data processing
+    - Data lake에서는 data를 먼저 저장하고 난 뒤 data가 필요할 때 처리하는 schema-on-read라는 방식을 사용한다.
+    - Data lake는 data를 먼저 처리하고 난 뒤에 저장하는 schema-on-read라는 방식을 사용한다.
+  - User persona
+    - Data lake는data에 대한 심층적인 분석을 하는 data scientists나 analyst들이 사용한다.
+    - Data warehouse는 business와 직접적인 관련이 있는 사람들이 사용한다.
+  - Data storage
+    - Data lake는 상대적으로 적은 비용으로 대량의 data를 저장할 수 있으므로 대량의 data를 수집하거나 문석해야 하는 기업에게 적합하다.
+    - Data warehouse의 경우 data 처리를 먼저 해야 하므로 data lake보다는 많은 비용이 들 수 있지만, 정제된 data에 대한 빠른 접근이 중요한 기업에게 적합할 수 있다.
+  - Governance
+    - Data lake는 다양한 유형의 data를 대량으로 저장하므로 관리가 힘들다.
+    - Data warehouse는 구조화된 data들이 저장되므로 상대적으로 쉽게 관리가 가능하다.
+  - Dataware house의 staging layer와 data lake는 같은 것 아닌가?
+    - 일반적으로 staging layer에는 오직 data warehouse의 integration layer로 data를 옮기는 하나의 consumer만이 존재한다.
+    - 그러나 data lake는 여러 consumer가 존재한다.
+
+
+
+- Data lakehouse
+  - Data warehouse와 data lake의 한계를 극복하고자 data warehouse와 data lake의 장점만을 취해 만들어진 개념이다.
+    - Data warehouse는 data lake보다 효율적이지만 data lake보다 많은 비용이 들고 확장도 쉽지 않다는 문제가 있었다.
+    - 반면에 data lake는 확장성은 높지만 관리의 효율성이 떨어진다는 문제가 있었다.
+    - 이러한 단점을 극복하기 위해 많은 조직에서는 data lake를 구축하고 data lake의 data를 data warehouse로 보내 처리하는 방식을 선택했다.
+    - 그러나 이와 같은 방식은 data의 중복 및 여러 시스템을 관리해야 하는 복잡함을 야기했고, 이를 극복하기 위해 data lakehouse가 등장했다.
+    - Data lakehouse는 data lake 정도의 유연성과 낮은 관리 비용으로 data warehouse와 유사한 data 구조를 가져와 효율성을 높인다.
+  
+  ![img](ETL.assets/0N982OISqO-a6DAY8.png)
+  
+  - Data lakehouse는 일반적으로 아래와 같은 5단계로 구성된다.
+    - Ingestion
+    - Storage
+    - Metadata
+    - API
+    - Data consumption
+  - Ingestion layer
+    - 다양한 source로부터 data를 수집하여 storage layer로 전달하는 역할을 한다.
+    - 수집한 data를 lakehouse에서 저장하고 분석할 수 있는 형태로 변환한다.
+  - Storage layer
+    - 정형, 비정형, 반정형 data를 Parquet이나 ORC 같은 open-source file format으로 저장한다.
+    - 일반적으로 AWS S3 등의 cloud service를 사용하지만, HDFS 등의 on-premise service를 사용해서도 구현이 가능하다.
+  - Metadata layer
+    - Data lakehouse의 기반이 되는 layer이다.
+    - Data lakehouse 내의 모든 data에 대한 메타데이터를 제공하는 통합 카탈로그로, 이를 사용하여 data에 대한 정보를 구성하고, 제공한다.
+    - 또한 사용자가 ACID transaction이나 file caching, 더 빠른 query를 위한 indexing 등의 관리 기능을 사용할 수 있게 해준다.
+    - Star, Snowflake 등의 data warehouse에서 사용하는 schema architecture를 사용하기도 한다.
+  - API layer
+    - Data lakehouse는 task와 분석을 보다 효율적으로 처리하기 위해서 API를 사용한다.
+    - 이를 통해 다양한 programming language에서 접근이 가능하게 된다.
+  - Data consumption layer
+    - Data lakehouse에 저장된 모든 data와 metadata에 접근할 수 있는 계층이다.
+
+
+
+
+
 # CDC
 
 - CDC(Change Data Capture)
@@ -80,7 +173,7 @@
 
   - CAP theorem은 Consistency, Availability, Partition tolerance 모두를 만족하는 분산 시스템은 있을 수 없다는 정리이다.
     - 컴퓨터 과학자 Eric Brewer가 주장하여 Brewer's theorem이라고도 불린다.
-    - 2000년에 Eric Brewer가 CAP 가설을 발표하고 이에 대한 증명이 2002년에 Gilbert와 Lynch에 의해 이루어졌다.
+    - 2000년에 Eric Brewer가 CAP 가설을 발표하고 이에 대한 증명이 2012년에 Gilbert와 Lynch에 의해 이루어졌다.
     - 주의할 점은 CAP theorem은 분산 시스템을 설명하기 위한 정리이므로 분산 시스템이 아닌 시스템을 설명하는 데 사용해선 안 된다는 점이다.
   - Consistency
     - 읽기 작업은 항상 최신 상태의 data를 읽어와야 하며, 그렇지 못 할 경우 읽어와서는 안 된다.
@@ -121,3 +214,29 @@
 
 
 
+# Airbyte
+
+- Airflow
+  - 일련의 task들을 schedule에 맞춰 실행하도록 하는 tool이다.
+    - 어떤 task들이 다른 task들이 완료된 이후에 실행되어야 할 때 특히 유용하게 사용할 수 있다.
+  - Airflow가 ETL(혹은 ELT) tool인가?
+    - Airflow는 내장 operator과 hook들, 그리고 community에서 관리되는 operator들과 hook들을 제공한다.
+    - 이를 이용하여 많은 종류의 task들을 실행하고 trigger할 수 있다.
+    - 그러나 Airflow는 ochestration에 목적이 있는 tool이지 ETL이 주요 목적인 tool은 아니다.
+    - 물론 Airflow는 여러 task를 scheduling 할 수 있고, Airflow가 scheduling하는 task들이 ETL task일 수는 있다.
+    - 그러나 Airflow 자체는 ETL만을 염두에 두고 만들어지지는 않았다.
+
+
+
+- Airbyte
+  - Airflow 개발자들이 만든 ETL tool이다.
+    - Source system에서 destination system으로 data를 옮기기 위해 사용한다.
+    - 이를 위해서 주기적으로 source로 부터 data를 읽어서 추출된 data들을 destination으로 옮기는 sync run을 수행한다.
+    - Airbyte의 주요 이점중 하나는 수백개의 서로 다른 source들로부터 data를 추출하여 다시 많은 수의 destination으로 load할 수 있다는 점이다.
+    - sync run이 실행되는 주기를 직접 지정할 수도 있지만, Airflow, Dagster, Prefect 등의 orchestrator에게 넘길 수도 있다.
+    - Orchecstrator에게 sync run을 실행하는 scheduling을 맡길 경우 sync run이 실행되기 전에 수행해야 하는 작업이나, sync run 이후에 수행해야 하는 작업을 더 잘 조정할 수 있게 된다.
+
+  - Airflow와의 차이
+    - Airbyte와 Airflow 모두 data integration에 사용되고, 기능사응로도 겹치는 부분이 있는 것은 사실이지만 엄연히 다른 tool이다.
+    - Airbyte는 한 system에서 다른 system으로 data를 옮기는 데 사용한다.
+    - Airflow는 주기적으로 실행될 일련의 task들을 스케줄링하고 관리하는 tool이다.
