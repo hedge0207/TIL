@@ -1,1494 +1,1958 @@
-# CS
-
-## [IT Essential_part1](https://github.com/hedge0207/TIL/blob/master/CS/IT_Essential_part1.md)
-
-- 프레임워크와 라이브러리
-- 아키텍처 설계하기
-- Server & Client Architecture
-- 개발자는 항상 의심해야 한다
-- 개발자의 나쁜 습관
-- 프로젝트 DB 설계
-- 데이터 크롤링
-- 클라우드
-- Linux
-- 캐싱
-- 소프트웨어 테스팅
-- 쿠키, 세션, 웹 스토리지, IndexedDB
-- SSL과 TLS
-- 프로세스와 스레드
-- 동시성 병렬성
-
-<br/>
-
-<br/>
-
-## [IT Essential_part2](https://github.com/hedge0207/TIL/blob/master/CS/IT_Essential_part2.md)
-
-- RPC
-- Session과 JWT
-- Text Encoding
-- REST
-- Memory
-
-<br/>
-
-<br/>
-
-## [IT Essential_part3](https://github.com/hedge0207/TIL/blob/master/CS/IT_Essential_part3.md)
-
-- CORS
-- 왜 숫자는 0부터 세는가?
-- Data processing
-- Monorepo vs. Polyrepo
-- 보안
-- Data의 단위
-- IP
-- 진수
-- Shorts
-
-<br/>
-
-<br/>
-
-## [IT Essential_part4](https://github.com/hedge0207/TIL/blob/master/CS/IT_Essential_part4.md)
-
-- Semantic Versioning Specification
-- CNCF
-- Stream Backpressure
-- Standard Stream, Standard Input, Output
-- 2진수 음수 표현
-- DI
-- CI/CD
-- API Gateway
-- Load balancing
-- API Gateway vs. Load Balancer vs. Reverse Proxy
-
-<br/>
-
-<br/>
-
-## [IT Essential_part5](https://github.com/hedge0207/TIL/blob/master/CS/IT_Essential_part5.md)
-
-- API Throttling
-- Circuit Breaker
-- Data Flow Diagram
-- Shorts
-
-<br/>
-
-<br/>
-
-## [Operating_System_part1](https://github.com/hedge0207/TIL/blob/master/CS/Operating_System_part1.md)
-
-- 운영체제 개요
-- 컴퓨터의 구조
-
-<br/>
-
-<br/>
-
-## [Operating_System_part2](https://github.com/hedge0207/TIL/blob/master/CS/Operating_System_part2.md)
-
-- 프로세스와 스레드
-- 유니온 마운트
-- CPU 스케줄링
-
-<br/>
-
-<br/>
-
-## [Operating_System_part3](https://github.com/hedge0207/TIL/blob/master/CS/Operating_System_part3.md)
-
-- 프로세스 동기화
-- 교착 상태
-- 물리 메모리 관리
-
-<br/>
-
-<br/>
-
-## [컴퓨터 공학 전공 정리_part1](https://github.com/hedge0207/TIL/blob/master/CS/%EC%BB%B4%ED%93%A8%ED%84%B0%20%EA%B3%B5%ED%95%99%20%EC%A0%84%EA%B3%B5%20%EC%A0%95%EB%A6%AC_part1.md)
-
-- 컴퓨터 프로그래밍 기초
-
-
-<br/>
-
-## [컴퓨터 공학 전공 정리_part2](https://github.com/hedge0207/TIL/blob/master/CS/%EC%BB%B4%ED%93%A8%ED%84%B0%20%EA%B3%B5%ED%95%99%20%EC%A0%84%EA%B3%B5%20%EC%A0%95%EB%A6%AC_part2.md)
-
-- 소프트웨어의 이해
-- 소프트웨어 개발 생명 주기(SDLC, System Development Life Cycle)
-- 소프트웨어 개발 단계
-  - 프로세스
-  - 소프트웨어 개발 계획(무엇을 만들 것인가)
-  - 소프트웨어 설계(어떻게 만들 것인가)/구현/테스트
-    - 설계
-    - 구현
-    - 테스트
-- 소프트웨어 품질
-- 프로젝트 관리
-
-<br/>
-
-<br/>
-
-## [최신 IT 기술](https://github.com/hedge0207/TIL/blob/master/CS/%EC%B5%9C%EC%8B%A0%20IT%20%EA%B8%B0%EC%88%A0%20%EC%A0%95%EB%A6%AC.md)
-
-- Big Data
-- 블록체인
-- 인공지능
-
-<br/>
-
-<br/>
-
-## [브라우저는 어떻게 동작하는가](https://github.com/hedge0207/TIL/blob/master/CS/%EB%B8%8C%EB%9D%BC%EC%9A%B0%EC%A0%80%EB%8A%94%20%EC%96%B4%EB%96%BB%EA%B2%8C%20%EB%8F%99%EC%9E%91%ED%95%98%EB%8A%94%EA%B0%80.md) 
-
-- 브라우저
-- 렌더링 엔진
-- 파싱과 DOM 트리 구축
-- 배치
-- 그리기
-
-<br/>
-
-<br/>
-
-## [HTTP_part1](https://github.com/hedge0207/TIL/blob/master/CS/HTTP_part1.md)
-
-- HTTP를 왜 학습해야 하는가
-- 인터넷 네트워크
-  - IP(Internet Protocol)
-  - TCP,UDP
-- URI와 웹 브라우저 요청 흐름
-- HTTP 기본
-  - HTTP의 특징
-
-<br/>
-
-<br/>
-
-## [web_application_architecture](https://github.com/hedge0207/TIL/blob/master/CS/web_application_architecture.md)
-
-- web_application_architecture
-  - Web Sevice의 전체적인 흐름
-  - WAS와 Web Server
-- Proxy
-- Python으로 웹 개발하기
-  - WSGI와 ASGI
-
-<br/>
-
-<br/>
-
-<br/>
-
-<br/>
-
-# Database
-
-## [Database_part1](https://github.com/hedge0207/TIL/blob/master/Database/Database_part1.md)
-
-- 데이터 베이스의 기본 개념
-  - DBMS
-  - 데이터베이스 설계
-- 데이터 모델링
-  - 데이터 모델
-    - 개념적 데이터 모델
-    - 논리적 데이터 모델
-- 데이터베이스의 언어, SQL
-- 정규화
-  - 정규형
-
-<br/>
-
-<br/>
-
-## [Database_part2](https://github.com/hedge0207/TIL/blob/master/Database/Database_part2.md)
-
-- 트랜잭션
-- 보안과 권한 관리
-- 데이터 베이스 응용 기술
-  - 객체 지향 데이터 베이스
-  - 분산 데이터베이스 시스템
-  - 웹 데이터베이스
-  - 데이터 웨어하우스
-
-<br/>
-
-<br/>
-
-# Git
-
-## [git_part1](https://github.com/hedge0207/TIL/blob/master/git/git_part1.md)
-
-- 시작하기
-  - 버전 관리 시스템
-  - git
-  - git 최초 설정
-- Git 기초
-  - 저장소 만들기
-  - 저장하기
-  - 커밋 히스토리 조회하기
-  - 되돌리기
-  - 리모트 저장소
-  - 태그
-  - Alias
-
-<br/>
-
-## [git_part2](https://github.com/hedge0207/TIL/blob/master/git/git_part2.md)
-
-- Git 브랜치
-  - 브랜치란
-  - 브랜치와 Merge의 기초
-  - 브랜치 관리
-  - 브랜치 워크플로우
-  - 리모트 브랜치
-  - Rebase
-
-<br/>
-
-<br/>
-
-# React
-
-## [React Tutorial](https://github.com/hedge0207/TIL/blob/master/React/React_tutorial.md) 
-
-- React란
-- JSX 소개
-- 엘리먼트 렌더링
-- Component와 Props
-- State와 Lifecycle
-
-<br/>
-
-<br/>
-
-## [React_part1](https://github.com/hedge0207/TIL/blob/master/React/React_part1.md) 
-
-- React란
-- 작업 환경 설정
-- 프로젝트 생성하기
-- JSX
-  - JSX 문법
-
-<br/>
-
-## [React_part2](https://github.com/hedge0207/TIL/blob/master/React/React_part2.md) 
-
-- 컴포넌트
-  - props
-  - state
-    - 클래스형 컴포넌트의 state
-    - 함수형 컴포넌트의 state
-    - state 사용시 주의사항
-
-<br/>
-
-## [React_part3](https://github.com/hedge0207/TIL/blob/master/React/React_part3.md) 
-
-- 이벤트 핸들링
-- ref
-
-<br/>
-
-## [React_part4](https://github.com/hedge0207/TIL/blob/master/React/React_part4.md) 
-
-- 컴포넌트의 라이프사이클
-  - 라이프사이클과 메서드
-  - 라이프사이클 메서드 사용하기
-- Hooks
-
-<br/>
-
-## [React_part5](https://github.com/hedge0207/TIL/blob/master/React/React_part5.md) 
-
-- 컴포넌트 내부의 반복
-- 컴포넌트 스타일링
-  - 일반 CSS
-  - Sass
-  - CSS Module
-  - styled-components
-
-<br/>
-
-## [React_part6](https://github.com/hedge0207/TIL/blob/master/React/React_part6.md) 
-
-- 컴포넌트 성능 최적화
-  - 문제 발생 및 원인 분석
-  - 문제 해결
-- immer
-
-<br/>
-
-## [React_part7](https://github.com/hedge0207/TIL/blob/master/React/React_part7.md) 
-
-- react-router로 SPA 개발하기
-  - SPA와 라우터
-  - react-router 부가 기능
-- React에서 axios 사용
-
-<br/>
-
-## [React_part8](https://github.com/hedge0207/TIL/blob/master/React/React_part8.md) 
-
-- Context API
-- Redux
-  - 리액트 없이 쓰는 리덕스
-
-<br/>
-
-## [React_part9](https://github.com/hedge0207/TIL/blob/master/React/React_part9.md) 
-
-- Redux 활용하기
-
-<br/>
-
-## [React_part10](https://github.com/hedge0207/TIL/blob/master/React/React_part10.md) 
-
-- 리덕스 미들위어를 통한 비동기 작업 관리
-  - 미들웨어 만들기
-  - 비동기 작업을 처리하는 미들웨어
-
-<br/>
-
-## [React_part11](https://github.com/hedge0207/TIL/blob/master/React/React_part11.md) 
-
-- 코드 스플리팅
-
-- 서버 사이드 렌더링 Part1
-
-<br/>
-
-## [React_part12](https://github.com/hedge0207/TIL/blob/master/React/React_part12.md) 
-
-- 서버 사이드 렌더링 Part2
-
-<br/>
-
-<br/>
-
-# Vue
-
-## [Vue.js](https://github.com/hedge0207/TIL/blob/master/Vue/Vue_js.md)
-
-- Vue.js
-- Vue 라이프 사이클
-- Vue 프로젝트
-
-<br/>
-
-## [Vue.js 심화](https://github.com/hedge0207/TIL/blob/master/Vue/Vue_js%EC%8B%AC%ED%99%94.md)
-
-- Vue router
-- Youtube를 활용하여 페이지 만들기
-- 서버와 연결
-  - 사용자 인증
-- 믹스 인
-- 이벤트 버스
-- 기타 팁
-
-<br/>
-
-## [Vue 배포](https://github.com/hedge0207/TIL/blob/master/Vue/Vue_%EB%B0%B0%ED%8F%AC.md)
-
-- 배포
-
-<br/>
-
-## [Vuex](https://github.com/hedge0207/TIL/blob/master/Vue/Vuex.md)
-
-- Vuex 기초
-- Vuex로 사용자 인증 구현
-- Vuex로 게시글 생성 및 조회 구현
-
-<br/>
-
-<br/>
-
-# Node
-
-## [Node.js_part1](https://github.com/hedge0207/TIL/blob/master/node/nodejs_part1.md)
-
-- Node.js란
-- 작업 환경 준비
-- Koa
-- Node.js에서 ES 모듈 import/export 문법 사용하기
-
-<br/>
-
-## [Node.js_part2](https://github.com/hedge0207/TIL/blob/master/node/nodejs_part2.md)
-
-- MongoDB와 연동
-- 데이터베이스 스키마와 모델
-- 데이터 CRUD
-- 요청 검증
-- 페이지네이션 구현
-
-<br/>
-
-<br/>
-
-# Django
-
-## [django part1](https://github.com/hedge0207/TIL/blob/master/django/django_part1.md)
-
-- Django란
-- MTV기초
-- DTL
-- MTV확장
-- form태그와 input태그
-- Model
-- HTTP
-- 정적 파일 관리
-- form
-
-<br/>
-
-## [django part2](https://github.com/hedge0207/TIL/blob/master/django/django_part2.md)
-
-- 사용자 인증 관리
-- 데이터 베이스
-- SQL 기본
-- ORM
-- 일대다 관계
-- 다대다 관계
-
-<br/>
-
-## [django part3](https://github.com/hedge0207/TIL/blob/master/django/django_part3.md)
-
-- 미디어 파일 관리
-- Query 최적화
-- REST API
-- Django&Vue
-  - 사용자 인증
-  - CORS
-- django additional
-  - Social Login
-  - 게시글 페이지 분할하기
-- 기타
-  - 투표 구현
-  - Gravartar
-  - faker
-
-<br/>
-
-<br/>
-
-## [django_part4](https://github.com/hedge0207/TIL/blob/master/django/django_part4.md)
-
-- DB와 Django 연동하기
-  - DB 설치하기
-  - DB 연동하기
-- Django allauth
-  - 초기 세팅
-  - Secret Key와 Client Id 발급받기
-  - 기능 구현
-
-<br/>
-
-<br/>
-
-# Java
-
-## [java part1](https://github.com/hedge0207/TIL/blob/master/java/java_part1.md)
-
-- Java 기초
-  - 객체 지향 프로그래밍
-  - Hello World
-  - 변수
-  - 자료형
-  - 연산자
-- 제어문
-  - 조건문
-  - 반복문
-
-<br/>
-
-## [java part2](https://github.com/hedge0207/TIL/blob/master/java/java_part2.md)
-
-- 클래스
-  - 추상 클래스
-  - 클래스 형변환
-  - 내부 클래스
-- 메서드
-- 상속
-- 생성자
-- 패키지
-- 인터페이스
-
-<br/>
-
-## [java part3](https://github.com/hedge0207/TIL/blob/master/java/java_part3.md)
-
-- 예외처리
-- 입출력
-  - 콘솔 입력
-  - 콘솔 출력
-  - 파일 읽기
-- 패키지
-
-<br/>
-
-<br/>
-
-# Python
-
-## [PEP8](https://github.com/hedge0207/TIL/blob/master/python/PEP8.md)
-
-<br/>
-
-<br/>
-
-## [Install Python](https://github.com/hedge0207/TIL/blob/master/python/install_python.md)
-
-- 오프라인 환경에서 설치하기
-
-<br/>
-
-<br/>
-
-## [Library](https://github.com/hedge0207/TIL/blob/master/python/library.md)
-
-- click
-- Python gRPC
-- Pydantic
-
-<br/>
-
-<br/>
-
-## [Python_part1](https://github.com/hedge0207/TIL/blob/master/python/python_part1.md)
-
-- 기초
-  - 식별자와 스타일 가이드
-  - 기초문법
-- 변수 및 자료형
-  - 변수
-  - 자료형_part1
-    - 숫자
-    - 문자열
-    - Boolean
-
-<br/>
-
-## [Python_part2](https://github.com/hedge0207/TIL/blob/master/python/python_part2.md)
-
-- 변수 및 자료형
-  - 자료형_part2
-    - Tuple
-    - List
-    - Dictionary
-    - Set
-  - enum
-  - 자료형의 변경
-
-<br/>
-
-## [Python_part3](https://github.com/hedge0207/TIL/blob/master/python/python_part3.md)
-
-- 연산자
-- 제어문
-  - 조건문
-  - 반복문
-- 함수
-- 입출력
-  - 사용자 입출력
-  - 파일 읽고 쓰기
-
-<br/>
-
-## [Python_part4](https://github.com/hedge0207/TIL/blob/master/python/python_part4.md)
-
-- 클래스
-- 모듈
-- 패키지
-- import
-- 이터레이터와 제너레이터
-
-<br/>
-
-## [Python_part5](https://github.com/hedge0207/TIL/blob/master/python/python_part5.md)
-
-- Python 내장 함수
-- 패키지
-  - os
-  - etc
-  - argsparse
-  - logging
-  - Json
-  - CSV
-  - Random
-- Python type hint
-- with
-
-<br/>
-
-## [Python_part6](https://github.com/hedge0207/TIL/blob/master/python/python_part6.md)
-
-- 클로저
-- 데코레이터
-- 가상환경
-  - 심볼릭 링크
-- 동시성, 병렬성 프로그래밍
-- ETC
-
-<br/>
-
-<br/>
-
-## [Python_part7](https://github.com/hedge0207/TIL/blob/master/python/python_part7.md)
-
-- 이터레이터와 제너레이터
-  - 이터레이터
-  - 제너레이터
-- 코루틴
-- async / await
-- 예외처리
-
-<br/>
-
-<br/>
-
-## [Python_part8](https://github.com/hedge0207/TIL/blob/master/python/python_part8.md)
-
-- Testing
-  - 테스트시 주의 사항
-  - 용어
-  - Test in Python
-    - fixture
-    - parameterize
-
-<br/>
-
-<br/>
-
-## [Python_part9](https://github.com/hedge0207/TIL/blob/master/python/python_part9.md)
-
-- Python의 memory 관리 방식
-- Python의 Garbage Collection
-- Python은 왜 느린가?
-- GIL
-- Multi processing
-
-<br/>
-
-<br/>
-
-## [Python_part10](https://github.com/hedge0207/TIL/blob/master/python/python_part10.md)
-
-- Logging
-- Interface
-- Python Bytecode
-
-<br/>
-
-<br/>
-
-# FastAPI
-
-## [fastapi_part1](https://github.com/hedge0207/TIL/blob/master/fastapi/fastapi_part1.md)
-
-- 튜토리얼
-- 매개변수
-  - 경로 매개변수
-  - 쿼리 매개변수
-- Request Body
-
-<br/>
-
-<br/>
-
-## [fastapi_part2](https://github.com/hedge0207/TIL/blob/master/fastapi/fastapi_part2.md)
-
-- Request Header
-- Pydantic validator
-- Testing
-
-<br/>
-
-<br/>
-
-## [gunicorn](https://github.com/hedge0207/TIL/blob/master/fastapi/guincorn.md)
-
-<br/>
-
-<br/>
-
-## [open_api](https://github.com/hedge0207/TIL/blob/master/fastapi/open_api.md)
-
-- 기본 개념
-- 상세
-  - metadata
-  - tags
-  - request
-  - response
-  - api description
-- Extending OpenAPI
-
-<br/>
-
-<br/>
-
-## [pydantic](https://github.com/hedge0207/TIL/blob/master/fastapi/pydantic.md)
-
-<br/>
-
-<br/>
-
-<br/>
-
-<br/>
-
-
-
-# JavaScript
-
-## [JavaScript_part1](https://github.com/hedge0207/TIL/blob/master/javascript/JavaScript_part1.md)
-
-- 브라우저 & JS의 역사
-- 소개
-- 기초
-- 변수의 선언
-- 타입
-  - 기본 데이터 타입
-  - 타입 변환
-  - 타입 확인
-
-<br/>
-
-## [JavaScript_part2](https://github.com/hedge0207/TIL/blob/master/javascript/JavaScript_part2.md)
-
-- 연산자
-- 제어문
-- 자료구조
-  - Array
-  - Object
-
-<br/>
-
-## [JavaScript_part3](https://github.com/hedge0207/TIL/blob/master/javascript/JavaScript_part3.md)
-
-- 함수
-  - 함수 정의와 함수의 특징
-  - 함수의 객체 프로퍼티
-  - 함수의 다양한 형태
-- 프로토타입
-  - 프로토타입 체인
-
-<br/>
-
-## [JavaScript_part4](https://github.com/hedge0207/TIL/blob/master/javascript/JavaScript_part4.md)
-
-- this
-- 스코프
-  - let, const와 블록 레벨 스코프
-
-<br/>
-
-## [JavaScript_part5](https://github.com/hedge0207/TIL/blob/master/javascript/JavaScript_part5.md)
-
-- 실행 컨텍스트와 JavaScript 동작 원리
-  - 실행 컨텍스트의 3가지 객체
-  - 실행 컨텍스트 생성 과정
-- 클로저
-
-<br/>
-
-## [JavaScript_part6](https://github.com/hedge0207/TIL/blob/master/javascript/JavaScript_part6.md)
-
-- JavaScript 객체 지향 프로그래밍
-  - 상속
-  - 캡슐화와 모듈화 패턴
-- 빌트인 객체
-- 전역 객체
-
-<br/>
-
-## [JavaScript_part7](https://github.com/hedge0207/TIL/blob/master/javascript/JavaScript_part7.md)
-
-- 각종 객체
-  - 래퍼 객체
-
-<br/>
-
-## [JavaScript_part8](https://github.com/hedge0207/TIL/blob/master/javascript/JavaScript_part8.md)
-
-- 정규표현식
-- 배열
-  - JS의 배열은 배열이 아니다
-  - 배열 고차 함수
-
-<br/>
-
-## [JavaScript_part9](https://github.com/hedge0207/TIL/blob/master/javascript/JavaScript_part9.md)
-
-- DOM
-  - DOM tree
-  - DOM Query
-  - DOM Manipulation
-  - Style
-
-<br/>
-
-## [JavaScript_part10](https://github.com/hedge0207/TIL/blob/master/javascript/JavaScript_part10.md)
-
-- 이벤트
-  - 이벤트의 종류
-  - 이벤트 헨들러 등록
-  - 이벤트의 흐름
-  - 이벤트 객체
-  - 이벤트 위임
-
-<br/>
-
-## [JavaScript_part11](https://github.com/hedge0207/TIL/blob/master/javascript/JavaScript_part11.md)
-
-- 비동기식 처리 모델과 ajax
-  - 동기식 처리 모델과 비동기식 처리 모델
-  - Ajax
-  - Json
-  - XMLHttpRequest
-  - axios
-- 프로미스
-  - 콜백 패턴의 단점
-
-<br/>
-
-## [JavaScript_part12](https://github.com/hedge0207/TIL/blob/master/javascript/JavaScript_part12.md)
-
-- async&await
-- 예외처리
-- 클래스
-- 모듈
-
-<br/>
-
-## [JavaScript_part13](https://github.com/hedge0207/TIL/blob/master/javascript/JavaScript_part13.md)
-
-- strict mode
-- ECMAScript6
-  - 화살표 함수
-  - 이터레이션
-  - 제네레이터
-
-<br/>
-
-## [JavaScript_part14](https://github.com/hedge0207/TIL/blob/master/javascript/JavaScript_part14.md)
-
-- ECMAScript6
-  - Symbol
-  - 객체리터럴 프로퍼티 기능 확장
-  - 디스트럭처링
-  - etc
-- Device Orientation
-- REST API
-- SPA
-
-<br/>
-
-<br/>
-
-<br/>
-
-<br/>
-
-# Spring
-
-## [Spring part1](https://github.com/hedge0207/TIL/blob/master/spring/spring_part1.md)
-
-- 스프링 기초
-  - 객체 지향 설계
-  - POJO
-  - PSA
-  - IoC와 DI
-  - AOP
-- 프로젝트 생성
-
-<br/>
-
-## [Spring part2](https://github.com/hedge0207/TIL/blob/master/spring/spring_part2.md)
-
-- 순수 자바로만 개발하기
-  - 회원 관리 예제
-  - 주문과 할인 예제
-  - 관심사의 분리
-- IOC, DI, 컨테이너
-- 스프링으로 개발하기
-  - 회원 관리 예제
-- 스프링 컨테이너와 스프링 빈
-  - 스프링 컨테이너 생성
-  - 스프링 빈 조회
-  - BeanFactory와 ApplicationContext
-  - 다양한 설정 형식
-  - 스프링 빈 설정 메타 정보
-
-<br/>
-
-## [Spring part3](https://github.com/hedge0207/TIL/blob/master/spring/spring_part3.md)
-
-- 싱글톤 컨테이너
-  - 웹 애플리케이션과 싱글톤
-  - 싱글톤 패턴
-  - 싱글톤 컨테이너
-  - 싱글톤 방식의 주의점
-  - Configuration과 싱글톤
-  - Configuration과 바이트 코드 조작
-- 컴포넌트 스캔
-  - 컴포넌트 스캔과 의존관계 자동 주입
-  - 탐색 위치와 기본 스캔 대상
-  - 필터
-  - 중복 등록과 충돌
-
-<br/>
-
-## [Spring part4](https://github.com/hedge0207/TIL/blob/master/spring/spring_part4.md)
-
-- 의존 관계 자동 주입
-  - 다양한 의존관계 주입 방법
-  - 옵션 처리
-  - 생성자 주입을 선택해야 하는 이유
-  - 롬복과 최신 트랜드
-  - 조회 되는 빈이 2개 이상일 경우
-  - 애노테이션 직접 만들기
-  - 조회한 빈이 모두 필요할 때
-  - 자동과 수동의 올바른 실무 운영 기준
-- 빈 생명주기 콜백
-  - 빈 생명주기 콜백 시작
-  - 인터페이스
-  - 빈 등록 초기화, 소멸 메서드
-  - 에노테이션 PostConstruct, PreDestroy
-- 빈 스코프
-  - 빈 스코프
-  - 프로토 타입 스코프
-  - 싱글톤 빈과 프로토 타입 빈을 함께 사용시 문제점
-  - 위 문제의 해결
-  - 웹 스코프
-    - request 스코프 개발
-    - 스코프와 프록시
-
-<br/>
-
-<br/>
-
-<br/>
-
-<br/>
-
-# 알고리즘
-
-## [알고리즘 part1](https://github.com/hedge0207/TIL/blob/master/%EC%95%8C%EA%B3%A0%EB%A6%AC%EC%A6%98/%EC%95%8C%EA%B3%A0%EB%A6%AC%EC%A6%98_part1.md)
+# algorithm
+## algorithm_part1
+- 목차
 
 - 선형 탐색과 이진 탐색
+
 - 정렬
-- 시간 복잡도
+
+- 시간복잡도
+
 - 재귀함수
+
 - 알고리즘 패러다임
 
 <br/>
-
-## [알고리즘 part2](https://github.com/hedge0207/TIL/blob/master/%EC%95%8C%EA%B3%A0%EB%A6%AC%EC%A6%98/%EC%95%8C%EA%B3%A0%EB%A6%AC%EC%A6%98_part2.md)
-
+<br/>
+## algorithm_part2
 - 알고리즘
+
 - 복잡도
+
 - 진수
+
 - 실수의 표현
+
 - 비트
-- 파이썬의 숫자 자료형
+
 - 문자표현
-- 그래프
-  - 서로소 집합
-  - 최소 신장 트리
-  - 최단경로
-- Stack, Queue
-  - Stack
-  - Queue
-- Linked List
+
+- 그래프 
+
+- Stack과 Queue
+
+<br/>
+<br/>
+## algorithm_part3
+- Linked list
+
 - Tree
+
 - 반복과 재귀
-- 순열, 조합, 부분집합
-  - 순열
-  - 조합
-  - 부분집합
+
+- 순열과 조합, 부분집합
+
 - 탐욕 알고리즘
-- 분할정복
-- 백트래킹
+
+- 다이나믹 프로그래밍
+
+- Divide and Conquer
+
+- Backtracking
+
 - 문제 풀면서 알게 된 것들
+
 - 팁
 
-<br/>
+- 편집 거리 알고리즘
 
 <br/>
+<br/>
+## algorithm_part4
+- Two Pointer
 
-## [HNSW]()
+- Deque와 우선순위 큐
+
+- Hash
+
+- 해시 충돌 발생시 회피 기법
+
+- 그래프
+
+- 최단 경로 문제
 
 <br/>
+<br/>
+## algorithm_part5
+- Tree
+
+- Heap
+
+- 에라스토테네스의 체
+
+- 연결리스트
+
+- Trie
+
+- 정렬
 
 <br/>
+<br/>
+## algorithm_part6
+- 그리디 알고리즘
 
-# 웹
-
-## [HTML](https://github.com/hedge0207/TIL/blob/master/%EC%9B%B9/HTML.md)
-
-- HTML이란
-- HTML 구조
-  - 요소
-  - head
-  - 표
-  - 서식
+- Raft Consensus Algorithm
 
 <br/>
+<br/>
+## HNSW
+<br/>
+<br/>
+<br/>
+<br/>
+# C
+## C
+- Pointer
 
-## [CSS](https://github.com/hedge0207/TIL/blob/master/%EC%9B%B9/CSS.md)
+<br/>
+<br/>
+<br/>
+<br/>
+# clean_code
+## clean_code_part1
+- 깨끗한 코드
+
+- 의미있는 이름
+
+- 함수
+
+- 주석
+
+- 형식 맞추기
+
+<br/>
+<br/>
+## clean_code_part2
+- 객체와 자료 구조
+
+<br/>
+<br/>
+<br/>
+<br/>
+# crawling
+## beautifulsoup
+- 목차
+
+- 크롤링의 위법성
+
+- Beautiful Soup
 
 - 기초
-- 선택자
-- 세부속성
-- Box Model
-- 정렬
-- 고급기능
+
+- 웹 크롤러 만들기
+
+- get: 웹 페이지를 여는 함수
+
+- 인자로 크롤링 하려는 사이트의 주소를 입력
+
+- query_txt = input("크롤링할 키워드: ")
+
+- f_name = input("검색 결과를 저장할 파일경로와 이름을 지정하세요: ")
+
+- 위에서 표준 출력 내용을 터미널 창이 아닌 f_name에 하도록 지정했기 때문에 아래 내용은 터미널 창이 아닌 txt 파일에 저장되게 된다. 
 
 <br/>
-
-## [IndexedDB](https://github.com/hedge0207/TIL/blob/master/%EC%9B%B9/IndexedDB.md)
-
-- 개요
-- 사용
-  - IndexedDB를 사용 가능한지 체크하기
-  - 데이터베이스 생성하기
-  - 데이터 추가, 조회, 수정, 삭제하기
+<br/>
+## scrapy
+- scrapy
 
 <br/>
+<br/>
+<br/>
+<br/>
+# CS
+## 2022_aws_summit
+- 아키텍처 현대화
 
-## [EmailJs](https://github.com/hedge0207/TIL/blob/master/%EC%9B%B9/Emailjs.md)
-
-- 코딩 전 설정 사항
-- 코딩하기
+- 당근마켓의 사례
 
 <br/>
+<br/>
+## discrete_mathematics_part1
+- 수의 체계
 
-## [babel_and_webpack](https://github.com/hedge0207/TIL/blob/master/%EC%9B%B9/babel_and_webpack.md)
+- 수의 연산
 
-- Babel
-  - Babel이란
-  - Babel 사용하기
-- Webpack
-  - Webpack이란
-  - Webpack 사용하기
+- 컴퓨터에서의 수의 연산 표현과 연산
+
+- 명제와 논리
 
 <br/>
+<br/>
+## HTTP_part1
+- HTTP를 왜 학습해야 하는가
+
+- 인터넷 네트워크
+
+- URI와 웹 브라우저 요청 흐름
+
+- HTTP 기본
+
+- Shorts
 
 <br/>
+<br/>
+## IT_Essential_part1
+- 프레임워크와 라이브러리
+
+- 아키텍처 그리기(설계하기)
+
+- Server & Client Architecture
+
+- 개발자는 항상 의심해야 한다
+
+- 개발자의 나쁜 습관
+
+- 프로젝트 DB 설계
+
+- 데이터 크롤링
+
+- 클라우드
+
+- Linux
+
+- 캐싱
+
+- 소프트웨어 테스팅
+
+- 쿠키, 세션, 웹 스토리지, IndexedDB
+
+- SSL과 TLS
+
+- 프로세스와 스레드
+
+- 동시성 병렬성
 
 <br/>
+<br/>
+## IT_Essential_part2
+- RPC
+
+- Session과 JWT
+
+- Text Encoding
+
+- REST
+
+- Memory
 
 <br/>
+<br/>
+## IT_Essential_part3
+- CORS
 
-# etc
+- 왜 숫자는 0부터 세는가?
 
-## [AWS_EC2](https://github.com/hedge0207/TIL/blob/master/etc/AWS_EC2.md)
+- Data processing
 
-- EC2 인스턴스 생성하기
-- 인스턴스에 접속하기
+- Monorepo Vs Polyrepo
+
+- 보안
+
+- Data의 단위
+
+- IP
+
+- 진수
+
+- Shorts
 
 <br/>
+<br/>
+## IT_Essential_part4
+- Semantic Versioning Specification
+
+- CNCF(Cloud Native Computing Foundation)
+
+- Stream Backpressure
+
+- Standard Stream, Standard Input, Output
+
+- 2진수 음수 표현
+
+- DI
+
+- CI/CD
+
+- API Gateway
+
+- Load balancing
+
+- API Gateway vs. Load Balancer vs. Reverse proxy
 
 <br/>
+<br/>
+## IT_Essential_part5
+- API Throttling
 
-## [BigData](https://github.com/hedge0207/TIL/blob/master/etc/BigData.md)
+- Circuit Breaker
 
-- 판다스
-  - 자료구조
-  - 데이터 읽고 쓰기
-  - 데이터 처리
-  - Matplotlib
-- 추천 시스템
-  - Collaborative filtering
-    - User based Collaborative filtering
-    - Item based Collaborative filtering
-  - Content based filtering
-- 통계
+- Data Flow Diagram(DFD)
+
+- Shorts
 
 <br/>
+<br/>
+## naming
+- boolean
 
 <br/>
+<br/>
+## Operating_System_part1
+- 운영체제 개요
+
+- 컴퓨터의 구조
 
 <br/>
+<br/>
+## Operating_System_part2
+- 프로세스와 스레드
+
+- 유니온 마운트
+
+- CPU 스케줄링
 
 <br/>
+<br/>
+## Operating_System_part3
+- 프로세스 동기화
 
-## [Redis](https://github.com/hedge0207/TIL/blob/master/etc/redis.md)
+- 교착 상태
 
-- Redis
-- Data Persistence
-- HA
-- redis 사용해보기
-- Redis 사용 전략
-- 참조
+- 물리 메모리 관리
 
 <br/>
-
 <br/>
+## web_application_architecture
+- Web application Architecture
 
-<br/>
+- Proxy
 
-<br/>
+- Python으로 웹 개발하기
 
-# Kafka
-
-## [Kafka_part1](https://github.com/hedge0207/TIL/blob/master/kafka/kafka_part1.md)
-
-- Kafka란
-  - kafka 개요
-  - 주요 개념
-    - 브로커
-    - 토픽과 파티션
-    - 프로듀서
-    - 커슈머
-- 카프카 확장
 - 참고
 
 <br/>
+<br/>
+## 브라우저는 어떻게 동작하는가
+- 브라우저
+
+- 렌더링 엔진
+
+- 파싱과 DOM트리 구축
+
+- 배치
+
+- 그리기
 
 <br/>
+<br/>
+## 최신 IT 기술 정리
+- 목차
 
-## [Kafka_part2](https://github.com/hedge0207/TIL/blob/master/kafka/kafka_part2.md)
+- Big Data
 
-- Kafka 상세 개념
-  - 토픽과 파티션
-  - 적정 파티션 개수
-  - 토픽 정리 정책
-  - ISR
-- 카프카 프로듀서
-  - acks
-  - 멱등성 프로듀서
-  - 트랜잭션 프로듀서
+- Clustering
 
-- 카프카 컨슈머
-  - 멀티 스레드 컨슈머
-  - 컨슈머 랙
-  - 컨슈머 배포 프로세스
-- 리밸런스
-  - 사전지식
-  - Kafka Rebalance Protocol
+- Recommendation Systems
+
+- 블록체인
+
+- 인공지능
 
 <br/>
+<br/>
+## 컴퓨터 공학 전공 정리_part1
+- 프로그래밍 언어
+
+- UI
 
 <br/>
+<br/>
+## 컴퓨터 공학 전공 정리_part2
+- 소프트웨어의 이해
 
-## [Kafka_part3](https://github.com/hedge0207/TIL/blob/master/kafka/kafka_part3.md)
+- 소프트웨어 개발 생명 주기(SDLC, System Development Life Cycle)
 
-- 카프카 시작해보기
-  - 카프카 설치 및 실행
-    - Docker로 설치하기
-  - 카프카 커맨드 라인 툴
-  - Python에서 사용하기
+- Agile
+
+- 소프트웨어 개발 단계
+
+- 소프트웨어 품질
+
+- 프로젝트 관리
 
 <br/>
+<br/>
+<br/>
+<br/>
+# Database
+## Database_part1
+- 데이터 베이스의 기본 개념
+
+- 데이터 모델링
+
+- 데이터베이스의 언어, SQL
+
+- 정규화
 
 <br/>
+<br/>
+## Database_part2
+- 트랜잭션
+
+- 보안과 권한 관리
+
+- 데이터 베이스 응용 기술
 
 <br/>
+<br/>
+## install
+- Tibero 설치 및 Python 연동
 
 <br/>
+<br/>
+## MongoDB
+### mongodb
+- MongoDB 소개
 
+- MongoDB 설치하기
 
+- Mongo Shell
 
-# Linux
+- MongoDB 상태 확인
 
-## [Linux](https://github.com/hedge0207/TIL/blob/master/linux/linux.md)
+- MongoDB Connection Pool
 
-- 리눅스 개요
-- 가상머신 준비하기
-- 리눅스 기본 개념
-  - 리눅스 에디터
-  - 마운트
-  - 사용자 관리와 파일 속성
-  - 링크
-  - 리눅스 패키지 설치
+- PyMongo
 
 <br/>
+<br/>
+<br/>
+<br/>
+## MySQL
+### mysql_part1
+- DBMS 개요
+
+- 데이터베이스 모델링
 
 <br/>
+<br/>
+<br/>
+<br/>
+## PostgreSQL
+### postgresql
+<br/>
+<br/>
+<br/>
+<br/>
+## python_oracle
+- Python에서 Oracle 사용하기
 
-## [Linux Command](https://github.com/hedge0207/TIL/blob/master/etc/linux_command.md)
-
-# Elasticsearch
-
-## [faiss](https://github.com/hedge0207/TIL/blob/master/elasticsearch/faiss.md)
-
-- 사전지식
-  - 용어
-  - 벡터 사이의 유사도 측정 방식
-- faiss Tutorial
-  - 시작하기
-  - 검색 속도 향상
-  - 메모리 사용 줄이기
-  - GPU에서 실행하기
-- 기초
-  - MetricType and distance
-  - Clustering, PCA, Quntization
-  - 인덱스를 선택할 때 고려할 사항
-- Faiss indexes
-  - basic index 목록
-  - 벡터를 인코딩하는 방식
-  - Flat indexes
-  - Cell-probe methods
-  - IndexHNSW
+- 참고
 
 <br/>
+<br/>
+## sql
+- SQL
+
+- Query
+
+- TO DO
 
 <br/>
+<br/>
+<br/>
+<br/>
+# design_pattern
+## design_pattern
+- Design Pattern
 
-## [Elasticsearch_part1](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part1.md)
+<br/>
+<br/>
+## design_pattern_part1
+- 사전 지식
 
+- Strategy Pattern
+
+- Observer Pattern
+
+- Decorator Pattern
+
+- 디자인 원칙 모아보기
+
+<br/>
+<br/>
+## design_pattern_part2
+- Factory Pattern
+
+- Singleton Pattern
+
+- Command Pattern
+
+- 디자인 원칙 모아보기
+
+<br/>
+<br/>
+## design_pattern_part3
+- Adapter Pattern
+
+- Facade Pattern
+
+- Iterator Pattern
+
+- Composite Pattern
+
+- 디자인 원칙 모아보기
+
+<br/>
+<br/>
+## design_pattern_part4
+- State Pattern
+
+- Proxy Pattern
+
+- Template Method Pattern
+
+- 디자인 패턴 모아보기
+
+<br/>
+<br/>
+## design_pattern_part5
+- Compound pattern
+
+- 다양한 디자인 패턴들
+
+<br/>
+<br/>
+## patterns
+### java
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+# devops
+## AWS
+- EC2
+
+- VPC
+
+<br/>
+<br/>
+## github_actions
+- 개요
+
+- Action 사용하기
+
+- 참고
+
+<br/>
+<br/>
+## Jenkins
+- Jenkins tutorial
+
+- Jenkins Pipeline
+
+- Blue Ocean
+
+- Jenkins로 application 관리하기
+
+- Jenkins + Docker swarm  + Docker registry로 Continuous Deploy pipeline 구성
+
+<br/>
+<br/>
+## nginx
+- Nginx
+
+- 참고
+
+<br/>
+<br/>
+## postman
+- Postman으로 API 테스트하기
+
+<br/>
+<br/>
+## ubuntu_docker
+- Docker로 Ubuntu 실행하기
+
+<br/>
+<br/>
+## virtual_machine
+- 가상머신 소개와 설치
+
+- 가상 머신 생성
+
+- VMware 사용 방법
+
+- 운영체제 설치하기
+
+<br/>
+<br/>
+<br/>
+<br/>
+# django
+## django_part1
+- 목차
+
+- Django
+
+- MTV기초
+
+- DTL
+
+- MTV 확장
+
+- form태그와 input태그
+
+- Model
+
+- django_crud/articles/admin.py
+
+- Register your models here.
+
+- HTTP
+
+- 정적 파일 관리
+
+- form
+
+<br/>
+<br/>
+## django_part2
+- 목차
+
+- 사용자 인증 관리
+
+- 데이터베이스
+
+- SQL 기본
+
+- ORM
+
+- 일대다 관계
+
+- 다대다 관계
+
+<br/>
+<br/>
+## django_part3
+- 목차
+
+- 미디어 파일 관리
+
+- Query 최적화
+
+- REST API
+
+- django additional
+
+- 기타
+
+- red와 blue라는 2개의 선택지가 될 charfield를 넘겨주고
+
+<br/>
+<br/>
+## django_part4
+- DB와 Django 연동하기
+
+- Django allauth
+
+<br/>
+<br/>
+## 기본 명령어
+- 명령어
+
+- Django 관련 명령어
+
+<br/>
+<br/>
+## 배포
+- 배포
+
+<br/>
+<br/>
+<br/>
+<br/>
+# docker
+## docker_part1
+- 컨테이너와 Docker
+
+- Docker image
+
+- Docker 설치하기
+
+- 도커 명령어
+
+<br/>
+<br/>
+## docker_part2
+- Dockerfile
+
+- Docker Compose
+
+- Manage application data
+
+- Docker network
+
+- Docker health check
+
+- etc
+
+- 참고
+
+<br/>
+<br/>
+## docker_part3
+- Logging
+
+- DinD DooD
+
+- Docker registry
+
+- Docker swarm
+
+- Docker service
+
+- Docker image build시 anti-pattern
+
+- Build context
+
+- alpine image
+
+<br/>
+<br/>
+## docker_part4
+- Docker Stack
+
+- Docker volume과 권한, 소유자, 소유 그룹
+
+- .bashrc에 umask 0002 명령어를 추가한다.
+
+<br/>
+<br/>
+<br/>
+<br/>
+# elasticsearch
+## debugging_elasticsearch
+<br/>
+<br/>
+## Elasticsearch_error
+<br/>
+<br/>
+## elasticsearch_heap
+- JVM
+
+- heap memory
+
+- 참고
+
+<br/>
+<br/>
+## Elasticsearch_part1
 - 검색 엔진 개요
+
 - 엘라스틱 서치 개요
-  - 주요 기능
-  - 엘라스틱서치의 데이터 구조
+
 - 엘라스틱서치 기본 개념
-  - 클러스터와 노드
-  - 인덱스와 타입
-  - 샤드와 세그먼트
-  - settings와 mappings
-- Elasticsearch 설치하고 실행하기
+
+- Elaistcsearch 설치하고 실행하기
 
 - 기본적인 데이터 처리
-  - 새로운 데이터 색인
-  - 데이터 검색
-  - 데이터 수정, 삭제
 
 - 참고
 
 <br/>
+<br/>
+## Elasticsearch_part10
+- Node의 역할
+
+- ILM(Index Lifecycle Management)
+
+- Sniffing
+
+- Snapshot
+
+- Bootstrap check
 
 <br/>
+<br/>
+## Elasticsearch_part11
+- Elasticsearch 최적화
 
-## [Elasticsearch_part2](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part2.md)
+<br/>
+<br/>
+## Elasticsearch_part12
+- 구현
 
+- Shard routing
+
+- Suggester
+
+- Mapping explosion
+
+- Rally
+
+<br/>
+<br/>
+## Elasticsearch_part13
+- alias
+
+<br/>
+<br/>
+## Elasticsearch_part2
 - 클러스터 구축하기
-  - elasticsearch.yml
-  - jvm.options
+
 - 클러스터 운영하기
-  - 버전 업그레이드
-  - 샤드 배치 방식 변경
-  - 클러스터와 인덱스의 설정 변경
-    - 클러스터 설정 변경
-    - 인덱스 설정 변경
-  - 템플릿 활용하기
 
 <br/>
-
 <br/>
+## Elasticsearch_part3
+- Elasticsearch의 자료 구조
 
-## [Elasticsearch_part3](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part3.md)
+- Elasticsearch의 score 계산 방식
 
 - 클러스터 성능 모니터링과 최적화
-  - 클러스터의 상태 확인하기
-  - 노드의 상태와 정보 확인하기
-  - 인덱스의 상태와 정보 확인하기
-  - 샤드의 상태 확인하기
-  - stats API로 지표 확인하기
-  - 성능 확인과 문제 해결
+
 - 분석 엔진으로 활용하기
-- 검색 엔진으로 활용하기
-  - inverted index와 analyzer
 
 <br/>
-
 <br/>
-
-## [Elasticsearch_part4](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part4.md)
-
+## Elasticsearch_part4
 - 인덱스 생성하기
-  - mappings
-  - settings
 
-
+- 데이터 색인
 
 - 데이터 삭제
 
 <br/>
-
 <br/>
-
-## [Elasticsearch_part5](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part5.md)
-
+## Elasticsearch_part5
 - 데이터 검색
-  - Search API
-  - Query DSL
-    - Query Context
-    - Filter Context
-    - bool query
-    - Function score query
-  - Retrieve inner hits
+
+- Elasticsearch multi-match
+
+- Exist query
+
+- function_score
+
+- Nested query
+
+- 검색 관련 옵션
 
 <br/>
-
 <br/>
+## Elasticsearch_part6
+- More Like This Query
 
-## [Elasticsearch_part6](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part6.md)
+- minimum_should_match
+
+- Profile API
+
+- kNN search
+
+- Highlight
+
+- Collapse
+
+- 여러 index 대상 검색
 
 - 엘라스틱서치 모니터링
-  - Head
-  - X-Pack
-- 색인 성능 최적화
-- 검색 성능 최적화
-  - ES 캐시 활용하기
-  - 검색 쿼리 튜닝하기
-  - 그 외의 방법들
 
 <br/>
-
 <br/>
-
-## [Elasticsearch_part7](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part7.md)
-
+## Elasticsearch_part7
 - Runtime field
+
 - Scripting
+
 - Aggregations
-  - Bucket aggregations
-    - term
-  - Metrics aggregations
 
 <br/>
+<br/>
+## Elasticsearch_part8
+- Loggin Configuration
+
+- Metricbeat
+
+- Data streams
+
+- Index template
+
+- Search template
+
+- API
 
 <br/>
+<br/>
+## Elasticsearch_part9
+- Analyzer와 inverted index
 
-## [Elasticsearch_part8](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part8.md)
+- auto completion
 
+- completion suggester
+
+- Security
+
+<br/>
+<br/>
+## Elasticsearch_plugin
+- configsync plugin
+
+- Elasticsearch plugin 개발
+
+<br/>
+<br/>
+## Elasticsearch_python
+- Elasticsearch 8
+
+- elasticsearch-dsl
+
+- ETC
+
+<br/>
+<br/>
+## elasticsearch_senario
 - ES 클러스터 구축 시나리오
 
 <br/>
-
 <br/>
-
-## [Elasticsearch_part9](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part9.md)
-
-- Field data types
-  - 기본 타입
-  - 심화 타입
-    - Join field type
-
-<br/>
-
-<br/>
-
-## [Elasticsearch_part10](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part10.md)
-
-- Loggin Confuguration
-- Slow Log
-- Metricbeat
-- ILM
-- Data streams
-- Search template
-
-<br/>
-
-<br/>
-
-## [Elasticsearch_part11](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_part11.md)
-
-- Analyzer와 inverted index
-  - token filter
-- auto completion
-- completion suggestor
-- Elasticsearch 8
-- security
-
-<br/>
-
-<br/>
-
-## [Elasticsearch_with_docker](https://github.com/hedge0207/TIL/blob/master/elasticsearch/Elasticsearch_with_docker.md)
+## Elasticsearch_with_docker
+- Cluster 구성 시 discovery가 발생하는 과정
 
 - Docker로 ES, Kibana 설치하기
-  - Docker-compose로 설치하기
-- 각기 다른 서버에 설치된 node들로 클러스터 구성하기
+
+- elasticsearch single node
+
+- Docker-compose로 설치하기
+
+- Docker stack으로 설치하기
+
+- Security 활성화 한 상태로 생성하기
+
+- Error
 
 <br/>
-
 <br/>
+## faiss
+- 사전지식
 
-## [Logstash](https://github.com/hedge0207/TIL/blob/master/elasticsearch/logstash.md)
+- faiss Tutorial
 
-<br/>
+- 기초
 
-<br/>
+- Faiss indexes
 
-## [elasticsearch_heap](https://github.com/hedge0207/TIL/blob/master/elasticsearch/elasticsearch_heap.md)
-
-<br/>
-
-<br/>
-
-<br/>
-
-<br/>
-
-# Docker
-
-## [docker_part1](https://github.com/hedge0207/TIL/blob/master/docker/docker_part1.md)
-
-- 컨테이너와 Docker
-- 도커 명령어
-
-<br/>
-
-## [docker_part2](https://github.com/hedge0207/TIL/blob/master/docker/docker_part2.md)
-
-- Dockerfile
-- Docker Compose
-- manage application data
-  - volumes
-  - bind mounts
-  - tmpfs
-
-- etc
 - 참고
 
 <br/>
+<br/>
+## fluentd
+- 개요
+
+- Python과 연동하기
 
 <br/>
+<br/>
+## logstash
+- Logstash
+
+- Docker로 실행하기
+
+- Logstash와 DB 연결하기
+
+- Logstash와 Kafka 연동
+
+- Output Plugin
+
+- Dead letter queues(DLQ)
 
 <br/>
+<br/>
+## Python_Elasticsearch
+<br/>
+<br/>
+## related_search
+- 연관검색어
 
 <br/>
+<br/>
+<br/>
+<br/>
+# etc
+## ETL
+- 사전지식
 
+- CDC
 
-# Machine learning
-
-## [machine_learning_part1](https://github.com/hedge0207/TIL/blob/master/machine_learning/machine_learning_part1.md)
-
-- 인공지능과 머신러닝, 딥러닝
-- k-최근접 이웃
-  - 생선 분류 문제
+- Airbyte
 
 <br/>
+<br/>
+## Pycon_2023
+- 짠내나는 데이터 다루기
+
+- Django 봄은 다시 온다
+
+- Jupyter book을 활용해 손쉽게 콘텐츠를 생성하고 공유하자
+
+- Django 컨트리뷰터가 되기까지의 여정
+
+- ETC
 
 <br/>
+<br/>
+## redis
+- Redis
+
+- Data Persistence
+
+- HA
+
+- Redis 사용해보기
+
+- Redis 사용 전략
+
+- 참조
 
 <br/>
+<br/>
+## tips
+-  유용한 사이트
+
+- Jupyter Notebook 
+
+- 초기화시 해야 할 것들
+
+- 단축키
 
 <br/>
-
-# Crawling
-
-## [scrapy](https://github.com/hedge0207/TIL/blob/master/crawling/scrapy.md)
-
-- 기본 개념
-- Spider
-- 데이터 추출하기
-- 데이터 저장하기
-- Following links
+<br/>
+## YAML
+<br/>
+<br/>
+## 암호화
+- AES
 
 <br/>
+<br/>
+## 추천시스템
+- 추천 시스템
 
-## [Beatifulsoup](https://github.com/hedge0207/TIL/blob/master/crawling/beautifulsoup.md)
+<br/>
+<br/>
+<br/>
+<br/>
+# fastapi
+## fastapi_part1
+- FastAPI 튜토리얼
 
-- 크롤링의 위법성
-- Beautiful Soup
+- 매개변수
+
+- Request
+
+- Pydantic validator
+
+<br/>
+<br/>
+## fastapi_part2
+- Response model
+
+- Testing
+
+- Dependencies
+
+- Backround Tasks
+
+- Async
+
+<br/>
+<br/>
+## fastapi_part3
+- fastapi security
+
+- Nginx + FastAPI
+
+<br/>
+<br/>
+## guincorn
+<br/>
+<br/>
+## open_api
+- Open API
+
+- 참고
+
+<br/>
+<br/>
+<br/>
+<br/>
+# git
+## git
+- 참고 사이트
+
+- 초기 설정
+
+- 기본 사용법
+
+- git branch
+
+- 기타
+
+<br/>
+<br/>
+## git_part1
+- 시작하기
+
+- Git의 기초
+
+<br/>
+<br/>
+## git_part2
+- Git 브랜치
+
+- commit message 작성하기
+
+- git 저장소 옮기기
+
+<br/>
+<br/>
+<br/>
+<br/>
+# ITPL
+## continuation
+<br/>
+<br/>
+## Introduction_To_Programming_Language_part1
+- Syntax and Semantic
+
+- Immutability
+
+- Pattern Matching
+
+- Identifiers
+
+- 출처
+
+<br/>
+<br/>
+## Introduction_To_Programming_Language_part2
+- Functions
+
+- 출처
+
+<br/>
+<br/>
+## Introduction_To_Programming_Language_part3
+- Boxes
+
+- Mutable Variables
+
+<br/>
+<br/>
+## Introduction_To_Programming_Language_part4
+- Garbage Collection
+
+<br/>
+<br/>
+## Introduction_To_Programming_Language_part5
+- Lazy Evaluation
+
+- Continuations
+
+<br/>
+<br/>
+## Introduction_To_Programming_Language_part6
+- First-Class Continuation
+
+<br/>
+<br/>
+<br/>
+<br/>
+# java
+## install_jdk
+- 설치
+
+<br/>
+<br/>
+## java_part1
+- JAVA 기초
+
+- 자료형
+
+- 리터럴
+
+- 연산자
+
+- 제어문
+
+<br/>
+<br/>
+## java_part2
+- 목차
+
+- 클래스
+
+- 메소드
+
+- 상속
+
+- 생성자
+
+- 패키지
+
+- 인터페이스
+
+<br/>
+<br/>
+## java_part3
+- 목차
+
+- 예외처리
+
+- 입출력
+
+- 패키지
+
+<br/>
+<br/>
+<br/>
+<br/>
+# javascript
+## JavaScript_part1
+- 브라우저 & JS의 역사
+
+- 소개
+
 - 기초
-- 웹 크롤러 만들기
+
+- 변수의 선언
+
+- 타입
+
+<br/>
+<br/>
+## JavaScript_part10
+- 이벤트
+
+<br/>
+<br/>
+## JavaScript_part11
+- 비동기식 처리 모델과 ajax
+
+- 프로미스
+
+<br/>
+<br/>
+## JavaScript_part12
+- async&await
+
+- 예외처리
+
+- 클래스
+
+- 모듈
+
+<br/>
+<br/>
+## JavaScript_part13
+- strict mode
+
+- ECAMAScript6
+
+<br/>
+<br/>
+## JavaScript_part14
+- ECMAScript
+
+- Device Orientation
+
+- REST API
+
+- SPA
+
+<br/>
+<br/>
+## JavaScript_part2
+- 연산자
+
+- 제어문
+
+- 자료구조
+
+<br/>
+<br/>
+## JavaScript_part3
+- 함수
+
+- 프로토타입
+
+<br/>
+<br/>
+## JavaScript_part4
+- this
+
+- 스코프
+
+<br/>
+<br/>
+## JavaScript_part5
+- 실행 컨텍스트와 JavaScript 동작 원리
+
+- 클로저
+
+<br/>
+<br/>
+## JavaScript_part6
+- JavaScript 객체 지향 프로그래밍
+
+-  빌트인 객체
+
+- 전역 객체
+
+<br/>
+<br/>
+## JavaScript_part7
+- 각종 객체
+
+<br/>
+<br/>
+## JavaScript_part8
+- 정규표현식
+
+- 배열
+
+<br/>
+<br/>
+## JavaScript_part9
+- DOM
+
+<br/>
+<br/>
+<br/>
+<br/>
+# kafka
+## kafka_part1
+- Kafka란
+
+- 참고
+
+<br/>
+<br/>
+## kafka_part2
+- Kafka 상세 개념
+
+<br/>
+<br/>
+## kafka_part3
+- 카프카 시작해보기
+
+- 카프카 확장
+
+<br/>
+<br/>
+## kafka_part4
+- Kafka를 사용한 application의 error handling
+
+- tips
+
+<br/>
+<br/>
+<br/>
+<br/>
+# kotlin
+## kotlin_part1
+- Kotlin 개요
+
+- Data type
+
+- 연산자
+
+- if expression
+
+- when expression
+
+- 반복문
+
+- MutableList
+
+<br/>
+<br/>
+## kotlin_part2
+- 함수
+
+- 객체
+
+- Class
+
+-  Error
+
+- packages
+
+<br/>
+<br/>
+<br/>
+<br/>
+# linux
+## linux_command
+- 리눅스 기본 명령어
+
+<br/>
+<br/>
+## linux_part1
+- 리눅스 개요
+
+- 가상머신 준비하기
+
+- 리눅스 기본 개념
+
+<br/>
+<br/>
+## linux_part2
+- 네트워크 관련 설정과 명령어
+
+- Shell
+
+- 사양
+
+- 페이지 캐시와 버퍼 캐시
+
+- -dev 패키지
+
+<br/>
+<br/>
+## linux_part3
+- systemd
+
+- umask
+
+- Shorts
+
+- etc
+
+<br/>
+<br/>
+<br/>
+<br/>
+# machine_learning
+## machine_learning_part1
+- 인공지능과 머신러닝, 딥러닝
+
+- k-최근접 이웃(k-Nearest Neighbor, kNN)
+
+<br/>
+<br/>
+<br/>
+<br/>
+# NLP
+## NLP_part1
+- 텍스트 전처리
+
+<br/>
+<br/>
+## NLP_part2
+<br/>
+<br/>
+<br/>
+<br/>
+# node
+## nodejs_part1
+- Node.js란
+
+- 작업 환경 준비
+
+- Koa 기본 사용법
+
+- Node.js에서 ES 모듈 import/export 문법 사용하기
+
+<br/>
+<br/>
+## nodejs_part2
+- MongoDB와 연동
+
+- 데이터베이스 스키마와 모델
+
+- 데이터 CRUD
+
+- 요청 검증하기
+
+- 페이지네이션 구현
+
+<br/>
+<br/>
+<br/>
+<br/>
+# OOP
+## OOP
+- 프로그래밍 패러다임
+
+- Object Oriented Programming
+
+- 참조
+
+<br/>
+<br/>
+<br/>
+<br/>
+# python
+## install_python
+- 오프라인 환경에서 linux에 Python 설치하기
+
+- Docker로 설치하기
+
+<br/>
+<br/>
+## packages_part1
+- argparse
+
+- click
+
+- Python gRPC
+
+- Pydantic
+
+- pyinstaller
+
+- 문장 분리
+
+- Streamlit
+
+<br/>
+<br/>
+## packages_part2
+- locust
+
+- .reset_index()
+
+- Matplotlib
+
+- APScheduler
+
+- Linter & formmater
+
+<br/>
+<br/>
+## packages_part3
+- Shorts
+
+<br/>
+<br/>
+## PEP8
+- google 스타일 가이드 추가할것
+
+- 소개
+
+- 코드 레이아웃
+
+- 공백
+
+- 주석
+
+- 명명 규칙
+
+- SQL Formatting
+
+<br/>
+<br/>
+## python_part1
+- 기초
+
+- 변수 및 자료형
+
+- Python의 동작 방식
+
+- EAFP와 LBYL
+
+- Easter Egg
+
+<br/>
+<br/>
+## python_part10
+- Logging
+
+- Interface
+
+- Python Bytecode
+
+<br/>
+<br/>
+## python_part2
+- Immutable 
+
+<br/>
+<br/>
+## python_part3
+- 연산자
+
+- 제어문
+
+- 함수
+
+- 입출력
+
+- 모듈
+
+- 패키지
+
+- import
+
+<br/>
+<br/>
+## python_part4
+- 클래스
+
+- 참고
+
+<br/>
+<br/>
+## python_part5
+- Python 내장 함수
+
+- 패키지
+
+- excel
+
+- Python type hint
+
+- with
+
+<br/>
+<br/>
+## python_part6
+- Context Manager
+
+- Namespace
+
+- 클로저
+
+- 데코레이터
+
+- 가상환경
+
+- 동시성, 병렬성 프로그래밍
+
+<br/>
+<br/>
+## python_part7
+- 이터레이터와 제너레이터
+
+- 코루틴
+
+- async / await
+
+- 예외처리
+
+<br/>
+<br/>
+## python_part8
+- Testing
+
+<br/>
+<br/>
+## python_part9
+- Python의 memory 관리 방식
+
+- Python의 Garbage Collection
+
+- Python은 왜 느린가?
+
+- GIL
+
+- Multi processing
+
+<br/>
+<br/>
+<br/>
+<br/>
+# React
+## React_part1
+- React란
+
+- 작업 환경 설정
+
+- 프로젝트 생성하기
+
+- JSX
+
+<br/>
+<br/>
+## React_part10
+- 리덕스 미들웨어를 통한 비동기 작업 관리
+
+<br/>
+<br/>
+## React_part11
+- 코드 스플리팅
+
+- 서버 사이드 렌더링 Part 1
+
+<br/>
+<br/>
+## React_part12
+- 서버 사이드 렌더링 Part 2
+
+<br/>
+<br/>
+## React_part2
+- 컴포넌트
+
+<br/>
+<br/>
+## React_part3
+- 이벤트 핸들링
+
+- ref
+
+<br/>
+<br/>
+## React_part4
+- 컴포넌트의 라이프사이클
+
+- Hooks
+
+<br/>
+<br/>
+## React_part5
+- 컴포넌트 내부의 반복
+
+- 컴포넌트 스타일링
+
+<br/>
+<br/>
+## React_part6
+- 컴포넌트 성능 최적화
+
+- immer
+
+<br/>
+<br/>
+## React_part7
+- react-router로 SPA 개발하기
+
+- React에서 axios 사용
+
+<br/>
+<br/>
+## React_part8
+- Context API
+
+- Redux 이해하기
+
+<br/>
+<br/>
+## React_part9
+- Redux 활용하기
+
+<br/>
+<br/>
+## React_tutorial
+- 목차
+
+- React란
+
+- JSX 소개
+
+- 엘리먼트 렌더링
+
+- Components와 Props
+
+- State와 Lifecycle
+
+<br/>
+<br/>
+<br/>
+<br/>
+# README
+<br/>
+<br/>
+# spring
+## spring_boot_part1
+- 스프링 부트
+
+- 스프링 부트 기초
+
+- 스프링 웹 개발 기초
+
+- 회원 관리 예제
+
+- 데이터 베이스
+
+- AOP
+
+<br/>
+<br/>
+## spring_boot_tip
+- Lombok
+
+- JPA
+
+- 기타
+
+<br/>
+<br/>
+## spring_part1
+- 목차
+
+- 스프링 기초 개념
+
+<br/>
+<br/>
+## spring_part2
+- 목차
+
+- 순수 자바로만 개발하기
+
+- IoC와 DI와 컨테이너
+
+- 스프링으로 개발하기
+
+- 스프링 컨테이너와 스프링 빈
+
+<br/>
+<br/>
+## spring_part3
+- 목차
+
+- 싱글톤 컨테이너
+
+- 컴포넌트 스캔
+
+<br/>
+<br/>
+## spring_part4
+- 목차
+
+- 의존 관계 자동 주입
+
+- 빈 생명주기 콜백
+
+- 빈 스코프
+
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+# Vue
+## Vuex
+- 목차
+
+- Vuex 기초
+
+- Vuex로 사용자 인증 구현
+
+- Vuex로 게시글 생성 및 조회 구현
+
+<br/>
+<br/>
+## Vue_js
+- 목차
+
+- Vue
+
+- Vue 라이프 사이클
+
+- Vue 프로젝트
+
+<br/>
+<br/>
+## Vue_js심화
+- 목차
+
+- Vue router
+
+- Youtube를 활용하여 페이지 만들기
+
+- 서버와 연결
+
+- 믹스 인
+
+- 이벤트 버스
+
+- 기타 팁
+
+<br/>
+<br/>
+## Vue_배포
+- 배포
+
+<br/>
+<br/>
+<br/>
+<br/>
+# web
+## babel_and_webpack
+- Babel
+
+- Webpack
+
+<br/>
+<br/>
+## CSS
+- CSS
+
+<br/>
+<br/>
+## Emailjs
+- EmailJs를 활용하여 메일 보내기
+
+<br/>
+<br/>
+## HCJ
+- HTML이란
+
+- HTML 기본 구조
+
+- HTML 문서 구조화(상)
+
+- HTML 문서 구조화(하)
+
+- CSS 문서 표현(상)
+
+- CSS 문서 표현(하)
+
+- 레이아웃과 고급 CSS 기능
+
+- CSS 기타
+
+- 자바스크립트 기초
+
+- 자바스크립트 문법
+
+- 내장객체
+
+- 배열과 함수
+
+- 문서객체모델(DOM)
+
+- 이벤트 
+
+- 함수의 고급 기능
+
+- 객체의 이해와 생성
+
+- 상속
+
+- 자바스크립트 library
+
+<br/>
+<br/>
+## HTML
+- HTML이란
+
+- HTML 기본 구조
+
+<br/>
+<br/>
+## IndexedDB
+- IndexedDB 개요
+
+- 사용해보기
+
+<br/>
+<br/>
+<br/>
+<br/>
