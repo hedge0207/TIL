@@ -319,3 +319,258 @@
 
   - 위와 마찬가지로 완성된 diagram을 `File` - `Save Model`을 통해 저장이 가능하다.
 
+
+
+# SQL
+
+- SQL의 분류
+  - DML(Data Manipulation Language, 데이터 조작어)
+    - 데이터를 선택, 삽입, 수정, 삭제 하는 데 사용되는 언어다.
+    - 사용 대상은 table의 row이므로, DML을 사용하기 위해서는 꼭 table이 정의되어 있어야한다.
+    - `SELECT`, `INSERT`, `UPDATE`, `DELETE`가 이에 해당한다.
+    - 그 밖애 transaction이 발생하는 SQL도 DML에 속한다.
+  - DDL(Data Definition Language, 데이터 정의어)
+    - DB, table, view, index 등의 개체를 생성/삭제/변경하기 위해 사용하는 언어다.
+    - `CREATE`, `DROP`, `ALTER`등이 이에 속한다.
+    - `DML`과 달리 transcation이 발생하지는 않는다.
+  - DCL(Data Control Language, 데이터 제어어)
+    - 사용자에게 권한을 부여하거나 회수할 때 사용하는 구문이다.
+    - `GRANT`, `REVOKE`, `DENY` 등이 이에 해당한다.
+
+
+
+- `USE`
+
+  - 사용할 DB를 지정하는 SQL 문이다.
+
+  ```sql
+  USE <database>;
+  ```
+
+  - 한 번 실행되고 나면 다시 다른 DB를 대상으로 `USE`를 사용하거나 다른 DB를 사용하겠다고 명시하지 않는 이상 위에서 설정한 DB에서 실행된다.
+
+
+
+- `SHOW`
+
+  - 현재 DB에 있는 모든 table들의 이름을 조회한다.
+
+  ```sql
+  SHOW TABLES;
+  ```
+
+  - 아래와 같이 입력하면 보다 상세한 정보를 볼 수 있다.
+
+  ```sql
+  SHOW TABLE STATUS;
+  ```
+
+
+
+- `SELECT`와 `FROM`
+
+  - `SELECT`뒤에는 조회할 column들을, FROM 뒤에는 조회할 table을 입력한다.
+    - Column에 `*`를 입력하면 모든 column들을 다 조회한다.
+
+  ```sql
+  SELECT <columns> FROM <table>;
+  ```
+
+  - 만일 `USE`로 선택한 DB가 아닌 다른 DB를 조회하고자 한다면 아래와 같이 DB 명을 명시할 수 있다.
+
+  ```sql
+  SELECT <columns> FROM <database>.<table>;
+  ```
+
+  - `AS`
+    - `AS` keyword를 사용하여 column의 별칭을 설정할 수 있다.
+    - 별칭 중간에 공백이 있다면 따옴표로 감싸줘야한다.
+    - `AS`는 생략할 수 있다.
+
+  ```sql
+  SELECT first_name '이름', last_name AS '성', hire_date '회사 입사일';
+  ```
+
+
+
+
+- 조건 설정하기
+
+  - `WHERE`
+    - 특정한 조건을 설정하여 조건에 맞는 data만 조회할 때 사용한다.
+
+  ```sql
+  SELECT <columns> FROM <table> WHERE <조건식>;
+  ```
+
+  - 조건 연산자
+    - `=`, `!=`, `<`, `>`, `<=`, `>=`, `<>`
+  - 관계 연산자
+    - `AND`, `OR`, `NOT`
+  - `BETWEEN AND`
+    - 조건 연산자 `<=`와 `>=`를 동시에 사용하는 것과 동일하다.
+    - 예를 들어 아래 두 query는 같은 data를 조회한다.
+    - 숫자와 같이 연속적인(continuous) 값을 가지는 값에만 사용할 수 있다.
+
+  ```sql
+  SELECT <columns> FROM <table> WHERE age >= 30 AND age <= 50;
+  
+  SELECT <columns> FROM <table> WHERE age BETWEEN 30 AND 50; 
+  ```
+
+  - `IN`
+    - `BETWEEN AND`가 연속적인값이 아닌 이산적인(discrete)값을 조회하기 위해 사용한다.
+
+  ```sql
+  SELECT <columns> FROM <table> WHERE address in ('서울', '대전', '대구');
+  ```
+
+  - `LIKE`
+    - 문자열의 내용을 조건으로 검색하기 위해 사용한다.
+    - `%`, `_`를 조회에 사용할 수 있으며 `%`는 글자 수와 상관 없이 아무 문자나 올 수 있음을 뜻하고, `_`는 아무 문자나 딱 한 글자만 올 수 있다는 것을 뜻한다.
+    - 단, `%`, `_`를 맨 앞에 사용하는 것은 성능에 악영향을 미칠 수 있으므로 주의해야한다.
+
+  ```sql
+  -- 김으로 시작하는 모든 사람을 조회한다.
+  SELECT <columns> FROM <table> WHERE name like '김%';
+  ```
+
+
+
+- 서브 쿼리
+
+  - Query문 안에 또 query문이 있는 것을 말한다.
+    - 예를 들어 아래 query는 `id`값이 1인 사람의 `age`보다 큰 `age` 값을 가지는 data들을 조회하는 query이다.
+    - 주의할 점은 서브 쿼리를 조건절에 사용하기 위해서는 서브 쿼리의 결과는 반드시 하나의 row만 반환해야한다는 점이다.
+    - 둘 이상의 row를 반환할 경우 `Subquery returns more than 1 row`라는 error가 발생한다.
+
+  ```sql
+  SELECT <columns> FROM <table> WHERE age > (SELECT age FROM <table> WHERE id='1');
+  ```
+
+  - `ANY`(=SOME`)
+    - 서브 쿼리의 조건절은 반드시 하나의 row만 반환해야 한다.
+    - 그러나 `ANY`를 사용할 경우 둘 이상의 row를 반환해도 되며, 반한된 row중 어느 것에든 일치하면 조회된다.
+
+  ```sql
+  SELECT <columns> FROM <table> WHERE age > ANY (SELECT age FROM <table> WHERE address='서울');
+  ```
+
+  - `ALL`
+    - 서브 쿼리에서 반환된 모든 결과를 만족해야 조회된다.
+
+  ```sql
+  SELECT <columns> FROM <table> WHERE age > ALL (SELECT age FROM test WHERE address='서울');
+  ```
+
+
+
+- 조회 결과 조정
+
+  - `ORDER BY`
+    - 조회 결과가 출력되는 순서를 조정한다.
+    - `ASC`와 `DESC` 중 하나로 설정할 수 있다(기본값은 `ASC`).
+    - 여러 개로 정렬하는 것도 가능하다.
+    - `ORDER BY`로 설정한 column이 꼭 조회 결과에 포함될 필요는 없다.
+    - `WHERE`, `GROUP BY`, `HAVING`보다 뒤에 와야 한다.
+
+  ```sql
+  SELECT <columns> FROM <table> ORDER BY <column> [ASC|DECS] [, <column> [ASC|desc], ...];
+  ```
+
+  - `DISTINCT`
+    - 중복된 row를 제거하고 조회한다.
+    - `DISTINCT` 뒤에 오는 column을 기준으로 중복을 제거하고 조회한다.
+
+  ```sql
+  SELECT DISTINCT <columns> FROM <table>;
+  ```
+
+  - `LIMIT`
+    - 조회할 row의 개수를 설정한다.
+
+  ```sql
+  SELECT <columns> FROM <table> LIMIT <number>;
+  ```
+
+  - `OFFSET`
+    - 조회를 시작할 row를 설정한다.
+    - 반드시 `LIMIT` 뒤에 와야 한다.
+    - `LIMIT <offset_number>, <limit_number>`와 같이 작성하면 `LIMIT` 만으로 `OFFSET`을 설정할 수 있다.
+
+  ```sql
+  SELECT <columns> FROM <table> LIMIT <number> OFFSET <number>;
+  
+  -- 위 query와 아래 query는 동일하다.
+  SELECT <columns> FROM <table> LIMIT <offset_number>, <limit_number>;
+  ```
+
+
+
+- `GROUP BY`
+
+  - 조회한 row들을 그룹으로 묶어준다.
+    - `GROUP BY`의 대상이 되는 column은 반드시 조회 대상이어야 한다.
+
+  ```sql
+  SELECT <columns> FROM <table> GROUP BY <columns>
+  ```
+
+  - 집계 함수
+    - 주로 `GROUP BY`와 함께 쓰여 데이터를 그룹화 해주는 역할을 하지만, 꼭 `GROUP BY`와 함께 사용해야 하는 것은 아니다.
+    - `AS`를 사용하면 결과를 더욱 보기 편하게 만들 수 있다.
+
+  | 함수명   | 설명                                           |
+  | -------- | ---------------------------------------------- |
+  | SUM      | 합계를 구한다.                                 |
+  | AVG      | 평균을 구한다.                                 |
+  | MIN      | 최소값을 구한다.                               |
+  | MAX      | 최대값을 구한다.                               |
+  | COUNT    | 행의 개수를 센다(NULL은 제외하고 개수를 센다). |
+  | STDEV    | 표준편차를 구한다.                             |
+  | VAR_SAMP | 분산을 구한다.                                 |
+
+  ```sql
+  -- 예시
+  SELECT category, SUM(price) AS '합계' FROM product GROUP BY category;
+  
+  -- GROUP BY 없이 사용
+  SELECT MAX(price) FROM product;
+  ```
+
+
+
+- HAVING
+
+  - 집계 함수에 대해 조건을 제한한다.
+    - 반드시 `GROUP BY`절 다음에 와야 한다.
+
+  ```sql
+  -- 예시
+  SELECT category, SUM(price*amount) FROM product GROUP BY category HAVING SUM(price*amount) > 2000;
+  ```
+
+  - `ORDER BY`와 함께 사용하는 것도 가능하다.
+
+  ```sql
+  -- 예시
+  SELECT category, SUM(price*amount) FROM product GROUP BY category HAVING SUM(price*amount) > 2000 ORDER BY SUM(price*amount);
+  ```
+
+
+
+- `ROLL UP`
+
+  - 소계를 구할 때 사용하는 구문이다.
+    - `GROUP BY`절과 함께 사용한다.
+
+  ```sql
+  -- 예시
+  SELECT category, SUM(price*amount) FROM product GROUP BY category WITH ROLLUP;
+  ```
+
+  - 출력시 소계에 해당하지 않는 column은 NULL로 출력된다.
+    - 위 예시에서 소계에 해당하는 `SUM(price*amount)`를 제외한 `category` column의 data는 NULL로 출력된다.
+
+
+
