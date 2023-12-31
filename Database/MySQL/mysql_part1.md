@@ -339,6 +339,61 @@
 
 
 
+- Database 개체(Indentifier)의 이름 규칙
+  - Database 개체란 database, table, index, column, index, view, stored procedure 등
+  - 아래는 위와 같은 식별자를 정의할 때 따라야 할 규칙이다.
+    - `a~z`, `A~Z`, `$`, `_`를 사용할 수 있다(영문 대문서자 소문자 중 어떤 것으로 해도 소문자로 생성된다).
+    - 개체 이름은 최대 64자로 제한된다.
+    - 예약어는 사용할 수 없다.
+    - 원칙적으로 공백을 사용할 수 없지만, 백틱으로 묶으면 공백을 사용할 수 있다.
+    - 이름만으로 어떤 것인지 파악할 수 있는 것이 바람직하다.
+    - Linux에서 DB 명과 table 명은 모두 소문자로 사용해야 한다.
+  - MySQL은 기본적으로 테이블 이름, 열 이름 등을 모두 소문자로 처리한다.
+    - 대문자를 섞어서 만드는 이유는 가독성을 위해서이다.
+  - 테이블 이름에 띄어쓰기를 넣는 것이 가능하다.
+
+
+
+- 주석
+  - 한 줄 주석은 `--`를 사용하며 `--` 뒤에 공백이 한 칸 있어야 주석으로 인식한다.
+  - 여러 줄 주석은 `/**/`을 사용한다.
+
+
+
+- Database와 table 생성하기
+
+  - Schema 생성하기
+    - MySQL에서는 DB를 schema라고도 부른다.
+    - Schema명은 따옴표(`'`)가 아닌 backtick(\`)을 사용한다.
+
+  ```mysql
+  CREATE SCHEMA `new_schema`;
+  ```
+
+  - Table 생성하기
+    - Table명과 column 명 모두 backtick을 사용한다.
+
+  ```mysql
+  CREATE TABLE `shopdb`.`memberTBL` (
+    `memberID` CHAR(8) NOT NULL,
+    `memberName` CHAR(5) NOT NULL,
+    `memberAddress` CHAR(20) NULL,
+    PRIMARY KEY (`memberID`));
+  ```
+
+
+
+- `CREATE TABLE ... SELECT`
+
+  - 테이블을 복사할 때 주로 사용하는 구문이다.
+  - Primary key나 foreign key 등의 제약조건은 복사되지 않는다.
+
+  ```sql
+  CREATE TABLE <new_table> (SELECT <columns> FROM <orig_table>)
+  ```
+
+
+
 - `USE`
 
   - 사용할 DB를 지정하는 SQL 문이다.
