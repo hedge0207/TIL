@@ -436,6 +436,13 @@
 
 - 데이터베이스 모델링
 
+- SQL
+
+<br/>
+<br/>
+### tips
+- Workbench 사용 방법
+
 <br/>
 <br/>
 <br/>
@@ -523,12 +530,6 @@
 
 - 다양한 디자인 패턴들
 
-<br/>
-<br/>
-## patterns
-### java
-<br/>
-<br/>
 <br/>
 <br/>
 <br/>
