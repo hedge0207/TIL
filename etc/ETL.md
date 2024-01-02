@@ -89,6 +89,40 @@
 
 
 
+- Data lake에서 사용하는 storage의 종류
+  - Distributed File System/Object Store - Text File
+    - 가장 단순한 형태의 storage이다.
+    - 일반적으로 fault tolerance를 지원하며, cluster를 구성하는 node들로부터 data를 병렬적으로 읽고 쓰는 기능을 제공한다.
+    - Data를 text file로 표 형식이나 JSON과 같이 구조화된 형식으로 저장한다.
+    - HDFS/CSV, HDFS/JSON이 이에 속한다.
+  - Distributed File System/Object Store - Column-oriented
+    - 일반적인 text file은 특정 use case에서는 유용하지만, 그렇지 않을 때도 있다.
+    - Column이 있을 경우 data 수집과 집계가 더 용이해진다.
+    - HDFS/Parquet, HDFS/ORC가 이에 속한다.
+  - Distributed File System/Object Store - Row-oriented
+    - 어떤 경우에는 column-oriented store는 효율적이지 않을 수 있다.
+    - 예를 들어 streaming application이나 schema가 가변적일 경우 column-oriented store보다는 row-oriented store가 더 효율적이다.
+    - HDFS/Avro가 이에 속한다.
+  - REBMS - Column-oriented
+    - 위에서 본 column-oriented store와 유사하지만, SQL database 가 내장되어 있어 성능이 개선된다.
+    - Snowflake, Redshift, Vertica 등이 이에 속한다.
+  - RDBMS - Row oriented
+    - 일반적인 backend application에서 사용하는 관계형 database이다.
+    - 보통 규모의 data 분석에 적합하다.
+    - MySQL, Oracle, PostgreSQL 등이 이에 속한다.
+  - NoSQL
+    - Document라 불리는 data를 key-value 쌍으로 저장하는 data store이다.
+    - 일반적으로 대량의 data를 읽고 쓰기 위해 사용한다.
+    - MongoDB, Elasticsearch, Cassandra 등이 이에 속한다.
+  - In Memory
+    - 모든 data를 memory에 저장함으로써 storage I/O를 제거하여 매우 빠른 속도로 조회가 가능하게 하는 저장소이다.
+    - 다양한 caching mechanism이 있을 수 있다.
+    - MemSQL, MonetDB 등이 이에 속한다.
+  - Local File System
+    - Server가 사용하는 file system을 data storage로 사용하는 것이다.
+    - NAS등을 사용할 수는 있으나 분산 저장소 역할을 하는데는 제한이 있다.
+    - ext4, NTFS 등이 이에 속한다.
+
 
 
 # CDC
