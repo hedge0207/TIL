@@ -251,10 +251,6 @@
 
 
 
-
-
-
-
 ### Docker로 설치하기
 
 > 아래 내용은 모두 wurstmeister/kafka 이미지를 기준으로 한다.
@@ -336,6 +332,68 @@
 
 
 
+- Kafka Listener
+
+  > https://www.confluent.io/blog/kafka-client-cannot-connect-to-broker-on-aws-on-docker-etc/
+
+  - Client(producer와 consumer)가 시작될 때 특정 topic에 대한 leader partition이 어느 broker에 속했는지를 확인하기 위해 모든 broker에 대한 metadata를 요청한다.
+    - Metadata에는 leader partition을 가지고 있는 broker의 endpoint에 대한 정보가 포함되어 있어 client들은 이를 활용하여 leader partition을 가진 broker에 연결한다.
+    - 주의할 점은 metadata를 받아올 때 사용하는 broker의 접속 정보와 응답으로 받아와 message를 read/write하기 위해 사용하는 metadata에 담긴 broker의 접속 정보가 별개라는 점이다.
+  - 결국 client가 partition에서 message를 read/write하기 위해서는 아래 두 단계를 거쳐야 한다.
+    - Client 최초 실행시 broker에 연결하여 metadata를 받아오는 단계.
+    - 이전 단계에서 broker로부터 받아온 metadata를 가지고 broker에 연결하는 단계.
+  - 첫 단계에서 broker가 반환하는 metadata에는 `advertised.listeners`에서 설정한 값이 담겨있다.
+    - Broker에서 metadata를 받아올 때는 `listeners`에 설정된 listner로 요청을 보내야 한다.
+    - Topic에서 message를 read/write할 때는 `advertised.listeners`에 설정된 listner로 요청을 보내야 한다.
+  - Listner는 아래의 조합으로 구성된다.
+    - Host/IP
+    - Port
+    - Protocol
+
+
+
+- Listner 관련 설정들
+
+  - `listeners`(`KAFKA_LISTENERS `)
+    - 콤마로 구분된 listner들의 목록을 설정한다.
+    - Listner와 host/IP + port를 `:`를 통해 bind한다(e.g. `LISTNER_FOO://localhost:29092`).
+  - `advertised.listeners`(`KAFKA_ADVERTISED_LISTENERS `)
+    - 콤마로 구분된 listner들의 목록을 설정한다.
+    - Listner와 host/IP + port를 `:`를 통해 bind한다.
+    - 이 정보가 client 최초 실행시에 broker가 반환하는 metadata에 담기게 된다.
+  - `listener.security.protocol.map`(`KAFKA_LISTENER_SECURITY_PROTOCOL_MAP`)
+    - 각 listner에서 사용할 security protocol을 key-value 쌍으로 설정한다.
+    - Key가 listner가 되고, value가 security protocol이 된다.
+  - `inter.broker.listener.name`(`KAFKA_INTER_BROKER_LISTENER_NAME`)
+    - 같은 cluster에 속한 Kafka broker들 간의 통신에 사용되는 listner를 설정한다.
+
+  ```yaml
+  KAFKA_LISTENERS: LISTENER_FOO://kafka0:29092,LISTENER_BAR://localhost:9092
+  KAFKA_ADVERTISED_LISTENERS: LISTENER_FOO://kafka0:29092,LISTENER_BAR://localhost:9092
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_FOO:PLAINTEXT,LISTENER_BAR:PLAINTEXT
+  KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_FOO
+  ```
+
+
+
+- `advertised.listeners` 설정시 주의사항
+  - 상기했듯, client가 최초 실행 될 때 broker로 부터 metadata를 받아온다.
+    - 이 metadata에는 `advertised.listeners`가 담겨있으며, client는 이 주소를 통해 broker에 요청을 보낸다.
+  - 만약 client와 broker가 각기 다른 machine에서 실행중인 상황에서 `advertised.listeners` 값이 localhost로 설정되어 있다면, 문제가 생길 수 있다.
+    - A machine에서 실행중인 client가 B machine에서 실행 중인 broker에서 metadata를 요청한다.
+    - Broker는 `advertised.listeners` 값인 localhost를 반환한다.
+    - Client는 broker로 부터 받은 metadata를 읽어 localhost로 요청을 보낸다.
+    - 즉, broker는 B machine에서 실행중임에도 A machine으로 요청을 보내게 되고, A machine에는 Kafka가 실행중이 아니므로 요청은 실패하게 된다.
+  - 혹은 같은 client는 Docker container 밖에서, broker는 docker container로 실행된다면, 이 역시 문제가 될 수 있다.
+    - 예를 들어 IP가 11.22.33.44인 server에서 `KAFKA_ADVERTISED_LISTENERS`의 값을 `PLAINTEXT://my-kafka:29092`와 같이 설정하고, 29092 port를 pulbish하여 container를 실행했다고 가정해보자.
+    - 이 때 container 외부에 있는 client는 broker container가 속한 docker network에 접근할 수 없으므로 server의 IP를 사용하여 `11.22.33.44:29092`로 요청을 보낸다.
+    - 이 경우 bootstrap은 성공하여 broker로부터 metadata는 받아오며, metadata에는 `KAFKA_ADVERTISED_LISTENERS`에 설정한 `my-kafka:29092`가 담겨서 온다.
+    - `my-kafka:29092`의 host에 해당하는 `my-kafka`는 docker network 내에서만 사용 가능하므로, docker network에 속하지 않은 client는 해당 listner로 요청을 보낼 수 없게 된다.
+
+
+
+
+
 ### producer.properties
 
 - `max.request.size`
@@ -378,7 +436,7 @@
   ```bash
   $ kafka-topics.sh \
   > --create \
-  > --bootstrap-server 127.0.0.1:9092 \	# 카프카 호스트와 포트 지정
+  > --bootstrap-server 127.0.0.1:9092 \		# 카프카 호스트와 포트 지정
   > --partitions 3 \							# 파티션 개수 지정
   > --replication-factor 1 \					# 복제 파티션 개수 지정
   > --config retention.ms=172800000 \			# 추가적인 설정
@@ -522,7 +580,7 @@
   
   - Consumer group의  offset  초기화
   
-    - `--dry-run`: offset reset시에 예쌍 결과를 보여준다.
+    - `--dry-run`: offset reset시에 예상 결과를 보여준다.
     - `--execute`: offset을 초기화한다.
   
   
@@ -686,8 +744,8 @@
   from json import loads
   
   
-  consumer = KafkaConsumer('test',bootstrap_servers=['localhost:9092'],auto_offset_reset='earliest', \
-                          enable_auto_commit=True, group_id="my-group", value_deserializer=lambda x: loads(x.decode('utf-8')),\
+  consumer = KafkaConsumer('test', bootstrap_servers=['localhost:9092'], auto_offset_reset='earliest', 
+                          enable_auto_commit=True, group_id="my-group", value_deserializer=lambda x: loads(x.decode('utf-8')),
                           consumer_timeout_ms=1000)
   
   for message in consumer:
@@ -814,7 +872,7 @@
   from kafka import KafkaAdminClient
   from kafka.admin import NewPartitions
   
-  bootstrap_servers='127.0.0.1:9092',
+  bootstrap_servers='127.0.0.1:9092'
   topic = 'test'
   
   # {topic명:NewPartition 인스턴스} 형태의 딕셔너리를 생셩한다.
@@ -1540,7 +1598,75 @@
 
 
 
+## Kafka-UI
 
+> https://github.com/provectus/kafka-ui
+>
+> https://docs.kafka-ui.provectus.io/overview/readme
+
+- UI for Apache Kafka
+  - Kafka를 UI를 통해 관리할 수 있게 해주는 open source wev UI이다.
+
+
+
+- 설치 및 실행
+
+  - Docker image를 pull 받는다.
+
+  ```bash
+  $ docker pull provectuslabs/kafka-ui
+  ```
+
+  - Docker compose file을 작성한다.
+    - Kafka-ui를 통해 관리하고자 하는 kafka cluster를 configuration file이나 environment등을 사용하여 미리 설정할 수 있다.
+    - 아래의 경우 environment를 통해 설정했으나, 미리 설정하지 않더라도 kafka-ui를 먼저 실행하고 UI에서 설정하는 것도 가능하다.
+    - Bootstrap server를 설정할 때는 Kafka의 `advertised.listeners`에 설정한 값을 입력해야한다.
+
+  ```yaml
+  version: '3.2'
+  
+  
+  services:
+    my-zookeeper:
+      container_name: my-zookeeper
+      image: confluentinc/cp-zookeeper:latest
+      environment:
+        - ZOOKEEPER_CLIENT_PORT=2181
+      networks:
+        - kafka
+  
+    my-kafka:
+      image: confluentinc/cp-kafka:latest
+      container_name: my-kafka
+      environment:
+        - KAFKA_BROKER_ID=1
+        - KAFKA_ZOOKEEPER_CONNECT=my-zookeeper:2181
+        - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://my-kafka:29093
+        - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      ports:
+        - 9092:9092
+      depends_on:
+        - my-zookeeper
+      networks:
+        - kafka
+      restart: always
+    
+    my-kafka-ui:
+      container_name: my-kafka-ui
+      image: provectuslabs/kafka-ui:latest
+      ports:
+        - 8080:8080
+      environment:
+        DYNAMIC_CONFIG_ENABLED: true
+        KAFKA_CLUSTERS_0_NAME: test
+        KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: my-kafka:29093
+      networks:
+        - kafka
+  
+  networks:
+    kafka:
+      driver: bridge
+  ```
 
 
 
