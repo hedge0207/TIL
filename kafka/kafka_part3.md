@@ -335,7 +335,9 @@
 - Kafka Listener
 
   > https://www.confluent.io/blog/kafka-client-cannot-connect-to-broker-on-aws-on-docker-etc/
-
+  >
+  > https://www.confluent.io/blog/kafka-listeners-explained/?utm_source=github&utm_medium=rmoff&utm_campaign=ty.community.con.rmoff-listeners&utm_term=rmoff-devx
+  
   - Client(producer와 consumer)가 시작될 때 특정 topic에 대한 leader partition이 어느 broker에 속했는지를 확인하기 위해 모든 broker에 대한 metadata를 요청한다.
     - Metadata에는 leader partition을 가지고 있는 broker의 endpoint에 대한 정보가 포함되어 있어 client들은 이를 활용하여 leader partition을 가진 broker에 연결한다.
     - 주의할 점은 metadata를 받아올 때 사용하는 broker의 접속 정보와 응답으로 받아와 message를 read/write하기 위해 사용하는 metadata에 담긴 broker의 접속 정보가 별개라는 점이다.
@@ -343,8 +345,7 @@
     - Client 최초 실행시 broker에 연결하여 metadata를 받아오는 단계.
     - 이전 단계에서 broker로부터 받아온 metadata를 가지고 broker에 연결하는 단계.
   - 첫 단계에서 broker가 반환하는 metadata에는 `advertised.listeners`에서 설정한 값이 담겨있다.
-    - Broker에서 metadata를 받아올 때는 `listeners`에 설정된 listner로 요청을 보내야 한다.
-    - Topic에서 message를 read/write할 때는 `advertised.listeners`에 설정된 listner로 요청을 보내야 한다.
+    - Client가 topic에서 message를 read/write하기 위해서는 `advertised.listeners`에 설정된 listner로 요청을 보내야 한다.
   - Listner는 아래의 조합으로 구성된다.
     - Host/IP
     - Port
@@ -355,18 +356,23 @@
 - Listner 관련 설정들
 
   - `listeners`(`KAFKA_LISTENERS `)
+    - Broker 내부에서 사용할 주소를 설정한다.
     - 콤마로 구분된 listner들의 목록을 설정한다.
     - Listner와 host/IP + port를 `:`를 통해 bind한다(e.g. `LISTNER_FOO://localhost:29092`).
+    
   - `advertised.listeners`(`KAFKA_ADVERTISED_LISTENERS `)
+    - Broker 외부로 노출할 주소를 설정한다.
     - 콤마로 구분된 listner들의 목록을 설정한다.
     - Listner와 host/IP + port를 `:`를 통해 bind한다.
     - 이 정보가 client 최초 실행시에 broker가 반환하는 metadata에 담기게 된다.
+    - 설정하지 않을 경우 `listeners`에 설정한 값이 기본으로 설정된다.
+  
   - `listener.security.protocol.map`(`KAFKA_LISTENER_SECURITY_PROTOCOL_MAP`)
     - 각 listner에서 사용할 security protocol을 key-value 쌍으로 설정한다.
     - Key가 listner가 되고, value가 security protocol이 된다.
   - `inter.broker.listener.name`(`KAFKA_INTER_BROKER_LISTENER_NAME`)
     - 같은 cluster에 속한 Kafka broker들 간의 통신에 사용되는 listner를 설정한다.
-
+  
   ```yaml
   KAFKA_LISTENERS: LISTENER_FOO://kafka0:29092,LISTENER_BAR://localhost:9092
   KAFKA_ADVERTISED_LISTENERS: LISTENER_FOO://kafka0:29092,LISTENER_BAR://localhost:9092
@@ -434,7 +440,7 @@
     - `--replication-factor`는 복제 파티션의 개수를 지정하는 것인데 1이면 복제 파티션을 사용하지 않는다는 의미이다.
   
   ```bash
-  $ kafka-topics.sh \
+  $ kafka-topics \
   > --create \
   > --bootstrap-server 127.0.0.1:9092 \		# 카프카 호스트와 포트 지정
   > --partitions 3 \							# 파티션 개수 지정
@@ -448,7 +454,7 @@
     - `--exclude-internal` 옵션을 추가하면 내부 관리를 위한 인터널 토픽을 제외하고 보여준다.
   
   ```bash
-  $ kafka-topics.sh --list --bootstrap-server 127.0.0.1:9092
+  $ kafka-topics --list --bootstrap-server 127.0.0.1:9092
   ```
   
   - 특정 토픽 상세 조회
@@ -456,7 +462,7 @@
     - `Partition`은 파티션 번호, `Leader`는 해당 파티션의 리더 파티션이 위치한 브로커의 번호, `Replicas`는 해당 파티션의 복제 파티션이 위치한 브로커의 번호를 의미한다.
   
   ```bash
-  $ kafka-topics.sh --describe --bootstrap-server 127.0.0.1:9092 --topic hello.kafka
+  $ kafka-topics --describe --bootstrap-server 127.0.0.1:9092 --topic hello.kafka
   
   Topic: hello-kafka      PartitionCount: 3       ReplicationFactor: 1    Configs: segment.bytes=1073741824,retention.ms=172800000
   Topic: hello-kafka      Partition: 0    Leader: 1001    Replicas: 1001  Isr: 1001
@@ -471,10 +477,10 @@
   
   ```bash
   # 파티션 개수 변경
-  $ kafka-topics.sh --alter --bootstrap-server 127.0.0.1:9092 --topic hello.kafka --partitions 4
+  $ kafka-topics --alter --bootstrap-server 127.0.0.1:9092 --topic hello.kafka --partitions 4
   
   # 리텐션 기간 수정
-  $ kafka-configs.sh --alter --add-config retention.ms=86400000 \
+  $ kafka-configs --alter --add-config retention.ms=86400000 \
   --bootstrap-server 127.0.0.1:9092 \
   --entity-type topics \
   --entity-name hello.kafka
@@ -483,7 +489,7 @@
   - 토픽 삭제
   
   ```bash
-  $ kafka-topics.sh --delete --bootstrap-server 127.0.0.1:9092 --topic <삭제할 topic 이름>
+  $ kafka-topics --delete --bootstrap-server 127.0.0.1:9092 --topic <삭제할 topic 이름>
   ```
   
 
@@ -498,7 +504,7 @@
     - 메시지 입력 후 엔터를 누르면 별 다른 메시지 없이 전송된다.
 
   ```bash
-  $ kafka-console-producer.sh --bootstrap-server 127.0.0.1:9092 --topic hello.kafka
+  $ kafka-console-producer --bootstrap-server 127.0.0.1:9092 --topic hello.kafka
   >hello
   >world
   >1
@@ -510,7 +516,7 @@
     - `key.separator`를 설정하지 않을 경우 기본 값은 `\t`dlek.
 
   ```bash
-  kafka-console-producer.sh --bootstrap-server 127.0.0.1:9092 \
+  $ kafka-console-producer --bootstrap-server 127.0.0.1:9092 \
   > --topic hello.kafka \
   > --property "parse.key=true" \	# 키를 보낸다는 것을 알려주고
   > --property "key.separator=:"	# 키워 값의 구분자를 :로 설정
@@ -526,7 +532,7 @@
     - `--from-beginning` 옵션은 토픽에 저장된 가장 처음 데이터부터 출력한다.
 
   ```bash
-  $ kafka-console-consumer.sh --bootstrap-server 127.0.0.1:9092 --topic kafka.test --from-beginning
+  $ kafka-console-consumer --bootstrap-server 127.0.0.1:9092 --topic kafka.test --from-beginning
   ```
 
   - 메시지 키와 값을 함께 확인
@@ -534,7 +540,7 @@
     - `--group` 옵션을 통해 새로운 컨슈머 그룹을 생성하였는데, 이 컨슈머 그룹을 통해 토픽에서 가져온 메시지에 대하 커밋을 진행한다.
 
   ```bash
-  kafka-console-consumer.sh --bootstrap-server 127.0.0.1:9092 \
+  $ kafka-console-consumer --bootstrap-server 127.0.0.1:9092 \
   --topic kafka.test \
   --property print.key=true \
   --property key.separator="-" \
@@ -551,14 +557,14 @@
     - `--list` 명령으로 실행한다.
 
   ```bash
-  $ kafka-consumer-groups.sh --list --bootstrap-server 127.0.0.1:9092 
+  $ kafka-consumer-groups --list --bootstrap-server 127.0.0.1:9092 
   ```
 
   - 컨슈머 그룹 상세 정보 확인
     -  특정 컨슈머 그룹의 상세 정보를 확인하기 위해 쓰인다.
 
   ```bash
-  $ kafka-consumer-groups.sh --describe --bootstrap-server 127.0.0.1:9092 --group test-group
+  $ kafka-consumer-groups --describe --bootstrap-server 127.0.0.1:9092 --group test-group
   ```
 
   - 응답
@@ -586,10 +592,10 @@
   
   ```bash
   # 예상 결과 출력
-  $ kafka-consumer-groups.sh --bootstrap-server <host:port> --group <group> --topic <topic> --reset-offsets --to-earliest --dry-run
+  $ kafka-consumer-groups --bootstrap-server <host:port> --group <group> --topic <topic> --reset-offsets --to-earliest --dry-run
   
   # offset 초기화
-  $ kafka-consumer-groups.sh --bootstrap-server <host:port> --group <group> --topic <topic> --reset-offsets --to-earliest --execute
+  $ kafka-consumer-groups --bootstrap-server <host:port> --group <group> --topic <topic> --reset-offsets --to-earliest --execute
   ```
 
 
@@ -605,7 +611,7 @@
     - `--max-message`에서 지정해준 만큼 전송이 완료되면 통계값이 출력된다.
 
   ```bash
-  $ kafka-verifiable-producer.sh --bootstrap-server 127.0.0.1:9092 --max-message 10 --topic kafka.test
+  $ kafka-verifiable-producer --bootstrap-server 127.0.0.1:9092 --max-message 10 --topic kafka.test
   {"timestamp":1633505763219,"name":"startup_complete"}
   {"timestamp":1633505763571,"name":"producer_send_success","key":null,"value":"0","partition":0,"topic":"kafka.test","offset":4}
   {"timestamp":1633505763574,"name":"producer_send_success","key":null,"value":"1","partition":0,"topic":"kafka.test","offset":5}
@@ -617,7 +623,7 @@
   - 메시지 확인하기
 
   ```bash
-  $ kafka-verifiable-consumer.sh --bootstrap-server 127.0.0.1:9092  --topic kafka.test --group-id test-group
+  $ kafka-verifiable-consumer --bootstrap-server 127.0.0.1:9092  --topic kafka.test --group-id test-group
   ```
 
 
@@ -638,7 +644,7 @@
   - 삭제
 
   ```bash
-  $ kafka-delete-records.sh --bootstrap-server 127.0.0.1:9092 --offset-json-file delete-data.json
+  $ kafka-delete-records --bootstrap-server 127.0.0.1:9092 --offset-json-file delete-data.json
   ```
 
 
@@ -648,7 +654,7 @@
   - 결과는 `<topic>:<partition_num>:<message_num>` 형태로 출력된다.
 
   ```bash
-  $ kafka-run-class.sh kafka.tools.GetOffsetShell --broker-list <HOST1:PORT,HOST2:PORT> --topic <topic>
+  $ kafka-run-class kafka.tools.GetOffsetShell --broker-list <HOST1:PORT,HOST2:PORT> --topic <topic>
   ```
 
 
