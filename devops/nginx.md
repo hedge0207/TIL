@@ -242,6 +242,43 @@
 
 
 
+##  Nginx SSL 인증서 설정
+
+- SSL 인증서 설정
+
+  - SSL 인증서 설정에는 아래와 같은 파일들이 필요하다.
+    - 도메인 인증서
+    - 개인키 파일
+  - nginx.conf file에서 아래와 같이 추가해준다.
+
+  ```nginx
+  server {
+      listener 443;
+      server_name 도메인;
+      
+      ssl on;
+      ssl_certificate			/도메인/인증서/경로;
+      ssl_certificate_key 	/개인키/경로;
+  }
+  ```
+
+  - 설정 후 nginx service를 재기동 해야한다.
+    - nginx 설치 방식에 따라 재기동 명령어는 달라질 수 있다.
+
+  ```bash
+  $ systemctl restart nginx
+  ```
+
+  - 인증서를 교체해야 할 경우 인증서 file을 교체하고 nginx.conf을 변경한 뒤 nginx를 재실행하면 된다.
+
+
+
+
+
+
+
+
+
 # 참고
 
 - [나는 nginx 설정이 정말 싫다구요](https://juneyr.dev/nginx-basics)

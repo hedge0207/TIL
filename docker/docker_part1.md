@@ -861,7 +861,18 @@
   $ docker stats
   ```
 
-  
+
+
+
+- `docker rename`
+
+  - Container의 이름을 변경한다.
+
+  ```bash
+  $ docker rename <old_container_name> <new_container_name>
+  ```
+
+
 
 
 
@@ -1509,6 +1520,7 @@
 - export와 save의 차이
   -  export
     - 컨테이너를 작동시키는 데 필요한 파일을 모두 압축 아카이브로 모을 수 있다.
+    - Image의 layer는 포함되지 않는다.
     - 따라서 export를 통해 나온  tar 파일을 실행하면 컨테이너의 루트 파일 시스템을 그대로 추출할 수 있다.
   -  save
     - 이미지의 레이어 구조도 포함된 형태로 압축 아카이브로 모을 수 있다.
