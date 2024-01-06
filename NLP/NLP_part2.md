@@ -471,3 +471,133 @@
     - α의 값을 무작정 크게 한다고 $w$를 빠르게 찾을 수 있는 것이 아니다.
     - 오히려 α의 값이 지나치게 높을 경우 접선의 기울기가 0이 되는 $w$를 찾는 것이 아니라 $cost(w)$의 값이 발산하게 된다.
     - 반대로 α의 값이 지나치게 낮을 경우 학습 속도가 느려지므로 적당한 α 값을 찾는 것이 중요하다.
+
+
+
+- 자동 미분(Auto Differentiation)을 이용한 선형 회귀 구현
+
+  - 자동 미분
+    - Tensorflow를 통해 아래와 같이 자동 미분을 할 수 있다.
+    - 아래는 $3w^2 + 7$이라는 임의의 식을 세우고 $w$에 대해서 미분하는 code이다.
+
+  ```python
+  import tensorflow as tf
+  
+  w = tf.Variable(2.0)
+  
+  with tf.GradientTape() as tape:
+      z = 3*w**2 + 7
+  
+  gradients = tape.gradient(z, [w])
+  print(gradients)	# [<tf.Tensor: shape=(), dtype=float32, numpy=12.0>]
+  ```
+
+  - 자동 미분을 이용한 선형 회귀 구현
+
+  ```python
+  import tensorflow as tf
+  
+  
+  # 함수로 가설을 정의한다.
+  @tf.function
+  def hypothesis(x):
+      return w*x + b
+  
+  # 평균 제곱 오차를 손실 함수로 정의한다.
+  @tf.function
+  def cost_mse(y, y_pred):
+      # 오차인 y_pred-y의 값을 제곱해서 평균을 취한다.
+      return tf.reduce_mean(tf.square(y_pred-y))
+  
+  
+  # 가중치와 편향을 정의한다.
+  w = tf.Variable(0.8)
+  b = tf.Variable(0.5)
+  
+  # 독립 변수 값을 정의한다.
+  x_values = [1, 2, 3, 4]
+  
+  # 독립변수를 통해 예측 값을 구한다
+  print(hypothesis(x_values).numpy())
+  
+  # optimizer로는 경사 하강법을 사용하며, 학습률은 0.01로 설정한다.
+  optimizer = tf.optimizers.SGD(0.01)
+  
+  # 학습에 사용할 data를 정의한다.
+  x = [1,2,3,4,5,6,7,8,9]
+  y = [2,3,4,5,4,2,5,6,7]
+  
+  # 1000번에 걸쳐 경사 하강법을 수행한다.
+  # 반복적으로 수행될수록 cost의 값이 작아지는 것을 볼 수 있다.
+  for i in range(1, 1001):
+      with tf.GradientTape() as tape:
+  
+          # 평균 제곱 오차를 계산
+          # hypothesis(x)는 입력 x에 대한 예측값이다.
+          cost = cost_mse(y, hypothesis(x))
+  
+      # 손실 함수에 대한 파라미터의 미분값을 계산한다.
+      gradients = tape.gradient(cost, [w, b])
+  
+      # parameter를 조정한다.
+      optimizer.apply_gradients(zip(gradients, [w, b]))
+  
+      if i % 100 == 0:
+          print("epoch : {:3} | w의 값 : {:5.4f} | b의 값 : {:5.4} | cost : {:5.6f}".format(i, w.numpy(), b.numpy(), cost))
+  
+  # 학습 후에 조정된 w, b 값에 의해서 변경된 예측값을 확인
+  print(hypothesis(x_values).numpy())
+  ```
+
+  - Keras를 사용하여 선형 회귀 구현
+    - `keras`는 `Sequential`을 사용하여 model을 생성하고 `add()` method를 통해 학습에 필요한 정보들을 추가하는 방식으로 동작한다.
+
+  ```python
+  import numpy as np
+  from tensorflow.keras.models import Sequential
+  from tensorflow.keras.layers import Dense
+  from tensorflow.keras import optimizers
+  
+  
+  # 학습 data
+  x = [1,2,3,4,5,6,7,8,9]
+  y = [2,3,4,5,4,2,5,6,7]
+  
+  # model을 생성한다.
+  model = Sequential()
+  
+  # Dense의 첫 번째 인자로 들어간 1은 출력의 차원을 정의한다.
+  # input_dim은 입력의 차원을 정의한다.
+  # activation에는 어떤 함수를 사용할 것인지를 정의하며, 선형 회귀를 사용하므로 linear를 입력한다.
+  model.add(Dense(1, input_dim=1, activation='linear'))
+  
+  # optimizer를 정의한다.
+  # SGD는 경사 하강법을 의미한다.
+  # 학습률(learning rate, lr)은 0.01로 설정한다.
+  optimizer = optimizers.SGD(lr=0.01)
+  
+  # 손실 함수(Loss function)는 평균 제곱 오차를 사용한다.
+  model.compile(optimizer=optimizer, loss='mse', metrics=['mse'])
+  
+  # 주어진 x와 y데이터에 대해서 오차를 최소화하는 작업을 1000번 시도한다.
+  model.fit(x, y, epochs=1000)
+  ```
+
+  - 만약 최종적으로 선택된 오차를 최소화하는 직선 그래프를 시각화해야한다면 `matplotlib`을 사용하면 된다.
+
+  ```python
+  import matplotlib.pyplot as plt
+  
+  plt.plot(x, model.predict(x), 'b', x, y, 'k.')
+  ```
+
+  - 마지막으로 학습된 model로 임의의 x에 대한 $\hat{y}$값은 아래와 같이 구할 수 있다.
+
+  ```python
+  print(model.predict([10]))
+  ```
+
+
+
+
+
