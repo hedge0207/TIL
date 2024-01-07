@@ -248,6 +248,305 @@
 
 
 
+## CDC 실행해보기
+
+- 목표
+  - Source connector로 PostgreSQL의 특정 table의 변경 사항을 추적하여 추출한다.
+  - Sink connector로 Elasticsearch에 적재한다.
+
+
+
+- Connector 준비
+
+  - Source connector 준비
+
+    - Dbezium에서 제공하는 PostgreSQL CDC connector를 다운 받는다.
+
+    > https://www.confluent.io/hub/debezium/debezium-connector-postgresql
+
+    - 위에서 다운 받은 `debezium-debezium-connector-postgresql-<version>.zip` 파일의 압축을 푼 후에 테스트를 진행할 서버에 업로드한다.
+
+  - Sink connector 준비
+
+    - Confluent에서 제공하는 Elasticsearch Sink connector를 다운 받는다.
+
+    > https://www.confluent.io/hub/confluentinc/kafka-connect-elasticsearch
+
+    - 위에서 다운 받은 `confluentinc-kafka-connect-elasticsearch-<version>.zip` 파일의 압축을 푼 후에 테스트를 진행할 서버에 업로드한다.
+
+
+
+- Config file 작성하기
+
+  - PostgreSQL에서 사용할 config file 수정하기
+
+    > https://debezium.io/documentation/reference/stable/postgres-plugins.html
+
+    - `postgresql.conf` file에서 아래 property들만 수정해준다.
+
+  ```properties
+  wal_level = logical
+  # ...
+  shared_preload_libraries = 'pgoutput'
+  ```
+
+  - Kafka connector config file 수정하기
+    - `connect.standalone.properties` file에서 아래 property들만 수정해준다.
+    - 운영 환경에서는 `connect-distributed.properties` file을 사용하여 분산 실행하는 것이 권장된다.
+
+  ```properties
+  bootstrap.servers=localhost:29093
+  key.converter=org.apache.kafka.connect.json.JsonConverter
+  value.converter=org.apache.kafka.connect.json.JsonConverter
+  key.converter.schemas.enable=true
+  value.converter.schemas.enable=true
+  offset.storage.file.filename=/tmp/connect.offsets
+  offset.flush.interval.ms=10000
+  plugin.path=/usr/share/java
+  ```
+
+
+
+- Docker Container로 필요한 component들 실행하기
+
+  - docker-compose.yml
+    - Debezium connector를 사용하기 위해서는 PostgreSQL의 wal_level을 `logical`로 설정해야한다.
+    - 위에서 압축을 푼 `debezium-debezium-connector-postgresql-<version>`, `confluentinc-kafka-connect-elasticsearch-<version>` 폴더와 위에서 작성한 `postgresql.conf`, `connect.standalone.properties` file을 kafka container 내부에 bind-mount한다.
+    - `/usr/share/java` 경로에 넣는 이유는 Kafka Connect 설정 파일인 `connect-standalone.properties`에 `plugin.path`의 기본 값이 `/usr/share/java`이기 때문이다.
+    - `KAFKA_ADVERTISED_LISTENERS`의 port는 위의 `connect.standalone.properties`에서 `bootstrap.servers`에 입력한 port와 동일하게 설정한다.
+
+  ```yaml
+  version: '3.2'
+  
+  
+  services:
+    etl-postgres:
+      image: postgres:latest
+      container_name: etl-postgres
+      environment:
+        - TZ=Asia/Seoul
+        - POSTGRES_PASSWORD=1234
+      volumes:
+        - ./db-data:/var/lib/postgresql/data
+        - ./postgresql.conf:/var/lib/postgresql/data/postgresql.conf
+      ports:
+        - 5433:5432
+      command:
+        - "postgres"
+        - "-c"
+        - "wal_level=logical"
+      networks:
+        - etl
+    
+    etl-node:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+      container_name: etl-node
+      environment:
+        - cluster.name=etl
+        - node.name=etl-node
+        - discovery.type=single-node
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      ports:
+        - 9206:9200
+      networks:
+        - etl
+    
+    etl-zookeeper:
+      container_name: etl-zookeeper
+      image: confluentinc/cp-zookeeper:latest
+      environment:
+        - ZOOKEEPER_CLIENT_PORT=2181
+      networks:
+        - etl
+  
+    etl-kafka:
+      image: confluentinc/cp-kafka:latest
+      container_name: etl-kafka
+      environment:
+        - KAFKA_ZOOKEEPER_CONNECT=theo-etl-zookeeper:2181
+        - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:29093
+        - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      volumes:
+        - ./debezium-debezium-connector-postgresql-2.2.1:/usr/share/java/debezium-debezium-connector-postgresql-2.2.1
+        - ./confluentinc-kafka-connect-elasticsearch-14.0.12:/usr/share/java/confluentinc-kafka-connect-elasticsearch-14.0.12
+        - ./connect-standalone.properties:/etc/kafka/connect-standalone.properties
+      ports:
+        - 9093:9092
+      depends_on:
+        - etl-zookeeper
+      networks:
+        - etl
+  
+  networks:
+    etl:
+      driver: bridge
+  ```
+
+  - 아래 명령어로 container를 실행한다.
+
+  ```bash
+  $ docker compose up -d
+  ```
+
+
+
+- Connector를 실행한다.
+
+  - Kafka container에 attach한다.
+
+  ```bash
+  $ docker exec -it etl-kafka /bin/bash
+  ```
+
+  - Kafka Connect를 실행한다.
+
+  ```bash
+  $ /bin/connect-standalone /etc/kafka/connect-standalone.properties
+  ```
+
+  - 정상적으로 실행됐는지 확인한다.
+
+  ```bash
+  $ curl localhost:8083/connector-plugins
+  ```
+
+  - 결과
+
+  ```json
+  [
+          {
+                  "class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+                  "type": "sink",
+                  "version": "14.0.12"
+          },
+          {
+                  "class": "io.debezium.connector.postgresql.PostgresConnector",
+                  "type": "source",
+                  "version": "2.2.1.Final"
+          },
+          // ...
+  ]
+  ```
+
+
+
+- PostgreSQL에 table을 생성하고 data를 삽입한다.
+
+  - Table 생성
+
+  ```sql
+  CREATE TABLE product (
+    id INT NOT NULL,
+    name VARCHAR(30) NOT NULL,
+    updated_time TIMESTAMP NOT NULL,
+    PRIMARY KEY (id)
+  );
+  ```
+
+  - Data 삽입
+
+  ```sql
+  INSERT INTO product VALUES (0, 'iPad');
+  INSERT INTO product VALUES (1, 'iPhone');
+  ```
+
+
+
+- Source Connector 생성
+
+  - REST API를 통해 source connector를 생성한다.
+
+    - `plugin.name`에는 `postgresql.conf` file의 `shared_preload_libraries` property에 설정해준 값을 넣는다.
+    - 전체 설정은 아래 참고
+
+    > https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-connector-properties
+
+  ```bash
+  $ curl -XPOST 'localhost:8083/connectors' \
+  --header 'Content-type: application/json' \
+  --data-raw '{
+    "name": "foo-connector",  
+    "config": {
+      "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+      "database.hostname": "etl-postgres", 
+      "database.port": "5432", 
+      "database.user": "postgres", 
+      "database.password": "1234", 
+      "database.dbname" : "postgres", 
+      "topic.prefix": "foo", 
+      "table.include.list": "public.product",
+      "plugin.name": "pgoutput"
+    }
+  }'
+  ```
+
+  - 정상적으로 생성 되었는지 확인
+
+  ```bash
+  $ curl localhost:8083/connectors
+  
+  # out
+  ["foo-connector"]
+  ```
+
+  - Kafka topic이 생성 되었는지 확인
+
+  ```bash
+  $ /bin/kafka-topics --list --bootstrap-server localhost:29093
+  
+  # out
+  foo.public.product
+  ```
+
+  - `foo.public.product` topic에 저장된 data 확인
+
+  ```bash
+  $ /bin/kafka-console-consumer --bootstrap-server localhost:29093 --topic foo.public.product --from-beginning
+  ```
+
+
+
+- Sink connector 생성
+
+  - REST API를 통해 sink connector를 생성한다.
+
+  ```bash
+  $ curl -XPOST 'localhost:8083/connectors' \
+  --header 'Content-type: application/json' \
+  --data-raw '{
+    "name": "bar-connector",  
+    "config": {
+      "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+      "connection.url": "http://etl-node:9200",
+      "topics":"foo.public.product",
+      "key.ignore":"true"
+    }
+  }'
+  ```
+
+  - Index 확인
+
+  ```bash
+  $ curl localhost:9206/_cat/indices
+  ```
+
+  - Document 확인
+
+  ```bash
+  $ curl localhost:9206/foo.public.product/_search
+  ```
+
+
+
+
+
 # Airbyte
 
 - Airflow
