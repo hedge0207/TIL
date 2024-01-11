@@ -338,3 +338,93 @@
 
 
 
+
+
+# Camel Kafka Connector로 MinIO의 data를 Kafka로 전송하기
+
+- Camel Kafka Connector 실행하기
+
+  - 아래 site에서 package file을 받는다.
+
+    - MinIO connector도 있지만 MinIO는 AWS S3와 호환되므로 여기서는 AWS S3 source connector를 사용할 것이다.
+
+    > https://camel.apache.org/camel-kafka-connector/3.20.x/reference/index.html
+
+  - 준비된 packag file을 Kafka connect package가 모여 있는 곳으로 옮긴 후 압축을 푼다.
+
+    - `connect-distributed.properties` 혹은 `connect-standalone.properties` 중 사용하려는 property file의 `plugin.path`에 설정된 경로에 넣으면 된다.
+
+    ```bash
+    $ unzip camel-aws-s3-source-kafka-connector-<version>-package.tar.gz
+    $ tar -xvf camel-aws-s3-source-kafka-connector-<version>-package.tar
+    ```
+
+  - Kafka connect를 실행한다.
+
+    ```bash
+    $ /bin/connect-standalone /etc/kafka/connect-standalone.properties
+    ```
+
+  - 각 connector에 맞는 양식으로 connector 생성 요청을 보낸다.
+
+    - 예시는 [예시를 작성해둔 repository](https://github.com/apache/camel-kafka-connector-examples/tree/main)나 package의 압축을 풀었을 때 함께 풀린 `docs` directory에서 볼 수 있다.
+    - 혹은 [document](https://camel.apache.org/camel-kafka-connector/3.20.x/reference/connectors/camel-aws-s3-source-kafka-source-connector.html)에서도 확인할 수 있다.
+    - `camel.kamelet.aws-s3-source.overrideEndpoint`를 true로 주고, `camel.kamelet.aws-s3-source.uriEndpointOverride`에 MinIO의 URI를 입력한다.
+
+  ```bash
+  $ curl -XPOST 'localhost:8083/connectors' \
+  --header 'Content-type: application/json' \
+  --data-raw '{
+    "name": "s3-source-connector",
+    "config": {
+      "connector.class": "org.apache.camel.kafkaconnector.awss3source.CamelAwss3sourceSourceConnector",
+      "topics":"my-s3-topic",
+      "camel.kamelet.aws-s3-source.bucketNameOrArn":"test",
+      "camel.kamelet.aws-s3-source.deleteAfterRead":false,
+      "camel.kamelet.aws-s3-source.accessKey":"user",
+      "camel.kamelet.aws-s3-source.secretKey":"password",
+      "camel.kamelet.aws-s3-source.region":"foo",
+      "camel.kamelet.aws-s3-source.overrideEndpoint":true,
+      "camel.kamelet.aws-s3-source.uriEndpointOverride":"http://<host_machine_IP>:9000"
+    }
+  }'
+  ```
+
+  - Kafka Connect 실행시 `value.converter`를 `org.apache.kafka.connect.json.JsonConverter`로 설정했다면 message는 아래와 같이 생성된다.
+
+  ```json
+  // body
+  {
+  	"schema": {
+  		"type": "bytes",
+  		"optional": false
+  	},
+  	"payload": "cHJpbnqwdgElbGxvIQghyvcITQIp"
+  }
+  
+  // header
+  {
+  	"CamelHeader.CamelAwsS3VersionId": "<version_id>",
+  	"CamelHeader.CamelMessageTimestamp": "1704862344000",
+  	"CamelHeader.CamelAwsS3ContentType": "text/x-python",
+  	"CamelHeader.CamelAwsS3ContentLength": "21",
+  	"CamelHeader.aws.s3.key": "test.py",
+  	"CamelHeader.CamelAwsS3Key": "test.py",
+  	"CamelHeader.aws.s3.bucket.name": "test",
+  	"CamelHeader.CamelAwsS3BucketName": "test",
+  	"CamelHeader.CamelAwsS3ETag": "\"789gwg8w7g8g8e7g87879w87985400878\""
+  }
+  ```
+
+
+
+- 주의사항
+  - `camel.kamelet.aws-s3-source.region`
+    - MinIO를 대상으로 data를 가져오는 것이므로  설정하지 않아도 된다고 생각할 수 있지만, 해당 옵션은 required 값으로 반드시 설정해야 한다.
+    - 위 값처럼 아무 값이나 넣어주기만 하면 된다.
+  - Docker로 실행할 경우 `camel.kamelet.aws-s3-source.uriEndpointOverride`에 docker network 상의 host명이나 docker network 상의 IP를 입력할 경우 정상적으로 실행되지 않으므로 반드시 host machine의 IP를 입력해야한다.
+    - 당연히 MinIO Docker instance에서 port를 publish해야한다.
+  - 기본적인 동작 방식이 bucket에서 data를 가져온 후 **해당 data를 삭제**하는 방식이다. 
+    - 따라서 삭제를 원치 않을 경우 위와 같이 `camel.kamelet.aws-s3-source.deleteAfterRead` 옵션을 false로 줘야 한다.
+    - 다만 이 경우 다음에 data를 push할 때 모든 data를 push하게 된다.
+
