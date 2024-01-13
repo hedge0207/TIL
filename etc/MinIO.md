@@ -48,6 +48,101 @@
 
 
 
+
+
+
+
+## Core Operational Concepts
+
+- MinIO는 크게 세 가지 방식의 배포 방식이 있다.
+  - Single Node Single Driver
+    - 하나의 MinIO서버와 하나의 driver 혹은 folder로 구성된 형태.
+    - 예를 들어 local PC에서 computer의 hard driver에 있는 folder를 사용하는 경우가 이에 해당한다.
+  - Single Node Multi Drive
+    - 하나의 MinIO 서버와 여러 개의 driver 혹은 folder로 구성된 형태.
+    - 예를 들어 하나의 MinIO container에서 여러 개의 volume을 사용하는 경우가 이에 해당한다.
+  - Multi Node Nulti Drive
+    - 여러 개의 MinIO server와 여러 개의 driver 혹은 folder로 구성된 형태.
+
+
+
+- 분산된 MinIO가 동작하는 방식
+  - 대부분의 운영 환경에서 MinIO는 고가용성을 위해 여러 개의 server에 배포된다.
+    - MinIO는 고가용성과 내결함성을 위해 하나의 server pool에 최소한 4개의 MinIO node로 cluster를 구성하는 것을 권장한다.
+  - MinIO가 여러 개의 server를 관리하는 방식.
+    - Server pool은 `minio server` node들의 집합이다.
+    - MinIO는 이미 존재하는 MinIO deployments에 새로운 server를 추가하는 기능을 제공한다.
+    - 만약 하나의 server pool이 down될 경우, MinIO는 정상화될 때 까지 모든 pool에 대한 I/O 작업을 정지한다.
+  - MinIO가 여러개의 server pool들을 하나의 MinIO cluster로 연결하는 방식.
+    - Cluster는 하나 이상의 server pool들로 구성된 전체 MinIO deployment를 의미한다.
+    - Cluster에 속한 각각의 server pool들은 하나 이상의 erasure set을 가지고 있으며 erasure set의 개수는 pool 내의 driver와 node의 개수로 결정된다.
+  - MinIO가 분산된 object들을 관리하는 방식
+    - 새로운 object를 생성할 때 가장 가용 공간이 많은 server pool에 object를 생성하는 방식으로 storage를 최적화한다.
+    - MinIO는 비용상의 문제로 오래된 pool에서 새로운 pool로 object들을 rebalancing하는 작업을 실행하지는 않는다.
+    - 대신 새로운 object는 일반적으로 충분한 용량을 가진 새로운 pool에 저장된다.
+
+
+
+- MinIO가 availability, redundancy, reliability를 제공하는 방식.
+  - MinIO는 data redundancy와 reilability를 위해 Erasure Coding을 사용한다.
+    - Erasure Coding은 MinIO를 여러 drive에 걸쳐서 배포하여 drive 혹은 node가 손실되더라도 바로 object들을 자동으로 재구성 할 수 있게 해주는 기능이다.
+    - Erasure Coding은 RAID나 replication보다 훨씬 적은 overhead로 object 수준의 복구를 제공한다.
+  - MinIO는 고가용성과 resiliency를 위해 data를 여러 Erasure Set들로 분산한다.
+    - Erasure Set은 Erasure Coding을 지원하는 여러 drive들의 집합이다.
+    - MinIO는 object를 shard라 불리는 덩어리로 나눈 후 이드을 Erasure Set 내의 여러 drive로 분산시켜 저장한다.
+    - 가장 높은 수준의 redundancy 설정을 할 경우 MinIO를 구성하는 전체 drive들 중 절반이 동작하지 않아도, MinIO는 읽기 요청을 처리할 수 있다.
+    - Server Pool 내의 Erasure Set의 크기와 개수는 set 내의 전체 dive의 개수와 minio server의 개수를 기반으로 계산된다.
+  - 미사용 data를 보호하기 위한 Bit Rot Healing이 구현되어 있다.
+    - Bit rot은 모든 storage device에서 발생할 수 있는 data의 손상을 의미한다.
+    - Bit rot이 사용자의 부주의로 인해 발생하는 경우는 흔치 않으며, OS도 이를 탐지해 사용자에게 알려줄 수 있는 방법이 없다.
+    - 일반적으로 driver의 노후화, drive firmware의 bug, driver error, 잘못된 방향으로 읽고 쓰는 등으로 인해 발생한다.
+    - MinIO는 object의 무결성을 확인하기 위해 hashing algorithm을 사용한다.
+    - 만약 object가 bit rot에 의해 손상되었다면, MinIO는 system topology와 availability에 따라 object를 복구할 수 있다.
+  - MinIO는 Parity를 사용하여 object 수준의 data protection을 기록한다.
+    - 여러 drive를 가진 MinIO는 가용한 drive들을 data drive와 parity drive로 나눈다.
+    - MinIO는 object를 작성할 때 object의 내용에 관한 추가적인 hashing 정보를 parity drive에 저장한다.
+    - Parity drive에 저장된 이 정보를 가지고 object의 무결성을 확인하고, object가 손실 혹은 손상될 경우 object를 복구하는 데 사용한다.
+    - MinIO는 Erasure Set에서 가용한 parity device의 개수만큼의 drive가 손실되어도 object에 대한 모든 종류의 접근을 처리할 수 있다.
+
+
+
+- 분산 구조
+  - 운영 환경에서 MinIO는 최소 4개의 MinIO host로 구성하는 것이 바람직하다.
+  - MinIO는 분산된 MinIO resource들을 하나의 pool로 통합하고, 이를 하나의 object storage service로 제공한다.
+    - 각각의 pool은 각자의 Erasure Set을 가지고 있는 여러 개의 독립적인 node들의 그룹으로 구성된다.
+  - MinIO는 NVMe나 SSD 같이 host maachine의 PCI-E controller board에 부착된 drive들을 사용할 때 최고의 성능을 보여준다.
+    - MinIO는 drive나 controller 계층에서 caching을 권장하지 않는데, 이는 caching이 채워지고 비워질 때 I/O spike를 유발하여 예측할 수 없는 성능을 보일 수 있기 때문이다.
+  - MinIO는 pool 내의 drive들을 Erasure Set으로 자동으로 묶어준다.
+    - MinIO의 Erasure Set을 pool내의 node들 간에 대칭적으로 stripe하여 Erasure Set drive가 고르게 분배될 수 있게 한다.
+  - 각 MinIO server 내에는 여러 개의 node들이 있을 수 있으며, client는 이 node들 중 어느 곳에나 연결하여 직접 작업을 수행할 수 있다.
+    - 요청을 받은 node는 다른 MinIO server 내의 다른 node들에도 요청을 보내고 다른 node들로부터 응답을 받아 이를 취합하여 최종 응답을 반환한다.
+    - Node를 추가, 삭제, 변경할 때 마다 client에도 이 정보를 update하는 것은 까다로운 일이므로, 일반적으로 앞단에 load balancer를 두고 load balancer에 이 정보를 update하는 방식을 사용한다.
+
+
+
+- MinIO의 Erasure Coding
+
+  - Erasure Coding(EC)이란
+    - Storage에 data를 저장할 때 내결함성을 보장하고, 저장 공간의 효율성을 높이기 위해 설계된 데이터 복제 방식이다.
+    - Data를 알고리즘에 따라 n개로 나눈 후에 나뉘어진 데이터들을 Erasure code codec을 사용하여 encoding하여 m개의 parity를 만든다.
+    - 이후 data나 parity가 유실될 경우 남은 data와 parity들을 decoding하여 원래의 data를 복구한다.
+
+  - MinIO에서도 data redundancy와 가용성을 위해 Erasure Coding을 사용한다.
+    - MinIO는 각 server pool의 drive들을 하나 이상의 같은 크기를 가진 Erasure Set으로 그룹화한다.
+    - Erasure Set의 크기와 개수는 server pool을 처음으로 구성할 때 결정되며, server pool이 구성된 이후에는 변경할 수 없다.
+  - 각 쓰기 작업마다 MinIO는 object를 data와 parity shard로 분할한다.
+    - Parity의 개수는 0부터 Erasure Set size의 절반까지로 설정이 가능하다.
+    - 예를 들어 Erasure Set의 size가 12라면, parity는 0부터 6 사이의 값으로 설정이 가능하다.
+    - Erasure Set의 size(N)는 data shard의 개수(K) + parity shard의 개수(M)이다.
+  - 읽기 작업을 위해서는 shard의 종류와 상관 없이 최소 data shard의 개수 만큼의 shard가 필요하다.
+  - 쓰기 작업을 위해서도 최소 data shard의 개수 만큼의 shard가 필요하다.
+    - 만약 parity가 Erasure set의 절반이라면 쓰기 작업을 위해서는 data shard의 개수 + 1개 만큼의 shard가 필요하다.
+    - 이는 split-brain 문제를 예방하기 위함이다.
+
+
+
+
+
 ## MinIO Client
 
 > https://min.io/docs/minio/linux/reference/minio-mc.html#command-mc
