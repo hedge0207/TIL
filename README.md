@@ -992,6 +992,13 @@
 
 <br/>
 <br/>
+## MinIO
+- MinIO
+
+- Camel Kafka Connector로 MinIO의 data를 Kafka로 전송하기
+
+<br/>
+<br/>
 ## Pycon_2023
 - 짠내나는 데이터 다루기
 
@@ -1355,6 +1362,8 @@
 <br/>
 <br/>
 ## kafka_part4
+- Kafka Connect
+
 - Kafka를 사용한 application의 error handling
 
 - tips
