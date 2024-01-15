@@ -33,7 +33,7 @@
 
 
     - docker image 생성하기
-
+    
       - 아래와 같이 dockerfile을 작성하고 image를 build한다.
 
   ```dockerfile
@@ -49,7 +49,7 @@
   ```
 
     - docker-compose.yml 파일 작성하기
-
+    
       > 전체 설정은 https://github.com/confluentinc/cp-demo의 docker-compose.yml 파일에서 확인 가능하다.
 
   ```yaml
@@ -207,6 +207,8 @@
 
 ## Converter
 
+> https://www.confluent.io/blog/kafka-connect-deep-dive-converters-serialization-explained/#internal-converters
+
 - Converter
   - Converter는 data의 serialization과 deserialization을 담당한다.
   - Converter가 필요한 이유
@@ -216,6 +218,155 @@
     - 반면에 이는 serializing해야하는 책임이 개발자에게 있다는 것을 의미하기도 한다.
   - Kafka Connect를 설정할 때 표준화 해야하는 것들 중 하나는 serialization format을 정하는 것이다.
     - Topic에 message를 쓸 때와 읽을 때 같은 serialization format을 사용해야한다.
+
+
+
+- Serialization format을 선택할 때 고려할 사항들.
+  - Schema
+    - 대부분의 data들은 schema를 가지고 있다.
+    - 일부 Avro와 Protobuf와 같이 schema 관련 기능들을 많이 지원하는 format이 있는 반면, JSON과 같이 덜 지원하는 format도 있다.
+  - Ecosystem compatibility
+    - Avro, Protobuf, JSON은 Kafka Connect가 속한 Confluent Platform 내에서 매우 일반적인 format이다.
+    - 따라서 Schema Registry, ksqlDB 등 Confluent Platform에 속한 다른 tool들도 함께 사용해야한다면 위 format들을 사용하는 것이 나을 수 있다.
+  - Message size
+    - JSON은 plain text이면서, Kafka 자체 포함된 압축에 의존하는 반면, Avro와 Protobuf는 binary format이므로 message의 크기가 더 작아질 수 있다.
+    - 따라서 message의 크기에 따라서도 적절한 converter가 달라질 수 있다.
+  - Language support
+    - 조직에서 주로 사용하는 언어가 특정 serialization format을 간편하게 다룰 수 있는지도 중요한 고려 사항 중 하나이다.
+
+
+
+- JSON과 Schema
+
+  - JSON 형식으로 message를 serialization하는 converter는 두 종류가 있다.
+    - JSON(`org.apache.kafka.connect.json.JsonConverter`)과 JSON Schema(`io.confluent.connect.json.JsonSchemaConverter`)가 있으며, 두 방식은 유사한듯 하지만 큰 차이가 있다.
+    - JSON Schema는 JSON과 달리 Schema Registry를 사용하는 방식이다.
+  - JSON은 기본적으로 schema를 전달하지 않지만, Kafka는 JSON이 schema도 함께 전달할 수 있도록 아래 두 가지 방법을 지원한다.
+    - JSON Schema converter를 사용하는 방식.
+    - JSON converter를 사용하여 Kafka Connect가 제공하는 특별한 형식의 JSON을 사용하는 방식.
+  - JSON converter
+    - JSON converter를 사용할 경우 Kafka Connect는 JSON data를 schema와 payload라는 고정된 형식으로 serialization한다.
+    - 모든 message에 schema 정보가 포함되므로 단일 message의 크기가 커질 수 있다는 단점이 있다.
+    - 아래 예시는 JSON converter를 사용했을 때 message의 형식을 보여주는데, schema/payload 형식으로 구분되는 것을 확인 할 수 있다.
+
+  ```json
+  {
+    "schema": {
+      "type": "struct",
+      "fields": [
+        {
+          "type": "int64",
+          "optional": false,
+          "field": "registertime"
+        },
+        {
+          "type": "string",
+          "optional": false,
+          "field": "userid"
+        },
+        {
+          "type": "string",
+          "optional": false,
+          "field": "regionid"
+        },
+        {
+          "type": "string",
+          "optional": false,
+          "field": "gender"
+        }
+      ],
+      "optional": false,
+      "name": "ksql.users"
+    },
+    "payload": {
+      "registertime": 1493819497170,
+      "userid": "User_1",
+      "regionid": "Region_5",
+      "gender": "MALE"
+    }
+  }
+  ```
+
+  - JSON converter 사용시 `value.converter.schemas.enable` option
+    - 만약 source로부터 받아오는 data가 schema가 있는 data라면 `value.converter.schemas.enable`을 true로 설정하면 message에 schema도 함께 담기게 된다.
+    - 반면에 source로부터 받아오는 data가 schema가 있는 data라 할지라도 `value.converter.schemas.enable`가 false라면 message에 schema는 담기지 않는다.
+    - 만약 schema가 없는 data를 `value.converter.schemas.enable` option을 true로 설정하여 가져오려 할 경우 error가 발생한다.
+    - `key.converter.schemas.enable`도 마찬가지다.
+  - 예를 들어 아래와 같이 table 을 생성하고 data를 넣은 후에
+
+  ```sql
+  CREATE TABLE product (
+    id INT NOT NULL,
+    name VARCHAR(30) NOT NULL,
+    updated_time TIMESTAMP NOT NULL default current_timestamp,
+    PRIMARY KEY (id)
+  );
+  
+  INSERT INTO product (id, name) VALUES (0, 'iPad');
+  ```
+
+  - 아래와 같이 설정하여 Kafka Connect를 실행하고
+
+  ```properties
+  value.converter=org.apache.kafka.connect.json.JsonConverter
+  value.converter.schemas.enable=true
+  ```
+
+  - 이를 source connector로 가져오면 message의 value는 아래와 같이 구성된다.
+
+  ```json
+  {
+  	"schema": {
+  		"type": "struct",
+  		"fields": [
+  			{
+  				"type": "int32",
+  				"optional": false,
+  				"field": "id"
+  			},
+  			{
+  				"type": "string",
+  				"optional": false,
+  				"field": "name"
+  			},
+  			{
+  				"type": "int64",
+  				"optional": false,
+  				"name": "org.apache.kafka.connect.data.Timestamp",
+  				"version": 1,
+  				"field": "updated_time"
+  			}
+  		],
+  		"optional": false,
+  		"name": "product"
+  	},
+  	"payload": {
+  		"id": 0,
+  		"name": "iPad",
+  		"updated_time": 1704220634262
+  	}
+  }
+  ```
+
+  - 반면에 아래와 같이 설정하여 Kafka Connect를 실행하고
+
+  ```properties
+  value.converter=org.apache.kafka.connect.json.JsonConverter
+  value.converter.schemas.enable=false
+  ```
+
+  - 이를 source connector로 가져오면 message의 value는 아래와 같이 구성된다.
+    - schema/payload 구조가 아닌 row의 값만 가져오는 것을 확인할 수 있다.
+
+  ```json
+  {
+  	"id": 0,
+  	"name": "iPad",
+  	"updated_time": 1704220634262
+  }
+  ```
+
+
 
 
 
