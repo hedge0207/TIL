@@ -1,4 +1,4 @@
-# MinIO
+# MinIO 개요
 
 > https://github.com/minio/minio
 >
@@ -522,4 +522,168 @@
   - 기본적인 동작 방식이 bucket에서 data를 가져온 후 **해당 data를 삭제**하는 방식이다. 
     - 따라서 삭제를 원치 않을 경우 위와 같이 `camel.kamelet.aws-s3-source.deleteAfterRead` 옵션을 false로 줘야 한다.
     - 다만 이 경우 다음에 data를 push할 때 모든 data를 push하게 된다.
+
+
+
+
+
+# Python에서 사용하기
+
+> https://min.io/docs/minio/linux/developers/python/API.html
+
+- MinIO Python SDK 설치하기
+
+  - pip를 사용하여 설치
+
+  ```bash
+  $ pip install minio
+  ```
+
+  - Source를 사용하여 설치
+
+  ```bash
+  $ git clone https://github.com/minio/minio-py
+  $ cd minio-py
+  $ python setup.py install
+  ```
+
+
+
+- MinIO client
+
+  - 주의 사항
+    - MinIO object는 Python의 `threading` library와 함께 사용할 때 thread safe하다.
+    - 그러나 `multiprocessing` package를 사용하여 여러 process에서 함께 사용할 때는 thread safe하지 않다.
+    - 따라서 multi processing 환경에서 MinIO object를 사용해야 할 경우, 각 process마다 MinIO object를 생성해야한다.
+  
+  - MinIO client 시작하기
+    - 접속정보를 잘 못 입력하더라도 error가 발생하지는 않는다.
+  
+  ```python
+  from minio import Minio
+  
+  client = Minio("localhost:9000", access_key="foo", secret_key="foo_auth", secure=False)
+  ```
+  
+  - File upload
+  
+  ```python
+  from minio import Minio
+  from minio.error import S3Error
+  
+  def main():
+      client = Minio("localhost:9000", access_key="foo", secret_key="foo_auth", secure=False)
+  
+      # upload할 file의 경로
+      source_file = "./tmp.json"
+      # upload할 bucket
+      bucket_name = "test"
+      # MinIO 내에서의 이름
+      destination_file = "tmp.json"
+  
+      client.fput_object(bucket_name, destination_file, source_file)
+  
+  if __name__ == "__main__":
+      try:
+          main()
+      except S3Error as exc:
+          print("error occurred.", exc)
+  ```
+
+  - Object 가져오기
+    - `get_object` method를 사용한다.
+    - response에서 object 정보를 읽은 후에는 `close` method를 호출하여 network resource를 release 해야한다.
+    - 만약 connection을 다시 사용하고자 한다면 `release_conn` method를 호출하면 된다.
+  
+  ```python
+  from minio import Minio
+  
+  
+  client = Minio("localhost:9000", access_key="foo", secret_key="foo_auth", secure=False)
+  
+  try:
+      object_path = "tmp.json"
+      response = client.get_object("test", object_path)
+      with open(object_path, "wb") as binary:
+          binary.write(response.read())
+  finally:
+      response.close()
+      response.release_conn()
+  
+  # 특정 version의 object 가져오기
+  try:
+      response = client.get_object(
+          "my-bucket", "my-object",
+          version_id="dfbd25b3-abec-4184-a4e8-5a35a5c1174d",
+      )
+  finally:
+      response.close()
+      response.release_conn()
+  
+  # offset과 length로 object 가져오기
+  try:
+      response = client.get_object(
+          "my-bucket", "my-object", offset=512, length=1024,
+      )
+  finally:
+      response.close()
+      response.release_conn()
+  ```
+  
+  - Object 삭제하기
+  
+  ```python
+  from minio import Minio
+  
+  client = Minio("localhost:9000", access_key="foo", secret_key="foo_auth", secure=False)
+  
+  # object 삭제
+  client.remove_object("my-bucket", "my-object")
+  
+  # object의 특정 version을 삭제
+  client.remove_object(
+      "my-bucket", "my-object",
+      version_id="dfbd25b3-abec-4184-a4e8-5a35a5c1174d",
+  )
+  ```
+  
+  - Bucket 생성하기
+  
+  ```python
+  from minio import Minio
+  
+  client = Minio("localhost:9000", access_key="foo", secret_key="foo_auth", secure=False)
+  bucket_name="my_bucket"
+  found = client.bucket_exists(bucket_name)
+  if not found:
+      client.make_bucket(bucket_name)
+      print("Created bucket", bucket_name)
+  else:
+      print("Bucket", bucket_name, "already exists")
+  ```
+  
+  - Bucket 내의 object들 조회하기
+    - `prefix`: 해당 prefix로 시작하는 object들만 조회한다.
+    - `recursive`: object들을 재귀적으로 나열한다.
+    - `start_after`: 해당 경로로 시작하는 object들만 조회한다.
+    - `include_user_meta`: 사용자 metadata를 함께 조회할지 설정한다.
+    - `include_version`: object의 version 정보도 함께 조회할지 설정한다.
+  
+  ```python
+  from minio import Minio
+  
+  client = Minio("localhost:9000", access_key="foo", secret_key="foo_auth", secure=False)
+  
+  objects = client.list_objects("my-bucket")
+  for obj in objects:
+      print(obj)
+  ```
+  
+  
+
+
+
+
+
+
 
