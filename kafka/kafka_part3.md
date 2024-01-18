@@ -552,30 +552,37 @@
 
 - kafka-consumer-groups.sh
 
-  - 컨슈머 그룹과 관련된 명령을 수행하는 커맨드라인
-  - 컨슈머 그룹 목록 확인
+  - Cosnuemr group과 관련된 명령을 수행하는 커맨드라인
+  - Cosnuemr group 목록 확인
     - `--list` 명령으로 실행한다.
 
   ```bash
   $ kafka-consumer-groups --list --bootstrap-server 127.0.0.1:9092 
   ```
 
-  - 컨슈머 그룹 상세 정보 확인
+  - Cosnuemr group 상세 정보 확인
     -  특정 컨슈머 그룹의 상세 정보를 확인하기 위해 쓰인다.
 
   ```bash
-  $ kafka-consumer-groups --describe --bootstrap-server 127.0.0.1:9092 --group test-group
+  $ kafka-consumer-groups --describe --bootstrap-server 127.0.0.1:9092 --group <group>
   ```
 
+  - Cosnuemr group 삭제
+    - 특정 topic에 대해서만 삭제하는 것은 불가능하다.
+  
+  ```bash
+  $ kafka-consumer-groups --bootstrap-server localhost:29093 --delete --group <group>
+  ```
+  
   - 응답
 
     - TOPIC과 PARTITION은 조회한 컨슈머 그룹이 구독하고 있는 토픽과 할당된 파티션을 나타낸다.
-
+  
     - CURRENT-OFFSET은 각 파티션 별 최신 오프셋이 몇 번인지를 나타낸다(0번 파티션은 4이므로 4개의 데이터가 들어갔다는 것을 알 수 있다).
     - LOG-END-OFFSET은 컨슈머가 몇 번 오프셋까지 커밋했는지를 알 수 있다.
     - LAG는 컨슈머 그룹이 파티션의 데이터를 가져가는 데 얼마나 지연이 발생하는지를 나타내는데, `CURRENT-OFFSET - LOG-END-OFFSET` 으로 계산한다.
     - HOST는 컨슈머가 동작하는 host명을 나타낸다.
-
+  
   ```bash
   GROUP           TOPIC           PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG     CONSUMER-ID     HOST            CLIENT-ID
   test-group      kafka.test      0          4               4               0       -               -               -
@@ -584,7 +591,7 @@
   test-group      kafka.test      3          4               4               0       -               -               -
   ```
   
-  - Consumer group의  offset  초기화
+  - Consumer group의 offset 초기화
   
     - `--dry-run`: offset reset시에 예상 결과를 보여준다.
     - `--execute`: offset을 초기화한다.

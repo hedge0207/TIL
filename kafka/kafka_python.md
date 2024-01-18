@@ -13,6 +13,144 @@
 
 
 
+- Benchmark
+
+  - `confluent_kafka`, `aiokafka`, `python-kafka` 세 package의 consumer 성능을 비교하기 위한 code이다.
+  - 주의사항
+    - 첫 message를 가져올 때와 consumer를 `stop` 혹은 `close`를 통해 멈출시 rebalancing이 발생하므로 message를 poll하는 시간만 비교하기 위해 첫 message를 poll하는 시간과 consumer를 close하는 시간은 제외했다.
+    - `confluent_kafka`은 commit이 기본적으로 비동기적으로 이루어진다.
+    - `python-kafka`는 `async_commit`라는 비동기 commit을 위한 method가 있다.
+    - `aiokafka`역시 기본적으로 commit이 비동기적으로 이루어지지만, 아래와 같이 await을 줄 경우 사실상 동기적으로 실행되므로, 비동기적으로 실행하려면 event loop에 등록해서 commit을 실행해야한다.
+
+  ```python
+  import time
+  import asyncio
+  
+  from confluent_kafka import Consumer
+  from aiokafka import AIOKafkaConsumer
+  from kafka import KafkaConsumer
+  
+  
+  class Benchmarker:
+      def __init__(self, n=1_000_000, manual_commit=False, enable_auto_commit=False):
+          self.n = n
+          self.manual_commit = manual_commit
+          self.topic = "my-topic"
+          self.config = {
+              "bootstrap.servers": "localhost:9092",
+              "auto.offset.reset": "earliest",
+              "group.id": "foo",
+              "enable.auto.commit": enable_auto_commit
+          }
+      
+      def consume_by_cp_consumer(self):
+          consumer = Consumer(self.config)
+          consumer.subscribe([self.topic])
+  
+          total = 0
+          cnt = -1
+          while 1:
+              st = time.time()
+              msg = consumer.poll()
+              cnt += 1
+  
+              if cnt == 0:
+                  continue
+  
+              if self.manual_commit:
+                  consumer.commit()
+              
+              if cnt == self.n:
+                  break
+  
+              total += time.time()-st
+          
+          consumer.close()
+  
+          print("ck", total, total / self.n)
+  
+      def consume_by_kf_consumer(self):
+          self.config["group.id"] = "bar"
+          consumer = KafkaConsumer(**{k.replace(".", "_"):v for k, v in self.config.items()})
+          consumer.subscribe([self.topic])
+  
+          total = 0
+          cnt = -1
+          for msg in consumer:
+              st = time.time()
+              cnt += 1
+              if cnt == 0:
+                  continue
+  
+              if self.manual_commit:
+                  consumer.commit()
+                  # consumer.commit_async()
+              
+              if cnt == self.n:
+                  break
+  
+              total += time.time()-st
+  
+          consumer.close()
+          
+          print("kf", total, total / self.n)
+  
+      async def consume_by_aio_consumer(self):
+          self.config["group.id"] = "baz"
+          consumer = AIOKafkaConsumer(**{k.replace(".", "_"):v for k, v in self.config.items()})
+          consumer.subscribe([self.topic])
+  
+          # loop = asyncio.get_running_loop()
+          await consumer.start()
+  
+          cnt = -1
+          total = 0
+          async for msg in consumer:
+              st = time.time()
+              cnt += 1
+  
+              if cnt == 0:
+                  continue
+  
+              if self.manual_commit:
+                  # loop.create_task(consumer.commit())
+                  await consumer.commit()
+  
+              if cnt == self.n:
+                  break
+  
+              total += time.time()-st
+          print("ak", total, total / self.n)
+  
+          await consumer.stop()
+  
+  
+  if __name__ == "__main__":
+      benchmarker = Benchmarker(manual_commit=True)
+      benchmarker.consume_by_cp_consumer()
+      benchmarker.consume_by_kf_consumer()
+      asyncio.run(benchmarker.consume_by_aio_consumer())
+  ```
+  
+  - 결과
+    - 100만개의 message를 consume하면서 message 1개를 poll하는데 걸리는 평균 시간을 측정한 것이다.
+  
+  |                      | confluent-kafka        | kafka-python          | aiokafka               |
+  | -------------------- | ---------------------- | --------------------- | ---------------------- |
+  | commit_per_msg       | -                      | 0.0008061759803295135 | 0.0008091759803295135  |
+  | commit_per_msg_async | 1.1089866638183593e-05 | 0.0002168059730529785 | 4.322867870330811e-06  |
+  | auto_commit          | 1.8383302688598633e-06 | 2.387664318084717e-07 | 2.2680330276489257e-07 |
+  
+  - 주의사항
+    - 위 표를 보면 비동기적으로 commit한는 것이 매우 빠른 속도를 보여 비동기적 커밋이 가장 낫다고 생각할 수 있지만 그렇지는 않다.
+    - 비동기적 commit의 경우 추후에 consumer나 broker에 문제가 생기는 등의 이유로 commit을 하지 못 했을 때, 대량의 데이터를 중복처리해야 할 수도 있다.
+    - 예를 들어 아래에서 confluent-kafka는 message 1건을 poll하고 commit을 비동기적으로 실행시키는데 1.1089866638183593e-05초 밖에 걸리지 않으므로 100만건을 가져오는데는 약 11초 밖에 걸리지 않을 것이다.
+    - 그런데 데이터를 전부 가져온 후에 데이터를 처리하는 과정에서 문제가 생겨 consumer app이 내려갔다고 가정해보자.
+    - 이 때 비동기적으로 실행되던 commit은 30만번째 offset까지만 완료된 상태였다.
+    - 다음에 다시 consumer를 실행시킬 경우 마지막으로 commit된 30만번째 offset 이후부터 가져와서 실행하게 되므로 70만 건의 data가 중복처리 된다.
+
+
+
 - 설치하기(kafka-python)
 
   ```bash
