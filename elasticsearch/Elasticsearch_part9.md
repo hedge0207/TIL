@@ -158,25 +158,25 @@
 
 
 
-
-
 - ES는 어떻게 tokenizing을 하는가
 
   - ES는 `_analyze`라는 API를 제공한다.
     - analyzer에는 토크나이징에 사용할 analyzer를 입력한다.
     - text에는 토크나이징 할 문자열을 입력한다.
-
+    - `explain`: option을 true로 주면 보다 상세한 정보를 확인할 수 있으며, nori의 경우 품사 정보도 확인할 수 있다.
+  
   ```bash
-  $ curl -XPOST "localhost:9200/_analyze?pretty" -H 'Content-type:application/json' -d '{
-  "analyzer":"standard",
-  "text":"I am a boy"
-  }'
+  GET _analyze
+  {
+      "analyzer":"standard",
+      "text":"I am a boy"
+  }
   ```
-
+  
   - 응답
     - 토크나이징의 결과로 토큰의 배열을 반환한다.
     - 아래 토큰을 보면 대문자 I가 아닌 소문자 i로 토크나이징 된 것을 볼 수 있는데, standard analyzer의 동작 중에 모든 문자를 소문자화하는 과정이 포함되어 있기 때문이다.
-
+  
   ```json
   {
     "tokens" : [

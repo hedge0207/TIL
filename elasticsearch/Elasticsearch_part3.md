@@ -402,7 +402,7 @@
 
 
 
-- BM25
+- BM25(Okapi BM25)
 
   > https://blog.naver.com/shino1025/222240603533
   >
@@ -423,13 +423,13 @@
   $$
 
   - Elasticsearch의 BM25 계산
-    - bm25를 약간 변형하여 사용한다.
+    - BM25를 약간 변형하여 사용한다.
     - `boost * IDF * TF`로 계산한다.
   - Elasticsearch의 IDF 계산
-    - `N`은 전체 문서의 개수, `n`은 term을 포함하고 있는 문서의 개수이다.
+    - `N`은 전체 문서의 개수, `n`은 $q_i$라는 term을 포함하고 있는 문서의 개수이다.
 
   $$
-  IDF(q_i) = log(1+\frac{N-n+0.5}{n+0.5})
+  IDF(q_i) = ln(1+\frac{N-n(q_i)+0.5}{n(q_i)+0.5})
   $$
 
   - Elasticsearch의 TF 계산
@@ -449,6 +449,93 @@
     - 만일 해당 필드가 너무 길다면 점수를 약간 깎는다.
     - 같은 단어가 단일 문서에 여러 번 등장한다면 점수를 약간 깎는다
     - 만일 해당 단어가 여러 문서에 흔하게 등장한다면 점수를 많이 깎는다.
+
+
+
+- Elasticsearch의 점수 계산 방식 변경하기
+
+  > https://www.elastic.co/guide/en/elasticsearch/reference/current/index-modules-similarity.html
+
+  - Index 생성시에 각 field 별로 다른 similarity 계산을 사용하도록 변경할 수 있다.
+  - 아래와 같이 settings에 similarity 계산 방식을 정의하고, mapping에서 field를 설정할 때 settings에서 정의한 계산 방식을 설정해주면 된다.
+
+  ```json
+  // PUT my-index
+  {
+      "settings": {
+          "index": {
+              "similarity": {
+                  "my_similarity": {
+                      "type": "DFR",
+                      "basic_model": "g",
+                      "after_effect": "l",
+                      "normalization": "h2",
+                      "normalization.h2.c": "3.0"
+                  }
+              }
+          }
+      },
+      "mappings":{
+          "properties" : {
+              "title" : { 
+                  "type" : "text", 
+                  "similarity" : "my_similarity" 
+              }
+          }
+      }
+  }
+  ```
+
+  - Elasticsearch는 아래와 같은 similarity module을 지원한다.
+    - BM25
+    - DFR
+    - DFI
+    - IB
+    - LM Jlinek Mercer
+
+  - 혹은 script를 사용하여 직접 점수 계산 방식을 구현하는 것도 가능하다.
+    - 아래 script는 TF-IDF를 script를 사용하여 구현한 것이다.
+    - 주의할 점은 반환하는 score는 반드시 양수여야 한다는 것이다.
+
+  ```json
+  // PUT my-index
+  {
+      "settings": {
+          "number_of_shards": 1,
+          "similarity": {
+              "scripted_tfidf": {
+                  "type": "scripted",
+                  "script": {
+                      "source": "double tf = Math.sqrt(doc.freq); double idf = Math.log((field.docCount+1.0)/(term.docFreq+1.0)) + 1.0; double norm = 1/Math.sqrt(doc.length); return query.boost * tf * idf * norm;"
+                  }
+              }
+          }
+      }
+  }
+  ```
+
+  - `weight_script`를 통해 가중치를 주는 script를 별도로 작성하는 것도 가능하다.
+    - `weight_script`를 사용하지 않을 경우 가중치는 1로 고정된다.
+
+  ```json
+  {
+      "settings": {
+          "similarity": {
+              "scripted_tfidf": {
+                  "type": "scripted",
+                  "weight_script": {
+                      "source": "double idf = Math.log((field.docCount+1.0)/(term.docFreq+1.0)) + 1.0; return query.boost * idf;"
+                  },
+                  "script": {
+                      "source": "double tf = Math.sqrt(doc.freq); double norm = 1/Math.sqrt(doc.length); return weight * tf * norm;"
+                  }
+              }
+          }
+      }
+  }
+  ```
+
+
 
 
 
