@@ -26,6 +26,89 @@
 
 
 
+- JVM과 가상 메모리
+
+  - 가상 메모리
+    - 대부분 현대의 운영체제들은 가상 메모리라는 메모리 관리 기법을 사용한다.
+    - 애플리케이션이 실행될 때 물리적인 메모리 번지를 직접 할당해서 메모리 공간을 제공하는 것이 아니라 가상의 메모리 번지를 생성해서 제공하여 애플리케이션 별로 전용 메모리 공간을 사용할 수 있도록 한다.
+  - 운영체제 입장에서는 모든 애플리케이션에서 시스템 리소스를 효율적으로 나눠 써야 하기 때문에 각 애플리케이션별로 리소스 사용량을 제한한다.
+    - Linux에서는 `ulimit`을 통해 애플리케이션별로 제한된 resource의 한계가 얼마인지 확인할 수 있다.
+
+  ```bash
+  $ ulimit -a
+  ```
+
+  - Java program 생성
+    - 아래와 같은 간단한 java program 을 생성한다.
+
+  ```java
+  public class HelloWorld {
+      public static void main(String[] args) throws Exception {
+          while(true) {
+              System.out.println("Hello World!");
+              Thread.sleep(100);
+          }
+      }
+  }
+  ```
+
+  - 위 program을 컴파일하고 JVM option을 설정하여 실행한다.
+
+  ```bash
+  # 컴파일
+  $ javac HelloWorld.java
+  
+  # JVM을 설정하고 실행
+  $ java -Xms1024m -Xmx2048m HelloWorld
+  ```
+
+  - 위 프로그램의 PID를 조회하고, 메모리 사용량을 조회한다.
+
+  ```bash
+  # PID 확인
+  $ jps
+  
+  # 메모리 사용량 조회
+  $ ps -eoeuser,pid,vsz,rss,comm | grep <PID>
+  ```
+
+  - 결과를 확인하면 위에서 1GB의 가상 메모리를 할당했음에도 4GB의 가상 메모리를 할당 받은 것으로 나오며, 실제 사용 중인 메모리는 21MB뿐이다.
+    - 이는 운영체제에 설정된 ulimit 때문이다.
+    - 이는 위 테스트 환경에서 virtual memory의 기본 설정값이 unlimited였기 때문이다.
+    - 실제 사용 중인 메모리가 적은 이유는 저 정도의 메모리로도 충분히 실행이 가능하기 때문이다.
+
+
+
+- `vm.max_map_count` 설정
+
+  - Elasticsearch는 검색을 위해 내부에 Lucene을 내장하고 있다.
+    - Lucene은 색인된 정보들을 다수의 segment file로 관리하고 있으며, 이를 위해 많은 리소스를 사용한다.
+    - Java 기반인 Elasticsearch는 태생적으로 가상 머신 위에서 돌아가도록 설계되어 있고 기본적으로는 JVM을 통해 할당 받은 memory만 사용할 수 있다.
+    - 하지만 Lucene은 대용량의 segment를 관리하기 위해 많은 resource를 필요로하기에 특별한 방식으로 이러한 제약을 회피한다.
+  - Lucene은 내부적으로 Java에서 제공하는 NIO 기술을 활용한다.
+    - 이를 통해 OS kernel에서 제공하는 mmap system call을 직접 호출할 수 있으며, 이를 이용하여 VM을 거치지 않고도 직접 kernel mode로 진입할 수 있다.
+    - Elasticsearch는 Lucene을 실행하면서 mmap과 niofs 방식의 directory를 적절히 혼용해서 사용한다.
+    - 이로 인해 mmap systemcall을 직접 호출할 수 있다.
+  - 이로 인해 kernel 수준의 file system cache를 사용할 수 있게 된다.
+    - Lucene에서 생성한 segment도 file이기 때문에 file system cache의 이점을 누릴 수 있다.
+    - Java heap memory에 의존하지 않으면서도 kernel 수준에서 간접적으로 물리 memory를 사용할 수 있게 돈다.
+    - 이 때문에 Elasticsearch에서 heap 설정 시 OS에게 물리 memory의 50%를 양보하는 것이다.
+  - Elasticsearch에서 Lucene이 원활하게 동작하기 위해서는 가상 메모리 설정 중 mmap 크기 항목을 변경해야한다.
+    - 대부분의 운영체제에서 이 값의 크기가 너무 작기 때문이다.
+    - Elasticsearch에서는 bootstrap 과정에서 이 값이 262,244보다 작으면 error message를 출력하고 강제로 종료시킨다.
+
+  - 다음 과정을 통해 변경이 가능하다.
+
+  ```bash
+  # 현재 값 확인
+  $ cat /proc/sys/vm/max_map_count
+  
+  # 변경
+  $ sudo sysctl -w vm.max_map_count=262144
+  ```
+
+
+
 - Runtime Data Areas
   - PC Register
     - 스레드가 시작될 때 생성되며, Thread가 어떤 명령어로 실행되어야 할지를 기록하는 영역.
