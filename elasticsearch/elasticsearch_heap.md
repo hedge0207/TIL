@@ -274,6 +274,13 @@
 
 
 
+- Elasticsearch JVM 설정 중 xms(최소 힙 크기)와 xmx(최대 힙 크기)
+  - JVM이 처음 실행될 때는 xms에 설정된 크기로 동작하다가 힙이 부족하다고 판단되면 xmx에 설정된 힙 크기까지 자동으로 늘어난다.
+  - 이 과정에서 애플리케이션 성능 저하가 있을 수 있다.
+  - Elasticsearch는 메모리를 많이 활용하기 때문에 힙 크기 변경되는 일이 없도록 두 값을 같은 값으로 설정하는 것이 권장된다.
+
+
+
 - ES에서 heap memory 사용량을 증가시키는 요소들
   - 많은 bucket들을 aggs 하는 경우
     - 따라서 aggs시에 bucket size를 제한하는 것이 좋다.
@@ -308,6 +315,71 @@
 
   - elasticsearch는 메모리 사용량이 지나치게 높아지는 것(OOM)을 막기 위해 circuit breaker를 사용한다.
   - node에서 memory 문제를 발생시킬만한 요청이 올 경우 ES는 circuit breaker를 통해  `CircuitBreakerException`를 throw하고 해당 요청을 거부한다.
+
+
+
+- Elasticsearch에서 swapping을 비활성화해야 하는 이유
+
+  - 운영체제 입장에서 봤을 때 swapping은 많은 resource를 사용하는 작업이다.
+  - Elasticsearch가 동작하는 데 필요한 memory도 swapping으로 인해 언제든지 disk로 swapping될 수 있다.
+    - Swapping이 발생할 경우 node 안정성에 치명적이기 때문에 이를 최대한 피해야한다.
+    - Memory를 많이 사용하는 Elasticsearch의 특성상 swapping 작업에 읳 garbage collection이 비정상적으로 수 분 동안 지속되거나 node의 응답이 느려질 수 있다.
+    - 또한 cluster의 연결이 불안정해질 수 있다.
+  - 운영체제 차원에서 swapping을 막는 방법
+    - 일시적으로 비활성화 하거나 파일을 수정하여 영구적으로 비활성화 할 수 있다.
+
+  ```bash
+  # 일시적 비활성화
+  $ sudo swapoff -a
+  
+  # 영구적 비활성화
+  $ vi /etc/fstab
+  ```
+
+  - 운영체제 차원에서 swapping 최소화
+
+    - Swapping을 완전히 비활성화 할 수 없는 상황이라면, swapping 발생 빈도를 조절하는 것도 방법이 될 수 있다.
+
+    - `vm.swappiness` 값을 1로 설정하면 swapping을 최대한 이용하지 않겠다는 의미이다.
+
+  ```bash
+  # 확인
+  $ cat /proc/sys/vm/swappiness
+  
+  # 수정
+  $ sudo sysctl vm.swappiness=1
+  ```
+
+  - Elasticsearch 차원에서 swapping 최소화
+    - 위 두 방법은 모두 루트 권한이 필요하기에, 루트 권한이 없다면 사용할 수 없는 방법이다.
+    - Elasticsearch는 `bootstrap.memory_lock` 설정이 가능한데, 이를 활성화하면 `mlockall()` 함수와 동일한 방식으로 application 차원에서 swapping을 최대한 방지할 수 있따.
+    - `mlockall()`은 호출한 프로세스의 페이징을 금지시키고 모든 memory가 램에 상주하는 것을 보장한다.
+    - 다만, memory 사용량이 많아지면 이 설정을 무시하고 swapping이 발생할 수 있다.
+
+  ```bash
+  $ vi /<path>/elasticsearch.yml
+  
+  boostrap.memory_lock: true
+  ```
+
+  - `boostrap.memory_lock`이 잘 설정 됐는지 확인
+    - 위와 같이 설정해도 실패하는 경우가 있으므로 반드시 확인해야한다.
+    - 실패할 경우 WARN level로 로그가 남게 된다.
+
+  ```json
+  // GET _nodes?filter_path=**.mlockall
+  
+  // response
+  {
+    "nodes" : {
+      "PaQsnRrUQZyn4NzfkVFX3A" : {
+        "process" : {
+          "mlockall" : true
+        }
+      }
+    }
+  }
+  ```
 
 
 
