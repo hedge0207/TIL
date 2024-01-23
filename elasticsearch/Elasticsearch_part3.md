@@ -310,6 +310,10 @@
 
 
 
+
+
+
+
 # Elasticsearch의 score 계산 방식
 
 > https://wikidocs.net/31698 참고
@@ -536,6 +540,401 @@
   ```
 
 
+
+- BM25 similarity 사용시 TF값의 계산 요소 중 term_frequency의 가중치 낮추기
+
+  - BM25 similarity 사용시 term_frequency 값의 가중치를 낮춰야 한다면 중복 token을 제거하는 것도 고려해 볼 수 있다.
+  - 예를 들어 아래와 같은 문서가 있다고 가정해보자.
+
+  ```json
+  // PUT test-index/_doc/1
+  {
+      "text":"brown fox playing with fox"
+  }
+  ```
+
+  - 위 문서는 standard tokenizer 기준으로 아래와 같이 tokenizing된다.
+    - "fox" 라는 token이 두 번 나왔으므로 `term_freq` 값은 2가 된다.
+
+  ```json
+  // GET test-index/_termvectors/1?fields=text
+  {
+    // ...
+    "term_vectors": {
+      "text": {
+        // ...
+          "fox": {
+            "term_freq": 2,
+            "tokens": [
+              {
+                "position": 1,
+                "start_offset": 6,
+                "end_offset": 9
+              },
+              {
+                "position": 4,
+                "start_offset": 23,
+                "end_offset": 26
+              }
+            ]
+          },
+          // ...
+        }
+      }
+    }
+  }
+  ```
+
+  - 아래와 같이 추가 문서를 색인하고
+
+  ```json
+  // PUT test-index/_doc/2
+  {
+      "text":"brown fox playing with box"
+  }
+  ```
+
+  - "fox"라는 검색어로 검색을 하면
+
+  ```json
+  // GET test-index/_search
+  {
+      "explain": true, 
+      "query": {
+          "match": {
+              "text": "fox"
+          }
+      }
+  }
+  ```
+
+  - "fox"라는 token을 두 개 가진 1번 문서의 tf 값이 더 크므로 1번 문서의 점수가 더 높게 나오는 것을 확인할 수 있다.
+    - TF 값 계산에 포함되는 요소 중 `freq`를 제외한 다른 모든 값들은 동일한 것을 볼 수 있다.
+
+  ```json
+  {
+    // ...
+    "hits": {
+      // ...
+      "hits": [
+        {
+          // ...
+          "_id": "1",
+          "_score": 0.25069216,
+          "_source": {
+            "text": "brown fox playing with fox"
+          },
+          "_explanation": {
+            "value": 0.25069216,
+            "description": "weight(text:fox in 0) [PerFieldSimilarity], result of:",
+            "details": [
+              {
+                "value": 0.25069216,
+                "description": "score(freq=2.0), computed as boost * idf * tf from:",
+                "details": [
+                  // ...
+                  {
+                    "value": 0.625,
+                    "description": "tf, computed as freq / (freq + k1 * (1 - b + b * dl / avgdl)) from:",
+                    "details": [
+                      {
+                        "value": 2,
+                        "description": "freq, occurrences of term within document",
+                        "details": []
+                      },
+                      {
+                        "value": 1.2,
+                        "description": "k1, term saturation parameter",
+                        "details": []
+                      },
+                      {
+                        "value": 0.75,
+                        "description": "b, length normalization parameter",
+                        "details": []
+                      },
+                      {
+                        "value": 5,
+                        "description": "dl, length of field",
+                        "details": []
+                      },
+                      {
+                        "value": 5,
+                        "description": "avgdl, average length of field",
+                        "details": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          // ...
+          "_id": "2",
+          "_score": 0.18232156,
+          "_source": {
+            "text": "brown fox playing with box"
+          },
+          "_explanation": {
+            "value": 0.18232156,
+            "description": "weight(text:fox in 0) [PerFieldSimilarity], result of:",
+            "details": [
+              {
+                "value": 0.18232156,
+                "description": "score(freq=1.0), computed as boost * idf * tf from:",
+                "details": [
+                  // ...
+                  {
+                    "value": 0.45454544,
+                    "description": "tf, computed as freq / (freq + k1 * (1 - b + b * dl / avgdl)) from:",
+                    "details": [
+                      {
+                        "value": 1,
+                        "description": "freq, occurrences of term within document",
+                        "details": []
+                      },
+                      {
+                        "value": 1.2,
+                        "description": "k1, term saturation parameter",
+                        "details": []
+                      },
+                      {
+                        "value": 0.75,
+                        "description": "b, length normalization parameter",
+                        "details": []
+                      },
+                      {
+                        "value": 5,
+                        "description": "dl, length of field",
+                        "details": []
+                      },
+                      {
+                        "value": 5,
+                        "description": "avgdl, average length of field",
+                        "details": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+  ```
+
+  - 이제 term_frequency의 가중치를 낮추기 위해 아래와 같이 `unique` token filter를 사용하여 중복 token을 제거한다.
+
+  ```json
+  // PUT unique-token
+  {
+      "settings": {
+          "analysis": {
+              "analyzer": {
+                  "unique_analyzer": {
+                      "type":"custom",
+                      "tokenizer":"standard",
+                      "filter": [
+                          "unique"
+                      ]
+                  }
+              }
+          }
+      },
+      "mappings": {
+          "properties": {
+              "text": {
+                  "type": "text",
+                  "analyzer": "unique_analyzer"
+              }
+          }
+      }
+  }
+  ```
+
+  - 그 후 다시 2개의 문서를 색인한다.
+    - 위와 동일하게 하나의 문서에만 fox가 2번 등장한다.
+
+  ```json
+  // PUT unique-token/_doc/1
+  {
+      "text":"brown fox playing with fox"
+  }
+  
+  // PUT unique-token/_doc/2
+  {
+      "text":"brown fox playing with box"
+  }
+  ```
+
+  - 1번 문서의 token을 확인해보면 아래와 같다.
+    - 중복 token을 모두 제거했으므로 fox token의 `term_freq` 값이 1인 것을 볼 수 있다.
+
+  ```json
+  // GET unique-token/_termvectors/1?fields=text
+  {
+    // ...
+    "term_vectors": {
+      "text": {
+        // ...
+        "terms": {
+          // ...
+          "fox": {
+            "term_freq": 1,
+            "tokens": [
+              {
+                "position": 1,
+                "start_offset": 6,
+                "end_offset": 9
+              }
+            ]
+          },
+          // ...
+        }
+      }
+    }
+  }
+  ```
+
+  - 이제 다시 동일한 query로 검색을 해보면
+
+  ```json
+  // GET unique-token/_search
+  {
+      "explain": true, 
+      "query": {
+          "match": {
+              "text": "fox"
+          }
+      }
+  }
+  ```
+
+  - `term_freq` 값이 1이 된 것을 확인할 수 있다.
+
+  ```json
+  {
+      // ...
+      "hits": {
+          // ...
+          "max_score": 0.19100355,
+          "hits": [
+              {
+                  // ...
+                  "_id": "1",
+                  "_score": 0.19100355,
+                  // ...
+                  "_explanation": {
+                      "value": 0.19100355,
+                      "description": "weight(text:fox in 0) [PerFieldSimilarity], result of:",
+                      "details": [
+                          {
+                              "value": 0.19100355,
+                              "description": "score(freq=1.0), computed as boost * idf * tf from:",
+                              "details": [
+                                  // ...
+                                  {
+                                      "value": 0.47619045,
+                                      "description": "tf, computed as freq / (freq + k1 * (1 - b + b * dl / avgdl)) from:",
+                                      "details": [
+                                          {
+                                              "value": 1,
+                                              "description": "freq, occurrences of term within document",
+                                              "details": []
+                                          },
+                                          {
+                                              "value": 1.2,
+                                              "description": "k1, term saturation parameter",
+                                              "details": []
+                                          },
+                                          {
+                                              "value": 0.75,
+                                              "description": "b, length normalization parameter",
+                                              "details": []
+                                          },
+                                          {
+                                              "value": 4,
+                                              "description": "dl, length of field",
+                                              "details": []
+                                          },
+                                          {
+                                              "value": 4.5,
+                                              "description": "avgdl, average length of field",
+                                              "details": []
+                                          }
+                                      ]
+                                  }
+                              ]
+                          }
+                      ]
+                  }
+              },
+              {
+                  // ...
+                  "_id": "2",
+                  "_score": 0.17439456,
+                  // ...
+                  "_explanation": {
+                      "value": 0.17439456,
+                      "description": "weight(text:fox in 0) [PerFieldSimilarity], result of:",
+                      "details": [
+                          {
+                              "value": 0.17439456,
+                              "description": "score(freq=1.0), computed as boost * idf * tf from:",
+                              "details": [
+                                  // ...
+                                  {
+                                      "value": 0.43478262,
+                                      "description": "tf, computed as freq / (freq + k1 * (1 - b + b * dl / avgdl)) from:",
+                                      "details": [
+                                          {
+                                              "value": 1,
+                                              "description": "freq, occurrences of term within document",
+                                              "details": []
+                                          },
+                                          {
+                                              "value": 1.2,
+                                              "description": "k1, term saturation parameter",
+                                              "details": []
+                                          },
+                                          {
+                                              "value": 0.75,
+                                              "description": "b, length normalization parameter",
+                                              "details": []
+                                          },
+                                          {
+                                              "value": 5,
+                                              "description": "dl, length of field",
+                                              "details": []
+                                          },
+                                          {
+                                              "value": 4.5,
+                                              "description": "avgdl, average length of field",
+                                              "details": []
+                                          }
+                                      ]
+                                  }
+                              ]
+                          }
+                      ]
+                  }
+              }
+          ]
+      }
+  }
+  ```
+
+  - 주의 사항
+    - 위 내용을 봤을 때 문서 1과 문서 2에서 token fox에 대한 `freq` 값이 1로 같으므로 두 문서의 점수가 같아야 할 것 같지만, 그렇지 않다.
+    - 이는 field의 길이를 나타내는 `dl` 때문이다.
+    - 문서 1의 token 들 중 중복된 fox token 하나가 날아가면서 문서 1의 `dl`이 5에서 4로 1 감소했다.
+    - 이로 인해 TF 값은 올라가게 된다.
+    - 따라서 위 방식을 사용할 때는, 사라진 token들로 인해 `dl` 값이 감소하여 TF값을 증가시킬 수 있다는 것을 염두에 둬야한다.
+
+  
 
 
 
