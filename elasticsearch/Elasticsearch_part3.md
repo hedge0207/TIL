@@ -57,8 +57,6 @@
 
 
 
-
-
 - fielddata
 
   - 집계, 정렬 등은 역인덱스를 통해서는 불가능하다.
@@ -307,8 +305,6 @@
   
   - Elasticsearch에서 stored fields는 압축된다.
     - 따라서 당연하게도, `_id` field와 `_source` field도 압축된다.
-
-
 
 
 

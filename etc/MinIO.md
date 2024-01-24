@@ -135,9 +135,26 @@
     - 예를 들어 Erasure Set의 size가 12라면, parity는 0부터 6 사이의 값으로 설정이 가능하다.
     - Erasure Set의 size(N)는 data shard의 개수(K) + parity shard의 개수(M)이다.
   - 읽기 작업을 위해서는 shard의 종류와 상관 없이 최소 data shard의 개수 만큼의 shard가 필요하다.
-  - 쓰기 작업을 위해서도 최소 data shard의 개수 만큼의 shard가 필요하다.
+    - 예를 들어 data shard의 개수가 12개, parity shard의 개수가 4개라고 가정해보자.
+    - 읽기를 위해서는 data shard의 개수 만큼의 shard가 필요하므로 12개의 shard가 필요하다.
+    - 이 때 data shard 중 4개에 문제가 생겼다고 하더라도 남은 data shard의 개수 8개에 parity shard의 개수 4를 더하면 아직 12개의 shard가 남아 있으므로 읽기 작업은 여전히 가능하다.
+  - 쓰기 작업을 위해서도 최소 K개의 drive가 필요하다.
     - 만약 parity가 Erasure set의 절반이라면 쓰기 작업을 위해서는 data shard의 개수 + 1개 만큼의 shard가 필요하다.
     - 이는 split-brain 문제를 예방하기 위함이다.
+
+
+
+- MinIO는 Reed-Solomon coding을 사용한다.
+
+  > https://www.cs.cmu.edu/~guyb/realworld/reedsolomon/reed_solomon_codes.html
+
+  - Reed-Solomon code
+    - Irving S. Reed와 Gustave Solomon이 소개한 block 기반의 오류 정정 코드이다.
+    - Data storage나 network 상에서 오염된 data를 정정하기 위해 사용한다.
+    - Reed-Solomon code는 BCH의 하위 집합이며, linear block code이다.
+  - Encoder와 decorder로 구성된다.
+    - Reed-Solomon encoder는 data를 block 단위로 받은 후 해당 불록에 정정을 위한 여분의 bits를 추가한다.
+    - Reed-Solomon decoder는 data를 각 block을 처리하면서 error가 발생했다면, encoder에서 추가한 여분의 bits를 사용하여 정정한다.
 
 
 
@@ -431,6 +448,80 @@
 
 
 
+- 주의사항
+
+  - MinIO를 여러 개의 drive에 배포할 경우 MinIO는 가장 작은 drive의 용량을 가지고 capacity를 계산한다.
+    - 예를 들어 15개의 10TB drive와 1개의 1TB drive가 있을 경우 MinIO는 drive별 capacity가 1TB라고 계산한다.
+  - MinIO는 server가 restart 되더라도 물리 drive들이 동일한 순서가 보장된다고 가정한다.
+    - 주어진 mount point가 항상 같은 formatted drive를 가리키도록 하기 위함이다.
+    - 따라서 MinIO는 reboot시에 drive의 순서가 변경되지 않도록 `/etc/fstab`을 사용하거나 이와 유사한 file 기반의 mount 설정을 하는 것을 강하게 권장한다.
+
+  ```bash
+  $ mkfs.xfs /dev/sdb -L DISK1
+  $ mkfs.xfs /dev/sdc -L DISK2
+  $ mkfs.xfs /dev/sdd -L DISK3
+  $ mkfs.xfs /dev/sde -L DISK4
+  
+  $ nano /etc/fstab
+  # <file system>  <mount point>  <type>  <options>         <dump>  <pass>
+  LABEL=DISK1      /mnt/disk1     xfs     defaults,noatime  0       2
+  LABEL=DISK2      /mnt/disk2     xfs     defaults,noatime  0       2
+  LABEL=DISK3      /mnt/disk3     xfs     defaults,noatime  0       2
+  LABEL=DISK4      /mnt/disk4     xfs     defaults,noatime  0       2
+  ```
+
+  - MinIO에서 drive들을 지정할 때는 expansion notation(`x...y`)를 사용해야한다.
+    - 예를 들어 MinIO 환경 변수 file에서 `MINIO_VOLUMES`에 여러 개의 drive를 지정하기 위해서는 아래와 같이 작성하면 된다.
+
+  ```toml
+  MINIO_VOLUMES="/data-{1...4}"
+  ```
+
+
+
+
+
+# Single-Node Multi-Drive MinIO
+
+- Docker를 사용하여 SNMD 방식으로 MinIO 배포하기
+
+  - 먼저 MinIO Docker image를 pull 받는다.
+
+  ```bash
+  $ docker pull minio/minio
+  ```
+
+  - MinIO 환경 변수 file을 생성한다.
+    - `.env` file로 생성하면 된다.
+
+  ```toml
+  MINIO_ROOT_USER=myminioadmin
+  MINIO_ROOT_PASSWORD=minio-secret-key-change-me
+  
+  # Drive들의 경로를 입력하면 되며, 여기 입력한 경로들은 모두 존재해야하고, 비어있어야 한다.
+  
+  MINIO_VOLUMES="/data-{1...4}"
+  ```
+
+  - Docker container를 실행한다.
+
+  ```bash
+  $ docker run                                    \
+    -p 9000:9000 -p 9001:9001                     \
+    -v PATH1:/data-1                              \
+    -v PATH2:/data-2                              \
+    -v PATH3:/data-3                              \
+    -v PATH4:/data-4                              \
+    -v ENV_FILE_PATH:/etc/config.env              \
+    -e "MINIO_CONFIG_ENV_FILE=/etc/config.env"    \
+    --name "minio_local"                          \
+    minio/minio server --console-address ":9001"
+  ```
+
+
+
+
+
 
 
 
@@ -679,7 +770,8 @@
       print(obj)
   ```
   
-  
+
+
 
 
 
