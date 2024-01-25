@@ -983,22 +983,30 @@
 - `op_type`
 
   - 색인하려는 문서가 이미 인덱스에 존재할 때의 동작을 정의할 수 있다.
-  - `create`로 설정할 경우, 색인하려는 문서가 인덱스에 없을 경우에만 색인을 진행한다.
+  - `create`
+    - 색인하려는 문서가 인덱스에 없을 경우에만 색인을 진행한다.
     - `_id` 필드를 기준으로 판단하며, 이미 존재할 경우 색인이 실패하게 된다.
     - `<인덱스명>/_create/<doc_id>`와 같이 보낼 경우 `op_type`은 `create`로 설정된다.
-  - `index`로 설정할 경우, 색인하려는 문서가 이미 인덱스에 있으면 해당 문서를 업데이트한다.
+    
+  - `index`
+    - 색인하려는 문서가 이미 인덱스에 있으면 해당 문서를 업데이트한다.
+    - 주의할 점은 지정한 field뿐 아니라 전체 문서를 변경한다는 점이다.
     - `<인덱스명>/_doc/<doc_id>`와 같이 보낼 경우 `op_type`은 `index`로 설정된다.
-
+  
+  
   ```http
   PUT my-index/_create/1
-  ```
   
-  - 위 명령어는 아래와 같다.
-
-  ```http
+  # 위 명령어는 아래와 같다.
   PUT my-index/_doc/1?op_type=create
   ```
-
+  
+  - `update`
+    - Document의 일부분만 update할 때 사용한다.
+    - 반드시 document의 id와 `doc`에 update할 field들과 변경할 값 들을 넣어줘야한다.
+  - `delete`
+    - Document를 삭제할 때 사용하며, document의 id를 입력해야한다.
+  
   - data stream의 경우  `op_type`이 `create`여야만 색인이 가능하다.
     - 따라서 `?op_type=create`와 같이 명시하거나 `_create` API를 사용해야 한다.
     - bulk의 경우에도 create라는 action을 명시해줘야한다.
@@ -1583,6 +1591,22 @@
     "doc_as_upsert": true
   }
   ```
+
+
+
+- Elasticsearch partial update VS index
+  - 문서의 변경 사항을 반영해야 할 때, 전체 문서를 동일 index에 재색인 하는 방식과 변경된 부분만 재색인 하는 방식 중 어떤 방식이 더 효율적인가.
+  - Test
+    - 건당 2KB 정도의 작은 data 100만 건을 대상으로 테스트 한 결과이다.
+    - 100만건의 문서를 부분 update할 경우 506.964초가 걸린다.
+    - 100만건의 문서를 전체 재색인 할 경우 341.837초가 걸린다.
+  - 대부분의 경우에서 partial update가 index보다 많은 시간이 걸리는 이유.
+    - Partial update의 경우 먼저 기존 문서에서 변경된 부분을 적용하여 새로운 문서를 만드는 작업을 memory에 올려두고 진행해야 하므로 overhead가 발생할 수 있다.
+    - 또한 field가 많거나 문서가 클 경우 overhead가 더 심해질 수도 있다.
+  - [Elasticsearch discuss에 올라온 답변](https://discuss.elastic.co/t/index-vs-update/280637)에 따르면 대부분의 경우 index가 더 효율 적인 것으로 보인다.
+    - 다만 위 답변에도 나와 있듯이 매우 큰 문서의 일부를 색인해야 한다면 일부만 수정하는 것이 network나 memory 측면에서 더 나을 수도 있다.
+    - 그러나 이는 client 관점에서 그렇다는 것이지 partial update를 수행해야 하는 Elasticsearch에서는 또 다를 수 있다.
+    - 위에서 살펴본대로 partial update의 경우 수정된 부분만 적용하여 새로운 문서를 색인해야 하는데, 이는 모두 memory를 사용하므로 Elasticsearch의 memory 사용량은 증가하게 될 수도 있다.
 
 
 

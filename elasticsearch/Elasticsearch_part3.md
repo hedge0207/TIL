@@ -42,6 +42,11 @@
   - Inverted index는 Elasticsearch segment로 disk에 저장된다.
     - 검색시에 disk에 저장된 모든 inverted index(segment)를 읽어 검색을 수행한다.
     - 빈번하게 접근하는 inverted index를 cache memory에 저장하여 보다 빠르게 읽을 수 있도록 한다.
+  - Segment가 불변성을 가짐으로써 얻는 이점
+    - 불변성이 보장된다면, 다수의 스레드가 동시에 접근하여 수정하는 일이 없어지므로 Lock이 필요 없어진다.
+    - 불변성이 보장되지 않을 경우 데이터가 변경될 때 마다 system cache를 갱신해야 하는데, 불변성이 보장된다면 system cache가 상대적으로 오랜 기간 동안 변동 없이 유지되므로 system cache를 적극적으로 활용이 가능하다.
+    - 역색인을 만드는 과정에서 많은 resource(CPU, memory)를 사용하는데, segment의 변경을 허용할 경우 일부가 수정되더라도 segment file을 다시 작성해야 해서 많은 resource가 소모된다.
+    - 따라서 변경 사항이 있을 때 마다 기존의 segment file을 수정하기 보다는 새로운 segment file을 생성하는 것이 낫다.
   - Elasticsearch의 모든 data가 inverted index에 저장되는 것은 아니다.
     - Elasticsearch의 모든 data는 각 field에 최적화된 자료구조에 저장된다.
     - 예를 들어 text field의 data는 inverted index에 저장되지만, numeric이나 geo field는 BKD tree 형태로 저장된다.
