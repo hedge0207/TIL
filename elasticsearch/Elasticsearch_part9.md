@@ -507,16 +507,208 @@
 
 
 
-- terms vector 확인하기
 
-  - inverted index를 보여주는 것은 아니지만, token이 어떤 형태로 생성됐는지 확인할 수 있다.
-  - `_termvectors ` API를 사용한다.
-    - Mapping에서 `terms_vector` 옵션을 `no`로 했어도 API로 요청을 보내면 동적으로 term vectors를 생성한다.
-  - `<인덱스명>/_termvectors/<doc_id>?fields=<확인할 필드>`
-  
-  ```bash
-  $ curl "localhost:9200/test-index/_termvectors/1?fields=title"
+
+## _termvectors API
+
+- `_termvectors` API
+
+  - 문서의 term vector들을 반환한다.
+    - 만약 index 생성시에 `term_vector`를 `no`(default)로 설정하여 저장된 term vector가 없다면 **현재 analyzer를 기준**으로 term vector를 생성해서 반환한다.
+  - Inverted index를 보여주는 것은 아니지만, token이 어떤 형태로 생성됐는지 확인할 수 있다.
+
+  ```http
+  GET _termvectors/<doc_id>?fields=<field1[,field2, ...]>
   ```
+
+
+
+- `_termvectors` API는 문서의 inverted index 상의 token들을 보여주는 것이 아니다.
+
+  - `_termvectors` API는 현재 index에 설정된 analyzer로 분석한 term vector들을 보여주는 것이다.
+  - 예를 들어 아래와 같이 index를 생성했다고 가정해보자.
+
+  ```json
+  // PUT test-index
+  {
+      "settings": {
+          "analysis": {
+              "tokenizer": {
+                  "my_nori_tokenizer":{
+                      "type":"nori_tokenizer",
+                      "decompound_mode":"none",
+                      "user_dictionary_rules":[]
+                  }
+              },
+              "analyzer": {
+                  "my_analyzer":{
+                      "type":"custom",
+                      "tokenizer":"my_nori_tokenizer"
+                  }
+              }
+          }
+      },
+      "mappings": {
+          "properties": {
+              "text":{
+                  "type":"text",
+                  "analyzer": "my_analyzer"
+              }
+          }
+      }
+  }
+  ```
+
+  - 문서를 색인하고
+
+  ```json
+  // PUT test-index/_doc/1
+  {
+    "text":"하와이안피자"
+  }
+  ```
+
+  - Term vector를 확인하면 "피자"와 "하와이안"으로 분리되어 생성된 것을 볼 수 있다.
+
+  ```json
+  // GET test-index/_termvectors/1?fields=text
+  
+  // output
+  {
+      // ...
+      "term_vectors" : {
+          "text" : {
+              // ...
+              "terms" : {
+                  "피자" : {
+                      // ...
+                  },
+                  "하와이안" : {
+                      // ...
+                  }
+              }
+          }
+      }
+  }
+  ```
+
+  - 따라서 "하와이안"으로 검색하면 1번 문서가 검색 된다.
+
+  ```json
+  // GET test-index/_search
+  {
+      "query": {
+          "match": {
+              "text": "하와이안"
+          }
+      }
+  }
+  
+  // output
+  {
+      // ...
+      "hits" : {
+          // ...
+          "hits" : [
+              {
+                  // ...
+                  "_id" : "1",
+                  "_score" : 0.18232156,
+                  "_source" : {
+                      "text" : "하와이안피자"
+                  }
+              }
+          ]
+      }
+  }
+  ```
+
+  - 이제 `my_nori_tokenizer`에 사용자 사전을 추가한다.
+
+  ```json
+  // POST test-index/_close
+  
+  // PUT test-index/_settings
+  {
+      "analysis": {
+          "tokenizer": {
+              "my_nori_tokenizer": {
+                  "type": "nori_tokenizer",
+                  "decompound_mode": "none",
+                  "user_dictionary_rules": [
+                      "하와이안피자"
+                  ]
+              }
+          }
+      }
+  }
+  
+  // POST test-index/_open
+  ```
+
+  - Term vector를 확인하면 "하와이안피자"로 하나의 token만 생성된 것을 볼 수 있다.
+
+  ```json
+  // GET test-index/_termvectors/1?fields=text
+  {
+      // ...
+      "term_vectors" : {
+          "text" : {
+              // ...
+              "terms" : {
+                  "하와이안피자" : {
+                      // ...
+                  }
+              }
+          }
+      }
+  }
+  ```
+
+  - 만약 `_termvectors` API가 현재 inverted index상의 token을 보여준다면 "하와이안"으로 검색했을 때 검색이 안 될 것이다.
+    - 그러나 아래와 같이 검색이 된다.
+    - 이처럼 `_termvectors` API는 현재 index에 설정된 analyzer로 분석한 term vector들을 보여주는 것이지, inveted index 상의 token을 보여주는 것이 아니다.
+
+  ```json
+  // GET test-index/_search
+  {
+      "query": {
+          "match": {
+              "text": "하와이안"
+          }
+      }
+  }
+  
+  // output
+  {
+      // ...
+      "hits" : {
+          // ...
+          "hits" : [
+              {
+                  // ...
+                  "_id" : "1",
+                  "_score" : 0.18232156,
+                  "_source" : {
+                      "text" : "하와이안피자"
+                  }
+              }
+          ]
+      }
+  }
+  ```
+
+  - 다만 이는 field의 `term_vector` 값이 `no`(default)로 설정되었을 때에만 해당한다.
+    - 만일 `term_vector`에 `no`이외의 값을 줘서 term vector가 저장되게 했다면, 재색인을 하지 않는 한 이전 analyzer로 분석한 결과를 보여줄 것이다.
+    - `_termvectors` API는 저장된 term vector가 있으면 해당 term vector를 반환하고, 없으면 term vector를 생성해서 반환하기 때문이다.
+
+
+
+
+
+
+
+
 
 
 
