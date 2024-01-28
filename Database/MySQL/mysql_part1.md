@@ -360,6 +360,14 @@
 
 
 
+## DDL
+
+> DDL문은 transaction을 발생시키지 않는다,
+>
+> 따라서 transaction log도 남지 않는다.
+
+
+
 - Database와 table 생성하기
 
   - Schema 생성하기
@@ -383,16 +391,79 @@
 
 
 
-- `CREATE TABLE ... SELECT`
+- `AUTO_INCREMENT`
 
-  - 테이블을 복사할 때 주로 사용하는 구문이다.
-  - Primary key나 foreign key 등의 제약조건은 복사되지 않는다.
+  - Table 생성시 특정 column을 선언할 때 `AUTO_INCREMENT` 옵션을 지정하면 data 삽입시에 자동으로 1부터 증가하는 값을 넣어준다.
+  - 제약 사항
+    - `AUTO_INCREMENT`로 지정하려면 반드시 `PRIMARY KEY` 혹은 `UNIQUE`로 지정해야 한다.
+    - 숫자 형식의 data type에만 사용할 수 있다.
+  - 아래와 같이 현재 어느 숫자까지 증가되었는지 확인할 수 있다.
 
   ```sql
-  CREATE TABLE <new_table> (SELECT <columns> FROM <orig_table>)
+  SELECT LAST_INSERT_ID();
+  ```
+
+  - `ALTER TABLE`을 사용하여 `AUTO_INCREMENT` 값을 변경할 수 있다.
+
+  ```sql
+  ALTER TABLE <table> AUTO_INCREMENT=<num>;
+  ```
+
+  - 만일 증가폭을 수정하고자 한다면 서버 변수인 `@@auto_increment_increment`를 수정해야한다.
+    - 예를 들어 이 변수의 값을 5로 변경할 경우 5씩 증가하며 값이 들어가게 된다.
+
+  ```sql
+  SET @@auto_increment_increment=<num>;
   ```
 
 
+
+- `CREATE TABLE ... SELECT`
+
+  - Table을 복사할 때 주로 사용하는 구문이다.
+  - Primary key나 foreign key 등의 제약조건은 복사되지 않는다.
+
+  ```sql
+  CREATE TABLE <new_table> (SELECT <columns> FROM <orig_table>);
+  ```
+
+
+
+- `DROP`
+
+  - Table을 삭제할 때 사용한다.
+
+  ```sql
+  DROP TABLE <table>;
+  ```
+
+
+
+- `TRUNCATE`
+
+  - Table의 내용을 삭제할 때 사용한다.
+
+    - Table을 삭제했다 다시 초기 설정으로 생성하는 명령어이다.
+
+    - `DELETE`를 사용하여 모든 data를 지우는 것과의 차이는 `TRUNCATE`는 transaction log를 기록하지 않기에 속도는 빠르지만 복구가 불가능하다.
+
+  ```sql
+  TRUNCATE TABLE <table>;
+  ```
+
+  
+
+
+
+
+
+## DML
+
+> DDL문과 달리 transaction log를 작성한다.
+
+
+
+### 조회
 
 - `USE`
 
@@ -626,6 +697,268 @@
 
   - 출력시 소계에 해당하지 않는 column은 NULL로 출력된다.
     - 위 예시에서 소계에 해당하는 `SUM(price*amount)`를 제외한 `category` column의 data는 NULL로 출력된다.
+
+
+
+### 삽입
+
+- `INSERT`
+
+  - Table에 data를 삽입할 때 사용한다.
+  - Table명 다음에 오는 열은 생략이 가능하다.
+    - 생략할 경우 table에 정의된 열 순서대로 value가 들어가게 된다.
+    - 생략하지 않을 경우 입력한 column 순서대로 value가 들어가게 된다.
+
+  ```sql
+  INSERT INTO <table>[(column1, column2, ...)] VALUES (value1, value2, ...);
+  ```
+
+  - 아래와 같이 여러 data를 한 번에 입력하는 것도 가능하다.
+
+  ```sql
+  INSERT INTO <table>[(column1, column2, ...)] VALUES (value1, value2, ...), (value1, value2, ...);
+  ```
+
+  - `IGNORE`
+    - Data insert시에 문제(e.g. PK값 중복)가 생겨도 error를 발생시키지 않는다.
+    - 대량의 data를 insert 할 때 소수의 잘못된 data 때문에 모든 data가 insert 되지 않는 상황을 방지하기 위한 option이다.
+    - 아래와 같이 `INSERT`와 `INTO` 사이에 작성한다.
+
+  ```sql
+  INSERT IGNORE INTO <table> [(column1, column2, ...)] VALUES (value1, value2, ...);
+  ```
+
+  - `ON DUPLICATE KEY UPDATE`
+    - Insert시에 PK 값이 중복되면 error를 발생시키지 않고, 기존에 해당 PK를 가지고 있던 data를 수정한다.
+    - 아래와 같이 `VALUES` 뒤에 입력하며, PK 값이 중복될 경우 `ON DUPLICATE KEY UPDATE` 뒤에 지정된 내용으로 update가 실행된다.
+
+  ```sql
+  INSERT INTO <table> [(column1, column2, ...)] VALUES (value1, value2, ...) ON DUPLICATE KEY UPDATE <col1>=<val1>[, <col2>=<val2>, ...];
+  ```
+
+
+
+- `INSERT INTO`
+
+  - 다른 table로부터 data를 가져와서 insert할 때 사용한다.
+  - 위에서 본 `CREATE TABLE ... SELECT` 구문과 유사하지만, `INSERT INTO`는 이미 생성된 table을 대상으로 하고, `CREATE TABLE ... SELECT`는 table까지 생성한다는 차이가 있다.
+
+  ```sql
+  INSERT INTO <dest_table> SELECT <columns> FROM <source_table>;
+  ```
+
+
+
+
+
+### 수정 및 삭제
+
+- `UPDATE`
+
+  - 기존에 삽입된 data를 수정하기 위해 사용한다.
+  - `WHERE`을 사용하여 변경 대상 data를 지정할 수 있다.
+    - 지정하지 않을 경우 모든 data가 변경된다.
+
+  ```sql
+  UPDATE <table> SET <col1>=<val1>, <col2>=<val2>, ... [WHERE <조건>];
+  ```
+
+
+
+- `DELETE`
+
+  - 삽입된 data를 삭제하기 위해 사용한다.
+  - `UPDATE`와 마찬가지로 `WHERE`문을 사용하여 삭제 대상 data를 지정할 수 있다.
+    - 지정하지 않을 경우 모든 data가 삭제된다.
+
+  ```sql
+  DELETE FROM <table> [WHERE <조건>];
+
+
+
+- `DROP`, `TRUNCATE`, `DELETE`의 차이
+  - `DROP`의 경우 다른 두 명령어와는 달리 Table을 삭제한다.
+  - `DELETE`의 경우 다른 두 명령어와는 달리 transaction log를 기록하며 data를 삭재한다.
+  - `TRUNCATE`의 경우 table을 삭제했다 다시 생성한다.
+    - `DROP`과의 차이는 table을 삭제했다 다시 생성한다는 것이다.
+    - `DELETE`와의 차이는 transaction log를 생성하지 않는다는 점이다.
+  - 일반적으로 속도는 `DROP`, `TRUNCATE`, `DELETE` 순이다.
+    - `TRUNCATE`는 table을 다시 생성하는 과정이 있으므로 `DROP`보다는 느리다.
+    - `DELETE`는 transaction log를 작성하므로 `TRUNCATE`보다 드리다.
+    - 특히 `DELETE`는 table에 data가 많을 수록 `DROP`, `TRUNCATE`에 비해서 압도적으로 느리다.
+
+
+
+## etc
+
+- `WITH`
+
+  - CTE(Common Table Expression)를 표현하기 위한 구문으로 MySQL 8.0부터 사용하 수 있따.
+    - CTE는 기존의 view, 파생 table, 임시 table 등으로 사용하던 것을 대신할 수 있으며, 더 간결하게 표현할 수 있다.
+    - 재귀적 CTE와 비재귀적 CTE라는 두 종류가 있다.
+  - 비재귀적 CTE
+    - 복잡한 query를 단순화 시키기 위해 사용한다.
+    - 아래 예시에서와 같은 `SELECT`문 뿐만 아니라 `UPDATE` 등에도 사용할 수 있지만, 주로 `SELECT`문을 사용한다.
+    - 아래 예시는 `WITH`문으로 정의한 foo라는 CTE table을 `AS`문을 통해 생성하여, foo table을 대상으로 data를 조회하는 것이다. 
+
+  ```sql
+  WITH <CTE_table>(column_name)
+  AS
+  (
+  	<query>
+  )
+  SELECT <columns> FROM <CTE_table>;
+  
+  
+  -- 예시
+  WITH foo(product_nm, total_price)
+  AS
+  (
+  	SELECT product_nm, sum(price*amount) FROM product group by product_nm;
+  )
+  SELECT product_nm, total_price FROM foo;
+  ```
+
+
+
+
+
+# MySQL의 자료형
+
+- 숫자 자료형
+
+  - 정수, 실수 등의 숫자를 표현한다.
+  - `DECIMAL`은 정확한 수치를 저장하고, `FLOAT`, `DOUBLE`은 근사치를 저장한다.
+
+  | type                    | bytes | 표현 가능 범위                         | 설명                                                 |
+  | ----------------------- | ----- | -------------------------------------- | ---------------------------------------------------- |
+  | BIT(N)                  | N/8   |                                        | 1~64bit를 표현(`b'0000` 형식)                        |
+  | TINYINT                 | 1     | -128 ~ 127                             | 정수                                                 |
+  | SMALLINT                | 2     | -32,768 ~ 32,767                       | 정수                                                 |
+  | MEDINUMINT              | 3     | -8,388,608 ~ 8,388,607                 | 정수                                                 |
+  | INT(), INTEGER          | 4     | 약 -21억 ~ 21억                        | 정수                                                 |
+  | BIGINT                  | 8     | 약 -900경 ~ 900경                      | 정수                                                 |
+  | FLOAT                   | 4     | -3.40E+38 ~ -1.17E-38                  | 소수점 아래 7자리까지                                |
+  | DOUBLE, REAL            | 8     | -1.22E-308 ~1.79E+308                  | 소수점 아래 15자리까지                               |
+  | DECIMAL(m,[d]), NUMERIC | 5~17  | -10<sup>38</sup>+1 ~ 10<sup>38</sup>-1 | 전체 자릿수(m)와 소수점 이하 자릿수(d)를 가진 숫자형 |
+
+
+
+- 문자 자료형
+
+  | type         | bytes        | 설명                             |
+  | ------------ | ------------ | -------------------------------- |
+  | CHAR(n)      | 1~255        | 고정길이 문자형                  |
+  | VARCHAR(n)   | 1~65535      | 가변길이 문자형                  |
+  | BINARY(n)    | 1~255        | 고정길이의 이진 데이터           |
+  | VARBINARY(n) | 1~255        | 가변길이의 이진 데이터           |
+  | TINYTEXT     | 1~255        | 255 크기의 TEXT 데이터           |
+  | TEXT         | 1~65535      | N 크기의 TEXT 데이터             |
+  | MEDIUMTEXT   | 1~16777215   | 최대 16777215 크기의 TEXT 데이터 |
+  | LONGTEXT     | 1~4294967295 | 최대 4GB 크기의 TEXT 데이터      |
+  | TINYBLOB     | 1~255        | 255 크기의 BLOB 데이터           |
+  | BLOB         | 1~65535      | N 크기의 BLOB 데이터             |
+  | MEDIUMBLOB   | 1~16777215   | 최대 16777215 크기의 BLOB 데이터 |
+  | LONGBLOB     | 1~4294967295 | 최대 4GB 크기의 BLOB 데이터      |
+  | ENUM         | 1 또는 2     | 최대 65535개의 열거형 데이터     |
+  | SET          | 1,2,3,4,8    | 최대 64개의 서로 다른 데이터     |
+
+  - CHAR
+    - 뒤에 괄호와 숫자를 입력하지 않을 경우 `CHAR(1)` 로 설정된다.
+    - 고정 길이를 가지므로 CHAR(100)과 같이 입력하고 몇 글자 저장하지 않는다면 남은 공간은 낭비된다.
+  - VARCHAR
+    - Variable chracter의 약자이다.
+    - 가변 길이를 가지므로 큰 값을 설정하고 실제 데이터를 그보다 적게 입력하더라도 공간을 낭비하지 않을 수 있다.
+    - 다만 일반적으로 INSERT/UPDATE시의 성능은 CHAR type이 더 뛰어나다.
+
+  - MySQL에서 CHAR와 VARCHAR 모두 UTF-8로 encoding되므로 입력한 글자가 영문인지 한글인지에 따라 내부적으로 크기가 달라진다.
+    - 그러나 사용자 입장에서는 CHAR(100)은 영문 한글 구분 없이 100글자를 입력하는 것으로 알고 있으면 되며, 내부 할당 크기는 신경 쓸 필요가 없다.
+  - BLOB
+    - Binary Large Object를 뜻한다.
+  - LOB(Large Object) 저장
+    - MySQL은 LOB을 저장하기 위해서 LONGTEXT와 LONGBLOB 자료형을 지원한다.
+    - 약 4GB 크기의 파일까지 저장할 수 있다.
+    - Text 파일은 LONGTEXT에 저장하고, binary 파일은 LONGBLOB에 저장하면 된다.
+
+
+
+- 날짜와 시간 자료형
+
+  | type      | bytes | format              | 설명                                                    |
+  | --------- | ----- | ------------------- | ------------------------------------------------------- |
+  | DATE      | 3     | YYYY-MM-DD          | 1001-01-01 ~ 9999-12-31까지 저장된다.                   |
+  | TIME      | 3     | HH:MM:SS            | -838:59:59.000000 ~ 838.59:59.000000까지 저장된다.      |
+  | DATETIME  | 8     | YYYY-MM-DD HH:MM:SS | 1001-01-01 00:00:00 ~ 9999-12-31 23:59:59까지 저장된다. |
+  | TIMESTAMP | 4     | YYYY-MM-DD HH:MM:SS | 1001-01-01 00:00:00 ~ 9999-12-31 23:59:59까지 저장된다. |
+  | YEAR      | 1     | YYYY                | 1901 ~ 2155까지 저장                                    |
+
+  - DATETIME과 TIMESTAMP의 차이.
+    - 둘 다 범위와 형식은 동일하다.
+    - 그러나 TIMESTAMP의 경우 `time_zone` system variable에 설정된 UTC 시간대로 변환하여 저장한다.
+
+
+
+- 기타
+
+  | type     | bytes | 설명                                                         |
+  | -------- | ----- | ------------------------------------------------------------ |
+  | GEOMETRY | N/A   | 공간 데이터 형식으로 점, 선, 다각형 같은 공간 데이터 개체를 저장 |
+  | JSON     | 8     | JSON 문서를 저장                                             |
+
+
+
+
+
+
+
+# MySQL 프로그래밍
+
+- 변수 사용
+
+  - 변수의 선언과 값의 대입
+
+  ```sql
+  SET @variable_name = value;
+  ```
+
+  - 변수 조회
+
+  ```sql
+  SELECT @variable_name;
+  ```
+
+  - 변수는 connection이 유지되는 동안에만 유지된다.
+
+
+
+- Data type 변환
+
+  - `CAST()`, `CONVERT`()를 사용하여 SQL문 내에서 data type을 변환할 수 있다.
+    - 당연히 table의 type이 변경되지는 않는다.
+    - 둘은 형식만 다르고 거의 유사한 기능을 한다.
+
+  ```sql
+  CAST (expression AS data_type [(길이 등)]);
+  CONVERT (expression, data_type[(길이 등)])
+  ```
+
+  - 암시적 형변환
+    - 위와 같이 `CAST()`, `COVERT()` 등을 사용해서 데이터 형식을 변환하는 것을 명시적 형변환이라 한다.
+    - 반면에 묵시적 형변환이란 위와 같은 함수를 사용하지 않고 형이 변환되는 것을 말한다.
+    - 아래와 같이 문자열 끼리의 더하기 연산에서 문자열인 100이 숫자로 변경되어 계산되는 것이 대표적인 예시이다.
+
+  ```sql
+  -- 암시적 형변환 예시
+  SELECT '100' + '100'
+  ```
+
+
+
+
+
+## MYSQL 내장 함수
+
+
 
 
 
