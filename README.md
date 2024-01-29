@@ -438,6 +438,10 @@
 
 - SQL
 
+- MySQL의 자료형
+
+- MySQL 프로그래밍
+
 <br/>
 <br/>
 ### tips
@@ -833,8 +837,6 @@
 ## Elasticsearch_part5
 - 데이터 검색
 
-- Elasticsearch multi-match
-
 - Exist query
 
 - function_score
@@ -993,9 +995,13 @@
 <br/>
 <br/>
 ## MinIO
-- MinIO
+- MinIO 개요
+
+- Single-Node Multi-Drive MinIO
 
 - Camel Kafka Connector로 MinIO의 data를 Kafka로 전송하기
+
+- Python에서 사용하기
 
 <br/>
 <br/>
@@ -1368,6 +1374,9 @@
 
 - tips
 
+<br/>
+<br/>
+## kafka_python
 <br/>
 <br/>
 <br/>
