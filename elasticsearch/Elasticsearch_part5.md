@@ -2189,13 +2189,23 @@
   -  옵션들
      - `field`(required): 검색 하고자 하는 field를 입력한다.
      - `value`(required): 검색하고자 하는 term을 입력한다.
-     - `fuzziness`: Levenshtein distance 값을 입력한다. 0, 1, 2, AUTO 중 하나의 값을 받는다. 3 이상을 줘도 error는 나지 않으나, 제대로 동작하지는 않는다. AUTO로 줄 경우 term의 길이에 따라 Levenshtein distance가 동적으로 결정된다. 0~2 글자 까지는 0, 3~5까지는 1, 5글자 이상은 2로 설정된다.
+     - `fuzziness`: Levenshtein distance 값을 입력한다. 0, 1, 2, AUTO 중 하나의 값을 받는다. 3 이상을 줘도 error는 나지 않으나, 제대로 동작하지는 않는다.
      - `max_expansions`: 생성할 후보군의 최대 개수를 설정한다.
      - `prefix_length`: 후보군을 생성할 때, term의 첫 번째 문자부터 몇 번째 글자까지 변경 없이 fix 시킬 것인지를 설정한다.
      - `transpositions`: Levenshtein distance를 계산할 때, 인접한 두 문자의 교환(ab -> ba)도 거리로 계산할 것인지 설정한다.
      - `rewrite`: [링크](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-term-rewrite.html) 참조
+  -  `fuzziness`는 `AUTO[:low,high]`와 같이 설정이 가능하다.
+     - 기본값은 `AUTO:3,6`이다.
+     - term의 길이가 low이하면 반드시 matching되어야 한다.
+     - term의 길이가 lowd 초과, high 미만이면 1번의 edit이 허용된다.
+     - term의 길이가 high 이상이면 2번의 edit이 허용된다.
+  -  3 이상의 edit distance를 지원하지 않는 이유
+     - Fuzzy query의 기본적인 목적은 간단한 typing 실수를 찾아내기 위한 것이다.
+     - 3자 이상이 틀릴 경우 사람이 쉽게 인식할 수 있으므로 3자 이상은 지원하지 않는다.
+  -  후보 term들을 선정하는 방식
+     - Elasticsearch는 잘못 입력된 term을 가지고`prefix_length`에서 고정된 문자열들을 가지고 `fuzziness`만큼의 edit이 발생한 term들을 `max_expansions` 값 만큼 생성한다.
   -  예시
-
+  
   ```json
   // GET /_search
   {
@@ -2213,9 +2223,9 @@
     }
   }
   ```
-
+  
   - `match_phrase_prefix` query와 함께 사용하여 자동완성에 사용하기도 한다.
-
+  
   ```json
   // GET /_search
   {
@@ -2241,6 +2251,191 @@
     }
   }
   ```
+
+
+
+- Fuzzy query의 동작 방식
+
+  - 동작 방식
+    - Fuzzy query는 입력으로 들어온 term을 analyzer를 사용하여 token 단위로 분해한다.
+    - 분해된 각 token들가지고 색인된 token들 중에서 `fuzziness`에 설정된 edit distance 내에 속하는 token들을 `max_expansions`만큼 찾는다.
+    - 해당 token들을 가지고 검색한 결과를 반환한다.
+  - Index 생성
+    - 아래와 같이 index를 생성한다.
+
+  ```json
+  // PUT korean-fuzzy-test
+  {
+      "settings": {
+          "analysis": {
+              "tokenizer": {
+                  "my_nori_tokenizer": {
+                      "type": "nori_tokenizer"
+                  }
+              },
+              "analyzer": {
+                  "my_nori_analyzer": {
+                      "type": "custom",
+                      "tokenizer": "my_nori_tokenizer"
+                  }
+              }
+          }
+      },
+      "mappings": {
+          "properties": {
+              "text": {
+                  "type": "text",
+                  "analyzer": "my_nori_analyzer"
+              }
+          }
+      }
+  }
+  ```
+
+  - 문서 2건을 색인한다.
+    - 한글은 ["한글"], 스마트폰은 ["스마트", "폰"]와 같이 token이 생성된다.
+
+  ```json
+  // PUT korean-fuzzy-test/_doc/1
+  {
+      "text":"한글"
+  }
+  
+  // PUT korean-fuzzy-test/_doc/2
+  {
+      "text":"스마트폰"
+  }
+  ```
+
+  - 검색을 실행한다.
+    - 결과를 보면 1, 2번 문서가 모두 검색되는 것을 확인할 수 있다.
+
+  ```json
+  // GET korean-fuzzy-test/_search
+  {
+      "query": {
+          "match": {
+              "text": {
+                  "query": "한굴",
+                  "fuzziness": "1"
+              }
+          }
+      }
+  }
+  ```
+
+  - 한글이 검색된 이유
+    - 검색어로 입력된 "한굴"을 형태소 분석하면 ["한", "굴"]로 token이 생성된다.
+    - "한", "굴"에 1 edit distance만으로 만들 수 있는 token을 1, 2번 문서의 token들 중에 찾는다.
+    - "한" token에 1번의 삽입 연산을 통해 "한글"을 만들 수 있으므로, "한글"로 query를 다시 작성하여 검색을 실행한다.
+    - 따라서 "한글"이라는 token을 가진 1번 문서가 검색이 된다.
+  - 스마트폰이 검색된 이유
+    - 검색어로 입력된 "한굴"을 형태소 분석하면 ["한", "굴"]로 token이 생성된다.
+    - "한", "굴"에 1edit distance만으로 만들 수 있는 token을 1, 2번 문서의 token들 중에 찾는다.
+    - "한", "굴" 모두 한 번의 수정 연산을 통해 "폰"을 만들 수 있으므로 "폰"으로 query를 다시 작성하여 검색을 실행한다.
+    - 따라서 "폰"이라는 token을 가진 2번 문서가 검색이 된다.
+
+
+
+- Fuzzy query는 개별 token을 대상으로 적용된다.
+
+  - 아래와 같이 문서를 색인하고
+
+  ```json
+  // PUT fuzzy-test/_doc/1
+  {
+    "text":"Hello John"
+  }
+  ```
+
+  - 아래와 같이 검색을 해보면 1번 문서가 검색이 되는 것을 확인할 수 있다.
+    - `operator`를 `and`로 줬으므로 잘 못 입력된 "hellp"와 "Johm"이 모두 교정 된 후 matching되어야 1번 문서가 검색된다.
+    - 그런데, 아래 문서를 대상으로 검색을 해보면 1번 문서가 검색이 되는 것을 확인할 수 있다.
+
+  ```json
+  // GET fuzzy-test/_search
+  {
+      "query": {
+          "match": {
+              "text":{
+                  "query":"Hellp, Johm",
+                  "fuzziness": 1,
+                  "operator": "and"
+              }
+          }
+      }
+  }
+  ```
+
+  - Profile을 통해 아래와 같이 두 token이 모두 오타 교정이 된 채로 검색이 실행되는 것을 확인할 수 있다.
+
+  ```json
+  "+(text:hello)^0.8 +(text:john)^0.75"
+  ```
+
+  - `fuzziness` 값 중 `AUTO:[low],[high]`에서 low, high의 값은 전체 term이 아닌 개별 token의 길이를 가지고 계산하는 것이다.
+
+
+
+- Fuzzy query와 한글
+
+  - Fuzzy query는 기본적으로 영문과 같은 언어를 위해 고안 된 것이다.
+    - 따라서 초성, 중성, 종성으로 구분 된 한글에는 적절하지 않을 수 있다.
+    - 한글의 경우 초성, 중성, 종성 단위로 적용되지 않고, 음절 단위로 적용된다.
+  - 아래와 같이 한글 문서를 색인하기 위한 index를 생성한다.
+
+  ```json
+  // PUT korean-fuzzy-test
+  {
+      "settings": {
+          "analysis": {
+              "analyzer": {
+                  "my_nori_analyzer": {
+                      "type": "custom",
+                      "tokenizer": "nori_tokenizer"
+                  }
+              }
+          }
+      },
+      "mappings": {
+          "properties": {
+              "text": {
+                  "type": "text",
+                  "analyzer": "my_nori_analyzer"
+              }
+          }
+      }
+  }
+  ```
+
+  - 한글 문서를 색인한다.
+
+  ```json
+  // PUT korean-fuzzy-test/_doc/1
+  {
+      "text":"한글"
+  }
+  ```
+
+  - `fuzziness`를 1로 주고 "헉글"이라는 잘 못 입력한 term으로 검색한다.
+    - "헉글"이 "한글"이 되기 위해서는 `"헉글"→ "학글"`, `"학글" → "한글"`와 같이 2번의 편집이 필요하다.
+    - 그러나 아래에서 edit distance를 1로 줬음에도 정상적으로 검색이 되는 것을 확인할 수 있다.
+
+  ```json
+  // GET korean-fuzzy-test/_search
+  {
+      "query": {
+          "match": {
+              "text": {
+                  "query": "헉글",
+                  "fuzziness": "1"
+              }
+          }
+      }
+  }
+  ```
+
+
 
 
 
