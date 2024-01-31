@@ -114,33 +114,107 @@
     - MinIO는 drive나 controller 계층에서 caching을 권장하지 않는데, 이는 caching이 채워지고 비워질 때 I/O spike를 유발하여 예측할 수 없는 성능을 보일 수 있기 때문이다.
   - MinIO는 pool 내의 drive들을 Erasure Set으로 자동으로 묶어준다.
     - MinIO의 Erasure Set을 pool내의 node들 간에 대칭적으로 stripe하여 Erasure Set drive가 고르게 분배될 수 있게 한다.
+    - Striping이란 데이터를 병렬로 분리하여 저장하는 방식을 의미한다.
   - 각 MinIO server 내에는 여러 개의 node들이 있을 수 있으며, client는 이 node들 중 어느 곳에나 연결하여 직접 작업을 수행할 수 있다.
     - 요청을 받은 node는 다른 MinIO server 내의 다른 node들에도 요청을 보내고 다른 node들로부터 응답을 받아 이를 취합하여 최종 응답을 반환한다.
     - Node를 추가, 삭제, 변경할 때 마다 client에도 이 정보를 update하는 것은 까다로운 일이므로, 일반적으로 앞단에 load balancer를 두고 load balancer에 이 정보를 update하는 방식을 사용한다.
 
 
 
-- MinIO의 Erasure Coding
-
+- Erasure Coding
   - Erasure Coding(EC)이란
     - Storage에 data를 저장할 때 내결함성을 보장하고, 저장 공간의 효율성을 높이기 위해 설계된 데이터 복제 방식이다.
     - Data를 알고리즘에 따라 n개로 나눈 후에 나뉘어진 데이터들을 Erasure code codec을 사용하여 encoding하여 m개의 parity를 만든다.
     - 이후 data나 parity가 유실될 경우 남은 data와 parity들을 decoding하여 원래의 data를 복구한다.
+  - 기존에 고가용성을 보장하던 방식과의 차이
+    - 기존에는 보관할 data를 그대로 복제하는 방식을 사용했다.
+    - 이 방식의 경우 data를 몇 벌씩 더 만드는 방식이기 때문에 보다 많은 저장 공간을 필요로 한다는 단점이 있다.
+    - Erasure coding의 경우 기존 방식보다 적은 저장 공간으로 고가용성을 보장할 수 있게 해준다.
+  - Object를 쓸 때 동작 방식
+    - N개의 drive가 있을 때, N개 중 K개를 data shard로, 나머지 M개를 parity shard로 나눈다.
+    - 결국 $$N = K + M$$이 된다.
+    - 새로운 object가 저장될 때, object는 K개의 fragment들로 분할되어, K개의 data shard에 하나씩 저장된다.
+    - 만약 이 때 object의 내용의 길이가 K로 나누어 떨어지지 않는다면 padding을 하여 길이를 맞춘다.
+    - 또한 이 때, object를 복원할 때 사용하기 위해 M개의 추가적인 fragment도 생성하여 M개의 parity shard에 하나씩 저장한다.
+    - Parity shard에 저장되는 fragment들은 object를 encoding하여 생성한다.
+    - Encoding 방식에는 여러 가지가 있는데 가장 널리 사용되는 것은 Reed-Solomon coding이다.
+  - Object를 읽을 때 동작 방식
+    - 모든 parity shard에 문제가 생기지 않는 이상, 일부 shard에 문제가 생기더라도 parity shard를 통해 object의 복원이 가능하다.
+    - 어떤 shard에도 문제가 없을 경우, 각 data shard들이 저장하고 있는 object fragment들을 모아서 object를 반환한다.
+    - M개 이하의 shard에 문제가 있을 경우, 만약 문제가 생긴 M개의 shard에 parity shard가 포함되어 있다면 정상 상태인 parity shard를 사용하여 object를 복원한 후 반환한다. 만약 문제가 생긴 M개의 shard가 모두 parity shard라면, data shard에서 object fragment들을 모아서 object를 반환한다.
+    - 따라서 Erasure coding은 M개 이하의 shard에서 문제가 생겼을 때만 고가용성을 보장한다.
+
+
+
+- MinIO의 Erasure Coding
 
   - MinIO에서도 data redundancy와 가용성을 위해 Erasure Coding을 사용한다.
     - MinIO는 각 server pool의 drive들을 하나 이상의 같은 크기를 가진 Erasure Set으로 그룹화한다.
     - Erasure Set의 크기와 개수는 server pool을 처음으로 구성할 때 결정되며, server pool이 구성된 이후에는 변경할 수 없다.
+    - 그러나 parity 개수는 변경이 가능하다.
   - 각 쓰기 작업마다 MinIO는 object를 data와 parity shard로 분할한다.
     - Parity의 개수는 0부터 Erasure Set size의 절반까지로 설정이 가능하다.
     - 예를 들어 Erasure Set의 size가 12라면, parity는 0부터 6 사이의 값으로 설정이 가능하다.
-    - Erasure Set의 size(N)는 data shard의 개수(K) + parity shard의 개수(M)이다.
-  - 읽기 작업을 위해서는 shard의 종류와 상관 없이 최소 data shard의 개수 만큼의 shard가 필요하다.
-    - 예를 들어 data shard의 개수가 12개, parity shard의 개수가 4개라고 가정해보자.
-    - 읽기를 위해서는 data shard의 개수 만큼의 shard가 필요하므로 12개의 shard가 필요하다.
-    - 이 때 data shard 중 4개에 문제가 생겼다고 하더라도 남은 data shard의 개수 8개에 parity shard의 개수 4를 더하면 아직 12개의 shard가 남아 있으므로 읽기 작업은 여전히 가능하다.
-  - 쓰기 작업을 위해서도 최소 K개의 drive가 필요하다.
-    - 만약 parity가 Erasure set의 절반이라면 쓰기 작업을 위해서는 data shard의 개수 + 1개 만큼의 shard가 필요하다.
-    - 이는 split-brain 문제를 예방하기 위함이다.
+    - Erasure Set의 size(N)는 data shard의 개수(K) + parity shard의 개수(M)이다(결국 전체 drive의 개수).
+  
+  - Parity 개수는 변경이 가능하다.
+    - 그러나 변경하더라도 변경 이전의 object들은 변경 이전의 설정이 적용된다.
+  
+  - MinIO는 object를 읽거나 쓸 때 정족수를 기반으로 한다.
+    - 읽기를 위해서는 `ERASURE_SET_SIZE - EC:N`만큼의 정족수가 필요하다.
+    - 쓰기를 위해서도 `ERASURES_SET_SIZE - EC:N`만큼의 정족수가 필요하다.
+    - 단, 만약 `EC:N`의 값이 최댓값인 ERASURE_SET_SIZE의 절반이라면, 이 때는 `(ERASURES_SET_SIZE - EC:N) + 1`만큼의 정족수가 필요하다.
+    - 결국 `EC:N`의 값이 커질수록 더 많은 drive 혹은 node가 내려가더라도 지속적인 서비스가 가능해진다.
+  - `EC:N`의 값이 ERASURE_SET_SIZE의 절반일 때 쓰기 작업을 위해  `(ERASURES_SET_SIZE-EC:N) + 1` 만큼의 shard가 필요한 이유는 split-brain 문제를 예방하기 위함이다.
+    - 만일 network 문제로 인해 4개의 node가 2개씩 나뉘게 되었을 때, `(ERASURES_SET_SIZE-EC:N)`만으로 쓰기 quorum을 충족하게 되면 2개씩 나뉜 두 그룹에 각각 쓰기 작업이 가능해진다. 
+    - 이럴 경우 두 그룹 간에 data 불일치가 발생할 수 있다. 
+    - 따라서 이 경우 쓰기 quorum은 `(ERASURES_SET_SIZE-EC:N)`에 1을 더해준 값으로 설정된다.
+
+
+
+- Parity 개수 변경하기
+
+  - MinIO는 erasure set size(erasure set 내의 전체 drive 개수)에 따라 parity의 개수를 아래와 같이 자동으로 설정한다.
+
+  | Erasure Set Size | Default Parity (EC:N) |
+  | ---------------- | --------------------- |
+  | 1                | EC:0                  |
+  | 2 ~ 3            | EC:1                  |
+  | 4 ~ 5            | EC:2                  |
+  | 6 ~ 7            | EC:3                  |
+  | 8 ~ 16           | EC:4                  |
+
+  - 이 기본 값은 `MINIO_STORAGE_CLASS_STANDARD` 환경변수를 수정하여 변경할 수 있다.
+    - `EC:N` 형태로 설정한다.
+    - 이렇게 설정하는 경우에도 최초로 server pool을 구성할 때 drive 개수의 절반을 넘길 수는 없다.
+
+  ```bash
+  $ export MINIO_STORAGE_CLASS_STANDARD="EC:8"
+  ```
+
+
+
+- MinIO는 최소 4대의 node로 하나의 erasure set을 구성하는 것을 권장한다.
+
+  > https://github.com/minio/minio/discussions/18572
+
+  - Node가 1대일 경우
+    - 당연하게도, node가 내려가게 되면 지속적인 서비스가 불가능하다.
+  - Node가 2대일 경우
+    - Node 1대가 내려갈 경우 write quorum을 충족하지 못 해 쓰기 작업이 불가능해진다.
+
+  - Node가 3대일 경우
+    - Node 1대가 내려가더라도 write quorum을 충족하므로 읽기, 쓰기 작업이 모두 가능하다.
+  - Node가 4대일 경우
+    - Node 2대가 내려가더라도 read quorum을 충족하므로 읽기 작업이 가능하다.
+  - Node가 4대일 때 부터 2개의 node가 내려가더라도 읽기 작업은 가능하므로, 최소 4대의 node로 server pool을 구성하는 것을 권장한다.
+
+
+
+- Parity의 개수와 Storage Efficiency
+  - Parity의 개수에 따라 가용성과 사용 가능한 storage의 양이 달라진다.
+    - Parity의 개수가 증가할수록 가용성도 증가하지만 가용한 storage의 양은 감소한다.
+  - Parity로 지정된 shard(drive)는 data를 저장하는 용도로는 사용할 수 없기 때문이다.
 
 
 
@@ -201,7 +275,7 @@
 
   | Operation     | Versioning Enabled                                           | Versioning Disabled \| Suspended           |
   | ------------- | ------------------------------------------------------------ | ------------------------------------------ |
-  | PUT(write)    | 객체의 버전을 "latest"로 새오 생성하고 unique한 version ID를 할당한다. | Object의 이름이 같으면 덮어쓴다.           |
+  | PUT(write)    | 객체의 버전을 "latest"로 새로 생성하고 unique한 version ID를 할당한다. | Object의 이름이 같으면 덮어쓴다.           |
   | GET(read)     | 가장 최신 버전인 object를 찾으며, version ID를 통해 특정 version의 object를 찾을 수도 있다. | Object를 탐색한다.                         |
   | LIST(read)    | 특정 bucket 혹은 prefix의 가장 최신 version인 object를 찾으며, version ID와 연결된 모든 객체를 찾는 것도 가능하다. | 특정 bucket 혹은 prefix의 object를 찾는다. |
   | DELETE(write) | 삭제 대상 object에 대해 0-byte delete marker를 생성한다(soft delete). 특정 version의 object를 삭제하는 것도 가능하다(hard delete). | Object를 삭제한다.                         |
