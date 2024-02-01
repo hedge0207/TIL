@@ -2385,7 +2385,154 @@
 
 
 
+# Analyzer 수정
 
+- Field에 설정된 analyzer를 다른 analyzer로 변경하는 것은 불가능하다.
+
+  - 그러나 field에 설정된 anaylzer를 수정하는 것은 가능하다.
+    - 이 경우 새로 색인되는 문서에만 수정된 analyzer가 적용된다.
+  - 예를 들어 아래와 같이 index를 생성한다.
+    - 2개의 analyzer를 설정한다.
+
+  ```json
+  // PUT test-index
+  {
+      "settings": {
+          "analysis": {
+              "char_filter": {
+                  "my_mappings_char_filter": {
+                      "type": "mapping",
+                      "mappings": [
+                          "foo => bar"
+                      ]
+                  }
+              },
+              "analyzer": {
+                  "my_analyzer": {
+                      "type": "custom",
+                      "tokenizer": "standard",
+                      "char_filter": [
+                          "my_mappings_char_filter"
+                      ]
+                  },
+                  "another_analyzer":{
+                      "type":"custom",
+                      "tokenizer":"standard"
+                  }
+              }
+          }
+      },
+      "mappings": {
+          "properties": {
+              "text":{
+                  "type":"text",
+                  "analyzer": "my_analyzer"
+              }
+          }
+      }
+  }
+  ```
+
+  - 문서를 색인한다.
+
+  ```json
+  // PUT test-index/_doc/1
+  {
+      "text":"foo"
+  }
+  ```
+
+  - 이후 `text` field의 anaylzer를 `my_analyzer`에서 `another_analyzer`로 변경을 시도한다.
+    - 유효하지 않은 요청이므로 error가 발생하게 된다.
+
+  ```json
+  // PUT test-index/_mapping
+  {
+      "properties":{
+          "text":{
+              "type":"text",
+              "analyzer":"another_analyzer"
+          }
+      }
+  }
+  ```
+
+  - 이미 설정된 analyzer를 수정
+    - `text` field에 설정된 `my_analyzer`를 수정한다.
+    - 수정 전에 index를 close하고, 수정이 완료된 후 다시 open해야한다.
+    - 기존에 설정되어 있던 `char_fitler`를 없앤다.
+
+  ```json
+  // POST test-index/_close
+  
+  // PUT test-index/_settings
+  {
+      "analysis": {
+          "analyzer": {
+              "my_analyzer":{
+                  "type": "custom",
+                  "char_filter":[]
+              }
+          }
+      }
+  }
+  
+  // POST test-index/_open
+  ```
+
+  - 다른 문서를 색인한다.
+
+  ```json
+  // PUT test-index/_doc/2
+  {
+      "text":"foo"
+  }
+  ```
+
+  - 검색을 실행한다.
+
+  ```json
+  // GET test-index/_search
+  {
+      "query": {
+          "match": {
+              "text": "bar"
+          }
+      }
+  }
+  ```
+
+  - 아래와 같이 `my_mappings_char_filter`를 빼기 전에 색인한 1번 문서만 검색되는 것을 볼 수 있다.
+
+  ```json
+  {
+      // ...
+      "hits": {
+          // ...
+          "hits": [
+              {
+                  "_index": "test-index",
+                  "_id": "1",
+                  "_score": 0.6931471,
+                  "_source": {
+                      "text": "foo"
+                  }
+              }
+          ]
+      }
+  }
+  ```
+
+
+
+- Service에서 사용중인 index의 analyzer 변경하기
+  - 운영중에 index의 analyzer를 변경하는 것은 많은 위험이 따른다.
+    - Index의 analyzer를 변경하려면 close와 open이 필요하다.
+    - 만약 이미 색인 된 문서에도 변경사항을 적용해야 한다면 재색인도 필요하다.
+    - 따라서 운영중인 index의 analyzer를 바꾸기 위해서는 운영 중인 index에는 영향을 최소화하면서 변경할 방법을 찾아야한다.
+  - 일반적으로 변경된 analyzer가 적용된 index를 생성하고, 해당 index에 문서를 재색인 한 후, alias를 활용하여 변경 된 index에 요청하도록 하는 방식을 사용한다.
+    - 이 방식을 사용하려면 client들은 처음부터 alias를 사용하여 요청을 보내고 있었어야한다.
+    - 또한 이 과정이 실행되고 있는 도중에는 기존 index에 색인을 막아야 data의 유실을 방지할 수 있다.
 
 
 
