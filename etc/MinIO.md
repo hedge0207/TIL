@@ -89,7 +89,7 @@
     - Erasure Coding은 RAID나 replication보다 훨씬 적은 overhead로 object 수준의 복구를 제공한다.
   - MinIO는 고가용성과 resiliency를 위해 data를 여러 Erasure Set들로 분산한다.
     - Erasure Set은 Erasure Coding을 지원하는 여러 drive들의 집합이다.
-    - MinIO는 object를 shard라 불리는 덩어리로 나눈 후 이드을 Erasure Set 내의 여러 drive로 분산시켜 저장한다.
+    - MinIO는 object를 shard라 불리는 덩어리로 나눈 후 이들을 Erasure Set 내의 여러 drive로 분산시켜 저장한다.
     - 가장 높은 수준의 redundancy 설정을 할 경우 MinIO를 구성하는 전체 drive들 중 절반이 동작하지 않아도, MinIO는 읽기 요청을 처리할 수 있다.
     - Server Pool 내의 Erasure Set의 크기와 개수는 set 내의 전체 dive의 개수와 minio server의 개수를 기반으로 계산된다.
   - 미사용 data를 보호하기 위한 Bit Rot Healing이 구현되어 있다.
@@ -126,23 +126,27 @@
     - Storage에 data를 저장할 때 내결함성을 보장하고, 저장 공간의 효율성을 높이기 위해 설계된 데이터 복제 방식이다.
     - Data를 알고리즘에 따라 n개로 나눈 후에 나뉘어진 데이터들을 Erasure code codec을 사용하여 encoding하여 m개의 parity를 만든다.
     - 이후 data나 parity가 유실될 경우 남은 data와 parity들을 decoding하여 원래의 data를 복구한다.
+    - 주의할 점은 drive를 data drive와 parity drive로 나누는 것이 아니고, object를 data shard와 parity shard로 나누어 각 drive에 무선적으로 저장한다는 점이다.
+    - 즉 하나의 drive에 어떤 object의 data shard가 저장되어 있으면서 다른 object의 parity shard가 저장되어 있는 것도 가능하다.
   - 기존에 고가용성을 보장하던 방식과의 차이
     - 기존에는 보관할 data를 그대로 복제하는 방식을 사용했다.
     - 이 방식의 경우 data를 몇 벌씩 더 만드는 방식이기 때문에 보다 많은 저장 공간을 필요로 한다는 단점이 있다.
     - Erasure coding의 경우 기존 방식보다 적은 저장 공간으로 고가용성을 보장할 수 있게 해준다.
   - Object를 쓸 때 동작 방식
-    - N개의 drive가 있을 때, N개 중 K개를 data shard로, 나머지 M개를 parity shard로 나눈다.
-    - 결국 $$N = K + M$$이 된다.
-    - 새로운 object가 저장될 때, object는 K개의 fragment들로 분할되어, K개의 data shard에 하나씩 저장된다.
+    - N개의 drive가 있을 때, object를 K개의 data fragment로 분할하고 이들을 encoding하여 M개의 parity fragment를 만든다.
+    - 이때 $$N = K + M$$이다.
+    - 새로운 object가 저장될 때, object는 K개의 fragment들로 분할되어, K개의 drive에 저장된다.
     - 만약 이 때 object의 내용의 길이가 K로 나누어 떨어지지 않는다면 padding을 하여 길이를 맞춘다.
-    - 또한 이 때, object를 복원할 때 사용하기 위해 M개의 추가적인 fragment도 생성하여 M개의 parity shard에 하나씩 저장한다.
+    - 또한 이 때, object를 복원할 때 사용하기 위해 M개의 추가적인 fragment도 생성하여 data fragment가 저장되지 않은 drive에 저장한다.
     - Parity shard에 저장되는 fragment들은 object를 encoding하여 생성한다.
     - Encoding 방식에는 여러 가지가 있는데 가장 널리 사용되는 것은 Reed-Solomon coding이다.
   - Object를 읽을 때 동작 방식
-    - 모든 parity shard에 문제가 생기지 않는 이상, 일부 shard에 문제가 생기더라도 parity shard를 통해 object의 복원이 가능하다.
+    - 일부 shard에 문제가 생기더라도 parity shard를 통해 object의 복원이 가능하다.
     - 어떤 shard에도 문제가 없을 경우, 각 data shard들이 저장하고 있는 object fragment들을 모아서 object를 반환한다.
     - M개 이하의 shard에 문제가 있을 경우, 만약 문제가 생긴 M개의 shard에 parity shard가 포함되어 있다면 정상 상태인 parity shard를 사용하여 object를 복원한 후 반환한다. 만약 문제가 생긴 M개의 shard가 모두 parity shard라면, data shard에서 object fragment들을 모아서 object를 반환한다.
     - 따라서 Erasure coding은 M개 이하의 shard에서 문제가 생겼을 때만 고가용성을 보장한다.
+  
+  - 하나의 object에 대해서 하나의 drive는 하나 이상의 segment를 가질 수 없다.
 
 
 
@@ -593,6 +597,193 @@
   ```
 
 
+
+
+
+# Multi-Node Multi-Drive MinIO
+
+- Docker를 사용하여 MinIO를 MNMD로 배포하기	
+
+  - MinIO에서는 server pool을 설정할 때 `{x...y}` 형식의 expansion notation을 사용해야 한다.
+    - MinIO에서는 아래와 같이 sequential한 hostname 또는 IP를 사용한는 것을 권장한다.
+    - Hostname 혹은 IP를 sequential하게 사용할 경우 관리의 overhead가 줄어든다는 장점이 있다.
+    - Sequential하게 설정하지 않더라도 정상 동작한다.
+
+  ```bash
+  # 예를 들어 아래와 같이 sequential하게 hostname을 설정했을 때
+  minio-01.example.com
+  minio-02.example.com
+  minio-03.example.com
+  minio-04.example.com
+  
+  # sever pool 설정은 아래와 같이 해준다.
+  minio-0{1...4}.example.com
+  
+  
+  # 만약 아래와 같이 non sequential하게 hostname을 설정했다면
+  minio-foo.example.com
+  minio-bar.example.com
+  minio-baz.example.com
+  minio-qux.example.com
+  
+  # sever pool 설정은 아래와 같이 해준다.
+  minio-foo.example.com minio-bar.example.com minio-baz.example.com minio-qux.example.com
+  ```
+
+  - MinIO를 여러개의 node로 구성할 경우 Nginx와 같은 load balancer를 사용하는 것이 권장된다.
+    - MinIO node가 추가 삭제될 때 마다 client에도 이를 추가하는 것이 번거롭기 때문이다.
+    - 따라서 아래 예시에서는 Nignx도 함께 배포할 것이다.
+  - 아래와 같이 Nginx 설정 파일을 작성한다.
+    - Request body에 담겨서 오는 file 크기에 제한을 두지 않기 위해서 `client_max_body_size`의 값을 0으로 설정했다.
+
+  ```nginx
+  user  nginx;
+  worker_processes  auto;
+  
+  error_log  /var/log/nginx/error.log warn;
+  pid        /var/run/nginx.pid;
+  
+  events {
+      worker_connections  4096;
+  }
+  
+  http {
+      include       /etc/nginx/mime.types;
+      default_type  application/octet-stream;
+  
+      log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                        '$status $body_bytes_sent "$http_referer" '
+                        '"$http_user_agent" "$http_x_forwarded_for"';
+  
+      access_log  /var/log/nginx/access.log  main;
+      sendfile        on;
+      keepalive_timeout  65;
+  
+      # include /etc/nginx/conf.d/*.conf;
+  
+      upstream minio {
+          server minio1:9000;
+          server minio2:9000;
+      }
+  
+      upstream console {
+          ip_hash;
+          server minio1:9001;
+          server minio2:9001;
+      }
+  
+      server {
+          listen       9000;
+          listen  [::]:9000;
+          server_name  localhost;
+  
+          ignore_invalid_headers off;
+          client_max_body_size 0;
+          # To disable buffering
+          proxy_buffering off;
+          proxy_request_buffering off;
+  
+          location / {
+              proxy_set_header Host $http_host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+  
+              proxy_connect_timeout 300;
+              proxy_http_version 1.1;
+              proxy_set_header Connection "";
+              chunked_transfer_encoding off;
+  
+              proxy_pass http://minio;
+          }
+      }
+  
+      server {
+          listen       9001;
+          listen  [::]:9001;
+          server_name  localhost;
+  
+          ignore_invalid_headers off;
+          client_max_body_size 0;
+          proxy_buffering off;
+          proxy_request_buffering off;
+  
+          location / {
+              proxy_set_header Host $http_host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_set_header X-NginX-Proxy true;
+  
+              real_ip_header X-Real-IP;
+  
+              proxy_connect_timeout 300;
+              
+              proxy_http_version 1.1;
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection "upgrade";
+              
+              chunked_transfer_encoding off;
+  
+              proxy_pass http://console;
+          }
+      }
+  }
+  ```
+
+  - `docker-compose` file을 아래와 같이 작성한다.
+    - `command` 부분에 server pool을 `http://minio{1...2}/data{1...2}`와 같이 설정해준다.
+    - 예시에서는 sequential한 hostname(minio1, minio2)을 사용하였지만, sequential하진 않은 hostname을 사용할 경우 주석 처리한 부분과 같이 따로 작성해주면 된다.
+
+  ```yaml
+  version: '3.7'
+  
+  
+  x-minio-common: &minio-common
+    image: minio/minio:latest
+    command: server --console-address ":9001" http://minio{1...2}/data{1...2}
+    # hostname 혹은 IP가 sequential하지 않을 경우
+    # command: server --console-address ":9001" http://minio-foo/data{1...2} http://minio-bar/data{1...3}
+    environment:
+      MINIO_ROOT_USER: 'foo'
+      MINIO_ROOT_PASSWORD: 'minio_password'
+  
+  
+  services:
+    minio1:
+      <<: *minio-common
+      hostname: minio1
+      volumes:
+        - ./drives/data1-1:/data1
+        - ./drives/data1-2:/data2
+  
+    minio2:
+      <<: *minio-common
+      hostname: minio2
+      volumes:
+        - ./drives/data2-1:/data1
+        - ./drives/data2-2:/data2
+  
+    nginx:
+      image: nginx:latest
+      hostname: nginx
+      volumes:
+        - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      ports:
+        - "9020:9000"
+        - "9021:9001"
+      depends_on:
+        - minio1
+        - minio2
+  ```
+
+  - Docker container들을 실행시킨다.
+
+  ```bash
+  $ docker compose up
+  ```
+
+  - 9020, 9021 port로 요청을 보내면 Nginx가 요청을 받게 되고, Nginx가 해당 요청을 minio1 혹은 minio2 node로 load balancing한다.
 
 
 
