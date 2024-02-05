@@ -883,6 +883,179 @@
 
 
 
+
+
+# Bucket의 event를 전송하기
+
+> https://min.io/docs/minio/linux/administration/monitoring/bucket-notifications.html
+
+- MinIO는 bucket에서 발생한 event를 Kafa, Elasticsearch, MySQL, PostgreSQL 등으로 전송하는 기능을 지원한다.
+  - 전송을 지원하는 event type은 [AWS S3 Event Notification](https://docs.aws.amazon.com/AmazonS3/latest/userguide/EventNotifications.html)과 완전히 호환된다.
+
+
+
+- MinIO는 `mc event add`를 사용하여 특정 bucket에 대한 event notification trigger를 추가할 수 있다.
+
+  - 형식은 아래와 같다.
+
+  ```bash
+  mc [GLOBALFLAGS] event add \
+                   [--event "string"]  \
+                   [--ignore-existing] \
+                   [--prefix "string"] \
+                   [--suffix "string"] \
+                   ALIAS               \
+                   ARN
+  ```
+
+  - `--event`에 넣을 수 있는 값들은 아래와 같다.
+    - 복수의 값을 event를 등록해야 할 경우 `--event put,get`과 같이 `,`로 구분하여 입력하면 된다.
+    - 각 value들은 S3 Event와 호환된다.
+
+  | Supported Value | Corresponding S3 Events                                      |
+  | :-------------- | :----------------------------------------------------------- |
+  | `put`           | `s3:ObjectCreated:CompleteMultipartUpload`<br />`s3:ObjectCreated:Copy`<br />`s3:ObjectCreated:DeleteTagging`<br />`s3:ObjectCreated:Post`<br />`s3:ObjectCreated:Put`<br />`s3:ObjectCreated:PutLegalHold`<br />`s3:ObjectCreated:PutRetention`<br />`s3:ObjectCreated:PutTagging` |
+  | `get`           | `s3:ObjectAccessed:Head`<br />`s3:ObjectAccessed:Get`<br />`s3:ObjectAccessed:GetRetention`<br />`s3:ObjectAccessed:GetLegalHold` |
+  | `delete`        | `s3:ObjectRemoved:Delete`<br />`s3:ObjectRemoved:DeleteMarkerCreated` |
+  | `replica`       | `s3:Replication:OperationCompletedReplication`<br />`s3:Replication:OperationFailedReplication`]<br />`s3:Replication:OperationMissedThreshold`<br />`s3:Replication:OperationNotTracked`<br />`s3:Replication:OperationReplicatedAfterThreshold` |
+  | `ilm`           | `s3:ObjectTransition:Failed`<br />`s3:ObjectTransition:Complete`<br />`s3:ObjectRestore:Post`<br />`s3:ObjectRestore:Completed` |
+  | `scanner`       | `s3:Scanner:ManyVersions`<br />`s3:Scanner:BigPrefix`        |
+
+
+
+
+
+### Bucket의 event를 Kafka로 전송하기
+
+- 먼저 MinIO host에 대한 alias를 생성한다.
+
+  ```bash
+  $ mc alias set <alias> <URL> <ACCESS_KEY> <SECRET_KEY>
+  ```
+
+
+
+- MinIO에 Kafka와 관련된 정보를 추가한다.
+
+  > 각 설정에 대한 설명은 아래에서 확인할 수 있다.
+  >
+  > https://min.io/docs/minio/linux/reference/minio-server/settings/notifications/kafka.html#minio-server-config-bucket-notification-kafka
+
+  - `ENDPOINT`에는 Kafka broker들을 `,`로 구분하여 입력하면 된다.
+  - `IDENTIFIER`에는 unique한 값을 설정해주면 된다.
+    - `notify_kafka`라는 service에 대한 대한 이름을 설정하는 것이다.
+    - 만일 `notify_kafka`에 동일한 `IDENTIFIER`를 설정할 경우 해당 설정을 덮어쓰게 된다.
+  - 아래와 같이 환경 변수로 설정할 수도 있고
+
+  ```bash
+  set MINIO_NOTIFY_KAFKA_ENABLE_<IDENTIFIER>="on"
+  set MINIO_NOTIFY_KAFKA_BROKERS_<IDENTIFIER>="<ENDPOINT>"
+  set MINIO_NOTIFY_KAFKA_TOPIC_<IDENTIFIER>="<string>"
+  set MINIO_NOTIFY_KAFKA_SASL_USERNAME_<IDENTIFIER>="<string>"
+  set MINIO_NOTIFY_KAFKA_SASL_PASSWORD_<IDENTIFIER>="<string>"
+  set MINIO_NOTIFY_KAFKA_SASL_MECHANISM_<IDENTIFIER>="<string>"
+  set MINIO_NOTIFY_KAFKA_TLS_CLIENT_AUTH_<IDENTIFIER>="<string>"
+  set MINIO_NOTIFY_KAFKA_SASL_<IDENTIFIER>="<string>"
+  set MINIO_NOTIFY_KAFKA_TLS_<IDENTIFIER>="<string>"
+  set MINIO_NOTIFY_KAFKA_TLS_SKIP_VERIFY_<IDENTIFIER>="<string>"
+  set MINIO_NOTIFY_KAFKA_CLIENT_TLS_CERT_<IDENTIFIER>="<string>"
+  set MINIO_NOTIFY_KAFKA_CLIENT_TLS_KEY_<IDENTIFIER>="<string>"
+  set MINIO_NOTIFY_KAFKA_QUEUE_DIR_<IDENTIFIER>="<string>"
+  set MINIO_NOTIFY_KAFKA_QUEUE_LIMIT_<IDENTIFIER>="<string>"
+  set MINIO_NOTIFY_KAFKA_VERSION_<IDENTIFIER>="<string>"
+  set MINIO_NOTIFY_KAFKA_COMMENT_<IDENTIFIER>="<string>"
+  ```
+
+  - `mc admin config`를 사용하여 추가할 수도 있다.
+    - `alias`에는 위에서 생성한 alias를 입력하면 된다.
+
+  ```bash
+  mc admin config set <alias>/ notify_kafka:IDENTIFIER \
+     brokers="<ENDPOINT>" \
+     topic="<string>" \
+     sasl_username="<string>" \
+     sasl_password="<string>" \
+     sasl_mechanism="<string>" \
+     tls_client_auth="<string>" \
+     tls="<string>" \
+     tls_skip_verify="<string>" \
+     client_tls_cert="<string>" \
+     client_tls_key="<string>" \
+     version="<string>" \
+     queue_dir="<string>" \
+     queue_limit="<string>" \
+     comment="<string>"
+  ```
+
+  - 잘 설정됐는지 확인하려면, 아래와 같이 입력하면 된다.
+
+  ```bash
+  $ mc admin config get <alias> notify_kafka
+  ```
+
+  - MinIO deployment를 재실행한다.
+    - 변경된 설정을 적용하기 위해서 아래와 같이 deployment를 재시작해야한다.
+
+  ```bash
+  $ mc admin service restart <alias>
+  ```
+
+
+
+- Bucket notification을 설정
+
+  - 먼저 ARN 정보를 확인해야한다.
+    - Bucket notification 설정시에 ARN 정보를 입력해야 한다.
+    - 아래와 같은 방식으로 확인할 수 있다.
+    - 결과에서 `info.sqsARN`을 확인하면 된다.
+
+  ```bash
+  $ mc admin info --json <alias>
+  ```
+
+  - Bucket notification을 설정한다.
+    - Event를 publish할 alias와 bucket을 `<alias>/<bucket>` 형태로 입력한다.
+    - 위에서 확인한 ARN을 그대로 `<ARN>`에 넣어준다.
+    - `<events>`에는 위에서 확인한 값들을 넣으면 된다.
+
+  ```bash
+  $ mc event add <alias>/<bucket> <ARN> --event <events>
+  
+  # e.g.
+  $ mc event add foo/bar arn:minio:sqs::some_identifier:kafka --event get,put,delete
+  ```
+
+  - 잘 설정되었는지 확인한다.
+
+  ```bash
+  $ mc event ls <alias>/<bucket> <ARN>
+  ```
+
+
+
+- 이미 설정한 Kafka 관련 설정 수정하기
+
+  - 아래와 같이 설정을 변경할 수 있다.
+    - 기존에 설정했던 `IDENTIFIER`를 알아야한다.
+
+  ```bash
+  $ mc admin config set <ALIAS>/ notify_kafka:<IDENTIFIER> \
+     brokers="https://kafka1.example.net:9200, https://kafka2.example.net:9200" \
+     topic="<string>"
+  ```
+
+  - 변경될 설정을 적용하기 위해 deployment를 재실행한다.
+
+  ```bash
+  $ mc admin service restart <alias>
+  ```
+
+
+
+
+
+
+
 # Python에서 사용하기
 
 > https://min.io/docs/minio/linux/developers/python/API.html
