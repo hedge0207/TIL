@@ -7,6 +7,10 @@
   - 다양한 설정 관련 file이 있으며, 각 file이 있어야 할 위치가 정해져있다.
 
     > https://www.elastic.co/guide/en/logstash/current/dir-layout.html#dir-layout
+    
+  - Elasticsearch에서 제공하는 Centralized Pipeline Management라는 기능이 있으나, 구독형 서비스로 모든 기능을 사용하려면 license가 있어야한다.
+  
+    - Elasticsearch에 API 요청을 보내 Logstash pipeline을 생성,  수정, 삭제할 수 있게 해준다.
 
 
 
@@ -102,13 +106,13 @@
 
 - 여러 pipeline 생성하기
 
-  - `pipeline.yml` file을 작성하여 여러 개의 pipeline을 하나의 instance에서 실행시키는 것이 가능하다.
+  - `pipelines.yml` file을 작성하여 여러 개의 pipeline을 하나의 instance에서 실행시키는 것이 가능하다.
     - `logstash.yml`에 있는 모든 설정을 적용할 수 있다.
     - 따로 설정을 주지 않을 경우 `logstash.yml`에 설정한 값이 기본값으로 설정된다.
     - 설정을 해줄 경우 `logstash.yml`에 설정한 값은 무시된다.
-    - `pipeline.yml` file은 반드시 `path.settings`(docker 기준 `/usr/share/logstash/config`)에 위치해야한다.
+    - `pipelines.yml` file은 반드시 `path.settings`(docker 기준 `/usr/share/logstash/config`)에 위치해야한다.
   - 예시
-    - `pipeline.yml` file에 실행시키고자하는 pipeline들의 정보를 입력하면 된다.
+    - `pipelines.yml` file에 실행시키고자하는 pipeline들의 정보를 입력하면 된다.
     - 아래 예시와 같이 `pipeline.id`를 입력하고, 해당 pipeline을 구성할 때 사용할 `.conf` file의 위치를 입력한다.
     - 각 pipeline 마다 worker의 수를 다르게 주는 것도 가능하다.
 
@@ -120,6 +124,31 @@
     path.config: "/etc/different/path/p2.cfg"
     queue.type: persisted
   ```
+  
+  - `-f` 옵션을 주지 않고 logstash를 실행하면 `pipelines.yml`에 정의된 대로 pipeline들을 생성한다.
+  
+  ```bash
+  $ bin/logstash
+  ```
+
+
+
+- Pipeline을 동적으로 추가, 삭제하기
+
+  - 위에서 `pipelines.yml`에 pipeline들을 미리 정의해두고 Logstash 실행시 해당 pipeline들을 동시에 실행시키는 방법을 살펴봤다.
+  - `pipelines.yml` 파일을 수정하여 Logstash instance를 정지하지 않고도 pipeline을 동적으로 추가, 삭제하는 것이 가능하다.
+
+  - `-r` 옵션은 Logstash 실행시 설정해준 config file을 주기적으로 reload하여 pipeline에 반영할지 여부를 설정하는 옵션이다.
+    - 해당 옵션의 기본값은 false이며, true로 줄 경우 주기적으로 config file을 확인하여 변경 사항을 반영한다.
+    - 즉, 이 경우 `pipelines.yml` 파일의 변경 사항을 주기적으로 확인하여 pipeline에 반영한다.
+  - 아래와 같이 실행시키고
+
+  ```bash
+  $ bin/logstash -r
+  ```
+
+  - `pipelines.yml` file을 변경하면 변경 사항이 pipeline에 반영된다.
+    - 따라서 이 file을 수정하여 pipeline의 추가, 수정, 삭제가 가능하다.
 
 
 
@@ -270,6 +299,64 @@
     }
   }
   ```
+
+
+
+
+
+# Command Line으로 실행하기
+
+- Logstash 설치하기
+  - [Elasticsearch 공식 홈페이지](https://www.elastic.co/kr/downloads/logstash)에서 설치 파일을 다운로드 한다.
+  - 다운 받은 압축 파일의 압축을 푼다.
+  - JDK가 내장되어 있어 JDK를 별도로 설치해줄 필요가 없다.
+
+
+
+- Logstash 실행하기
+
+  - 기본적인 형식은 아래와 같다.
+
+  ```bash
+  bin/logstash [options]
+  ```
+
+  - `--node.name`
+    - Logstash instance의 이름을 지정한다.
+    - 만약 아무 값도 주지 않을 경우 hostname이 설정된다.
+
+  - `-f, --path.config`
+    - Logstash config 파일의 경로를 입력한다.
+    - Directory와 file 모두 입력할 수 있으며, directory를 입력할 경우 해당 directory에 있는 모든 file들이 사전순으로 합쳐져 하나의 config file을 구성하게 된다.
+  - `modules`
+    - Module을 실행한다.
+  - `-M, --modules.variable`
+    - Module이 사용할 option의 값을 설정한다.
+  - `--pipeline.id`
+    - Pipeline의 ID를 설정한다.
+    - 기본 값은 `main`이다.
+  - `-w, --pipeline.workers`
+    - Pipeline worker의 개수를 설정한다.
+    - 여기에 설정한 개수 만큼의 worker들이 filter와 output stage를 병렬적으로 수행한다.
+    - 기본값은 CPU의 코어 수이다.
+  - `--pipeline.ordered`
+    - Event의 순서를 보존할지를 설정하며, `auto`, `true`, `false` 중 하나의 값을 설정할 수 있다.
+
+  - `-b, --pipeline.batch.size`
+    - 각 worker thread가 input stage에서 최대 몇 개 까지 event를 받아올지를 설정한다.
+    - 기본값은 125이며, 일반적으로 클 수록 효율적이지만, memory overhead가 증가할 수 있다.
+    - 큰 값을 주고자 할 경우 JVM heap size를 변경해야 할 수 있다.
+  - `-u, --pipeline.batch.delay`
+    - Event를 poll 할때 얼마나 기다릴지를 설정한다.
+
+  - `-r, --config.reload.automatic`
+    - Config file의 수정사항을 주기적으로 확인하여 pipeline에 반영할지 여부를 설정한다.
+    - 기본 값은 false이며, true로 줄 경우 config file의 수정 사항을 주기적으로 pipeline에 반영한다.
+  - `--config.reload.interval`
+    - Config file의 수정사항을 얼마의 간격으로 확인할지를 설정한다.
+    - 기본값은 `3s`이다.
+
+
 
 
 
