@@ -1804,6 +1804,22 @@
   foo : MyType = ValueRange(-30, 10)
   print(foo)											# ValueRange(lo=-10, hi=5)
   ```
+  
+  - Type에 대한 metadata를 추가하기 위해 사용한다.
+    - 특정 type에 대해 추가적인 설명이 필요할 경우 이를 metadata로 추가하기 위해 사용한다.
+    - 당연하게도 강제성은 없다.
+  
+  ```python
+  from typing import Annotated
+  
+  
+  Name = Annotated[str, "fist lettser is Capital"]
+  
+  my_name: Name = "john"
+  print(my_name)
+  ```
+
+
 
 
 

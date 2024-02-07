@@ -578,6 +578,8 @@
 
 
 
+## Basemodel
+
 - 예시
 
   - `pydantic`에서 `BaseModel`을 import한다.
@@ -622,52 +624,6 @@
   # [1, 2, 3]
   print(user.dict())	
   # {'id': 123, 'signup_ts': datetime.datetime(2019, 6, 1, 12, 22), 'friends': [1, 2, 3], 'name': 'John Doe'}
-  ```
-
-
-
-- `ValidationError`
-
-  - 만일 class에서 설정해준 타입이 들어오지 않을 경우 pydantic 패키지에 포함된 `ValidationError`가 발생하게 된다.
-
-  ```python
-  from pydantic import ValidationError
-  
-  try:
-      User(signup_ts='broken', friends=[1, 2, 'not number'])
-  except ValidationError as e:
-      print(e.json())
-  ```
-
-  - output
-    - `ValidationError`에는 에러가 발생한 위치, message, type 등이 담겨 있다.
-    - list의 경우 `loc` 에는 몇 번째 인덱스에서 문제가 생긴 것인지도 담겨 있다. 
-
-  ```json
-  [
-    {
-      "loc": [
-        "id"
-      ],
-      "msg": "field required",
-      "type": "value_error.missing"
-    },
-    {
-      "loc": [
-        "signup_ts"
-      ],
-      "msg": "invalid datetime format",
-      "type": "value_error.datetime"
-    },
-    {
-      "loc": [
-        "friends",
-        2
-      ],
-      "msg": "value is not a valid integer",
-      "type": "type_error.integer"
-    }
-  ]
   ```
 
 
@@ -729,144 +685,6 @@
 
 
 
-- validation하기
-
-  - pydantic에서 제공하는 `@validator` 데코레이터를 사용한다.
-    - 첫 번째 인자로는 class 자체를 받는다.
-    - 두 번째 인자는 검증 대상 필드를 받는다.
-    - 그 밖에 field 정보와 config 정보를 받는다.
-
-  ```python
-  from pydantic import BaseModel, ValidationError, validator
-  
-  
-  class UserModel(BaseModel):
-      name: str
-      username: str
-      password1: str
-      password2: str
-  
-      @validator('name')
-      def name_must_contain_space(cls, v):
-          if ' ' not in v:
-              raise ValueError('must contain a space')
-          return v.title()
-  
-      @validator('username')
-      def username_alphanumeric(cls, v):
-          assert v.isalnum(), 'must be alphanumeric'
-          return v
-      
-      @validator('password2')
-      def passwords_match(cls, v, values, **kwargs):
-          if 'password1' in values and v != values['password1']:
-              raise ValueError('passwords do not match')
-          return v
-  
-  
-  try:
-      UserModel(
-          name='samuel',
-          username='scolvin',
-          password1='zxcvbn',
-          password2='zxcvbn2',
-      )
-  except ValidationError as e:
-      print(e)
-  ```
-  
-  - 주의할 점은 값이 주어지지 않을 경우 해당 field는 validation을 하지 않는다는 점이다.
-    - 이는 성능상의 이유 때문으로, 굳이 값이 주어지지 않은 field를 대상으로 validation을 할 필요가 없기 때문이다.
-    - 값이 주어지지 않더라도 validation을 해야한다면 아래와 같이 `always`를 `True`로 주면 된다.
-  
-  ```python
-  class DemoModel(BaseModel):
-      ts: datetime = None
-  
-      @validator('ts', pre=True, always=True)
-      def set_ts_now(cls, v):
-          return v or datetime.now()
-  ```
-
-
-
-- pydantic validator 재사용하기
-
-  - pydantic에서  한 class 내의 validation 함수 이름은 중복될 수 없다.
-  - 두 개의 필드에 대해서 `change_to_str`라는 같은 이름의 validation 함수를 사용하면 error가 발생한다.
-
-  ```python
-  from datetime import date
-    
-    
-  class MyRange(pyd.BaseModel):
-      gte:date
-      lte:date
-  
-      @pyd.validator('gte')
-      def change_to_str(cls, v):
-          return v.strftime('%Y-%m-%d')
-  
-      @pyd.validator('lte')
-      def change_to_str(cls, v):
-          return v.strftime("%Y-%m-%d")
-  ```
-
-  - 아래와 같이 여러 field명을 넣으면 된다.
-
-  ```python
-  from datetime import date
-    
-    
-  class MyRange(pyd.BaseModel):
-      gte:date
-      lte:date
-  
-      @pyd.validator('gte', 'lte')
-      def change_to_str(cls, v):
-          return v.strftime('%Y-%m-%d')
-  ```
-  
-  - 위와 같이 정확히 동일하게 동작하는 validate을 여러 필드에 해줘야 할 경우
-  
-  ```python
-  from datetime import date, timedelta
-  from pydantic import BaseModel, validator
-  
-  def change_to_str(date_param: date) -> str:
-      return date_param.strftime("%Y-%m-%d")
-  
-  class MyRange(BaseModel):
-      gte:date
-      lte:date
-  
-      str_gte = validator('gte', allow_reuse=True)(change_to_str)
-      str_lte = validator('lte', allow_reuse=True)(change_to_str)
-  
-  my_range = MyRange(gte=date.today()-timedelta(days=1), lte=date.today())
-  print(my_range.gte)		# 2022-03-04
-  print(my_range.lte)		# 2022-03-05
-  ```
-  
-  - class 내의 모든 field에 하나의 validation 적용하기
-    - class 내의 모든 field에 하나의 validation 적용하기
-  
-  ```python
-  from datetime import date, timedelta
-  from pydantic import BaseModel, root_validator
-  
-  
-  class MyRange(BaseModel):
-      gte:date
-      lte:date
-  
-      @root_validator
-      def change_to_str(cls, values):
-          return {key:value.strftime("%Y-%m-%d") for key,value in values.items()}
-  ```
-
-
-
 - Enum class 사용하기
 
   - `use_enum_values`를 `True`로 주면, 자동으로 Enum 클래스의 value를 할당한다.
@@ -893,7 +711,7 @@
 
 
 
-- pydantic model의 기본값
+- Pydantic model의 기본값
 
   - 만일 아래와 같이 다른 pydantic model을 field의 type으로 갖을 경우, 해당 field의 기본 값을 None으로 설정하면, 기존 field의 기본값은 무시된다.
     - 만일 기본값이 적용된다면 `foo=Foo(a=1, b='Hello')`가 출력되겠지만 기본값이 무시되므로 `foo=None`가 출력된다.
@@ -934,7 +752,7 @@
 
 
 
-- alias를 설정 가능하다.
+- Alias를 설정 가능하다.
 
   - 방법1. `Field`를 사용
 
@@ -1097,6 +915,266 @@
       aggregation: Union[BucketAggregation, MetricAggregation]
       sub: 'Aggregation' = None
   ```
+
+
+
+
+
+## Validator
+
+### Annotated Validator
+
+- `Annotated`를 사용하여 validation을 할 수 있다.
+
+  - Python 3.9부터 typing package에 추가 된 `Annotated`를 사용하여 validation이 가능하다.
+
+  
+
+
+
+### 특정 field를 validation하기(Pydantic 2.0 미만)
+
+- 특정 field를 validation하기(Pydantic 2.0 이전)
+
+  - Pydantic에서 제공하는 `@validator` 데코레이터를 사용한다.
+    - 첫 번째 인자로는 class 자체를 받는다.
+    - 두 번째 인자는 검증 대상 필드를 받는다.
+    - 그 밖에 field 정보와 config 정보를 받는다.
+
+  ```python
+  from pydantic import BaseModel, ValidationError, validator
+  
+  
+  class UserModel(BaseModel):
+      name: str
+      username: str
+      password1: str
+      password2: str
+  
+      @validator('name')
+      def name_must_contain_space(cls, v):
+          if ' ' not in v:
+              raise ValueError('must contain a space')
+          return v.title()
+  
+      @validator('username')
+      def username_alphanumeric(cls, v):
+          assert v.isalnum(), 'must be alphanumeric'
+          return v
+      
+      @validator('password2')
+      def passwords_match(cls, v, values, **kwargs):
+          if 'password1' in values and v != values['password1']:
+              raise ValueError('passwords do not match')
+          return v
+  
+  
+  try:
+      UserModel(
+          name='samuel',
+          username='scolvin',
+          password1='zxcvbn',
+          password2='zxcvbn2',
+      )
+  except ValidationError as e:
+      print(e)
+  ```
+  
+  - 주의할 점은 값이 주어지지 않을 경우 해당 field는 validation을 하지 않는다는 점이다.
+    - 이는 성능상의 이유 때문으로, 굳이 값이 주어지지 않은 field를 대상으로 validation을 할 필요가 없기 때문이다.
+    - 값이 주어지지 않더라도 validation을 해야한다면 아래와 같이 `always`를 `True`로 주면 된다.
+  
+  ```python
+  class DemoModel(BaseModel):
+      ts: datetime = None
+  
+      @validator('ts', pre=True, always=True)
+      def set_ts_now(cls, v):
+          return v or datetime.now()
+  ```
+
+
+
+- Pydantic validator 재사용하기
+
+  - pydantic에서  한 class 내의 validation 함수 이름은 중복될 수 없다.
+  - 두 개의 필드에 대해서 `change_to_str`라는 같은 이름의 validation 함수를 사용하면 error가 발생한다.
+
+  ```python
+  from datetime import date
+    
+    
+  class MyRange(pyd.BaseModel):
+      gte:date
+      lte:date
+  
+      @pyd.validator('gte')
+      def change_to_str(cls, v):
+          return v.strftime('%Y-%m-%d')
+  
+      @pyd.validator('lte')
+      def change_to_str(cls, v):
+          return v.strftime("%Y-%m-%d")
+  ```
+
+  - 아래와 같이 여러 field명을 넣으면 된다.
+
+  ```python
+  from datetime import date
+    
+    
+  class MyRange(pyd.BaseModel):
+      gte:date
+      lte:date
+  
+      @pyd.validator('gte', 'lte')
+      def change_to_str(cls, v):
+          return v.strftime('%Y-%m-%d')
+  ```
+  
+  - 위와 같이 정확히 동일하게 동작하는 validate을 여러 필드에 해줘야 할 경우
+  
+  ```python
+  from datetime import date, timedelta
+  from pydantic import BaseModel, validator
+  
+  def change_to_str(date_param: date) -> str:
+      return date_param.strftime("%Y-%m-%d")
+  
+  class MyRange(BaseModel):
+      gte:date
+      lte:date
+  
+      str_gte = validator('gte', allow_reuse=True)(change_to_str)
+      str_lte = validator('lte', allow_reuse=True)(change_to_str)
+  
+  my_range = MyRange(gte=date.today()-timedelta(days=1), lte=date.today())
+  print(my_range.gte)		# 2022-03-04
+  print(my_range.lte)		# 2022-03-05
+  ```
+  
+  - class 내의 모든 field에 하나의 validation 적용하기
+    - class 내의 모든 field에 하나의 validation 적용하기
+  
+  ```python
+  from datetime import date, timedelta
+  from pydantic import BaseModel, root_validator
+  
+  
+  class MyRange(BaseModel):
+      gte:date
+      lte:date
+  
+      @root_validator
+      def change_to_str(cls, values):
+          return {key:value.strftime("%Y-%m-%d") for key,value in values.items()}
+  ```
+
+
+
+- `ValidationError`
+
+  - 만일 class에서 설정해준 타입이 들어오지 않을 경우 pydantic 패키지에 포함된 `ValidationError`가 발생하게 된다.
+
+  ```python
+  from pydantic import ValidationError
+  
+  try:
+      User(signup_ts='broken', friends=[1, 2, 'not number'])
+  except ValidationError as e:
+      print(e.json())
+  ```
+
+  - output
+    - `ValidationError`에는 에러가 발생한 위치, message, type 등이 담겨 있다.
+    - list의 경우 `loc` 에는 몇 번째 인덱스에서 문제가 생긴 것인지도 담겨 있다. 
+
+  ```json
+  [
+    {
+      "loc": [
+        "id"
+      ],
+      "msg": "field required",
+      "type": "value_error.missing"
+    },
+    {
+      "loc": [
+        "signup_ts"
+      ],
+      "msg": "invalid datetime format",
+      "type": "value_error.datetime"
+    },
+    {
+      "loc": [
+        "friends",
+        2
+      ],
+      "msg": "value is not a valid integer",
+      "type": "type_error.integer"
+    }
+  ]
+  ```
+
+
+
+### 특정 field를 validation하기(Pydantic 2.0 이상)
+
+- `field_validator`를 사용한다.
+
+  - Pydantic 2.0 version 이전에는 특정 field를 validation하는데 `validator`를 사용했다.
+  - 그러나 Pydantic 2.0부터는 `validator` 대신 `field_valudator`를 사용한다.
+    - 사용법은 `validator`와 유사하다.
+
+  ```python
+  from typing_extensions import Annotated
+  
+  from pydantic import BaseModel, Field, field_validator
+  
+  
+  class Model(BaseModel):
+      x: str = 'abc'
+      y: str = 'def'
+  
+      @field_validator('x', 'y')
+      @classmethod
+      def double(cls, v: str) -> str:
+          return v * 2
+  ```
+
+  - `field_validator` 사용시 주의할 사항
+    - `@field_validator`는 class method이므로 첫 번째 argument로는 class의 instacne가 아니라 class 자체를 받는다.
+    - 따라서 적절한 type checking을 위해 `@field_Validator` 아래에 `@classmethod` decorator를 두는 것이 권장된다.
+    - 두 번째 argument는 validation할 field가 온다.
+    - 세 번째 argument는 정의하지 않아도 되지만, 정의할 경우 `pydantic.ValidationInfo`의 instance가 온다.
+    - Validator는 value를 반환하거나 `ValueError` 혹은 `AssertionError`를 raise해야한다.
+    - 하나의 validator에 여러 field name을 전달하여 여러 field를 validation하는 데 사용할 수 있다.
+    - Field를 지정할 때 `"*"`와 같이 입력하여 모든 field를 하나의 validator로 validation할 수 있다.
+
+  - `validate_default` 
+    - 기본적으로 `Annotated`를 사용한 validator나 `field_validator`를 사용한 validator 모두 기본값에 대해서는 validation을 하지 않는다.
+    - 만약 기본값에 대해서도 validation을 하고자 한다면 반드시 `validate_default`값을 True로 설정해야한다.
+
+  ```python
+  from typing_extensions import Annotated
+  
+  from pydantic import BaseModel, Field, field_validator
+  
+  
+  class Model(BaseModel):
+      x: str = 'abc'
+      y: Annotated[str, Field(validate_default=True)] = 'xyz'
+  
+      @field_validator('x', 'y')
+      @classmethod
+      def double(cls, v: str) -> str:
+          return v * 2
+  
+  ```
+
+  
+
+  
 
 
 
