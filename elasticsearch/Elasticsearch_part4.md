@@ -1502,6 +1502,111 @@
 
 
 
+### Dynamic template
+
+
+- Elasticsearch `dynamic_templates`에 있는 search_analyzer와 field에 설정된 search_analyzer 중 무엇을 사용하여 검색어를 분석하는가
+
+  - 기본적으로 field에 `search_analyzer`를 따로 설정하지 않을 경우 `analyzer`에 설정된 analyzer를 search analyzer로 사용한다.
+
+  - 그리고 이는 `dynamic_template`을 사용해 기본 mapping을 설정 할 때도 마찬가지로 `analyzer`만 설정할 경우 `analyzer`에 설정된 analyzer가 `search_analyzer`로도 사용된다.
+  - 만약 `field`를 생성할 때 `analyzer`만 설정하고 `search_analyzer`는 설정해주지 않을 경우 해당 field는 search analyzer로 `dynamic_template`의 `search_analyzer`를 따르는지, 아니면 field의 `analyzer`를 따르는지 확인해 본다.
+
+
+
+
+
+  - 테스트
+
+
+    - 아래와 같이 test용 index를 생성한다.
+
+    ```json
+    // PUT test-index
+    {
+        "settings": {
+            "analysis": {
+                "analyzer": {
+                    "default_analyzer": {
+                        "type": "custom",
+                        "tokenizer": "standard",
+                        "filter":[
+                            "lowercase",
+                            "snowball"
+                        ]
+                    },
+                    "my_analyzer": {
+                        "type": "custom",
+                        "tokenizer": "standard"
+                    }
+                }
+            }
+        },
+        "mappings": {
+            "dynamic_templates": [
+                {
+                    "string": {
+                        "match_mapping_type": "string",
+                        "mapping": {
+                            "analyzer":"default_analyzer",
+                            "search_analyzer":"default_analyzer"
+                        }
+                    }
+                }
+            ],
+            "properties": {
+                "foo": {
+                    "type": "text",
+                    "analyzer": "my_analyzer"
+                }
+            }
+        }
+    }
+    ```
+
+      - 아래와 같이 document를 색인한다.
+        - 완전히 동일한 내용을 색인한다.
+        - 다만 `foo` field는 mapping에 설정한대로 `my_analyzer`를 통해 분석될 것이고, `bar` field는 `dynamic_templates`에 설정된대로 `default_analyzer`를 사용하여 분석된다.
+
+    ```json
+    // PUT test-index/_doc/1
+    {
+        "foo":"Quick brown foxes",
+        "bar":"Quick brown foxes"
+    }
+    ```
+
+      - 두 field를 대상으로 검색을 실행한다.
+        - `profile`을 통해 검색어가 어떤 analyzer를 통해 분석되었는지 확인할 수 있다.
+
+    ```json
+    // GET test-index/_search
+    {
+        "profile": true, 
+        "query": {
+            "multi_match": {
+                "query": "Quick brown foxes",
+                "fields": [
+                    "foo",
+                    "bar"
+                ]
+            }
+        }
+    }
+    ```
+
+      - 아래와 같은 내용을 확인할 수 있다.
+        - `foo` field는 `my_analyzer`를 search analyzer로 사용하고, `bar` field는 `default_analyzer`를 search analyzer로 사용한다는 것을 볼 수 있다.
+        - 어찌보면 당연한 결과인 것이, `dynamic_templates` 자체가 mapping에 미리 지정되지 않은 field들에 대해서만 적용되는 설정이므로 이미 mapping에 정의한 `foo` field는 `dynamic_templates`에 설정한 `analyzer`의 적용을 받지 않는 것이 맞다. 
+
+    ```bash
+    "((foo:Quick foo:brown foo:foxes) | (bar:quick bar:brown bar:fox))"
+    ```
+
+
+
+
+
 ## settings
 
 - `auto_expand_replicas`
@@ -1533,7 +1638,8 @@
   }
   ```
 
-  
+
+
 
 
 
