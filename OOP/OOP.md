@@ -108,7 +108,7 @@
 
 
 
-# Object Oriented Programming
+# Object Oriented Programming 개요
 
 - OOP란
   - 프로그래밍 설계 패러다임 중 하나.
@@ -121,6 +121,45 @@
     - 클래스 단위로 모듈화 시켜서 개발할 수 있으므로 협업에 유리하다.
   - 단점
     - 설계시 많은 시간과 노력이 들어간다.
+
+
+
+- 초기 OOP
+
+  - 1967년 Alan Kay가 최초로 고안했다.
+    - Alan Kay는 학부 때 생물학을 전공했다.
+    - 세포들이 서로 상호작용 하는 방식을 소프트웨어 개발에도 적용할 수 있을 것이라 생각했다.
+    - 세포들은 서로에게 message를 보내면서 상호작용하는데, 소프트웨어 개발에도 이를 적용하려 했다.
+  - 초기 OOP의 핵심 개념은 data와 procedure라 불리는 data를 조작하는 로직을 하나로 묶어 객체를 만들고, 이 객체들은 서로 message를 통해 통신한다는 것이었다.
+    - 상속, 다형성 등은 모두 나중에 등장한 개념이다.
+    - Data와 procedure를 하나의 객체로 묶어 보다 편하게 관리할 수 있도록 하고, 객체 외부에서는 객체 내부의 data를 직접적으로 조작할 수 없게 하여 버그가 발생할 가능성을 낮추고, 객체 사이의 결합도를 낮추는 것이 최초의 목적이었다.
+    - 객체와 객체 사이에는 message를 통해서만 통신을 함으로써 한 객체의 변경 사항이 다른 객체에는 영향을 미치지 않게 된다.
+
+  - Alan Kay는 OOP에 대해 아래와 같이 말했다.
+
+    > OOP to me means only **messaging**, **local retention and protection** and **hiding of state-process, and extreme late-binding** of all things.
+
+    - Local retention and protection: data와 procedure를 하나의 객체로 묶어 외부에서 객체 내부의 data를 조작할 수 없게 한다.
+    - Messaging: 만일 한 객체가 다른 객체의 data나 procedure가 필요하다면 오직 message를 보내서 요청해야하며, message를 받은 객체가 어떻게 처리할지는 message를 받은 객체에게 달려있다.
+    - Hiding of state-process, and extreme late-binding: message를 보낸 객체는 message를 받은 객체가 어떻게 data를 처리하는지 알 필요가 없으며, message를 받는 객체는 달라질 수 있다.
+
+  - Extream late-binding
+
+    - Message를 보내는 객체와 받는 객체 사이의 binding을 의미한다.
+    - Message를 보내는 객체는 compile time에 이미 결정되지만, 어떤 객체에 보낼지는 runtime에 동적으로 결정된다는 의미이다.
+    - 이를 통해 보다 유연하게 코드를 작성할 수 있게 된다.
+
+  - Alan Kay는 Dan Ingalls, Adele Goldberg 등과 함께 자신이 고안한 객체 지향의 개념을 담아 모든 것이 객체로 이루어진 Smalltalk이라는 언어를 만들었다.
+
+  - Objec Oriented라는 용어에 대해
+
+    - Alan Kay는 훗날 자신이 object라는 용어를 사용한 것을 후회한다는 말을 했다.
+    - 자신이 고안한 개념에 object라는 개념을 붙임으로서 사람들이 사소한 개념들에 집중하게 만들었기 때문이다.
+    - Alan Kay는 object oriented에서 정말로 집중해야 할 것은 객체 그 자체가 아니라 객체들이 상호작용하는 방식인 messaging이라고 말했다.
+
+
+
+
 
 
 
@@ -185,8 +224,6 @@
 
 
 
-
-
 - 좋은 객체지향 설계의 5가지 원칙(SOLID)
   - SRP: 단일 책임 원칙(Single Responsibility Principle)
     - 하나의 클래스는 하나의 책임만 가져야 한다.
@@ -212,9 +249,172 @@
 
 
 
-# 참조
+## 참조
 
 - [[프로그래밍 패러다임\]순차적(비구조적),절차적(구조적),객체지향적 프로그래밍](https://kamang-it.tistory.com/entry/프로그래밍-패러다임순차적비구조적절차적구조적객체지향적-프로그래밍)
 
 - https://gracefulprograming.tistory.com/130
 - https://st-lab.tistory.com/151
+- https://www.purl.org/stefan_ram/pub/doc_kay_oop_en
+- https://medium.com/javascript-scene/the-forgotten-history-of-oop-88d71b9b2d9f
+- https://velog.io/@eddy_song/alan-kay-OOP
+
+
+
+
+
+# Dependency
+
+- Dependency
+  - Dependency의 사전적 정의는 아래와 같다.
+    - 다른 것으로부터 영향을 받거나 결정되거나 종속되는 정도나 상태.
+  - Dependency의 사전적 정의를 기반으로, software 개발에서 dependency는 아래와 같이 정의할 수 있다.
+    - 두 component 사이의 dependency는 한 component의 변경이 다른 component에 영향을 줄 수 있는 가능성을 의미한다.
+    - 즉 한 component가 다른 component를 강하게 의존한 다는 것은 한 component의 변경사항이 다른 component에도 강한 영향을 미칠 가능성이 높다는 것이다.
+  - Coupling
+    - Component들 간의 결합(coupling)은 의존성의 정도를 정확히 측정한다.
+    - 강하게 결합된 component들은 높은 의존성을 가지고 있으며, 약하게 결합된 component들은 낮은 의존성을 가지고 있다.
+    - Software 개발에서 절대적 진리로 여겨지는 개념 중하나는 component들을 약하게 결합해야한다는 것이다.
+    - Component들이 강하게 결합될수록 한 component의 변경 사항이 다른 component에 영향을 미칠 가능성(의존성)이 높아지므로 개발 비용이 증가하게 된다.
+
+
+
+- OOP와 dependency
+
+  - OOP에서 위에서 말한 component라는 개념은 보통 type으로 정의된다.
+    - 기본적으로 우리는 type들 사이의 의존성에 주의를 기울여야한다.
+  - Class 사이의 관계(dependency)는 아래와 같은 방식으로 맺어지며, 아래로 갈수록 강하게 맺어진 관계이다.
+    - Dependency
+    - Association(Aggregation, Composition)
+    - Inheritance
+  - Dependency
+    - 한 class의 object가 다른 class의 object와 짧은 시간 동안 함께 작업을 수행할 경우 dependency라 부른다.
+    - 예를 들어 아래와 같은 경우가 dependency의 예시이다.
+    - A의 object를 인자로 받아 해당 object를 사용하거나, A의 object를 반환하는 경우 등을 의미한다.
+    - B는 A의 interface만 알면 되며, A의 interface(foo method)가 변경되지 않는 한, A가 변경되어도 B는 변경되지 않아도 된다.
+
+  ```python
+  class A:
+      def foo(self):
+          pass
+      
+  class B:
+      def work_with_A(self, a: A):
+          a.foo()
+          
+      def return_A(self) => A:
+          return A()
+  ```
+
+  - Association(Aggregation과 Composition)
+    - 한 class의 object가 다른 class의 object와 장기간 함께 작업을 수행할 경우 association이라 부른다.
+    - 한 class가 다른 class의 object에 대한 reference를 attribute로 가지고 있으면 associtaion이라 볼 수 있다.
+    - 예를 들어 아래와 같은 경우는 association이라 볼 수 있다.
+    - 이전에는 오직 `work_with_A` method가 호출 될 때만 A와 관계를 유지했지만, 이제는 B의 object가 생성될 때부터 사라질 때 까지 관계를 유지하게 된다.
+    - Aggregation은 association의 특수한 형태이며, composition은 aggregation의 특수한 형태이다.
+    - UML diagram을 그려야 하는 것이 아니라면, 이들을 구분하기 보다는 한 객체가 다른 객체를 가지고 있다(A has B)는 개념으로 이해하면 된다.
+    - Aggregation의 애매한 개념으로 인해 개발자들 사이에서도 association, aggregation, composition의 구분에 대한 갑론을박이 있었고, UML 2.0부터는 aggregation을 삭제했다.
+
+  ```python
+  class A:
+      pass
+  
+  class B:
+      def __init__(self, a:A):
+          self.a = a
+          
+  class C:
+      def __ini__(self):
+          self.a = A()
+  ```
+
+  - Inheritance
+    - 한 class가 다른 class를 상속하는 것을 inheritance라 부른다.
+
+  ```python
+  class A:
+      pass
+  
+  class B(A):
+      pass
+  ```
+
+
+
+- Dependency Injection
+
+  - 객체의 외부에서 instance를 생성한 후 이를 객체에 전달해서 의존성을 해결하는 방법이다.
+    - 이를 통해 결합도를 낮추고 응집도를 높일 수 있다.
+  - 예를 들어 아래 코드를 보자
+    - 아래에서 dependency에 해당하는 부분은 모두 주석으로 표기를 해놨다.
+
+  ```python
+  import os
+  
+  
+  class ApiClient:
+  
+      def __init__(self) -> None:
+          self.api_key = os.getenv("API_KEY")  # dependency
+          self.timeout = int(os.getenv("TIMEOUT"))  # dependency
+  
+  
+  class Service:
+  
+      def __init__(self) -> None:
+          self.api_client = ApiClient()  # dependency
+  
+  
+  def main() -> None:
+      service = Service()  # dependency
+      ...
+  
+  
+  if __name__ == "__main__":
+      main()
+  ```
+
+  - 아래는 의존성을 주입하도록 변경한 code이다.
+
+  ```python
+  import os
+  
+  
+  class ApiClient:
+  
+      def __init__(self, api_key: str, timeout: int) -> None:
+          self.api_key = api_key  # dependency is injected
+          self.timeout = timeout  # dependency is injected
+  
+  
+  class Service:
+  
+      def __init__(self, api_client: ApiClient) -> None:
+          self.api_client = api_client  # dependency is injected
+  
+  
+  def main(service: Service) -> None:  # dependency is injected
+      ...
+  
+  
+  if __name__ == "__main__":
+      main(service=Service(
+          api_client=ApiClient(
+                  api_key=os.getenv("API_KEY"),
+                  timeout=int(os.getenv("TIMEOUT"))
+              )
+          )
+      )
+  ```
+
+
+
+
+
+
+
+## 참조
+
+https://blog.rcard.in/programming/oop/software-engineering/2017/04/10/dependency-dot.html
+
+https://python-dependency-injector.ets-labs.org/introduction/di_in_python.html
