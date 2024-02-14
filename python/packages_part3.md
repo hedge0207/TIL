@@ -1,4 +1,4 @@
-# locust
+# Locust
 
 - locust
   - performance testing tool
@@ -807,6 +807,440 @@
           ]
           environment.runner.send_message('test_users', users)
   ```
+
+
+
+
+
+# Poetry
+
+- Dependency 관리 및 packaging을 위한 Python package이다.
+  - Python 3.8 이상이 요구된다.
+  - Windows, Linux, macOS 등에서 모두 사용이 가능하다.
+  - Poetry는 반드시 전용 가상환경에 설치해야 한다.
+    - 그렇지 않을 경우 Poetry의 dependency들이 의도치 않게 삭제되거나 upgrade 될 수 있기 때문이다.
+
+
+
+- pip가 있는 데 Poetry가 필요한 이유
+
+  - Python은 기본적으로 pip라는 package manager(&dependency manager)를 제공한다.
+    - 그런데, pip에는 몇 가지 문제들이 있다.
+
+  - pip의 문제점들
+    - Dependency 충돌이 발생했을 때 잘 처리하지 못 한다.
+    - Lock file이 없어서 사용자가 requirements file을 잘 작성하는 수 밖에 없다.
+    - 개발 환경과 운영 환경에서 필요한 package가 다를 경우(예를 들어 운영 환경에서는 black이나 pytest등의 package들은 사용하지 않을 확률이 높다) pip는 각 환경을 위한 requirements file을 따로 작성해야한다.
+  - Poetry는 pip의 위와 같은 문제점들을 해결하고자 등장했다.
+
+
+
+- 설치
+
+  - Poetry를 설치할 가상 환경을 생성한다.
+    - 가상환경을 venv package로 사용해도 되고, conda로 생성해도 된다.
+
+  ```bash
+  # venv 사용
+  $ python -m venve <가상환경 이름>
+  
+  # conda 사용
+  $ conda create -n <가상 환경 이름> (python=python 버전)
+  ```
+
+  - 가상 환경을 활성화한다.
+
+  ```bash
+  # venv 사용
+  $ source ./<가상환경 이름>/bin/activate
+  
+  # conda 사용
+  $ conda activate <가상환경 이름>
+  ```
+
+  - Poetry를 설치한다.
+
+  ```bash
+  $ pip install poetry
+  ```
+
+  - 자동 완성 활성화하기
+    - Poetry는 `tab`을 눌렀을 때 자동완성이 되도록 설정할 수 있다.
+    - Bash, Fixh, Zsh에서 자동완성을 지원한다.
+
+  ```bash
+  # bash의 경우 아래와 같이 활성화시키면 된다.
+  $ poetry completions bash >> ~/.bash_completion
+  ```
+
+
+
+- 기본적인 사용법
+
+  - 새로운 project 생성
+    - `--name` option으로 project의 이름을 지정할 수 있다.
+  
+  
+  ```bash
+  $ poetry new <project-name>
+  
+  # 아래와 같은 구조로 project가 생성된다.
+  <project-name>
+  ├── pyproject.toml
+  ├── README.md
+  ├── <project_name>
+  │   └── __init__.py
+  └── tests
+      └── __init__.py
+  ```
+  
+  - `pyproject.toml`
+    - Project의 dependency를 관리하기 위한 file이다.
+    - 최초 생성시 아래와 같이 생성된다.
+  
+  ```toml
+  [tool.poetry]
+  name = "poetry-demo"
+  version = "0.1.0"
+  description = ""
+  authors = ["foo <foo@42bar.com>"]
+  readme = "README.md"
+  
+  [tool.poetry.dependencies]
+  python = "^3.9"
+  
+  
+  [build-system]
+  requires = ["poetry-core"]
+  build-backend = "poetry.core.masonry.api"
+  ```
+
+  - Project의 dependency들은 `tool.poetry.dependencies`에 작성하면 되며, 아래와 같이 명령어로도 추가할 수 있다.
+  
+  ```bash
+  $ poetry add <dependency>
+  ```
+
+  - 위와 같이 새로운 project를 생성할 수도 있고, 기존 project에 적용할 수도 있는데, 기존 project에 적용하고자 하면 아래와 같이 하면 된다.
+  
+  ```bash
+  $ cd pre-existing-project
+  $ poetry init
+  ```
+  
+  - Dependency 설치하기
+    - 아래 명령어를 실행하면 `pyproject.toml` file을 읽어 필요한 package들을 설치한다.
+    - 설치가 끝나고 나면  `poetry.lock` file을 생성하는데, 여기에는 다운 받은 package들과 각 package들의 version 정보를 작성한다.
+    - `poetry.lock` file을 사용하여 project에 참여하는 모두가 동일한 version의 package를 사용할 수 있게 된다.
+  
+  ```bash
+  $ poetry install
+  ```
+  
+  - `poetry.lock` 파일이 있는 상태에서 `poetry install` 명령어를 실행할 경우
+    - `poetry.lock` file은 project를 생성할 때 함께 생성되는 것이 아니라, `poetry install` 명령어를 최초로 실행했을 때 생성된다.
+    - 따라서 `poetry.lock` file이 있다는 것은 기존에 `poetry install` 명령어를 실행한 적이 있다는 의미이다.
+    - `poetry.lock` file이 있다면 `pyproject.toml`에서 설치해야 하는 dependency들을 확인하고, `poetry.lock` file에서 각 package들의 version 정보를 확인하여 정확히 일치하는 version을 설치한다.
+
+
+
+- Dependency version 정의하기
+
+  - 아래와 같은 다양한 방식으로 dependency의 version을 정의할 수 있다.
+  - Caret requirements
+    - Caret requirements는 SemVer(Semantic Versioning)과 호환되도록 version을 정의하는 방식이다.
+    - 가장 왼쪽의 0이 아닌 숫자가 달라지지 않는 한 update를 수행한다.
+    - 예시는 아래 표와 같다.
+
+  | requirement | versions allowed | explanation                                                  |
+  | ----------- | ---------------- | ------------------------------------------------------------ |
+  | ^1.2.3      | >=1.2.3 < 2.0.0  | 가장 왼쪽의 0이 아닌 숫자인 major version 1이 변경되지 않는 한 update를 허용한다. |
+  | ^1          | >=1.0.0 < 2.0.0  | -                                                            |
+  | ^0.2.3      | >=0.2.3 <0.3.0   | 가장 왼쪽의 0이 아닌 숫자인 minor version 2가 변경되지 않는 한 update를 허용한다. |
+
+  - Tilde requirements
+    - 오직 patch level의 update만 허용하지만, major version만 입력하는 경우 minor version의 update도 허용한다.
+
+  | requirment | versions allowed | explanation                                                  |
+  | ---------- | ---------------- | ------------------------------------------------------------ |
+  | ~1.2.3     | >=1.2.3 < 1.3.0  | patch level의 update만 허용한다.                             |
+  | ~1.2       | \>=1.2.0 <1.3.0  | patch level의 update만 허용한다.                             |
+  | ~1         | \>=1.0.0 <2.0.0  | major version만 입력할 경우, minor level의 update도 허용된다. |
+
+  - Wildcard requirements
+    - Wildcard가 허용하는 한 가장 최근 version으로 update한다.
+
+  | requirment | versions allowed | explanation                                                  |
+  | ---------- | ---------------- | ------------------------------------------------------------ |
+  | *          | \>=0.0.0         | 모든 version이 허용된다.                                     |
+  | 1.*        | >=1.0.0 <2.0.0   | 1 major version에 대한 모든 version이 허용된다.              |
+  | 1.2.*      | \>=1.2.0 <1.3.0  | 1 major version과 2 minor version에 대한 모든 version이 허용된다. |
+
+  - Exact requirements
+    - 특정 version을 설정한다.
+    - `==`를 사용한다.
+
+  ```toml
+  ==1.2.3
+  ```
+
+  - Inequality requirments
+    - Version의 범위를 설정하거나, 특정 version을 피하도록 설정할 수 있다.
+
+  ```toml
+  >= 1.2.0
+  > 1
+  < 2
+  != 1.2.3
+  ```
+
+  - Multiple requirements
+    - 콤마로 구분하여 여러 version을 설정할 수 있다.
+
+  ```toml
+  >= 1.2, < 1.5
+  ```
+
+
+
+
+
+
+
+## pyproject.toml
+
+- `tool.poetry`
+
+  - `name`(required)
+    - Package의 name을 설정한다.
+    - [PEP 508](https://peps.python.org/pep-0508/#names)에 정의된 유효한 이름이어야한다.
+  - `version`(required)
+    - Pacakage의 version을 설정한다.
+    - [PEP 440](https://peps.python.org/pep-0440/)에 정의된 유효한 version이어야한다.
+  - `description`(required)
+    - Package에 대한 짧은 설명을 설정한다.
+  - `license`
+    - Package의 license를 설정한다.
+    - 필수는 아니지만 설정하는 것을 강하게 권장한다.
+  - `authors`(required)
+    - Package의 작성자를 설정한다.
+    - 모든 작성자를 배열 형태로 입력할 수 있으며, 반드시 한 명의 작성자는 들어가야한다.
+    - `name <email>` 형태로 작성한다.
+  - `maintainers`
+    - Package의 maintainer를 설정한다.
+    - `authors`와 마찬가지로 여러 명을 입력할 수 있으며, `name <email>` 형태로 작성한다.
+  - `readme`
+    - README file의 경로를 입력한다.
+    - `pyproject.toml` file을 기준으로 상대 경로를 입력할 수  있다.
+    - 배열 형태로 여러 개의 README file의 경로를 입력할 수도 있다.
+  - `homepage`
+    - Project의 website URL을 입력한다.
+
+  - `repository`
+    - Project의 repository의 URL을 입력한다.
+  - `documentation`
+    - Project의 documentation의 URL을 입력한다.
+  - `keywords`
+    - Package와 관련된 keyword들을 입력한다.
+    - 배열 형태로 입력한다.
+  - `classifiers`
+    - Project의 PyPI trove classifier를 입력한다.
+  - `packages`
+    - 최종 배포에 포함될 package들과 module들을 배열 형태로 입력한다.
+    - `from`을 입력하여 package의 위치를 지정할 수 있다.
+    - `format`을 사용하여 build format을 설정할 수도 있다(예를 들어 아래의 경우 `sdist` build만이 `my_other_package`라는 package를 포함시켜 배포한다).
+
+  ```toml
+  [tool.poetry]
+  # ...
+  packages = [
+      { include = "my_package" },
+      { include = "extra_package/**/*.py" },
+      { include = "my_package", from = "lib" },
+      { include = "my_other_package", format = "sdist" },
+  ]
+  ```
+
+  - `include`
+    - 최종 package에 포함될 package들을 정의한다.
+
+  ```toml
+  [tool.poetry]
+  # ...
+  include = [
+      { path = "tests", format = "sdist" },
+      { path = "for_wheel.txt", format = ["sdist", "wheel"] }
+  ]
+  ```
+
+  - `exclude`
+    - 최종 package에서 제외 할 package들을 정의한다.
+    - VCS의 ignore setting이 있을 경우(git의 경우 `.gitignore` file) `exclude`는 이 내용을 기본적으로 사용한다.
+    - 만약 VCS의 `ignore setting`에는 포함되어 있는데, `exclude`에서는 제외시키고자 할 경우 `include`에 정의해주면 된다.
+
+  ```toml
+  [tool.poetry]
+  exclude = ["my_package/excluded.py"]
+  ```
+
+
+
+- Dependency 관련 section
+
+  - `tool.poetry.dependencies`
+    - 아래와 같이 dependency들을 입력한다.
+
+  ```toml
+  [tool.poetry.dependencies]
+  requests = "^2.13.0"
+  ```
+
+  - Local directory에 위치한 library를 지정해줘야 하는 경우 아래와 같이 설정할 수 있다.
+
+  ```toml
+  [tool.poetry.dependencies]
+  # directory
+  my-package = { path = "../my-package/", develop = false }
+  
+  # file
+  my-package = { path = "../my-package/dist/my-package-0.1.0.tar.gz" }
+  ```
+
+  - 만약 특정 git repository에서 package를 설치해야 하는 경우 아래와 같이 설정할 수 있다.
+
+  ```toml
+  [tool.poetry.dependencies]
+  # 기본형
+  requests = { git = "https://github.com/requests/requests.git" }
+  
+  # branch 지정
+  requests = { git = "https://github.com/kennethreitz/requests.git", branch = "next" }
+  
+  # coomit hash 사용
+  flask = { git = "https://github.com/pallets/flask.git", rev = "38eb5d3b" }
+  
+  # tag 사용
+  numpy = { git = "https://github.com/numpy/numpy.git", tag = "v0.13.2" }
+  
+  # pacakage가 특정 directory에 있을 경우
+  subdir_package = { git = "https://github.com/myorg/mypackage_with_subdirs.git", subdirectory = "subdir" }
+  
+  # ssh connection을 사용하는 경우
+  requests = { git = "git@github.com:requests/requests.git" }
+  ```
+
+  - Editable mode로 설치하고자 한다면 아애롸 같이 `develop=true` 옵션을 주면 된다.
+    - 이 경우 설치 file의 변경 사항이 environment에 바로 반영된다.
+  
+  ```toml
+  [tool.poetry.dependencies]
+  my-package = {path = "../my/path", develop = true}
+  ```
+  
+  - 만약 Python version에 따라 dependency의 version이 달라져야 한다면 아래와 같이 설정하면 된다.
+
+  ```toml
+  [tool.poetry.dependencies]
+  foo = [
+      {version = "<=1.9", python = ">=3.6,<3.8"},
+      {version = "^2.0", python = ">=3.8"}
+  ]
+  ```
+  
+  - `tool.poetry.source`
+    - Poetry는 기본적으로 PyPI에서 package들을 찾는다.
+    - 만일 다른 저장소에서 package를 설치한다면 아래와 같이 `tool.poetry.source`에 지정해주면 된다.
+  
+  ```toml
+  [[tool.poetry.source]]
+  name = "private"
+  url = "http://example.com/simple"
+  
+  # 그 후 tool.poetry.dependencies에 dependency를 입력할 때 아래와 같이 source를 설정해준다.
+  [tool.poetry.dependencies]
+  requests = { version = "^2.13.0", source = "private" }
+  ```
+  
+  - Dependency들을 group으로 묶는 것도 가능하다.
+  
+  ```toml
+  [tool.poetry.group.test.dependencies]
+  pytest = "*"
+  
+  [tool.poetry.group.docs.dependencies]
+  mkdocs = "*"
+  ```
+
+
+
+- `tool.poetry.scripts`
+
+  - Package를 설치할 때 설치될 script 혹은 실행 파일에 대한 설명을 작성한다.
+    - 예를 들어 아래의 경우 `my_pacakge` package의 `console` module에서 `run` function을 실행할 것이라는 의미이다.
+
+  ```toml
+  [tool.poetry.scripts]
+  my_package_cli = 'my_package.console:run'
+  ```
+
+  - 아래와 같이 `extras`와 `type`도 설정할 수 있다.
+    - `extras`는 아래 `tool.poetry.extras` 참고
+
+  ```toml
+  [tool.poetry.scripts]
+  devtest = { reference = "mypackage:test.run_tests", extras = ["test"], type = "console" }
+  ```
+
+  - Script에 추가나 변경 사항이 있을 경우 `poetry install` 명령어를 실행해야 project의 가상환경이 이를 사용할 수 있게 된다.
+
+
+
+- `tool.poetry.extras`
+
+  - 아래와 같은 것들을 표현하기 위한 section이다.
+    - 필수는 아닌 dependency들을 나열
+    - Optional한 dependency들을 묶기
+  - 예시
+
+  ```toml
+  [tool.poetry.dependencies]
+  # mandatory는 이 package를 배포할 때 반드시 포함되어야하는 package이다.
+  mandatory = "^1.0"
+  
+  # 반면에 아래 두 개는 반드시 포함되지는 않아도 되는 package이다.
+  psycopg2 = { version = "^2.9", optional = true }
+  mysqlclient = { version = "^1.3", optional = true }
+  
+  [tool.poetry.extras]
+  # 반드시 포함되지는 않아도 되는 package들을 나열하고
+  mysql = ["mysqlclient"]
+  pgsql = ["psycopg2"]
+  # 반드시 포함되지는 않아도 되는 package들을 묶을 때 extras를 사용한다.
+  databases = ["mysqlclient", "psycopg2"]
+  ```
+
+  - `poetry install` 명령어 실행시에 `-E`(`--extras`) 옵션으로 package를 설치할지 여부를 결정할 수 있다.
+
+  ```bash
+  $ poetry install --extras "mysql pgsql"
+  $ poetry install -E mysql -E pgsql
+  ```
+
+  - 모든 extra dependency들을 함께 설치하려면 아래와 같이 실행하면 된다.
+
+  ```bash
+  $ poetry install --all-extras
+  ```
+
+  - 만일 Poetry로 build된 package를 pip로 설치한다면 [PEP 508](https://peps.python.org/pep-0508/#extras)에 따라 아래와 같이 extra를 지정해줄 수 있다.
+
+  ```bash
+  $ pip install awesome[databases]
+  ```
+
+
+
+
 
 
 
