@@ -601,123 +601,239 @@
 
 
 
-## 다중 입력에 대한 실습
-
-- 독립 변수가 2개 이상인 경우에 대한 실습을 할 것이다.
-  - 지금까지는 선형 회귀와 로지스틱 회귀에서 독립 변수가 1개인 경우만을 다뤘다.
-  - 그러나 대부분의 경우 독립 변수는 2개 이상이다.
-    - 즉 입력 벡터의 차원이 2 이상이다.
 
 
+### Logistic Regression
 
-- 다중 선형 회귀
+- 이진 분류(Binary Classification)
 
-  - 아래와 같이 중간 고사, 기말 고사, 과제 점수를 가지고 특정 공식을 통해 최종 점수를 계산한 데이터가 있다고 가정해보자.
+  - Logistic regression은 이진 분류 문제를 풀기 위한 대표적인 algorithm이다.
 
-  | mid_term | final | assignment | score |
-  | -------- | ----- | ---------- | ----- |
-  | 57       | 66    | 10         | 60    |
-  | 91       | 94    | 20         | 93    |
-  | 71       | 68    | 15         | 70    |
-  | 98       | 100   | 20         | 99    |
-  | 47       | 54    | 8          | 49    |
-  | 88       | 82    | 12         | 82    |
-  | 47       | 56    | 8          | 50    |
+  - 정의
 
-  - 가설은 아래와 같다.
-    - 중간 고사, 기말 고사, 과제 점수를 각각 $x_1$, $x_2$, $x_3$로 표기하고 이 세 개의 특성을 가진 벡터 [$x_1$, $x_2$, $x_3$]를 X로 표기한다.
+    - 일상에는 두 개의 선택지 중에서 정답을 고르는 문제가 많다.
+    - 예를 들어 어떤 메일이 스팸 메일인지 아닌지를 분류하는 문제 등이 있다.
+    - 이렇게 둘 중 하나를 결정하는 문제를 이진 분류라 한다.
+
+  - 이진 분류 문제는 직선으로 표현하는 것이 적절하지 않다.
+
+    - 앞에서 했던 가중치 w와 편향 b를 찾아 데이터를 가장 잘 표현하는 직선을 찾는 방법을 살펴봤다.
+    - 그러나 이진 분류는 이와 같이 접근하는 것이 적절치 않다.
+
+    - 예를 들어 점수에 따른 합격 여부를 표현한 그래프는 아래와 같을 것이다(합격은 1, 불합격은 0).
+    - 이와 같은 관계를 나타내기 위해서는 직선이 아닌 S자 형태를 표현할 수 있는 함수가 필요하다.
+    - 또한 아래와 같은 예제의 경우 y는 1 또는 0이라는 두 가지 값만 가지지만, $y=wx+b$의 직선은 y값이 음의 무한대부터 양의 무한대까지 될 수 있다.
+
+  ![image-20240201111900883](NLP_part2.assets/image-20240201111900883.png)
+
+
+
+- 시그모이드 함수(Sigmoid function)
+
+  - 출력이 0과 1 사이의 값을 가지면서 S자 형태로 그려지는 대표적인 함수이다.
+    - 입력값이 커지면 1에 수렴하고, 입력값이 작아지면 0에 수렴한다.
+    - 출력값이 0.5 이상이면 1, 0.5이하면 0으로 만들면 이진 분류 문제를 풀기 위해 사용할 수 있다.
+    - `σ`로 축약해서 표현하기도 한다.
+  - 로지스틱 회귀를 풀기 위한 가설
+    - 여기서 e(e=2.718281...)는 자연 상수라 불리는 숫자이다.
+    - 아래 식에서 구해야하는 것은 여전히 주어진 데이터에 가장 적합한 가중치(w)와 편향(b)이다.
+    - 선형 회귀에서 직선을 표현할 때 가중치 w는 직선의 기울기를 의미했지만 로지스틱 회귀에서는 그래프의 경사도를 결정한다(w가 커지면 경사가 커지고, w가 작아지면 경사가 작아진다).
 
   $$
-  H(X) = w_1x_1+w_2x_2+w_3x_3+b
+  H(x) = {1 \over 1+e^{-wx+b}} = sigmoid(wx+b) = σ(wx+b)
   $$
 
-  - 다중 선형 회귀를 사용하여 모델을 학습시킨다.
-    - 위 데이터 중 앞의 5개를 훈련에 사용하고, 나머지 2개를 테스트에 사용한다.
-    - 결과를 확인해보면 실제값과 거의 유사한 것을 확인할 수 있다.
-    - Vector가 3차원이므로 `input_dims`를 3으로 준다.
+  - 시그모이드 함수를 그래프로 시각화하기
+    - `sigmoid()` 함수는 출력값을 0과 1 사이의 값으로 조정하여 반환한다.
 
   ```python
   import numpy as np
+  import matplotlib.pyplot as plt
+  
+  def sigmoid(x):
+      return 1/(1+np.exp(-x))
+  
+  x = np.arange(-10.0, 10.0, 0.1)
+  y = sigmoid(x)
+  
+  plt.plot(x, y, 'g')
+  plt.plot([0, 0], [1.0, 0.0], ':')
+  plt.title('Sigmoid Function')
+  plt.show()
+  ```
+
+  - 가중치(w)에 따라 그래프가 어떻게 달라지는지 시각화하기
+    - `w`(가중치)의 값이 클 수록 경사가 커지는 것을 확인할 수 있다.
+
+  ```python
+  import numpy as np
+  import matplotlib.pyplot as plt
+  
+  def sigmoid(x):
+      return 1/(1+np.exp(-x))
+  
+  x = np.arange(-5.0, 5.0, 0.1)
+  w = 0.5
+  y1 = sigmoid(w*x)
+  y2 = sigmoid(x)
+  w = 2
+  y3 = sigmoid(w*x)
+  
+   # w의 값이 0.5일때
+  plt.plot(x, y1, 'r', linestyle='--')
+  # w의 값이 1일때
+  plt.plot(x, y2, 'g') 
+  # w의 값이 2일때
+  plt.plot(x, y3, 'b', linestyle='--') 
+  plt.plot([0, 0],[1.0, 0.0], ':')
+  plt.title('Sigmoid Function')
+  plt.show()
+  ```
+
+  - 편향(b)에 따라 그래프가 어떻게 달라지는지 시각화하기
+
+  ```python
+  import numpy as np
+  import matplotlib.pyplot as plt
+  
+  def sigmoid(x):
+      return 1/(1+np.exp(-x))
+  
+  x = np.arange(-5.0, 5.0, 0.1)
+  b = 0.5
+  y1 = sigmoid(x + b)
+  y2 = sigmoid(x + 1)
+  b = 1.5
+  y3 = sigmoid(x+b)
+  
+  plt.plot(x, y1, 'r', linestyle='--')
+  plt.plot(x, y2, 'g')
+  plt.plot(x, y3, 'b', linestyle='--')
+  plt.plot([0, 0],[1.0, 0.0], ':')
+  plt.title('Sigmoid Function')
+  plt.show()
+  ```
+
+
+
+- 비용함수
+
+  - 로지스틱 회귀도 경사 하강법을 사용하여 가중치 w를 찾는다.
+    - 그러나 평균 제곱 오차를 비용 함수로 사용하지는 않는다.
+    - 평균 제곱 오차를 로지스틱 회귀의 비용 함수로 사용할 경우 좋지 않은 로컬 미니멈에 빠질 가능성이 매우 높아 문제 해결이 어렵기 때문이다.
+  - 글로벌 미니멈과 로컬 미니멈
+    - 전체 함수에 걸쳐 최소값을 글로벌 미니멈(global minimum), 특정 구역에서의 최소값을 로컬 미니멈(local minimum)이라 한다.
+    - 로컬 미니멈에 지나치게 쉽게 빠지는 비용 함수는 cost가 가능한한 최소가 되는 w를 찾는다는 목적에는 좋지 않은 선택이다.
+    - 로지스텍 회귀에서 평균 제곱 오차를 비용 함수로 사용하는 것이 바로 이런 좋지 않은 선택에 해당한다.
+
+  ![image-20240201115648778](NLP_part2.assets/image-20240201115648778.png)
+
+  - 로지스틱 회귀 문제에서 가중치 w를 최소로 만드는 적절한 새로운 비용 함수를 찾아야한다.
+
+    - 가중치를 최소화하는 함수를 목적함수 $J$라 한다.
+
+    - 목적 함수는 아래와 같이 정의한다(아래 식은 아직 완성된 식이 아니다.).
+
+    $$
+    J(w) = {1 \over n} \sum_{i=1}^n f(H(x^{(i)}),y^{(i)})
+    $$
+
+    - 위의 식에서 샘플 데이터의 개수가 n개이고, 어떤 함수 $f$가 실제값 $y_i$와 예측값 $H(x_i)$의 오차를 나타내는 함수라고 할 때, 새로운 함수 $f$를 어떻게 정의하느냐에 따라 가중치를 최소화하는 적절한 목적 함수가 완성된다.
+    - 목적 함수는 전체 데이터에 대해서 어떤 함수 $f$의 평균을 계산한다.
+    - 적절한 가중치를 찾기 위해서 결과적으로 실제값과 예측값에 대한 오차를 줄여야 하므로 여기서 $f$는 비용 함수(cost function)이라고 할 수 있다.
+    - 따라서 위 식은 다시 쓰면 아래와 같다.
+
+    $$
+    J(w) = {1 \over n} \sum_{i=1}^n cost(H(x^{(i)}),y^{(i)})
+    $$
+
+  - 시그모이드 함수는 0과 1 사이의 y값을 반환한다.
+
+    - 이는 실제 값이 0일 때 y값이 1에 가까워지면 오차가 커지며, 실제값이 1일 때 y값이 0에 가까워지면 오차가 커짐을 의미한다.
+    - 이를 반영할 수 있는 함수는 로그 함수를 통해 표현 가능하다.
+
+    $$
+    if\ \ y=1 \rightarrow cost(H(x), y) = -log(H(x)) \\
+    if\ \ y=0 \rightarrow cost(H(x),y) = -log(1-H(x))
+    $$
+
+    - y의 실제값이 1일 때 $-logH(x)$그래프를 사용하고, y의 실제값이 0일 때 $-log(1-H(x))$그래프를 사용해야 한다.
+    - 위 두 식을 그래프로 표현하면 아래와 같다(y의 실제값이 1일 때의 그래프가 빨간선, y의 실제값이 0일 때의 그래프가 초록색이다).
+    - y축이 cost, x축이 $H(x)$이다.
+
+    ![image-20240201181926080](NLP_part2.assets/image-20240201181926080.png)
+
+    - 위 그래프상에서 실제값이 1일 때, 예측 값인 $H(x)$의 값이 1이면 오차가 0이므로 당연히 cost는 0이 된다.
+    - 반면, 실제값이 1일 때, 예측값인 $H(x)$의 값이 0으로 수렴하면, cost는 무한대로 수렴한다.
+    - 실제값이 0인 경우는 그 반대로 이해하면 된다.
+    - 이는 아래와 같은 식으로 표현할 수 있다.
+
+    $$
+    cost(H(x),y) = -[ylogH(x) + (1-y)log(1-H(x))]
+    $$
+
+    - 위 식을 자세히 보면 y와 (1-y)가 식 중간에 들어갔고, 두 식을 -로 묶은 것 외에는 기존의 두 식이 들어가 있는 것을 볼 수 있다.
+    - y가 이면 $ylogH(x)$가 없어지고, y가 1이면 $(1-y)log(1-H(x))$가 없어지는데 이는 각각 y가 1일 때와 y가 0일 때의 앞서 본 식과 동일하다.
+
+  - 결국 로지스틱 회귀의 목적 함수는 아래와 같다.
+
+    - 이 때 로지스틱 회귀에서 찾아낸 비용 함수를 크로스 엔트로피(cross entropy)라 한다.
+    - 결론적으로 로지스틱 회귀는 비용 함수로 크리스 엔트로피 함수를 사용하며, 가중치를 찾기 위해 크로스 엔트로피 함수의 평균을 취한 함수를 사용한다.
+    - 크로스 엔트로피 함수는 소프트맥스 회귀의 비용 함수이기도 하다.
+
+  $$
+  J(w) = -{1 \over n} \sum_{i=1}^n[y^{(i)}logH(x^{(i)})+(1-y^{(i)})log(1-H(x^{(i)}))]
+  $$
+
+
+
+- Keras로 로지스틱 회귀 구현하기
+
+  - 독립 변수 데이터를 x, 숫자 0 이상인 경우 1, 미만인 경우 0을 부여한 레이블 데이터를 y로 표현한다.
+
+    - 1개의 실수 x로부터 1개의 실수 y를 예측하는 mapping 관계를 가지므로 `Dense`의 `input_dim`, `output_dim` 인자를 모두 1을 넘겨준다.
+    - 시그모이드 함수를 사용할 것이므로 `activation` 값은 sigmoid를 넘겨준다.
+
+    - Optimizer로는 가장 기본적인 경사 하강법인 sgd를 사용한다.
+    - 이진 분류 문제에 손실 함수로 크로스 엔트로피 함수를 사용할 경우 `binary_crossentropy`를 넣어주면 된다.
+
+  ```python
+  import numpy as np
+  import matplotlib.pyplot as plt
   from tensorflow.keras.models import Sequential
   from tensorflow.keras.layers import Dense
   from tensorflow.keras import optimizers
   
   
-  x = np.array([[57, 66, 10], [91, 94, 20], [71, 68, 15], [98, 100, 20], [47, 54, 8]])
-  # 최종 성적
-  y = np.array([60, 93, 70, 99, 49]) 
+  nums = [-40, -30, -20, -10, -5, -3, -1, 0, 1, 2, 3, 10, 20]
+  ans = [1 if num >= 0 else 0 for num in nums]
+  
+  x = np.array(nums)
+  y = np.array(ans)
   
   model = Sequential()
-  model.add(Dense(1, input_dim=3, activation='linear'))
+  model.add(Dense(1, input_dim=1, activation='sigmoid'))
   
-  sgd = optimizers.SGD(learning_rate=0.00001)
-  model.compile(optimizer=sgd, loss='mse', metrics=['mse'])
-  model.fit(x, y, epochs=5000)
+  sgd = optimizers.SGD(lr=0.01)
+  model.compile(optimizer=sgd, loss='binary_crossentropy', metrics=['binary_accuracy'])
   
-  # 학습 시킨 model에 test data를 넣어 예측값을 출력한다.
-  x_test = np.array([[88, 82, 12], [47, 56, 8]])
-  print(model.predict(x_test)) # [[84.543106] [49.937683]]
+  model.fit(x, y, epochs=100)
   ```
 
+  - `epochs`를 100으로 줬으므로 총 100회에 걸쳐 전체 데이터에 대한 오차를 최소화하는 w와 b를 찾아내는 작업을 한다.
 
+    - 일정 횟수 이상부터 정확도가 100%가 나오기 시작한다.
 
-- 다중 로지스틱 회귀
-
-  - 아래와 같은 물고기의 길이와 무게 데이터를 가지고, 해당 물고기가 A인지 B인지 예측하는 모델을 만들고자 한다.
-
-  | length(cm) | weight(g) | species |
-  | ---------- | --------- | ------- |
-  | 5.1        | 5.3       | A       |
-  | 4.9        | 5.0       | A       |
-  | 5.3        | 5.5       | A       |
-  | 3.8        | 3.9       | B       |
-  | 3.4        | 3.5       | B       |
-  | ...        | ...       | ...     |
-
-  - 가설은 아래와 같다.
-    - 길이와 무게를 각각 $x_1$, $x_2$ 로 표기하고 이 세 개의 특성을 가진 벡터 [$x_1$, $x_2$]를 X로 표기한다.
-
-  $$
-  H(x) = sigmoid(w_1x_1 + w_2x_2 + b)
-  $$
-
-  - 다중 로지스틱 회귀를 이용하여 모델을 학습시킨다.
-    - Vector가 2차원이므로 `input_dims`를 2로 준다.
-    - 1이면 A종, 0이면 B종이다.
-    - 학습을 위해 데이터를 더 추가했다.
+    - 실제 값과 오차를 최소화하도록 값이 변경된 w와 b의 값을 가진 모델로 그래프를 그리면 아래와 같다.
 
   ```python
-  import numpy as np
-  from tensorflow.keras.models import Sequential
-  from tensorflow.keras.layers import Dense
-  from tensorflow.keras import optimizers
-  
-  
-  x = np.array([[5.8, 5.7], [5.1, 5.3], [4.9, 5.0], [5.3, 5.5], [6.0, 6.2], [2.9, 2.9], [3.5, 3.7], [3.8, 3.9], [3.4, 3.5]])
-  y = np.array([1, 1, 1, 1, 1, 0, 0, 0, 0])
-  
-  model = Sequential()
-  model.add(Dense(1, input_dim=2, activation='sigmoid'))
-  model.compile(optimizer='sgd', loss='binary_crossentropy', metrics=['binary_accuracy'])
-  
-  model.fit(x, y, epochs=2000)
-  # 길이와 무게 데이터에 대해서 예측값을 확인한다.
-  print(model.predict(x))
-  
-  """
-  [[0.7527496 ]
-   [0.70963895]
-   [0.68242395]
-   [0.72846127]
-   [0.7880189 ]
-   [0.44953454]
-   [0.5369429 ]
-   [0.56275266]
-   [0.5164799 ]]
-  """
+  plt.plot(x, model.predict(x), 'b', x, y, 'k.')
+  plt.show()
   ```
 
-  - 결과를 확인해 보면 A종의 경우 대부분 값이 0.6 이상인 것을 확인할 수 있다.
+  ![image-20240202102814570](NLP_part2.assets/image-20240202102814570.png)
+
+
 
 
 

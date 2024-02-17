@@ -1661,12 +1661,6 @@ keep='last'
 
 
 
-- python poetry
-  - 의존성 관리 툴
-  - pip 대체제
-
-
-
 - mypy
   - Python의 static type check 도구.
 
