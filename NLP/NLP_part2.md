@@ -837,3 +837,125 @@
 
 
 
+
+
+### 다중 입력에 대한 실습
+
+- 독립 변수가 2개 이상인 경우에 대한 실습을 할 것이다.
+  - 지금까지는 선형 회귀와 로지스틱 회귀에서 독립 변수가 1개인 경우만을 다뤘다.
+  - 그러나 대부분의 경우 독립 변수는 2개 이상이다.
+    - 즉 입력 벡터의 차원이 2 이상이다.
+
+
+
+- 다중 선형 회귀
+
+  - 아래와 같이 중간 고사, 기말 고사, 과제 점수를 가지고 특정 공식을 통해 최종 점수를 계산한 데이터가 있다고 가정해보자.
+
+  | mid_term | final | assignment | score |
+  | -------- | ----- | ---------- | ----- |
+  | 57       | 66    | 10         | 60    |
+  | 91       | 94    | 20         | 93    |
+  | 71       | 68    | 15         | 70    |
+  | 98       | 100   | 20         | 99    |
+  | 47       | 54    | 8          | 49    |
+  | 88       | 82    | 12         | 82    |
+  | 47       | 56    | 8          | 50    |
+
+  - 가설은 아래와 같다.
+    - 중간 고사, 기말 고사, 과제 점수를 각각 $x_1$, $x_2$, $x_3$로 표기하고 이 세 개의 특성을 가진 벡터 [$x_1$, $x_2$, $x_3$]를 X로 표기한다.
+
+  $$
+  H(X) = w_1x_1+w_2x_2+w_3x_3+b
+  $$
+
+  - 다중 선형 회귀를 사용하여 모델을 학습시킨다.
+    - 위 데이터 중 앞의 5개를 훈련에 사용하고, 나머지 2개를 테스트에 사용한다.
+    - 결과를 확인해보면 실제값과 거의 유사한 것을 확인할 수 있다.
+    - Vector가 3차원이므로 `input_dims`를 3으로 준다.
+
+  ```python
+  import numpy as np
+  from tensorflow.keras.models import Sequential
+  from tensorflow.keras.layers import Dense
+  from tensorflow.keras import optimizers
+  
+  
+  x = np.array([[57, 66, 10], [91, 94, 20], [71, 68, 15], [98, 100, 20], [47, 54, 8]])
+  # 최종 성적
+  y = np.array([60, 93, 70, 99, 49]) 
+  
+  model = Sequential()
+  model.add(Dense(1, input_dim=3, activation='linear'))
+  
+  sgd = optimizers.SGD(learning_rate=0.00001)
+  model.compile(optimizer=sgd, loss='mse', metrics=['mse'])
+  model.fit(x, y, epochs=5000)
+  
+  # 학습 시킨 model에 test data를 넣어 예측값을 출력한다.
+  x_test = np.array([[88, 82, 12], [47, 56, 8]])
+  print(model.predict(x_test)) # [[84.543106] [49.937683]]
+  ```
+
+
+
+- 다중 로지스틱 회귀
+
+  - 아래와 같은 물고기의 길이와 무게 데이터를 가지고, 해당 물고기가 A인지 B인지 예측하는 모델을 만들고자 한다.
+
+  | length(cm) | weight(g) | species |
+  | ---------- | --------- | ------- |
+  | 5.1        | 5.3       | A       |
+  | 4.9        | 5.0       | A       |
+  | 5.3        | 5.5       | A       |
+  | 3.8        | 3.9       | B       |
+  | 3.4        | 3.5       | B       |
+  | ...        | ...       | ...     |
+
+  - 가설은 아래와 같다.
+    - 길이와 무게를 각각 $x_1$, $x_2$ 로 표기하고 이 세 개의 특성을 가진 벡터 [$x_1$, $x_2$]를 X로 표기한다.
+
+  $$
+  H(x) = sigmoid(w_1x_1 + w_2x_2 + b)
+  $$
+
+  - 다중 로지스틱 회귀를 이용하여 모델을 학습시킨다.
+    - Vector가 2차원이므로 `input_dims`를 2로 준다.
+    - 1이면 A종, 0이면 B종이다.
+    - 학습을 위해 데이터를 더 추가했다.
+
+  ```python
+  import numpy as np
+  from tensorflow.keras.models import Sequential
+  from tensorflow.keras.layers import Dense
+  from tensorflow.keras import optimizers
+  
+  
+  x = np.array([[5.8, 5.7], [5.1, 5.3], [4.9, 5.0], [5.3, 5.5], [6.0, 6.2], [2.9, 2.9], [3.5, 3.7], [3.8, 3.9], [3.4, 3.5]])
+  y = np.array([1, 1, 1, 1, 1, 0, 0, 0, 0])
+  
+  model = Sequential()
+  model.add(Dense(1, input_dim=2, activation='sigmoid'))
+  model.compile(optimizer='sgd', loss='binary_crossentropy', metrics=['binary_accuracy'])
+  
+  model.fit(x, y, epochs=2000)
+  # 길이와 무게 데이터에 대해서 예측값을 확인한다.
+  print(model.predict(x))
+  
+  """
+  [[0.7527496 ]
+   [0.70963895]
+   [0.68242395]
+   [0.72846127]
+   [0.7880189 ]
+   [0.44953454]
+   [0.5369429 ]
+   [0.56275266]
+   [0.5164799 ]]
+  """
+  ```
+
+  - 결과를 확인해 보면 A종의 경우 대부분 값이 0.6 이상인 것을 확인할 수 있다.
+
+
+
