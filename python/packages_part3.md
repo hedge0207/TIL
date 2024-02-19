@@ -1003,6 +1003,467 @@
 
 
 
+- 가상 환경을 생성하여 poetry를 설치한 후 해당 가상환경을 사용하면 poetry의 가상환경은 사용하지 않게된다.
+
+  - 예를 들어 아래와 같이 poetry를 설치했다고 가정해보자.
+
+  ```bash
+  $ python -m venv test
+  $ source test/bin/activate
+  $ pip install -U pip
+  $ pip install poetry
+  ```
+
+  - 이 상태에서 poetry를 아래와 같이 실행하고
+
+  ```bash
+  $ poetry new demo
+  $ cd demo
+  $ poetry add elasticsearch
+  ```
+
+  - 설치된 package 목록을 확인해보면 위에서 설치한 elasticsearch가 포함된 것을 확인할 수 있다.
+    - 이는 poetry가 제공하는 가상 환경이 아닌 위에서 사용자가 직접 생성한 test라는 가상환경에 elasticsearch가 설치된 것이다.
+
+  ```bash
+  $ pip list
+  ```
+
+  - 만약 이 때 elasticsearch pakcage를 삭제하면 문제가 발생한다.
+    - 아래 명령어를 실행하면 elasticsearch가 정상적으로 삭제되지만, 이후부터는 poetry 명령어 실행시 module not found error가 발생하면서 실행되지 않게 된다.
+
+  ```bash
+  $ poetry remove elasticsearch
+  ```
+
+  - 문제의 원인
+    - 위에서 poetry를 통해 elasticsearch package를 설치하긴 했으나 이는 사실 poetry의 가상 환경이 아닌 사용자가 생성한 가상 환경에 설치된 것이다.
+    - `poetry remove`를 통해 elasticsearch를 제거할 때 역시 poetry의 가상 환경에서 elasticsearch를 삭제한 것이 아닌 사용자가 생성한 가상 환경에 설치된 것이다.
+    - poetry와 elasticsearch package는 동일한 dependency(e.g. urllib3, certifi)를 가지고 있다.
+    - test라는 가상환경에서 elasticsearch가 삭제되면서 elasticsearch의 dependency들도 함께 삭제되는데, 이 때 poetry의 dependency들도 함께 삭제된다.
+    - 따라서 poetry 실행시 module not found error가 발생하면서 poetry가 정상적으로 실행되지 않는다.
+  - 해결 방법
+    - poetry는 사용자가 생성한 가상 환경에 설치를 하고, poetry는 poetry의 가상환경에서 실행해야한다.
+    - poetry의 가상환경에서 실행하기 위해서는 사용자가 생성한 가상 환경을 activate 하지 않아야한다.
+    - 사용자가 생성한 가상 환경을 activate 하지 않고 poetry를 실행하기 위해 사용자가 생성한 가상 환경 내에서 poetry가 설치된 경로를 찾아 poetry를 바로 실행시켜준다.
+
+  ```bash
+  $ python -m venv test
+  $ source test/bin/activate
+  $ pip install -U upgrade pip
+  $ pip install poetry
+  
+  # 여기서부터 달라진다.
+  $ test/bin/poetry new demo
+  $ cd demo
+  $ ../test/bin/poetry add elasticsearch
+  ```
+
+  - 위 명령어를 실행하고 다시 사용자가 생성한 가상 환경을 실행시켜 package들을 확인해보면, 사용자가 생성한 가상 환경에는 elasticsearch가 포함되지 않은 것을 확인할 수 있다.
+
+  ```bash
+  $ source ../test/bin/activate
+  $ pip list
+  ```
+
+
+
+- Dependency group
+
+  - Dependency들을 group으로 묶을 수 있는 기능을 제공한다.
+    - 이는 dependency들을 보다 편리하게 관리할 수 있게 해준다.
+    - 또한 이를 통해 특정 상황에서만 필요한 dependency들을 따로 관리하는 것이 가능하다.
+    - 예를 들어 test에 필요한 pytest 등의 dependency는 운영 환경에는 필요하지 않다.
+    - 따라서 test에만 필요한 dependency들을 group으로 묶고 최종 배포에는 포함되지 않도록 관리하는 것이 좋다.
+
+  - `pyproject.toml`에 아래와 같이 dependency group을 선언할 수 있다.
+    - `tool.poetry.group.<group>` 형태로 선언한다.
+
+  ```toml
+  [tool.poetry.group.test]
+  
+  [tool.poetry.group.test.dependencies]
+  pytest = "^6.0.0"
+  pytest-mock = "*"
+  ```
+
+  - 모든 dependency들은 각 group간에 호환이 가능해야한다.
+    - 어떤 dependency가 특정 group에서만 사용된다고 해서 다른 group의 dependency와 호환되지 않아도 되는 것이 아니다.
+    - 모든 group의 dependency들은 group과 무관하게 호환되어야한다.
+  - Optional한 group 선언하기
+    - 아래와 같이 `optional = true`로 설정하면 해당 group은 optional group이 된다.
+
+  ```toml
+  [tool.poetry.group.docs]
+  optional = true
+  
+  [tool.poetry.group.docs.dependencies]
+  mkdocs = "*"
+  ```
+
+
+
+- Dependency synchronization
+
+  - `peotry.lock`에 정의된 locked dependency들 중에서 불필요한 것들을 제거하는 과정이다.
+    - 이를 통해 `poetry.lock` file에 있는 locked dependency들은 environment에 하나만 존재한다는 것이 보장된다.
+  - `poetry install`시에 `--sync` option을 주면 된다.
+
+  ```bash
+  $ poetry install --sync
+  ```
+
+  - Dependency group과 관련된 option들과 함께 사용할 수 있다.
+
+  ```bash
+  $ poetry install --without dev --sync
+  $ poetry install --with docs --sync
+  $ poetry install --only dev
+  ```
+
+  - `--sync` option을 사용하지 않고 install할 경우 이미 설치된 optional group의 subset들을 삭제하지 않고도 이들을 설치할 수 있다.
+    - 이는 multi-stage Docker build시에 굉장히 유용할 수 있다.
+
+
+
+
+
+## 명령어
+
+- `new`
+
+  - 새로운 project를 생성하는 명령어이다.
+
+  ```bash
+  $ poetry new <package-name>
+  ```
+
+  - `--name` option을 통해 folder명과 package 명을 다르게 설정할 수 있다.
+
+  ```bash
+  $ poetry new <folder-name> --name <package-name>
+  ```
+
+  - 만약 depth가 있는 구조를 원한다면 아래와 같이 `.`을 사용하여 입력하면 된다.
+
+  ```bash
+  $ poetry new --name my.package my-package
+  
+  # 아래와 같이 project가 생성된다.
+  my-package
+  ├── pyproject.toml
+  ├── README.md
+  ├── my
+  │   └── package
+  │       └── __init__.py
+  └── tests
+      └── __init__.py
+  ```
+
+  - `src`  directory가 필요할 경우 `--src` option을 주면 된다.
+
+  ```bash
+  $ poetry new --src <package-name>
+  
+  # 아래와 같은 구조로 project가 생성된다.
+  my-package
+  ├── pyproject.toml
+  ├── README.md
+  ├── src
+  │   └── my_package
+  │       └── __init__.py
+  └── tests
+      └── __init__.py
+  ```
+
+
+
+- `init`
+
+  - Poetry로 관리되고 있지 않던 project에 `pyproject.toml` file을 생성해준다.
+    - Interactive shell로 `pyproject.toml` file을 생성할 때 필요한 정보들을 받는다.
+
+  ```bash
+  $ poetry init
+  ```
+
+  - Interactive shell에서 입력하지 않고, 아래와 같은 option들을 미리 지정해주는 것도 가능하다.
+    - `--name`
+    - `--description`
+    - `--author`
+    - `--python`
+    - `--dependency`
+    - `--dev-dependency`
+
+
+
+- `install`
+
+  - `pyproject.toml` file을 읽어서 dependency들을 resolve하고 설치한다.
+    - 만약 `poetry.lock` file이 있다면, version을 resolve하는 대신 해당 file에 정의된 정확한 version들을 설치한다.
+
+  ```bash
+  $ poetry install
+  ```
+
+  - `--without`
+    - 설치시에 제외할 dependency group들을 설정할 수 있게 해준다.
+
+  ```bash
+  $ poetry install --without foo,bar
+  ```
+
+  - `--with`
+    - 설치시에 함께 설치할 optional dependency group들을 설정할 수 있게 해준다.
+    - `--without`과 함께 쓸 경우 `--without`이 우선권을 가진다.
+
+  ```bash
+  $ poetry install --with foo,bar
+  ```
+
+  - `--only`
+    - 특정 dependency group들만 설치하도록 설정할 수 있게 해준다.
+
+  ```bash
+  $ poetry install --only foo,bar
+  ```
+
+  - `--only-root`
+    - Dependency는 설치하지 않고, project만 설치할 수 있게 해준다.
+
+  ```bash
+  $ poetry install --only-root
+  ```
+
+  - `--no-root`
+    - Package(project) 자체는 설치하지 않는다.
+
+  ```bash
+  $ poetry install --no-root
+  ```
+
+  - `--no-directory`
+    - Directory path를 설정한 dependency들은 설치하지 않는다.
+
+  ```bash
+  $ poetry install --no-directory
+  ```
+
+  - `--sync`
+    - Environment를 동기화할 수 있게 해준다.
+
+  ```bash
+  $ poetry install --sync
+  ```
+
+  - `--extras`(`-E`)
+    - extras들을 설치할 수 있게 해준다.
+    - `--all-extras`를 입력하면 모든 extra들을 설치한다.
+
+  ```bash
+  $ poetry install --extras "mysql pgsql"
+  $ poetry install -E mysql -E pgsql
+  $ poetry install --all-extras
+  ```
+
+  - `--compile`
+    - 기본적으로 `poetry install`시에는 Python source file을 bytecode로 compile하지 않는데, 이를 통해 설치 속도를 올릴 수 있기 때문이다.
+    - 그러나 첫 실행시에는 Python이 자동으로 source code를 compile한다.
+    - 만약 설치시에 source file을 compile하고자 한다면 `--compile` option을 주면 된다.
+    - 만약 `installer.modern-installation`이 `false`로 설정되어 있다면 `--compile` option은 아무 영향도 미치지 못하는데, 이는 이전 installer는 항상 source file을 compile하기 때문이다.
+
+  ```bash
+  $ poetry install --compile
+  ```
+
+  - `--dry-run`
+    - 실행 결과만 보여주고 실제 실행하지는 않는다.
+
+
+
+- `update`
+
+  - Dependency를 가장 최신 version으로 update하기 위해 사용한다.
+
+    - 실행시에 `poetry.lock` file도 자동으로 update된다.
+    - 일부 package들만 update하고자 할 경우 아래와 같이 뒤에 update할 package들을 입력하면 된다.
+
+    - 주의할 점은 `pyproject.toml`에 정의한 version을 넘어서 update하지는 않는다는 점이다.
+
+  ```bash
+  $ poetry update [package1 package2 ...]
+  ```
+
+  - `--lock`
+    - 실제 Update는 실행하지 않고, lockfile만 update한다.
+
+  ```bash
+  $ poetry update --lock
+  ```
+
+  - 아래와 같은 option들은 `install`과 공유한다.
+    - `--without`
+    - `--with`
+    - `--only`
+    - `--dry-run`
+
+
+
+- `add`
+
+  - `pyproject.toml` file에 dependency를 추가한다.
+    - `@` 등을 사용하여 제약 조건을 추가할 수 있다.
+    - 만약 이미 있는 dependency를 추가하려 할 경우 error가 발생한다.
+    - 그러나 constraint를 정의할 경우 정의한 constraint에 따라 `pyproject.toml` file이 update된다.
+
+  ```bash
+  $ poetry add <pacakge> [package2 ...]
+  
+  # 예시
+  $ poetry add pendulum@^2.0.5
+  
+  $ poetry add pendulum@~2.0.5
+  
+  $ poetry add "pendulum>=2.0.5"
+  
+  $ poetry add pendulum==2.0.5
+  ```
+
+  - `git` dependency는 아래와 같이 추가가 가능하다.
+
+  ```bash
+  $ poetry add git+https://github.com/sdispater/pendulum.git
+  
+  # ssh connection을 사용해야 할 경우
+  $ poetry add git+ssh://git@github.com/sdispater/pendulum.git
+  
+  # 특정 branch, tag 등에서 가져와야 할 경우 
+  $ poetry add git+https://github.com/sdispater/pendulum.git#develop
+  $ poetry add git+https://github.com/sdispater/pendulum.git#2.0.5
+  
+  # 특정 sub dir에서 가져와야 할 경우
+  $ poetry add git+https://github.com/myorg/mypackage_with_subdirs.git@main#subdirectory=subdir
+  ```
+
+  - Local directory에서 추가할 경우 아래와 같이 경로를 입력하면 된다.
+
+  ```bash
+  $ poetry add ./my-package/
+  $ poetry add ../my-package/dist/my-package-0.1.0.tar.gz
+  ```
+
+  - Extra를 설치해야 할 경우
+
+  ```bash
+  $ poetry add "requests[security,socks]"
+  ```
+
+  - `--editable`
+    - Dependency를 editable mode로 설치하게 해준다.
+    - `pyproject.toml` file에서 package를 추가할 때 `develop` option에 대응한다.
+
+  ```bash
+  $ poetry add --editable ./my-package/
+  ```
+
+  - `--group`
+    - 특정 group에 추가할 수 있게 해준다.
+
+  ```bash
+  $ poetry add mkdocs --group docs
+  ```
+
+  - `--extras`(`-E`)
+    - Extra를 지정할 수 있다.
+  - `--optional`
+    - Optional dependency로 추가할 수 있게 해준다.
+
+  - `--python`
+    - Dependency가 설치되기 위한 Python version을 설정할 수 있게 해준다.
+  - `--platform`
+    - Dependency가 설치되기 위한 platform을 설정할 수 있게 해준다.
+  - `--source`
+    - Package를 설치할 때 사용할 source의 이름을 설정할 수 있게 해준다.
+
+  - `--allow-prereleases`
+    - Prerelease를 설치할 수 있게 해준다.
+  - `--lock`
+    - Install 은 실행하지 않고, lockfile만 update한다.
+  - `--dry-run`
+    - 실제 실행은 하지 않고, 실행 결과만 보여준다.
+
+
+
+- `remove`
+
+  - 설치된 dependency들 중에서 특정 dependency를 삭제한다.
+
+  ```bash
+  $ poetry remove <package>
+  ```
+
+  - `--group`(`-G`)
+    - 특정 group에서 dependency를 제거한다.
+
+
+
+- `show`
+
+  - 사용 가능한 package들의 목록을 보여준다.
+
+  ```bash
+  $ poetry show
+  ```
+
+  - 특정 package의 상세한 정보를 보고싶다면 아래와 같이 package를 입력하면 된다.
+
+  ```bash
+  $ poetry show <package>
+  ```
+
+
+
+- `config`
+
+  - Poetry의 설정을 변경할 때 사용한다.
+
+  ```bash
+  $ poetry config [options] [setting-key] [setting-value1] ... [setting-valueN]
+  ```
+
+  - `--list`
+    - 설정을 확인할 수 있게 해준다.
+
+  ```bash
+  $ poetry config --list
+  ```
+
+
+
+- `check`
+
+  - `pyproject.toml` file의 유효성을 검증하고, `poetry.lock` 파일과 일관성이 있는지를 검증한다.
+
+  ```bash
+  $ poetry check
+  ```
+
+
+
+- export
+
+  - Lockfile을 다른 format으로 export한다.
+
+  ```bash
+  $ poetry export -f requirements.txt --output requirements.txt
+  ```
+
+  - `-f`를 통해 format을 설정할 수 있다.
+    - 현재는 `requirements.txt`와 `constraints.txt` 두 format만 지원한다.
+  - `--output`
+    - Output file의 이름을 지정한다.
+    - 지정하지 않을 경우 standard output으로 출력한다.
+
 
 
 
