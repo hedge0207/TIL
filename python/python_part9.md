@@ -1018,12 +1018,9 @@
 
   - `Pool` class는 worker process들의 pool을 생성한다.
   - `Pool` class는 task들을 process로 넘길 수 있는 몇 가지 method를 제공한다.
-    - `apply()`: process에게 특정 작업을 실행시키고 해당 작업의 종료까지 기다린다.
+    - `apply()`: 하나의 process에게 특정 작업을 실행시키고 해당 작업의 종료까지 기다린다.
     - `apply_async()`: process에게 특정 작업을 시키고 종료는 기다리지 않고 `AsyncResult`를 반환 받는다.  작업이 완료되었을 때 `AsyncResult`의  `get()` 메서드를 통해 작업의 반환값을 얻을 수 있다.
-    - `map()`: process에게 iterable한 작업을 실행시킨다. 단, 사용하고자 하는 함수는 단일 인자를 받아야 한다. ` apply()`와 마찬가지로 작업의 종료까지 기다린다.
-    - `async_map()`: process에게 iterable한 작업을 실행시킨다. 단, 사용하고자 하는 함수는 단일 인자를 받아야 한다. `apply_async()`와 마찬가지로 종료는 기다리지 않고 `AsyncResult`를 반환 받는다.
-  - 예시
-
+  
   ```python
   from multiprocessing import Pool, TimeoutError
   import time
@@ -1035,25 +1032,19 @@
   if __name__ == '__main__':
       # 4개의 worker process를 시작한다.
       with Pool(processes=4) as pool:
-  
-          print(pool.map(f, range(10)))
-  
-          for i in pool.imap_unordered(f, range(10)):
-              print(i)
-  
           # evaluate "f(20)" asynchronously
-          res = pool.apply_async(f, (20,))      # runs in *only* one process
+          res = pool.apply_async(f, (20,))      # 오직 하나의 process에서만 실행된다.
           print(res.get(timeout=1))             # prints "400"
   
           # evaluate "os.getpid()" asynchronously
-          res = pool.apply_async(os.getpid, ()) # runs in *only* one process
-          print(res.get(timeout=1))             # prints the PID of that process
+          res = pool.apply_async(os.getpid, ()) # 오직 하나의 process에서만 실행된다.
+          print(res.get(timeout=1))
   
-          # launching multiple evaluations asynchronously *may* use more processes
+          # 여러 개의 process에서 실행될 수도 있다.
           multiple_results = [pool.apply_async(os.getpid, ()) for i in range(4)]
           print([res.get(timeout=1) for res in multiple_results])
   
-          # make a single worker sleep for 10 secs
+          # 하나의 worker를 10초 동안 휴식시킨다.
           res = pool.apply_async(time.sleep, (10,))
           try:
               print(res.get(timeout=1))
@@ -1062,13 +1053,93 @@
   
           print("For the moment, the pool remains available for more work")
   
-      # exiting the 'with'-block has stopped the pool
+      # with block을 벗어나면 pool이 정지된다.
       print("Now the pool is closed and no longer available")
   ```
-
+  
   - `Pool`과 `Process`의 차이
     - `Pool`은 처리할 일을 쌓아두고 process들이 알아서 분산 처리를 하게 만드는 방식이다.
     - `Process`는 각 process마다 할당량을 지정해주고 분산 처리를 하게 만드는 방식이다.
+
+
+
+- `map`, `map_async`, `imap`, `imap_unordered`의 차이
+
+  - `map(func, iterable[, chunksize, callback, error_callback])`
+    - Iterable한 값을 chunk로 자른 뒤 각 chunk들을 pool 내의 worker process로 보내는 방식으로 동작한다.
+    - `chunksize` option을 통해 몇 개의 item을 하나의 chunk로 묶을지를 설정할 수 있다(단 반드시 해당 크기로 묶이지는 않을 수도 있다).
+    - Iterable을 모두 처리한 뒤 그 결과를 list로 반환한다.
+    - 따라서 iterable의 크기가 커질 수록 memory에 부담이 가게 되므로, 이런 경우 `imap`을 사용하는 것이 권장된다.
+
+  ```python
+  from multiprocessing import Pool
+  
+  def f(x):
+      return x*x
+  
+  with Pool(processes=4) as pool:
+      print(pool.map(f, range(10)))	# [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+  ```
+
+  - `map_async(func, iterable[, chunksize])`
+    - `map`과 유사하지만 작업의 종료를 기다리지 않고, `AsyncResult`를 반환한다는 점이 다르다.
+    - 만약 `callback` 함수는 오직 하나의 argument만을 받는 callable한 객체여야하며, `error_callback`도 마찬가지다.
+
+  ```python
+  from multiprocessing import Pool
+  
+  def f(x):
+      return x // x
+  
+  def callback(x):
+      print(x)
+  
+  def error_callback(x):
+      print(x)
+  
+  with Pool(processes=4) as pool:
+      # 아래는 ZeroDivisionError가 발생하여 error_callback이 실행된다.
+      res = pool.map_async(f, range(10), callback=callback, error_callback=error_callback)
+      # 완료까지 기다린다.
+      res.wait()
+      # 아래는 문제 없이 실행되어 callback이 실행된다.
+      res = pool.map_async(f, range(1, 10), callback=callback, error_callback=error_callback)
+      res.wait()
+  ```
+
+  - `imap(func, iterable[, chunksize])`
+    - `map`과 동작 방식은 유사하지만 `map`이 결과를 list로 한 번에 반환하는 것과 달리 `imap`은 iterator를 반환한다.
+    - 기본 chunksize는 1이며, 1보다 적절히 큰 값을 줄 경우 처리 속도를 크게 높일 수 있다.
+
+  ```python
+  from multiprocessing import Pool
+  
+  def f(x):
+      return x*x
+  
+  with Pool(processes=4) as pool:
+      result = pool.imap(f, range(10))
+      print(type(result))				# <class 'multiprocessing.pool.IMapIterator'>
+      for result in result:
+          print(result, end=" ")		# 0 1 4 9 16 25 36 49 64 81
+  ```
+
+  - `imap_unordered(func, iterable[, chunksize])`
+    - 결과의 순서가 보장되지 않는다는 점만 빼면 `imap`과 동일하다.
+    - Process가 하나만 있을 경우에는 순서가 보장된다.
+
+  ```python
+  from multiprocessing import Pool
+  
+  def f(x):
+      return x*x
+  
+  with Pool(processes=4) as pool:
+      result = pool.imap_unordered(f, range(10))
+      print(type(result))				# <class 'multiprocessing.pool.IMapIterator'>
+      for result in result:
+          print(result, end=" ")		# 0 16 1 25 9 4 64 49 36 81
+  ```
 
 
 
