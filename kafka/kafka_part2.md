@@ -190,8 +190,8 @@
     - Partitioner가 topic의 어느 partition에 메시지를 보낼지 지정한다.
     - 전송할 partiton을 지정할 수 있다.
     - 전송할 partition을 지정해주지 않을 경우 DefaultPartitoner는 다음과 같이 동작한다.
-    - key값이 있을 경우 key 값의 hash 값을 이용해서 parittion을 할당한다.
-    - key 값이 없는 경우 round-robin 방식(2.4부터는 sticky partitioner)으로 parititon을 할당한다.
+    - Key값이 있을 경우 key 값의 hash 값을 이용해서 parittion을 할당한다.
+    - Key 값이 없는 경우 sticky partitioner 방식(2.4이전에는 round-robin 방식)으로 parititon을 할당한다.
   - 압축
     - 설정된 포맷에 맞춰 메시지를 압축한다.
     - 압축을 함으로써 메시지를 borker로 보다 빠르게 전달 할 수 있게 되고, 브로커 내부에서 빠른 복제가 가능해지며, 저장 비용도 줄일 수 있다.

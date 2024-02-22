@@ -625,6 +625,12 @@
   print(user.dict())	
   # {'id': 123, 'signup_ts': datetime.datetime(2019, 6, 1, 12, 22), 'friends': [1, 2, 3], 'name': 'John Doe'}
   ```
+  
+  - 주의 사항
+  
+    - field명 앞에 underscore를 붙이면 해당 field는 제외 대상 필드로 지정된다.
+  
+    > https://docs.pydantic.dev/1.10/usage/models/#automatically-excluded-attributes
 
 
 

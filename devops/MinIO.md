@@ -238,25 +238,6 @@
 
 
 
-## MinIO Client
-
-> https://min.io/docs/minio/linux/reference/minio-mc.html#command-mc
-
-- MinIO Client
-
-  - MinIO는 `mc`라는 command line tool을 제공한다.
-    - AWS S3와 호환이 가능하다.
-  - 아래와 같이 사용한다.
-
-  ```bash
-  $ mc [GLOBALFLAGS] COMMAND
-  ```
-
-  - MinIO에 내장되어 있지는 않으므로 별도의 설치가 필요하다.
-    - Docker로 설치한 경우 `mc`가 내장되어 있어 설치 없이 사용이 가능하다.
-
-
-
 ## Object 관리하기
 
 - Object와 Bucket
@@ -1102,11 +1083,57 @@
 
 
 
+- Bucket과 file 경로가 Kafka message의 key값이 된다.
+  - 따라서 같은 file은 같은 partition으로 전송되는 것이 보장된다.
 
 
 
 
-# Python에서 사용하기
+
+# MinIO Client
+
+## MinIO command line tool
+
+> https://min.io/docs/minio/linux/reference/minio-mc.html#command-mc
+
+- MinIO는 `mc`라는 command line tool을 지원한다.
+
+  - AWS S3 API와도 호환이 가능하다.
+
+  - 아래와 같이 사용하면 된다.
+
+  ```bash
+  $ mc [GLOBALFAGS] COMMAND
+  ```
+
+  - MinIO에 내장되어 있지는 않으므로 사용하려면 별도의 설치가 필요하다.
+    - MinIO 공식 Docker image를 사용할 경우 설치 없이 사용이 가능하다.
+  - JSON 형식의 configuration file을 사용하며, 기본 위치는 `~/.mc/config.json`이다.
+
+
+
+- `mc alias`
+
+  - S3와 호환 가능한 hosts들을 관리하기 위한 기능이다.
+  - `list`
+    - Alias들의 목록을 보여준다.
+
+  ```bash
+  $ mc alias list
+  ```
+
+  - `set`
+    - Alias를 추가하거나 기존의 alias를 수정한다.
+
+  ```bash
+  $ mc set <alias> <URL> <ACCESS_KEY> <SECRET_KEY>
+  ```
+
+
+
+
+
+## Python
 
 > https://min.io/docs/minio/linux/developers/python/API.html
 
