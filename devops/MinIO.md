@@ -557,9 +557,9 @@
 
 
 
+# MinIO 구성
 
-
-# Single-Node Multi-Drive MinIO
+## Single-Node Multi-Drive MinIO
 
 - Docker를 사용하여 SNMD 방식으로 MinIO 배포하기
 
@@ -600,7 +600,7 @@
 
 
 
-# Multi-Node Multi-Drive MinIO
+## Multi-Node Multi-Drive MinIO
 
 - Docker를 사용하여 MinIO를 MNMD로 배포하기	
 
@@ -789,9 +789,9 @@
 
 
 
+# Kafka와 함께 사용하기
 
-
-# Camel Kafka Connector로 MinIO의 data를 Kafka로 전송하기
+## Camel Kafka Connector로 MinIO의 data를 Kafka로 전송하기
 
 - Camel Kafka Connector 실행하기
 
@@ -883,14 +883,13 @@
 
 
 
-
-
-# Bucket의 event를 전송하기
+## Bucket의 event를 전송하기
 
 > https://min.io/docs/minio/linux/administration/monitoring/bucket-notifications.html
 
 - MinIO는 bucket에서 발생한 event를 Kafa, Elasticsearch, MySQL, PostgreSQL 등으로 전송하는 기능을 지원한다.
   - 전송을 지원하는 event type은 [AWS S3 Event Notification](https://docs.aws.amazon.com/AmazonS3/latest/userguide/EventNotifications.html)과 완전히 호환된다.
+  - 위에서 살펴본 Camel Kafka Connector의 경우 file 자체를 전송하여 message의 크기가 크다는 점과, 변경 사항 추적이 힘들다는 단점이 있다.
 
 
 
@@ -925,7 +924,7 @@
 
 
 
-### Bucket의 event를 Kafka로 전송하기
+## Bucket의 event를 Kafka로 전송하기
 
 - 먼저 MinIO host에 대한 alias를 생성한다.
 
@@ -1048,6 +1047,57 @@
 
   ```bash
   $ mc admin service restart <alias>
+  ```
+
+
+
+- 각 bucket 별로 다른 topic으로 전송하기
+
+  - 먼저 두 개의 alias를 생성한다.
+
+  ```bash
+  $ mc alias set foo <URL> <ACCESS_KEY> <SECRET_KEY>
+  $ mc alias set bar <URL> <ACCESS_KEY> <SECRET_KEY>
+  ```
+
+  - 각 alias 별로 Kafka 관련 설정을 해준다.
+    - 주의할 점은 `notify_kafka:IDENTIFIER`부분을 아래와 같이 각기 다르게 설정해줘야 한다는 점이다.
+
+  ```bash
+  $ mc admin config set foo notify_kafka:foo \
+     brokers="localhost:9092" \
+     topic="minio_foo"
+     
+  $ mc admin config set foo notify_kafka:bar \
+     brokers="localhost:9092" \
+     topic="minio_bar"
+     
+  # 변경 사항 적용
+  $ mc admin service restart <alias>
+  ```
+
+  - ARN 정보를 확인한다.
+    - 위에서 설정한 `IDENTIFIER`가 포함된 alias들이 보일 것이다.
+
+  ```json
+  {
+      "status": "success",
+      "info": {
+          "mode": "online",
+          "sqsARN": [
+              "arn:minio:sqs::prospector:kafka",
+              "arn:minio:sqs::synap:kafka"
+          ]
+      }
+      // ...
+  }
+  ```
+
+  - Notification 설정시 각 alias/bucket별로 각기 다른 ARN을 적용한다.
+
+  ```bash
+  $ mc event add foo/foo arn:minio:sqs::foo:kafka --event get,put,delete
+  $ mc event add bar/bar arn:minio:sqs::foo:kafka --event get,put,delete
   ```
 
 
