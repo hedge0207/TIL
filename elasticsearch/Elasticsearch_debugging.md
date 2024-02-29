@@ -151,8 +151,7 @@
   - 정상적으로 실행 됐는지 확인하기
     - Elasticsearch 8부터는 security 기능이 자동으로 활성화 된 상태이기 때문에 `-u` option으로 user와 password를 입력해야한다.
     - 기본 user/password는 elastic/password이다.
-
-
+  
   ```bash
   $ curl -u elastic:password localhost:9200
   ```
@@ -160,7 +159,17 @@
 
 
 
+
 ## UUID 생성 과정
+
+- Elasticsearch의 UUID는 [Flake ID](https://archive.md/2015.07.08-082503/http://www.boundary.com/blog/2012/01/flake-a-decentralized-k-ordered-unique-id-generator-in-erlang/)를 기반으로 한다.
+  - 그러나 추후 살펴볼 내용처럼 이를 변형해서 사용한다.
+  - Flake ID와 차이점은 아래와 같다.
+    - Flake ID는 첫 64bits를 timestamp를 사용하여 생성하므로 ID 순으로 정렬시 시간 순서대로 정렬되지만, Elasticsearch의 UUID는 첫 두 개의 byte를 생성할 때 sequence number를 사용하기에 Flake ID처럼 ID로 정렬한다고 시간순으로 정렬되지는 않는다.
+    - 또한 FlakeID는 timestamp를 8bytes, sequence number에 2 bytes를 사용하지만, Elasticsearch UUID는 timestamp를 6bytes, sequence number를 3bytes 사용한다.
+  - 그대로 사용하지 않는 이유는, Lucene term dictionary 구조에서 더 잘 활용할 수 있도록 하기 위함이다.
+
+
 
 - Elasticsearch의 UUID 생성과 관련된 class들이다.
 
@@ -183,7 +192,8 @@
   
       // 초기값을 0으로 설정한 AtomicLong type 값을 선언한다.
       private final AtomicLong lastTimestamp = new AtomicLong(0);
-  
+  	
+      // MAC address 값을 가져온다.
       private static final byte[] SECURE_MUNGED_ADDRESS = MacAddressProvider.getSecureMungedAddress();
   
       static {
@@ -239,10 +249,10 @@
       }
   }
   ```
-
+  
   - `server.src.main.java.org.elasticsearch.common.SecureRandomHolder`
     - 무작위 정수 생성을 위한 class이다.
-
+  
   ```java
   package org.elasticsearch.common;
   
@@ -253,12 +263,95 @@
       public static final SecureRandom INSTANCE = new SecureRandom();
   }
   ```
+  
+  - `server.src.main.java.org.elasticsearch.common.MacAddressPRovider`
+    - Elasticsearch를 실행한 machine의 MAC address를 가져오기 위한 class이다.
+  
+  ```java
+  package org.elasticsearch.common;
+  
+  import java.net.NetworkInterface;
+  import java.net.SocketException;
+  import java.util.Enumeration;
+  
+  public class MacAddressProvider {
+  
+      private static byte[] getMacAddress() throws SocketException {
+          Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces();
+          if (en != null) {
+              while (en.hasMoreElements()) {
+                  NetworkInterface nint = en.nextElement();
+                  if (nint.isLoopback() == false) {
+                      // Pick the first valid non loopback address we find
+                      byte[] address = nint.getHardwareAddress();
+                      if (isValidAddress(address)) {
+                          return address;
+                      }
+                  }
+              }
+          }
+          // Could not find a mac address
+          return null;
+      }
+  
+      private static boolean isValidAddress(byte[] address) {
+          if (address == null || address.length != 6) {
+              return false;
+          }
+          for (byte b : address) {
+              if (b != 0x00) {
+                  return true; // If any of the bytes are non zero assume a good address
+              }
+          }
+          return false;
+      }
+  
+      public static byte[] getSecureMungedAddress() {
+          byte[] address = null;
+          try {
+              address = getMacAddress();
+          } catch (SocketException e) {
+              // address will be set below
+          }
+  
+          if (isValidAddress(address) == false) {
+              address = constructDummyMulticastAddress();
+          }
+  
+          byte[] mungedBytes = new byte[6];
+          SecureRandomHolder.INSTANCE.nextBytes(mungedBytes);
+          for (int i = 0; i < 6; ++i) {
+              mungedBytes[i] ^= address[i];
+          }
+  
+          return mungedBytes;
+      }
+  
+      private static byte[] constructDummyMulticastAddress() {
+          byte[] dummy = new byte[6];
+          SecureRandomHolder.INSTANCE.nextBytes(dummy);
+          /*
+           * Set the broadcast bit to indicate this is not a _real_ mac address
+           */
+          dummy[0] |= (byte) 0x01;
+          return dummy;
+      }
+  
+  }
+  ```
 
 
 
-- `getBase64UUID()` method 상세
+- UUID 생성에 필요한 `sequenceId`와 `timestamp` 생성
 
-  - Elasticsearch는 UUID 생성에 무작위 정수와 milliseconde 단위로 변환된 timestamp를 사용한다.
+  - Elasticsearch는 UUID 생성에 정수와 milliseconde 단위로 변환된 timestamp, 그리고 Elasticsearch가 실행되는 machine의 MAC address를 사용한다.
+    - 최초의 난수는 `SecureRandomHolder`를 통해 생성하며, 음수를 포함한 어떤 정수든 나올 수 있다.
+    - 난수는 최초 실행시에만 생성되고, 이후에는 생성된 난수에 1을 더하여 사용한다.
+    - 따라서 정확히는 최초 실행시에만 난수를 사용하고, 이후부터는 1씩 증가하는 값을 사용한다.
+    - Timestamp는 현재 시간과 마지막으로 색인된 시간 중 더 큰 값을 사용하는데, 이는 모종의 이유로 시간이 뒤로 돌아가게 되는 경우를 대비하기 위함이다.
+    - Timestamp 6bytes, secuence number 3bytes, MAC address 6bytes를 조합하여 UUID를 생성한다.
+    - 이 중 secure number는 정수를 3bytes로 제한하기 위해 추가적인 연산을 수행하고, MAC address는 원래 6bytes로 구성되므로 추가적인 연산을 수행하지 않는다.
+
   - 무작위 정수 생성
     - 무작위 정수를 1증가시킨 후 16진수 0xffffff를 and 연산을 하여 24bit로 제한한다.
     - 16진수 0xffffff는 2진수로 변환하면 11111111 111111111 11111111으로 모든 bit 값이 1인 24bit(3byte) 숫자이다.
@@ -282,26 +375,109 @@
   );
   ```
 
-  - Byte의 순서를 최적화한다.
+  - MAC address 값을 가져온다.
+
+  ```java
+  byte[] macAddress = macAddress();
+  ```
+
+
+
+- Byte 순서 최적화
+
+  - Elasticsearch는 아래와 같은 방식으로 UUID를 최적화한다.
     - Id의 시작 부분에 고유한 byte를 배치함으로써 정렬을 빠르게 하여 색인 속도를 높인다.
     - 일정 id들이 공통된 prefix를 공유하게 함으로써 압축률을 높인다.
     - 가능한한 leading byte를 통해 segment를 식별할 수 있도록 하여 id 값으로 문서를 찾는 속도를 높인다.
+  - `sequenceId`의 첫 번째 byte와 세 번째 byte를 UUID의 가장 앞쪽에 배치하여 정렬을 빠르게 하여 색인 속도를 높인다.
+    - 주석에 따르면 처음에는 하위 두 개의 byte를 사용했으나, 이 경우 하나의 segment에 대략적으로 2백만 개의 문서가 색인되는 순간부터 압축의 효가가 나타나기 시작했다고 한다. 
+    - 이로 인해 첫 번째와 세 번째 byte를 사용하도록 변경하였고, 기존 보다 적은 segment 크기에서도 압축의 효과가 나타나기 시작했다고 한다.
+    - 첫 두 byte에 `timestamp`가 아닌 `sequenceId`를 사용하는 이유는 `timestamp`의 분포는 색인 비율에 영향을 받기 때문에 `sequencId`에 비해 분포의 안정성이 떨어지기 때문이다.
+
 
   ```java
   int i = 0;
-  // 3byte의 sequenceId의 가장 왼쪽의 1byte를 할당한다.
+  // 3byte의 sequenceId의 가장 아래쪽의 1byte를 할당한다.
   uuidBytes[i++] = (byte) sequenceId;
   // sequencId의 bit를 오른쪽으로 shift하여 3byte중 위쪽의 1byte만 남긴다.
-  // 예를 들어 sequenceId의 값이 4588686였다면, 이는 2진수로 01000110 00000100 10001110이고, 
-  // 16만큼 오른쪽으로 shifting하면 아래 두 개의 byte가 사라지고 맨 위의 1byte만 남아 01000110(10진수 70)이된다.
-  // 상위 1 byte만 사용하므로 대략적으로 6만 5천개의 문서를 색인하면 이 값이 바뀌게 되며, 6만 5천개는 동일한 prefix를 공유하므로 정렬이 빨라져 색인 속도가 증가한다.
   uuidBytes[i++] = (byte) (sequenceId >>> 16);
-  
-  // 각 byte가 일정 기간마다 변경되게 하여 prefix를 공유하게 함으로써 압축률을 높인다.
+  ```
+
+  - `timestamp`의 byte들을 뒤쪽으로 배치한다.
+    - 각 byte가 일정 기간마다 변경되게 하여 prefix를 공유하게 함으로써 압축률을 높인다.
+
+  ```java
   uuidBytes[i++] = (byte) (timestamp >>> 16); // changes every ~65 secs
   uuidBytes[i++] = (byte) (timestamp >>> 24); // changes every ~4.5h
   uuidBytes[i++] = (byte) (timestamp >>> 32); // changes every ~50 days
   uuidBytes[i++] = (byte) (timestamp >>> 40); // changes every 35 years
   ```
 
+  - 뒤의 6 bytes는 MAC address로 채운다.
+
+  ```java
+  // MAC address를 가져오고
+  byte[] macAddress = macAddress();
+  // MAC address가 6bytes가 맞는지 확인한 후
+  assert macAddress.length == 6;
+  // MAC address 값으로 6bytes를 채운다.
+  System.arraycopy(macAddress, 0, uuidBytes, i, macAddress.length);
+  // i의 값을 6만큼 올린다.
+  i += macAddress.length;
+  ```
+
+  - `timestamp`와 `sequenceId`의 남은 bytes들을 사용하여 마지막 3 bytes를 생성한다.
+
+  ```java
+  uuidBytes[i++] = (byte) (timestamp >>> 8);
+  uuidBytes[i++] = (byte) (sequenceId >>> 8);
+  uuidBytes[i++] = (byte) timestamp;
+  ```
+
+
+
+- 예시
+
+  - UUID가 생성되는 과정을 예시와 함께 살펴볼 것이다.
+  - `sequencId` 생성
+    - Elasticsearch가 최초로 실행될 때, 103,484,266라는 난수가 생성됐다.
+    - 이 난수에 1을 더한 103,484,267를 0xffffff와 AND 연산을 수행한다.
+    - 103,484,267는 2진수로 변환하면 00000110 00101011 00001011 01101011이 되고, 0xffffff와 AND 연산을 수행하면 2,820,971이 된다.
+  - `timestamp` 생성
+    - `timestamp`는` lastTimestamp`와 `currentTimeMillis`중 더 큰 값으로 결정되는데, `lastTimestamp`는 최초 실행시 0으로 초기화된 상태이므로 `currentTimeMillis`값이 `timestamp`가 된다.
+    - 이 값이 1709086673072라고 가정해보자.
+  - UUID의 첫 두 개의 byte에 `sequencId`의 세 번째와 첫 번째 byte를 넣는다.
+    - 2,820,971는 2진수로 변환하면 00101011 00001011 01101011이다.
+    - 첫 번째와 세 번째 byte를 넣으면 UUID는 01101011 00101011이 된다.
+    - UUID의 두 번째 byte를 `sequencId`의 세 번째 byte로 사용하므로 65,536(2**16)건의 문서를 색인할 때 마다 UUID의 두 번째 byte가 변경된다.
+  - UUID의 세 번째 부터 여섯 번째 byte에 `timestamp`의 byte값 일부를 넣는다.
+    - 1,709,098,431,248를 2진수로 변환하면 00000001 10001101 11101110 00110100 01110011 00010000이 된다.
+    - UUID의 세 번째 byte에 `timestamp`의 뒤에서 세 번째 byte(`timestamp >>> 16`)를 넣는다.
+    - 따라서 UUID의 세 번째 byte 값은 대략 65초(65536ms == 2**16)마다 변경된다.
+    - UUID의 네 번째 byte에 `timestamp`의 뒤에서 네 번째 byte(`timestamp >>> 24`)를 넣는다.
+    - 따라서 UUID의 네 번째 byte 값은 대략 4.6시간(16777216ms == 2**24)마다 변경된다.
+    - UUID의 다섯 번째 byte에 `timestamp`의 뒤에서 다섯 번째 byte(`timestamp >>> 32`)를 넣는다.
+    - 따라서 UUID의 다섯 번째 byte 값은 대략 50일(4294967296ms == 2**32)마다 변경된다.
+    - UUID의 여섯 번째 byte에 `timestamp`의 뒤에서 여섯 번째 byte(`timestamp >>> 40`)를 넣는다.
+    - 따라서 UUID의 여섯 번째 byte 값은 대략 35년(1099511627776ms == 2**40)마다 변경된다.
+  - MAC address로 UUID의 일곱 번째부터 열두 번째 byte를 채운다.
+  - 남은 byte로 UUID의 열 세 번째 부터 열 다섯 번째까지 채운다.
+    - 남은 byte는 `sequencId`의 두 번째 byte와 `timestamp`의 마지막 두 개의 byte이다.
+
+  ```
+  # sequencId
+  00101011 00001011 01101011
   
+  # timestamp
+  00000001 10001101 11101110 00110100 01110011 00010000
+  
+  # 결과 UUID
+  01101011 00101011 00110100 11101110 10001101 00000001 ...<MAC address bytes>... 01110011 00001011 00010000
+  ```
+
+
+
+
+
+
+
