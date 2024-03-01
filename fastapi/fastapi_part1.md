@@ -149,6 +149,80 @@
 
 
 
+- FastAPI에서 사용하는 `Query`, `Path`, `File`등은 모두 사실은 class가 아닌 class를 반환하는 function이다.
+
+
+
+- 각 API에 해당하는 함수를  path operation function이라 부른다.
+
+  - 즉, 아래에서 `create_item`이 path opetaion function이다.
+
+  ```python
+  @app.post("/items")
+  def create_item(item: Item):
+      return item
+  ```
+
+
+
+## Python type과 FastAPI
+
+- `Annotated`와 FastAPI
+
+  - 본래 Python에서는 `Annotated`는 metadata를 추가하는 것 외에 아무런 기능이 존재하지 않는다.
+
+  ```python
+  from typing import Annotated
+  
+  
+  def say_hello(name: Annotated[str, "this is just metadata"]) -> str:
+      return f"Hello {name}"
+  ```
+
+  - 그러나 FastAPI에서는 객체의 metadata를 가지고 해당 객체가 어떻게 동작해야 하는지를 결정한다.
+    - FastAPI에서도 `Annotated`에 첫 번째로 넘긴 type이 실제 type이라는 점은 변함이 없다.
+
+
+
+- `Union`과 `Optional`
+
+  - `Optional`은 optional한 값을 설정하기 위해 주로 사용한다.
+    - `name: str = None`이라고 쓰는 것과 실제 동작에는 차이가 없지만, 아래와 같이 `Optional`을 붙일 경우 editor가 `name`이라는 값이 항상 str인 것이 아니라 None이라는 것을 알 수 게 해준다.
+
+  ```python
+  from typing import Optional
+  
+  
+  def say_hi(name: Optional[str] = None):
+      if name is not None:
+          print(f"Hey {name}!")
+      else:
+          print("Hello World")
+  ```
+
+  - `Optional[SomeType]`과 `Union[SomeType, None]`은 내부 동작까지 완전히 동일하다.
+  - 그러나 `Optional`한 값이 아닌 곳에서는 `Optional` 보다는 `Union`을 사용하는 것이 권장된다.
+    - 이는 optinonal이라는 단어의 의미 때문으로, 실제로는 optional한 값이 아님에도 `Optional`이 달려있으면 optional한 값이라는 착각을 일으킬 수 있기 때문이다.
+    - 예를 들어 아래 예시에서 `name`은 optional한 값이 아니지만 `Optional`을 사용하여 optional한 값 같은 느낌을 준다.
+
+  ```python
+  from typing import Optional
+  
+  
+  def say_hi(name: Optional[str]):
+      print(f"Hey {name}!")
+  ```
+
+  - 단, 이는 Python 3.10 미만일 때의 이야기로, Python 3.10 이상을 사용한다면 둘 다 사용하지 않고 아래와 같이 하면 된다.
+    - `|`를 사용한다.
+
+  ```python
+  def say_hi(name: str | None):
+      print(f"Hey {name}!")
+  ```
+
+
+
 
 
 
