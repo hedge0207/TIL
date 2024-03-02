@@ -774,6 +774,125 @@
 
 
 
+## Request Files
+
+- `File`을 사용하여 client로 부터 file을 받아오는 API를 생성할 수 있다.
+
+  - 아래와 같이 `File`이라는 metadata를 추가하면, form data로 file이 추가된다.
+
+  ```python
+  from fastapi import FastAPI, File
+  from typing_extensions import Annotated
+  
+  
+  app = FastAPI()
+  
+  @app.post("/files")
+  async def create_file(file: Annotated[bytes, File()]):
+      return {"file_size": len(file)}
+  ```
+
+  - `File`이라는 metadata를 추가하지 않으면 FastAPI는 해당 parameter를 query parameter 혹은 form data body parameter가 아닌 json body parameter로 인식하게 된다.
+    - 예를 들어 아래와 같이 작성할 경우, form data로 추가해도 인식하지 못 한다.
+
+  ```python
+  @app.post("/files")
+  async def create_file(file: bytes):
+      return {"file_size": len(file)}
+  ```
+
+  - `UploadFile`
+
+    - 위 예시에서와 같이 parameter의 type을 bytes로 지정할 경우(`file: Annotated[bytes, File()]`), 해당 file을 읽어서 memory에 저장한다.
+    - 이는 file의 크기가 작을 경우에는 문제가 없지만, file의 크기가 커질 경우 문제가 생길 수 있다.
+
+    - Type을 `UploadFile`로 설정할 경우 대용량 file도 메모리 걱정 없이 사용할 수 있다.
+
+  ```python
+  from fastapi import FastAPI, UploadFile
+  
+  
+  app = FastAPI()
+  
+  @app.post("/uploadfile")
+  async def create_upload_file(file: UploadFile):
+      return {"filename": file.filename}
+  ```
+
+  - `UploadFile`을 사용할 경우 아래와 같은 이점들이 있다.
+    - Spooled file을 사용한다. 즉, 일정 크기까지의 file만 memory에 저장하고, 해당 크기를 초과하는 file은 disk에 저장한다.
+    - 받아온 file로부터 file의 metadata를 가져올 수 있다.
+    - [file-like](https://docs.python.org/3/glossary.html#term-file-like-object) async interface를 가지고있다.
+    - [SpooledTemporaryFile](https://docs.python.org/3/library/tempfile.html#tempfile.SpooledTemporaryFile)의 객체로 file-like object를 사용하는 다른 library들에 바로 사용할 수 있다.
+  - `UploadFile`은 아래와 같은 attribute들을 가지고 있다.
+    - `filename`, `content-type`, `file`
+    - `file`에는 SpooledTemporaryFile 객체가 담겨있다.
+  - `UploadFile` 객체는 내부의 SpooledTemporaryFile 객체를 조작하기 위한 여러 method를 지원한다.
+    - 모두 async method이므로 `await` keyword를 사용해야한다.
+
+  ```python
+  from fastapi import FastAPI, UploadFile
+  
+  app = FastAPI()
+  
+  
+  @app.post("/uploadfile")
+  async def create_upload_file(file: UploadFile):
+      # file에 내용을 작성한다.
+      await file.write("Hello World!".encode("utf8"))
+      # 특정 offset으로 이동한다.
+      await file.seek(0)
+      # file의 내용을 특정 size만큼 읽는다.
+      content = await file.read(5)
+      print(content)
+      # file을 닫는다.
+      await file.close()
+      return {"filename": file.filename}
+  ```
+
+  - 만일 async가 아닌 function에서 사용하고자 한다면, 아래와 같이 `.file` attribute에 바로 접근해서 사용하면 된다.
+
+  ```python
+  contents = myfile.file.read()
+  ```
+
+  - `File`과 함께 사용하면 metadata를 추가할 수 있다.
+
+  ```python
+  from typing import Annotated
+  
+  from fastapi import FastAPI, File, UploadFile
+  
+  app = FastAPI()
+  
+  @app.post("/uploadfile/")
+  async def create_upload_file(file: Annotated[UploadFile, File(description="A file read as UploadFile")]):
+      return {"filename": file.filename}
+  ```
+
+  - 여러 file upload하기
+    - Type을 list로 선언하면 된다.
+
+  ```python
+  from typing import Annotated
+  
+  from fastapi import FastAPI, File, UploadFile
+  from fastapi.responses import HTMLResponse
+  
+  app = FastAPI()
+  
+  
+  @app.post("/files/")
+  async def create_files(files: Annotated[list[bytes], File()]):
+      return {"file_sizes": [len(file) for file in files]}
+  
+  
+  @app.post("/uploadfiles/")
+  async def create_upload_files(files: list[UploadFile]):
+      return {"filenames": [file.filename for file in files]}
+  ```
+
+
 
 
 
