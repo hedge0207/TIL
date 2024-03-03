@@ -1695,6 +1695,131 @@
 
 
 
+## Namespace Package
+
+- Python package의 종류
+
+  - Python3.3부터는 directory에 `__init__.py` file이 없어도 package로 인식한다.
+    - Python 3.3 전에는 특정 driectory가 package가 되기 위해서는 해당 driectory에 `__init__.py` file이 있어야했다.
+
+  - Namespace package
+    - `__init__.py` file 없이도 package로 인식된 package를 namespace package라 부른다.
+
+  - Regular package
+    - Python 3.3 전에 `__init__.py` file을 통해 package임을 표시한 package를 regular package라 부른다.
+    - Regular package가 import되면 `__init__.py` file도 실행된다.
+  - 두 package의 동작 방식은 차이가 나지 않는다.
+    - 다만 일반적으로 namespace package가 regular package에 비해서 import 속도가 아주 약간 느리다.
+
+
+
+- Namespace package
+
+  - Namespace
+    - Object group을 특정 이름으로 묶는 방식이다.
+    - 값 들을 묶을 수도 있고, 함수들을 묶을 수도 있으며, object들을 묶을 수도 있다.
+    - 여러 개의 package를 하나의 namespace로 묶는 것도 가능하다.
+    - 예를 들어 `typing`을 import한다면 `typing`이라는 namespace에 대한 접근권을 얻는 것이며, `typing`내의 모든 객체를 사용할 수 있다.
+  - Namespace package를 언제 사용하는가?
+    - 공통된 namespace를 유지하고 싶지만, package 내의 모든 기능이 필요하지는 않을 때.
+    - 서로 다르지만 관련된 package들이 있는 경우, 이들이 같은 namespace를 사용하도록 하고자 할 때.
+  - 예를 들어 아래와 같은 구조를 가진 library가 있다.
+    - foo와 bar라는 2개의 package를 가지고 있다.
+    - foo와 bar는 parent/child라는 공통된 구조를 가지고 있다.
+
+  ```
+  /my-lib
+  └── foo/
+      └── common
+          └── foo.py
+          └── __init__.py
+  
+  /my-lib
+  └── bar/
+      └── common
+          └── bar.py
+          └── __init__.py
+  ```
+
+  - 이 때 위 두 개의 package를 `sys.path`에 추가하고 child를 import하면 아래와 같은 결과가 나온다.
+    - 두 경로 모두 parent와 child를 공통으로 가지는 데 둘 중 하나만 나오게 된다.
+    - 이렇게 나오는 이유는 import시에 sys.path를 순회하면서 `common`을 찾는데, `/my-lib/foo`가 먼저 추가되어 `/my-lib/foo`를 먼저 찾게 되고, 이후에 탐색을 중단하기 때문이다.
+
+  ```python
+  import sys
+  
+  sys.path.extend([
+      "/my-lib/foo",
+      "/my-lib/bar"
+  ])
+  
+  import common
+  
+  print(common.__path__)		# ['/my-lib/foo/common']
+  ```
+
+  - 따라서 아래와 같이 `common`으로부터 `bar`를 import하려고 하면 error가 발생한다.
+
+  ```python
+  import sys
+  
+  sys.path.extend([
+      "/my-lib/foo",
+      "/my-lib/bar"
+  ])
+  
+  from common import bar
+  # ImportError: cannot import name 'bar' from 'common'
+  ```
+
+  - 반면에 아래와 같이 `__init__.py`를 없애고 namespace package로 전환하면
+
+  ```
+  /my-lib
+  └── foo/
+      └── common
+          └── foo.py
+              
+  /my-lib
+  └── bar/
+      └── common
+          └── bar.py
+  ```
+
+  - 두 개가 전부 나오는 것을 확인할 수 있다.
+
+  ```python
+  import sys
+  
+  sys.path.extend([
+      "/my-lib/foo",
+      "/my-lib/bar"
+  ])
+  
+  import common
+  
+  print(common.__path__)	# _NamespacePath(['/my-lib/foo/common', '/my-lib/bar/common'])
+  ```
+
+  - 둘 다 import가 가능하다.
+    - foo와 bar는 서로 다른 package에 있음에도 common이라는 같은 namespace로 import가 가능해진다.
+
+  ```python
+  from common import foo, bar
+  ```
+
+
+
+- 그럼 그냥 namespace package만 쓰면 되는 것인가?
+  - Namespace package가 묵시적으로 생성된다고 해도(즉, `__init__.py` file이 없으면 자동으로 namespace package가 된다고 해도) 반드시 필요한 경우에만 사용해야한다.
+  - 만약 namespace package가 필요한 경우가 아니라면 `__init__.py`를 붙여서 regular package를 사용해야한다.
+
+
+
+
+
+
+
 
 # import
 
