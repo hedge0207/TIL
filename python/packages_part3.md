@@ -907,8 +907,13 @@
 
 - Dependency injector를 사용하는 이유
 
+  - Dependency들을 container로 묶어서 관리하여 보다 간편하게 관리할 수 있다.
+    - `providers.Singlton`과 같이 주입 대상이 되는 객체의 life cycle을 관리할 수 있는 기능을 제공한다.
+    - `override`를 통해 코드의 큰 수정 없이도 테스트를 진행할 수 있게 해준다.
+    - 의존성 주입을 보다 명시적으로 정의하여 코드를 보다 쉽게 이해할 수 있도록 해준다.
+  
   - 아래 코드는 의존성 주입을 하지 않는 코드다.
-
+  
   ```python
   import os
   
@@ -934,10 +939,10 @@
   if __name__ == "__main__":
       main()
   ```
-
+  
   - 위 코드에 의존성 주입을 적용하면 아래와 같다.
     - 기존 코드 보다는 유연한 코드가 됐지만, `main`을 실행시키기 위한 코드가 알아보기 힘들어 졌고, 구조를 변경하기도 힘들어졌다.
-
+  
   ```python
   import os
   
@@ -969,9 +974,9 @@
           )
       )
   ```
-
+  
   - 위 코드에 `dependency_injector`를 도입하면 아래와 같이 바뀐다.
-
+  
   ```python
   from dependency_injector import containers, providers
   from dependency_injector.wiring import Provide, inject
@@ -1009,6 +1014,87 @@
       with container.api_client.override(mock.Mock()):
           main()	# override된 의존성이 자동으로 주입된다.
   ```
+
+
+
+- FastAPI + Elasticsearch client를 사용하는 예시
+
+  - FastAPI에 요청을 보내 Elasticsearch를 사용하는 app을 만들고자 한다.
+    - App의 특성상 FastAPI app은 Elasticsearch Python client에 강하게 의존할 수 밖에 없다.
+    - 따라서 dependency injector를 사용하여 의존성을 주입해줄 것이다.
+  - 먼저 Elasticsearch client를 사용하여 Elasticearch로 요청을 보내는 service를 작성한다.
+    - `Service`는 Elasticsearch client에 의존한다.
+
+  ```python
+  from elasticsearch import Elasticsearch
+  
+  
+  class Service:
+      def __init__(self, es_client: Elasticsearch) -> None:
+          self.es_client = es_client
+  
+      def get_indices(self) -> list:
+          result = self.es_client.cat.indices()
+          return result.split("\n")
+  ```
+
+  - 다음으로 의존성 주입을 위한 container를 작성한다.
+    - Elasticsearch client에 의존하는 `Service`에 의존성(Elasticsearch client)를 주입한다.
+
+  ```python
+  # containers.py
+  
+  from dependency_injector import containers, providers
+  from elasticsearch import Elasticsearch
+  
+  import services
+  
+  
+  class Container(containers.DeclarativeContainer):
+      config = providers.Configuration()
+  
+      es_client = providers.Singleton(
+          Elasticsearch,
+          hosts=config.es_hosts
+      )
+  	
+      service = providers.Factory(
+          services.Service,
+          es_client=es_client
+      )
+  ```
+
+  - 마지막으로 FastAPI app을 작성한다.
+    - FastAPI app은 `Service`에 의존한다.
+    - FastAPI app이 의존하는 `Service`를 `@inject`와 marker, `.wire()`를 사용하여 주입해준다.
+
+  ```python
+  from dependency_injector.wiring import inject, Provide
+  from fastapi import FastAPI, Depends
+  import uvicorn
+  
+  from containers import Container
+  from services import Service
+  
+  
+  app = FastAPI()
+  
+  
+  @app.get("/indices")
+  @inject
+  def get_indices(service: Service = Depends(Provide[Container.service])):
+      indices = service.get_indices()
+      return {"indices": indices}
+  
+  
+  if __name__ == "__main__":
+      container = Container()
+      container.config.es_hosts.from_env("ES_HOSTS", "http://localhost:9200")
+      container.wire(modules=[__name__])
+      uvicorn.run(app, port=8080)
+  ```
+
+  
 
 
 
@@ -1568,7 +1654,6 @@
           pi=config.pi.as_(decimal.Decimal)
       )
   ```
-
 
 
 
