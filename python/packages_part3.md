@@ -1657,3 +1657,152 @@
 
 
 
+- Singleton provider
+
+  - 단일 객체를 제공하는 provider이다.
+    - 처음 생성된 객체를 기억하고 있다가 이후에 생성 요청이 들어올 때 마다 처음 생성된 객체를 반환한다.
+    - Singleton provider는 오직 생성될 때만 dependency injection을 수행하며, 이미 생성된 후에는 생성된 객체를 반환하기만 하고 injection을 적용하지는 않는다.
+
+  ```python
+  from dependency_injector import containers, providers
+  
+  
+  class UserService:
+      ...
+  
+  
+  class Container(containers.DeclarativeContainer):
+  
+      user_service_provider = providers.Singleton(UserService)
+  
+  
+  if __name__ == "__main__":
+      container = Container()
+  
+      user_service1 = container.user_service_provider()
+      user_service2 = container.user_service_provider()
+      assert user_service1 is user_service2
+  ```
+
+  - Singleton provider의 scope는 container 단위이다.
+    - 즉 서로 다른 container에서 생성된 singleton object는 서로 다르다.
+
+  ```python
+  from dependency_injector import containers, providers
+  
+  
+  class UserService:
+      ...
+  
+  
+  class Container(containers.DeclarativeContainer):
+  
+      user_service_provider = providers.Singleton(UserService)
+  
+  
+  if __name__ == "__main__":
+      container1 = Container()
+      user_service1 = container1.user_service_provider()
+  
+      container2 = Container()
+      user_service2 = container2.user_service_provider()
+  
+      assert user_service1 is not user_service2
+  ```
+
+  - 기억하고 있는 객체를 초기화하기
+    - `reset()` method를 통해 기억하고 있는 객체(처음 생성 된 객체)를 초기화 할 수 있다.
+
+  ```python
+  from dependency_injector import containers, providers
+  
+  
+  class UserService:
+      ...
+  
+  
+  class Container(containers.DeclarativeContainer):
+  
+      user_service = providers.Singleton(UserService)
+  
+  
+  if __name__ == "__main__":
+      container = Container()
+  
+      user_service1 = container.user_service()
+  
+      container.user_service.reset()
+  
+      user_service2 = container.user_service()
+      assert user_service2 is not user_service1
+  ```
+
+  - `reset()` method는 context manager로도 사용할 수 있다.
+    - 이 경우 context에 진입할 때와 나올 때 기억하고 있는 객체가 초기화된다.
+
+  ```python
+  from dependency_injector import containers, providers
+  
+  
+  class UserService:
+      ...
+  
+  
+  class Container(containers.DeclarativeContainer):
+  
+      user_service = providers.Singleton(UserService)
+  
+  
+  if __name__ == "__main__":
+      container = Container()
+  
+      user_service1 = container.user_service()
+  
+      with container.user_service.reset():
+          user_service2 = container.user_service()
+  
+      user_service3 = container.user_service()
+  
+      assert user_service1 is not user_service2
+      assert user_service2 is not user_service3
+      assert user_service3 is not user_service1
+  ```
+
+  - `full_reset()` method를 사용하여 해당 singleton provider가 의존하는 singleton provider가 기억하고 있는 객체를 초기화 할 수 있다.
+    - `reset()` method는 현재 provider가 기억하고 있는 객체만 초기화한다.
+    - 예를 들어 아래 예시에서 `user_service` provider는 `database` provider에 의존한다.
+    - 이 때 `user_service` provider가 기억하고 있는 객체 뿐 아니라 `database` provider가 기억하고 있는 객체까지 초기화하고자 한다면 `full_reset()` method를 사용해야한다.
+    - `full_reset()` method도 context manager로 사용하는 것이 가능하다.
+
+  ```python
+  from dependency_injector import containers, providers
+  
+  
+  class Database:
+      ...
+  
+  
+  class UserService:
+      def __init__(self, db: Database):
+          self.db = db
+  
+  
+  class Container(containers.DeclarativeContainer):
+  
+      database = providers.Singleton(Database)
+  
+      user_service = providers.Singleton(UserService, db=database)
+  
+  
+  if __name__ == "__main__":
+      container = Container()
+  
+      user_service1 = container.user_service()
+  
+      container.user_service.full_reset()
+  
+      user_service2 = container.user_service()
+      assert user_service2 is not user_service1
+      assert user_service2.db is not user_service1.db
+  ```
+
