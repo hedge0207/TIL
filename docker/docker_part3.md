@@ -879,18 +879,18 @@
 - Node 목록 조회
 
   - ID 옆의 `*` 표시는 현재 명령을 실행한 node를 나타낸다.
-  - Docker swarm 내에서 HOSTNAME 값은 중복이 가능하지만 ID 값은 중복될 수 없다.
+  - Docker swarm 내에서 `HOSTNAME` 값은 중복이 가능하지만 ID 값은 중복될 수 없다.
   - AVAILABILITY
-    - Active: 새로운 task를 할당 받을 수 있는 상태
-    - Pause: 새로운 task를 할당 받지는 않지만 현재 실행중인 task는 구동중인 상태
-    - Drain: 새로운 task도 할당 받지 않고, 실행 중인 task들도 모두 종료되는 상태
+    - `Active`: 새로운 task를 할당 받을 수 있는 상태
+    - `Pause`: 새로운 task를 할당 받지는 않지만 현재 실행중인 task는 구동중인 상태
+    - `Drain`: 새로운 task도 할당 받지 않고, 실행 중인 task들도 모두 종료되는 상태
     - 단 이는 swarm service에 해당하는 사항으로, service가 아닌 standalone container의 경우 영향을 받지 않는다.
     - 즉, 예를 들어 node가 Drain 상태라고 하더라도 해당 Docker로 띄운 standalone container는 계속 실행된다.
   - MANAGER STATUS
     - manager node에만 표시된다.
-    - Leader: Swarm 관리와 orchestration을 맡은 노드임을 의미한다. 
-    - Reachable: 다른 매니저 노드들과 정상적으로 통신 가능한 노드임을 의미하며, 만일 leader node에 장애가 발생할 경우 이 상태값을 가진 node들 중에 새로운 leader를 선출한다.
-    - Unavailable: Leader를 포함한 다른 매니저 노드들과 통신이 불가능한 상태임을 의미한다.
+    - `Leader`: Swarm 관리와 orchestration을 맡은 노드임을 의미한다. 
+    - `Reachable`: 다른 매니저 노드들과 정상적으로 통신 가능한 노드임을 의미하며, 만일 leader node에 장애가 발생할 경우 이 상태값을 가진 node들 중에 새로운 leader를 선출한다.
+    - `Unavailable`: Leader를 포함한 다른 매니저 노드들과 통신이 불가능한 상태임을 의미한다.
 
   ```bash
   $ docker node ls
@@ -904,7 +904,9 @@
 - 특정 노드 상세 조회
 
   - 특정 node에 대한 상세한 정보를 JSON 형식으로 출력한다.
-
+    - `--pretty` option을 줄 경우 보다 보기 편한 형태로 출력한다.
+  
+  
   ```bash
   $ docker node inspect <node 식별자>
   ```
@@ -981,6 +983,18 @@
     - Manager node를 강제로 제거하려 할 경우 cluster가 기능을 멈출 수 있다.
   
   - Cluster에서 모든 node가 제외되면 swarm mode가 종료된다.
+
+
+
+- `task.db`
+  - Docker swarm에서 실행되는 task들을 저장하기 위한 file이다.
+    - `/var/lib/docker/swarm/worker`경로에서 확인할 수 있다.
+  - Docker deamon이 restart될 때 간혹 이 file이 오염되는 경우가 있다.
+    - 이 경우 Docker deamon을 정지하고 `task.db` file을 삭제한 후 다시 생성하면 된다고 하는데, 직접 테스트해보지는 않았다.
+    - [Stackoverflow](https://stackoverflow.com/questions/50933171/docker-node-is-down-after-service-restart)와 [github issue](https://github.com/moby/moby/issues/34827#issuecomment-457678500)에서 이와 관련된 질문과 답변을 찾아볼 수 있다.
+  - Docker swarm과 관련된 task들을 작성하는 file이기에 모종의 이유(disk 부족 등)로 file을 작성할 수 없게 될 경우, 해당 node는 swarm에서 이탈하게 된다.
+    - Heatbeat가 실패하게 되어 `STATUS`는 `Down`이 되고, `MANAGER STATUS`는 `Unreachable`이 된다.
+    - 이 경우 file 작성을 불가능하게 만든 원인을 제거하면 해결된다.
 
 
 
@@ -1416,6 +1430,8 @@
 
 
 
+
+
 # Build context
 
 - Build context
@@ -1436,6 +1452,8 @@
     - Build context에서 제외시킬 file 혹은 directory들을 정의하는 file이다.
     - `.dockerignore`에 포함된 file 혹은 directory들은 build context에 포함되지 않는다.
     - 작성법은 `.gitignore` file과 거의 유사하다.
+
+
 
 
 

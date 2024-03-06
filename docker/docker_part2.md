@@ -1170,7 +1170,7 @@
 
   - Swarm에 속한 각 node들이 publish된 port들로 swarm 내에서 기동중인 service에 연결할 수 있게 해주는 기능이다.
     - 모든 node들은 ingress routing mesh에 참여한다.
-    - Node에서 실행 중인 task가 없다고 해도 다른 service와 연결이 가능하다.
+    - Node에서 특정 service의 task가 실행중이 아니라고 해도 service에 연결이 가능하다.
     - Routing mesh는 모든 요청을 접근 가능한 node에서 실행 중인 container의 pulish된 port들로 routing한다.
   - Docker service를 생성 할 때나 수정 할 때, `--publish` option을 주고 `mode`를 따로 설정하지 않으면 기본 값인 `ingress`가 설정되어 해당 service는 자동으로 routing mesh를 사용하게 된다.
     - 아래와 같이 `mode`를 직접 지정해도 된다.
@@ -1187,7 +1187,7 @@
 
   - Routing mesh는 publish된 port로 요청을 보내기만 하면 node의 IP와 무관하게 모든 요청을 받을 수 있다.
 
-    - 예를 들어 192.168.99.100, 192.168.99.101, 192.168.99.102라는 세 계의 IP를 3개의 node가 각각 할당 받았다고 가정해보자.
+    - 예를 들어 3개의 node가 192.168.99.100, 192.168.99.101, 192.168.99.102라는 IP를  각각 할당 받았다고 가정해보자.
     - 만약 service의 8080 port를 publish 했다면 192.168.99.100:8080, 192.168.99.101:8080, 192.168.99.102:8080 중 아무 곳에나 요청을 보내도 service는 요청을 받을 수 있다.
     - 해당 service의 task가 실행중이 아닌 node라도 이와 같이 요청을 보내는 것이  가능하다.
     - 예를 들어 service가 192.168.99.100, 192.168.99.101 IP를 할당 받은 node들에서만 task를 실행중이라 하더라도, task를 실행중이지 않은 192.168.99.102:8080으로도 요청을 보내는 것이 가능하다.
