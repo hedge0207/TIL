@@ -42,6 +42,95 @@
 
 ## StreamingResponse
 
+- FastAPI는 StreamingResponse를 지원한다.
+
+  - `StreamingResponse`
+    - Generator/iterator를 첫 번째 인자로 받는다.
+  - 기본적인 StreamingResponse의 사용법은 아래와 같다.
+    - 아래에서는 file로 test를 했지만, 꼭 file이 아니어도 되며, `yield from`을 통해 streaming하고자 하는 data를 넘겨주는 함수만 있으면 된다.
+
+  ```python
+  from fastapi import FastAPI
+  from fastapi.responses import StreamingResponse
+  import uvicorn
+  
+  app = FastAPI()
+  
+  
+  @app.get("/stream")
+  async def stream():
+      def iterfile():
+          with open("./test.json", "r") as f:
+              for row in f.readlines():
+                  yield from row
+  
+      return StreamingResponse(iterfile(), media_type="application/json")
+  
+  
+  if __name__ == "__main__":
+      uvicorn.run(app, port=8000)
+  ```
+
+
+
+- Streamin response를 다시 streaming으로 반환하기
+
+  - 다른 server에서 받아온 streaming response를 다시 streaming response로 반환하는 방법이다.
+  - ServerA
+    - ServerB에 streaming response를 보낸다.
+
+  ```python
+  from fastapi import FastAPI
+  from fastapi.responses import StreamingResponse
+  import uvicorn
+  
+  app = FastAPI()
+  
+  
+  @app.get("/stream")
+  async def stream():
+      def iterfile():
+          with open("./test.json", "r") as f:
+              for row in f.readlines():
+                  yield from row
+  
+      return StreamingResponse(iterfile(), media_type="application/json")
+  
+  
+  if __name__ == "__main__":
+      uvicorn.run(app, port=8000)
+  ```
+
+  - ServerB
+    - ServerA로부터 streaming response를 받아, 이를 다시 streaming으로 반환한다.
+
+  ```python
+  import requests
+  
+  from fastapi import FastAPI
+  from fastapi.responses import StreamingResponse
+  import uvicorn
+  
+  app = FastAPI()
+  
+  
+  @app.get("/stream")
+  async def stream():
+      def iter_request():
+          session = requests.Session()
+          with session.get("http://localhost:8000/stream") as res:
+              for line in res.iter_lines():
+                  yield from line.decode()
+  
+      return StreamingResponse(iter_request(), media_type="application/json")
+  
+  
+  if __name__ == "__main__":
+      uvicorn.run(app, port=8001)
+  ```
+
+
+
 - 예외처리
 
   - StreamingResponse는 특성상 일단 응답을 보내기만 하면 error 발생 여부와 관계 없이 status code가 200 OK로 반환된다.
@@ -445,7 +534,6 @@
 - Dependency injection
   - FastAPI에서의 dependency injection은 프로그래밍에서 일반적으로 사용되는 dependency injection의 의미와 동일하다.
     - FastAPI에서의 dependency란 path operation function이 필요로하는 것들이다.
-    - Path operation function이란 endpoint로 요청이 들어왔을 때 실행되는 함수를 의미한다.
     - FastAPI라는 system은 path operation function이 필요로 하는 dependency들을 제공한다(의존성을 주입한다).
   - 목표
     - Logic을 공유하는 것.

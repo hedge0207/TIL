@@ -1475,83 +1475,112 @@
 
 
 
-# Pydantic validator
+# Response
 
-- Pydantic에서 제공하는 `validator` 데코레이터를 통해 Request Model에 대한 validation이 가능하다.
+- Response Model
 
-  - model
+  - 아래와 같이 response model을 선언할 수 있다.
 
   ```python
+  from fastapi import FastAPI
   from pydantic import BaseModel
   
+  app = FastAPI()
   
-  class UserModel(BaseModel):
+  
+  class Item(BaseModel):
       name: str
-      username: str
-      password1: str
-      password2: str
+      price: float
+  
+  
+  @app.post("/items/")
+  async def create_item(item: Item) -> Item:
+      return item
+  
+  
+  @app.get("/items/")
+  async def read_items() -> list[Item]:
+      return [
+          Item(name="Portal Gun", price=42.0),
+          Item(name="Plumbus", price=32.0),
+      ]
   ```
 
-  - `validator` 데코레이터 추가하기
-    - `v`에는 validatiom 대상이 되는 값(예시의 경우 name)이 들어간다.
-    - `values`에는 `v`보다 위에 선언 된 값 이 경우(name)이 들어간다.
-    - `field`에는 검증 대상 값(`v`)에 대한 정보가 들어간다.
-    - `**kwargs`:에는 추가적으로 제공된 값들이 들어가게 된다.
+  - FastAPI는 response model을 사용하여 아래와 같은 것들을 수행한다.
+    - Response를 validate하여 불필요한 정보가 반환되는 것을 막고, 만일 response가 이상하다면 logic 상의 문제가 있는 것이므로 이를 catch할 수 있게 해준다.
+    - Respone에 관한 JSON Schema를 추가한다.
+
+
+
+- `response_model`
+
+  - 위와 같이 response model을 정의하는 것도 가능하지만, `response_model`을 통해서도 정의할 수 있다.
+    - `response_model`은 `@app.get()` 등의 path operation decorator에 정의한다.
+  - 굳이 `response_model`을 사용하는 이유는 아래와 같다.
+    - 반환 type이 Pydantic으로 정의한 것과 다를 때, 즉 response model은 Pydantic으로 정의했지만, 실제로는 dictionary를 반환하고자 할 때 등에 사용할 수 있다.
+    - 예를 들어 아래와 같은 code가 있을 때, `read_items`는 실제로는 dictionary들을 반환하지만, `Item`들을 반환한다고 정의되어 있다.
+    - 실행시에 error가 발생하지는 않지만, 사용중인 tool이나 editor에 따라 `read_items`의 반환 type이 잘못되었다는 경고를 보낼 수도 있다.
+    - 따라서 return type은 실제 반환하는 type 혹은 `Any`로 선언하고, `response_model`에 Pydantic Model을 정의하여 Pydantic model이 제공하는 documentation, validation 등의 이점을 누리면서도 type이 잘못되었다는 경고를 받지 않기 위해 사용한다.
 
   ```python
-  from pydantic import BaseModel, validator
+  from fastapi import FastAPI
+  from pydantic import BaseModel
+  
+  app = FastAPI()
   
   
-  class UserModel(BaseModel):
+  class Item(BaseModel):
       name: str
-      username: str
-      password1: str
-      password2: str
+      price: float
   
-      @validator('username')
-      def username_must_contain_space(cls, v, values, field, **kwargs):
-          if ' ' not in v:
-              raise ValueError('must contain a space')
-          return v.title()
+  
+  @app.post("/items/")
+  async def create_item(item: Item) -> Item:
+      return item
+  
+  
+  @app.get("/items/")
+  async def read_items() -> list[Item]:
+      return [
+          Item(name="Portal Gun", price=42.0).dict(),
+          Item(name="Plumbus", price=32.0).dict(),
+      ]
   ```
 
-
-
-- 예외처리하기
-
-  - pydantic의 `ValidationError`를 활용한다.
+  - 예시
+    - 아래와 같이 return type과 `response_model`을 모두 선언한 경우 `response_model`이 우선권을 가지며, FastAPI도 이를 사용한다.
+    - 따라서 return type은 `Any`로 선언하고, `response_model`에 Pydantic model을 선언하여 `Item` class를 통해 문서화와 validation의 이점도 누리고, return type이 잘못되었다는 경고도 피할수 있게 된다.
 
   ```python
-  from pydantic import BaseModel, validator
+  from typing import Any
+  
+  from fastapi import FastAPI
+  from pydantic import BaseModel
+  
+  app = FastAPI()
   
   
-  class UserModel(BaseModel):
+  class Item(BaseModel):
       name: str
-      username: str
-      password1: str
-      password2: str
+      price: float
   
   
-      @validator('password2')
-      def passwords_match(cls, v, values, **kwargs):
-          if 'password1' in values and v != values['password1']:
-              raise ValueError('passwords do not match')
-          return v
+  @app.post("/items/", response_model=Item)
+  async def create_item(item: Item) -> Any:
+      return item
   
-  try:
-      UserModel(
-          name='samuel',
-          username='scolvin',
-          password1='zxcvbn',
-          password2='zxcvbn2',
-      )
-  except ValidationError as e:
-      print(e)
+  
+  @app.get("/items/", response_model=list[Item])
+  async def read_items() -> Any:
+      return [
+          {"name": "Portal Gun", "price": 42.0},
+          {"name": "Plumbus", "price": 32.0},
+      ]
   ```
 
+  
 
-
-
+  
 
 
 
