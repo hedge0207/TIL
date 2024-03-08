@@ -1806,3 +1806,191 @@
       assert user_service2.db is not user_service1.db
   ```
 
+
+
+
+
+## Container
+
+- Container
+  - Provider들의 집합이다.
+  - 아래와 같은 기준으로 Provider들을 묶는다.
+    - 모든 Provider들이 한 container에 있도록 한다(가장 흔한 경우이다).
+    - 같은 계층에 있는 provider들을 묶는다.
+    - 기능에 따라 함께 사용되는 provider들을 묶는다.
+
+
+
+- Declarative container
+
+  - `DeclarativeContainer`를 상속 받는 class를 container로 사용하는 방식이다.
+    - Class attribute로 provider들을 나열한다.
+    - Declarative container는 provider를 제외한 어떤 attribute나 method도 가져선 안된다.
+
+  ```python
+  from dependency_injector import containers, providers
+  
+  # DeclarativeContainer를 상속 받는 class를 생성하고
+  class Container(containers.DeclarativeContainer):
+  
+      factory1 = providers.Factory(object)
+  
+      factory2 = providers.Factory(object)
+  
+  
+  if __name__ == "__main__":
+      # 해당 class의 instance를 생성한다.
+      container = Container()
+  
+      object1 = container.factory1()
+      object2 = container.factory2()
+  ```
+
+  - Declarative container는 어래와 같은 attribute들을 제공한다.
+    - `providers`: 모든 container provider들이 dictionary 형태로 저장되어 있다.
+    - `cls_providers`: 현재 container의 provider들이 dictionary 형태로 저장되어 있다.
+    - `inheritd_providers`: 자신이 상속 받은 container의 container provider 들이 dictionary 형태로 저장되어 있다.
+
+  ```python
+  from dependency_injector import containers, providers
+  
+  
+  class ContainerA(containers.DeclarativeContainer):
+  
+      provider1 = providers.Factory(object)
+  
+  
+  class ContainerB(ContainerA):
+  
+      provider2 = providers.Singleton(object)
+  
+  
+  assert ContainerA.providers == {
+      "provider1": ContainerA.provider1,
+  }
+  assert ContainerB.providers == {
+      "provider1": ContainerA.provider1,
+      "provider2": ContainerB.provider2,
+  }
+  
+  assert ContainerA.cls_providers == {
+      "provider1": ContainerA.provider1,
+  }
+  assert ContainerB.cls_providers == {
+      "provider2": ContainerB.provider2,
+  }
+  
+  assert ContainerA.inherited_providers == {}
+  assert ContainerB.inherited_providers == {
+      "provider1": ContainerA.provider1,
+  }
+  ```
+
+  - Container 내에서의 의존성 주입은 아래와 같이 이루어진다.
+
+  ```python
+  from dependency_injector import containers, providers
+  from elasticsearch import Elasticsearch
+  
+  
+  class UserService:
+      ...
+  
+  
+  class AuthService:
+      def __init__(self, es_client: Elasticsearch, user_service: UserService):
+          self.es_client = es_client
+          self.user_service = user_service
+  
+  
+  class Container(containers.DeclarativeContainer):
+  
+      es_client = providers.Singleton(Elasticsearch, ["http://localhost:9200"])
+  
+      user_service = providers.Factory(
+          UserService
+      )
+  
+      auth_service = providers.Factory(
+          AuthService,
+          es_client=es_client,
+          user_service=user_service,
+      )
+  
+  
+  if __name__ == "__main__":
+      container = Container()
+  
+      user_service = container.user_service()
+      auth_service = container.auth_service()
+  
+      assert isinstance(auth_service.es_client, Elasticsearch)
+      assert isinstance(auth_service.user_service, UserService)
+  ```
+
+  - Container instance를 생성할 때 container provider를 override 할 수 있다.
+
+  ```python
+  from unittest import mock
+  
+  from dependency_injector import containers, providers
+  from elasticsearch import Elasticsearch
+  
+  
+  class Container(containers.DeclarativeContainer):
+  	# 실제 es_client provider를 선언하고
+      es_client = providers.Singleton(Elasticsearch, ["http://localhost:9200"])
+  
+  
+  if __name__ == "__main__":
+      # container instance 생성시에 mock으로 교체한다.
+      container = Container(es_client=mock.Mock(Elasticsearch))
+      es_client = container.es_client()
+      assert isinstance(es_client, mock.Mock)
+  ```
+
+  - 혹은 아래와 같이 container instance를 생성하고 난 후에 `override_providers()` method를 사용하여 override하는 것도 가능하다.
+
+  ```python
+  from unittest import mock
+  
+  from dependency_injector import containers, providers
+  from elasticsearch import Elasticsearch
+  
+  
+  class Container(containers.DeclarativeContainer):
+      es_client = providers.Singleton(Elasticsearch, ["http://localhost:9200"])
+  
+  
+  if __name__ == "__main__":
+      # container instance는 그냥 생성하고
+      container = Container()
+      # override_providers method를 사용하여 override한다.
+      container.override_providers(es_client=mock.Mock(Elasticsearch))
+      es_client = container.es_client()
+      assert isinstance(es_client, mock.Mock)
+  ```
+
+  - 혹은 아래와 같이 `override_providers()` method를 context manager로 사용할 수도 있다.
+
+  ```python
+  from unittest import mock
+  
+  from dependency_injector import containers, providers
+  from elasticsearch import Elasticsearch
+  
+  
+  class Container(containers.DeclarativeContainer):
+      es_client = providers.Singleton(Elasticsearch, ["http://localhost:9200"])
+  
+  
+  if __name__ == "__main__":
+      container = Container()
+      # override_providers method를 context manager로 사용한다.
+      with container.override_providers(es_client=mock.Mock(Elasticsearch)):
+          assert isinstance(container.es_client(), mock.Mock)
+      
+      # context가 종료되면 다시 원래 object를 가리키게 된다.
+      assert isinstance(container.es_client(), Elasticsearch)
+  ```
+
