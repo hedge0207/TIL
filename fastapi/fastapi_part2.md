@@ -50,25 +50,41 @@
     - 아래에서는 file로 test를 했지만, 꼭 file이 아니어도 되며, `yield from`을 통해 streaming하고자 하는 data를 넘겨주는 함수만 있으면 된다.
 
   ```python
+  import asyncio
+  
+  import uvicorn
   from fastapi import FastAPI
   from fastapi.responses import StreamingResponse
-  import uvicorn
   
   app = FastAPI()
   
   
-  @app.get("/stream")
-  async def stream():
-      def iterfile():
-          with open("./test.json", "r") as f:
-              for row in f.readlines():
-                  yield from row
+  async def text_streamer():
+      for i in range(30):
+          yield "some text data"
+          await asyncio.sleep(5)
   
-      return StreamingResponse(iterfile(), media_type="application/json")
+  
+  @app.get("/")
+  async def main():
+      return StreamingResponse(text_streamer())
   
   
   if __name__ == "__main__":
-      uvicorn.run(app, port=8000)
+      uvicorn.run(app, host="0.0.0.0", port=8000)
+  ```
+  
+  - 받아오는 쪽에서는 아래와 같이 받아오면 된다.
+    - `stream=True`을 설정한다.
+  
+  ```python
+  import requests
+  
+  url = "http://localhost:8000"
+  
+  with requests.get(url, stream=True) as r:
+      for line in r.iter_content(100):
+          print(line)
   ```
 
 
@@ -118,8 +134,8 @@
   async def stream():
       def iter_request():
           session = requests.Session()
-          with session.get("http://localhost:8000/stream") as res:
-              for line in res.iter_lines():
+          with session.get("http://localhost:8000/stream", stream=True) as res:
+              for line in res.iter_content(100):
                   yield from line.decode()
   
       return StreamingResponse(iter_request(), media_type="application/json")
