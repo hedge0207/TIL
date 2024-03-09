@@ -568,6 +568,17 @@
 
 <br/>
 <br/>
+## MinIO
+- MinIO 개요
+
+- MinIO 구성
+
+- Kafka와 함께 사용하기
+
+- MinIO Client
+
+<br/>
+<br/>
 ## nginx
 - Nginx
 
@@ -741,7 +752,9 @@
 <br/>
 <br/>
 # elasticsearch
-## debugging_elasticsearch
+## Elasticsearch_debugging
+- Debug Elasticsearch
+
 <br/>
 <br/>
 ## Elasticsearch_error
@@ -796,14 +809,12 @@
 
 - Suggester
 
-- Mapping explosion
-
-- Rally
-
 <br/>
 <br/>
 ## Elasticsearch_part13
 - alias
+
+- Security
 
 <br/>
 <br/>
@@ -827,6 +838,8 @@
 <br/>
 ## Elasticsearch_part4
 - 인덱스 생성하기
+
+- Mapping explosion
 
 - 데이터 색인
 
@@ -893,11 +906,11 @@
 ## Elasticsearch_part9
 - Analyzer와 inverted index
 
+- Analyzer 수정
+
 - auto completion
 
 - completion suggester
-
-- Security
 
 <br/>
 <br/>
@@ -962,6 +975,8 @@
 ## logstash
 - Logstash
 
+- Command Line으로 실행하기
+
 - Docker로 실행하기
 
 - Logstash와 DB 연결하기
@@ -975,6 +990,11 @@
 <br/>
 <br/>
 ## Python_Elasticsearch
+<br/>
+<br/>
+## Rally
+- Rally
+
 <br/>
 <br/>
 ## related_search
@@ -991,17 +1011,6 @@
 - CDC
 
 - Airbyte
-
-<br/>
-<br/>
-## MinIO
-- MinIO 개요
-
-- Single-Node Multi-Drive MinIO
-
-- Camel Kafka Connector로 MinIO의 data를 Kafka로 전송하기
-
-- Python에서 사용하기
 
 <br/>
 <br/>
@@ -1067,7 +1076,7 @@
 
 - Request
 
-- Pydantic validator
+- Response
 
 <br/>
 <br/>
@@ -1507,9 +1516,9 @@
 ## OOP
 - 프로그래밍 패러다임
 
-- Object Oriented Programming
+- Object Oriented Programming 개요
 
-- 참조
+- Dependency
 
 <br/>
 <br/>
@@ -1541,7 +1550,7 @@
 <br/>
 <br/>
 ## packages_part2
-- locust
+- Pandas
 
 - .reset_index()
 
@@ -1554,6 +1563,35 @@
 <br/>
 <br/>
 ## packages_part3
+- Poetry
+
+- Dependency Injector
+
+<br/>
+<br/>
+## packages_part4
+- Locust
+
+- Environment의 instance 생성 후 runner 생성
+
+- web ui 호스트와 포트 설정
+
+- 테스트 상태가 print되도록 설정
+
+- 과거 테스트 이력을 저장하도록 설정(chart 등에 사용)
+
+- 테스트 시작
+
+- 테스트 기간 설정
+
+- wait for the greenlets
+
+- stop the web server for good measures
+
+- aggs 결과 확인
+
+- 각 task별 결과 확인
+
 - Shorts
 
 <br/>
