@@ -6,9 +6,7 @@ class Updater:
 
     def __init__(self):
         self.text = ""
-        
-
-
+    
     def make_text(self, d, cur_dir):
         for path in os.listdir(cur_dir):
             if path == ".git":
@@ -26,6 +24,7 @@ class Updater:
                             if line.startswith("# "):
                                 self.text += "- {}\n".format(line.replace("# ", ""))
             self.text += "<br/>\n<br/>\n"
+            self.text += "\n"
                 
     def update(self):
         with open("./README.md", "w", encoding="utf8") as f:
