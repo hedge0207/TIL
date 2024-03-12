@@ -1994,3 +1994,153 @@
       assert isinstance(container.es_client(), Elasticsearch)
   ```
 
+
+
+
+
+## Wiring
+
+- Wiring
+
+  - Function이나 method에 container provider들을 주입할 수 있게 해주는 기능이다.
+  - 사용법은 아래와 같다.
+    - Dependency들을 주입시킬 method에 `@inject` decorator를 작성한다.
+    - 주입시킬 dependency들을 정의하는 wiring marker를 작성한다.
+    - `container.wire()` method를 호출하여 marker를 통해 주입하고자 하는 module과 container를 연결(wiring)한다(호출하지 않을 경우 주입 되지 않는다).
+
+  ```python
+  from dependency_injector import containers, providers
+  from dependency_injector.wiring import Provide, inject
+  
+  
+  class Service:
+      ...
+  
+  
+  class Container(containers.DeclarativeContainer):
+  
+      service = providers.Factory(Service)
+  
+  # depenency를 주입시킬 method에 decorator를 작성한다.
+  @inject
+  # wiring marker를 작성한다. 예시에서는 Provide[Container.service]가 wiring marker이다.
+  def main(service: Service = Provide[Container.service]) -> None:
+      ...
+  
+  
+  if __name__ == "__main__":
+      container = Container()
+      # wire method를 호출하여 연결하고자 하는 module을 지정해준다.
+      container.wire(modules=[__name__])
+  
+      main()
+  ```
+
+
+
+- Decorator `@inject`
+
+  - `@inject` decorator는 dependency들을 주입한다.
+    - 정상적으로 동작하게 하기 위해서는 반드시 첫 번째 decorator로 작성해야한다.
+  - 이는 FastAPI에서도 마찬가지로, FastAPI에서 사용할 때도 `@app` decorator보다 번저 작성해야한다.
+
+  ```python
+  app = FastAPI()
+  
+  
+  @app.api_route("/")
+  @inject
+  async def index(service: Service = Depends(Provide[Container.service])):
+      value = await service.process()
+      return {"result": value}
+  ```
+
+
+
+- Markers
+
+  - Wiring에서는 의존성 주입을 위해 marker를 사용한다.
+    - 아래와 같이 method의 argument에 기본 값 형태로 작성하면 된다.
+    - Annotation은 꼭 입력하지 않아도 된다.
+
+  ```python
+  from dependency_injector.wiring import inject, Provide
+  
+  
+  @inject
+  def foo(bar: Bar = Provide[Container.bar]):
+      ...
+  ```
+
+  - 만약 provider 자체를 주입해야 할 경우 아래와 같이 하면 된다.
+    - `Container.bar.provider`와 같이 `.provider` attribute를 사용한다.
+
+  ```python
+  from dependency_injector.providers import Factory
+  from dependency_injector.wiring import inject, Provide
+  
+  
+  @inject
+  def foo(bar_provider: Factory[Bar] = Provide[Container.bar.provider]):
+      bar = bar_provider(argument="baz")
+      ...
+  ```
+
+  - 아래와 같이 attribute를 사용하지 않고 string identifier를 사용할 수도 있다.
+    - 이 경우 container를 입력할 필요가 없다.
+
+  ```python
+  from dependency_injector import containers, providers
+  from dependency_injector.wiring import Provide, inject
+  
+  
+  class Service:
+      ...
+  
+  
+  class Container(containers.DeclarativeContainer):
+  
+      service = providers.Factory(Service)
+  
+  
+  @inject
+  def main(service: Service = Provide["service"]) -> None:
+      ...
+  
+  
+  if __name__ == "__main__":
+      container = Container()
+      container.wire(modules=[__name__])
+  
+      main()
+  ```
+
+
+
+- `WiringConfiguration`을 사용하면 `.wire()` method를 자동으로 호출하도록 만들 수 있다.
+
+  - 아래와 같이 `containers.WiringConfiguration`를 사용하면 된다.
+
+  ```python
+  from dependency_injector import containers
+  
+  
+  class Container(containers.DeclarativeContainer):
+  
+      wiring_config = containers.WiringConfiguration(
+          modules=[
+              "yourapp.module1",
+              "yourapp.module2",
+          ],
+          packages=[
+              "yourapp.package1",
+              "yourapp.package2",
+          ],
+      )
+  
+  if __name__ == "__main__":
+      container = Container()  # Container instance 생성시에 .wire() method가 자동으로 호출된다.
+  ```
+
+  - Container instance가 생성될 때 자동으로 `.wire()` method가 호출된다.
+
