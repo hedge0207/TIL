@@ -784,14 +784,6 @@
 
 
 
-
-
-
-
-
-
-
-
 # 도커 명령어
 
 ## Docker
@@ -812,12 +804,23 @@
 
 
 
-- Docker 디스크 이용 상황 확인
+- `docker system`
 
-  - 이미지, 컨테이너 등에 대한 요약된 정보를 확인 가능하다.
+  - `docker system df`
+    - Docker가 사용하는 disk 사용량을 보여준다.
+    - `-v`(`--verbose`): 보다 상세한 정보를 보여준다.
+    - `--format`: format을 지정할 수 있다.
 
   ```bash
-  $ docker system df
+  $ docker system df [options]
+  ```
+
+  - `docker system info`
+    - Docker와 관련된 정보를 보여준다.
+    - `--format`: format을 지정할 수 있다.
+
+  ```bash
+  $ docker system info
   ```
 
 
@@ -914,19 +917,6 @@
 
 
 
-- Docker Hub에 이미지 업로드하기
-
-  - `docker login` 명령으로 로그인 해야 가능하다.
-  - Docker Hub에 업로드할 이미지는 `<Docker Hub 사용자명>/이미지명:태그명`의 형태로 지정해야 한다.
-
-  ```bash
-  $ docker image push 이미지명[:태그명]
-  ```
-
-
-
-
-
 ## Docker image
 
 - Docker 이미지 다운로드 하기
@@ -940,6 +930,17 @@
 
   ```bash
   $ docker pull [옵션] 이미지명[:태그명]
+  ```
+
+
+
+- Docker Hub에 이미지 업로드하기
+
+  - `docker login` 명령으로 로그인 해야 가능하다.
+  - Docker Hub에 업로드할 이미지는 `<Docker Hub 사용자명>/이미지명:태그명`의 형태로 지정해야 한다.
+
+  ```bash
+  $ docker image push 이미지명[:태그명]
   ```
 
 
@@ -1200,8 +1201,6 @@
 
 
 
-
-
 ## 가동 중인 Docker Container 연결
 
 - 컨테이너에 연결하기
@@ -1245,7 +1244,6 @@
   25 ?        00:00:00 ps
   ```
   
-  
 
 
 
@@ -1265,23 +1263,24 @@
   ```
 
   - Process들을 확인하면, 새로운 process가 생성되지 않은 것을 확인할 수 있다.
-
+    - 만약 이 상태에서 `exit` 명령을 입력할 경우 root process가 종료되고, container도 정지되게 된다.
+  
+  
   ```bash
   $ ps -ef
   UID          PID    PPID  C STIME TTY          TIME CMD
   root           1       0  0 04:26 pts/0    00:00:00 /bin/bash
   root          11       1  0 04:26 pts/0    00:00:00 ps -ef
   ```
-
-  - 만약 이 상태에서 `exit` 명령을 입력할 경우 root process가 종료되고, container도 정지되게 된다.
+  
   - 반면에 `exec`을 통해 접속할 경우
-
+  
   ```bash
   $ docker exec -it test /bin/bash
   ```
-
+  
   - 아래와 같이 새로운 프로세스가 생성되는 것을 확인할 수 있다.
-
+  
   ```bash
   $ ps -ef
   
