@@ -34,11 +34,17 @@
 
 
 
+
+
+## 이름과 주석
+
 - 이름 붙이기
-  - 좋은 이름
-    - 좋은 이름은 이름이 나타내는 내용, 문법, 단어가 모두 잘 맞는 이름이다.
-    - 정확하고, 정보를 제공하며, 분명한 이름이 좋은 이름이다.
-    - 이름을 붙일 때 아래와 같은 규칙을 지켜야 한다.
+  - 좋은 이름은 이름이 나타내는 내용, 문법, 단어가 모두 잘 맞는 이름이다.
+  - 정확하고, 정보를 제공하며, 분명한 이름이 좋은 이름이다.
+
+
+
+- 이름을 붙일 때 아래와 같은 규칙을 지켜야 한다.
   - 정확한 문법을 사용하라.
     - 정확하지 않은 문법은 역할을 헷갈리게 만들 수 있다.
     - 명사를 사용할 경우 필수적인 단어를 맨 끝에 위치시켜라.
@@ -80,9 +86,11 @@
     - documentation: type/value/procedure에 대한 구조화된 주석.
     - Inline comment: code block에 대한 정보를 제공하기 위한 주석
 
-  - 문서화 주석
 
-    - 유형, 값, 절차 등의 선언어이나 정의에 다는 주석으로, 일정한 형식에 맞춰 작성한 주석을 의미한다.
+
+- 문서화 주석
+
+  - 유형, 값, 절차 등의 선언어이나 정의에 다는 주석으로, 일정한 형식에 맞춰 작성한 주석을 의미한다.
     - 문서화 주석을 통해 상세한 코드 참조나 대상을 확인할 필요 없이 사양을 이해할 수 있다.
     - 짧은 요약은 반드시 들어가야 하며 필요에 따라 상세 설명을 추가할 수 있다.
 
@@ -104,15 +112,21 @@
     - 요약을 작성하지 않는 것
     - 호출자를 언급하는 것
 
-  - Inline 주석에는 아래와 같은 내용을 작성한다.
-
-    - 읽는 사람에게 도움을 줄 수 있는 것이면 어떤 것이든 작성하면 된다.
-    - 반드시 요약을 작성할 필요는 없다(code가 거대해 빠르게 파악하기 힘들 경우에 작성하면 된다).
-    - 혹은 규모가 큰 코드를 주석을 통해 여러 개의 덩어리로 구분하기 위해 사용하기도 한다.
 
 
+- Inline 주석에는 아래와 같은 내용을 작성한다.
 
-- 상태(state)와 절차(procedure)
+  - 읽는 사람에게 도움을 줄 수 있는 것이면 어떤 것이든 작성하면 된다.
+  - 반드시 요약을 작성할 필요는 없다(code가 거대해 빠르게 파악하기 힘들 경우에 작성하면 된다).
+  - 혹은 규모가 큰 코드를 주석을 통해 여러 개의 덩어리로 구분하기 위해 사용하기도 한다.
+
+
+
+
+
+## 절차와 상태
+
+- 상태(state)의 사용 줄이기
 
   - 상태가 지나치게 많이 사용된 코드는 읽기가 힘들어진다.
 
@@ -135,9 +149,8 @@
   - 상태 변환이 가져오는 혼란을 줄이는 방법.
     - 가능하면 immutable한 property들을 사용해라.
     - 멱등성을 준수하여 동일한 함수를 여러 번 실행하더라도 결과가 달라지지 않도록해라.
-    - 단, 최초 실행시에도 값이 변경되지 않는다면 그것이 멱등성을 준수한다고 할 수 없다.
-    - Acyclic state를 유지해라
-    - 상태에 순환이 있을 경우 코드를 이해하기가 힘들어질 수 있다.
+    - 단, 최초 실행시에도 값이 변경되지 않는다면 멱등성을 준수한다고 할 수 없다.
+    - 상태에 순환이 있을 경우 코드를 이해하기가 힘들어질 수 있으므로, acyclic state를 유지해라
     - 그러나 cycle을 무리하게 없앨 경우 model이 지나치게 복잡해질 수 있으므로 적절한 타협점을 찾아야한다.
 
   ```python
@@ -153,19 +166,23 @@
   closable.close()			# 여전히 close 상태
   ```
 
+
+
+
+- 절차를 명확히하기
+
   - 절차는 아래와 같은 것들을 의미한다.
-    - Main routine, sub routine
-    - function
-    - method
-    - computed property
-    - ...
+    - Main routine, sub routine, function, method, computed property, 등
   - 절차의 책임과 흐름을 명확히 해야 가독성을 높일 수 있다.
-    - 만일 절차를 한 문장/문단으로 요약하기 힘들다면 절차를 나눠야한다.
+    - 만일 code를 보고 절차를 한 문장/문단으로 요약하기 힘들다면 책임이 명확하지 않은 것이므로, 절차를 나눠야한다.
     - 좋은 절차는 절차의 이름에 부합하고, documentation을 작성하기 쉬우며, 적은 수의 error case와 limitation만을 가져야한다.
-  - Command와 query를 구분할 경우 절차의 책임을 명확히 하는데 도움이 될 수 있다.
+  - Command와 query를 분리할 경우 절차의 책임을 명확히 하는데 도움이 될 수 있다.
     - Command는 요청을 받은 쪽이나 parameter를 변경시키는 procedure를 의미한다.
     - Query는 변경 없이 값을 반환하는 procedure를 의미한다.
-    - 단, 무작정 분할할 경우 오히려 불필요한 state들이 추가될 수 있으므로 주의해야한다.
+    - Query를 실행했는데, 값의 변경이 생기면 절차의 책임이 불명확해진다.
+    - Query와 command를 분리하면 절차의 책임을 명확히 할 수 있다.
+
+  - 단, command와 query를 무작정 분리할 경우 오히려 불필요한 state들이 추가될 수 있으므로 주의해야한다.
     - 예를 들어 유저를 생성하고, 성공 여부를 반환하는 함수가 있었다고 가정해보자.
     - 이 때 command와 query를 분리하고자 `latest_operation_result`라는 새로운 state를 만드는 것은 오히려 버그의 위험성만 높이므로 이럴 경우 오히려 기존 code가 더 낫다고 볼 수 있다.
 
@@ -193,8 +210,7 @@
   ```
 
   - 절차의 흐름을 명확하게 하기 위해서는 아래 세 가지 원칙을 지켜야한다.
-    - 정의 기반 프로그래밍을 한다.
-    - 최대한 빨리 반환한다.
+    - 정의 기반 프로그래밍(definition based programming)을 한다.
     - Error case보단 normal case에 집중한다.
     - 로직을 케이스로 나누지 않고 대상으로 나눈다.
   - 정의 기반 프로그래밍
@@ -216,7 +232,7 @@
   - Error case보단 normal case에 집중한다.
     - Normal case는 절차가 달성하고자 하는 주 목적을 달성하는 것을 의미한다.
     - Error case는 목적 달성 없이 절차가 종료되는 것을 의미한다.
-    - Normal case에 집중하려면 반환을 빨리 하면 된다.
+    - Normal case에 집중하려면 반환을 빨리(early return) 하면 된다.
 
   ```python
   # error case에 집중하다보면 아래와 같은 code가 나오게 된다.
@@ -240,6 +256,364 @@
   
   # ...
   ```
+
+  - 로직을 케이스로 나누지 않고 대상으로 나눈다.
+    - 계정의 종류에 따라 profile의 background의 색과 icon이 변경되는 서비스가 있다고 가정해보자.
+    - Premium 계정의 경우 profile background의 색이 파랑색이고, icon에 premium이라는 문구가 추가된다.
+    - Free 계정의 경우 profile background의 색이 초록색이고, icon에 아무런 문구도 추가되지 않는다.
+    - 이 때 계정의 종류가 케이스가 되고, background의 색과 icon의 문구가 대상이 된다.
+
+  ```python
+  # 케이스로 나눌 경우
+  # 무엇을 변경하는지 코드만 보고는 알기 힘들다.
+  def bind_view_data(account_type):
+      if accont_type == PREMIUM:
+          update_views_for_premium()
+      elif account_type == FREE:
+          update_views_for_free()
+          
+  # 대상으로 나눌 경우
+  # 무엇을 변경하는지 보다 확실히 알 수 있다.
+  def bind_view_data(account_type):
+      update_background_color(account_type)
+      update_account_icon(account_type)
+  ```
+
+
+
+
+
+## 의존성
+
+- 결합도 줄이기
+
+  - Coupling의 종류(coupling이 강한 순)
+    - Content coupling
+    - Common coupling
+    - Control coupling
+    - Stamp coupling
+    - Data coupling
+    - Message coupling
+  - Content coupling
+    - 한 모듈이 다른 모듈의 내부 동작을 직접 사용하는 것을 의미한다.
+    - 예를 들어 한 type이 다른 type의 data에 직접 접근하고 수정하는 경우 등이 있다.
+    - 아래 코드의 문제점은 `Caller`가 `calculator`의 `calculate()` 메서드를 호출하기 전후로 `prepare()`, `tear_down()` 메서드를 호출해야 한다는 점과, calculator의 `parameter`, `result` property의 값을 직접 설정하고 직접 접근하여 값을 받아온다는 것이다.
+
+  ```python
+  # Bad example
+  class Caller:
+      def call_calculator(self):
+          calculator.parameter = 10
+          
+          calculator.prepare()
+          calculator.calculate()
+          calculator.tear_donw()
+          
+          result = calculator.result
+  
+  
+  # 결합도 줄이기
+  class Calller:
+      def call_calculator(self):
+          # prepare()와 tear_down()도 calculator내부에서 처리하도록 변경한다.
+          result = calculator.calculatate(10)
+  ```
+
+  - Common coupling
+    - Global state를 사용할 때 발생하는 의존성을 의미한다.
+    - 전역 변수나 가변적인 싱글톤 객체 혹은 파일이나 DB 등의 단일 외부자원을 사용하여 상태를 공유했을 때 발생한다.
+    - 파일이나 DB의 경우 사용할 수밖에 없는 경우가 많지만, 전역 변수나 가변 싱글톤 객체는 가능한 한 사용하지 말아야한다.
+
+  ```python
+  # 전역 변수에 의존하는 경우
+  # 전역 변수 prameter의 값의 변경에 따라 calculate() 메서드가 산출하는 값이 달라진다.
+  # 문제는 전역 변수의 변경 사항을 추적하기 힘들다는 것이다.
+  parameter = 10
+  
+  class Calculator:
+      def calculate(self, num:int):
+          return parameter + num
+          
+  def call_calculator():
+      global parameter
+      parameter = 20
+      calculator = Calculator()
+      print(calculator.calculate(1))	# 21
+  
+  call_calculator()
+  print(parameter)	# 20
+  ```
+
+  - Control coupling
+    - 한 모듈이 다른 모듈에게 무엇을 해야 하는지에 대한 정보를 넘겨줌으로써 다른 모듈의 흐름을 제어하는 의존성을 의미한다.
+    - 이 경우 프로시저가 처리하는 일이 정확히 무엇인지 요약하기 힘들어진다(즉, 프로시저의 책임이 불분명해진다).
+    - 또한 조건이 변경될 때 마다 코드를 수정해야한다.
+
+  ```python
+  # 예시1. boolean 값을 flag로 사용하는 경우
+  def update_view(is_error: bool):
+      if is_error:
+          result_view.is_visible=True
+          error_view.is_visible=False
+      else:
+          result_view.is_visible=False
+          error_view.is_visible=True
+          
+  # 예시2. 인자에 따라 다른 행동을 해야 하는 경우
+  def update_view(data_type:DataType):
+      if data_type == DataType.user_name:
+          user_name_view.text = user_name
+      elif data_type == DataType.birthday:
+          birthday_view.text = birthday
+      # ...
+  
+  
+  # 개선 방법1. 프로시저를 분리하여 분기를 없앤다.
+  def update_result_view(is_error:bool):
+      result_view.is_visible = not is_error
+  
+  def update_error_view(is_error:bool):
+      error_view.is_visible = is_error
+  
+  # 개선 방법2. 케이스가 아닌 대상으로 나눈다.
+  def update_view(is_error:bool):
+      result_view.is_visible = not is_error
+      error_view.is_visible = is_error
+      
+  # 개선 방법3. strategy pattern을 적용한다.
+  ```
+
+  - Stamp coupling
+    - 둘 이상의 모듈이 데이터 구조를 공유하지만, 공유하는 데이터 구조 중 일부씩만 사용하는 경우에 stamp coupling이라 한다.
+    - 필요한 data들만 공유함으로써 결합도를 줄일 수 있다.
+
+  ```python
+  # 예시
+  # UserData에 mail_address, phone_number 등도 있다고 가정하면, 아래 함수는 UserData 중 일부만 사용하고 있는 것이다.
+  # 이 경우 update_user_view() 함수는 UserData에 stamp coupling되어 있다고 한다.
+  def update_user_view(user_data:UserData):
+      user_name_view.text = user_data.full_name
+      birthday_view.text = user_data.birthday
+      
+  # 아래와 같이 필요한 정보만 받도록 수정하여 결합도를 낮출 수 있다.
+  def update_user_view(full_name:str, birthday:date):
+      user_name_view.text = full_name
+      birthday_view.text = birthday
+  ```
+
+  - Data coupling
+    - 모듈들 사이에 parameter 등을 통해 데이터를 공유할 때 data coupling이라 한다.
+    - 이 때 모듈들이 공유하는 data는 필수적인 것이어야 한다(즉, 공유하는 모든 데이터가 사용되어야한다).
+
+  ```python
+  # 아래와 같은 경우 data coupling이 있다고 할 수 있다.
+  def update_user_view(full_name:str, birthday:date):
+      user_name_view.text = full_name
+      birthday_view.text = birthday
+  ```
+
+  - Message coupling
+    - 아무 data 없이 method를 호출하는 경우의 결합도를 의미한다.
+    - 현실에서는 거의 존재하지 않으며, 다른 계층에서는 content coupling을 유발할 수도 있다.
+  - 의존성을 줄이기 위해서는 강한 모듈 간 강한 결합이 생기는 것을 방지해야한다.
+    - Content, common, control의 경우 강한 결합으로 반드시 지양해야한다.
+    - 반면에 stamp, data의 경우 용인되는 결합도이다.
+
+
+
+- 의존성
+  - 아래와 같은 경우에 typx X는 type Y에 의존한다고 할 수 있다.
+    - Type X가 Y의 instance를 property로 가지고 있을 경우.
+    - X의 method가 Y를 parameter로 받거나, Y를 반환할 경우.
+    - X가 Y의 method를 호출할 경우.
+    - X가 Y를 상속받을 경우.
+  - 의존성의 방향
+    - 의존성은 가능한한 한 방향으로만 생성되어야한다(즉, 의존성에 사이클이 있어선 안 된다).
+    - 의존성은 아래와 같은 방향으로 생성되는 것이 바람직하다.
+    - Caller에서 callee로
+    - 구상에서 추상으로
+    - 복잡한 것에서 단순한 것으로
+    - Algorithm에서 data model로
+    - Mutable에서 immutable로
+    - 빈번하게 변경되는 layer에서 안정적인 layer로
+
+
+
+- Callee에서 caller로 의존성이 생성될 경우.
+
+  - 아래 예시의 call stack은 `MediaViewPresenter.play_video()` - `VideoPlayerView.play()` - `MediaViewPresenter.get_video_uri()` 순이다.
+    - Caller가 callee에 의존하고 callee인 `VideoPlayerView`도 `MediaViewPresenter`에 의존한다. 
+    - 즉, A - B - A의 형태이며, 이는 일반적으로 좋지 않다.
+
+  ```python
+  # 문제가 있는 code
+  class MediaViewPresenter:
+      def get_video_uri(self):
+          ...
+          
+      def play_video(self):
+          video_player_view.play(self)
+          
+  class VideoPlayerView:
+      def play(self, presenter: MediaViewPresenter):
+          uri = presenter.get_video_uri()
+  ```
+
+  - 개선 방법1. parameter를 통해 값을 넘긴다.
+    - Callee가 원하는 값을 parameter를 통해 넘긴다.
+
+  ```python
+  class MediaViewPresenter:
+      def get_video_uri(self):
+          ...
+      
+      def play_video(self):
+          video_player_view.play(self.get_video_uri())
+  
+  class VideoPlayerView:
+      def play(self, video_uri):
+          ...
+  ```
+
+  - 개선방법2. callee가 원하는 값을 생성하는 역할을 하는 별도의 class로 추출한다.
+    - 별도의 class로 추출할 때, 추출된 로직이 원래 class에서 사용중이었을 것이므로, 원래 class에도 추출된 class에 의존성이 생성되게 된다.
+    - 즉, `MediaViewPresenter`이 `VideoPlayerView`에 의존하고, `VideoPlayerView`이 `MediaViewPresenter`에 의존하던 관계에서 `MediaViewPresenter`이 `VideoPlayerView`과 `URIProvider`에 의존하고 `VideoPlayerView`가 `URIProvider`에 의존하도록 의존관계가 변경되어 더는 callee가 caller에 의존하지 않게 된다.
+
+  ```python
+  class URIProvider:
+      def get_video_uri(self):
+          ...
+  
+  class MediaViewPresenter:
+      def play_video(self):
+          video_player_view.play()
+          
+          
+  class VideoPlayerView:
+      def play(self):
+          uri = uri_orivider.get_video_uri()
+  ```
+
+  - 아래와 같은 경우에는 callee가 caller를 의존하는 것이 용인된다.
+    - Threads
+    - Event listener
+    - Strategy pattern
+
+
+
+- 추상에서 구상으로 의존성이 생성될 경우.
+
+  - 자신이 상속한 class에 의존해선 안 된다.
+    - 즉 instance 자기 자신(언어에 따라 this 혹은 self)의 type check를 해선 안 된다.
+    - 아래와 같은 코드는 캡슐화를 저해하고 변경이 쉽지 않은 코드이다.
+    - 새로운 class가 `IntList`를 상속 받을 경우 `add_element`의 코드가 변경되어야한다.
+
+  ```python
+  class IntList:
+      def add_element(value: int):
+          if isinstance(self, ArrayIntList):
+              ...
+          else:
+              ...
+  
+  class ArrayIntList(IntList):
+      ...
+  ```
+
+  - 개선 방법
+    - Overriding을 통해 추상이 구상을 의존하는 것을 막는다.
+
+  ```python
+  class IntList:
+      def add_element(value: int):
+          ...
+      
+  class ArrayIntList(IntList):
+      def add_element(value: int):
+          ...
+  ```
+
+
+
+- 단순한 것에서 복잡한 것으로 의존성이 생성될 경우.
+
+  - 아래와 같이 단순한 것에서 복잡한 것으로 의존성이 생성되면 안 된다.
+    - 아래 예시는 복잡한 `UserDataRequester`를 `UserData`가 의존한다.
+
+  ```python
+  class UserData:
+      def __init__(self, user_id, requester):
+          self.user_id = user_id
+          self.requester = requester
+      
+  class UserDataRequester:
+      def obtain_from_server(self)->UserData:
+          ...
+  ```
+
+  - 위 코드의 문제점
+    - 불필요한 dependency가 bug를 발생시킬 수 있다.
+    - 또한 일반적으로 단순한 type은 여러 모듈에 광범위하게 사용되므로 dependency가 있으면 광범위한 사용이 힘들다.
+  - 때때로 복잡한 것에 의존해야 하는 경우도 있기는 하다.
+    - Mediator pattern을 사용할 경우.
+    - Adapter나 facade를 사용할 경우.
+    - Data binder를 사용할 경우.
+
+
+
+- 의존성의 중복
+
+  - Cascaded dependency
+    - 불필요한 dependency chain이 생성되는 것을 피해야한다.
+    - 예를 들어 A가 C를 의존해야 하는 상황에서 C를 직접 의존하지 않고, C의 instance를 가지고 있는 B를 의존한다면, A는 불필요하게 B를 의존하고 있는 것이다.
+
+  ```python
+  class MessageDataProvider:
+      ...
+  
+  
+  class TimestampPresenter:
+      data_provider = MessageDataProvider()
+      
+      def invalidate_views(self):
+          # data_provider를 사용하는 logic
+          
+  class MessageTextPresenter:
+      timestamp_presenter = TimestampPresenter()
+      
+      def invalidate_views(self):
+          message_data = timestamp_presenter.data_provider...
+  ```
+
+  - 위 코드가 문제인 이유
+    - `MessageTextPresenter`는 `TimestampPresenter`와는 관련이 없음에도 의존하고 있다.
+    - 정작 `MessageTextPresenter`가 의존하고 있는 `MessageDataProvider`는 직접적으로 의존하고 있지 않다.
+  - 아래와 같이 개선이 가능하다.
+    - `MessageTextPresenter`가 `MessageDataProvider`를 직접 의존하도록 변경한다.
+
+  ```python
+  class TimestampPresenter:
+      data_provider = MessageDataProvider()
+      
+      def invalidate_views(self):
+          # data_provider를 사용하는 logic
+  
+  class MessageTextPresenter:
+      data_provider = MessageDataProvider()
+      
+      def invalidate_views(self):
+          message_data = data_provider...
+  ```
+
+
+
+
+
+
+
+
+
+
 
 
 
