@@ -262,7 +262,8 @@
     - Premium 계정의 경우 profile background의 색이 파랑색이고, icon에 premium이라는 문구가 추가된다.
     - Free 계정의 경우 profile background의 색이 초록색이고, icon에 아무런 문구도 추가되지 않는다.
     - 이 때 계정의 종류가 케이스가 되고, background의 색과 icon의 문구가 대상이 된다.
-
+    - 분기문을 쓰지 말라는 것이 아니라, 분기문을 써서 코드의 가독성이 떨어질 경우 분기가 아닌 대상으로 나누라는 것이다.
+  
   ```python
   # 케이스로 나눌 경우
   # 무엇을 변경하는지 코드만 보고는 알기 힘들다.
@@ -271,12 +272,19 @@
           update_views_for_premium()
       elif account_type == FREE:
           update_views_for_free()
-          
+  
   # 대상으로 나눌 경우
   # 무엇을 변경하는지 보다 확실히 알 수 있다.
   def bind_view_data(account_type):
       update_background_color(account_type)
       update_account_icon(account_type)
+  
+  # 분기는 대상으로 나눈 후에 한다.
+  def update_backgound_color(account_type):
+      if account_type == PREMIUM:
+          backround_view.color = PREMIUM_BACKGROUND_COLOR
+      elif account_type == FREE:
+          backround_view.color = FREE_BACKGROUND_COLOR
   ```
 
 
@@ -561,10 +569,8 @@
 
 
 
-- 의존성의 중복
-
-  - Cascaded dependency
-    - 불필요한 dependency chain이 생성되는 것을 피해야한다.
+- Cascaded dependency
+  - 불필요한 dependency chain이 생성되는 것을 피해야한다.
     - 예를 들어 A가 C를 의존해야 하는 상황에서 C를 직접 의존하지 않고, C의 instance를 가지고 있는 B를 의존한다면, A는 불필요하게 B를 의존하고 있는 것이다.
 
   ```python
@@ -604,6 +610,165 @@
       def invalidate_views(self):
           message_data = data_provider...
   ```
+
+
+
+- 중복된 의존성 집합
+
+  - 의존성이 항상 1:1 관계인 것은 아니며, 경우에 따라 N:M 관계로 의존성이 생성될 수 있다.
+    - 즉, 여러 모듈에서 공통적으로 사용하는 dependency set이 있을 수 있다.
+    - 예를 들어 사용자 데이터를 저장하는 저장소가 로컬용과 리모트용 두 가지로 만든다고 가정했을 때, 사용자 데이터 저장과 관련된 모든 모듈은 이들 두 종류의 데이터 저장소 모듈을 의존해야한다.
+    - 이럴 경우 두 종류의 저장소 모듈을 의존하는 모든 모듈에서 로컬과 리모트 중 어느 쪽에 데이터를 저장할 것인지 구분하는 로직이 중복 구현된다.
+    - 또한, 새로운 종류의 저장소가 추가될 경우 의존하는 모든 모듈의 코드도 변경해야한다는 문제가 있다.
+
+  - 예시
+    - 아래 예시에서 `UserCreateService`와 `UserUpdateService`는 모두 `LocalUserRepository`와 `RemoteUserPrepository`라는 공통된 dependency 집합에 의존한다.
+    - 즉 N:M 관계로 의존성이 생성되어 있다.
+    - `UserCreateService`와 `UserUpdateService`에 `LocalUserRepository`와 `RemoteUserPrepository`중 어디에 저장할지 구분하는 로직이 중복 구현된 것을 확인할 수 있다.
+    - 이 때, 만약 `LocalUserRepository`와 `RemoteUserPrepository`를 의존하는 `UserDeleteService`가 추가되면 해당 코드에도 어디에 저장할 지 구분하는 로직이 중복 구현되어야 한다.
+    - 또한 새로운 저장소인 `CacheUserRepository`가 추가된다면, 의존하는 모든 코드에 새로운 분기를 추가해야한다.
+
+  ```python
+  class LocalUserRepository:
+      ...
+  
+  class RemoteUserPrepository:
+      ...
+  
+  
+  class UserCreateService:
+      def __init__(self):
+          self.local_repo = LocalUserRepository()
+          self.remote_repo = RemoteUserPrepository()
+  
+      def create_user(self, data):
+          if data.dest == DEST.LOCAL:
+              self.local_repo.create()
+          elif data.dest == DEST.REMOTE:
+              self.remote_repo.create()
+  
+  class UserUpdateService:
+      def __init__(self):
+          self.local_repo = LocalUserRepository()
+          self.remote_repo = RemoteUserPrepository()
+  
+      def update_user(self, data):
+          if data.dest == DEST.LOCAL:
+              self.local_repo.update()
+          elif data.dest == DEST.REMOTE:
+              self.remote_repo.update()
+  ```
+
+  - 개선 방법
+    - 의존되는 모듈들을 은닉하는 새로운 저장소 레이어를 만든다.
+    - 아래 예시에서는 `LocalUserRepository`와 `RemoteUserPrepository`라는 공통된 dependency set을 은닉하는 `UserPrepository`라는 새로운 layer를 만들었다.
+    - `UserCreateService`와 `UserUpdateService`는 이제 `UserPrepository`만을 의존한다.
+    - 저장소가 새로 추가 되거나, 저장소에 의존하는 서비스가 추가되어도 `UserPrepository`만 변경하면 되므로 의존성 관리가 보다 쉬워진다.
+
+  ```python
+  class LocalUserRepository:
+      ...
+  
+  class RemoteUserPrepository:
+      ...
+  
+  class UserPrepository:
+      def __init__(self):
+          self.local_repo = LocalUserRepository()
+          self.remote_repo = RemoteUserPrepository()
+  
+      def create(self, data):
+          if data.dest == DEST.LOCAL:
+              self.local_repo.create()
+          elif data.dest == DEST.REMOTE:
+              self.remote_repo.create()
+  
+      def update(self, data):
+          if data.dest == DEST.LOCAL:
+              self.local_repo.update()
+          elif data.dest == DEST.REMOTE:
+              self.remote_repo.update()
+  
+  class UserCreateService:
+      def __init__(self):
+          self.user_repo = UserPrepository()
+  
+      def create_user(self, data):
+          self.user_repo.create(data)
+  
+  class UserUpdateService:
+      def __init__(self):
+          self.user_repo = UserPrepository()
+  
+      def update_user(self, data):
+          self.user_repo.update(data)
+  ```
+
+  - 개선시 주의 사항
+    - YAGNI와 KISS를 기억해라.
+    - 즉, 중간 layer가 정말로 필요하기 전까지는 만들지 마라.
+    - 은닉된 class에 직접 접근하지 마라.
+    - 예를 들어 `user_repository.local_repo`와 같이 접근하여 사용하면 안 된다.
+
+
+
+- 명시적 의존성
+
+  - 의존성은 명시적이어야하며, 암시적(implicit)이어서는 안 된다.
+  - Parameter에 암시적 data domain 사용
+    - 아래 예시는 string으로 받은 color parameter에 따라 color_code의 값을 변경하는 것이다.
+    - 문제는 함수가 color라는 parameter에 강하게 의존하고 있다는 것이다.
+    - 그럼에도 이 의존이 명시적이지 않아서, color에 어떤 값이 유효한 것인지 함수를 전부 읽기 전까지는 알 수 없다.
+    - 문제가 발생한 원인은 color는 추상적인 string으로 정의해놓고, 정작 함수의 동작은 color가 일정한 값만 저장할 수 있는 구상형인 것 처럼 사용하기 때문이다.
+
+  ```python
+  def set_view_background_color(color: str):
+      color_code = 0x000000
+      if color == "red":
+          color_code = 0xFF0000
+      elif color == "green":
+          color_code = 0x00FF00
+          
+      set_background_color(color_code)
+  ```
+
+  - 개선 방법
+    - Data domain을 표현할 수 있는 data type을 만든다.
+
+  ```python
+  from enum import Enum
+  
+  class BackgroundColor(Enum):
+      RED = 0xFF0000
+      GREEN = 0x00FF00
+      
+  def set_view_background_color(color: BackgroundColor):
+      set_background_color(color.value)
+  ```
+
+  - Subtype의 동작을 암시적으로 기대하는 경우
+
+  ```python
+  from abc import ABCMeta, abstractmethod
+  
+  
+  class ListenerInterface(metaclass=ABCMeta):
+      @abstractmethod
+      def query_int() -> int:
+          ...
+  
+  class LargeClass:
+      class ListenerImplementation(ListenerInterface):
+          ...
+  
+  class Caller:
+      def __init__(self, listener: ListenerInterface):
+          ...
+  ```
+
+
+
+
 
 
 
