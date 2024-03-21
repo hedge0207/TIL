@@ -1041,7 +1041,107 @@
   $ usermod --shell <shell 종류> <user명>
   ```
 
-  
+
+
+
+- SSH(Secure SHell)
+
+  - 네트워크 상의 다른 컴퓨터에 로그인하거나 원격 시스템에서 명령을 실행하고 다른 시스템으로 파일을 복사할 수 있도록 해주는 소프트웨어 혹은 그 프로토콜을 의미한다.
+
+    - 핀란드의 Tatu Ylönen이 개발하였다.
+    - 유저 인증, 명령어, 출력 결과, 파일 전송이 모두 암호회되어 network상에서 탈취되더라도 쉽게 내용을 볼 수 없게 해준다.
+
+    - OpenSSH라는 SSH protocol을 open source로 구현한 프로그램이 있다.
+    - 서버 인증과 사용자 인증에는 비대칭키 방식을 사용하고, client와 server간의 통신에는 대칭키 방식을 사용한다.
+
+  - 동작 과정
+
+    - Client가 server의 22번 포트로 접속을 요청한다.
+    - Client의 요청을 받은 server는 server에서 보관중인 public key(host key)를 client에게 전송한다.
+    - Client와 server는 parameter들을 주고 받으며 연결 방식에 대해 협의한 후 접속 채널을 연다.
+    - 모든 인증이 무사히 완료되면, client는 SSH 프로토콜로 server에 접속하게 된다.
+
+  - 서버 인증 과정
+
+    - Client가 자신이 접속하고자 하는 server가 올바른 서버인지 확인하는 과정이다.
+    - 서버 인증에는 host keys라 불리는 비대칭키(public key와 private key)가 사용된다.
+    - Host keys는 일반적으로 `/etc/ssh` directory에 저장되며, `ssh_host_<rsa/dsa/ecdsa/ed25519>_key`와 같은 prefix를 가지고 있다.
+    - Host keys는 일반적으로 OpenSSH가 최초로 설치될 때 함께 생성되며, 이후에 추가로 생성할 수도 있다.
+    - Host keys의 private key는 server가 보관하고, public key는 client가 보관한다.
+    - Server가 client로부터 접속 요청을 받으면, client에게 host keys 중 public key를 전송한다.
+    - Client는 server로부터 받은 public key를 `<home>/.ssh/known_hosts`파일에 저장한다.
+    - Client는 `known_hosts` file에 저정해둔 server의 public key를 가지고, 자신이 접속하려는 server가 정상적인 서버인지 아래와 같은 과정을 통해 확인한다.
+    - Clinet는 난수값을 생성하고 해당 난수값으로 해시를 생성해 저장한 뒤, 난수값을 server가 전달한 public key로 암호화하여 server에 전송한다.
+    - Server는 암호화된 데이터를 private key(host key)로 복호화하여 난수값을 얻어낸 뒤, 해당 난수값을 해시로 만들어 다시 client로 전송한다.
+    - Server로부터 해시를 전달 받은 client는 자신이 저장했던 해시와 비교하여 두 해시가 동일하면, 올바른 서버에 접속하는 것이라 판단한다.
+
+  - 서버 인증이 필요한 이유
+
+    - Client가 server에 최초로 접속 요청을 보낸 후 둘 사이에 안전한 채널이 열리기 전에, client가 server로 보낸 요청이 network상에서 악의적인 공격으로 다른 server로 납치될 수 있다.
+    - 그럼 client는 자신이 접속하려던 server가 아닌 악의적인 다른 server에 데이터를 전송하게 된다.
+    - 따라서 client는 중간에 다른 서버에게 자신의 요청이 가로채진 것은 아닌지 확인하는 과정이 필요하다.
+
+  - 사용자 인증 과정
+
+    > Password를 사용한 인증 방법도 있고 아예 인증을 하지 않는 방법도 있지만 SSH key를 사용하는 것이 권장되므로, SSH key를 사용할 경우만 다룬다.
+
+    - Server가 자신에게 접속을 요청한 client user의 identity를 확인하는 과정이다.
+    - 사용자 인증에는 비대칭키(public key와 private key)가 사용된다(서버 인증에 사용된 host keys와는 다르다).
+    - Client는 비대칭키를 생성하여 public key는 서버의 `<home>/.ssh/authorized_keys`에 저장하고, private key만 자신이 가지고 있는다.
+    - Client가 인증할 key 쌍의 ID를 서버에 전송한다.
+    - Server는 `.ssh/authorized_keys`파일을 확인하여 ID에 매칭되는 public key가 있을 시 아래 과정을 진행한다.
+    - Server는 무작위 문자열을 생성하고 해당 문자열로 만든 해시를 저장한 뒤, 난수는 client에게 전달 받은 public key로 암호화하여 client에게 전송한다.
+    - Client는 priavate key를 사용하여 server가 전달한 암호화된 난수를 복호화하고, 복호화된 난수와 세션키를 결합하여 해시를 생성한 후 server로 전송한다.
+    - Server는 저장된 난수와 세션키를 결합하여 해시를 생성하고, 해당 해시와 client에게 전달 받은 해시를 비교하여 두 해시가 동일하면 client에게 권한이 있다고 판단한다.
+
+  - Server와 client간의 통신
+
+    - Server와 client간의 통신에는 대칭키인 session key가 사용된다.
+    - 대칭키 방식은 비대칭키 방식에 비해 리소스도 적게 들고 속도도 빠르다는 장점이 있지만, 대칭키가 유출될 경우 암호화된 통신을 복호화 할 수 있다는 단점이 있다.
+    - SSH는 대칭키기 유출되지 않도록 하기 위해 키 교환 알고리즘을 사용하여 대칭키를 교환한다.
+    - 키 교환 알고리즘에는 주로 디피-헬먼(Diffie-Hellman) 알고리즘 혹은 타원 곡선 디피 헬먼(Elliptic-curve Diffie–Hellman) 알고리즘이 사용된다.
+
+
+
+- `ssh`를 통해 다른 컴퓨터로 접속하기 위한 사용자 인증 과정
+
+  - 위에서 살펴본 SSH의 동작 과정 중에서 사용자가 신경써야 할 부분은 사용자 인증과 관련된 부분 뿐이다.
+    - 접속 대상 컴퓨터에 OpenSSH가 설치되어 있다면, 서버 인증에 필요한 host keys는 이미 생성된 상태일 것이므로 굳이 생성할 필요는 없다.
+    - 그리고 대부분의 OS에서 OpenSSH는 기본으로 설치되어 있다.
+    - 따라서 사용자 인증을 위한 절차만 살펴볼 것이다.
+  - 먼저 key pair를 생성한다.
+    - `ssh-keygen` 명령어를 통해 key pair를 생성할 수 있다.
+    - Key pair는 client 컴퓨터의 `<user_home_dir>/.ssh` directory에 저장해야한다.
+    - Unix 계열 운영체제가 아닌 Windows에서도 cmd 창을 열어 동일한 명령어로 생성이 가능하다.
+    - 여러 가지 key type을 선택할 수 있는데, OpenSSH 8.8부터 SHA-1 알고리즘으로 작성한 RSA 인증은 사용할 수 없게 되었으므로 다른 타입을 사용해야한다.
+
+  ```bash
+  $ ssh-keygen -t <key-type>
+  ```
+
+  - Public key를 접속하려는 컴퓨터의 `<user_home_dir>/.ssh/authorized_keys`에 추가한다.
+    - 별도의 파일명을 설정하지 않고 위 명령어를 실행하면 `id_rsa.pub`라는 public key가 저장된 파일과 `id_rsa`라는 private key가 저장된 파일이 생성된다.
+    - 이 중 public key가 저장된 `id_rsa` file의 내용을 읽어서 `<user_home_dir>/.ssh/authorized_keys`에 추가하면 된다.
+  - `ssh`를 통해 접속한다.
+
+  ```bash
+  $ ssh -i <private_key_file_path> <user>@<IP>
+  ```
+
+  - 만약 매 번 `-i` option을 통해 키를 지정하는 것이 번거롭다면 아래와 같이 하면 된다.
+    - `<user_home_dir>/.ssh` 경로에 `config` 파일을 생성한다.
+    - config file에 아래와 같이 작성한다.
+
+  ```bash
+  Host test
+    HostName <IP>
+    IdentityFile <private_key_path>
+    User <user>
+  ```
+
+
+
+
 
 
 
