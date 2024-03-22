@@ -904,6 +904,8 @@
 
 
 
+
+
 # Manage application data
 
 - Docker는 컨테이너 내부에 데이터를 저장한다.
@@ -921,21 +923,21 @@
 
 - Docker 컨테이너 내부의 데이터를 외부에 저장하는 방법.
 
-  - bind mount
-    - data를 host의 filesystem 내부의 어느 곳에든 저장하는 방식이다.
-    - container의 데이터를 임의의 host 경로에 저장
+  - Bind mount
+    - Data를 host의 filesystem 내부의 어느 곳에든 저장하는 방식이다.
+    - Container의 데이터를 임의의 host 경로에 저장
   
-  - volume
-    - data를 host의 filesystem중 docker가 관리하고 있는 영역에 저장하는 방식이다.
-    - container의 데이터를 host의 `/var/lib/docker/volume`이라는 경로에 저장
+  - Volume
+    - Data를 host의 filesystem중 docker가 관리하고 있는 영역에 저장하는 방식이다.
+    - Container의 데이터를 host의 `/var/lib/docker/volume`(기본값)이라는 경로에 저장한다.
     - 해당 경로는 docker를 설치할 때 지정된 docker의 root 경로(`/var/lib/docker`)로, 볼륨 외에도 이미지, 컨테이너 관련된 정보들이 저장되어 있다.
   
   - tmpfs
     - host의 메모리에 저장
     - 파일로 저장하는 것이 아니라 메모리에 저장하는 것이므로 영구적인 방법은 아니다.
-  - bind mount와 volume의 차이
-    - volume은 오직 해당 volume을 사용하는 컨테이너에서만 접근이 가능하지만 bind mount 된 데이터는 다른 컨테이너 또는 호스트에서도 접근이 가능하다.
-    - 즉 Non-docker process는 volume을 수정할 수 없다.
+  - Bind mount와 volume의 차이
+    - Volume은 오직 해당 volume을 사용하는 컨테이너에서만 접근이 가능하지만 bind mount 된 데이터는 다른 컨테이너 또는 호스트에서도 접근이 가능하다.
+    - 즉 non-docker process는 volume을 수정할 수 없다.
     - 바인드 마운트를 사용하면 호스트 시스템의 파일 또는 디렉터리가 컨테이너에 마운트 된다.
     - 바인드 마운트는 양방향으로 마운트되지만(즉, 호스트의 변경 사항이 컨테이너에도 반영되고 그 반대도 마찬가지), volume의 경우 호스트의 변화가 컨테이너 내부에는 반영되지 않는다.
   
@@ -962,18 +964,20 @@
 
 
 
+
+
 ## Volumes
 
 > https://docs.docker.com/storage/volumes/
 
-- volume을 사용해야 하는 경우
+- Volume을 사용해야 하는 경우
   - 여러 컨테이너들이 데이터를 공유해야 하는 경우
     - 여러 컨테이너는 동시에 같은 volume에 마운트 할 수 있다.
     - 다를 컨테이너에 연결된 하나의 볼륨에서 읽기, 쓰기 모두 동시에 처리 가능하다.
   - 마운트 하려는 디렉토리 혹은 파일이 호스트의 filesystem에 있는지 확신하기 어려울 경우
     - volume은 host의 filesystem 중에서도 docker가 관리하는 영역에 생성되므로 호스트의 filesystem에 마운트할 파일 혹은 폴더가 실제로 존재한다는 것이 보장된다.
-  - data를 local(host의 filesystem)이 아닌 cloud나 remote 호스트에 저장해야 할 경우
-  - data를 백업하거나 복원하거나 다른 host로 옮겨야 할 경우
+  - Data를 local(host의 filesystem)이 아닌 cloud나 remote 호스트에 저장해야 할 경우
+  - Data를 백업하거나 복원하거나 다른 host로 옮겨야 할 경우
   - 높은 수준의 I/O가 발생하는 작업을 해야 할 경우
 
 
@@ -981,41 +985,53 @@
 - 관련 명령어
 
   - 볼륨 생성하기
-
+    - `--driver`: driver를 설정할 수 있다.
+    - `--opts(-o)`: driver의 option을 설정할 수 있다.
+  
+  
   ```bash
-  $ docker create volume <볼륨 이름>
+  $ docker volume create [options] <볼륨 이름>
+  
+  # 예시
+  $ docker volume create --driver local \
+      --opt type=local \
+      --opt device=/path/to/dir \
+      foo
   ```
-
-  - volume 목록 보기
-
+  
+  - Volume 목록 보기
+    - 아래 명령어로는 volume의 크기까지는 볼 수 없다.
+    - Volume의 크기까지 보려면 `docker system df -v` 명령어를 사용해야 한다.
+  
+  
   ```bash
   $ docker volume ls
   ```
-
+  
   - 특정  volume 상세 정보 보기
-
+  
   ```bash
   $ docker volume inspect <볼륨 이름>
   ```
 
-  - volume 마운트하기
+  - Volume 마운트하기
     - `-v` 옵션 또는 `--mount` 옵션 사용
-
+  
   ```bash
   $ docker run -v <볼륨 이름>:<컨테이너 경로> <이미지 이름>
   
-  $ docker run --mount type=volume,source=<호스트 경로>,target=<도커 경로>
+  $ docker run --mount type=<type>,source=<호스트 경로>,target=<도커 경로>
   ```
-
-  - volume 삭제
+  
+  - Volume 삭제
     - cp를 통해 볼륨을 다른 디렉터리에 복제해도 rm 명령을 사용하면 **복제 된 volume도 삭제된다.**
-
+  
   ``` bash
   $ docker volume rm <볼륨 이름>
   ```
-
+  
   - 사용하지 않는 볼륨 일괄 삭제
-
+  
   ```bash
   $ docker volume prune
   ```
@@ -1029,7 +1045,7 @@
   - `--mount`
     - key=value 쌍으로 설정한다.
     - source, target(혹은 destination, dst), type, readonly 등의 옵션을 지정 가능하다.
-    - type에 volume, bind, tmpfs를 사용 가능하다.
+    - type에 `volume`, `bind`, `tmpfs`를 사용 가능하다.
     - readonly 옵션을 줄 경우 readonly 상태로 마운트된다.
   - `-v`로 설정한다고 volume이 되는 것이 아니며, `--mount`로 설정한다고 bind mount가 되는 것이 아니다.
     - 두 설정은 단지 설정 format이 다른 것일 뿐 `-v`로도 bind mount가 가능하고 `--mount`로도 volume을 설정하는 것이 가능하다.
@@ -1037,7 +1053,7 @@
 
 
 
-- docker volume의 기본 경로 변경하기
+- Docker volume의 경로 변경하기
 
   - docker data root directory 자체를 변경하는 방법
     - 아래 [Data Root Directory 변경] 부분 참고
@@ -1083,16 +1099,21 @@
     es:
       (...)
       volumes:
-        - es_data:/usr/share/elasticsearch/data
+        - test-volume:/home/foo/data
     (...)
     volumes:
-      es_data:
+      test-volume:
         driver:local,
         driver_opts:
           type: none
           o: bind
-          device: /home/es/data/docker_volumes/es
+          device: /data
   ```
+  
+  - 위와 같이 설정할 경우 docker의 root dir(기본값은 `/var/lib/docker`)의 `volumes` directory에 volume이 생성되고, `du` 명령어 등을 통해 크기를 확인해보면 용량을 차지하고 있는 것 처럼 보인다.
+    - 그러나 그렇게 보일뿐, 실제로는 용량을 차지하지는 않는다.
+    - 또한 bind mounts 방식인 것 같지만, `docker inspect <container_name>`을 통해서 `Mounts.type`을 확인해보면 `volume`으로 생성된 것을 확인할 수 있다.
+    - 따라서 `docker volume` 명령어를 통해 조작이 가능하다.
 
 
 
@@ -1115,7 +1136,7 @@
   ```bash
   $ docker run -v <호스트 경로>:<컨테이너 경로> <이미지이름>
   
-  $ docker run --mount type=bind,source=<호스트 경로>,target=<도커 경로>
+  $ docker run --mount type=bind,source=<호스트 경로>,target=<컨테이너 내부 경로>
   ```
 
 

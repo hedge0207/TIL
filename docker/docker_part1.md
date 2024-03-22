@@ -808,7 +808,7 @@
 
   - `docker system df`
     - Docker가 사용하는 disk 사용량을 보여준다.
-    - `-v`(`--verbose`): 보다 상세한 정보를 보여준다.
+    - `-v`(`--verbose`): 보다 상세한 정보를 보여준다(volume별 크기도 확인이 가능하다).
     - `--format`: format을 지정할 수 있다.
 
   ```bash
