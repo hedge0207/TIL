@@ -76,7 +76,7 @@
           self.tickets = tickets
       
       def get_ticket(self) -> Ticket:
-          return ticket.pop()
+          return self.tickets.pop()
       
       def plus_amount(self, amount):
           self.amount += amount
@@ -101,13 +101,13 @@
           self.ticket_seller = ticket_seller
       
       def enter(self, audience: Audience):
-          if audience.getBag().has_invitation():
+          if audience.get_bag().has_invitation():
               ticket = self.ticket_seller.get_ticket_office().get_ticket()
               audience.get_bag().set_ticket(ticket)
           else:
               ticket = self.ticket_seller.get_ticket_office().get_ticket()
               audience.get_bag().minus_amount(ticket.get_fee())
-              ticket_seller.get_ticket_office().plus_amount(ticket.get_fee())
+              self.ticket_seller.get_ticket_office().plus_amount(ticket.get_fee())
               audience.get_bag().set_ticket(ticket)
   ```
   
@@ -296,10 +296,10 @@
       
       def hold(self, ticket:Ticket):
           if self._has_invitation():
-              self.set_ticket(ticket)
+              self._set_ticket(ticket)
               return 0
           else:
-              self.set_ticket(ticket)
+              self._set_ticket(ticket)
               self._minus_amount(ticket.get_fee())
               return ticket.get_fee()
   ```
@@ -324,7 +324,7 @@
           self.tickets = tickets
       
       def _get_ticket(self) -> Ticket:
-          return ticket.pop()
+          return self.tickets.pop()
       
       def _plus_amount(self, amount):
           self.amount += amount
@@ -377,3 +377,51 @@
     - 메시지를 전송하기 위해 필요한 지식들이 두 객체를 결합시키고 이 결합이 객체 사이의 의존성을 만든다.
     - 이렇게 생성된 의존성을 잘 관리하여 변경이 용이한 설계가 진정한 객체지향 설계다.
 
+
+
+
+
+# 객체지향 프로그래밍
+
+- 영화 예매 시스템의 할인 기능 요구사항
+
+  - 할인액을 결정하는 두 가지 규칙이 존재하는데, 하나는 할인 조건이라 부르고 다른 하나는 할인 정책이라 부른다.
+    - 할인 조건은 다수의 조건을 지정하거나 혼합하는 것이 가능하지만, 할인 정책은 하나의 정책만 할당할 수 있다.
+    - 할인 정책은 1인을 기준으로 책정된다.
+  - 할인 조건은 가격의 할인 여부를 결정하며 순서 조건과 기간 조건의 두 종류로 나눌 수 있다.
+    - 순서 조건은 상영 순번을 이용해 할인 여부를 결정하는 규칙이다(e.g. 순번이 3번일 경우 매일 3번째로 사양되는 영화를 예매한 사용자들에게 할인 혜택 제공).
+    - 기간 조건은 영화 상영 시작 시간을 이용해 할인 여부를 결정하며, 요일, 시작 시간, 종료 시간의 세 부분으로 구성된다.
+  - 할인 정책은 할인 요금을 결정하며, 할인 정책에는 금액 할인 정책과 비율할인 정책이 있다.
+    - 금액 할인 정책은 예매 요금에서 일정 금액을 할인해주는 방식이다.
+    - 비율 할인 정책은 정가에서 일정 비율의 요금을 할인해 주는 방식이다.
+
+  - 할인을 적용하기 위해서는 할인 조건과 할인 적책을 함께 조합해서 사용한다.
+    - 먼저 사용자의 예매 정보가 할인 조건 중 하나라도 만족하는지 검사한다.
+    - 할인 조건을 만족할 경우 할인 정책을 이용해 할인 요금을 계산한다.
+    - 할인 정책은 적용돼 있지만 할인 조건을 만족하지 못하는 경우나 아예 할인 정책이 적용돼 있지 않은 경우에는 요금을 할인하지 않는다.
+
+
+
+- 협력, 객체, 클래스
+  - 객체지향은 클래스가 아닌 객체에 초점을 맞춰야한다.
+    - 어떤 클래스가 필요한지를 고민하기 전에 어떤 객체들이 필요한지 고민해야한다.
+    - 클래스는 공통적인 상태와 행동을 공유하는 객체들을 추상화한 것이다.
+    - 따라서 클래스의 윤곽을 잡기 위해서는 어떤 객체들이 어떤 상태와 행동을 가지는지를 먼저 결정해야한다.
+    - 객체를 중심에 두는 접근 방법은 설계를 단순하고 깔끔하게 만든다.
+  - 객체를 독립적인 존재가 아니라 기능을 구현하기 위해 협력하는 공동체의 일원으로 봐야 한다.
+    - 객체는 다른 객체에게 도움을 주거나 의존하면서 살아가는 협력적인 존재다.
+    - 객체를 협력하는 공동체의 일원으로 바라보는 것은 설계를 유연하고 확장 가능하게 만든다.
+  - 객체의 모양과 윤곽이 잡히면 공통된 특성과 상태를 가진 객체들을 타입으로 분류하고 이 타입을 기반으로 클래스를 구현해야한다.
+    - 훌륭한 협력이 훌륭한 객체를 낳고, 훌령한 객체가 훌륭한 클래스를 낳는다.
+
+
+
+- 도메인의 구조를 따르는 프로그램 구조
+  - 도메인(domain)
+    - 소프트웨어는 사용자가 가진 어떤 문제를 해결하기 위해 만들어진다.
+    - 문제를 해결하기 위해 사용자가 프로그램을 사용하는 분야를 도메인이라 부른다.
+  - 객체지향과 도메인
+    - 객체지향 패러다임이 강력한 이유는 요구사항을 분석하는 초기 단계부터 프로그램을 구현하는 마지막 단계까지 객체라는 동일한 추상화 기법을 사용할 수 있기 때문이다.
+    - 요구사항과 프로그램을 객체라는 동일한 관점에서 바라볼 수 있기 때문에 도메인을 구성하는 개념들이 프로그램의 객체와 클래스로 매끄럽게 연결될 수 있다.
+    - 일반적으로 클래스의 이름은 대응되는 도메인 개념의 이름과 동일하거나 유사하게 지어야 한다.
+    - 클래스 사이의 관계도 최대한 도메인 개념 사이에 맺어진 관계와 유사하게 만들어서 프로그램의 구조를 이해하고 예상하기 쉽게 만들어야 한다.
