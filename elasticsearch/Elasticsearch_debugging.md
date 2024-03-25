@@ -479,5 +479,628 @@
 
 
 
+## 색인이 실행 과정
+
+- Elasticsearch
+
+  - 아래와 같이 Elasticsearch에 색인 요청을 보낸다.
+
+  ```json
+  // POST test/_doc
+  {
+      "foo":"bar"
+  }
+  ```
+
+  - `RestIndexAction.prepareRequest()` method가 호출되어 색인를 위한 request를 생성한다.
+    - `server.src.main.java.org.elasticsearch.rest.document.RestIndexAction`
+
+  ```java
+  @Override
+  public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
+      if (request.getRestApiVersion() == RestApiVersion.V_7) {
+          request.param("type"); // consume and ignore the type
+      }
+  	// IndexRequest를 생성하고, params들을 추가한다.
+      IndexRequest indexRequest = new IndexRequest(request.param("index"));
+      indexRequest.id(request.param("id"));
+      indexRequest.routing(request.param("routing"));
+      // (...)
+  	
+      // 생성한 request를 인자로 넘겨 NodeClient의 index 메서드를 실행한다.
+      return channel -> client.index(
+          indexRequest,
+          new RestToXContentListener<>(channel, DocWriteResponse::status, r -> r.getLocation(indexRequest.routing()))
+      );
+  }
+  ```
+
+  - `AbstractClient.index()` method가 호출되어 색인을 실행한다.
+    - `server.src.main.java.org.elasticsearch.client.internal.support.AbstractClient`
+    - `NodeClient`는 `AbstractClient`를 상속한 client이다.
+    - `index()` method는 `TransportIndexAction.TYPE`을 추가하여 `execute()` method를 호출한다.
+    - `execute()` method는 `NodeClient.doExecute()` method를 호출한다.
+
+  ```java
+  @Override
+  public void index(final IndexRequest request, final ActionListener<DocWriteResponse> listener) {
+      // NodeClient의 execute 메서드를 실행한다.
+      execute(TransportIndexAction.TYPE, request, listener);
+  }
+  
+  @Override
+  public final <Request extends ActionRequest, Response extends ActionResponse> void execute(
+      ActionType<Response> action,
+      Request request,
+      ActionListener<Response> listener
+  ) {
+      try {
+          doExecute(action, request, listener);
+      } catch (Exception e) {
+          assert false : new AssertionError(e);
+          listener.onFailure(e);
+      }
+  }
+  ```
+
+  - `NodeClient.doExecute()` method가 호출되고, `deExecute()`는 다시 `executeLocally()` method를 호출한다.
+    - `server.src.main.java.org.elasticsearch.client.internal.node.NodeClient`
+    - `executeLocally()` method는 이전 단계에서 받아온 action(이 경우에는 `indices:data/write/index`)과 request, listener를 가지고 `TaskManager.registerAndExecute()` method를 호출하여 task manager에 task를 등록하고, 등록한 task를 실행한다.
+    - `transportAction()` method는 action에 해당하는 TransPortAction instance(이 경우에는 `TransportIndexAction`)를 반환한다.
+
+  ```java
+  @Override
+  public <Request extends ActionRequest, Response extends ActionResponse> void doExecute(
+      ActionType<Response> action,
+      Request request,
+      ActionListener<Response> listener
+  ) {
+      try {
+          executeLocally(action, request, listener);
+      } catch (TaskCancelledException | IllegalArgumentException | IllegalStateException e) {
+          listener.onFailure(e);
+      }
+  }
+  
+  public <Request extends ActionRequest, Response extends ActionResponse> Task executeLocally(
+          ActionType<Response> action,
+          Request request,
+          ActionListener<Response> listener
+  ) {
+      return taskManager.registerAndExecute(
+          "transport",
+          transportAction(action),
+          request,
+          localConnection,
+          ActionListener.assertOnce(listener)
+      );
+  }
+  ```
+
+  - `TaskManager.registerAndExecute()` method는 task를 등록하고, 실행한다.
+
+    - `server.src.main.java.org.elasticsearch.tasks.TaskManager`
+
+    - `TransportIndexAction.execute()` method를 호출하여 task를 실행한다.
+
+  ```java
+  public <Request extends ActionRequest, Response extends ActionResponse> Task registerAndExecute(
+      String type,
+      TransportAction<Request, Response> action,
+      Request request,
+      Transport.Connection localConnection,
+      ActionListener<Response> taskListener
+  ) {
+      // (...)
+  
+      try (var ignored = threadPool.getThreadContext().newTraceContext()) {
+          final Task task;
+          try {
+              // 받아온 정보로 task를 등록하고
+              task = register(type, action.actionName, request);
+          } catch (TaskCancelledException e) {
+              Releasables.close(unregisterChildNode);
+              throw e;
+          }
+          // TransportIndexAction의 execute method를 호출하여 task를 실행한다.
+          // 색인 결과를 처리할 listener를 생성하여 execute() 호출시 함께 넘긴다.
+          action.execute(task, request, new ActionListener<>() {
+              @Override
+              public void onResponse(Response response) {
+                  try {
+                      release();
+                  } finally {
+                      taskListener.onResponse(response);
+                  }
+              }
+  
+              @Override
+              public void onFailure(Exception e) {
+                  try {
+                      if (request.getParentTask().isSet()) {
+                          cancelChildLocal(request.getParentTask(), request.getRequestId(), e.toString());
+                      }
+                      release();
+                  } finally {
+                      taskListener.onFailure(e);
+                  }
+              }
+  
+              @Override
+              public String toString() {
+                  return this.getClass().getName() + "{" + taskListener + "}{" + task + "}";
+              }
+  
+              private void release() {
+                  Releasables.close(unregisterChildNode, () -> unregister(task));
+              }
+          });
+          return task;
+      }
+  }
+  ```
+
+  - `TransportAction.execute()`는 다시 sub class의 `RequestFilterChain.proceed()` method를 호출한다.
+    - `server.src.main.java.org.elasticsearch.action.support.TransportAction`
+    - `execute()` method에서는 전달 받은 request에 대한 validation을 수행하고, 이상 없이면 이후의 process를 실행한다.
+    - `action.doExecute()`를 호출하는 데, 이 때 action은 `TransportIndexAction`이다.
+
+  ```java
+  public final void execute(Task task, Request request, ActionListener<Response> listener) {
+      // 유효성 검사
+      final ActionRequestValidationException validationException;
+      try {
+          validationException = request.validate();
+      } catch (Exception e) {
+          assert false : new AssertionError("validating of request [" + request + "] threw exception", e);
+          logger.warn("validating of request [" + request + "] threw exception", e);
+          listener.onFailure(e);
+          return;
+      }
+      if (validationException != null) {
+          listener.onFailure(validationException);
+          return;
+      }
+      
+      // (...)
+      
+      requestFilterChain.proceed(task, actionName, request, ActionListener.runBefore(listener, releaseRef::close));
+  }
+  
+  
+  // RequestFilterChain class
+  @Override
+  public void proceed(Task task, String actionName, Request request, ActionListener<Response> listener) {
+      int i = index.getAndIncrement();
+      try {
+          if (i < this.action.filters.length) {
+              this.action.filters[i].apply(task, actionName, request, listener, this);
+          } else if (i == this.action.filters.length) {
+              try (releaseRef) {
+                  // action의 doExecute method를 실행한다.
+                  this.action.doExecute(task, request, listener);
+              }
+          } else {
+              listener.onFailure(new IllegalStateException("proceed was called too many times"));
+          }
+      } catch (Exception e) {
+          logger.trace("Error during transport action execution.", e);
+          listener.onFailure(e);
+      }
+  }
+  ```
+
+  - `TransportSingleItemBulkWriteAction.doExecute()`
+    - `server.src.main.java.org.elasticsearch/action/bulk.TransportSingleItemBulkWriteAction`
+    - `TransportIndexAction`는 `TransportSingleItemBulkWriteAction`를 상속 받는다.
+    - 위 예시에서 `this.action.doExecute()`를 호출하면 `TransportSingleItemBulkWriteAction.doExeucte()` method가 실행된다.
+    - `doExeucte()` method는 단일 문서 색인용으로 생성된 request를 bulk request format으로 변경하고, `TransportBulkAction.execute()`를 호출한다.
+    - 결국 Elasticsearch에서는 단 건 색인도 bulk로 처리되는 것이다.
+
+  ```java
+  @Override
+  protected void doExecute(Task task, final Request request, final ActionListener<Response> listener) {
+      bulkAction.execute(task, toSingleItemBulkRequest(request), TransportBulkAction.unwrappingSingleItemBulkResponse(listener));
+  }
+  ```
+
+  - `TransportAction.doInternalExecute()`
+    - `TransportBulkAction`이 상속 받은 `TransportAction`의 `execute()` method가 다시 실행된다.
+    - `execute()` method는 다시 `RequestFilterChain.proceed()` method를 호출하고, `proceed()` method는 이번에는 `TransportBulkAction.doExecute()` method를 호출한다.
+  - `TransportBulkAction.doExecute()`
+    - `server.src.main.java.org.elasticsearch.action.bulk.TransportBulkAction`
+    - `doExecute()` method는 `ensureClusterStateThenForkAndExecute()` method를, `ensureClusterStateThenForkAndExecute()` method는 `forkAndExecute()` method를, `forkAndExecute()` method는 다시 `doInternalExecute()` method를 호출한다.
+    - 최종적으로는 `createMissingIndicesAndIndexData()` 메서드가 호출된다.
+
+  ```java
+  protected void doInternalExecute(Task task, BulkRequest bulkRequest, String executorName, ActionListener<BulkResponse> listener) {
+      // (...)
+  
+      // Bulk를 시작하기 전에 index를 먼저 생성한다.
+      // 1 단계: bulkRequest에 담겨있는 모든 index 정보를 수집한다.
+      final Map<String, ReducedRequestInfo> indices = bulkRequest.requests.stream()
+          // 삭제 요청일 때는 index를 생성해선 안 되므로 그 부분에 대한 처리를 해준다.
+          .filter(
+          request -> request.opType() != DocWriteRequest.OpType.DELETE
+          || request.versionType() == VersionType.EXTERNAL
+          || request.versionType() == VersionType.EXTERNAL_GTE
+      )
+          .collect(
+          Collectors.toMap(
+              DocWriteRequest::index,
+              request -> ReducedRequestInfo.of(request.isRequireAlias(), request.isRequireDataStream()),
+              (existing, updated) -> ReducedRequestInfo.of(
+                  existing.isRequireAlias || updated.isRequireAlias,
+                  existing.isRequireDataStream || updated.isRequireDataStream
+              )
+          )
+      );
+  
+      // 2 단계: 현재 존재하지 않는 index들을 filtering한다.
+      final Map<String, IndexNotFoundException> indicesThatCannotBeCreated = new HashMap<>();
+      final ClusterState state = clusterService.state();
+      Map<String, Boolean> indicesToAutoCreate = indices.entrySet()
+          .stream()
+          .filter(entry -> indexNameExpressionResolver.hasIndexAbstraction(entry.getKey(), state) == false)
+          .filter(entry -> entry.getValue().isRequireAlias == false)
+          .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().isRequireDataStream));
+  
+      // 3 단계: bulk 전에 roll over 되어야 하는 data stream들을 수집한다.
+      Set<String> dataStreamsToBeRolledOver = featureService.clusterHasFeature(state, LazyRolloverAction.DATA_STREAM_LAZY_ROLLOVER)
+          ? indices.keySet().stream().filter(target -> {
+          DataStream dataStream = state.metadata().dataStreams().get(target);
+          return dataStream != null && dataStream.rolloverOnWrite();
+      }).collect(Collectors.toSet())
+          : Set.of();
+  
+      // Step 4: 생성해야 하는 index들을 생성하고, bulk를 실행한다.
+      createMissingIndicesAndIndexData(
+          task,
+          bulkRequest,
+          executorName,
+          listener,
+          indicesToAutoCreate,
+          dataStreamsToBeRolledOver,
+          indicesThatCannotBeCreated,
+          startTime
+      );
+  }
+  ```
+
+  - `TransportBulkAction.createMissingIndicesAndIndexData()`
+    - 먼저 생성해야 할 index가 있는지와 roll over해야 할 data stream이 없는지 확인한다.
+    - 만약 없다면 바로 `executeBulk()` method를 호출하여 bulk를 계속 진행하고, 있다면 index 생성, roll over를 모두 마치고 bulk를 계속한다.
+
+  ```java
+  protected void createMissingIndicesAndIndexData(
+      Task task,
+      BulkRequest bulkRequest,
+      String executorName,
+      ActionListener<BulkResponse> listener,
+      Map<String, Boolean> indicesToAutoCreate,
+      Set<String> dataStreamsToBeRolledOver,
+      Map<String, IndexNotFoundException> indicesThatCannotBeCreated,
+      long startTime
+  ) {
+      final AtomicArray<BulkItemResponse> responses = new AtomicArray<>(bulkRequest.requests.size());
+      // 만약 생성해야 할 index가 없고, roll over해야 할 data stream이 없다면
+      if (indicesToAutoCreate.isEmpty() && dataStreamsToBeRolledOver.isEmpty()) {
+          // 바로 bulk를 실행한다.
+          executeBulk(task, bulkRequest, startTime, listener, executorName, responses, indicesThatCannotBeCreated);
+          return;
+      }
+      // 만약 아니라면 index를 생성하고, data stream을 roll over한 후에 bulk를 실행한다.
+      Runnable executeBulkRunnable = () -> threadPool.executor(executorName).execute(new ActionRunnable<>(listener) {
+          @Override
+          protected void doRun() {
+              executeBulk(task, bulkRequest, startTime, listener, executorName, responses, indicesThatCannotBeCreated);
+          }
+      });
+      try (RefCountingRunnable refs = new RefCountingRunnable(executeBulkRunnable)) {
+          for (Map.Entry<String, Boolean> indexEntry : indicesToAutoCreate.entrySet()) {
+              final String index = indexEntry.getKey();
+              // index를 생성한다.
+              createIndex(index, indexEntry.getValue(), bulkRequest.timeout(), ActionListener.releaseAfter(new ActionListener<>() {
+                  // ...
+              }, refs.acquire()));
+          }
+          for (String dataStream : dataStreamsToBeRolledOver) {
+              // roll over를 실행한다.
+              lazyRolloverDataStream(dataStream, bulkRequest.timeout(), ActionListener.releaseAfter(new ActionListener<>() {
+  				// ...
+          }
+      }
+  }
+  ```
+
+  - `TransportBulkAction.executeBulk()`
+    - `executeBulk()` method는 `BulkOperation`의 instance를 생성한 후 해당 instance의 `run()` method를 실행한다.
+
+  ```java
+  void executeBulk(
+      Task task,
+      BulkRequest bulkRequest,
+      long startTimeNanos,
+      ActionListener<BulkResponse> listener,
+      String executorName,
+      AtomicArray<BulkItemResponse> responses,
+      Map<String, IndexNotFoundException> indicesThatCannotBeCreated
+  ) {
+      new BulkOperation(
+          task,
+          threadPool,
+          executorName,
+          clusterService,
+          bulkRequest,
+          client,
+          responses,
+          indicesThatCannotBeCreated,
+          indexNameExpressionResolver,
+          relativeTimeProvider,
+          startTimeNanos,
+          listener
+      ).run();
+  }
+  ```
+
+  - `ActionRunnable`
+    - `server.src.main.java.org.elasticsearch.action.ActionRunnable`
+    - `BulkOperation`은 `ActionRunnable`을 상속 받고 `BulkOperation.run()`을 호출하면 `ActionRunnable.run()`이 실행된다.
+    - `run()` method는 `ActionRunnable`의 인스턴스를 생성하여 반환하는데, 이 경우 `ActionRunnable`을 상속한 `BulkOperation` instacne가 생성된다.
+
+  ```java
+  public static <T> ActionRunnable<T> run(ActionListener<T> listener, CheckedRunnable<Exception> runnable) {
+      return new ActionRunnable<>(listener) {
+          @Override
+          protected void doRun() throws Exception {
+              runnable.run();
+              listener.onResponse(null);
+          }
+      };
+  }
+  ```
+
+  - `BulkOperation`
+    - `server.src.main.java.org.elasticsearch.action.bulk.BulkOperation`
+    - `doRun()` method가 실행되면 `executeBulkRequestsByShard()` method를 호출한다.
+    - `executeBulkRequestsByShard()` method는 `executeBulkShardRequest()`메서드를 호출한다.
+    - `executeBulkShardRequest()`메서드는 `NodeClient.executeLocally()` method를 호출한다. 
+
+  ```java
+  @Override
+  protected void doRun() {
+      assert bulkRequest != null;
+      final ClusterState clusterState = observer.setAndGetObservedState();
+      if (handleBlockExceptions(clusterState)) {
+          return;
+      }
+      Map<ShardId, List<BulkItemRequest>> requestsByShard = groupRequestsByShards(clusterState);
+      executeBulkRequestsByShard(requestsByShard, clusterState);
+  }
+  
+  private void executeBulkRequestsByShard(Map<ShardId, List<BulkItemRequest>> requestsByShard, ClusterState clusterState) {
+      if (requestsByShard.isEmpty()) {
+          listener.onResponse(
+              new BulkResponse(responses.toArray(new BulkItemResponse[responses.length()]), buildTookInMillis(startTimeNanos))
+          );
+          return;
+      }
+  
+      // 색인 요청을 받은 node의 node ID를 받아온다.
+      String nodeId = clusterService.localNode().getId();
+      Runnable onBulkItemsComplete = () -> {
+          listener.onResponse(
+              new BulkResponse(responses.toArray(new BulkItemResponse[responses.length()]), buildTookInMillis(startTimeNanos))
+          );
+          bulkRequest = null;
+      };
+  
+      try (RefCountingRunnable bulkItemRequestCompleteRefCount = new RefCountingRunnable(onBulkItemsComplete)) {
+          for (Map.Entry<ShardId, List<BulkItemRequest>> entry : requestsByShard.entrySet()) {
+              // 색인을 실행할 shard의 ID를 받아온다.
+              final ShardId shardId = entry.getKey();
+              final List<BulkItemRequest> requests = entry.getValue();
+  			
+              // shard의 ID를 추가하여 bulk request를 재구성한다.
+              BulkShardRequest bulkShardRequest = new BulkShardRequest(
+                  shardId,
+                  bulkRequest.getRefreshPolicy(),
+                  requests.toArray(new BulkItemRequest[0])
+              );
+              bulkShardRequest.waitForActiveShards(bulkRequest.waitForActiveShards());
+              bulkShardRequest.timeout(bulkRequest.timeout());
+              bulkShardRequest.routedBasedOnClusterVersion(clusterState.version());
+              if (task != null) {
+                  bulkShardRequest.setParentTask(nodeId, task.getId());
+              }
+              // executeBulkShardRequest method를 호출하여 벌크를 계속 진행한다.
+              executeBulkShardRequest(bulkShardRequest, bulkItemRequestCompleteRefCount.acquire());
+          }
+      }
+  }
+  
+  private void executeBulkShardRequest(BulkShardRequest bulkShardRequest, Releasable releaseOnFinish) {
+      // 여기서 client는 BulkOperation의 property로 NodeClient class의 instance이다.
+      // 이번에도 첫 번째 인자로 Action의 type을 넘기는데, 이번에는 TransportShardBulkAction.TYPE을 넘긴다.
+      client.executeLocally(TransportShardBulkAction.TYPE, bulkShardRequest, new ActionListener<>() {
+          @Override
+          public void onResponse(BulkShardResponse bulkShardResponse) {
+              for (BulkItemResponse bulkItemResponse : bulkShardResponse.getResponses()) {
+                  // we may have no response if item failed
+                  if (bulkItemResponse.getResponse() != null) {
+                      bulkItemResponse.getResponse().setShardInfo(bulkShardResponse.getShardInfo());
+                  }
+                  responses.set(bulkItemResponse.getItemId(), bulkItemResponse);
+              }
+              releaseOnFinish.close();
+          }
+  
+          @Override
+          public void onFailure(Exception e) {
+              // create failures for all relevant requests
+              for (BulkItemRequest request : bulkShardRequest.items()) {
+                  final String indexName = request.index();
+                  DocWriteRequest<?> docWriteRequest = request.request();
+                  BulkItemResponse.Failure failure = new BulkItemResponse.Failure(indexName, docWriteRequest.id(), e);
+                  responses.set(request.id(), BulkItemResponse.failure(request.id(), docWriteRequest.opType(), failure));
+              }
+              releaseOnFinish.close();
+          }
+      });
+  }
+  ```
+
+  - `NodeClient`
+    - `executeLocally()` method는 `TaskManager.registerAndExecute()` method를 호출한다.
+    - 이 때, 위에서 받아온 action 정보(`TransportShardBulkAction.TYPE`)를 가지고 이번에는 `TransportShardBulkAction`을 인자로 넘긴다.
+    - `TaskManager.registerAndExecute()` method는 task를 등록하고, 인자로 받은 action(`TransportShardBulkAction`)의 `execute()` method를 호출한다.
+    - `execute()` 메서드가 호출되면, `TransportShardBulkAction`가 상속 받은 `TransportAction.execute()`가 실행된다.
+    - `TransportAction.execute()`가 실행되면서 sub class인 `RequestFilterChain`의 `proceed()` method를 호출한다.
+    - `RequestFilterChain.proceed()` method가 호출되면서 `doExecute()` method가 호출된다.
+    - `TransportShardBulkAction`은 `TransportWriteAction`을 상속 받고, `TransportWriteAction`은 `TransportReplicationAction`을 상속 받는다.
+    - 앞의 두 class에 `doExecute()` method가 없으므로, `TransportReplicationAction.doExecute()` 메서드가 호출된다.
+  - `TransportReplicationAction`
+    - `server.src.main.java.org.elasticsearch.action.support.replication.TransportReplicationAction`
+    - `doExecute()` method는 `runReroutePhase()` 메서드를 호출한다.
+    - `runReroutePhase()` 메서드가 호출되면 `TransportReplicationAction`의 sub class인 `ReroutePhase`의 인스턴스를 생성하고, `ReroutePhase.run()` 메서드를 호출한다.
+    - `ReroutePhase`는 `AbstractRunnable`을 상속받는데, `ReroutePhase`에는 `run()` method가 없어 `AbstractRunnable.run()` 메서드가 실행된다.
+    - `AbstractRunnable.run()` method가 실행되면서, `ReroutePhase.doRun()` method를 호출한다.
+    - `ReroutePhase.doRun()` method는 `performRemoteAction` method를 호출한다.
+    - `performRemoteAction()` method는 `performAction()` method를 호출한다.
+    - `performAction()` method는 다시 `TransportService.sendRequest()` method를 호출한다.
+    - `TransportService.sendRequest()`는 마지막 인자로 `TransportResponseHandler`의 instance를 받는다.
+
+  ```java
+  private void performAction(
+      final DiscoveryNode node,
+      final String action,
+      final boolean isPrimaryAction,
+      final TransportRequest requestToPerform
+  ) {
+      // TransportResponseHandler의 instance를 인자로 받는다.
+      transportService.sendRequest(node, action, requestToPerform, transportOptions, new TransportResponseHandler<Response>() {
+  
+          @Override
+          public Response read(StreamInput in) throws IOException {
+              return newResponseInstance(in);
+          }
+  
+          @Override
+          public Executor executor() {
+              return TransportResponseHandler.TRANSPORT_WORKER;
+          }
+  
+          @Override
+          public void handleResponse(Response response) {
+              finishOnSuccess(response);
+          }
+  
+          @Override
+          public void handleException(TransportException exp) {
+              // ...
+          }
+      });
+  }
+  ```
+
+  - `TransportService.sendRequest()`
+    - `server.src.main.java.org.elasticsearch.transport.TransportService`
+    - `TransportService.sendRequest()`는 overloading된 다른 `sendrequest()`를 호출한다.
+    - `sendrequest()`는 `asyncSender.sendRequest()` method를 호출하고, 그 결과 `sendRequestInternal()` method가 호출된다.
+    - `sendRequestInternal()`는 인자로 받은 `Transport.Connection` instance의 `sendRequest()` method를 호출한다.
+    - 그 결과 `sendLocalRequest()` method가 호출된다.
+
+  ```java
+  volatile DiscoveryNode localNode = null;
+      private final Transport.Connection localNodeConnection = new Transport.Connection() {
+          @Override
+          public DiscoveryNode getNode() {
+              return localNode;
+          }
+  
+          @Override
+          public TransportVersion getTransportVersion() {
+              return TransportVersion.current();
+          }
+  
+          @Override
+          public void sendRequest(long requestId, String action, TransportRequest request, TransportRequestOptions options) {
+              sendLocalRequest(requestId, action, request, options);
+          }
+          // ...
+      };
+  
+  // ...
+  
+  public final <T extends TransportResponse> void sendRequest(
+      final DiscoveryNode node,
+      final String action,
+      final TransportRequest request,
+      final TransportRequestOptions options,
+      TransportResponseHandler<T> handler
+  ) {
+      // connector는 만약 색인 대상 node가 local node면 localNode attribute를 반환하고, 아니라면 ConnectionManager.getConnection()를 통해 connection을 받아온다.
+      final Transport.Connection connection = getConnectionOrFail(node, action, handler);
+      if (connection != null) {
+          // overloading된 다른 sendRequest method가 실행된다.
+          sendRequest(connection, action, request, options, handler);
+      }
+  }
+  ```
+
+  - `TransportService.sendLocalRequest()`
+    - `sendLocalRequest`는 `Executor.execute()` method를 호출한다.
+    - `Executor.execute()` method는 `AbstractRunnable` instance를 생성한다.
+    - `AbstractRunnable` instance를 생성할 때, `doRun()` method를 구현하는데, `doRun()`는 `RequestHandlerRegistry.processMessageReceived` method를 실행한다.
+
+  ```java
+  private void sendLocalRequest(long requestId, final String action, final TransportRequest request, TransportRequestOptions options) {
+      final DirectResponseChannel channel = new DirectResponseChannel(localNode, action, requestId, this);
+      try {
+          onRequestSent(localNode, requestId, action, request, options);
+          onRequestReceived(requestId, action);
+          @SuppressWarnings("unchecked")
+          // registry를 가져온다.
+          final RequestHandlerRegistry<TransportRequest> reg = (RequestHandlerRegistry<TransportRequest>) getRequestHandler(action);
+          
+          // ...
+          // executor를 가져온다.
+          final Executor executor = reg.getExecutor();
+          if (reg == null) {
+             // ...
+          } else {
+              boolean success = false;
+              request.mustIncRef();
+              try {
+                  // AbstractRunnable instance를 생성한다.
+                  executor.execute(threadPool.getThreadContext().preserveContextWithTracing(new AbstractRunnable() {
+                      @Override
+                      protected void doRun() throws Exception {
+                          reg.processMessageReceived(request, channel);
+                      }
+                      // ...
+                  }));
+                  success = true;
+              } finally {
+                  if (success == false) {
+                      request.decRef();
+                  }
+              }
+          }
+      // ...
+  }
+  ```
+
+  - `RequestHandlerRegistry.processMessageReceived`
+    - `server.src.main.java.org.elasticsearch.transport.RequestHandlerRegistry`
+
+
+
+
+
+
+
+
+
 
 
