@@ -393,8 +393,7 @@
     - 주석에 따르면 처음에는 하위 두 개의 byte를 사용했으나, 이 경우 하나의 segment에 대략적으로 2백만 개의 문서가 색인되는 순간부터 압축의 효가가 나타나기 시작했다고 한다. 
     - 이로 인해 첫 번째와 세 번째 byte를 사용하도록 변경하였고, 기존 보다 적은 segment 크기에서도 압축의 효과가 나타나기 시작했다고 한다.
     - 첫 두 byte에 `timestamp`가 아닌 `sequenceId`를 사용하는 이유는 `timestamp`의 분포는 색인 비율에 영향을 받기 때문에 `sequencId`에 비해 분포의 안정성이 떨어지기 때문이다.
-
-
+  
   ```java
   int i = 0;
   // 3byte의 sequenceId의 가장 아래쪽의 1byte를 할당한다.
@@ -402,19 +401,19 @@
   // sequencId의 bit를 오른쪽으로 shift하여 3byte중 위쪽의 1byte만 남긴다.
   uuidBytes[i++] = (byte) (sequenceId >>> 16);
   ```
-
-  - `timestamp`의 byte들을 뒤쪽으로 배치한다.
-    - 각 byte가 일정 기간마다 변경되게 하여 prefix를 공유하게 함으로써 압축률을 높인다.
-
+  
+    - `timestamp`의 byte들을 뒤쪽으로 배치한다.
+      - 각 byte가 일정 기간마다 변경되게 하여 prefix를 공유하게 함으로써 압축률을 높인다.
+  
   ```java
   uuidBytes[i++] = (byte) (timestamp >>> 16); // changes every ~65 secs
   uuidBytes[i++] = (byte) (timestamp >>> 24); // changes every ~4.5h
   uuidBytes[i++] = (byte) (timestamp >>> 32); // changes every ~50 days
   uuidBytes[i++] = (byte) (timestamp >>> 40); // changes every 35 years
   ```
-
-  - 뒤의 6 bytes는 MAC address로 채운다.
-
+  
+    - 뒤의 6 bytes는 MAC address로 채운다.
+  
   ```java
   // MAC address를 가져오고
   byte[] macAddress = macAddress();
@@ -425,9 +424,9 @@
   // i의 값을 6만큼 올린다.
   i += macAddress.length;
   ```
-
-  - `timestamp`와 `sequenceId`의 남은 bytes들을 사용하여 마지막 3 bytes를 생성한다.
-
+  
+    - `timestamp`와 `sequenceId`의 남은 bytes들을 사용하여 마지막 3 bytes를 생성한다.
+  
   ```java
   uuidBytes[i++] = (byte) (timestamp >>> 8);
   uuidBytes[i++] = (byte) (sequenceId >>> 8);
@@ -1091,8 +1090,112 @@
   }
   ```
 
-  - `RequestHandlerRegistry.processMessageReceived`
+  - `RequestHandlerRegistry`
     - `server.src.main.java.org.elasticsearch.transport.RequestHandlerRegistry`
+    - `RequestHandlerRegistry.processMessageReceived()`는 `ProfileSecuredRequestHandler.messageReceived()`를 호출한다.
+    - `ProfileSecuredRequestHandler.messageReceived()`는 다시 `getReceiveRunnable()` method를 통해 생성한 `AbstractRunnable` instance의 `run()` method를 호출한다.
+    - `AbstractRunnable.run()`이 호출되면 `doRun()` method를 실행한다.
+    - `getReceiveRunnable()` method를 통해 `AbstractRunnable` instance를 생성할 때, `doRun` method를 설정해주는 데, 이 때 `doRun` method가 실행되면 `TransportReplicationAction.handlePrimaryRequest`를 실행하도록 설정된다.
+    - `TransportReplicationAction.handlePrimaryRequest`가 실행되는 이유는 `TransportReplicationAction` instance가 초기화 될 때, `TransportService`의 instance에 `registerRequestHandler()` method를 통해 여러 action들을 등록해주는데, `handlePrimaryRequest` method가 그 때 등록되기 때문이다.
+
+  - `TransportReplicationAction`
+    - `handlePrimaryRequest()` method가 실행되면 `AsyncPrimaryAction`의 instance를 생성하고, `AsyncPrimaryAction.run()` method를 실행한다.
+    - `AsyncPrimaryAction.run()` method는 `AsyncPrimaryAction.doRun()` method를 실행한다.
+    - `AsyncPrimaryAction.doRun()` method는 `AsyncPrimaryAction.runWithPrimaryShardReference` method를 실행한다.
+    - `AsyncPrimaryAction.runWithPrimaryShardReference` method는 `ReplicationOperation` instance를 생성하고, 해당 instance의 `execute()` method를 실행한다.
+  - `ReplicationOperation`
+    - `server.src.main.java.org.elasticsearch.action.support.replication.ReplicationOperation`
+    - `ReplicationOperation.execute()` method는 `TransportAction`의 서브 클래스인 `PrimaryShardReference`의 `perform()` method를 호출한다.
+    - `PrimaryShardReference.perform`은 다시 `TransportWriteAction.shardOperationOnPrimary()` method를 호출한다.
+  - `TransportShardBulkAction`
+    - `TransportWriteAction.shardOperationOnPrimary()` method는 `TransportShardBulkAction.dispatchedShardOperationOnPrimary()` method를 호출한다.
+    -  `TransportShardBulkAction.dispatchedShardOperationOnPrimary()` 는 다시 `performOnPrimary()` method를 호출한다.
+    -  `performOnPrimary()`는 `ActionRunnable` instance를 생성한 뒤 해당 instance의 `run` method를 실행한다.
+    - `ActionRunnable.run()`은 `ActionRunnable.doRun()` method를 실행하고, `doRun()` method는 `executeBulkItemRequest()` method를 실행한다.
+    - `executeBulkItemRequest()` method는 실행되면서 `IndexShard.applyIndexOperationOnPrimary()` method를 실행한다.
+
+  ```java
+  public static void performOnPrimary(
+      BulkShardRequest request,
+      IndexShard primary,
+      UpdateHelper updateHelper,
+      LongSupplier nowInMillisSupplier,
+      MappingUpdatePerformer mappingUpdater,
+      Consumer<ActionListener<Void>> waitForMappingUpdate,
+      ActionListener<PrimaryResult<BulkShardRequest, BulkShardResponse>> listener,
+      ThreadPool threadPool,
+      String executorName,
+      @Nullable PostWriteRefresh postWriteRefresh,
+      @Nullable Consumer<Runnable> postWriteAction,
+      DocumentParsingProvider documentParsingProvider
+  ) {
+      // ActionRunnable instance를 생성한다.
+      new ActionRunnable<>(listener) {
+  
+          private final Executor executor = threadPool.executor(executorName);
+  
+          private final BulkPrimaryExecutionContext context = new BulkPrimaryExecutionContext(request, primary);
+  
+          final long startBulkTime = System.nanoTime();
+  		
+          // ActionRunnable instance의 doRun() method를 설정한다.
+          @Override
+          protected void doRun() throws Exception {
+              // 실행할 operation이 더 남아있지 않을 때 까지 operation을 실행하다.
+              while (context.hasMoreOperationsToExecute()) {
+                  // executeBulkItemRequest method를 호출하여 색인을 진행한다.
+                  if (executeBulkItemRequest(
+                      context,
+                      updateHelper,
+                      nowInMillisSupplier,
+                      mappingUpdater,
+                      waitForMappingUpdate,
+  
+                      ActionListener.wrap(v -> executor.execute(this), this::onRejection),
+                      documentParsingProvider
+                  ) == false) {
+                      // We are waiting for a mapping update on another thread, that will invoke this action again once its done
+                      // so we just break out here.
+                      return;
+                  }
+                  assert context.isInitial(); // either completed and moved to next or reset
+              }
+              primary.getBulkOperationListener().afterBulk(request.totalSizeInBytes(), System.nanoTime() - startBulkTime);
+              // We're done, there's no more operations to execute so we resolve the wrapped listener
+              finishRequest();
+          }
+          // ...
+      }.run();	// 실행한다.
+  }
+  ```
+
+  - `IndexShard`
+    - `server.src.main.java.org.elasticsearch.index.shard.IndexShard`
+    - `applyIndexOperationOnPrimary()` method는 실행되면서 `applyIndexOperation` method를 호출한다.
+    - `applyIndexOperation()` method는 실행되면서 `index()` method를 호출한다.
+    - `index()` method가 실행되면서, 인자로 받은 `InternalEngine` instance의 `index()` method를 실행한다.
+
+  ```java
+  private Engine.IndexResult index(Engine engine, Engine.Index index) throws IOException {
+          try {
+              final Engine.IndexResult result;
+              final Engine.Index preIndex = indexingOperationListeners.preIndex(shardId, index);
+              try {
+                  // ...
+                  // Engine.index() method를 실행한다.
+                  result = engine.index(preIndex);
+                  // ...
+          } finally {
+              active.set(true);
+          }
+      }
+  ```
+
+  - `InternalEngine`
+    - `server.src.main.java.org.elasticsearch.index.engine.InternalEngine`
+    - `index()` method는 실행되면서 `indexIntoLucene()` method를 호출한다.
+    - `indexIntoLucene()`method가 실행되면서 `addDocs()` method를 호출한다.
+    - `addDocs()` method는 색인하려는 문서의 숫자에 따라 Lucene의 `IndexWriter.addDocuments()` 혹은 `IndexWriter.addDocument()` 중 하나의 method를 실행한다.
 
 
 
