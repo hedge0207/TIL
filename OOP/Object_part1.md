@@ -438,3 +438,219 @@
     - 요구사항과 프로그램을 객체라는 동일한 관점에서 바라볼 수 있기 때문에 도메인을 구성하는 개념들이 프로그램의 객체와 클래스로 매끄럽게 연결될 수 있다.
     - 일반적으로 클래스의 이름은 대응되는 도메인 개념의 이름과 동일하거나 유사하게 지어야 한다.
     - 클래스 사이의 관계도 최대한 도메인 개념 사이에 맺어진 관계와 유사하게 만들어서 프로그램의 구조를 이해하고 예상하기 쉽게 만들어야 한다.
+
+
+
+- 클래스 구현하기
+  - 클래스를 구현할 때 가장 중요한 것은 클래스의 경계를 구분 짓는 것이다.
+    - 클래스는 내부와 외부로 구분되며 훌륭한 클래스를 설계하기 위한 핵심은 어떤 부분을 외부에 공개하고 어떤 부분을 감출지를 결정하는 것이다.
+    - 클래스와 내부와 외부를 구분해야 하는 이유는 **경계의 명확성이 객체의 자율성을 보장**하기 때문이다.
+    - 또한 이를 통해 프로그래머에게 구현의 자유를 제공하기 때문이다.
+  - 자율적인 객체
+    - 객체는 상태와 행동을 함께 가지는 복합적인 존재이면서, 스스로 판단하고 행동하는 자율적인 존재이다.
+    - 객체지향 이전의 패러다임과 달리 객체지향에서는 객체라는 단위 안에 데이터와 기능을 한 덩어리로 묶는다.
+    - 이처럼 데이터와 기능을 객체 내부로 함께 묶는 것을 캡슐화라고 부른다.
+    - 대부분의 객체지향 프로그래밍 언어들은 캡슐화에서 한 걸음 더 나아가서 접근 제어(access control) 매커니즘을 함께 제공한다.
+    - **객체 내부에 대한 접근을 통제하는 이유는 객체를 자율적인 존재로 만들기 위해**서다.
+    - 객체지향의 핵심은 자율적인 객체들의 공동체를 구성하는 것이며, 객체가 자율적이기 위해서는 외부의 간섭을 최소화해야 한다.
+    - 외부에서는 객체가 어떤 상태에 놓여 있는지, 어떤 생각을 하고 있는지 알아서는 안 되며, 결정에 직접 개입하려고 해도 안 된다.
+    - 캡슐화와 접근 제어는 객체를 외부에서 접근 가능한 퍼블릭 인터페이스와 내부에서만 접근 가능한 구현으로 나눈다.
+    - 이 인터페이스와 구현의 분리 원칙은 객체지향 프로그램을 만들기 위해 따라야 하는 핵심 원칙이다.
+  - 프로그래머의 자유
+    - 프로그래머의 역할을 클래스 작성자(class creator)와 클라이언트 프로그래머(client programmer)로 구분하는 것이 유용하다.
+    - 클래스 작성자는 새로운 데이터 타입을 프로그램에 추가하고, 클라이언트 프로그래머는 클래스 작성자가 추가한 데이터 타입을 사용한다.
+    - 클래스 작성자는 클라이언트 프로그래머에게 필요한 부분만 공개하고 나머지는 숨겨야하는데, 이를 구현 은닉(implementation hiding)이라 부른다.
+    - 구현 은닉은 두 종류의 프로그래머 모두에게 유용한 개념이다.
+    - 이를 통해 클래스 작성자는 클라이언트 프로그래머에 대한 영향을 걱정하지 않고도 내부 구현을 마음대로 변경할 수 있다.
+    - 클라이언트 프로그래머는 내부의 구현은 모른채 인터페이스만 알아도 클래스를 사용할 수 있다.
+
+
+
+- 협력하는 객체들의 공동체를 구현한다.
+
+  - 먼저 상영 클래스를 구현한다.
+    - 인스턴스 변수는 모두 private으로, 메서드는 모두 public으로 선언한다.
+
+  ```python
+  from datetime import datetime
+  
+  
+  class Screening:
+      def __init__(self, movie: Movie, sequence: int, when_screened: datetime):
+          self._movie = movie
+          self._sequence = sequence
+          self._when_screened = when_screened
+  
+      def get_start_time(self):
+          return self._when_screened
+  
+      def is_sequence(self, sequence: int):
+          return self._sequence == sequence
+  
+      def get_movie_fee(self):
+          return self._movie.get_fee()
+  
+      def _calculate_fee(self, audience_count: int):
+          return self._movie.calculate_movie_fee(self).times(audience_count)
+  
+      def reserve(self, customer: Customer, audience_count: int):
+          return Reservation(customer, self, self.calculate_fee(audience_count), audience_count)
+  ```
+
+  - `Money` 클래스를 구현한다.
+    - 굳이 int를 사용하지 않고 `Money` 클래스를 따로 구현한 이유는 저장하는 값이 금액과 관련되어 있다는 의미를 보다 분명히 전달하고, 금액과 관련된 로직이 서로 다른 곳에 중복되어 구현되는 것을 막기 위해서다.
+
+  ```python
+  class Money:
+      def __init__(self, amount):
+          self._amount = amount
+  
+      @classmethod
+      def wons(self, amount) -> Self:
+          return Money(amount)
+  
+      def plus(self, amount: Self) -> Self:
+          return Money(self._amount + amount._amount)
+  
+      def minus(self, amount: Self) -> Self:
+          return Money(self._amount - amount._amount)
+  
+      def times(self, percent: int) -> Self:
+          return Money(self._amount * percent)
+  
+      def is_lt(self, other: Self) -> bool:
+          return self._amount < other._amount
+  
+      def is_gte(self, other: Self) -> bool:
+          return self._amount >= other._amount
+  ```
+
+  - `Reservation` 클래스를 구현한다.
+
+  ```python
+  class Reservation:
+      def __init__(self, customer: Customer, screening: Screening, fee: Money, audience_count: int):
+          self.customer = customer
+          self.screening = screening
+          self.fee = fee
+          self.audience_count = audience_count
+  ```
+
+  - 협력(Collaboration)
+    - 영화를 예매하기 위해 각 인스턴스들은 서로의 메서드를 호출하며 상호작용한다.
+    - 이처럼 시스템의 어떤 기능을 구현하기 위해 객체들 사이에 이뤄지는 상호작용을 협력이라고 부른다.
+    - 객체지향 프로그램을 작성할 때는 먼저 협력의 관점에서 어떤 객체가 필요한지를 결정하고, 객체들의 공통 상태와 행위를 구현하기 위해 클래스를 작성한다.
+  - 협력의 방식
+    - 객체는 다른 객체의 엔터페이스에 공개된 행동을 수행하도록 요청 할 수 있다.
+    - 요청을 받은 객체는 자율적인 방법에 따라 요청을 처리한 후 응답한다.
+    - 객체가 다른 객체와 상호작용 할 수 있는 유일한 방법은 메시지를 전송하는 것이다.
+    - 다른 객체에게 요청이 도착할 때 해당 객체가 메시지를 수신했다고 이야기한다.
+    - 메시지를 수신한 객체는 스스로의 결정에 따라 자율적으로 메시지를 처리할 방법을 결정한다.
+  - 메서드와 메시지
+    - 수신된 메시지를 처리하기 위한 자신만의 방법을 메서드라 부른다.
+    - 메시지와 메서드를 구분하는 것은 매우 중요하며, 이를 구분하는 것에서 다형성의 개념이 출발한다.
+    - 위에서 `Screening`이 `Movie`의 `calculate_movie_fee` '메서드를 호출한다'는 표현 보다는 '메시지를 전송한다'는 표현이 더 적절한 표현이다.
+    - 사실 `Screening`은 `Movie`의 내부에 `caclulate_movie_fee` 메서드가 있는지조차 알지 못한다.
+    - 단지 `Movie`가 `calculate_movie_fee`라는 메시지에 응답할 수 있다고 믿고 메시지를 전송할 뿐이다.
+
+
+
+- 할인 요금을 구하기 위한 협력
+
+  - `DiscountCondition`을 구현한다.
+    - 할인 조건을 구현하기 위한 클래스이다.
+    - 여러 할인 조건들은 공유하는 코드가 생길 수 밖에 없으므로, 중복 코드를 제거하기 위해 부모 클래스를 생성한다.
+    - 부모 클래스는 직접 생성할 일이 없으므로 인터페이스로 구현한다.
+
+  ```python
+  class DiscountCondition(metaclass=ABCMeta):
+      @abstractmethod
+      def is_satisfied_by(self, screening: Screening) -> bool:
+          ...
+  
+  
+  class SequenceCondition(DiscountCondition):
+      def __init__(self, sequence: int):
+          self._sequence = sequence
+  
+      def is_satisfied_by(self, screening: Screening) -> bool:
+          return screening.is_sequence(self._sequence)
+  
+  
+  class PeriodCondition(DiscountCondition):
+      def __init__(self, day_of_week: int, start_time: time, end_time: time):
+          self.day_of_week = day_of_week
+          self.start_time = start_time
+          self.end_time = end_time
+  
+      def is_satisfied_by(self, screening: Screening) -> bool:
+          return screening.get_start_time().weekday() == self.day_of_week and \
+                 self.start_time <= screening.get_start_time() and \
+                 self.end_time >= screening.get_start_time()
+  ```
+
+  - `DiscountPolicy` 클래스를 구현한다.
+    - 할인 정책은 금액 할인과 비율 할인으로 구분되는데, 두 방식은 계산하는 방식만 다를 뿐 대부분이 유사하다.
+    - 따라서 할인 조건을 구현할 때와 마찬가지로, 두 정책의 부모 클래스를 생성할 것이다.
+
+  ```python
+  class DiscountPolicy:
+  
+      def __init__(self, conditions: list[DiscountCondition]):
+          self.conditions = conditions
+  
+      @abstractmethod
+      def get_discount_amount(self, screening: Screening) -> Money:
+          ...
+  
+      def calculate_discount_amount(self, screening: Screening):
+          for condition in self.conditions:
+              if condition.is_satisfied_by(screening):
+                  return self.get_discount_amount(screening)
+  
+          return Money.wons(0)
+  
+  
+  class AmountDiscountPolicy(DiscountPolicy):
+  
+      def __init__(self, discount_amount: Money, conditions: list[DiscountCondition]):
+          super().__init__(conditions)
+          self.discount_amount = discount_amount
+  
+      def get_discount_amount(self, screening: Screening) -> Money:
+          return self.discount_amount
+  
+  
+  class PercentDiscountPolicy(DiscountPolicy):
+  
+      def __init__(self, percent: float, conditions: list[DiscountCondition]):
+          super().__init__(conditions)
+          self.percent = percent
+  
+      def get_discount_amount(self, screening: Screening) -> Money:
+          return screening.get_movie_fee().times(self.percent)
+  ```
+
+  - `Movie` 클래스를 구현한다.
+    - `calculate_movie_fee` 메서드는 `_discount_policy`에 `caculate_discount_amount` 메시지를 전송해 할인 요금을 반환 받는다.	
+
+  ```python
+  class Movie:
+      def __init__(self, title: str, running_time: time, fee: Money, discount_policy: DiscountPolicy):
+          self._title = title
+          self._running_time = running_time
+          self._fee = fee
+          self._discount_policy = discount_policy
+  
+      def get_fee(self) -> Money:
+          return self._fee
+  
+      def calculate_movie_fee(self, screening: Screening):
+          return self._fee.minus(self._discount_policy.calculate_discount_amount(screening))
+  ```
+
+
+
+- 상속과 다형성
+  - 컴파일 시간 의존성과 실행 시간 의존성
+    - 
