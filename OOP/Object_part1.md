@@ -596,7 +596,7 @@
   ```python
   class DiscountPolicy:
   
-      def __init__(self, conditions: list[DiscountCondition]):
+      def __init__(self, conditions: list[DiscountCondition]=[]):
           self.conditions = conditions
   
       @abstractmethod
@@ -632,8 +632,9 @@
   ```
 
   - `Movie` 클래스를 구현한다.
-    - `calculate_movie_fee` 메서드는 `_discount_policy`에 `caculate_discount_amount` 메시지를 전송해 할인 요금을 반환 받는다.	
-
+    - `calculate_movie_fee` 메서드는 `_discount_policy`에 `caculate_discount_amount` 메시지를 전송해 할인 요금을 반환 받는다.
+    - `Movie` class 어디에도 할인 정책이 금액 할인 정책인지, 비율 할인 정책인지를 판단하지 않는다.
+  
   ```python
   class Movie:
       def __init__(self, title: str, running_time: time, fee: Money, discount_policy: DiscountPolicy):
@@ -653,4 +654,3 @@
 
 - 상속과 다형성
   - 컴파일 시간 의존성과 실행 시간 의존성
-    - 

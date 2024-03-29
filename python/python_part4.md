@@ -906,12 +906,12 @@
     - 따라서 추상 메서드가 0개라도 할지라도 미완성 상태이기만 하다면 추상클래스일 수 있다.
   - 인터페이스와의 차이
     - 인터페이스는 모든 메서드가 추상 메서드인 클래스를 의미한다.
-    - 반면 추상 클래스는 추상 메서드가 0개 이상 있되, 전부 추상 메서드이지만 않으면 추상 클래스이다.
+    - 반면 추상 클래스는 메서드가 전부 추상 메서드이지만 않으면 추상 클래스이다.
   
   - 추상 클래스 생성하기
     - `abc` 모듈을 불러와서 사용해야 한다.
     - abstract base class의 약자이다.
-    - `metaclass=ABCMeta`와 같이 설정함으로써 instance를 생성할 수 없게 한다.
+    - `metaclass=ABCMeta`와 같이 설정함으로써 추상클래스라는 것을 표시한다.
   
   ```python
   # abc 모듈을 불러온다.
@@ -927,7 +927,7 @@
   ```
   
   - 자식 클래스에 추상 메서드를 구현하지 않을 경우
-    - Hello!까지는 출력이 되지만 인스턴스를 생성할 때 에러가 발생한다.
+    - 인스턴스를 생성할 때 에러가 발생한다.
   
   ```python
   from abc import *
@@ -942,7 +942,6 @@
   class MyClass(AbstractClass):
       pass
   
-  print("Hello!")		# Hello!
   my_inst = MyClass()	# TypeError
   ```
   
@@ -967,6 +966,7 @@
   
   - ABC class는 결국 `ABCMeta`를 metaclass로 받는다.
     - 아래 코드는 abc 패키지 내에 있는 `ABC` class의 실제 코드이다.
+    - 따라서 `ABC`를 바로 상속 받는 것과 `metaclass=ABCMeta`와 같이 meta class를 `ABCMeta`로 설정하는 것 사이에 실제 기능적 동작에는 차이가 없다.
   
   ```python
   class ABC(metaclass=ABCMeta):

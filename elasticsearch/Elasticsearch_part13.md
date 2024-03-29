@@ -1,3 +1,578 @@
+# Ingest Pipeline
+
+> https://www.elastic.co/guide/en/elasticsearch/reference/current/ingest.html
+>
+> https://www.elastic.co/guide/en/elasticsearch/reference/current/ingest-apis.html
+
+- Ingest Pipeline
+  - Index에 data가 색인되기 전에 모든 data에 적용할 공통된 변환 작업을 설정할 수 있게 해주는 기능이다.
+  - 하나의 pipeline은 processor라 불리는 여러 개의 설정 가능한 task들로 구성된다.
+    - 각각의 processor들은 순차적으로 실행된다.
+    - Processor가 실행된 후에 Elasticsearch는 processor가 변환한 doucment들을 index에 색인한다.
+  - Kibana의 `Ingest Pipelines` 기능이나 ingest API를 통해 설정할 수 있다.
+  - Pipeline들은 cluster state에 저장된다.
+  - 제약사항
+    - Cluster 내에 최소한 하나의 `ingest` 역할을 하는 node가 필요하다.
+    - 만약 ingest에 부하가 많이 걸린다면 dedicate ingest node를 생성하는 것이 권장된다.
+    - `enrich` processor가 포함된 pipeline은 추가적인 설치가 필요하다.
+
+
+
+- Pipeline 생성 및 수정하기
+
+  - `_ingest` API를 통해 pipeline을 생성하고 수정하는 것이 가능하다.
+    - `description`: ingest pipeline에 대한 설명을 입력한다.
+    - `processors`: 색인 전에 변환을 수행할 processor들을 배열 형태로 입력한다.
+    -  `_meta`: pipeline에 대한 metadata를 추가한다. object 형태로 입력하기만 하면 형식은 자유롭게 설정할 수 있다.
+
+  ```json
+  // PUT _ingest/pipeline/my-pipeline
+  {
+      "description": "My optional pipeline description",
+      "processors": [
+          {
+              "set": {
+                  "description": "My optional processor description",
+                  "field": "my-long-field",
+                  "value": 10
+              }
+          },
+          {
+              "set": {
+                  "description": "Set 'my-boolean-field' to true",
+                  "field": "my-boolean-field",
+                  "value": true
+              }
+          },
+          {
+              "lowercase": {
+                  "field": "my-keyword-field"
+              }
+          }
+      ],
+      "_meta": {
+          "reason": "set my-keyword-field to foo",
+          "serialization": {
+              "class": "MyPipeline",
+              "id": 10
+          }
+      }
+  }
+  ```
+
+  - Pipeline 버전 관리하기
+    - Pipeline을 생성하거나 수정할 때, version을 설정할 수 있다.
+    - 설정한 버전 정보는 `if_version` query parameter에 활용할 수 있다.
+
+  ```json
+  // PUT _ingest/pipeline/my-pipeline-id
+  {
+      "version": 1,
+      "processors": [
+          // ...
+      ]
+  }
+  ```
+
+  - `if_version` query parameter
+    - Pipeline의 version이 `if_version`에 설정해준 version과 같을 때만 update를 수행한다.
+    - Update가 완료되면 pipeline의 `version`이 1증가한다.
+
+
+
+- Pipeline 조회하기
+
+  - `_ingest` API를 통해 생성한 pipeline들을 조회할 수 있다.
+    - `pipeline_id`에는 `*`도 사용할 수 있다.
+
+  ```http
+  GET _ingest/pipeline/<pipeline_id>
+  GET _ingest/pipeline
+  ```
+
+  - 아래와 같은 형식으로 반환된다.
+
+  ```json
+  {
+      "my-pipeline-id" : {
+          "description" : "describe pipeline",
+          "version" : 123,
+          "processors" : [
+              {
+                  "set" : {
+                      "field" : "foo",
+                      "value" : "bar"
+                  }
+              }
+          ]
+      }
+  }
+  ```
+
+
+
+- Pipeline 삭제하기
+
+  - `_ingest` API를 통해 pipeline을 삭제할 수 있다.
+    - `pipeline_id`에는 `*`도 사용할 수 있다.
+
+  ```http
+  DELETE _ingest/pipeline/<pipeline_id>
+  ```
+
+
+
+- Pipeline simulation하기
+
+  - Pipeline을 임의의 문서들에 simulation 해 볼 수 있다.
+    - `docs`에 simulation을 실행할 문서들을 입력하면 된다.
+
+  ```json
+  // POST /_ingest/pipeline/my-pipeline-id/_simulate
+  {
+      "docs": [
+          {
+              "_index": "index",
+              "_id": "id",
+              "_source": {
+                  "foo": "bar"
+              }
+          },
+          {
+              "_index": "index",
+              "_id": "id",
+              "_source": {
+                  "foo": "rab"
+              }
+          }
+      ]
+  }
+  ```
+
+  - Simulation 대상 pipeline은 path parameter로 주거나 request body에 포함시키면 된다.
+    - 이미 생성한 pipeline의 경우 path parameter로 설정해야 하고, 생성한 적 없는 pipeline은 body에 넣어야한다.
+
+  ```json
+  // POST /_ingest/pipeline/my-pipeline-id/_simulate
+  
+  // POST /_ingest/pipeline/_simulate
+  {
+      "pipeline":{
+          "description": "_description",
+          "processors": [
+              {
+                  "set" : {
+                      "field" : "field2",
+                      "value" : "_value"
+                  }
+              }
+          ]
+      }
+  }
+  ```
+
+  - Query parameter로 `verbose`값을 true로 줄 경우 보다 상세한 결과가 출력된다.
+
+  ```http
+  POST _ingest/pipeline/my-pipeline-id/_simulate?verbose=true
+  ```
+
+
+
+- Ingest simulation하기
+
+  - 주어진 문서들을 대상으로 ingest pipeline을 simulation 할 수 있다.
+    - Pipeline 개발용으로 사용하는 기능이며, index에 실제로 데이터를 색인하지는 않는다.
+    - `docs`에 simulation할 문서들을 입력하면 된다.
+    - 이미 존재하는 pipeline을 대체해서 사용하는 것도 가능하다.
+
+  ```json
+  // POST /_ingest/_simulate
+  {
+      "docs": [
+          {
+              "_index": "my-index",
+              "_id": "id",
+              "_source": {
+                  "foo": "bar"
+              }
+          },
+          {
+              "_index": "my-index",
+              "_id": "id",
+              "_source": {
+                  "foo": "rab"
+              }
+          }
+      ],
+      "pipeline_substitutions": {  // 이미 있는 my-pipeline을 아래와 같이 교체해서 사용한다.
+          "my-pipeline": {
+              "processors": [
+                  {
+                      "set": {
+                          "field": "field3",
+                          "value": "value3"
+                      }
+                  }
+              ]
+          }
+      }
+  }
+  ```
+
+  - 요청 endpoint는 아래와 같다.
+    - `target`은 ingest pipeline을 simulation해 볼 index를 의미한다.
+    - `target`은 각 문서별로  설정하는 것도 가능하며, 둘 다 설정할 경우 문서에 설정한 값이 우선 순위를 가진다.
+    - 만약 문서에 index를 설정하지 않았다면, `target`에 설정한 값이 적용된다.
+
+  ```http
+  POST /_ingest/_simulate
+  POST /_ingest/<target>/_simulate
+  ```
+
+  - `pipeline_substitutions`에 대체할 pipeline을 설정할 수 있다.
+    - `pipeline_id` key로, pipeline 생성시에 pipeline에 설정해주는 값과 동일한 object를 value로 갖는다.
+    - 아래와 같이 실행할 경우 만약 `my-index`에 `foo-pipeline`이라는 pipeline이 설정되어 있다면, 해당 pipeline을 `pipeline_substitutions`에 정의한 `my-pipeline`으로 대체해서 실행한다.
+    - 만약 `my-index`에 `bar-pipeline`도 설정되어 있다면, 해당 pipeline은 변경 없이 실행된다.
+
+  ```json
+  // POST /_ingest/_simulate
+  {
+      "docs": [
+          {
+              "_index": "my-index",
+              "_id": "123",
+              "_source": {
+                  "foo": "bar"
+              }
+          },
+          {
+              "_index": "my-index",
+              "_id": "456",
+              "_source": {
+                  "foo": "rab"
+              }
+          }
+      ],
+      "pipeline_substitutions": {
+          "foo-pipeline": {
+              "processors": [
+                  {
+                      "uppercase": {
+                          "field": "foo"
+                      }
+                  }
+              ]
+          }
+      }
+  }
+  ```
+
+  - 꼭 를 설정해줘야 하는 것은 아니다.
+    - 아래와 같이 실행하면, pipeline의 대체 없이 이미 설정된 pipeline으로 simulation한다.
+
+  ```json
+  // POST /_ingest/_simulate
+  {
+      "docs": [
+          {
+              "_index": "my-index",
+              "_id": "123",
+              "_source": {
+                  "foo": "bar"
+              }
+          },
+          {
+              "_index": "my-index",
+              "_id": "456",
+              "_source": {
+                  "foo": "rab"
+              }
+          }
+      ]
+  }
+  ```
+
+
+
+- Pipeline을 설정하는 방법
+
+  - 색인 request의 `pipeline` query parameter에 pipeline을 설정할 수 있다.
+
+  ```json
+  // POST my-data-stream/_doc?pipeline=my-pipeline
+  {
+    	"my-keyword-field": "foo"
+  }
+  ```
+
+  - `_update_by_query`나 `_reindex` 시에 설정하는 것도 가능하다.
+
+  ```json
+  // POST my-data-stream/_update_by_query?pipeline=my-pipeline
+  
+  // POST _reindex
+  {
+      "source": {
+          "index": "my-data-stream"
+      },
+      "dest": {
+          "index": "my-new-data-stream",
+          "op_type": "create",
+          "pipeline": "my-pipeline"
+      }
+  }
+  ```
+
+  - Index를 생성시에 설정이 가능하다.
+    -  `index.default_pipeline`에 default pipeline을 설정할 수 있다.
+    - `index.default_pipeline`에 설정한 pipeline은 색인 요청시에 `pipeline` parameter가 설정되지 않았을 경우 적용된다.
+    - `index.final_pipeline`에 final pipeline을 설정할 수 있다.
+    - `index.final_pipeline`에 설정한 pipeline은 색인 요청시에 설정한 `pipeline`이나 default pipeline이 실행되고 난 후 실행된다.
+
+
+
+- Pipeline의 processor에서 metadata field에 접근이 가능하다.
+
+  - 아래와 같은 metadata field들에 접근이 가능하다.
+    - `_index`
+    - `_id`
+    - `_routing`
+    - `_dynamic_templates`
+  - 예시
+
+  ```json
+  // PUT _ingest/pipeline/my-pipeline
+  {
+      "processors": [
+          {
+              "set": {
+                  "description": "Set '_routing' to 'geoip.country_iso_code' value",
+                  "field": "_routing",
+                  "value": "{{{geoip.country_iso_code}}}"
+              }
+          }
+      ]
+  }
+  ```
+
+
+
+- `_ingest` metadata field
+
+  - Ingest processor를 통해 `_ingest`라는 key로 ingest metadata를 추가하거나 접근하는 것이 가능하하다.
+    - Source나 metadata와 달리 ingest metadata는 기본적으로 색인되지 않는다.
+    - 만약 ingest metadata도 색인하길 원한다면 `set` processor를 사용하면 된다.
+
+  - 예시
+
+  ```json
+  // PUT _ingest/pipeline/my-pipeline
+  {
+      "processors": [
+          {
+              "set": {
+                  "description": "Index the ingest timestamp as 'event.ingested'",
+                  "field": "event.ingested",
+                  "value": "{{{_ingest.timestamp}}}"
+              }
+          }
+      ]
+  }
+  ```
+
+
+
+- Handling pipeline failures
+
+  - Pipeline에 설정한 processor들은 설정한 순서대로 실행되는데, 이 중 하나라도 실패하거나 error가 발생하면 전체 pipeline이 중단된다.
+    - 따라서 일부 processor가 실패하더라도 전체 pipeline은 동작하도록 하기 위해 아래와 같이 예외처리를 해줘야한다.
+  - `ignore_failure`를 `true`로 주면 실패가 발생한 processor는 무시하고 다음 processor를 실행한다.
+
+  ```json
+  PUT _ingest/pipeline/my-pipeline
+  {
+      "processors": [
+          {
+              "rename": {
+                  "description": "Rename 'provider' to 'cloud.provider'",
+                  "field": "provider",
+                  "target_field": "cloud.provider",
+                  "ignore_failure": true
+              }
+          }
+      ]
+  }
+  ```
+
+  - `on_failure`에 processor가 실패했을 때 실행할 processor들을 설정하는 것도 가능하다.
+    - `on_failure`에 설정한 processor가 실패할 때를 대비해서 nest 형태로 `on_failure`를 설정하는 것도 가능하다.
+
+  ```json
+  // PUT _ingest/pipeline/my-pipeline
+  {
+      "processors": [
+          {
+              "rename": {
+                  "description": "Rename 'provider' to 'cloud.provider'",
+                  "field": "provider",
+                  "target_field": "cloud.provider",
+                  "on_failure": [
+                      {
+                          "set": {
+                              "description": "Set 'error.message'",
+                              "field": "error.message",
+                              "value": "Field 'provider' does not exist. Cannot rename to 'cloud.provider'",
+                              "override": false
+                          }
+                      }
+                  ]
+              }
+          }
+      ]
+  }
+  ```
+
+  - Pipeline 전체를 위한 `on_failure`를 설정할 수도 있다.
+    - 만약 `on_failure`가 설정되지 않은 processor가 실패할 경우, pipeline의 다음 processor를 실행하지 않고, pipeline에 설정한 `on_failure`를 실행한다.
+
+  ```json
+  // PUT _ingest/pipeline/my-pipeline
+  {
+      "processors": [
+          // ...
+      ],
+      "on_failure": [
+          {
+              "set": {
+                  "description": "Index document to 'failed-<index>'",
+                  "field": "_index",
+                  "value": "failed-{{{ _index }}}"
+              }
+          }
+      ]
+  }
+  ```
+
+  - `on_failure` block에서는 아래와 같은 metadata field에 접근하여 failure에 대한 추가적인 정보를 얻을 수 있다.
+    - `on_failure_message`
+    - `on_failure_processor_type`
+    - `on_failure_processor_tag`
+    - `on_failure_pipeline`
+
+  ```json
+  // PUT _ingest/pipeline/my-pipeline
+  {
+      "processors": [ 
+          // ...
+      ],
+      "on_failure": [
+          {
+              "set": {
+                  "description": "Record error information",
+                  "field": "error_information",
+                  "value": "Processor {{ _ingest.on_failure_processor_type }} with tag {{ _ingest.on_failure_processor_tag }} in pipeline {{ _ingest.on_failure_pipeline }} failed with message {{ _ingest.on_failure_message }}"
+              }
+          }
+      ]
+  }
+  ```
+
+
+
+- 특정 조건에 해당할 때만 processor를 실행시키는 것도 가능하다.
+
+  - 각 processor에는 `if`로 조건을 설정할 수 있다.
+    - `if`가 설정된 processor는 조건이 true일 경우에만 실행된다.
+    - 조건은 Painless script로 작성하면 된다.
+    - 만약 Painless script의 ingest processor context에서 `if` script가 실행된다면, `ctx` 값은 읽는 것만 가능하다.
+
+  ```json
+  // PUT _ingest/pipeline/my-pipeline
+  {
+      "processors": [
+          {
+              "drop": {
+                  "description": "Drop documents with 'network.name' of 'Guest'",
+                  "if": "ctx?.network?.name == 'Guest'"
+              }
+          }
+      ]
+  }
+  ```
+
+  - Cluster setting 중 `script.painless.regex.enabled`가 enable 상태라면 `if` script 내에서 정규표현식을 사용할 수 있다.
+
+  ```json
+  // PUT _ingest/pipeline/my-pipeline
+  {
+      "processors": [
+          {
+              "set": {
+                  "description": "If 'url.scheme' is 'http', set 'url.insecure' to true",
+                  "if": "ctx.url?.scheme =~ /^http[^s]/",
+                  "field": "url.insecure",
+                  "value": true
+              }
+          }
+      ]
+  }
+  ```
+
+  - `if` script에 저장된 script를 사용하는 것도 가능하다.
+
+  ```json
+  // PUT _scripts/my-prod-tag-script
+  {
+    "script": {
+      "lang": "painless",
+      "source": """
+        Collection tags = ctx.tags;
+        if(tags != null){
+          for (String tag : tags) {
+            if (tag.toLowerCase().contains('prod')) {
+              return false;
+            }
+          }
+        }
+        return true;
+      """
+    }
+  }
+  
+  // PUT _ingest/pipeline/my-pipeline
+  {
+    "processors": [
+      {
+        "drop": {
+          "description": "Drop documents that don't contain 'prod' tag",
+          "if": { "id": "my-prod-tag-script" }
+        }
+      }
+    ]
+  }
+  ```
+
+
+
+- Ingest pipeline의 사용 현황 보기
+
+  - 아래와 같이 ingest pipeline의 사용 현황을 확인할 수 있다.
+
+  ```http
+  GET _nodes/stats/ingest?filter_path=nodes.*.ingest
+  ```
+
+  
+
+
+
+
+
+
+
+
+
 # alias
 
 - Alias
