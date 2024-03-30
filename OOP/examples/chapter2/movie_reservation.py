@@ -1,5 +1,5 @@
 from __future__ import annotations
-from abc import abstractmethod, ABCMeta
+from abc import abstractmethod, ABC
 from datetime import datetime, time
 from typing_extensions import Self
 
@@ -76,7 +76,7 @@ class Movie:
         return self._fee.minus(self._discount_policy.calculate_discount_amount(screening))
 
 
-class DiscountCondition(metaclass=ABCMeta):
+class DiscountCondition(ABC):
     @abstractmethod
     def is_satisfied_by(self, screening: Screening) -> bool:
         ...
@@ -102,7 +102,7 @@ class PeriodCondition(DiscountCondition):
                self.end_time >= screening.get_start_time()
 
 
-class DiscountPolicy:
+class DiscountPolicy(ABC):
 
     def __init__(self, conditions: list[DiscountCondition]):
         self.conditions = conditions

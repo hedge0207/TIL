@@ -563,7 +563,8 @@
     - 부모 클래스는 직접 생성할 일이 없으므로 인터페이스로 구현한다.
 
   ```python
-  class DiscountCondition(metaclass=ABCMeta):
+  class DiscountCondition(ABC):
+      
       @abstractmethod
       def is_satisfied_by(self, screening: Screening) -> bool:
           ...
@@ -588,13 +589,13 @@
                  self.start_time <= screening.get_start_time() and \
                  self.end_time >= screening.get_start_time()
   ```
-
+  
   - `DiscountPolicy` 클래스를 구현한다.
     - 할인 정책은 금액 할인과 비율 할인으로 구분되는데, 두 방식은 계산하는 방식만 다를 뿐 대부분이 유사하다.
     - 따라서 할인 조건을 구현할 때와 마찬가지로, 두 정책의 부모 클래스를 생성할 것이다.
-
+  
   ```python
-  class DiscountPolicy:
+  class DiscountPolicy(ABC):
   
       def __init__(self, conditions: list[DiscountCondition]=[]):
           self.conditions = conditions
@@ -630,7 +631,7 @@
       def get_discount_amount(self, screening: Screening) -> Money:
           return screening.get_movie_fee().times(self.percent)
   ```
-
+  
   - `Movie` 클래스를 구현한다.
     - `calculate_movie_fee` 메서드는 `_discount_policy`에 `caculate_discount_amount` 메시지를 전송해 할인 요금을 반환 받는다.
     - `Movie` class 어디에도 할인 정책이 금액 할인 정책인지, 비율 할인 정책인지를 판단하지 않는다.
@@ -652,5 +653,287 @@
 
 
 
-- 상속과 다형성
+- 컴파일 시간 의존성과 실행 시간 의존성
+  - 영화 클래스와 할인 정책 클래스 사이의 의존성
+    - `Movie`는 `DiscountPolicy`와 연결 되어 있으며, `AmountDiscountPolicy`와 `PercentDiscountPolicy`는 추상 클래스인 `DiscountPolicy`를 상속 받는다.
+    - 이처럼 어떤 클래스가 다른 클래스에 접근할 수 있는 경로를 가지거나 해당 클래스의 객체의 메서드를 호출할 경우 두 클래스 사이에 의존성이 존재한다고 말한다.
+    - `Movie`는 코드 수준에서  `AmountDiscountPolicy`와 `PercentDiscountPolicy` 중 어느 클래스에도 의존하지 않으며, 오직 추상클래스인 `DiscountPolicy`에만 의존한다.
+    - 그러나 코드가 실행될 때, 두 클래스 중 한 클래스에 의존하게 된다.
   - 컴파일 시간 의존성과 실행 시간 의존성
+    - 위에서 알 수 있는 것은 코드의 의존성과 실행 시점의 의존성이 서로 다를 수 있다는 것이다.
+    - 다시 말해 클래스 사이의 의존성과 객체 사이의 의존성은 동일하지 않을 수 있다.
+    - 훌륭한 객체지향 설계가 가지는 특징은 코드의 의존성과 실행 시점의 의존성이 다르다는 것이다.
+    - 그러나 코드의 의존성과 실행 시점의 의존성이 달라질수록 코드를 이해하기 어려워진다는 단점이 있다.
+  - 설계의 유연성과 코드의 가독성 사이의 트레이드 오프
+    - 설계가 유연해질수록 코드를 이해하고 디버깅하기는 점점 더 어려워진다.
+    - 반면에 유연성을 억제할수록 코드를 이해하고 디버깅하기는 쉬워진다.
+    - 유연성과 가독성 사이에서 적절한 타협점을 찾아야한다.
+
+
+
+- 상속
+  - 차이에 의한 프로그래밍(Programming by difference)
+    - 클래스를 추가하려 할 때, 해당 클래스가 기존의 어떤 클래스와 매우 흡사하다면, 상속을 이용해 기존 클래스가 가지고 있는 모든 속성과 행동을 새로운 클래스에 포함시킬 수 있다.
+    - 상속은 기존 클래스를 기반으로 새로운 클래스를 쉽고 빠르게 추가할 수 있는 간편한 방법을 제공한다.
+    - 또한 상속을 이용하면 부모 클래스의 구현은 공유하면서도 행동이 다른 자식 클래스를 쉽게 추가할 수 있다.
+    - 부모 클래스와 다른 부분만을 추가해서 새로운 클래스를 쉽고 빠르게 만드는 방법을 차이에 의한 프로그래밍이라 부른다.
+  - 상속과 인터페이스
+    - 상속이 가치있는 이유는 부모 클래스가 제공하는 모든 인터페이스를 자식 클래스가 물려받을 수 있기 때문이다.
+    - 이는 상속의 목적이 메서드나 인스턴스 변수의 재사용이라는 일반적인 인식과는 거리가 있다.
+    - 인터페이스는 객체가 이해할 수 있는 메시지의 목록이며, 상속을 통해 자식 클래스는 자신의 인터페이스에 부모 클래스의 인터페이스를 포함하게 된다.
+    - 결과적으로 자식 클래스는 부모 클래스가 수신할 수 있는 모든 메시지를 수신할 수 있기 때문에 외부 객체는 자식 클래스를 부모 클래스와 동일한 타입으로 간주할 수 있다.
+    - 위 예시에서 `Movie`는 `DiscountPolicy`의 자식 클래스에게 `calculateMovieFee` 라는 메시지를 보냈는데, 이는 `DiscountPolicy`의 자식 클래스들이 `DiscountPolicy`의 인터페이스를 물려받기 때문에, 해당 메시지를 처리할 수 있다고 간주하기 때문이다.
+    - 이처럼 자식 클래스가 부모 클래스를 대신하는 것을 업캐스팅(upcasting)이라 부른다.
+  - 구현 상속과 인터페이스 상속
+    - 구현 상속을 흔히 서브클래싱(subclassing)이라 부르고, 인터페이스 상속을 서브타이핑(subtyping)이라 부른다.
+    - 순수하게 코드를 재사용하기 위한 목적으로 상속을 사용하는 것을 구현 상속이라 부른다.
+    - 다형적인 협력을 위해 부모 클래스와 자식 클래스가 인터페이스를 공유할 수 있도록 상속을 이용하는 것을 인터페이스 상속이라 부른다.
+    - 상속은 구현 상속이 아니라 인터페이스 상속을 위해 사용해야 한다.
+    - 대부분의 사람들은 코드 재사용을 상속의 주된 목적이라고 생각하지만, 이는 오해다.
+    - 인터페이스를 재사용할 목적이 아니라 구현을 재사용할 목적으로 상속을 사용하면 변경에 취약한 코드를 낳게 될 확률이 높다.
+
+
+
+- 다형성
+
+  - 다형성의 개념
+    - 메시지와 메서드는 다른 개념이다.
+    - 코드 상에서 `Movie` 클래스는 `DiscountPolicy` 클래스에게 메시지를 전송하지만 실행 시점에 실제로 실행되는 메서드는 `Movie`와 협력하는 객체의 실제 클래스가 무엇인지에 따라 달라진다.
+    - 예를 들어 `Movie`와 협력하는 객체가 `AmountDiscountPolicy`의 인스턴스라면 `AmountDiscountPolicy`에서 오버라이딩한 메서드가 실행될 것이다.
+    - 이처럼 동일한 메시지를 전송하지만 실제로 어떤 메서드가 실행될 것인지는 메시지를 수신하는 객체의 클래스가 무엇이냐에 따라 달라지는 것을 다형성이라 부른다.
+
+  - 다형성은 객체지향 프로그램의 컴파일 시간 의존성과 실행 시간 의존성이 다를 수 있다는 사실을 기반으로 한다.
+    - 코드상에서`Movie`는 `DiscountPolicy` 클래스에 의존하지만, 실행 시점에 실제 상호작용 하는 대상은 `AmountDiscountPolicy`또는 `PercentDiscountPolicy`의 인스턴스다.
+    - 이처럼 다형성은 컴파일 시간 의존성과 실행 시간 의존성을 다르게 만들 수 있는 객체지향의 특성을 이용해 서로 다른 메서드를 실행할 수 있게 한다.
+  - 상속과 다형성
+    - 다형적인 협력에 참여하는 객체들은 모두 같은 메시지를 이해할 수 있어야한다.
+    - 즉 인터페이스가 동일해야한다.
+    - 그리고 두 클래스의 인터페이스를 통일하기 위해 사용하는 구현 방법이 바로 상속인 것이다.
+    - 그러나 상속이 다형성을 구현할 수 있는 유일한 방법인 것은 아니다.
+  - 동작 바인딩과 정적 바인딩
+    - 다형성을 구현하는 방법은 다양하지만, 메시지에 응답하기 위해 실행될 메서드를 컴파일 시점이 아닌 실행 시점에 결정한다는 공통점이 있다.
+    - 즉 메시지와 메서드를 실행 시점에 바인딩 하는데, 이를 지연 바인딩(lazy binding) 혹은 동적 바인딩(dynamic binding)이라 부른다.
+    - 이에 반해 전통적인 함수 호출처럼 컴파일 시점에 실행될 함수나 프로시저를 결정하는 것을 초기 바인딩(early binding) 혹은 정적 바인딩(static binding)이라 부른다.
+    - 객체지향이 컴파일 시점의 의존성과 실핼 시점의 의존성을 분리하고, 하나의 메시지를 선택적으로 서로 다른 메서드에 연결할 수 있는 이유가 바로 지연 바인딩이라는 메커니즘 덕분이다.
+
+  - 인터페이스와 다형성
+    - 구현은 공유할 필요가 없고, 인터페이스만 공유하고 싶을 때 사용할 수 있는 것이 Java의 interface이다.
+    - 이는 구현에 대한 고려 없이 다형적인 협력에 참여하는 클래스들이 공유 가능한 외부 인터페이스를 정의한 것이다.
+    - Python의 경우 추상 기반 클래스(Abstract Base Class, ABC)를 통해 Java의 interface 개념을 구현할 수 있다.
+    - 위 예시에서 할인 조건은 구현을 공유할 필요가 없기 때문에 interface를 사용하여 구현했다.
+
+
+
+- 추상화와 유연성
+
+  - 추상화의 힘
+    - 추상화를 사용하면 요구사항의 정책을 높은 수준에서 서술할 수 있다.
+    - 추상화의 이런 특징은 세부사항에 억눌리지 않고 상위 개념만으로도 도메인의 중요한 개념을 설명할 수 있게 한다.
+    - 추상화를 이용해 상위 정책을 표현하면 기존 구조를 수정하지 않고도 새로운 기능을 쉽게 추가하고 확장할 수 있다.
+    - 즉, 유연한 설계가 가능하다.
+  - 할인 정책이 없을 경우를 고려하여 다시 작성하기
+    - 위에서 작성한 코드는 할인 정책이 없을 경우에 대한 고려 없이 작성되었다.
+    - 따라서 할인 정책이 없을 경우를 추가하여 code를 다시 작성한다.
+
+  ```python
+  class Movie:
+      def calculate_movie_fee(self, screening: Screening):
+          if self._discount_policy is None:
+              return
+          
+          return self._fee.minus(self._discount_policy.calculate_discount_amount(screening))
+  ```
+
+  - 위 코드의 문제점
+    - 할인 정책이 없는 경우를 예외 케이스로 취급하여 지금까지 일관성 있던 협력 방식이 무너지게 되었다.
+    - 기존 할인 정책의 경우 할인할 금액을 계산하는 책임이 `DiscountPolicy`의 자식 클래스에 있었지만 할인 정책이 없는 경우에는 할인 금액이 0원이라는 사실이 `DiscountPolicy`가 아닌 `Movie`쪽에 있기 때문이다.
+    - 따라서 책임의 위치를 결정하기 위해 조건문을 사용하는 것은 대부분의 경우 좋지 않은 선택이다.
+  - 개선을 위해 `NoneDiscountPolicy`를 추가한다.
+    - 이는 할인 요금을 계산할 책임을 그대로 `DiscountPolicy` 계층에 유지시키기 위함이다.
+    - `Movie`는 다시 원래대로 변경한다.
+
+  ```python
+  class NoneDiscountPolicy(DiscountPolicy):
+      
+      def get_discount_amount(self, screening: Screening) -> Money:
+          return Meney.wons(0)
+  ```
+
+  - 중요한 점은 기존 코드의 수정 없이 애플리케이션의 기능을 확장했다는 것이다.
+    -  `Movie`와 `DiscountPolicy`는 수정하지 않고 `NoneDiscountPolicy`라는 새로운 클래스를 추가하는 것 만으로 애플리케이션의 기능을 확장했다.
+    -  이처럼 추상화를 중심으로 코드의 구조를 설계하면 유연하고 확장 가능한 설계를 만들 수 있다.
+  - 추상화가 유연한 설계를 가능하게 하는 이유
+    - 설계가 구체적인 상황에 결합되는 것을 방지하기 때문이다.
+    - `Movie`는 특정 할인 정책에 묶이지 않고, 할인 정책을 구현한 클래스가 `DiscountPolicy`를 상속 받고 있다면 어떤 클래스와도 협력이 가능하다.
+    - `DiscountPolicy` 역시 특정한 할인 조건에 묶여있지 않으며, `DiscountCondition`을 상속 받은 어떤 클래스와도 협력이 가능하다.
+    - 이는 모두 `DiscountPolicy`와 `DiscountCondition`이 추상적이기 때문에 가능한 것이다.
+    - 이를 컨텍스트 독립성이라 부른다.
+
+
+
+- 추상 클래스와 인터페이스 트레이드오프
+
+  - 새로 추가된 `NoneDiscountPolicy`는  `DiscountPolicy`와 개념적으로 연결되어 있다.
+    - 할인 조건이 없을 경우 `get_discount_amount` 메서드는 호출되지 않는다. 
+    - `NoneDiscountPolicy`는 초기화 될 때 할인 조건을 설정하지 않는다.
+    - 따라서 `self.conditions`에는 빈 배열이 할당되고, `get_discount_amount()` 메서드는 호출되지 않는다.
+    - `NoneDiscountPolicy`는 `get_discoumt_amount`가 호출되지 않는다는 것을 알고 있으므로 아무 값이나 반환해도 상관이 없다.
+    - 이는 `NoneDiscountPolicy`를  `DiscountPolicy`와 개념적으로 결합시킨다.
+  - 둘 사이의 개념적 연결을 끊기 위해 아래와 같이 변경한다.
+    - `DiscountPolicy`를 interface로 변경하며, `get_discount_amount` 메서드가 아닌 `calculate_discount_amount` 메서드를 오버라이딩하도록 변경한다.
+    - 본래 `DiscountPolicy`의 내용을 `DefaultDiscountPolicy`라는 새로운 클래스 내부로 옮긴다.
+    - `NoneDiscountPolicy`가 `DiscountPolicy` interface를 구현하도록 변경한다.
+
+  ```python
+  from abc import ABC, abstractmethod
+  
+  class DiscountPolicy(ABC):
+      
+      @abstractmethod
+      def calculate_discount_amount(screening: Screening):
+          ...
+  
+  
+  class DefaultDiscountPolicy(DiscountPolicy):
+      def __init__(self, conditions: list[DiscountCondition]=[]):
+          self.conditions = conditions
+  
+      @abstractmethod
+      def get_discount_amount(self, screening: Screening) -> Money:
+          ...
+  
+      def calculate_discount_amount(self, screening: Screening):
+          for condition in self.conditions:
+              if condition.is_satisfied_by(screening):
+                  return self.get_discount_amount(screening)
+  
+          return Money.wons(0)
+  
+      
+  class NoneDiscountPolicy(DiscountPolicy):
+      
+      def calculate_discount_amount(self, screening: Screening) -> Money:
+          return Meney.wons(0)
+  ```
+
+  - 어떤 설계가 더 나은가?
+    - 이상적으로는 인터페이스를 사용하도록 변경한 설계가 더 좋을 것이다.
+    - 현실적으로는 `NoneDiscountPolicy`만을 위해 인터페이스를 추가하는 것이 과하다는 생각이 들 수도 있다.
+    - 결국 구현과 관련된 모든 것들이 트레이드오프의 대상이 될 수 있다.
+
+
+
+- 상속의 악영향
+
+  - 코드 재사용
+    - 상속은 코드를 재사용하기 위해 널리 사용되는 방법이다.
+    - 그러나 널리 사용되는 방법이라고 해서 가장 좋은 방법인 것은 아니다.
+  - 위 설계를 상속을 사용하도록 변경 할 수도 있다.
+    - `Movie`를 상속 받는 `AmountDiscountMovie`와 `PercentDiscountMovie`를 추가한다.
+    - 아래 방식은 합성을 사용한 기존 방법과 기능적인 관점에서 완전히 동일하다.
+
+  ```python
+  class Movie:
+      def calculate_movie_fee(self):
+          ...
+      
+      @abstractmethod
+      def get_discount_amount(self, screening: Screening):
+          ...
+  
+          
+  class AmountDiscountMovie(Movie):
+      def get_discount_amount(self, screening: Screening):
+          ...
+          
+          
+  class PercentDiscountMovie(Movie):
+      def get_discount_amount(self, screening: Screening):
+          ...
+  ```
+
+  - 상속은 캡슐화를 위반한다.
+    - 상속을 이용하기 위해서는 부모 클래스의 내부 구조를 잘 알고 있어야 한다.
+    - 위 예시에서 `AmountDiscountMovie`와 `PercentDiscountMovie`를 구현하는 개발자는 `Movie`의 `calculate_movie_fee` 메서드 안에서 추상 메서드인 `get_discount_amount` 메서드를 호출한다는 사실을 알고 있어야한다.
+    - 결과적으로 부모 클래스의 구현이 자식 클래스에게 노출되기 때문에 캡슐화가 약화된다.
+    - 캡슐화의 약화는 자식 클래스가 부모 클래스에 강하게 결합되도록 만들기 때문에 부모 클래스를 변경할 때 자식 클래스도 함께 변경될 확률을 높인다.
+  - 상속은 유연하지 않은 설계를 만든다.
+    - 상속은 부모 클래스와 자식 클래스의 관계를 컴파일 시점에 결정한다.
+    - 따라서 실행 시점에 객체의 종류를 변경하는 것이 불가능하다.
+    - 예를 들어 실행 시점에 금액 할인 정책인 영화를 비율 할인 정책으로 변경하고자 한다면, 상속을 사용한 설계에서는 `AmountDiscountMovie`의 인스턴스를 `PercentDiscountMovie`의 인스턴스로 변경해야한다.
+    - 대부분의 언어는 이미 생성된 객체의 클래스를 변경하는 기능을 지원하지 않기 떄문에 이 문제를 해결할 수  있는 최선의 방법은 `PercentDiscountMovie`의 인스턴스를 생성한 후 `AmountDiscountMovie`의 상태를 복사하는 것뿐이다.
+    - 이는 부모 클래스와 자식 클래스가 강하게 결합돼 있기 때문에 발생하는 문제다.
+
+  ```python
+  # 상속을 사용한 설계에서 실행 시점에 금액 할인 정책인 영화를 비율 할인 정책으로 변경하고자 한다.
+  # 아래와 같이 movie를 선언하고
+  movie = AmountDiscountMovie("About Time",
+                    time(2, 3),
+                    Money.wons(10000),
+                    Money.wons(800),
+                    [
+                        SequenceCondition(1), 
+                        SequenceCondition(2),
+                        PeriodCondition(2, datetime(2024, 3, 27, 10), datetime(2024, 3, 27, 12))
+                    ])
+  
+  # 할인 정책을 변경하려면 아래와 같이 기존에 생성한 인스턴스를 복사를 해야 한다.
+  movie = PercentDiscountPolicy(
+      movie._title,
+      movie._running_time,
+      movie._fee,
+      0.1,
+      movie.conditions
+  )
+  ```
+
+  - 반면에 기존대로 합성을 사용하면 보다 유연한 설계가 가능하다.
+    - 만약 할인 정책을 실행 시간에 할인 정책을 변경해야 한다면, 아래와 같이 하면 된다.
+
+  ```python
+  class Movie:
+      # 메서드를 추가하고
+      def change_discount_policy(self, discount_policy):
+          self._discount_policy = discount_policy
+          
+  movie = Movie("About Time",
+                    time(2, 3),
+                    Money.wons(10000),
+                    AmountDiscountPolicy(Money.wons(800),
+                                         [SequenceCondition(1), SequenceCondition(2),
+                                          PeriodCondition(2, datetime(2024, 3, 27, 10), datetime(2024, 3, 27, 12))]
+                                         ))
+  
+  # 메서드를 호출하여 변경한다.
+  movie.change_discount_policy(PercentDiscountPolicy(Money.wons(800),
+                                                     [SequenceCondition(1), SequenceCondition(2),
+                                                      PeriodCondition(2, datetime(2024, 3, 27, 10),
+                                                                      datetime(2024, 3, 27, 12))]
+                                                    ))
+  ```
+
+
+
+- 합성
+
+  - 합성은 다른 객체의 인스턴스를 자신의 인스턴스 변수로 포함해서 재사용하는 방법을 말한다.
+
+    - 인터페이스에 정의된 메시지를 통해서만 코드를 재사용하는 방법을 합성이라고 부른다.
+    - `Movie`가 `DiscountPolicy`의 코드를 재사용하는 방법이 바로 합성이다.
+    - 이 방법이 상속과 다른 점은 상속이 부모 클래스의 코드와 자식 클래스의 코드를 컴파일 시점에 하나의 단위로 강하게 결합하는 데 비해 `Movie`가 `DiscountPolicy`의 인터페이스를 통해 약하게 결합된다는 것이다.
+
+  - 코드 재사용을 위해서는 상속보다 합성(composition)이 더 좋은 방법이다.
+
+    - 합성은 상속이 가지는 두 가지 문제점을 모두 해결한다.
+    - 인터페이스에 정의된  메시지를 통해서만 재사용이 가능하기 때문에 구현을 효과적으로 캡슐화할 수 있다.
+    - 또한 의존하는 인터페이스를 교체하는 것이 비교적 쉽기 때문에 설계를 유연하게 만든다.
+    - 상속은 클래스를 통해 강하게 결합되는 데 비해 합성은 메시지를 통해 느슨하게 결합된다.
+
+    - 따라서 코드 재사용을 위해서는 상속보다 합성을 선호하는 것이 더 좋은 방법이다.
+
+  - 그러나 상속을 절대 사용하지 말라는 것은 아니다.
+
+    - 대부분의 설계에서는 상속과 합성을 함께 사용해야 한다.
+    - 코드를 재사용하는 경우에는 상속보다 합성을 선호하는 것이 옳지만 다형성을 위해 인터페이스를 재사용하는 경우에는 상속과 합성을 함께 조합해서 사용할 수밖에 없다.
+
+  
