@@ -563,11 +563,734 @@
   GET _nodes/stats/ingest?filter_path=nodes.*.ingest
   ```
 
-  
 
 
 
+- Mustache template snippet을 사용할 수 있다.
 
+  - `{{{field_name}}}` 형태로 file의 값에 접근할 수 있다.
+  - 예시
+    - 아래 예시는 `service` field의 값을 field로 설정하고, 해당 field의 값을 `code` field의 값으로 설정하겠다는 의미이다.
+
+  ```json
+  // PUT _ingest/pipeline/my-pipeline
+  {
+    "processors": [
+      {
+        "set": {
+          "description": "Set dynamic '<service>' field to 'code' value",
+          "field": "{{{service}}}",
+          "value": "{{{code}}}"
+        }
+      }
+    ]
+  }
+  ```
+
+
+
+## Processor의 종류
+
+> 대부분의 processor가 array 혹은 object type의 field에도 적용이 가능하며, 이 경우 배열 혹은 object를 순회하면서 각 요소에 모두 processor를 적용한다.
+
+- Append
+  - 배열 형태의 field에 값을 추가한다.
+    - 만약 field가 없다면 배열 형태로 값을 추가한다.
+
+
+
+- Attachment
+  - Apache의 text 추출 library인 Tika를 사용하여 널리 사용되는 file format을 가진 file에서 text를 추출한다.
+
+
+
+- Bytes
+  - 사람이 읽기 편한 형태의 byte 값(e.g. 1kb)를 bytes로 변환(e.g. 1024)한다.
+
+
+
+- Convert
+  - 색인 할 문서의 field type을 다른 type으로 변경한다.
+
+
+
+- CSV
+
+  - CSV의 line 하나를 하나의 document로 변환한다.
+  - 예시
+
+  ```json
+  // POST _ingest/pipeline/_simulate
+  {
+      "docs": [
+          {
+              "_source":{
+                  "foo":"hello,world"
+              }
+          }
+      ], 
+      "pipeline": {
+          "processors": [
+              {
+                  "csv": {
+                      "field": "foo",
+                      "target_fields": [
+                          "bar","baz"
+                      ]
+                  }
+              }
+          ]
+      }
+  }
+  ```
+
+  - 응답
+
+  ```json
+  {
+      "docs": [
+          {
+              "doc": {
+                  "_index": "_index",
+                  "_version": "-3",
+                  "_id": "_id",
+                  "_source": {
+                      "bar": "hello",
+                      "baz": "world",
+                      "foo": "hello,world"
+                  },
+                  "_ingest": {
+                      "timestamp": "2024-03-28T02:34:09.292646895Z"
+                  }
+              }
+          }
+      ]
+  }
+  ```
+
+
+
+- Date
+  - 색인 대상 document의 field에서 date 혹은 timestamp를 추출하여 이 값을 document의 timestamp 값으로 사용한다.
+
+
+
+- Dot expander
+
+  - Dot이 포함된 field를 object field로 확장한다.
+  - 예시
+
+  ```json
+  // POST _ingest/pipeline/_simulate
+  {
+      "docs": [
+          {
+              "_source": {
+                  "foo.bar": "value"
+              }
+          }
+      ],
+      "pipeline": {
+          "processors": [
+              {
+                  "dot_expander": {
+                      "field": "foo.bar"
+                  }
+              }
+          ]
+      }
+  }
+  ```
+
+  - 응답
+
+  ```json
+  {
+      "docs": [
+          {
+              "doc": {
+                  "_index": "_index",
+                  "_version": "-3",
+                  "_id": "_id",
+                  "_source": {
+                      "foo": {
+                          "bar": "value"
+                      }
+                  },
+                  "_ingest": {
+                      "timestamp": "2024-03-28T02:48:02.297179237Z"
+                  }
+              }
+          }
+      ]
+  }
+  ```
+
+
+
+- Drop
+  - 조건을 충족하는 docuemt를 색인하지 않는다.
+
+
+
+- Enrich
+  - 다른 index로 부터 data를 가져와 해당 data를 추가한다.
+
+
+
+- Disscet
+
+  - Grok processor와 유사하게 문서의 단일 text field에서 구조화 된 데이터를 추출한다.
+    - Grok과 차이점은 disscet은 정규표현식을 사용하지 않는다는 것이다.
+    - 정규표현식을 사용하는 대신, disscet만의 문법을 사용하며, 이는 grok보다 간단하고 특정 경우에 grok보다 더 빠른 속도를 보인다.
+  - 예시
+
+  ```json
+  // POST _ingest/pipeline/_simulate
+  {
+      "docs": [
+          {
+              "_source":{
+                  "message":"1.2.3.4 - - [30/Apr/1998:22:00:52 +0000] \"GET /english/venues/cities/images/montpellier/18.gif HTTP/1.0\" 200 3171"
+              }
+          }
+      ], 
+      "pipeline": {
+          "processors": [
+              {
+                  "dissect": {
+                      "field": "message",
+                      "pattern": "%{clientip} %{ident} %{auth} [%{@timestamp}] \"%{verb} %{request} HTTP/%{httpversion}\" %{status} %{size}"
+                  }
+              }
+          ]
+      }
+  }
+  ```
+
+  - 응답
+
+  ```json
+  {
+      "docs": [
+          {
+              "doc": {
+                  "_index": "_index",
+                  "_version": "-3",
+                  "_id": "_id",
+                  "_source": {
+                      "request": "/english/venues/cities/images/montpellier/18.gif",
+                      "@timestamp": "30/Apr/1998:22:00:52 +0000",
+                      "size": "3171",
+                      "auth": "-",
+                      "ident": "-",
+                      "clientip": "1.2.3.4",
+                      "verb": "GET",
+                      "httpversion": "1.0",
+                      "message": """1.2.3.4 - - [30/Apr/1998:22:00:52 +0000] "GET /english/venues/cities/images/montpellier/18.gif HTTP/1.0" 200 3171""",
+                      "status": "200"
+                  },
+                  "_ingest": {
+                      "timestamp": "2024-03-28T02:44:43.172065188Z"
+                  }
+              }
+          }
+      ]
+  }
+  ```
+
+
+
+- Fail
+  - 특정 조건이 충족되면 exception을 발생시킨다.
+
+
+
+- Fingerprint
+  - Document의 내용을 기반으로 hash 값을 생성한다.
+
+
+
+- Foreach
+
+  - 배열 혹은 object 형태의 element이 각각 ingest processor를 적용한다.
+  - 예시
+
+  ```json
+  // POST _ingest/pipeline/_simulate
+  {
+      "docs": [
+          {
+              "_source": {
+                  "values": [
+                      "foo",
+                      "bar",
+                      "baz"
+                  ]
+              }
+          }
+      ],
+      "pipeline": {
+          "processors": [
+              {
+                  "foreach": {
+                      "field": "values",
+                      "processor": {
+                          "uppercase": {
+                              "field": "_ingest._value"
+                          }
+                      }
+                  }
+              }
+          ]
+      }
+  }
+  ```
+
+  - 응답
+
+  ```json
+  {
+      "docs": [
+          {
+              "doc": {
+                  "_index": "_index",
+                  "_version": "-3",
+                  "_id": "_id",
+                  "_source": {
+                      "values": [
+                          "FOO",
+                          "BAR",
+                          "BAZ"
+                      ]
+                  },
+                  "_ingest": {
+                      "_value": null,
+                      "timestamp": "2024-03-28T04:09:11.618989688Z"
+                  }
+              }
+          }
+      ]
+  }
+  ```
+
+
+
+- Grok
+
+  - 문서의 단일 text field에서 구조화된 field들을 추출한다.
+    - 정규표현식과 유사한 grok pattern을 사용하여 추출한다.
+
+  - 예시
+    - `IP`, `WORD`, `URIPATHPARAM`등은 모두 미리 정의된 pattern이다.	
+
+  ```json
+  // POST _ingest/pipeline/_simulate
+  {
+      "docs": [
+          {
+              "_source": {
+                  "message": "55.3.244.1 GET /index.html 15824 0.043"
+              }
+          }
+      ],
+      "pipeline": {
+          "processors": [
+              {
+                  "grok": {
+                      "field": "message",
+                      "patterns": [
+                          "%{IP:client} %{WORD:method} %{URIPATHPARAM:request} %{NUMBER:bytes:int} %{NUMBER:duration:double}"
+                      ]
+                  }
+              }
+          ]
+      }
+  }
+  ```
+
+  - 아래와 같이 pattern을 processor 내에서 정의하는 것도 가능하다.
+
+  ```json
+  // POST _ingest/pipeline/_simulate
+  {
+      "docs": [
+          {
+              "_source": {
+                  "message": "This apple is colored BLUE"
+              }
+          }
+      ],
+      "pipeline": {
+          "description": "parse multiple patterns",
+          "processors": [
+              {
+                  "grok": {
+                      "field": "message",
+                      "patterns": [
+                          "%{FRUIT:fruit}",
+                          "%{RGB:color}"
+                      ],
+                      "pattern_definitions": {
+                          "FRUIT": "apple",
+                          "RGB": "RED|GREEN|BLUE"
+                      }
+                  }
+              }
+          ]
+      }
+  }
+  ```
+
+
+
+- Gsub
+
+  - String field에 정규표현식을 사용하여 field의 값을 변경한다.
+
+  - 예시
+
+  ```json
+  // POST _ingest/pipeline/_simulate
+  {
+      "docs": [
+          {
+              "_source": {
+                  "message": "Hello, World!"
+              }
+          }
+      ],
+      "pipeline": {
+          "processors": [
+              {
+                  "gsub": {
+                      "field": "message",
+                      "pattern": """,""",
+                      "replacement": "~"
+                  }
+              }
+          ]
+      }
+  }
+  ```
+
+  - 응답
+
+  ```json
+  {
+      "docs": [
+          {
+              "doc": {
+                  "_index": "_index",
+                  "_version": "-3",
+                  "_id": "_id",
+                  "_source": {
+                      "message": "Hello~ World!"
+                  },
+                  "_ingest": {
+                      "timestamp": "2024-03-28T04:56:31.78014232Z"
+                  }
+              }
+          }
+      ]
+  }
+  ```
+
+
+
+- HTML strip
+  - HTML tag를 제거한다.
+
+
+
+- Inference
+  - 미리 학습된 data frame analytic model이나 NLP를 위해 deploy된 model로 data를 inference할 수 있게 해준다.
+
+
+
+- Join
+
+  - 배열의 각 요소를 하나의 string으로 합친다.
+  - 예시
+
+  ```json
+  // POST _ingest/pipeline/_simulate
+  {
+      "docs": [
+          {
+              "_source": {
+                  "message": ["Hello", "World"]
+              }
+          }
+      ],
+      "pipeline": {
+          "processors": [
+              {
+                  "join": {
+                      "field": "message",
+                      "separator": "-"
+                  }
+              }
+          ]
+      }
+  }
+  ```
+
+  - 응답
+
+  ```json
+  {
+      "docs": [
+          {
+              "doc": {
+                  "_index": "_index",
+                  "_version": "-3",
+                  "_id": "_id",
+                  "_source": {
+                      "message": "Hello-World"
+                  },
+                  "_ingest": {
+                      "timestamp": "2024-03-28T05:14:30.922875462Z"
+                  }
+              }
+          }
+      ]
+  }
+  ```
+
+
+
+- JSON
+  - JSON string을 JSON object로 변환한다.
+
+
+
+- KV
+
+  - Key-Value 형태로 이루어진 값을 document 형식으로 전환한다.
+
+  - 예시
+
+  ```json
+  // POST _ingest/pipeline/_simulate
+  {
+      "docs": [
+          {
+              "_source": {
+                  "message": "foo-bar / baz-cux"
+              }
+          }
+      ],
+      "pipeline": {
+          "processors": [
+              {
+                  "kv": {
+                      "field": "message",
+                      "field_split": " / ",
+                      "value_split": "-"
+                  }
+              }
+          ]
+      }
+  }
+  ```
+
+  - 응답
+
+  ```json
+  {
+      "docs": [
+          {
+              "doc": {
+                  "_index": "_index",
+                  "_version": "-3",
+                  "_id": "_id",
+                  "_source": {
+                      "baz": "cux",
+                      "message": "foo-bar / baz-cux",
+                      "foo": "bar"
+                  },
+                  "_ingest": {
+                      "timestamp": "2024-03-28T05:24:56.352268071Z"
+                  }
+              }
+          }
+      ]
+  }
+  ```
+
+
+
+- Lowercase / Upperase
+  - 각각 특정 field의 string을 소문자/대문자로 변경한다.
+
+
+
+- Pipeline
+  - 다른 pipeline을 실행한다.
+
+
+
+- Registered domain processor
+
+  - Registered domain을 분리해준다.
+  - 요청
+
+  ```json
+  // POST _ingest/pipeline/_simulate
+  {
+      "docs": [
+          {
+              "_source": {
+                  "message": "www.example.ac.uk"
+              }
+          }
+      ],
+      "pipeline": {
+          "processors": [
+              {
+                  "registered_domain": {
+                      "field": "message",
+                      "target_field": "url"
+                  }
+              }
+          ]
+      }
+  }
+  ```
+
+  - 응답
+
+  ```json
+  {
+      "docs": [
+          {
+              "doc": {
+                  "_index": "_index",
+                  "_version": "-3",
+                  "_id": "_id",
+                  "_source": {
+                      "message": "www.example.ac.uk",
+                      "url": {
+                          "subdomain": "www",
+                          "registered_domain": "example.ac.uk",
+                          "top_level_domain": "ac.uk",
+                          "domain": "www.example.ac.uk"
+                      }
+                  },
+                  "_ingest": {
+                      "timestamp": "2024-03-28T05:31:29.433335523Z"
+                  }
+              }
+          }
+      ]
+  }
+  ```
+
+
+
+- Remove
+  - 특정 field를 제거한다.
+
+
+
+- Rename
+  - Field의 이름을 변경한다.
+
+
+
+- Reroute
+  - 다른 index 혹은 data stream으로 문서를 route한다.
+
+
+
+- Script
+  - 색인 대상 document에 script를 실행한다.
+
+
+
+- Set
+  - Field를 추가하고, 해당 field에 값을 추가한다.
+
+
+
+- Sort
+  - 배열을 정렬한다.
+
+
+
+- Split
+
+  - String field의 값을 분할하여 배열을 만든다.
+
+  - 예시
+
+  ```json
+  // POST _ingest/pipeline/_simulate
+  {
+      "docs": [
+          {
+              "_source": {
+                  "message": "foo!bar!baz!"
+              }
+          }
+      ],
+      "pipeline": {
+          "processors": [
+              {
+                  "split": {
+                      "field": "message",
+                      "separator": "!",
+                      "preserve_trailing": true
+                  }
+              }
+          ]
+      }
+  }
+  ```
+
+  - 응답
+    - 만일 맨 마지막의 빈 문자열을 빼고 싶다면, 위에서 `preserve_trailing`을 false로 설정하면 된다.
+
+  ```json
+  {
+      "docs": [
+          {
+              "doc": {
+                  "_index": "_index",
+                  "_version": "-3",
+                  "_id": "_id",
+                  "_source": {
+                      "message": [
+                          "foo",
+                          "bar",
+                          "baz",
+                          ""
+                      ]
+                  },
+                  "_ingest": {
+                      "timestamp": "2024-03-28T05:39:07.22816113Z"
+                  }
+              }
+          }
+      ]
+  }
+  ```
+
+
+
+- Trim
+  - String field에서 공백을 제거한다.
+
+
+
+- URI parts
+  - URI를 파싱한다.
+
+
+
+- User agent
+  - Browser가 web request로 보낸 user agent를 파싱한다.
 
 
 
