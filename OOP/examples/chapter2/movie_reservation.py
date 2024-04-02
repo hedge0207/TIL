@@ -139,6 +139,11 @@ class PercentDiscountPolicy(DiscountPolicy):
         return screening.get_movie_fee().times(self.percent)
 
 
+class NoneDiscountPolicy(DiscountPolicy):
+    
+    def calculate_discount_amount(self, screening: Screening) -> Money:
+        return Money.wons(0)
+
 if __name__ == "__main__":
     movie = Movie("About Time",
                   time(2, 3),
