@@ -2,12 +2,16 @@
 
 - 역할, 책임, 협력
   - 객체지향 패러다임의 관점에서 핵심은 역할, 책임, 협력이다.
-    - 클래스, 상속, 지연 바인딩이 중요하지 않은 것은 아니지만, 구현 측면에 치주쳐 있기 때문에 객체지향 패러다음의 본질과는 거리가 멀다.
+    - 클래스, 상속, 지연 바인딩이 중요하지 않은 것은 아니지만, 구현 측면에 치우쳐 있기 때문에 객체지향 패러다임의 본질과는 거리가 멀다.
   - 객체지향의 본질은 협력하는 객체들의 공동체를 창조하는 것이다.
     - 객체지향 설계의 핵심은 협력을 구성하기 위해 적절한 객체를 찾고 적절한 책임을 할당하는 과정에서 드러난다.
     - 클래스와 상속은 객체의 책임과 협력이 어느 정도 자리를 잡은 후에 사용할 수 있는 구현 메커니즘일 뿐이다.
 
 
+
+
+
+## 협력
 
 - 협력(Collaboration)
 
@@ -16,23 +20,19 @@
     - 객체지향 원칙을 따르는 애플리케이션의 제어 흐름은 어떤 하나의 객체에 의해 통제되지 않고 다양한 객체들 사이에 균형 있게 분배되는 것이 일반적이다.
     - 객체들은 요청의 흐름을 따라 자신에게 분배된 로직을 실행하면서 애플리케이션의 전체 기능을 완성한다.
 
-    - 앞에서 구현한 영화 예매 시스템에선 영화 예매라는 기능를 구현하기 위헤 메시지를 주고받으면서 상호작용한다.
-
+    - 앞에서 구현한 영화 예매 시스템에선 영화 예매라는 기능을 구현하기 위해 메시지를 주고받으면서 상호작용한다.
   - 협력은 객체지향의 세계에서 기능을 구현할 수 있는 유일한 방법이다.
-
+  
     - 두 객체 사이의 협력은 하나의 객체가 다른 객체에게 도움을 요청할 때 시작한다.
     - 메시지 전송은 객체 사이의 협력을 위해 사용할 수 있는 유일한 커뮤니케이션 수단이다.
     - 객체는 다른 객체의 상세한 내부 구현에 직접 접근할 수 없기 때문에 오직 메시지 전송을 통해서만 자신의 요청을 전달할 수 있다.
     - 메시지를 수신한 객체는 메서드를 실행해 요청에 응답한다.
-    - 여기서 객체가 메시지를 처리할 방법을 스스로 선택한다는 점이 중요하다.
-
   - 자율적인 객체
-
+  
     - 외부의 객체는 오직 메시지만 전송할 수 있을 뿐이며 메시지를 어떻게 처리할지는 메시지를 수신한 객체가 직접 결정한다.
     - 이것은 객체가 자신의 일을 스스로 처리할 수 있는 자율적인 존재라는 것을 의미한다.
-
   - 자신이 할 수 없는 일을 다른 객체에게 위임하면 협력에 참여하는 객체들의 전체적인 자율성을 향상시킬 수 있다.
-
+  
     - 위 예시에서 `Screening`은 `Movie`에게 `calculate_movie_fee`라는 메시지를 전송하여 요금 계산을 요청한다.
     - `Screening`이 직접 처리하지 않고 `Movie`에게 위임하는 이유는 `Movie`가 요금을 계산하는 데 필요한 기본 요금과 할인 정책을 가장 잘 알고 있는 객체이기 때문이다.
     - 요금을 계산하는 일을 `Screening`이 직접 수행한다면 `Movie`의 인스턴스 변수인 `fee`와 `discount_policy`에 접근해야만 하며, 이 경우 `Screening`은 `Movie`의 내부 구현에 결합된다.
@@ -41,10 +41,9 @@
     - 그러나 `Screening`이 `Movie`의 정보를 이용해 요금을 계산할 경우 정보와 행동이 `Movie`와 `Screeing`이라는 별도의 객체로 나뉜다.
     - 결과적으로 `Movie`는 정보만 제공하는 수동적인 객체로 전락하고 만다.
     - `Movie`가 자율적인 존재가 되기 위해서는 자신이 알고 있는 정보를 이용해 직접 요금을 계산해야한다.
-
   - 객체의 자율성과 캡슐화
-
-    - 객체를 자율으로 만드는 가장 기본적인 방법은 내부 구현을 캡슐화하는 것이다.
+  
+    - 객체를 자율적으로 만드는 가장 기본적인 방법은 내부 구현을 캡슐화하는 것이다.
     - 캡슐화를 통해 변경에 대한 파급효과를 제한할 수 있기 때문에 자율적인 객체는 변경하기도 쉬워진다.
 
 
@@ -52,7 +51,7 @@
 - 협력이 설계를 위한 문맥을 결정한다.
   - 객체가 가질 수 있는 행동을 결정하는 기준
     - 객체가 협력에 참여할 수 있는 이유는 협력에 필요한 적절한 행동을 보유하고 있기 때문이다.
-    - 결국 객체의 행동을 결정하는 것은 객체가 참여하고 있는 행동이다.
+    - 결국 객체의 행동을 결정하는 것은 객체가 참여하고 있는 협력이다.
     - 협력은 객체가 필요한 이유와 객체가 수행하는 행동의 동기를 제공한다.
   - 객체가 가질 수 있는 상태를 결정하는 기준
     - 객체의 행동을 결정하는 것이 협력이라면 객체의 상태를 결정하는 것은 행동이다.
@@ -61,7 +60,7 @@
   - 결국 상태는 행동에 따라 결정되고, 행동은 협력에 의해 결정되므로, 객체가 참여하는 협력이 객체의 행동과 상태를 모두 결정한다.
     - 따라서 협력은 객체를 설계하는 데 필요한 일종의 문맥을 제공한다.
   - 영화 예매 시스템
-    - 위 예시에서 `Movie`를 처음 본 사람들은 자연스럽게 영화를 사영하는 행동을 수행할 것이라고 생각할 것이다.
+    - 위 예시에서 `Movie`를 처음 본 사람들은 자연스럽게 영화를 상영하는 행동을 수행할 것이라고 생각할 것이다.
     - 그러나 영화 예매 시스템 안의 `Movie`는 영화를 상영하기 위한 행동은 포함하지 않는다.
     - `Movie`에 포함된 대부분의 메서드는 요금을 계산하는 행동과 관련된 것이다.
     - 이는 `Movie`가 영화를 예매하기 위한 협력에 참여하고 있고 그 안에서 요금을 계산하는 책임을 지고 있기 때문이다.
@@ -70,6 +69,10 @@
 
 
 
+
+
+## 책임
+
 - 책임(Responsibility)
   - 협력에 참여하기 위해 객체가 수행하는 행동을 책임이라 부른다.
     - 객체에 의해 정의되는 응집도 있는 행위의 집합으로, 객체가 유지해야 하는 정보와 수행할 수 있는 행동에 대해 개략적으로 서술한 문장이다.
@@ -77,7 +80,6 @@
     - 크레이그 라만은 이러한 분류에 따라 객체의 책임을 크게 하는 것과 아는 것의 두 가지 범주로 나누어 세분화하고 있다.
     - 아는 것과 하는 것은 밀접하게 연관되어 있다.
     - 객체는 자신이 맡은 책임을 수행하는 데 필요한 정보를 알고 있을 책임이 있으며, 자신이 할 수 없는 작업을 도와줄 객체를 알고 있을 책임이 있다.
-    - 어떤 책임을 수행하기 위해서는 그 책임을 수행하는 데 필요한 정보하 함께 알아야 할 책임이 있는 것이다.
   - 하는 것(doing)
     - 객체를 생성하거나 계산을 수행하는 등의 스스로 하는 것
     - 다른 객체의 행동을 시작시키는 것
@@ -85,7 +87,7 @@
   - 아는 것(knowing)
     - 사적인 정보에 관해 아는 것
     - 관련된 객체에 관해 아는 것
-    - 자신이 유도하거나 계산할 수 있는 것에 관해 아는 것.
+    - 자신이 유도하거나 계산할 수 있는 것에 관해 아는 것
   - 객체에게 할당한 책임이 외부의 인터페이스와 내부의 속성을 결정한다.
     - `Screening`의 책임은 영화를 예매하는 것이고, `Movie`의 책임은 요금을 계산하는 것이다.
     - 이는 모두 객체의 책임 중 하는 것과 관련되어 있다.
@@ -124,7 +126,7 @@
 - 책임 주도 설계(Responsibility-Driven Desing, RDD)
   - 책임을 찾고, 책임을 수행할 적절한 객체를 찾아 책임을 할당하는 방식으로 협력을 설계하는 방법을 책임 주도 설계라고 부른다.
   - 아래와 같은 과정을 통해 설계가 이루어진다.
-    - 시스템이 사용자에게 제공해야 하는 기능은 시스템 책임을 파악한다.
+    - 시스템이 사용자에게 제공해야 하는 기능인 시스템 책임을 파악한다.
     - 시스템 책임을 더 작은 책임으로 분할한다.
     - 분할된 책임을 수행할 수 있는 적절한 객체 또는 역할을 찾아 책임을 할당한다.
     - 객체가 책임을 수행하는 도중 다른 객체의 도움이 필요한 경우 이를 책임질 적절한 객체 또는 역할을 찾는다.
@@ -156,6 +158,10 @@
     - 객체가 가질 수 있는 상태는 행동을 결정하고 나서야 비로소 결정할 수 있다.
 
 
+
+
+
+## 역할
 
 - 역할
   - 객체가 어떤 특정한 협력 안에서 수행하는 책임의 집합을 역할이라 부른다.
@@ -255,3 +261,226 @@
     - 책임 중심의 관점에서 객체는 다른 객체가 요청할 수 있는 오퍼레이션을 위해 필요한 상태를 보관한다.
     - 데이터 중심의 관점은 객체의 상태에 초점을 맞추고, 책임 중심의 관점은 객체의 행동에 초점을 맞춘다.
     - 전자는 객체를 독립된 데이터 덩어리로 보고, 후자는 객체를 협력하는 공동체의 일원으로 본다.
+  - 훌륭한 객체지향 설계는 데이터가 아니라 책임에 초점을 맞춰야한다.
+    - 객체의 상태는 구현에 속하며, 구현은 불안정하기 때문에 변하기 쉽다.
+    - 상태를 객체 분할의 중심축으로 삼으면 구현에 관한 세부사항이 객체의 인터페이스에 스며들게 되어 캡슐화의 원칙이 무너진다.
+    - 결과적으로 상태 변경은 인터페이스의 변경을 초래하며 이 인터페이스에 의존하는 모든 객체에게 변경의 영향이 퍼지게 된다.
+    - 반면에 객체의 책임은 인터페이스에 속한다.
+    - 객체는 책임을 드러내는 안정적인 인터페이스 뒤로 책임을 수행하는 데 필요한 상태를 캡슐화하여 구현 변경에 대한 파장이 외부로 퍼지는 것을 방지한다.
+    - 따라서 책임에 초점을 맞추면 상대적으로 변경에 안정적인 설계를 얻을 수 있게 된다.
+
+
+
+- 데이터를 중심으로 영화 예매 시스템 설계하기
+
+  - 데이터 중심 설계는 객체 내부에 저장해야 하는 데이터를 중심으로 설계한다.
+  - Movie에 저장될 데이터를 결정한다.
+    - 기존 설계와 달리 할인 조건의 목록이 인스턴스 변수로 `Movie` 안에 포함되어 있다.
+    - 또한 할인 정책에 사용되는 할인 금액과 할인 비율을 `Movie`안에서 정의한다.
+    - 할인 정책은 영화별로 오직 하나만 지정할 수 있기 때문에 한 시점에 두 정책 중 하나의 값만 사용할 수 있다.
+    - 할인 정책의 종류를 결정하기 위해 `MovieType`을 사용한다.
+    - 아래와 같이 객체의 종류를 저장하는 인스턴스 변수(`movie_type`)와 인스턴스의 종류에 따라 배타적으로 사용될 인스턴스 변수(`discount_amount`, `discount_percent`)를 하나의 클래스 안에 포함시키는 방식은 데이터 중심 설계에서 흔히 볼 수 있는 패턴이다.
+
+  ```python
+  from enum import Enum, auto
+  
+  class MovieType(str, Enum):
+      AMOUNT_DISCOUNT = auto()
+      PECENT_DISCOUNT = auto()
+      NONE_DISCOUNT = auto()
+  
+  class Movie:
+      def __init__(self, title, runnung_time, movie_type: MovieType, 
+                   discount_amount:Money, discount_percent:float,
+                   fee: Money, discount_conditions:list[DiscountCondition]):
+          self._title = title
+          self._running_time = runnung_time
+          self._movie_type = movie_type
+          self._discount_amount = discount_amount
+          self._discount_percent = discount_percent
+          self._fee = fee
+          self._discount_conditions = discount_conditions
+  ```
+
+  - 접근자(accessor)와 수정자(mutator)를 추가한다.
+    - 객체지향의 가장 중요한 원칙은 캡슐화이므로 내부 데이터가 객체의 얇은 막을 빠져나가 다른 객체를 오염시키는 것을 막아야 한다.
+    - 이를 위해 내부의 데이터를 반환하는 접근자와 데이터를 수정하는 수정자를 추가한다.
+
+  ``` python
+  class MovieType(str, Enum):
+      AMOUNT_DISCOUNT = auto()
+      PECENT_DISCOUNT = auto()
+      NONE_DISCOUNT = auto()
+  
+  
+  class Movie:
+      def __init__(self, title, runnung_time, movie_type: MovieType, 
+                   discount_amount: Money, discount_percent: float,
+                   fee: Money, discount_conditions: list[DiscountCondition]):
+          self._title = title
+          self._running_time = runnung_time
+          self._movie_type = movie_type
+          self._discount_amount = discount_amount
+          self._discount_percent = discount_percent
+          self._fee = fee
+          self._discount_conditions = discount_conditions
+  
+      @property
+      def movie_type(self):
+          return self._movie_type
+  
+      @movie_type.setter
+      def movie_type(self, movie_type):
+          self._movie_type = movie_type
+  
+      @property
+      def fee(self):
+          return self._fee
+      
+      @fee.setter
+      def fee(self, fee):
+          self._fee = fee
+  
+      # 나머지 인스턴스 변수들의 접근자와 수정자도 추가한다.
+      # ...
+  ```
+
+  - 할인 조건을 구현한다.
+    - 할인 조건을 구현하는 데 필요한 데이터가 무엇인지 생각해보고 이들을 구현한다.
+    - 할인 조건의 종류를 저장할 `DiscountConditionType`를 정의한다.
+    - 위에서 했던 것과 마찬가지로 접근자와 수정자도 구현한다.
+
+  ```python
+  class DiscountConditionType(str, Enum):
+      SEQUENCE = auto()
+      PERIOD = auto()
+  
+  
+  class DiscountCondition:
+      def __init__(self, type_: DiscountConditionType, sequence: int, 
+                   day_of_week: str, start_time: time, end_time: time):
+          self._type = type_
+          self._sequence = sequence
+          self._day_of_week = day_of_week
+          self._start_time = start_time
+          self._end_time = end_time
+  
+      @property
+      def type_(self):
+          return self._type
+      
+      @type_.setter
+      def type_(self, type_):
+          self._type = type_
+      
+      # 나머지 인스턴스 변수들의 접근자와 수정자도 추가한다.
+      # ...
+  ```
+
+  - `Screening` 클래스를 구현한다.
+
+  ```python
+  class Screening:
+      def __init__(self, movie: Movie, sequence: int, when_screen: time):
+          self._movie = movie
+          self._sequence = sequence
+          self._when_screen = when_screen
+  
+      @property
+      def movie(self):
+          return self._movie
+      
+      @movie.setter
+      def movie(self, movie:Movie):
+          self._movie = movie
+  
+      # 나머지 인스턴스 변수들의 접근자와 수정자도 추가한다.
+      # ...
+  ```
+
+  - `Reservation` 클래스를 구현한다.
+
+  ```python
+  class Reservation:
+      def __init__(self, customer: Customer, screening: Screening, fee: Money, audience_count: int):
+          self._customer = customer
+          self._screening = screening
+          self._fee = fee
+          self._audience_count = audience_count
+  
+      @property
+      def customer(self):
+          return self._customer
+      
+      @customer.setter
+      def customer(self, customer: Customer):
+          self._customer = customer
+  
+      # 나머지 인스턴스 변수들의 접근자와 수정자도 추가한다.
+      # ...
+  ```
+
+  - `Customer` 클래스를 구현한다.
+
+  ``` python
+  class Customer:
+      def __init__(self, name, id):
+          self._name = name
+          self._id = id
+  
+      @property
+      def name(self):
+          return self._name
+      
+      @name.setter
+      def name(self, name):
+          self._name = name
+  
+      @property
+      def id_(self):
+          return self._id
+      
+      @id_.setter
+      def id_(self, id_):
+          self._id = id_
+  ```
+
+  - `ReservationAgency` 클래스를 구현한다.
+    - 영화 예매 절차를 구현하기 위한 클래스이다.
+    - `reserve` 메서드는 크게 두 부분으로 나눌 수 있는데, `DiscountCondition`에 대해 루프를 돌면서 할인 가능 여부를 확인하는 부분과 `discountable` 변수의 값을 확인하여 적절한 할인 정책에 따라 예매 요금을 계산하는 부분으로 나눌 수 있다.
+
+  ```python
+  class ReservationAgency:
+      def reserve(self, screening: Screening, customer: Customer, audience_count: int):
+          movie = screening.movie
+  
+          discountable = False
+          for condition in movie.discount_conditions:
+              if condition.type_ == DiscountConditionType.PERIOD:
+                  discountable = screening.when_screen.weekday() == condition.day_of_week \
+                                  and condition.start_time <= screening.when_screen \
+                                  and condition.end_time >= screening.when_screen
+              else:
+                  discountable = condition.sequence == screening.sequence
+  
+              if discountable:
+                  break
+  
+          if discountable:
+              discount_amount = Money.wons(0)
+  
+              match movie.movie_type:
+                  case MovieType.AMOUNT_DISCOUNT:
+                      discount_amount = movie.discount_amount
+                  case MovieType.PECENT_DISCOUNT:
+                      discount_amount = movie.fee * movie.discount_percent
+              
+              fee = movie.fee.minus(discount_amount)
+          else:
+              fee = movie.fee
+          
+          return Reservation(customer, screening, fee, audience_count)
+  ```
+
+  
+
