@@ -148,7 +148,7 @@ class Reservation:
 
     # 나머지 인스턴스 변수들의 접근자와 수정자도 추가한다.
     # ...
-        
+
 
 class ReservationAgency:
     def reserve(self, screening: Screening, customer: Customer, audience_count: int):
