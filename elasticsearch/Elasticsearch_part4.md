@@ -1702,6 +1702,31 @@
 
 
 
+- `index.highlight.max_analyzed_offset`
+
+  - 많은 양의 text data에 대하서 plain highlighting을 수행하는 것은 상당한 시간과 memory를 필요로한다.
+    - 지나치게 많은 시간과 memory가 highlighting에 소모되는 것을 막기 위해서, highlight시에 분석되는 character의 개수를 제한할 필요가 있다.
+  - Highlight 요청이 들어왔을 때 최대 몇 개의 character를 분석할지 결정한다.
+    - 기본값은 1,000,000이다.
+  - 아래와 같이 변경이 가능하다.
+    - Dynamic option으로 close/open하지 않고도 바로 적용된다.
+
+  ```json
+  // PUT <index_name>/_settings
+  {
+    "index": {
+      "highlight": {
+        "max_analyzed_offset": 100000
+      }
+    }
+  }
+  ```
+
+  - 이 option은 오직 offset이나 term vector 없이 색인된 text field를 대상으로 highlight해야 할 때만 유효하다.
+    - Plain highlither를 사용할 때만 고려해야 할 사항이 아니라 offset이나 term vector 없이 색인된 text field를 대상으로 highlight해야 할 때는 고려해야한다.
+
+
+
 
 
 
