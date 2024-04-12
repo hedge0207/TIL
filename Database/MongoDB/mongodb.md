@@ -75,6 +75,8 @@
 
 
 
+
+
 # MongoDB 설치하기
 
 > https://www.mongodb.com/compatibility/deploying-a-mongodb-cluster-with-docker
@@ -206,13 +208,7 @@
 
 
 
-- 조회
-
-  - MongoDB status 조회
-
-  ```bash
-  > rs.status()
-  ```
+- DB와 collection 확인
 
   - DB 목록 조회
 
@@ -233,17 +229,42 @@
   ```
 
   - collection 목록 조회
-  
+
   ```bash
   $ show collections
   ```
 
-  - document select
-    - `find`의 인자로 조건을 넣을 수 있다.
-    - `.pretty()`는 결과를 json 형식에 맞게 출력한다.
-    - 출력할 필드는 `{필드명: 0 or 1}` 형식으로 들어가며, 1일 경우에만 출력한다(아예 작성하지 않을 경우 모든 필드를 출력한다.).
-    - `_id`의 경우 명시적으로 지정하지 않더라도 출력한다.
-  
+
+
+
+- 상태 확인
+
+  - MongoDB status 조회
+
+  ```bash
+  $ rs.status()
+  ```
+
+  - Lock 확인
+
+  ```bash
+  $ db.adminCommand({lockInfo:1}).lockInfo
+  ```
+
+  - Collection 상태 확인
+
+  ```bash
+  $ db.<collection_name>.stats()
+  ```
+
+
+
+- 조회
+  - `find`의 인자로 조건을 넣을 수 있다.
+  - `.pretty()`는 결과를 json 형식에 맞게 출력한다.
+  - 출력할 필드는 `{필드명: 0 or 1}` 형식으로 들어가며, 1일 경우에만 출력한다(아예 작성하지 않을 경우 모든 필드를 출력한다.).
+  - `_id`의 경우 명시적으로 지정하지 않더라도 출력한다.
+
   ```bash
   $ db.<collection 명>.find([조건], [{출력할 필드들}])[.pretty()]
   
@@ -258,6 +279,23 @@
   select name, author. published_date from books where price > 5000 and price <=8000
   ```
 
+  - 정렬하기
+    - `sort`를 사용하여 정렬이 가능하다.
+    - `{field:order}` 형식으로 설정하면 되며, `order`에 1을 줄 경우 오름차순으로, `-1`을 줄 경우 내림차순으로 정렬한다.
+
+  ```bash
+  $ db.<collection>.find().sort({<field>:<1 or -1>})
+  
+  # 예시
+  $ db.books.find().sort({price:-1})
+  ```
+
+  - 출력 개수 제한하기
+
+  ```bash
+  $ db.<collection>.find().limit(<num>)
+  ```
+
 
 
 - 삽입
@@ -266,7 +304,7 @@
     - Mongo shell에는 create command가 따로 있지는 않고, 아래와 같이 `use`를 사용하여 context를 switching하면 된다.
 
   ```bash
-  > use <database_name>
+  $ use <database_name>
   ```
 
   - 위 명령어만 입력했을 경우 `show dbs`를 통해 database들을 확인하더라도 아직 추가되지 않은 것을 볼 수 있다.
@@ -275,7 +313,7 @@
   - Document 삽입하기
 
   ```bash
-  > db.<collection_name>.insert(<json_data>)
+  $ db.<collection_name>.insert(<json_data>)
   
   # db.book.insert({title:"foo", content:"bar"})
   ```
@@ -285,9 +323,60 @@
     - 만일 수동으로 생성하고자 한다면 아래와 같이 하면 된다.
 
   ```bash
-  db.createCollection("<name>"[, options])
+  $ db.createCollection("<name>"[, options])
   
   # db.createCollection("book")
+  ```
+
+
+
+- 수정
+
+  - `updateOne`
+    - Filter에 matching되는 첫 번째 문서를 수정한다.
+
+  ```sh
+  $ db.<collection명>.updateOne(<조건>, {$set:<수정 내용>})
+  
+  # 예시
+  $ db.books.updateOne({title:"foo"},
+  {
+    $set:{
+      content:"Hello World",
+      price: 100
+    }
+  })
+  ```
+
+  - `updateMany`
+    - Filter에 matching되는 모든 문서를 수정한다.
+
+  ```bash
+  $ db.<collection명>.updateOne(<조건>, {$set:<수정 내용>})
+  
+  # 예시
+  $ db.books.updateMany({title:"foo"},
+  {
+    $set:{
+      content:"Hello World"
+    }
+  })
+  ```
+
+  - `replaceOne`
+    - Document를 새로운 document로 대체한다.
+    - 단, 이 때 `_id` field는 유지된다.
+    - `_id` field도 새로운 문서에 포함시킬 수는 있으나, 이 경우 반드시 기존 문서의 `_id`값과 동일한 값을 넣어야 한다.
+    - `update`와의 차이는 `update`는 일부 field의 값만을 변경하는 것이지만, `replaceOne`은 문서 전체를 입력된 문서로 교체한다는 것이다.
+
+  ```bash
+  $ db.<collection명>.updateOne(<조건>, <새로운 문서>)
+  
+  # 예시
+  $ db.accounts.replaceOne(
+    { account_id: 371138 },
+    { account_id: 893421, limit: 5000, products: [ "Investment", "Brokerage" ] }
+  )
   ```
 
 
@@ -323,7 +412,7 @@
 
 
 
-# MongoDB 상태 확인
+# Mongostat
 
 - mongostat
 
@@ -352,14 +441,6 @@
     - `netIn`: MongoDB로 들어온 network traffic의 양(bytes)
     - `netOut`: MongoDB에서 나간 network traffic의 양(bytes)
     - `conn`: 열려 있는 connection의 개수
-
-
-
-- mongo shell 명령어들
-  - `db.adminCommand({lockInfo:1}).lockInfo`
-    - 현재 hold 상태거나 pending되고 있는 lock들의 목록을 보여준다.
-  - `db.<collection_name>.stats()`
-    - Collection과 관련된 여러 상태 정보를 보여준다.
 
 
 
@@ -418,10 +499,10 @@
   ```python
   from pymongo import MongoClient
   
-  # 방법1
+  # 방식1
   client = MongoClient('<mongodb host>', '<mongodb port>')
   
-  # 방법2
+  # 방식2
   client = MongoClient('mongodb://<mongodb host>:<mongodb port>/')
   
   # 인증이 필요할 경우
