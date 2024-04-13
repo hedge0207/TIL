@@ -24,42 +24,55 @@ class MovieType(str, Enum):
     NONE_DISCOUNT = auto()
 
 
-class Movie:
-    
-    def __init__(self, title: str, running_time: time, fee: Money, discount_conditions: list[DiscountCondition],
-                 movie_type: MovieType, discount_amount: Money, discount_percent: float):
+class Movie(ABC):
+
+    def __init__(self, title: str, running_time: time, fee: Money, discount_conditions: list[DiscountCondition]=[]):
         self._title = title
         self._running_time = running_time
         self._fee = fee
         self._discount_conditions = discount_conditions
-        self._movie_type = movie_type
-        self._discount_amount = discount_amount
-        self._discount_percent = discount_percent
-
+    
     def calculate_movie_fee(self, screening: Screening):
         if self._is_discountable(screening):
             return self._fee.minus(self._calculate_discount_amount())
+        return self._fee
     
     def _is_discountable(self, screening: Screening):
         return any([discount_condition.is_satisfied_by(screening) 
                     for discount_condition in self._discount_conditions])
+    
+    @abstractmethod
+    def _calculate_discount_amount(self):
+        ...
+
+
+class AmountDiscountMovie(Movie):
+
+    def __init__(self, title: str, running_time: time, fee: Money, discount_conditions: list[DiscountCondition], 
+                 discount_amount: Money):
+        super().__init__(title, running_time, fee, discount_conditions)
+        self._discount_amount = discount_amount
 
     def _calculate_discount_amount(self):
-        match self._movie_type:
-            case MovieType.AMOUNT_DISCOUNT:
-                return self._calculate_amount_discount_amount()
-            case MovieType.PECENT_DISCOUNT:
-                return self._calculate_percent_discount_amount()
-            case MovieType.NONE_DISCOUNT:
-                return self._calculate_none_discount_anount()
-
-    def _calculate_amount_discount_amount(self):
         return self._discount_amount
     
-    def _calculate_percent_discount_amount(self):
-        return self._fee.times(self._discount_percent)
+
+class PercentDiscountMovie(Movie):
+
+    def __init__(self, title: str, running_time: time, fee: Money, discount_conditions: list[DiscountCondition], 
+                 percent: float):
+        super().__init__(title, running_time, fee, discount_conditions)
+        self._percent = percent
     
-    def _calculate_none_discount_anount(self):
+    def _calculate_discount_amount(self):
+        return self._fee * self._percent
+
+
+class NoneDiscountMovie(Movie):
+    def __init__(self, title: str, running_time: time, fee: Money):
+        super().__init__(title, running_time, fee)
+
+    def _calculate_discount_amount(self):
         return Money.wons(0)
 
 

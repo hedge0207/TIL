@@ -38,6 +38,7 @@ class Movie:
     def calculate_movie_fee(self, screening: Screening):
         if self._is_discountable(screening):
             return self._fee.minus(self._calculate_discount_amount())
+        return self._fee
     
     def _is_discountable(self, screening: Screening):
         return any([discount_condition.is_satisfied_by(screening) 
