@@ -558,3 +558,211 @@
     - 상속을 이용한 설계에 비해 유연한 설계가 가능하다.
   - 합성을 사용하도록 코드를 수정하면 2장에서 봤던 코드와 동일한 구조가 된다.
 
+
+
+
+
+## 책임 주도 설계의 대안
+
+- 리팩터링(Refactoring)
+
+  - 책임을 올바르게 할당하는 것은 어렵고 난해한 작업이다
+
+    - 객체지향 프로그래밍 언어를 이용해 절차형 프로그램을 작성하는 대부분의 이유가 바로 책임 할당의 어려움에서 기인한다.
+
+  - 책임 주도 설계에 익숙하지 않은 사람들은 아래와 같은 대안적인 방법을 사용하는 것도 좋다.
+
+    - 먼저 빠르게 절차형 코드로 실행되는 프로그램을 작성한다.
+    - 완성된 코드를 객체지향적인 코드로 변경한다.
+
+    - 즉 일단 실행되는 코드를 얻고 난 후에 코드 상에 명확하게 드러나는 책임들을 올바른 위치로 이동시키는 것이다.
+    - 이처럼 이해하기 쉽고 수정하기 쉬운 소프트웨어로 개선하기 위해 겉으로 보이는 동작은 바꾸지 않은 채 내부 구조를 변경하는 것을 리팩터링이라고 부른다.
+
+  - 주의사항
+
+    - 코드를 수정한 후에 겉으로 드러나는 동작이 바뀌어서는 안 된다.
+    - 캡슐화를 향상시키고 응집도를 높이고, 결합도를 낮추면서도 동작은 그대로 유지해야한다.
+
+
+
+- 메서드 응집도
+
+  - 데이터 중심 설계로 작성된 코드를 책임 주도 설계로 작성된 코드처럼 변경하기
+    - 데이터 중심으로 설계된 영화 예매 시스템에서 도메인 객체들은 단지 데이터의 집합일 뿐이며 영화 예매를 처리하는 모든 절차 는 `ReservationAgency`에 집중되어 있었다.
+    - 따라서 ReservationAgency에 포함된 로직들을 적절한 객체의 책임으로 분배하면 책임 주도 설계와 거의 유사한 결과를 얻을 수 있다.
+
+  - 아래 코드는 3장 초반에 작성한 `ReservationAgency`의 코드이다.
+    - 아래 코드에서 `reserve` method는 너무 길고 이해하기 어렵다.
+    - 마이클 페더스는 아래와 같은 메서드를 몬스터 메서드(monster method)라 부른다.
+    - 메서드의 응집도가 낮다고 표현할 수 있다.
+
+  ```python
+  class ReservationAgency:
+      def reserve(self, screening: Screening, customer: Customer, audience_count: int):
+          movie = screening.movie
+  
+          discountable = False
+          for condition in movie.discount_conditions:
+              if condition.type_ == DiscountConditionType.PERIOD:
+                  discountable = screening.when_screen.weekday() == condition.day_of_week \
+                                  and condition.start_time <= screening.when_screen \
+                                  and condition.end_time >= screening.when_screen
+              else:
+                  discountable = condition.sequence == screening.sequence
+  
+              if discountable:
+                  break
+  
+          if discountable:
+              discount_amount = Money.wons(0)
+  
+              match movie.movie_type:
+                  case MovieType.AMOUNT_DISCOUNT:
+                      discount_amount = movie.discount_amount
+                  case MovieType.PECENT_DISCOUNT:
+                      discount_amount = movie.fee * movie.discount_percent
+              
+              fee = movie.fee.minus(discount_amount)
+          else:
+              fee = movie.fee
+          
+          return Reservation(customer, screening, fee, audience_count)
+  ```
+
+  - 긴 메서드는 아래와 같은 이유로 코드의 유지 보수에 악영향을 미친다.
+
+    - 어떤 일을 수행하는지 한눈에 파악하기 어려워 코드를 이해하는 데 시간이 오래 걸린다.
+    - 하나의 메서드 안에서 너무 많은 작업을 처리하기에 변경이 필요할 때 수정할 부분을 찾기 어렵다.
+    - 메서느 내부의 일부 로직만 수정하더라도 나머지 부분에서 버그가 발생할 확률이 높다.
+    - 로직의 일부만 재사용하는 것이 불가능하다.
+    - 코드를 재사용하는 유일한 방법은 원하는 코드를 복사해서 붙여넣는 것 뿐이므로 코드 중복을 초래하기 쉽다.
+
+  - 메서드의 응집도를 높여야 하는 이유
+
+    - 클래스의 응집도를 높이는 이유와 같이 메서드의 응집도를 높이는 이유도 변경과 관련이 깊다.
+    - 즉 변경을 수용할 수 있는 코드를 만들기 위해서이다.
+    - 응집도 높은 메서드는 변경되는 이유가 단 하나여야 한다.
+
+    - 메서드가 잘게 나뉘어져 있으므로 다른 메서드에서 사용될 확률이 높다.
+    - 고수준의 메서드를 볼 때 마치 주석들을 나열한 것처럼 보이기 때문에 코드를 이해하기도 쉽다.
+
+  - 객체에게 책임을 분배할 때 가장 먼저 할 일은 메서드를 응집도 있는 수준으로 분해하는 것이다.
+
+    - 긴 메서드를 작고 응집도 있는 메서드로 분리하면 각 메서드를 적절한 클래스로 이동하기가 더 수월해지기 때문이다.
+
+
+
+- `ReservationAgency` 리팩터링하기
+
+  - 위에서 살펴본 대로 메서드를 응집도 있는 수준으로 분해하는 것에서 시작한다.
+    - `reserve` 메서드를 응집도 있는 메서드들로 분해한다.
+    - 이제 각 메서드들은 하나의 작업만 수행하고, 하나의 변경 이유만 가진다.
+    - 비록 클래의 길이는 더 길어졌지만 일반적으로 명확성의 가치가 클래스의 길이보다 중요하다.
+
+  ```python
+  class ReservationAgency:
+      
+      def reserve(self, screening: Screening, customer: Customer, audience_count: int):
+          discountable = self._check_discountable(screening)
+          fee = self._calculate_fee(screening, discountable, audience_count)
+          return self._create_reservation(screening, customer, audience_count, fee)
+  
+      def _check_discountable(self, screening: Screening):
+          return any([self._is_discountable(discount_condition, screening) 
+                      for discount_condition in screening.movie.discount_conditions])
+      
+      def _is_discountable(self, condition: DiscountCondition, screening: Screening):
+          if condition.type_ == DiscountConditionType.PERIOD:
+              return self._is_satisfied_by_period(condition, screening)
+      
+      def _is_satisfied_by_period(self, condition, screening: Screening):
+          return screening.when_screen.weekday() == condition.day_of_week \
+                  and condition.start_time <= screening.when_screen \
+                  and condition.end_time >= screening.when_screen
+      
+      def _is_satisfied_by_sequence(self, condition, screening: Screening):
+          return condition.sequence == screening.sequence
+      
+      def _calculate_fee(self, screening: Screening, discountable: bool, audience_count: int):
+          if discountable:
+              return screening.movie.fee.minus()
+          
+      def _calculate_discount_fee(self, movie: Movie):
+          match movie.movie_type:
+              case MovieType.AMOUNT_DISCOUNT:
+                  return self._calculate_amount_discounted_fee(movie)
+              case MovieType.PECENT_DISCOUNT:
+                  return self._calculate_percent_discounted_fee(movie)
+              
+          return self._calculate_none_discounted_fee(movie)
+      
+      def _calculate_amount_discounted_fee(self, movie: Movie):
+          return movie.discount_amount
+  
+      def _calculate_percent_discounted_fee(self, movie: Movie):
+          return movie.fee * movie.discount_percent
+      
+      def _calculate_none_discounted_fee(self, movie: Movie):
+          return Money.wons(0)
+      
+      def _create_reservation(self, screening: Screening, customer: Customer, audience_count: int, fee: Money):
+          return Reservation(customer, screening, fee, audience_count)
+  ```
+
+  - 수정 후의  `reserve` 메서드
+    - 수정 후의  `reserve` 메서드는 이제 상위 수준의 명세를 읽는 것 같은 느낌이 든다.
+    - 이제 메서드가 어떤 일을 하는지 한 눈에 알아볼 수 있다.
+    - 심지어 메서드의 구현이 주석을 모아놓은 것처럼 보이기까지 한다.
+  - 남아 있는 문제점
+    - 각 메서드들의 응집도는 높아졌지만 `ReservationAgency`의 응집도는 아직도 낮다.
+    - 응집도를 높이기 위해서는 변경의 이유가 다른 메서드들을 적절한 위치로 분배해야 한다.
+    - 적절한 위치란 바로 각 메서드가 사용하는 데이터를 정의하는 클래스를 의미한다.
+
+  - 객체를 자율적으로 만드는 방법
+    - 어떤 메서드를 어떤 클래스로 이동시킬지 결정하기 위해서는 객체가 자율적인 존재여야 한다는 사실을 떠올리면 된다.
+    - 자신이 소유하고 있는 데이터를 자기 스스로 처리하도록 만드는 것이 자율적인 객체를 만드는 지름길이다.
+    - 따라서 메서드가 사용하는 데이터를 저장하고 있는 클래스로 메서드를 이동시킨다.
+  - 코드에 적용하기
+    - `_is_discountable` 메서드는 `DiscountCondition`의 `type_`을 확인하여 타입에 따라 각기 다른 메서드를 호출한다.
+    - `_is_discountable`가 호출하는 `_is_satisfied_by_period`, `_is_satisfied_by_sequence` 역시 `DiscountCondition`의 내부 데이터를 사용한다.
+    - 따라서 이 메서드들이 사용하는 데이터를 가진 클래스인 `DiscountCondition`으로 이동시킨다.
+    - 이제, `is_discountable`은 외부에서 호출해야 하므로 private에서 public으로 변경한다.
+    - 또한 기존에 `DiscountCondition`에 있던 모든 접근자 메서드를 제거한다.
+    - `ReservationAgency`는 이제 접근자 메서드가 아닌 메시지를 통해서만 `DiscountCondition`과 협력한다.
+    - 결국 `ReservationAgency`의 응집도는 높어지고, `DiscountCondition`의 캡슐화가 증진되었으며, 둘 사이의 결합도는 낮아지게 된다.
+
+  ```python
+  class DiscountCondition:
+      def __init__(self, type_: DiscountConditionType, sequence: int, 
+                   day_of_week: str, start_time: time, end_time: time):
+          self._type = type_
+          self._sequence = sequence
+          self._day_of_week = day_of_week
+          self._start_time = start_time
+          self._end_time = end_time
+      
+      def is_discountable(self, screening: Screening):
+          if self.type_ == DiscountConditionType.PERIOD:
+              return self._is_satisfied_by_period(screening)
+      
+      def _is_satisfied_by_period(self, screening: Screening):
+          return screening.when_screen.weekday() == self._day_of_week \
+                  and self._start_time <= screening.when_screen \
+                  and self._end_time >= screening.when_screen
+      
+      def _is_satisfied_by_sequence(self, screening: Screening):
+          return self._sequence == screening.sequence
+  
+      
+  class ReservationAgency:
+      # ...
+  	
+      # 이제 DiscountCondition 객체와 is_discountable 메시지를 통해 협력한다.
+      def _check_discountable(self, screening: Screening):
+          return any([discount_condition.is_discountable(screening)
+                      for discount_condition in screening.movie.discount_conditions])
+      
+      # ...
+  ```
+
+
