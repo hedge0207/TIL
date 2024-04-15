@@ -1,3 +1,18 @@
+# Airbyte
+
+- ELT 파이프라인을 보다 간편하게 구축할 수 있도록 해주는 플랫폼이다.
+  - Source와 destination을 생성하고, connection을 설정하면 source에서 destination으로 data를 전송하는 pipeline이 생성된다.
+    - Source와 destination의 경우 Airbyte에서 개발한 것과 community에서 개발한 것을 모두 지원한다.
+  - UI를 통해 생성하는 것도 가능하고, Python client를 사용하여 생성하는 것도 가능하다.
+  - 변환 기능이 풍부하진 않아서, 데이터 변환을 위해서 일반적으로 dbt(Data Build Tool)라 불리는 데이터 변환 도구를 함께 사용한다.
+
+
+
+- CDC
+  - 현재까지는 MySQL, MongoDB, PostgreSQL, MSSQL만 지원한다.
+
+
+
 # Airbyte 실행하기
 
 - Docker로 Airbyte 실행하기

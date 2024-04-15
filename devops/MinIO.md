@@ -48,7 +48,9 @@
 
 
 
-
+- 각 문서들은 etag를 가진다.
+  - MinIO의 etag는 내용이 같으면 같은 값으로 생성된다.
+  - file명이 달라도 file의 내용이 같으면 같은 값으로 생성된다.
 
 
 
@@ -1287,6 +1289,32 @@
   
 
 
+
+- MinIO Python client로 notification 설정하기
+
+  - MinIO Python client로도 notification 설정이 가능하다.
+  - 아래 code는 Kafka로 event를 publish 하도록 하는 code이다.
+    - 다만, arn은 직접 설정해줘야한다.
+    - `QueueConfig`의 첫 번째 인자로 arn을 입력하고, 두 번째 인자로 event들을 입력하면 된다.
+
+  ```python
+  from minio.notificationconfig import NotificationConfig, QueueConfig
+  from minio import Minio
+  
+  
+  client = Minio("localhost:9000", access_key="foo", secret_key="foo_auth", secure=False)
+  
+  config = NotificationConfig(queue_config_list=[
+      QueueConfig(
+          "<arn>", 
+          ["s3:ObjectCreated:*","s3:ObjectRemoved:*"]
+      )
+  ])
+  
+  client.set_bucket_notification("bucket-name", config)
+  ```
+
+  
 
 
 
