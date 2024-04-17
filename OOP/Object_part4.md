@@ -331,3 +331,87 @@
 
 
 
+- 인터페이스에 의도를 드러내자
+
+  - 현재의 인터페이스는 클라이언트의 의도를 명확하게 드러내지 못 한다.
+    - `TicketSeller`의 `set_ticket` 메서드는 클라이언트의 의도를 전달하지 못한다.
+    - 이는 `Audience`의 `set_ticket`과 `Bag`의 `set_ticket` 역시 마찬가지다.
+
+  - 따라서 의도를 보다 분명히 드러낼 수 있도록 수정한다.
+
+  ```python
+  class TicketSeller:
+      def sell_to(self, audience: Audience):
+          ...
+          
+          
+  class Audience:
+      def buy(self, ticket: Ticket):
+          ...
+          
+          
+  class Bag:
+      def hold(self, ticket: Ticket):
+          ...
+  ```
+
+  - 오퍼레이션의 이름은 협력이라는 문맥을 반영해야한다.
+    - 오퍼레이션은 클라이언트가 객체에게 무엇을 원하는지를 표현해야한다.
+    - 다시 말해 객체 자신이 아닌 클라이언트의 의도를 표현하는 이름을 가져야한다.
+
+
+
+- 원칙의 함정
+
+  - 위에서 살펴본 것들은 절대적인 법칙이 아닌 원칙이다.
+
+    - 설계는 트레이드오프의 산물이므로 원칙을 맹목적으로 추종해선 안 된다.
+    - 원칙들이 서로 충돌하는 경우에도 원칙에 정당성을 부여하고 억지로 끼워 맞춰서는 안 된다.
+
+    - 원칙이 현재 상황에 부적합하다고 판단된다면 과감하게 원칙을 무시해야한다.
+
+  - 디미터 법칙은 하나의 도트(`.`)를 강제하는 규칙이 아니다.
+    - 디미터 법칙은 "하나의 도트만을 사용하라"는 말로 요약되기도 한다.
+    - 만약 하나의 도트만을 사용해야 한다는 디미터 원칙을 곧이 곧대로 받아들이면 아래와 같은 코드는 디미터 원치글 위반하는 코드가 될 것이다. 
+    - `IntStream.of(1,2,3).filter(x -> x >2).distinct().count();`
+    - 그러나 이는 디미터 법칙을 잘못 이해한 것으로, 위 코드에서 `of`, `filter`, `distinct` 메서드는 모두 `IntStream`이라는 동일한 클래스의 인스턴스를 반환한다.
+    - 즉 이들은 `IntStream`의 인스턴스를 또 다른 `IntStream` 인스턴스로 변환다.
+    - 따라서 이 코드는 디미터 법칙을 위반하지 않는다.
+    - 디미터 법칙은 결합도와 관련된 것이며, 결합도가 문제가 되는 것은 객체의 내부 구조가 외부로 노출되는 경우로 한정된다.
+    - 이런 종류의 코드를 마주쳤을 때 과연 여러 개의 토드를 사용한 코드가 객체의 내부 구조를 노출하는가를 먼저 생각해 봐야 한다.
+  - 맹목적인 위임 메서드의 추가는 응집도를 낮출 수 있다.
+    - 수정 전의 `Theater.enter`를 보면 `Audience` 내부에 포함된 `Bag`에 대해 질문한 후 반환된 결과를 이용해 `Bag`의 상태를 변경한다.
+    - 이 코드는 분명히 `Audience`의 캡슐화를 위반하기 때문에 `Theater`는 `Audience`의 내부 구조에 강하게 결합된다.
+    - 이 문제를 해결할 수 있는 방법은 질문하고, 판단하고, 상태를 변경하는 모든 코드를 `Audience` 내부로 옮기는 것이다.
+    - 즉 `Audience`에게 위임 메서드를 추가하는 것이다.
+    - 위임 메서드를 통해 객체의 내부 구조를 감추는 것은 협력에 참여하는 객체들의 결합도를 낮출 수 있는 동시에 응집도를 높일 수 잇는 효과적인 방법이다.
+    - 그러나 묻지 말고 시켜라와 디미터의 법칙을 준수하는 것이 항상 긍정적인 결과를 가져오는 것은 아니다.
+    - 모든 상황에 맹목적으로 위임 메서드를 추가할 경우 같은 퍼블릭 인터페이스 안에 어울리지 않는 오퍼레이션들이 공존하게 되어 상관 없는 책임들을 한꺼번에 떠안게 되고, 결과적으로 응집도가 낮아진다.
+
+  - 때로는 묻는 것이 더 좋은 방법일 수 있다.
+    - 예를 들어 아래 코드에서 `is_satisfied_by` 메서드는 `Screening`에게 질의한 상영 시작 시간을 이용해 할인 여부를 결정한다.
+    - 이 코드는 얼핏 보기에 `Screening`의 내부 상태를 가져와서 사용하기 때문에 캡슐화를 위반한 것으로 보일 수 있다.
+    - 따라서 할인 여부를 판단하는 로직을 `Screening`의 `is_discountable` 메서드로 옮기고 `PeriodCondition`이 이 메서드를 호출하도록 변경하여 묻디 말고 시켜라 스타일을 준수하는 퍼블릭 인터페이스를 얻을 수 있다고 생각할 것이다.
+    - 그러나 이 경우 `Screening`이 할인 조건을 판단하는 책임을 떠안게 되며, 이는 `Screening`의 본질적인 책임이 아니다.
+    - 따라서 `Screening`의 응집도가 낮아지게 된다.
+    - 또한 `PeriodCondition`의 인스턴스 변수를 인자로 받기 때문에 `PeriodCondition`의 인스턴스 변수 목록이 변경될 경우에도 영향을 받기 되어 결합도도 높아진다.
+    - 따라서 묻지 말고 시켜라 스타일을 준수하여 `Screening`의 캡슐화를 높이는 것 보다 전체적인 관점에서 응집도와 결합도를 높이는 것이 더 좋은 방법이다.
+
+  ```python
+  class PeriodCondition(DiscountCondition):
+      def is_satisfied_by(self, screening: Screening):
+          return screening._when_screened.weekday() == self._day_of_week and \
+                 self._start_time <= screening._when_screened() and \
+                 self._end_time >= screening._when_screened()
+      
+      
+  # 아래와 같이 변경한다.
+  class Screening:
+      def is_satisfied_by(self, day_of_week, start_time, end_time):
+          return self._when_screened.weekday() == day_of_week and \
+                 start_time <= self._when_screened() and \
+                 end_time >= self._when_screened()
+  ```
+
+
+

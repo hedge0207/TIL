@@ -409,11 +409,11 @@
           self._audience_count = audience_count
   
       @property
-      def customer(self):
+      def _customer(self):
           return self._customer
       
-      @customer.setter
-      def customer(self, customer: Customer):
+      @_customer.setter
+      def _customer(self, customer: Customer):
           self._customer = customer
   
       # 나머지 인스턴스 변수들의 접근자와 수정자도 추가한다.
