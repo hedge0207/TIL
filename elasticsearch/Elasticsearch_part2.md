@@ -424,6 +424,61 @@
 
 
 
+
+- Split brain
+
+  - Cluster로 구성된 시스템에서 네트워크 연결의 이상 또는 분할로 인해 시스템 내의 노드들이 서로 다른 그룹으로 나누어져 데이터 일관성을 유지하기 어려운 상황을 의미한다.
+    - 예를 들어 master eligible node가 4개(A, B, C, D)인 상황을 가정해보자.
+    - 네트워크게 문제가 생겨 A-B, C-D를 제외한 network가 모두 끊기게 되었다.
+    - 이 상황에서 연결이 되는 A-B가 A를 master node로 하는 cluster를 형성하고, C-D가 C를 master node로 하는 cluster를 생성하게 되었다.
+    - 시간이 흐를 수록 두 cluster 사이의 data는 점점 차이가 벌어질 것이고, 나중에 다시 합쳐야 할 때 어느 data를 기준으로 합쳐야 할지 알 수도 없게 된다.
+
+  - Elasticsearch에서는 이를 방지하기 위해 master eligible node의 개수를 홀수로 설정하는 것을 권장한다.
+    - Master eligible node의 개수를 홀수로 설정하는 것은 split brain을 방지하기 위함이다.
+    - 만약 짝수 개의 master eligible node들이 절반씩 두 그룹으로 나뉘어졌다고 하면, 어떤 그룹을 선택하여 cluster를 지속할지 정하기가 쉽지 않다.
+    - 그러나 홀수 개라면 정확히 절반으로 나뉘는 경우가 나올 수 없으므로, 더 많은 node들이 속한 그룹을 선택하여 cluster를 지속하고, 다른 group은 작동을 멈추는 식으로 동작할 수 있다.
+  - Master eligible node의 개수를 홀수로 설정하는 것을 권장하는 또 다른 이유는 Elasticsearch의 master 선출이 정족수 기반이기 때문이다.
+    - 아래 표를 보면 master eligible node가 3개일 때와 4개일 때 정족수는 4개일 때가 더 높지만 정지 되어도 되는 node의 수는 차이가 없다.
+    - 즉 홀수가 짝수에 비해 정족수 대비 정지 되어도 되는 node의 수가 더 많으므로 홀수로 하는 것이 더 효율적이다.
+
+  | Master 후보 노드의 개수 | 정족수 | 허용 가능한 실패한 node의 개수 |
+  | ----------------------- | ------ | ------------------------------ |
+  | 3                       | 2      | 1                              |
+  | 4                       | 3      | 1                              |
+  | 5                       | 3      | 2                              |
+  | 6                       | 4      | 2                              |
+  | 7                       | 4      | 3                              |
+
+
+
+
+- Tiebreaker node
+
+  - Elasticsearch는 split-brain 문제를 막기 위해 node의 개수를 홀수로 설정하는 것을 권장한다.
+  - 예를 들어 두 개의 node로 구성된 cluster가 있다고 가정해보자.
+    - 만약 두 node 중 한 node가 실행을 멈춘 경우 아직 실행 중인 다른 node가 master node로 선출 될 것이라고 생각하겠지만, 그렇지 않다.
+    - 실제로는 master를 선출하지 않은 채로 기다린다.
+    - 이 두 노드 중 한 node가 실행을 멈출 경우 다른 node는 해당 node와 연결이 끊어진 것인지, 아니면 해당 node가 실행을 멈춘 것인지 알 수 있는 방법이 없다.
+    - 만약 위와 같은 상황에서 master를 선출한다면, 두 node 모두 실행 중이지만 단순히 두 node 사이의 연결이 끊어진 것 뿐이라고 하더라도, 두 node들은 각각 master node로 선출 되고 별도의 cluster를 선출하게 된다.
+    - 따라서 이러한 상황을 방지하고자 Elasticsearch는 남은 node가 최신 cluster 상태이고, cluster에 다른 master node가 없는지 확인할 때 까지 master를 선출하지 않는다.
+  - 위와 같은 문제는 세 번째 node를 추가하고, 세 node 모두 master-eligible하게 만듦으로써 해결할 수 있다.
+    - 두 개의 원래 node 사이의 연결이 끊어졌을 때, 새로 추가된 세 번째 node는 tiebreaker 역할을 한다.
+  - Dedicated tiebreaker
+    - 오직 tiebreaker의 역할만 하는 node를 의미한다.
+    - 이 node는 master와 voting_only 역할 만을 부여 받으며, data를 저장하지도, 검색이 이루어지지도 않고, coordinator 역할을 수행하지도 않는다.
+    - Master 선출에만 관여하는 node로, 이 node를 상대적으로 사양이 떨어지는 server에 배치하고, 다른 두 대의 server에 data, master node 역할을 하는 node를 배치하여 node를 홀수로 구성하면서 비용도 절감할 수 있다.
+    - Elasticsearch에서는 production 환경에 적합한 가장 작은 규모의 cluster라고 본다.
+  - Elasticsearch가 권장하는 cluster의 최소 구성
+    - Elastic Cloud의 최소 구성은 아래와 같다.
+
+  |        | Tiebreaker          | Data1  | Data2  |
+  | ------ | ------------------- | ------ | ------ |
+  | 역할   | master, voting_only | himrst | himrst |
+  | Memory | 1GB                 | 4GB    | 4GB    |
+  | Disk   | 12GB                | 120GB  | 120GB  |
+
+
+
 - 두 번째 노드 생성하기
   - 방법
     - `elasticsearch.yml` 파일에 `node.max_local_storage_nodes: 생성할 노드 수` 코드를 추가한다(`:`와 생성할 노드 수 사이에 공백이 있어야 한다).
@@ -510,6 +565,10 @@
 
   - 클러스터 그린 상태(모든 샤드가 할당 된 상태) 확인
   - 위 과정 반복
+
+
+
+
 
 
 

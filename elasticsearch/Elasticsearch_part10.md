@@ -42,6 +42,32 @@
 
 
 
+- Single node
+  - 단일 node라는 의미도 있지만 node의 역할 측면에서 보면 node의 모든 역할을 수행할 수 있는 node를 의미한다.
+    - Node에 아무 역할을 지정해주지 않으면 기본적으로 모든 역할을 하는 single node로 동작한다.
+  - Cluster의 규모가 작을 때는 node 별로 역할을 나누기 보다 single node로 동작하게 하는 것이 유리할 수 있다.
+    - 장애가 발생했을 때 다른 node가 대신할 수 있어야 하기 때문이다.
+    - 일반적으로 3대 이하의 소규모 cluster를 구축한다면 모든 Elasticsearch node를 single node로 동작시키는 것이 좋다.
+
+
+
+- Coordinator node
+
+  - 기본적으로 모든 node는 coordinator의 역할을 수행한다.
+  - 그럼에도 coordinator의 역할만 하는 node를 두는 것이 권장된다.
+    - Coordinator node가 검색 요청을 받으면 cluster에 존재하는 모든 data node에게 검색을 요청한다.
+    - 각 data node들이 검색을 수행하고 그 결과를 다시 coordinator node에게 전달한다.
+    - Coordinator node는 모든 data node들로부터 검색 결과를 받을 때 까지 대기하다가 모든 data node로부터 검색 결과가 반환 되면 이들을 하나로 병합해서 사용자에게 전달한다.
+    - 각 data node에게 전달 받은 data를 하나로 합치는 작업은 memory를 많이 필요로한다.
+    - 따라서 coordinator node가 master나 data node 등 다른 역할도 함께 수행할 경우 문제가 발생할 가능성이 높아진다.
+    - 또한 aggregation과 같이 매우 많은 resource를 필요로 하는 기능도 있다.
+    - 따라서 자칫 무리한 작업을 실행하여 resource의 한계에 도달할 경우 시스템 전체에 장애가 발생할 수도 있다.
+    - 그러므로 coordinator node를 별도로 구축하면 해당 node는 data node의 역할은 하지 않을 수 있으므로 부하가 훨씬 감소하게 된다.
+  - Master node도 마찬가지 이유로 따로 분리할 수 있다면 data node와 분리하는 것이 좋다.
+    - Master node는 data node나 coordinator node와 달리 많은 resource를 필요로 하지 않으므로 상대적으로 떨어지는 사양을 가진 장비에 master node를 실행하고, 보다 높은 사양을 가진 장비에 data node를 실행하는 식으로 운영이 가능하다.
+
+
+
 - Data role
   - Data노드는 기본적으로 아래와 같은 역할을 수행한다.
     - 문서의 색인 및 저장

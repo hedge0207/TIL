@@ -12,37 +12,39 @@
   - 의존성은 실행 시점과 구현 시점에 서로 다른 의미를 가진다.
     - 실행 시점: 의존하는 객체가 정상적으로 동작하기 위해서는 실행 시에 의존 대상 객체가 반드시 존재해야한다.
     - 구현 시점: 의존 대상 객체가 변경될 경우 의존하는 객체도 함께 변경된다.
-
-
-  - 영화 예매 시스템에서
-    - `PeriodCondition.is_satisfied_by`는 `Screening`인스턴스에게 메시지를 전송하여 상영 시작 시간을 받아온다.
-    - 즉 `PeriodCondition`은 `Screening`에게 의존한다.
-    - 실행 시점에 `PeriodCondition`의 인스턴스가 정상적으로 동작하기 위해서는 `Screening`의 인스턴스가 존재해야 한다.
-    - 만약 `Screening`의 인스턴스가 존재하지 않거나 상영 시작 시간을 알려달라는 메시지를 이해할 수 없다면 `is_satisfied_by` 메서드는 예상했던 대로 동작하지 않을 것이다.
-    - 또한 `PeriodCondition`은 `DiscountCondition`을 상속 받으므로, `DiscountCondition`에게 의존한다.
-    - 따라서 만약 `Screening`의 인터페이스가 변경되거나, `DiscountCondition`이 변경된다면 `PeriodCondition`도 변경되어야 한다.
-
+  
+  
+    - 영화 예매 시스템에서
+      - `PeriodCondition.is_satisfied_by`는 `Screening`인스턴스에게 메시지를 전송하여 상영 시작 시간을 받아온다.
+      - 즉 `PeriodCondition`은 `Screening`에게 의존한다.
+      - 실행 시점에 `PeriodCondition`의 인스턴스가 정상적으로 동작하기 위해서는 `Screening`의 인스턴스가 존재해야 한다.
+      - 만약 `Screening`의 인스턴스가 존재하지 않거나 상영 시작 시간을 알려달라는 메시지를 이해할 수 없다면 `is_satisfied_by` 메서드는 예상했던 대로 동작하지 않을 것이다.
+      - 또한 `PeriodCondition`은 `DiscountCondition`을 상속 받으므로, `DiscountCondition`에게 의존한다.
+      - 따라서 만약 `Screening`의 인터페이스가 변경되거나, `DiscountCondition`이 변경된다면 `PeriodCondition`도 변경되어야 한다.
+  
   ```python
-class PeriodCondition(DiscountCondition):
-
-    def __init__(self, day_of_week: str=None, start_time: time=None, end_time: time=None):
-        self._day_of_week = day_of_week
-        self._start_time = start_time
-        self._end_time = end_time
-
-    def is_satisfied_by(self, screening: Screening):
-        return screening._when_screened.weekday() == self._day_of_week and \
-               self._start_time <= screening._when_screened() and \
-               self._end_time >= screening._when_screened()
+  class PeriodCondition(DiscountCondition):
+  
+      def __init__(self, day_of_week: str=None, start_time: time=None, end_time: time=None):
+          self._day_of_week = day_of_week
+          self._start_time = start_time
+          self._end_time = end_time
+  
+      def is_satisfied_by(self, screening: Screening):
+          return screening._when_screened.weekday() == self._day_of_week and \
+                 self._start_time <= screening._when_screened() and \
+                 self._end_time >= screening._when_screened()
   ```
-
-  - 변경과 관련이 있는 어떤 것에도 의존성이라는 개념을 적용할 수 있다.
-    - 의존성이란 꼭 클래스에만 국한되는 개념은 아니다.
-    - 의존성이 대상은 객체일 수도 있고 모듈일 도 있고 더 큰 규모의 시스템일 수도 있다.
-  - 변경될 확률이 거의 없는 클래스라면 의존성이 문제가 되지 않는다.
-    - 의존성이 불편한 이유는 그것이 항상 변경에 대한 영향을 암시하기 때문이다.
-    - Java라면 JDK에 포함된 표준 클래스가 이 부류에 속한다.
-    - 이런 클래스들에 대해서는 구체 클래스에 의존하거나 직접 인스턴스를 생성하더라도 문제가 없다.
+  
+    - 변경과 관련이 있는 어떤 것에도 의존성이라는 개념을 적용할 수 있다.
+      - 의존성이란 꼭 클래스에만 국한되는 개념은 아니다.
+      - 의존성이 대상은 객체일 수도 있고 모듈일 도 있고 더 큰 규모의 시스템일 수도 있다.
+  
+    - 변경될 확률이 거의 없는 클래스라면 의존성이 문제가 되지 않는다.
+      - 의존성이 불편한 이유는 그것이 항상 변경에 대한 영향을 암시하기 때문이다.
+        - Java라면 JDK에 포함된 표준 클래스가 이 부류에 속한다.
+        - 이런 클래스들에 대해서는 구체 클래스에 의존하거나 직접 인스턴스를 생성하더라도 문제가 없다.
+  
 
 
 
@@ -260,6 +262,8 @@ class PeriodCondition(DiscountCondition):
       }
   }
   ```
+
+
 
 
 
