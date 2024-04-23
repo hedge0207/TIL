@@ -324,11 +324,42 @@
   }
   ```
 
-  - Index를 생성시에 설정이 가능하다.
+  - Index를 생성할 때 설정 하는 것도 가능하다.
     -  `index.default_pipeline`에 default pipeline을 설정할 수 있다.
     - `index.default_pipeline`에 설정한 pipeline은 색인 요청시에 `pipeline` parameter가 설정되지 않았을 경우 적용된다.
     - `index.final_pipeline`에 final pipeline을 설정할 수 있다.
     - `index.final_pipeline`에 설정한 pipeline은 색인 요청시에 설정한 `pipeline`이나 default pipeline이 실행되고 난 후 실행된다.
+  
+  ```json
+  // PUT _ingest/pipeline/my-pipeline
+  {
+    "processors": [
+      {
+        "rename": {
+          "field": "baz",
+          "target_field": "foo"
+        }
+      }
+    ]
+  }
+  
+  // PUT my-data-stream
+  {
+      "settings": {
+          "default_pipeline":"my-pipeline"
+      }
+  }
+  ```
+  
+  - `index.default_pipeline`와 `index.final_pipeline` 모두 dynamic setting으로 중간에 변경하는 것이 가능하다.
+    - 만약 해제하고 싶다면 아래와 같이 null 값을 주면된다.
+  
+  ```json
+  // PUT my-data-stream/_settings
+  {
+    "default_pipeline":null
+  }
+  ```
 
 
 
@@ -589,9 +620,11 @@
 
 
 
+
+
 ## Processor의 종류
 
-> 대부분의 processor가 array 혹은 object type의 field에도 적용이 가능하며, 이 경우 배열 혹은 object를 순회하면서 각 요소에 모두 processor를 적용한다.
+> 대부분의 processor를 배열 혹은 object type의 field에도 적용이 가능하며, 이 경우 배열 혹은 object를 순회하면서 각 요소에 모두 processor가 적용된다.
 
 - Append
   - 배열 형태의 field에 값을 추가한다.
@@ -600,12 +633,14 @@
 
 
 - Attachment
-  - Apache의 text 추출 library인 Tika를 사용하여 널리 사용되는 file format을 가진 file에서 text를 추출한다.
+  - Apache의 text 추출 library인 Tika를 사용하여 file에서 text를 추출한다.
+    - 널리 사용되는 파일 포맷만 지원한다.
+    - 지원하는 포맷은 [링크](https://tika.apache.org/3.0.0-BETA/formats.html)에서 확인할 수 있다.
 
 
 
 - Bytes
-  - 사람이 읽기 편한 형태의 byte 값(e.g. 1kb)를 bytes로 변환(e.g. 1024)한다.
+  - 사람이 읽기 편한 형태의 byte 값(e.g. 1kb)을 bytes로 변환(e.g. 1024)한다.
 
 
 
@@ -742,7 +777,7 @@
 
   - Grok processor와 유사하게 문서의 단일 text field에서 구조화 된 데이터를 추출한다.
     - Grok과 차이점은 disscet은 정규표현식을 사용하지 않는다는 것이다.
-    - 정규표현식을 사용하는 대신, disscet만의 문법을 사용하며, 이는 grok보다 간단하고 특정 경우에 grok보다 더 빠른 속도를 보인다.
+    - 정규표현식을 사용하지 않는 대신, disscet만의 문법을 사용하며, 이는 grok보다 간단하고 특정 경우에 grok보다 더 빠른 속도를 보인다.
   - 예시
 
   ```json
@@ -802,7 +837,7 @@
 
 
 - Fail
-  - 특정 조건이 충족되면 exception을 발생시킨다.
+  - 설정한 조건을 만족하면 exception을 발생시킨다.
 
 
 
@@ -813,7 +848,7 @@
 
 - Foreach
 
-  - 배열 혹은 object 형태의 element이 각각 ingest processor를 적용한다.
+  - 배열 혹은 object 형태의 element에 각각 ingest processor를 적용한다.
   - 예시
 
   ```json
@@ -1004,7 +1039,7 @@
 
 
 - Inference
-  - 미리 학습된 data frame analytic model이나 NLP를 위해 deploy된 model로 data를 inference할 수 있게 해준다.
+  - 미리 학습된 data frame analytic model이나 NLP를 위해 deploy된 model로 데이터를 inference할 수 있게 해준다.
 
 
 
@@ -1122,7 +1157,7 @@
 
 
 - Lowercase / Upperase
-  - 각각 특정 field의 string을 소문자/대문자로 변경한다.
+  - String을 소문자/대문자로 변경한다.
 
 
 
@@ -1196,6 +1231,68 @@
 
 - Rename
   - Field의 이름을 변경한다.
+  - Pipeline 생성
+  
+  ```json
+  // PUT _ingest/pipeline/my-pipeline
+  {
+    "processors": [
+      {
+        "rename": {
+          "field": "baz",
+          "target_field": "foo"
+        }
+      }
+    ]
+  }
+  ```
+  
+  - 데이터 색인
+  
+  ```json
+  // POST my-data-stream/_doc?pipeline=my-pipeline
+  {
+    	"baz": "Hello World"
+  }
+  ```
+  
+  - 확인
+  
+  ```json
+  // GET my-data-stream/_mapping
+  {
+      "my-data-stream": {
+          "mappings": {
+              "properties": {
+                  "foo": {
+                      "type": "text",
+                      "fields": {
+                          "keyword": {
+                              "type": "keyword",
+                              "ignore_above": 256
+                          }
+                      }
+                  }
+              }
+          }
+      }
+  }
+  
+  // GET my-data-stream/_search
+  {
+      // ...
+      "hits": [
+          {
+              "_index": "my-data-stream",
+              "_id": "Q3rRB1gfg3sujMBEHctS",
+              "_score": 1,
+              "_source": {
+                  "foo": "Hello World"
+              }
+          }
+      ]
+  }
+  ```
 
 
 
