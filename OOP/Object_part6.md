@@ -427,3 +427,233 @@
     - 상속은 기본적으로 부모 클래스의 구현을 재사용한다는 전제를 따르기 때문에 자식 클래스가 부모 클래스의 내부에 대해 자세히 알도록 강요한다.
   - 클래스를 상속하면 결합도로 인해 자식 클래스와 부모 클래스의 구현을 영원히 변경하지 않거나, 자식 클래스와 부모 클래스를 동시에 변경하거나 둘 중하나를 선택할 수밖에 없다.
 
+
+
+
+
+
+
+## 상속 제대로 사용하기
+
+- 추상화에 의존하기
+  - `NightlyDiscountPhone`의 가장 큰 문제는 `Phone`에 강하게 결합되어 있다는 것이다.
+  - 이 문제를 해결하는 가장 일반적인 방법은 자식 클래스가 보무 클래스의 구현이 아닌 추상화에 의존하도록 만드는 것이다.
+    - 정확히 말하면 부모 클래스와 자식 클래스 모두 추상화에 의존하도록 수정해야 한다.
+
+
+
+- 차이를 메서드로 추출하라
+
+  - 중복 코드 안에서 차이점을 별도의 메서드로 추출한다.
+    - 이는 "변하는 부분을 찾고 이를 캡슐화 하라"는 객체 지향의 원칙을 메서드에 적용한 것이다.
+    - 상속을 사용하지 않은 코드에서 `Phone`과 `NightlyDiscountPhone`는 `calculate_fee`의 구현 방식에 차이가 있다.
+    - 이 부분을 동일한 이름을 가진 메서드로 추출한다.
+
+  ```python
+  class Phone:
+      
+      def __init__(self, amount: Money, seconds: int):
+          self._amount = amount
+          self._seconds = seconds
+          self._calls: List[Call] = []
+  
+      def calculate_fee(self) -> Money:
+          result = Money.wons(0)
+          for call in self._calls:
+              result = result.plus(self.calculate_call_fee(call))
+          return result
+  
+      def calculate_call_fee(self, call: Call) -> Money:
+          return self._amount.times(call.get_duration().total_seconds() / self._seconds)
+  ```
+
+  - `NightlyDiscountPhone`에서도 동일한 방식으로 메서드를 추출한다.
+
+  ```python
+  class NightlyDiscountPhone:
+  
+      LATE_NIGHT_HOUR = 22
+  
+      def __init__(self, nightly_amount: Money, regular_amount: Money, seconds: int):
+          self._nightly_amount = nightly_amount
+          self._regular_amount = regular_amount
+          self._seconds = seconds
+          self._calls: List[Call] = []
+  
+      def calculate_fee(self) -> Money:
+          result = Money.wons(0)
+          for call in self._calls:
+              result = result.plus(self._calculate_call_fee(call))
+          
+          return result.minus(result.times(self._tax_rate))
+      
+      def _calculate_call_fee(self, call: Call) -> Money:
+          if call._from.hour >= self.LATE_NIGHT_HOUR:
+              return self._nightly_amount.times(call.get_duration().total_seconds() / self._seconds)
+          else:
+              return self._regular_amount.times(call.get_duration().total_seconds() / self._seconds)
+  ```
+
+  - 두 클래스의 `calculate_fee`에서 차이가 나는 부분을 추출하여, 두 클래스의 `calculate_fee`가 완전히 동일해졌다.
+
+
+
+- 중복 코드를 부모 클래스로 올려라.
+
+  - 부모 클래스를 추가한다.
+    - 부모 클래스에 `Phone`과 `NightlyDiscountPhone`의 공통 부분(`calculate_fee`)을 이동시킨다.
+    - 그리고 이에 필요한 인스턴스 변수도 함께 이동시킨 후 필요한 메서드는 추상 메서드로 선언한다.
+
+  ```python
+  class AbstractPhone(ABC):
+  
+      def __init__(self):
+          self._calls = []
+  
+      def calculate_fee(self) -> Money:
+          result = Money.wons(0)
+          for call in self._calls:
+              result = result.plus(self._calculate_call_fee(call))
+          return result
+      
+      @abstractmethod
+      def _calculate_call_fee(sefl) -> Money:
+          ...
+  ```
+
+  - 이제 `Phone`과 `NightlyDiscountPhone`이 추상 클래스를 상속받도록 변경한다.
+
+  ```python
+  class Phone(AbstractPhone):
+      def __init__(self, amount: Money, seconds: int):
+          self._amount = amount
+          self._seconds = seconds
+  
+      def _calculate_call_fee(self, call: Call) -> Money:
+          return self._amount.times(call.get_duration().total_seconds() / self._seconds)
+  
+  
+  class NightlyDiscountPhone(AbstractPhone):
+  
+      LATE_NIGHT_HOUR = 22
+  
+      def __init__(self, nightly_amount: Money, regular_amount: Money, seconds: int):
+          self._nightly_amount = nightly_amount
+          self._regular_amount = regular_amount
+          self._seconds = seconds
+      
+      def _calculate_call_fee(self, call: Call) -> Money:
+          if call._from.hour >= self.LATE_NIGHT_HOUR:
+              return self._nightly_amount.times(call.get_duration().total_seconds() / self._seconds)
+          else:
+              return self._regular_amount.times(call.get_duration().total_seconds() / self._seconds)
+  ```
+
+  - 위와 같이 공통된 부분을 부모 클래스로 옮기는 것을 "위로 올리기" 전략이라 부른다.
+    - 이를 통해 추상화에 의존하는 코드를 작성할 수 있다.
+
+
+
+- 추상화에 의존하도록 변경한 후에 얻은 이점들
+  - 공통 코드를 이동시킨 후에 각 클래스는 서로 다른 변경의 이유를 가지게 되었다.
+    - `AbstractPhone`은 전체 통화 목록을 계싼하는 방법이 바뀔 경우에만 변경된다.
+    - `Phone`은 일반 요금제의 통화 한 건을 계산하는 방식이 바뀔 경우에만 변경된다.
+    - `NightlyDiscountPhone`은 심야 할인 요금제의 통화 한 건을 계산하는 방식이 바뀔 경우에만 변경된다.
+    - 이들은 단일 책임 원칙을 준수하기 때문에 응집도가 높다.
+  - 자식 클래스는 부모 클래스의 구현에 의존하지 않게 되었다.
+    - 자식 클래스인 `Phone`과 `NightlyDiscountPhone`은 부모 클래스인 `AbstractPhone`의 구체적인 구현에 의존하지 않는다.
+    - 오직 부모 클래스에서 정의한 추상 메서드인 `calculate_call_fee`에만 의존한다.
+    - `calculate_call_fee`의 시그니처가 변경되지 않는 한 부모 클래스의 내부 구현이 변경되더라도 자식 클래스는 영향을 받지 않는다.
+    - 결과적으로 낮은 결합도를 가지게 된다.
+  - 의존성 역전 원칙도 준수한다.
+    - 요금 계산과 관련된 상위 수준의 정책을 구현하는 `AbstractPhone`이 세부적인 계산 로직을 구현하는 `Phone`과 `NightlyDiscountPhone`에 의존하지 않고 있다.
+    - 반대로 `Phone`과 `NightlyDiscountPhone`이 추상화인 `AbstractPhone`에 의존한다.
+  - 개방-폐쇄 원칙을 준수한다.
+    - 새로운 요금제를 추가하기도 쉬워졌다.
+    - 새로운 요금제가 발생한다면 `AbstractPhone`을 상속 받는 새로운 클래스를 추가한 후 `calculate_fee` 메서드만 오버라이딩하면 된다.
+
+
+
+- 의도를 드러내는 이름 선택하기
+
+  - 수정된 위 코드에서 한 가지 아쉬운 점이 있다면 클래스의 이름이다.
+    - `NightlyDiscountPhone`은 심야 할인 요금제와 관련된 내용을 구현한다는 사실을 명확하게 전달하지만 `Phone`은 그렇지 못한다.
+    - 또한 `AbstractPhone` 역시 모든 전화기를 포괄한다는 의미를 명확하게 전달하지 못 한다.
+  - 따라서 아래와 같이 이름을 변경한다.
+
+  ```python
+  # AbstractPhone
+  class Phone(ABC): ...
+  # Phone
+  class RegularPhone(Phone): ...
+  ```
+
+
+
+- 변경 사항 수용하기
+
+  - 이전과 마찬가지로 요금에 세금을 부과해야 한다는 요구사항이 추가되었다.
+    - 세금은 모든 요금제에 공통으로 적용되는 요구사항이므로 `Phone`에서 처리한다.
+
+  ```python
+  class Phone(ABC):
+  
+      def __init__(self, tax_rate: float):
+          self._calls: List[Call] = []
+          self._tax_rate = tax_rate
+  
+      def calculate_fee(self) -> Money:
+          result = Money.wons(0)
+          for call in self._calls:
+              result = result.plus(self._calculate_call_fee(call))
+          return result.plus(result.times(self._tax_rate))
+  ```
+
+  - 자식 클래스들의 생성자도 `tax_rate`을 받도록 수정한다.
+    - 이처럼 책임을 잘 분배했더라도, 부모 클래스에 인스턴스 변수가 추가되면 자식 클래스에도 영향을 미치게 된다.
+
+  ```python
+  class RegularPhone(Phone):
+      def __init__(self, amount: Money, seconds: int, tax_rate: float):
+          super().__init__(tax_rate)
+          self._amount = amount
+          self._seconds = seconds
+  
+  class NightlyDiscountPhone(Phone):
+      def __init__(self, nightly_amount: Money, regular_amount: Money, seconds: int, tax_rate: float):
+          super().__init__(tax_rate)
+          self._nightly_amount = nightly_amount
+          self._regular_amount = regular_amount
+          self._seconds = seconds
+  ```
+
+
+
+- 상속으로 인한 클래스 사이의 결합을 피할 수 있는 방법은 없다.
+  - 상속은 자식 클래스가 부모 클래스의 행동뿐 아니라 인스턴스 변수에도 결합되게 만든다.
+    - 인스턴스 변수의 목록이 변하지 않는 상황에서 객체의 행동만 변경된다면 상속 계층에 속한 각 클래스들을 독립적으로 진화시킬 수 있다.
+    - 그러나 인스턴스 변수가 추가된다면 자식 클래스는 자신의 인스턴스를 생성할 때 부모 클래스에 정의된 인스턴스 변수를 초기화해야 하기 때문에 자연스럽게 부모 클래스에 추가된 인스턴스 변수는 자식 클래스의 초기화 로직에 영향을 주게 된다.
+    - 결과적으로 책임을 아무리 잘 분리하더라도 인스턴스 변수의 추가는 종종 상속 계층 전반에 걸친 변경을 유발한다.
+  - 상속은 어떤 방식으로든 부모 클래스와 자식 클래스를 결합시킨다.
+    - 메서드 구현에 대한 결합은 추상 메서드를 추가함으로써 어느 정도 완화할 수 있다.
+    - 그러나 인스턴스 변수에 대한 잠재젹인 결합을 제거할 수 있는 방법은 없다.
+
+
+
+- 차이에 의한 프로그래밍(programming by difference)
+  - 기존 코드와 다른 부분만을 추가함으로써 애플리케이션의 기능을 확장하는 방법이다.
+    - 상속을 이용하면 이미 존재하는 클래스의 코드를 쉽게 재사용할 수 있기 때문에 애플리케이션의 점진적인 정의가 가능해진다.
+  - 차이에 의한 프로그래밍의 목표는 중복 코드를 제거하고 코드를 재사용하는 것이다.
+    - 사실 중복 코드 제거와 코드 재사용은 동일한 행동을 카리키는 서로 다른 단어다.
+    - 중복을 제거하기 위해서는 코드를 재사용 가능한 단위로 분해하고 재구성해야 한다.
+    - 코드를 재사용하기 위해서는 중복 코드를 제거해서 하나의 모듈로 모아야 한다.
+  - 재사용 가능한 코드란 심각한 버그가 존재하지 않는 코드다.
+    - 코드를 재사용 하는 것은 단순히 문자를 타이핑하는 수고를 덜어주는 수준의 문제가 아니다.
+    - 코드를 재사용하면 코드의 품질은 유지하면서도 코드를 작성하는 노력과 테스트는 줄일 수 있다.
+  - 상속은 강력한 도구다.
+    - 객체지향 세계에서 중복 코드를 제거하고 코드를 재사용할 수 있는 가장 유명한 방법이다(그러나 가장 좋은 방법이지는 않을 수 있다).
+    - 상속을 이용하면 새로운 기능을 추가하기 위해 직접 구현해야 하는 코드의 양을 최소화할 수 있다.
+  - 그러나 상속의 오용과 남용은 애플리케이션을 이해하고 확장하기 어렵게 만든다.
+    - 정말 필요한 경우에만 상속을 사용해야 한다.
+    - 상속은 코드 재사용과 관련된 대부분의 경우에 우아한 해결 방법이 아니다.
+
