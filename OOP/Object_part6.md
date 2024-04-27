@@ -657,3 +657,436 @@
     - 정말 필요한 경우에만 상속을 사용해야 한다.
     - 상속은 코드 재사용과 관련된 대부분의 경우에 우아한 해결 방법이 아니다.
 
+
+
+
+
+
+
+# 합성과 유연한 설계
+
+- 상속과 합성
+
+  - 상속과 합성은 객체지향 프로그래밍에서 가장 널리 사용되는 코드 재사용 기법이다.
+    - 상속은 is-a 관계라고 부른다.
+    - 합성은 has-a 관계라고 부른다.
+  - 코드 재사용에서의 차이
+    - 상속은 부모 클래스와 자식 클래스를 연결해서 부모 클래스의 코드를 재사용한다.
+    - 합성은 전체를 표현하는 객체가 부분을 표현하는 객체를 포함해서 부분 코드의 객체를 재사용한다.
+    - 상속은 부모 클래스 안에 구현된 코드 자체를 재사용한다.
+    - 합성은 포함되는 객체의 퍼블릭 인터페이스를 재사용한다.
+  - 의존성 해결 시점에서의 차이
+    - 상속에서 부모 클래스와 자식 클래스 사이의 의존성은 컴파일타임에 해결된다.
+    - 합성에서 두 객체 사이의 의존성은 런타임에 해결된다.
+
+  - 상속은 자식 클래스와 부모 클래스 사이의 결합도를 높인다.
+    - 상속을 제대로 활용하기 위해서는 부모 클래스의 내부 구현에 대해 상세하게 알아야 하기 때문이다.
+    - 결과적으로 상속은 코드를 재사용할 수 잇는 쉽고 간단한 방법이지만 우아한 방법은 아니다.
+  - 합성은 상속과 달리 구현에 의존하지 않는다.
+    - 합성은 내부에 포함되는 객체의 구현이 아닌 퍼블릭 인터페이스에 의존한다.
+    - 따라서 합성을 사용하면 포함된 객체의 내부 구현이 변경되더라도 영향을 최소화할 수 있기에 변경에 더 안정적인 코드를 얻을 수 있게 된다.
+  - 상속 대신 합성을 사용하면 변경하기 쉽고 유연한 설계를 얻을 수 있다.
+    - 상속은 클래스 사이의 정적인 관계인데 반해 합성은 객체 사이의 동적인 관계다.
+    - 코드 작성 시점에 결정한 상속 관계는 변경이 불가능하지만 합성 관계는 실행시에 동적으로 변경할 수 있다.
+
+
+
+- 상속 대신 합성을 사용할 경우의 이점
+
+  - 코드 재사용을 위해 상속을 남용했을 때 발생할 수 있는 세 가지 문제점은 아래와 같다.
+    - 불필요한 인터페이스 상속
+    - 메서드 오버라이딩 오작용
+    - 부모 클래스와 자식 클래스 동시 수정
+  - 합성을 사용하면 불필요한 인터페이스 상속 문제를 해결할 수 있다.
+    - 이전 장에서 `List`를 상속한 `Stack`을 예시로 불필요한 인터페이스 상속 문제를 살펴봤다.
+    - 해당 코드를 상속이 아닌 합성을 사용하도록 아래와 같이 변경했다.
+    - `List`의 인스턴스를 `Stack`의 인스턴스 변수로 선언한다.
+    - 이제 `Stack`의 퍼블릭 인터페이스에는 불필요한 `List`의 오퍼레이션이 포함되지 않는다.
+    - 따라서 마지막 위치에만 요소를 추가할 수 있다.
+
+  ```python
+  class List:
+      def __init__(self):
+          self._elements = []
+  
+      def insert(self, idx, element):
+          self._elements.insert(idx, element)
+  
+      @property
+      def elements(self):
+          return self._elements
+          
+  
+  class Stack:
+      def __init__(self, list_: List):
+          self._list = list_
+  
+      def __str__(self):
+          return str(self._list.elements)
+      
+      def push(self, element):
+          self._list.insert(len(self._list.elements), element)
+      
+  
+  stack = Stack(List())
+  stack.push(1)
+  stack.push(2)
+  try:
+      stack.insert(0, 3)
+  except Exception as e:
+      print(e)			# 'Stack' object has no attribute 'insert'
+  print(stack)			# [1, 2]
+  ```
+
+  - 합성을 이용하면 메서드 오버라이딩 오작용 문제를 해결할 수 있다.
+    - 이전 장에서 `Parent` 클래스와 `Child` 클래스를 통해 상속시에 발생할 수 있는 메서드 오버라이딩 오작용에 대해 살펴봤다.
+    - 이 역시 합성을 이용하면 해결이 가능하다.
+
+  ```python
+  class Parent:
+      def bye(self):
+          print("Bye!")
+      
+      def hello(self):
+          print("Hello World!")
+          self.bye()
+          
+  
+  class Child:
+      def __init__(self, parent: Parent):
+          self.cnt = 0
+          self._parent = parent
+  
+      def bye(self):
+          print("Bye!")
+          self.cnt += 1
+  
+      def hello(self):
+          self.cnt += 1
+          self._parent.hello()
+  
+  child = Child(Parent())
+  child.hello()
+  print(child.cnt)		# 1
+  ```
+
+  - 합성을 사용하더라도 부모 클래스와 자식 클래스의 동시 수정 문제는 해결할 수 없다.
+    - 앞 장에서 살펴본 변경을 수용하기 위해 `Playlist`와 `PersonalPlaylist`를 함께 수정해야 하는 문제는 해결되지 않는다.
+    - 그럼에도 상속보다는 합성이 더 나은데, 그 이유는 변경에 의한 파급효과를 최대한 `PersonalPlaylist` 내부로 캡슐화할 수 있기 때문이다.
+
+  ```python
+  class Playlist:
+      def __init__(self):
+          self._tracks = list[Song]
+          self._singers = {}
+  
+      @property
+      def tracks(self):
+          return self._tracks
+      
+      @property
+      def singer(self):
+          return self._singers
+      
+      def append(self, song: Song):
+          self._tracks.append(song)
+          self._singers[song.singer] = song.title
+  
+  class PersonalPlaylist:
+  
+      def __init__(self, playlist: Playlist):
+          self._playlist = playlist
+  
+      def append(self, song: Song):
+          self._playlist.append(song)
+  
+      def remove(self, song: Song):
+          self._playlist.tracks.remove(song)
+          del self._playlist.singer[song.singer]
+  ```
+
+
+
+
+
+## 상속으로 인한 조합의 증가
+
+- 상속으로 인해 결합도가 높아지면 코드를 수정하는 데 필요한 작업의 양이 과도하게 늘어날 수 있다.
+  - 가장 일반적인 상황은 작은 기능들을 조합해서 더 큰 기능을 수행하는 객체를 만들어야 하는 경우다.
+  - 일반적으로 다음과 같은 두 가지 문제가 발생한다.
+    - 하나의 기능을 추가하거나 수정하기 위해 불필요하게 많은 수의 클래스를 추가하거나 수정해야 한다.
+    - 단일 상속만 지원하는 언어에서 상속으로 인해 오히려 중복 코드의 양이 늘어날 수 있다.
+  - 합성을 사용하면 상속으로 인해 발생하는 클래스의 증가와 중복 코드 문제를 해결할 수 있다.
+
+
+
+- 기본 정책과 부가 정책 조합하기
+  - 이전 장에서 봤던 핸드폰 과금 시스템에 새로운 요구사항을 추가한다.
+    - 현재 시스템에는 일반 요금제와 할인 요금제라는 두 가지 종류가 존재한다.
+    - 새로운 요구 사항은 이 두 요금제에 부가 정책을 추가하는 것이다.
+    - 지금부터는 핸드폰 요금제가 기본 정책과 부가 정책을 조합해서 구성된다.
+    - 기본 정책은 가입자의 통화 정보를 기반으로 하며, 한달 통화량을 기준으로 부과할 요금을 계산한다.
+    - 부가 정책은 통화량과 무관하게 기본 정책체 선택적으로 추가할 수 있는 요금 방식을 의미하며, 이전 장에서 봤던 세금이 이에 해당한다.
+    - 세금과 관련된 부가 정책을 세금 정책, 최종 계산된 요금에서 일정 금액을 할인해주는 부가 정책을 할인 정책이라 부른다.
+  - 부가 정책은 아래와 같은 특성을 가진다.
+    - 기본 정책의 계산 결과에 적용된다.
+    - 선택적으로 적용할 수 있다.
+    - 조합 가능하다(여러 개의 부가 정책을 함께 적용하는 것도 가능하다).
+    - 부가 정책은 임의의 순서로 적용이 가능하다.
+  - 결국 현재의 기본 정책 2개와 부가 정책 2개를 조합하면 총 10개의 조합이 가능하다.
+    - 일반요금제
+    - 심야할인요금제
+    - 일반요금제 - 세금 정책
+    - 일반요금제 - 할인 정책
+    - 일반요금제 - 세금 정책 - 할인 정책
+    - 일반요금제 - 할인 정책 - 세금 정책
+    - ...
+
+
+
+- 상속을 이용해서 기본 정책 구현하기
+
+  - 아래 코드는 기존 코드에서 세금을 더하는 부분만 제외한 것이다.
+  - `RegularPhone`와 `NightlyDiscountPhone`의 인스턴스만 단독으로 생성한다는 것은 부가 정책은 적용하지 않고 기본 정책만으로 요금을 계산한다는 것을 의미한다.
+
+  ```python
+  class Phone(ABC):
+  
+      def __init__(self):
+          self._calls: List[Call] = []
+  
+      def call(self, call: Call):
+          self._calls.append(call)
+  
+      def calculate_fee(self) -> Money:
+          result = Money.wons(0)
+          for call in self._calls:
+              result = result.plus(self._calculate_call_fee(call))
+          return result
+      
+      @abstractmethod
+      def _calculate_call_fee(sefl) -> Money:
+          ...
+      
+      
+  class RegularPhone(Phone):
+      def __init__(self, amount: Money, seconds: int):
+          self._amount = amount
+          self._seconds = seconds
+  
+      def _calculate_call_fee(self, call: Call) -> Money:
+          return self._amount.times(call.get_duration().total_seconds() / self._seconds)
+  
+      
+  class NightlyDiscountPhone(Phone):
+  
+      LATE_NIGHT_HOUR = 22
+  
+      def __init__(self, nightly_amount: Money, regular_amount: Money, seconds: int):
+          self._nightly_amount = nightly_amount
+          self._regular_amount = regular_amount
+          self._seconds = seconds
+      
+      def _calculate_call_fee(self, call: Call) -> Money:
+          if call._from.hour >= self.LATE_NIGHT_HOUR:
+              return self._nightly_amount.times(call.get_duration().total_seconds() / self._seconds)
+          else:
+              return self._regular_amount.times(call.get_duration().total_seconds() / self._seconds)
+  ```
+
+
+
+- 기본 정책에 세금 정책 조합하기
+
+  - `RegularPhone` 클래스를 상속 받는 `TaxableRegularPhone` 클래스를 추가한다.
+    - 부모 클래스의 `calculate_fee` 메서드를 오버라이딩하여 `super` 호출을 통해 부모 클래스에게 `calculatr_fee` 메시지를 전송한다.
+    - `RegularPhone.calulcate_fee` 메서드는 일반 요금제 규칙에 따라 계산된 요금을 반환하므로 이 반환값에 세금을 부과해서 반환하면 일반 요금제와 세금 정책을 조합한 요금을 계산할 수 있다.
+
+  ```python
+  class TaxableRegularPhone(RegularPhone):
+  
+      def __init__(self, amount: Money, seconds: int, tax_rate: float):
+          super().__init__(amount, seconds)
+          self._tax_rate = tax_rate
+  
+      def calculate_fee(self) -> Money:
+          fee = super().calculate_fee()
+          return fee.plus(fee.times(self._tax_rate))
+  ```
+
+  - 위 방식의 문제점
+    - `super`를 사용하는 방식은 원하는 결과를 쉽게 얻을 수는 있지만 자식 클래스와 부모 클래스의 결합도가 높아진다는 문제가 있다.
+    - 결합도를 낮추기 위헤서는 자식 클래스가 부모 클래스의 메서드를 호출하지 않도록 부모 클래스에 추상 메서드를 제공하는 것이다.
+  - `Phone` 클래스에 추상 메서드 추가하기
+    - 부모 클래스가 자신이 정의한 추상 메서드를 호출하고 자식 클래스가 이 메서드를 오버라이딩해서 부모 클래스가 원하는 로직을 제공하도록 수정하여 결합도를 느슨하게 만든다.
+    - 이 방법은 자식 클래스가 부모 클래스의 구현이 아니라 필요한 동작의 명세를 기술하는 추상화에 의존하도록 만든다.
+
+  ```python
+  class Phone(ABC):
+  	
+      def calculate_fee(self) -> Money:
+          result = Money.wons(0)
+          for call in self._calls:
+              result = result.plus(self._calculate_call_fee(call))
+          # 부모 클래스의 다른 메서드에서 자신이 정의한 추상 메서드를 호출하도록 만든다.
+          return self._after_calculated(result)
+      
+      @abstractmethod
+      def _after_calculated(self, fee: Money) -> Money:
+          ...
+  ```
+
+  - 자식 클래스는 위에서 정의한 `after_calculated` 메서드를 오버라이딩한다.
+    - 일반 요금제와 심야 할인 요금제는 요금을 수정할 필요가 없기에 인자로 받은 값을 그대로 반환하도록 한다.
+
+  ```python
+  class RegularPhone(Phone):
+      # ...
+      def _after_calculated(self, fee: Money):
+          return fee
+      
+  class NightlyDiscountPhone(Phone):
+      # ...
+      def _after_calculated(self, fee: Money):
+          return fee
+  ```
+
+  - 위 방식의 문제점
+    - 부모 클래스에 추상 메서드를 추가하면 모든 자식 클래스들이 추상 메서드를 오버라이딩해야 한다.
+    - 또한 모든 추상 메서드의 구현이 동일하다.
+    - 유연성은 유지하면서도 중복 코드를 제거할 수 있는 방법은 `Phone`에서 `after_calculated` 메서드에 대한 기본 구현을 함께 제공하는 것이다.
+
+  - `Phone.after_calculated`이 기본 구현을 제공하도록 수정한다.
+    - 이제 자식 클래스들은 `after_calculated`를 오버라이딩 할 필요가 없다.
+
+  ```python
+  class Phone(ABC):
+      
+      def calculate_fee(self) -> Money:
+          result = Money.wons(0)
+          for call in self._calls:
+              result = result.plus(self._calculate_call_fee(call))
+          return self._after_calculated(result)
+  
+      # ...
+      def _after_calculated(self, fee: Money) -> Money:
+          return fee
+      
+  class RegularPhone(Phone):
+      # ...
+      # def _after_calculated(self, fee: Money):
+      #     return fee
+      
+  class NightlyDiscountPhone(Phone):
+      # ...
+      # def _after_calculated(self, fee: Money):
+      #     return fee
+  ```
+
+  - `TaxableRegularPhone`을 수정한다.
+    - `_after_calculated` 메서드를 오버라이딩한 후 `fee`에 세금을 더해서 반환하도록 한다.
+
+  ```python
+  class TaxableRegularPhone(RegularPhone):
+  
+      def __init__(self, amount: Money, seconds: int, tax_rate: float):
+          super().__init__(amount, seconds)
+          self._tax_rate = tax_rate
+      
+      def _after_calculated(self, fee: Money) -> Money:
+          return fee.plus(fee.times(self._tax_rate))
+  ```
+
+  - 심야 할인 요금제에도 세금을 부과할 수 있도록 `NightlyDiscountPhone`의 자식 클래스인 `TaxableNightlyDiscountPhone`을 추가한다.
+    - `TaxableRegularPhone`와 중복 코드가 생기게 되었다.
+
+  ```python
+  class TaxableNightlyDiscountPhone(NightlyDiscountPhone):
+  
+      def __init__(self, nightly_amount: Money, regular_amount: Money, seconds: int, tax_rate: float):
+          super().__init__(nightly_amount, regular_amount, seconds)
+          self._tax_rate = tax_rate
+  
+      def _after_calculated(self, fee: Money) -> Money:
+          return fee.plus(fee.times(self._tax_rate)) 
+  ```
+
+
+
+- 추상 메서드와 훅 메서드
+
+  - OCP를 만족하는 설계를 만들 수 있는 한 가지 방법은 부모 클래스에 새로운 추상 메서드를 추가하고 부모 클래스의 다른 메서드 안에서 호출하는 것이다.
+    - 자식 클래스는 추상 메서드를 오버라이딩하고 자신만의 로직을 구현해서 부모 클래스에서 정의한 플로우에 개입할 수 있게 된다.
+    - 처음에 `Phone` 클래스에서 추상 메서드인 `_calculate_call_fee`와 `_after_calculated`를 선언하고 자식 클래스에서 두 메서드를 오버라이딩한 것 역시 이 방법을 사용한 것이다.
+
+  - 훅 메서드(hook method)
+    - 추상 메서드의 단점은 상속 계층에 속하는 모든 자식 클래스가 추상 메서드를 오버라딩해야 한다는 것이다.
+    - 대부분의 자식 클래스가 추상 메서드를 동일한 방식으로 구현한다면 상속 계층 전반에 걸쳐 중복 코드가 존재하게 될 것이다.
+    - 해결 방법은 메서드에 기본 구현을 제공하는 것이다.
+    - 이처럼 추상 메서드와 동일하게 자식 클래스에서 오버라이딩할 의도로 메서드를 추가했지만 편의를 위해 기본 구현을 제공하는 메서드를 훅 메서드라고 부른다.
+    - 위 예시에서는 `_after_calculated`가 훅 메서드에 해당한다.
+
+
+
+- 기본 정책에 할일 정책 적용하기
+
+  - 일반 요금제에 할인 정책을 조합하기 위해 `RateDiscountableRegularPhone` 클래스를 생성한다.
+
+  ```python
+  class RateDiscountableRegularPhone(RegularPhone):
+  
+      def __init__(self, amount: Money, seconds: int, discount_amount: Money):
+          super().__init__(amount, seconds)
+          self._discount_amount = discount_amount
+  
+      def _after_calculated(self, fee: Money) -> Money:
+          return fee.minus(self._discount_amount)
+  ```
+
+  - 심야 할인 요금제에 할인 정책을 조합하기 위해 `RateDiscountableNightlyDiscountPhone` 클래스를 생성한다.
+    - 마찬가지로 `RateDiscountableRegularPhone` 코드와 중복 코드가 생성됐다.
+
+  ```python
+  class RateDiscountableNightlyDiscountPhone(NightlyDiscountPhone):
+  
+      def __init__(self, nightly_amount: Money, regular_amount: Money, seconds: int, discount_amount: Money):
+          super().__init__(nightly_amount, regular_amount, seconds)
+          self._discount_amount = discount_amount
+  
+      def _after_calculated(self, fee: Money) -> Money:
+          return fee.minus(self._discount_amount)
+  ```
+
+
+
+- 중복 코드의 덫
+
+  - 상속을 이용한 해결 방법은 모든 가능한 조합별로 자식 클래스를 하나씩 추가하는 것이다.
+    - 만약 일반 요금제의 계산 결과에 세금 정책을 조합한 후 할인 정책을 추가하고 싶다면 아래와 같이 `TaxableRegularPhone`을 상속 받는 새로운 자식 클래스를 생성해야 한다.
+    - 만약 심야 할인 요금제의 계산 결과에 할인 정책을 조합한 후 세금 정책을 추가하고 싶다면 `RateDiscountableNightlyDiscountPhone`를 상속 받는 새로운 자식 클래스를 생성해야 한다.
+
+  ```python
+  class TaxableAndRateDiscountableRegualarPhone(TaxableRegularPhone):
+      
+      def __init__(self, amount: Money, seconds: int, tax_rate: float, discount_amount: Money):
+          super().__init__(amount, seconds, tax_rate)
+          self._discount_amount = discount_amount
+  
+      def _after_calculated(self, fee: Money) -> Money:
+          return super()._after_calculated(fee).minus(self._discount_amount)
+  ```
+
+  - 이 방식의 문제점은 새로운 정책을 추가하기 어렵다는 것이다.
+    - 현재의 설계에 새로운 정책을 추가하기 위해서는 불필요하게 많은 수의 클래스를 상속 계층 안에 추가해야 한다.
+    - 만약 새로운 기본 정책이 추가 된다면 새로운 기본 정책 클래스를 포함하여 5개의 새로운 클래스가 추가되어야 한다.
+    - 마찬가지로 새로운 부가 정책이 추가된다면 또 다시 많은 수의 클래스가 추가되어야 한다.
+  - 클래스 폭발(class explosion)
+    - 이처럼 상속의 남용으로 하나의 기능을 추가하기 위해 필요 이상으로 많은 수의 클래스를 추가해야 하는 경우를 클래스 폭발 혹은 조합의 폭발(combinational explosion) 문제라고 부른다.
+    - 클래스 폭발 문제는 자식 클래스가 부모 클래스의 구현에 강하게 결합되도록 강요하는 상속의 근본적인 한계 때문에 발생하는 문제다.
+    - 컴파일 타임에 결정된 자식 클래스와 부모 클래스 사이의 관계는 변경될 수 없기 때문에 자식 클래스와 부모 클래스의 다양한 조합이 필요한 상황에서 유일한 해결 방법은 조합의 수만큼 새로운 클래스를 추가하는 것뿐이다.
+  - 클래스 폭발은 새로운 기능을 추가할 때뿐만 아니라 기능을 수정할 때도 문제가 된다.
+    - 만약 세금 정책을 변경해야 한다면 세금 정책과 관련된 여러 클래스에 중복된 코드를 모두 찾아 동일한 방식으로 수정해야 한다.
+    - 이 클래스 중에 하나라도 누락된다면 버그가 발생하게 될 것이다.
+
+
+
