@@ -1090,3 +1090,369 @@
 
 
 
+
+
+## 합성 관계로 변경하기
+
+- 합성을 사용하면 클래스 폭발을 해결할 수 있다.
+  - 상속 관계는 컴파일타임에 결정되고 고정된다.
+    - 따라서 코드를 실행하는 도중에는 변경할 수 없다.
+    - 여러 기능을 조합해야 하는 설계에서 상속을 이용하면 모든 조합 가능한 경우별로 클래스를 추가해야 한다.
+    - 이는 클래스 폭발 문제를 야기한다.
+  - 합성은 컴파일타임 관계를 런타임 관계로 변경함으로써 클래스 폭발 문제를 해결한다.
+    - 합성을 사용하면 구현이 아닌 퍼블릭 인터페이스에 대해서만 의존할 수 있기 때문에 런타임에 객체의 관계를 변경할 수 있다.
+    - 컴파일타임 의존성과 런타임 의존성이 멀수록 설계가 유연해진다.
+    - 상속이 조합의 결과를 개별 클래스 안으로 밀어 넣는 방법이라면 합성은 조합을 구성하는 요소들을 개별 클래스로 구현한 후 실행 시점에 인스턴스를 조립하는 방법을 사용하는 것이다.
+  - 컴파일 의존성에 속박되지 않고 다양한 방식의 런타임 의존성을 구성할 수 있다는 것이 합성이 제공하는 가장 커다란 장점이다.
+
+
+
+- 기본 정책 합성하기
+
+  - 기본 정책과 부가 정책을 포괄하는 `RatePolicy` 인터페이스를 추가한다.
+    - `Phone`을 인자로 받아 계산된 요금을 반환하는 `calculate_fee` 오퍼레이션을 포함한다.
+
+  ```python
+  class RatePolicy(ABC):
+      
+      @abstractmethod
+      def caclulate_fee(self, phone: Phone):
+          ...
+  ```
+
+  - 기본 정책 구현하기
+    - 기본 정책에 속하는 일반 요금제와 심야 할인 요금제는 개별 요금을 계산하는 방식을 제외한 전체 처리 로직이 거의 동일하다.
+    - 중복 코드를 담을 추상 클래스를 생성한다.
+
+  ```python
+  class BasicRatePolicy(RatePolicy):
+  
+      def caclulate_fee(self, phone: Phone):
+          result = Money.wons(0)
+  
+          for call in phone.calls:
+              result = result.plus(self._calculate_call_fee(call))
+          
+          return result
+      
+      @abstractmethod
+      def _calculate_call_fee(self, call: Call):
+          ...
+  ```
+
+  - 일반 요금제를 구현한다.
+    - `BasicRatePolicy`의 자식 클래스로 구현한다.
+
+  ```python
+  class RegularPolicy(BasicRatePolicy):
+      
+      def __init__(self, amount: Money, seconds: int):
+          self._amount = amount
+          self._seconds = seconds
+  
+      def _calculate_call_fee(self, call: Call):
+          return self._amount.times(call.get_duration().total_seconds() / self._seconds)
+  ```
+
+  - 심야 할인 요금제를 구현한다.
+    - 마찬가지로 `BasicRatePolicy`의 자식 클래스로 구현한다.
+
+  ```python
+  class NightlyDiscountPolicy(BasicRatePolicy):
+  
+      LATE_NIGHT_HOUR = 22
+      
+      def __init__(self, nightly_amount: Money, regular_amount: Money, seconds: int):
+          self._nightly_amount = nightly_amount
+          self._regular_amount = regular_amount
+          self._seconds = seconds
+  
+      def _calculate_call_fee(self, call: Call):
+          if call._from.hour >= self.LATE_NIGHT_HOUR:
+              return self._nightly_amount.times(call.get_duration().total_seconds() / self._seconds)
+          else:
+              return self._regular_amount.times(call.get_duration().total_seconds() / self._seconds)
+  ```
+
+  - 기본 정책을 이용해 요금을 계산할 수 있도록 `Phone`을 수정한다.
+    - `Phone` 내부에 `RatePolicy`에 대한 참조자가 포함되어 있는데, 이것이 바로 합성이다.
+    - 또한 다양한 요금 정책과 협력할 수 있어야 하므로 `RatePolicy`라는 인터페이스로 정의되어 있다.
+    - `Phone`은 이 컴파일타임 의존성을 구체적인 런타임 의존성으로 대체하기 위해 생성자를 통해 `RatePolicy`에 대한 의존성을 주입받는다.
+    - 이처럼 다양한 종류의 객체와 협력하기 위해 합성 관계를 사용하는 경우에는 합성하는 개체의 타입을 인터페이스나 추상 클래스로 선언하고 의존성 주입을 사용해 런타임에 필요한 객체를 설정할 수 있도록 구현하는 것이 일반적이다.
+
+  ```python
+  class Phone(ABC):
+  
+      def __init__(self, rate_policy: RatePolicy):
+          self._calls: List[Call] = []
+          self._rate_policy = rate_policy
+  
+      def call(self, call: Call):
+          self._calls.append(call)
+  
+      def calculate_fee(self) -> Money:
+          self._rate_policy.calculate_fee(self)
+  
+      @property
+      def calls(self):
+          return self._calls
+  ```
+
+  - 예시
+    - 일반 요금제의 규칙에 따라 통화 요금을 계산하고 싶다면 `Phone`과 `RegularPolicy`의 인스턴스를 합성하면 된다.
+    - 심야 할인 요금제의 규칙에 따라 통화 요금을 계산하고 싶다면 `Phone`과 `NightlyDiscountPolicy`의 인스턴스를 합성하면 된다.
+
+  ```python
+  phone = Phone(RegularPolicy(Money(10), 10))
+  phone = Phone(NightlyDiscountPolicy(Money(5), Money(10), 10))
+  ```
+
+
+
+- 부가 정책 적용하기
+
+  - 부가 정책은 아래와 같은 제약 사항이 있다.
+    - 부가 정책은 기본 정책이나 다른 부가 정책의 인스턴스를 참조할 수 있어야 한다. 즉 부가 정책의 인스턴스는 어떤 종류의 정책과도 함성될 수 있어야 한다.
+    - `Phone`의 입장에서는 자신이 기본 정책의 인스턴스에게 메시지를 전송하고 있는지, 부가 정책의 인스턴스에게 메시지를 전송하고 있는지를 몰라야 한다. 즉 기본 정책과 부가 정책은 협력 안에서 동일한 역할을 수행해야 한다.
+  - 부가 정책을 구현한다.
+    - 부가 정책은 `RatePolicy` 인터페이스를 구현하는 방식으로 구현한다.
+    - 이는 기본 정책과 부가 정책이 협력 안에서 동일한 역할을 수행해야 하기 때문이다.
+    - 즉 `Phone`의 입장에서 `AdditionalRatePolicy`는 `RatePolicy`의 역할을 수행하기 때문이다.
+    - `AdditionalRatePolicy` 역시 마찬가지로 컴파일타임 의존성을 런타임 의존성으로 쉽게 대체할 수 있도록 `RatePolicy` 타입의 인스턴스를 인자로 받는 생성자를 제공하여 의존성을 주입 받는다.
+
+  ```python
+  class AdditionalRatePolicy(RatePolicy):
+  
+      def __init__(self, next_: RatePolicy):
+          self._next = next_
+  
+      def calculate_fee(self, phone: Phone):
+          fee = self._next.calculate_fee(phone)
+          return self._after_calculated(fee)
+      
+      @abstractmethod
+      def _after_calculated(self, fee: Money):
+          ...
+  ```
+
+  - 세금 정책을 구현한다.
+    - `AdditionalRatePolicy`를 상속 받아 구현한다.
+
+  ```python
+  class TaxablePolicy(AdditionalRatePolicy):
+      
+      def __init__(self, tax_ratio: float, next_: RatePolicy):
+          super().__init__(next_)
+          self._tax_ratio = tax_ratio
+  
+      def _after_calculated(self, fee: Money):
+          return fee.plus(fee.times(self._tax_ratio))
+  ```
+
+  - 할인 정책을 구현한다.
+    - `AdditionalRatePolicy`를 상속 받아 구현한다.
+
+  ```python
+  class RateDiscountPolicy(AdditionalRatePolicy):
+  
+      def __init__(self, amount: Money, next_: RatePolicy):
+          super().__init__(next_)
+          self._amount = amount
+      
+      def _after_calculated(self, fee: Money):
+          return fee.minus(self._amount)
+  ```
+
+
+
+- 기본 정책과 부가 정책 합성하기
+
+  - 일반 요금제에 할인 정책을 조합한 결과에 세금 정책을 조합하기
+
+  ```python
+  phone = Phone(TaxablePolicy(0.02, RateDiscountPolicy(Money.wons(10), RegularPolicy(Money(10), 10))))
+  ```
+
+  - 심야 할인 요금제에 세금 정책을 조합한 결과에 할인 정책을 조합하기
+
+  ```python
+  phone = Phone(RateDiscountPolicy(Money.wons(10), TaxablePolicy(0.02, NightlyDiscountPolicy(Money(5), Money(10), 10))))
+  ```
+
+  - 이처럼 클래스를 새로 추가하지 않고도 예측 가능하고 일관성 있는 조합이 가능하다.
+
+
+
+- 객체 합성이 상속 보다 더 좋은 방법이다.
+  - 상속은 구현을 재사용하는 데 비해 합성은 객체의 인터페이스를 재사용한다.
+  - 다만 이는 구현 상속에 해당하는 이야기로, 앞에서 살펴본 단점들은 모두 구현 상속에 국한되는 것들이다.
+    - 인터페이스 상속의 경우 다를 수 있다.
+
+
+
+
+
+## 믹스인
+
+- 믹스인(Mixin)
+  - 객체를 생성할 때 코드 일부를 클래스 안에 섞어 넣어 재사용하는 기법이다.
+    - 합성이 실행 시점에 객체를 조합하는 재사용 방법이라면 믹스인은 컴파일 시점에 필요한 코드 조각을 조합하는 재사용 방법이다.
+  - 상속과의 차이
+    - 상속을 사용하여 부모 클래스의 코드를 재사용할 수 있기는 하지만 상속의 진정한 목적은 자식 클래스를 부모 클래스와 동일한 개념적 범주로 묶어 is-a 관계를 만드는 것이다.
+    - 반면 믹스인은 말 그대로 코드를 다른 코드 안에 섞어 넣기 위한 방법이다.
+    - 상속이 클래스와 클래스 사이의 관계를 고정시키는 데 비해 믹스인은 유연하게 관계를 재구성할 수 있다.
+
+
+
+- 정책 구현하기
+
+  - 기본 정책 구현하기
+
+  ```python
+  class BasicRatePolicy(ABC):
+      def calculate_fee(self, phone: Phone) -> Money:
+          result = Money.wons(0)
+          for call in phone.calls:
+              result = result.plus(self._calculate_call_fee(call))
+          return result
+  
+      @abstractmethod
+      def _calculate_call_fee(self, call) -> Money:
+          pass
+  
+  
+  class RegularPolicy(BasicRatePolicy):
+      def __init__(self, amount: Money, seconds: int):
+          self.amount = amount
+          self.seconds = seconds
+  
+      def _calculate_call_fee(self, call: Call) -> Money:
+          return self.amount.times(call.get_duration().total_seconds() / self.seconds)
+      
+  
+  class NightlyDiscountPolicy(BasicRatePolicy):
+  
+      LATE_NIGHT_HOUR = 22
+  
+      def __init__(self, nightly_amount: Money, regular_amount: Money, seconds: int):
+          self._nightly_amount = nightly_amount
+          self._regular_amount = regular_amount
+          self._seconds = seconds
+      
+      def _calculate_call_fee(self, call: Call) -> Money:
+          if call._from.hour >= self.LATE_NIGHT_HOUR:
+              return self._nightly_amount.times(call.get_duration().total_seconds() / self._seconds)
+          else:
+              return self._regular_amount.times(call.get_duration().total_seconds() / self._seconds)
+  ```
+
+  - 부가 정책 구현하기
+
+  ```python
+  class TaxablePolicy(BasicRatePolicy):
+      
+      def __init__(self, tax_ratio: float):
+          self._tax_ratio = tax_ratio
+  
+      def calculate_fee(self, phone: Phone):
+          fee: Money = super().calculate_fee(phone)
+          return fee.plus(fee.times(self._tax_ratio))
+  
+  
+  class RateDiscountPolicy(BasicRatePolicy):
+  
+      def __init__(self, discount_amount: Money):
+          self._discount_amount = discount_amount
+  
+      def calculate_fee(self, phone: Phone):
+          fee: Money = super().calculate_fee(phone)
+          return fee.minus(self._discount_amount)
+  ```
+
+  - 상속과의 차이
+
+    - 부가 정책은 `BasicRatePolicy`를 상속받고, `calculate_fee` 안에서 `super`를 통해 부모 클래스의 메서드를 호출한다.
+    - 그러나, 이는 상속과 다르다.
+    - `BasicRatePolicy`를 상속 받는 것은 믹스인 될 문맥을 제한하기 위한 것이지 상속 그 자체를 위한 것이 아니다.
+    - 부가 정책을 `BasicRatePolicy`를 상속 받은 클래스에만 믹스인 될 수 있게 하기 위해 `BasicRatePolicy`를 상속 받는 것이다.
+    - 또한 `super` 역시 단순한 상속에서 사용하는 방식과는 차이가 있다.
+    - 상속을 사용한 방식에서 `super`는 부모 클래스로 고정되지만, 믹스인 방식에서 `super`는 믹스인 대상에 따라 달라질 수 있다.
+    - 즉 `super`가 가리키는 대상이 믹스인 할 때 결정된다.
+    - 예를 들어 부가 정책이 `RegularPolicy`와 믹스인 되면 `RegularPolicy.calculate_fee`가 호출 될 것이고,  `NightlyDiscountPolicy`와 믹스인 되면 `NightlyDiscountPolicy.calculate_fee`가 호출 될 것이다.
+
+    - 이것이 믹스인이 상속보다 더 유연한 재사용 기법인 이유다.
+
+
+
+- 믹스인 사용하기
+
+  - Python의 경우 다중 상속을 통해 구현이 가능하다.
+    - 다만 믹스인 자체를 위한 문법은 없기에 제약이 있을 수 있다.
+  - 기본 요금 정책에 세금 정책을 적용하기
+
+  ```python
+  class TaxableRegularPolicy(TaxablePolicy, RegularPolicy):
+      def __init__(self, amount: Money, seconds: int, tax_ratio: float):
+          RegularPolicy.__init__(self, amount, seconds)
+          TaxablePolicy.__init__(self, tax_ratio)
+  
+  if __name__ == "__main__":
+      policy = TaxableRegularPolicy(Money(10), 10, 0.02)
+      phone = Phone()
+      phone.call(Call(datetime(2024, 11, 11, 22, 30, 0), datetime(2024, 11, 12)))
+      phone.call(Call(datetime(2024, 12, 10, 22, 30, 0), datetime(2024, 12, 11)))
+      print(policy.calculate_fee(phone)._amount)
+  ```
+
+  - 결국에는 믹스인할 때 마다 클래스가 늘어난다는 문제는 그대로인 것 아닌가?
+    - 클래스 폭발의 문제는 클래스가 늘어난다는 것 자체 보다 클래스의 증가와 함께 중복 코드가 늘어난다는 것이다.
+    - 믹스인에서는 이런 문제가 발생하지 않는다.
+  - 결국 믹스인하는 클래스를 구현한 순간 정적으로 결정되는 것 아닌가?
+    - 믹스인에서 동적으로 변경되는 것은 `super`가 가리키는 대상이다.
+    - 상속에서의 `super`는 무조건 부모 클래스를 가리키지만, `mixin`에서의 `super`는 믹스인 대상 클래스를 가리킨다.
+    - 예를 들어 아래와 같이 상속을 이용할 경우 `super().calculate_fee(phone)`는 몇 번을 호출하든 `RegularPolicy.calculate_fee()`를 호출한다.
+    - 그러나 믹스인을 사용할 경우 `super()`는 믹스인 대상에 따라 `RegularPolicy`가 될 수도 있고, `NightlyDiscountPolicy`가 될 수도 있다.
+
+  ```python
+  # 상속을 사용할 경우
+  class TaxableRegularPolicy(RegularPolicy):
+  
+      def __init__(self, discount_amount: Money):
+          self._discount_amount = discount_amount
+  
+      def calculate_fee(self, phone: Phone):
+          fee: Money = super().calculate_fee(phone)
+          return fee.minus(self._discount_amount)
+      
+  
+  # 믹스인 사용
+  class TaxablePolicy(BasicRatePolicy):
+      
+      def __init__(self, tax_ratio: float):
+          self._tax_ratio = tax_ratio
+  
+      def calculate_fee(self, phone: Phone):
+          fee: Money = super().calculate_fee(phone)
+          return fee.plus(fee.times(self._tax_ratio))
+  ```
+
+
+
+- 쌓을 수 있는 변경
+
+  - 믹스인은 특정한 클래스의 메서드를 재사용하고 기능을 확장하기 위해 사용돼 왔다.
+    - 핸드폰 과금 시스템의 경우에는 `BasicRatePolicy`의 `calculate_fee` 메서드의 기능을 확장하기 위해 사용했다.
+    - 믹스인을 사용하면 특정 클래스에 대한 변경 또는 확장을 독립적으로 구현한 후 필요한 시점에 차례대로 추가할 수 있다.
+    - 믹스인의 이러한 특징을 쌓을 수 있는 변경이라 부른다.
+
+  - 믹스인은 상속 계층 안에서 확장한 클래스보다 더 하위에 위치하게 된다.
+    - 다시 말해서 믹스인은 대상 클래스의 자식 클래스처럼 사용될 용도로 만들어진다.
+    - 따라서 믹스인을 추상 서브클래스라고 부르기도 한다.
+
+  - 믹스인의 주요 아이디어
+    - 객체지향 언어에서 부모 클래스는 자식 클래스를 명시하지 않고도 정의할 수 있다.
+    - 그러나 자식 클래스를 정의할 때는 부모 클래스를 명시해야 한다.
+    - 믹스인은 부모 클래스로부터 상속될 클래스를 명시하는 메커니즘을 표현한다.
+    - 하나의 믹스인은 매우 다양한 클래스를 도출하면서 서로 다른 서브클래스를 이용해 인스턴스화될 수 있다.
+    - 믹스인의 이런 특성은 다중 클래스를 위한 단일의 점진적인 확장을 정의하는 데 적절하다.
+    - 이 클래스들 중 하나를 부모 클래스로 삼아 믹스인이 인스턴스화될 때 행위가 확장된 클래스를 생성한다.
