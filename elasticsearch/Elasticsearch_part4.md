@@ -43,11 +43,10 @@
 
   - 미리 정의하지 않은 string 타입의 필드가 입력될 때, 만일 값이 date 필드의 형식에 부합하면 string이 아닌 date 타입으로 매핑한다.
     - boolean 값을 받으며, 기본값은 true이다.
-  - `dynamic_date_formats`에 정의된 pattern과 일치하면 date type으로 본다.
-    - 기본 값은 [ [`"strict_date_optional_time"`](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-date-format.html#strict-date-time),`"yyyy/MM/dd HH:mm:ss Z||yyyy/MM/dd Z"`]이다.
-  
+    - `dynamic_date_formats`에 정의된 pattern과 일치하면 date type으로 본다.
+    - `dynamic_date_formats`의 기본 값은 [ [`"strict_date_optional_time"`](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-date-format.html#strict-date-time),`"yyyy/MM/dd HH:mm:ss Z||yyyy/MM/dd Z"`]이다.
   - `properties`와 동일한 수준에 정의한다.
-  
+
   ```bash
   $ curl -XPUT 'localhost:9200/인덱스명' -H 'Content-Type: application/json' -d '{
       "mappings":{
@@ -58,9 +57,9 @@
       }
   }'
   ```
-  
+
   - 예시
-  
+
   ```bash
   PUT date_detection
   {
@@ -74,9 +73,9 @@
     "today":"2015/09/02"
   }
   ```
-  
+
   - 결과
-  
+
   ```bash
   GET date_detection/_mappings
   
@@ -92,6 +91,89 @@
         }
       }
     }
+  }
+  ```
+
+
+
+- `dynamic_date_formats`
+
+  - `date_detection`이 `true`일 경우 새로운 string field의 값이 들어왔을 때, `date_detection`에 matching되는지 확인하고, matching되면 date type으로 색인한다.
+  - 콤마로 구분 된 배열로 설정 가능하며, 배열 내의 하나의 요소는 `||`로 구분 된 string 형식으로 설정이 가능하다.
+    - 배열 내에서 일치하는 첫 번째 format이 해당 field의 format이 된다.
+
+  ```json
+  // PUT my-index-000001
+  {
+      "mappings": {
+          "dynamic_date_formats": [ "yyyy/MM", "MM/dd/yyyy"]
+      }
+  }
+  
+  // PUT my-index-000001/_doc/1
+  {
+    "create_date": "09/25/2015"
+  }
+  
+  // 결과
+  {
+      "my-index-000001": {
+          "mappings": {
+              "dynamic_date_formats": [
+                  "yyyy/MM",
+                  "MM/dd/yyyy"
+              ],
+              "properties": {
+                  "create_date": {
+                      "type": "date",
+                      "format": "MM/dd/yyyy"
+                  }
+              }
+          }
+      }
+  }
+  ```
+
+  - `dynamic_date_formats`의 요소를 `||`로 구분 된 string 형식으로 설정할 경우
+    - `dynamic_date_formats`의 요소를 `||`로 구분 된 string 형식으로 설정할 경우, string중 일부가 매칭되더라도 해당 string 전체가 format이 된다.
+    - 따라서, `||`으로 구분 된 해당 string의 format 중 하나에라도 매칭이 된다면 색인이 가능하다.
+
+  ```json
+  // PUT my-index-000001
+  {
+      "mappings": {
+          "dynamic_date_formats": [ "yyyy/MM||MM/dd/yyyy", "yyyy-MM-dd||yyyy-mm-dd"]
+      }
+  }
+  
+  
+  // PUT my-index-000001/_doc/1
+  {
+      "create_date": "09/25/2015"
+  }
+  
+  
+  // 결과
+  {
+      "my-index-000001": {
+          "mappings": {
+              "dynamic_date_formats": [
+                  "yyyy/MM||MM/dd/yyyy"
+              ],
+              "properties": {
+                  "create_date": {
+                      "type": "date",
+                      "format": "yyyy/MM||MM/dd/yyyy"
+                  }
+              }
+          }
+      }
+  }
+  
+  // PUT my-index-000001/_doc/1
+  {
+      // 아래와 같은 형식으로도 색인이 가능하다.
+      "create_date": "2015/09"
   }
   ```
 
@@ -440,8 +522,8 @@
 
   - `_source`나 `fields`를 사용하는 것과 무엇이 다른가?
     - `_source`와 `fields`와는 달리, 해당 필드가 저장되었다는 것을 명시적으로 표현할 수 있다.
-    - 그러나 권장하는 방식은 아니며, 공식 문서에서도 `stored_fields`보다는 `_source`나 `fields`를 사용하는 것을 권한다.
   - `store` 옵션은 Elasticsearch에서 권장하는 방식은 아니다.
+    - 공식 문서에서는 `stored_fields`보다는 `_source`나 `fields`를 사용하는 것을 권한다.
 
 
 
@@ -784,7 +866,7 @@
     - 매핑의 format 형식만 지정 해 놓으면 지정된 어떤 형식으로도 색인 및 쿼리가 가능하다.
     - basic_date, strict_date_time과 같이 미리 정의 된 포맷들
     - [joda.time.format](https://www.joda.org/joda-time/apidocs/org/joda/time/format/DateTimeFormat.html) 심볼을 사용하여 지정 가능하다.
-    - 정의된 포맷들은  [Elastic 홈페이지의 공식 도큐먼트](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-date-format.html#built-in-date-formats)에서 볼 수 있으며 joda 심볼 기호들은 다음과 같다.
+    - 정의된 포맷들은  [Elastic 홈페이지의 공식 문서](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-date-format.html#built-in-date-formats)에서 볼 수 있으며 joda 심볼 기호들은 다음과 같다.
 
   | 심볼 | 의미                 | 예시) 2019-09-12T17:13:07.428+09.00 |
   | ---- | -------------------- | ----------------------------------- |
@@ -810,6 +892,9 @@
   - 사용 가능한 옵션들
     - `"doc_values"`, `"index"`, `"null_value"`, `"ignore_malformed"` 옵션들은 문자열, 숫자 필드와 기능이 동일하다.
     - `"format": "문자열 || 문자열..."`: 입력 가능한 날짜 형식을 ||로 구분해서 입력한다.
+    - `format`을 설정하지 않을 경우 기본 값은 `"strict_date_optional_time||epoch_millis"`이다.
+    - `strict_`가 붙은 format들은 년을 4자리 숫자, 월과 일을 2자리 숫자로 엄격하게 지켜야 한다는 의미이다.
+    - 기본 값인 `strict_date_optional_time`는 `yyyy-MM-dd'T'HH:mm:ss.SSSZ` 또는 `yyyy-MM-dd` 형식을 의미한다.
 
 
 
