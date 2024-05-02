@@ -19,6 +19,12 @@ class Lecture:
     
     def _fail_count(self):
         return len([score for score in self._scores if score < self._pass])
+    
+    def stats(self):
+        return f"Title: {self._title} Evaluation Method: {self._get_evaluation_method()}"
+    
+    def _get_evaluation_method(self):
+        return "Pass or Fail"
 
     @property
     def score(self):
@@ -58,16 +64,51 @@ class GradeLecture(Lecture):
     def _grade_count(self, grade: Grade):
         return len([score for score in self._scores if grade.include(score)])
 
+    def _get_evaluation_method(self):
+        return "Grade"
+    
+
+class FormattedGradeLecture(GradeLecture):
+
+    def format_average(self):
+        return f"Avg: {super().average()}"
+
+
+class Professor:
+
+    def __init__(self, name, lecture: Lecture):
+        self._lecture_name = name
+        self._lecture = lecture
+    
+    def compile_statistics(self):
+        return f"[{self._lecture_name}] {self._lecture.evaluate()} - Avg: {self._lecture.average()}"
 
 if __name__ == "__main__":
-    lecture = GradeLecture("Psychology", 
-                          80, 
-                          [
-                              Grade("A", 100, 95), 
-                              Grade("B", 94, 80), 
-                              Grade("C", 79, 70), 
-                              Grade("D", 69, 50), 
-                              Grade("F", 49, 0)
-                          ],
-                          [75, 80, 95, 60, 85])
-    print(lecture.evalutate())
+
+    # propessor = Professor("DFS", Lecture("Algorithm", 
+    #                                         80, 
+    #                                         [75, 80, 95, 60, 85]))
+    
+    # propessor = Professor("DFS", GradeLecture("Algorithm", 
+    #                                         80, 
+    #                                         [
+    #                                             Grade("A", 100, 95), 
+    #                                             Grade("B", 94, 80), 
+    #                                             Grade("C", 79, 70), 
+    #                                             Grade("D", 69, 50), 
+    #                                             Grade("F", 49, 0)
+    #                                         ],
+    #                                         [75, 80, 95, 60, 85]))
+    # print(propessor.compile_statistics())
+
+    lecture = FormattedGradeLecture("Algorithm", 
+                            80, 
+                            [
+                                Grade("A", 100, 95), 
+                                Grade("B", 94, 80), 
+                                Grade("C", 79, 70), 
+                                Grade("D", 69, 50), 
+                                Grade("F", 49, 0)
+                            ],
+                            [75, 80, 95, 60, 85])
+    print(lecture.format_average())
