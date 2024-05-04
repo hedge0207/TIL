@@ -139,6 +139,12 @@
 <br/>
 <br/>
 
+## code_readability
+- 코드 가독성
+
+<br/>
+<br/>
+
 <br/>
 <br/>
 
@@ -457,7 +463,7 @@
 
 - Mongo Shell
 
-- MongoDB 상태 확인
+- Mongostat
 
 - MongoDB Connection Pool
 
@@ -894,6 +900,8 @@
 <br/>
 
 ## Elasticsearch_part13
+- Ingest Pipeline
+
 - alias
 
 - Security
@@ -1087,6 +1095,12 @@
 <br/>
 <br/>
 
+## Lucene
+- Index File Formats
+
+<br/>
+<br/>
+
 ## Python_Elasticsearch
 <br/>
 <br/>
@@ -1107,6 +1121,16 @@
 <br/>
 
 # etc
+## Airbyte
+- Airbyte
+
+- Airbyte 실행하기
+
+- Destination
+
+<br/>
+<br/>
+
 ## ETL
 - 사전지식
 
@@ -1114,6 +1138,10 @@
 
 - Airbyte
 
+<br/>
+<br/>
+
+## Iceberg
 <br/>
 <br/>
 
@@ -1683,6 +1711,159 @@
 <br/>
 
 # OOP
+## examples
+### chapter1
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+### chapter10
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+### chapter11
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+### chapter12
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+### chapter2
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+### chapter4
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+### chapter5
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+### chapter6
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+### chapter8
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+## Object_part0-1
+- 객체 지향의 사실과 오해
+
+<br/>
+<br/>
+
+## Object_part0-2
+<br/>
+<br/>
+
+## Object_part1
+- 객체, 설계
+
+- 객체지향 프로그래밍
+
+<br/>
+<br/>
+
+## Object_part2
+- 역할, 책임, 협력
+
+- 설계 품질과 트레이드오프
+
+<br/>
+<br/>
+
+## Object_part3
+- 책임 할당하기
+
+<br/>
+<br/>
+
+## Object_part4
+- 메시지와 인터페이스
+
+- 객체 분해
+
+<br/>
+<br/>
+
+## Object_part5
+- 의존성 관리하기
+
+- 유연한 설계
+
+<br/>
+<br/>
+
+## Object_part6
+- 상속과 코드 재사용
+
+- 합성과 유연한 설계
+
+<br/>
+<br/>
+
+## Object_part7
+- 다형성
+
+<br/>
+<br/>
+
 ## OOP
 - 프로그래밍 패러다임
 
@@ -2028,6 +2209,9 @@
 <br/>
 <br/>
 
+<br/>
+<br/>
+
 # spring
 ## spring_boot_part1
 - 스프링 부트
@@ -2095,9 +2279,6 @@
 - 빈 생명주기 콜백
 
 - 빈 스코프
-
-<br/>
-<br/>
 
 <br/>
 <br/>
