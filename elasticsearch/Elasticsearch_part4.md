@@ -1449,7 +1449,7 @@
 
 - Join filed 와 성능
 
-  - 관계형 DB의 join과  동일하게 사용하는 것이 아니다.
+  - 관계형 DB의 join과 동일하게 사용하는 것이 아니다.
     - ES에서 성능 향상의 핵심은 데이터를 비정규화하는 것이다.
     - 각각의 join field에서 `has_child`나 `has_parent` 쿼리를 추가하는 것은 쿼리 성능에 상당한 악영향을 미친다.
   - join field를 사용할만한 유일한 경우는 한 entitiy가 다른 entity보다 훨씬 많은 일대 다 관계가 포함된 경우뿐이다.
@@ -1875,6 +1875,115 @@
     - Flush가 발생하는 주기가 따로 있는 것은 아니다.
     - 아직 flush 되지 않은 translog와 각 flush를 수행하는 비용의 trade off를 고려하는 heuristic으로 flush 실행 여부를 결정한다.
     - 이러한 결정에는 translog에 얼마나 많은 transaction log가 적재되었는지, data의 크기, 마지막 flush 시점 등이 영향을 미친다.
+
+
+
+- Lucene index
+  - Lucene index는 IndexWriter와 IndexSearcher를 가지고 색인과 검색을 동시에 제공하는 Lucene instance이다.
+    - 하나의 Lucene index는 자체적으로 데이터를 색인하고 검색할 수 있는 가장 작은 크기의 단일 검색엔진이라고도 할 수 있다.
+
+  - 하나의 Elasticsearch shard는 하나의 Lucene index이다.
+    - 그러나 shard에는 Elasticsearch에서 추가한 다양한 기능이 포함되어 있기는 하다.
+    - 그러나 shard의 본질이 Lucene index라는 사실에는 변함이 없다.
+    - Lucene index가 자기 자신이 가지고 있는 세그먼트 내에서만 검색이 가능한 것과 달리 샤드는 모든 샤드가 가지고 있는 세그먼트들을 논리적으로 통합해서 검색할 수 있다.
+    - Lucene의 세그먼트는 확장이 불가능하다는 문제가 있었는데, Elasticsearch는 shard를 사용하여 여러 segment를 통합하여 검색할 수 있게 함으로써 이러한 한계를 극복하고 확장 가능한 시스템을 만들었다.
+
+
+
+- Lucene의 flush
+  - Lucene은 효율적인 색인 작업을 위해 내부적으로 일정 크기의 버퍼를 가지고 있다.
+    - 이러한 내부 버퍼를 In-memory buffer라 부른다.
+    - 색인 작업이 요청되면 전달된 데이터는 일단 in-memory buffer에 순서대로 쌓인다.
+    - 그 후 정책에 따라 내부 버퍼에 일정 크기 이상의 데이터가 쌓이거나 일정 시간이 흐를 경우 버퍼에 쌓은 데이터를 모아 한꺼번에 처리한다.
+    - 버퍼를 일종의 큐로 사용하는 것이다.
+  - 버퍼에 모여 한 번에 처리된 데이터는 segment 형태로 생성되고 이후에 디스크에 동기화된다.
+    - 새로운 segment가 생성되고 디스크에 동기화하는 과정까지 거쳐야만 검색이 가능해진다.
+  - Lucene은 무거운 fsync 방식을 이용해 디스크를 동기화하는 대신 상대적으로 가벼운 write 방식을 이용해 쓰기 과정을 수행한다.
+    - 디스크에 물리적으로 동기화하는 과정은 OS 입장에서는 매우 비용이 큰 연산이기 때문에 segment가 생성될 때 마다 동기화를 할 경우 성능이 급격히 나빠질 수 있다.
+    - 따라서 Lucene은 무거운 `fsync()` 함수가 아니라 상대적으로 가벼운 `write()` 함수를 사용한다.
+    - `write()` 함수는 일단 캐시에만 기록되고 리턴되며, 실제 데이터는 특정한 주기에 따라 물리적인 디스크로 기록된다.
+    - 물리적인 디스크 쓰기 작업을 수행하지 않기에 빠른 처리가 가능한 반면, 시스템이 비정상 종료될 경우 데이터 유실이 일어날 수도 있다.
+    - 이를 통해 쓰기 성능을 높이고 이후 일정한 주기에 따라 물리적인 디스크 동기화 작업을 수행한다.
+  - 이처럼 in-memory buffer 기반의 처리 과정을 Lucene에서는 flush라고 부른다.
+    - 일단 flush 처리에 의해 segment가 생성되면 커널 시스템 캐시에 segment가 캐시되어 읽기가 가능해진다.
+    - 컨널 시스템 캐시에 캐시가 생성되면 Lucene의 `openIfChanged()`함수를 이용하여 `IndexSearcher`도 읽을 수 있는 상태가 된다.
+    - 즉 flush 이후부터 검색이 가능해진다.
+  - `openIfChanged()` 함수
+    - Lucene의 `IndexSearcher`는 일단 생성되고 나면 이후 변경된 사항들을 인지하지 못한다.
+    - 이를 가능하게 해주는 것이 `openIfChanged()` 함수로 일정 주기마다 실행되어 변경 사항을 반영할 수 있게 해준다.
+
+
+
+- Lucene의 commit
+  - Lucene이 디스크 동기화를 위해 `write()` 함수를 이용하기 때문에 물리적으로 기록되는 것이 100% 보장되지는 않는다.
+    - 디스크에 물리적으로 동기화되기 위해서는 결과적으로 커널 레벨에서 제공하는 `fsync()` 함수가 언젠가는 반드시 실행되어야 한다.
+    - 일반적인 쓰기 함수인 `write()` 함수는 커널에 쓰기 작업을 위임하기 때문에 최악의 경우 시스템에 문제가 생기면 데이터가 유실될 수 있다.
+  - Lucene에서는 물리적으로 디스크에 기록을 수행하는 `fsync()` 함수를 호출하는 작업을 commit이라 한다.
+    - 매번 commit을 수행할 필요는 없지만 일정 주기로 commit을 통해 물리적인 디스크로 기록 작업을 수행해야한다.
+
+
+
+- Lucene의 merge
+  - Merge는 여러 개의 segment를 하나로 합치는 작업이다.
+    - Segment 불변성에 따라 시간이 지날수록 segment의 개수는 증가할 수 밖에 없다.
+    - 따라서 늘어난 segment를 하나로 합치는 작업이 필요해진다.
+    - Lucene은 특정 주기 마다 자동으로 merge를 수행한다.
+  - Merge의 장점
+    - 검색 요청이 들어오면 모든 segment를 검색해야 하는데 segment의 개수가 줄어들면 검색 횟수도 줄어들어 검색 성능이 좋아진다.
+    - 삭제된 문서가 merge와 함께 디스크에서 삭제되므로 디스크 용량을 확보할 수 있다.
+  - Merge 작업은 반드시 commit 작업을 동반해야 한다.
+    - Commit 작업은 매우 비용이 많이 드는 연산으로 실행하는 데 많은 리소스가 필요하다/
+    - 따라서 적절한 주기를 설정해서 진행해야 한다.
+
+
+
+- Elasticsearch의 refresh, flush, optimize API
+  - Lucene의 flush는 Elasticsesarch의 refresh에 해당한다.
+    - Elasticsearch는 refresh 주기를 수동으로 조절할 수 있는 API를 제공한다.
+    - 특별한 경우가 아니면 refresh 주기를 임의로 변경하지 않는 것이 좋다.
+  - Lucene의 commit은 Elasticsearch의 flush에 해당한다.
+    - Elasticsearch의 flush는 Lucene의 commit 작업을 수행하고 새로운 translog를 시작한다는 의미이다.
+    - Translog는 Elasticsearch에만 존재하는 개념으로 고가용성과 매우 밀접한 관련이 있다.
+    - Translog는 샤드의 장애 복구를 위해 제공되는 특수한 파일로, 샤드는 자신에게 일어나는 모든 변경사항을 translog에 먼저 기록한 후 내부에 존재하는 Lucene을 호출한다.
+    - 시간이 흐를수록 translog의 크기는 계속 증가하고 shard는 1초마다 refresh 작업을 수행해서 실시간에 가까운 검색을 제공한다.
+    - 지속적인 refresh 작업에 의해 검색은 가능해지지만 아직은 디스크에 물리적인 동기화가 되지 않은 상태이기 때문에 주기적으로 Lucene commit을 수행해야 한다.
+    - 정책에 의해 lucene commit이 정상적으로 수행되면 변경사항이 디스크에 물리적으로 기록되고 translog 파일에서 commit이 정상적으로 일어난 시점까지의 내역이 삭제된다.
+  - Elasticsearch에서는 강제로 Lucene의 merge를 실행할 수 있는 API를 제공한다.
+    - 세그먼트를 병합하여 검색 성능을 올리는 것이 가능하다.
+
+
+
+- Translog
+  - Elasticsearch는 고가용성을 제공하기 위해 내부적으로 translog라는 파일을 유지하고 관리한다.
+    - 장애 복구를 위한 백업 데이터 및 데이터 유실 방지를 위한 저장소로 사용한다.
+  - Translog의 동작 순서
+    - 샤드에 어떤 변경사항이 생길 경우 Translog 파일에 먼저 해당 내역을 기록한 후 내부에 존재하는 Lucene index로 데이터를 전달한다.
+    - Lucene에 전달된 데이터는 인메모리 버퍼로 저장되고 주기적으로 처리되어 결과적으로 segment가 된다.
+    - Elasticsearch는 기본적으로 1초에 한번씩 refresh 작업이 수행되는데, 이를 통해 추가된 세그먼트의 내용을 읽을 수 있게 되고 검색이 가능해진다.
+    - 그러나 refresh 이후에도 translog에 기록된 내용은 삭제되지 않고 계속 유지된다.
+    - Elasticsearch의 flush가 실행되어 내부적으로 `fsync` 함수를 통해 실제 물리적인 디스크에 변경 내용이 성공적으로 기록돼야 translog 파일의 내용이 비로소 삭제된다.
+  - Translog가 필요한 이유
+    - Refresh가 실행되면 검색은 가능해지지만 아직은 불안정한 상태라고 볼 수 있다.
+    - 장애 발생시 완벽한 복구를 위해서는 물리적인 디스크로 동기화하는 flush가 언젠가는 이뤄져야한다.
+    - 만약 refresh와 flush 사이에 장애가 발생할 경우 flush를 통해 물리적인 디스크에 기록되지 못 한 데이터는 유실되게 된다.
+    - 그러나 translog가 있다면, refresh와 flush 사이에 장애가 발생하더라도 translog를 통해 복구가 가능하다.
+    - 또한 Elasticsearch는 shard crash가 발생할 경우에도 translog를 사용한다.
+    - Translog에 기록된 내용을 사용하면 shard를 완벽하게 복구할 수 있다.
+
+
+
+- 운영 중에 샤드의 개수를 변경할 수 없는 이유
+  - Elasticsearch의 shard는 Lucene index의 확장이다.
+    - 각 shard 내부에는 독립적인 Lucene library를 가지고 있으며 Lucene은 단일 머신 위에서 동작(stand alone)하는 검색 엔진이다.
+    - 이러한 특성 때문에 shard 내부의 Lucene 입장에서는 함께 index를 구성하는 다른 shard의 존재를 전혀 눈치채지 못한다.
+    - Lucene 입장에서 Elasticsearch index를 구성하는 전체 데이터가 별도로 존재하고 자신은 그 중 일부만 가지고 있다는 사실을 알 수가 없다.
+  - Primary shard의 개수를 변경한다는 말의 의미는 각각의 독립적인 Lucene이 가지고 있는 data들을 모두 재조정한다는 의미와 같다.
+    - 만약 Lucene의 개수가 5개에서 10개로 늘어난다면 Lucene 내부에 가지고 있는 segment가 잘게 쪼개져 일부 segment들은 새롭게 추가된 Lucene 쪽으로 전송되어야 할 것이다.
+    - 그리고 새로 추가된 Lucene에서는 여기저기에서 전송된 segment 조각들을 다시 합치는 작업을 수행해야 할 것이다.
+    - 그러나 segment는 segment 불변성에 의해 변경이 불가능하다.
+    - 따라서 primary shard의 개수를 변경하는 것은 불가능하다.
+
+
 
 
 
