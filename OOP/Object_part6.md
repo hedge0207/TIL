@@ -3,7 +3,7 @@
 - 중복 코드
 
   - 중복 코드의 문제점
-    - 중복 코드는 변경을 방해하며, 이것이 중복 코드를 제거해야 하는 가장 크 이유다.
+    - 중복 코드는 변경을 방해하며, 이것이 중복 코드를 제거해야 하는 가장 큰 이유다.
     - 어떤 코드가 중복인지를 찾아야 하고, 찾은 후에는 찾아낸 모든 코드를 일관되게 수정해야 한다.
     - 모든 중복 코드를 개별적으로 테스트해서 동일한 결과를 내놓는지 확인해야만 한다.
 
@@ -31,7 +31,7 @@
     - 전화 요금을 계산하는 규칙은 통화 시간을 단위 시간당 요금으로 나눠 주는 것이다.
 
   - `Call` 클래스를 구현한다.
-    - 개별 통솨 시간을 저장하기 위한 클래스이다.
+    - 개별 통화 시간을 저장하기 위한 클래스이다.
 
   ```python
   from datetime import datetime
@@ -112,11 +112,12 @@
       print(phone.calculate_fee()._amount)
   ```
 
-  - 중복 코드 변경하기
+  - 중복된 코드가 있는 상태에서 변경하기
     - `Phone`의 코드를 복사한 후 일부 수정해서 `NightlyDiscountPhone` 클래스를 만들었기에 둘 사이에 중복 코드가 생기게 되었다.
     - 이 상황에서 통화 요금에 부과할 세금을 계산해야 한다는 요구사항이 추가되었다.
     - 현재 통화 요금을 계산하는 로직은 두 클래스 모두에 구현되어 있기 때문에 세금을 추가하기 위해서는 두 클래스를 함께 수정해야 한다.
-
+    - 두 클레스의 `calculate_fee` 메서드를 모두 수정한다.
+  
   ```python
   class Phone:
       def __init__(self, amount: Money, seconds: int, tax_rate: float):
@@ -158,9 +159,9 @@
                   result = result.plus(self._regular_amount.times(call.get_duration().total_seconds() / self._seconds))
           return result.minus(result.times(self._tax_rate))
   ```
-
+  
   - 일어날 수 있는 실수들
-    - 위 코드에서 `Phone`에는 세금을 더했지만, `NightlyDiscountPhone`에는 세금을 뺐다.
+    - `calculate_fee` 메서드를 수정하면서 `Phone`에는 세금을 더했지만, `NightlyDiscountPhone`에는 세금을 뺐다.
     - 이처럼 중복 코드가 있을 경우 중복 코드를 서로 다르게 수정하는 경우가 있을 수 있다.
     - 또한 실수로 중복 코드들 중 일부만 수정하고 일부는 수정하지 않는 경우도 있을 수 있다.
 
@@ -173,7 +174,7 @@
     - 따라서 상속을 이용하여 위 문제를 해결할 수 있다.
     - 그러나 상속을 염두에 두고 설계되지 않은 클래스를 상속을 이용해 재사용하는 것은 생각처럼 쉽지 않다.
   - 상속을 이용하도록 변경하기
-    - 세금 부과는 안 한다고 가정한다.
+    - 세금 부과 이전의 상태를 가지고 변경한다.
     - 먼저 `Phone` 클래스의 `calculate_fee` 메서드로 일반 요금제에 따라 요금을 계산한 후, 만약 밤 10시 이후라면, 할인 받는 만큼을 일반 요금제로 계산된 금액에서 빼준다.
     - 이렇게 구현된 이유는 `Phone`을 최대한 재사용하고자 했기 때문이다.
     - 그러나, 이는 직관에 어긋난다.
@@ -204,7 +205,7 @@
   ```
 
   - 상속은 부모 클래스와 자식 클래스를 강하게 결합시킨다.
-    - 상속을 이용해 코드를 재사용하기 위해서는 부모 클래스의 개발자가 세웠던 가정이나 추론 과정을 정확히 히해해야 한다.
+    - 상속을 이용해 코드를 재사용하기 위해서는 부모 클래스의 개발자가 세웠던 가정이나 추론 과정을 정확히 이해해야 한다.
     - 이는 자식 클래스의 작성자가 부모 클래스의 구현 방법에 대한 정확한 지식을 가져야 한다는 것을 의미한다.
     - 따라서 상속은 결합도를 높이고, 이는 코드를 수정하기 어렵게 만든다.
   - `Phone`과 `NightlyDiscountPhone`은 강하게 결합되어 있다.
@@ -447,7 +448,7 @@
   - 중복 코드 안에서 차이점을 별도의 메서드로 추출한다.
     - 이는 "변하는 부분을 찾고 이를 캡슐화 하라"는 객체 지향의 원칙을 메서드에 적용한 것이다.
     - 상속을 사용하지 않은 코드에서 `Phone`과 `NightlyDiscountPhone`는 `calculate_fee`의 구현 방식에 차이가 있다.
-    - 이 부분을 동일한 이름을 가진 메서드로 추출한다.
+    - 이 부분을 동일한 이름을 가진 메서드(`_calculate_call_fee`)로 추출한다.
 
   ```python
   class Phone:
@@ -460,10 +461,10 @@
       def calculate_fee(self) -> Money:
           result = Money.wons(0)
           for call in self._calls:
-              result = result.plus(self.calculate_call_fee(call))
+              result = result.plus(self._calculate_call_fee(call))
           return result
   
-      def calculate_call_fee(self, call: Call) -> Money:
+      def _calculate_call_fee(self, call: Call) -> Money:
           return self._amount.times(call.get_duration().total_seconds() / self._seconds)
   ```
 
