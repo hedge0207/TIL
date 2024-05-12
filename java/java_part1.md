@@ -178,13 +178,11 @@
 
 ## 변수
 
-- 변수: 값을 저장할 수 있는 메모리 공간
-
-
-
 - 자바는 강형 언어다.
-  - 강형언어:모든 변수의 타입이 컴파일 시에 결정되는 언어로 자료형에 대한 오류를 컴파일 시 검출 가능하다.
-  - 따라서 자바는 처음 변수를 선언 할 때부터 어떤 값을 넣을 지 정해야하며 선언된 변수에 알맞은 값을 넣어야 한다.
+  - 강형 언어
+    - 모든 변수의 타입이 컴파일 시에 결정되는 언어를 의미한다.
+    -  자료형에 대한 오류를 컴파일 시 검출 가능하다.
+  - 따라서 자바는 처음 변수를 선언 할 때부터 어떤 타입의 값을 저장할지 정해야하며 선언된 변수의 타입에 알맞은 값을 넣어야 한다.
 
 
 
@@ -194,28 +192,29 @@
   - 자바의 키워드는 변수명으로 사용할 수 없다.
     - 키워드 혹은 예약어라고도 하며, 대표적으로 아래와 같든 것들이 있다.
     - if, break, for, true, false 등
-  - 변수명은 **lowerCamelCase** 로 작성한다(네이밍 문법으로 지키지 않아도 에러가 발생하지는 않는다).
   - 위 규칙들은 지키지 않을 경우 error가 발생하는 것 들이고 아래는 컨벤션으로서 지켜지는 규칙들이다.
     - 클래스의 첫 이름은 항상 대문자로 한다.
-    - 여러 단어로 이루어진 이름은 캐멀 케이스로 작성한다.
+    - 여러 단어로 이루어진 이름은 **camelCase** 로 작성한다(네이밍 문법으로 지키지 않아도 에러가 발생하지는 않는다).
     - 상수의 이름은 모두 대문자로 하며, 여러 단어로 이루어진 경우 `_`로 구분한다.
 
 
 
 - 변수의 선언과 대입
 
+  - 프로그래밍 언어에서의 변수란 값을 저장할 수 있는 메모리사으이 공간을 의미한다.
+  
   - 변수를 선언하고 값을 대입하는 것을 초기화라고도 한다.
     - 메모리는 여러 프로그램이 공유하는 자원이므로 전에 다른 프로그램에 의해 저장된 값(garbage value)이 남아있을 수 있다.
     - 따라서 적절한 값으로 초기화하는 것이 좋다.
-  
-  - `자료형 변수명`의 형태로 선언한다.
 
+  - `자료형 변수명`의 형태로 선언한다.
+  
   ```java
   int a;
   ```
-  
-  - 선언한 후의 대입에는 자료형을 붙이지 않는다. 
 
+  - 선언한 후의 대입에는 자료형을 붙이지 않는다. 
+  
   ```java
   a = 3
   ```
@@ -234,49 +233,17 @@
 
 
 
-- 상수: 데이터를 담을 수 있는 공간이라는 것은 변수와 유사하지만 변수와 달리 대입한 값을 변화시킬 수 없다.
 
-  - 원주율 등의 변하지 않는 값을 저장하여 사용하기 위해 사용한다.
-  - `final 자료형 상수명`으로 선언한다.
-    - 반드시 선언과 동시에 값을 대입해야한다.
-
-  - 상수명은 모두 대문자로 구성된 명사로 작성한다. 
-    - 단어와 단어 사이를 `_`로 구분하여 작성한다.
-  
-  
-  ```java
-  final double PI;
-  PI = 3.141592;
-  
-  //아래와 같은 재대입은 불가
-  //A = 3.14;
-  
-  //단어와 단어 사이를 _로 구분하여 작성
-  final int AVG_PRICE;
-  AVG_PRICE=150;
-  ```
-
-
-
-- `final`키워드
-  - final은 해당 entity가 오로지 한 번 할당될 수 있음을 의미한다.
-  - final 변수
-    - 해당 변수가 생성자나 대입연산자를 통해 한 번만 초기화 가능함을 의미.
-    - 이를 활용하여 상수를 선언할 때 사용.
-  - final 메소드
-    - 해당 메소드를 오버라이드하거나 숨길 수 없음을 의미.
-  - final 클래스
-    - 해당 클래스는 상속할 수 없음을 의미. 
-    - 문자 그대로 상속 계층 구조에서 ‘마지막’ 클래스이다.
 
 
 
 # 자료형
 
 - 자료형(data type)과 타입(type)
-  - 아래에서 설명하겠지만 자료형에는 기본형과 참조형이 존재한다.
-  - 기본형은 실제 값을, 참조형은 값이 저장되어 있는 주소를 저장한다.
-  - 기본형에는 실제 값(data)가 저장되어 있으므로 기본형의 종류를 이야기 할 때는 자료형이라는 용어를 사용한다.
+  - 자료형에는 기본형과 참조형이 존재한다.
+    - 기본형은 실제 값을, 참조형은 값이 저장되어 있는 주소를 저장한다.
+    - Java는 참조형 변수 사이의 연산을 할 수 없으므로 실제 연산에 사용되는 것은 모두 기본형 변수이다.
+  - 기본형에는 실제 값(data)이 저장되어 있으므로 기본형의 종류를 이야기 할 때는 자료형이라는 용어를 사용한다.
   - 반면에 참조형에는 값이 저장되어 있는 주소가 저장되어 있으므로 참조형의 종류를 이야기 할 때는 타입이라는 용어를 사용한다.
   - 타입이 자료형을 포함하는 개념이므로 굳이 구분하지 않아도 된다.
 
@@ -287,6 +254,7 @@
   - 기본형(원시 자료형)
     - 원시 자료형은 리터럴로 값을 세팅할 수 있다. 리터럴이란 계산식 없이 소스코드에 표기하는 상수 값을 의미한다.
     - String은 원시 자료형은 아니지만 리터럴 표현식을 사용할 수 있도록 자바에서 특별 대우 해주는 자료형이다.
+    - 원시 자료형은 `new` 키워드로 생성할 수 없다.
   - 참조형
     - 기본형 타입을 제외한 모든 타입, 문자열 등
   
@@ -301,38 +269,33 @@
   String str = new String "asd";
   ```
   
-  - 기본형과 참조형의 차이
-    - 원시 자료형은 `new` 키워드로 생성할 수 없다.
-    - 기본형은 변수에 실제 값이 저장되는 반면, 참조형 변수는 변수에 값이 저장되어 있는 주소가 저장된다.
+  - 기본형에는 총 8가지의 타입이 있으며 각각의 크기는 아래와 같다.
+    - char는 자바에서 유니코드(2 byte 문자체계)를 사용하기에 2 byte이다.
+    - boolean은 true와 false 두 가지 값만 표현할 수 있으므로 가장 작은 1byte이다.
   
-  ```java
-  // 아래 예시에서 num에는 실제 값인 1이, today에는 new Date()로 생성된 객체의 주소가 저장된다.
-  // 즉 new Date()의 반환값은 값이 아닌 객체의 주소이다.
-  int num = 1;
-  Date today = new Date()
-  ```
-  
-  - 기본형에는 총 8가지의 타입이 있다.
-    - char, boolean, byte, short, int, long, float, double
-  
-  - 기본형의 크기는 다음과 같다.
-    - boolean은 true와 false 두 가지 값만 표현할 수 있으므로 1byte
-    - char는 유니코드(2 byte 문자체계)를 사용하므로 2byte
-    - byte는 1byte
-    - int는 4byte
-    - long과 short은 int를 기준으로 각각 2배와 0.5배를 한 8byte, 2byte.
-    - float은 4byte.
-    - double은 float의 더블인 8byte.
+  |        | 1 byte  | 2 byte | 4 byte | 8 byte |
+  | ------ | ------- | ------ | ------ | ------ |
+  | 논리형 | boolean |        |        |        |
+  | 문자형 |         | char   |        |        |
+  | 정수형 | byte    | short  | int    | long   |
+  | 실수형 |         |        | float  | double |
 
 
+
+
+
+## 기본형
 
 - 숫자
 
   - 정수형
+    - 정수형 중에서는 int를 가장 많이 사용하는데, 이는 CPU가 가장 효율적으로 처리할 수 있는 타입이기 때문이다.
+    - 효율적인 실행보다 메모리를 절약하는 것이 중요하다면 byte나 short를 사용하면 된다.
     - 8진수, 16진수는 int 자료형으로 표현한다.
     - long 변수에 값을 대입할 때는 대입하는 숫자 값이 int 자료형의 최대값인 2147483647 보다 큰 경우 `L` 또는 `l(소문자 L)`을 붙여주어야 한다.  단, 소문자 l의 경우 1과 혼동될 수  있으므로 가급적 대문자로 적는다.
     - `부호 타입(양수는 0, 음수는 1) + n-1 bit`형태로 저장된다.
-
+    
+  
   ```java
   // 예를 들어서 int type인 num은 아래 과정을 거쳐서 저장된다(실제 아래 순서로 저장되는 것은 아니나 편의를 위해 아래와 같은 순서로 설명한다).
   int num = -1000
@@ -350,6 +313,18 @@
     - 정수보다 실수의 크기가 더 크다. 즉 수를 다루는 타입의 크기는 다음과 같다.
     - byte < char = short <  int < long < float < double
     - 실수는 소수점 뒤의 자릿수들을 담을 공간이 필요하기에 정수보다 크다.
+
+
+
+- 정수형과 오버플로우
+  - 오버플로우
+    - 타입이 표현할 수 있는 값의 범위를 넘어서는 것을 오버플로우라고 한다.
+    - 오버플로우가 발생했다고 해서 에러가 발생하는 것은 아니자만 예상치 못 한 결과가 나올 수 있다.
+    - 애초부터 오버플로우가 발생하지 않게 충분한 크기의 타입을 선택해서 사용해야 한다.
+  - 오버플로우 예시
+    - 4bit 2진수의 최대값인 1111에 1을 더하면 10000이 된다.
+    - 그러나 4bit로는 4자리의 2진수만 저장할 수 있으므로 0000이 된다.
+    - 즉 5자리의 2진수 10000 중에서 하위 4bit만 저장하게 되는 것이다.
 
 
 
@@ -412,10 +387,11 @@
 
 
 
-
-
 - 논리형(boolean)
   - true나 false중 하나의 값을 가진다.
+    - 기본값은 false다.
+    - true와 false만 표현하면 되기에 1bit만으로도 충분하지만, 자바에서 데이터를 다루는 최소 단위가 byte이기 때문에, boolean의 크기가 1byte이다.
+  - Java에서는 대소문자가 구분되기 때문에 반드시 소문자로 사용해야한다.
 
 
 
@@ -427,225 +403,256 @@
     - 문자값, 아스키코드 값, 유니코드 값으로 모두 표현이 가능하다.
   - char는 내부적으로는 정수(유니코드)로 저장하기에 정수형과 별반 다르지 않다.
     - 따라서 정수형, 또는 실수형과도 연산이 가능하다.
-    
-    ```java
-    package first;
-    
-    public class HelloWorld {
-    
-    	public static void main(String[] args) {
-    		char a1 = 'a';       //문자값
-    		char a2 = 97;        //아스키코드 값
-    		char a3 = '\u0061';  //유니코드 값
-    		System.out.println(a1);  //a
-    		System.out.println(a2);  //a
-    		System.out.println(a3);  //a
-    	}
-    }
-    ```
 
-  - String(문자열): 문장을 표현, 한 글자도 포함된다.
+
+  ```java
+  package first;
+  
+  public class HelloWorld {
+  
+  	public static void main(String[] args) {
+  		char a1 = 'a';       //문자값
+  		char a2 = 97;        //아스키코드 값
+  		char a3 = '\u0061';  //유니코드 값
+  		System.out.println(a1);  //a
+  		System.out.println(a2);  //a
+  		System.out.println(a3);  //a
+  	}
+  }
+  ```
+
+  - 특수 문자 다루기
+    - 영문자 외에 tab이나 backspace 등의 특수문자를 저장하려면, 아래와 같은 리터럴을 사용한다.
+
+  | 특수문자              | 문자 리터럴  |
+  | --------------------- | ------------ |
+  | tab                   | `\t`         |
+  | backspace             | `\b`         |
+  | form feed             | `\f`         |
+  | new line              | `\n`         |
+  | carriage return       | `\r`         |
+  | 역 슬래쉬             | `\\`         |
+  | 작은 따옴표           | `\'`         |
+  | 큰 따옴표             | `\"`         |
+  | 유니코드(16진수) 문자 | `\u유니코드` |
+
+  - char 타입의 표현 형식
+    - char 타입의 크기는 2 byte(16 bit)이므로, 16자리의 2진수로 표현할 수 있는 정수의 개수인 65536(2<sup>16</sup>)개의 코드를 사용할 수 있으며 char형 변수는 이 범위 내 코드 중 하나를 저장할 수 있다.
+    - 예를 들어, 문자 A를 저장하면 2진수 0000 0000 0100 0001(10진수로 65)로 저장된다.
+    - char 타입은 문자를 저장할 변수를 선언하기 위한 것이지만, 실제로 char 타입의 변수에는 문자가 아닌 문자의 유니코드(정수)가 저장되고 표현형식 역시 정수형과 동일하다.
+    - 다만 정수형과 달리 음수를 나타낼 필요가 없으므로 표현할 수 있는 값의 범위가 다르다.
+    - 2 byte는 모두 2<sup>16</sup>개의 값을 표현할 수 있는데, char 타입에 저장되는 값인 유니코드는 모두 음수가 아니므로, 0~65535의 범위를 가지며, 정수형인 short은 절반은 음수 표현에 사용하므로 -32768~32767을 범위로 갖는다.
+
+
+
+
+
+## 참조형
+
+- 문자열(String)
+
+  - 문장을 표현, 한 글자도 포함된다.
 
     - 큰 따옴표를 사용하여 묶어야 하며 작은 따옴표 사용시 error가 발생한다.
     - 아래와 같은 두 가지 방식으로 표현이 가능하다.
     - `new` 키워드는 객체를 만들 때 사용하는 것으로 일반적으로는 `new`를 쓰지 않는 첫 번째 방법을 사용
 
-    ```java
-    package first;
-    
-    public class HelloWorld {
-    
-    	public static void main(String[] args) {
-            //String은 원시 자료형은 아니지만 리터럴 표현식을 사용할 수 있도록 자바에서 특별 대우해주기에 아래와 같이 리터럴 표현식으로 쓸 수 있다. 이 경우 변수는 문자열 자체가 저장되어 있다.
-    		String a = "Hi";
-    		String b = "My name is";
-    		String c = "Java";
-            
-            //방법2. new 사용 방법, String은 기본적으로 클래스이므로 아래와 같이 객체를 생성하는 키워드인 new를 사용 가능하다. 이 경우 변수에는 문자열 자체가 아닌 문자열 객체를 가리키는 주소가 저장되어 있다.
-    		String a2 = new String("Hi");
-    		String b2 = new String("My name is");
-    		String c2 = new String("Java");
-    		System.out.println(a);
-    		System.out.println(b);
-    		System.out.println(c);
-    		System.out.println(a2);
-    		System.out.println(b2);
-    		System.out.println(c2);
-    	}
-    }
-    ```
+
+  ```java
+  package first;
+  
+  public class HelloWorld {
+  
+  	public static void main(String[] args) {
+          //String은 원시 자료형은 아니지만 리터럴 표현식을 사용할 수 있도록 자바에서 특별 대우해주기에 아래와 같이 리터럴 표현식으로 쓸 수 있다. 이 경우 변수는 문자열 자체가 저장되어 있다.
+  		String a = "Hi";
+  		String b = "My name is";
+  		String c = "Java";
+          
+          //방법2. new 사용 방법, String은 기본적으로 클래스이므로 아래와 같이 객체를 생성하는 키워드인 new를 사용 가능하다. 이 경우 변수에는 문자열 자체가 아닌 문자열 객체를 가리키는 주소가 저장되어 있다.
+  		String a2 = new String("Hi");
+  		String b2 = new String("My name is");
+  		String c2 = new String("Java");
+  		System.out.println(a);
+  		System.out.println(b);
+  		System.out.println(c);
+  		System.out.println(a2);
+  		System.out.println(b2);
+  		System.out.println(c2);
+  	}
+  }
+  ```
 
   - String 자료형과 관련된 메소드들
 
-    ```java
-    //1. equals: 두 개의 문자열이 동일한 값을 가지고 있는지 비교하여 true, false 값을 리턴
-    //==연산자를 사용할 경우 리터럴 방식으로 생성한 변수와 new를 사용하여 생성한 변수를 비교할 때 같은 값이더라도 false를 반환하는데 이는 == 연산자가 값이 동일한지 여부를 판별하는 것이 아닌 같은 객체인지를 판별하는 것이기 때문이다.
-    package first;
-    
-    public class HelloWorld {
-    
-    	public static void main(String[] args) {
-            // 리터럴 표기법
-    		String a = "My name is";
-    		String b = "My name is";
-    		String c = "My name Is";
-            
-            // 생성자 방식
-            // part2에 적혀 있듯 new 키워드 자체가 생성자가 아니다. 
-            // 클래스명과 메소드명이 동일하고 리턴 자료형이 없는 메소드를 생성자라고 한다.
-            // 생성자는 객체가 생성될 때 호출되고 객체가 생성될 때는 new라는 키워드로 객체가 만들어질 때이다.
-    		String d = new String("My name is");
-            String e = new String("My name is");
-    		System.out.println(a.equals(b));   //true
-            
-            //둘이 같다고 나오는 이유는 객체를 생성하는 방식이 아닌 리터럴을 저장하는 방식이기 때문이다.
-            System.out.println(a==b);          //true
-            
-            //c에 Is라고 썼으므로 다르다고 나온다.
-    		System.out.println(a.equals(c));   //false
-            
-            //equals는 값이 같은지를 판단하기에 true가 출력
-            System.out.println(a.equals(d));   //true
-            
-            //==는 같은 객체인지를 판단하기에 false가 출력
-    		System.out.println(a==d);          //false
-            
-            //d와 e도 마찬가지로 값은 같지만서로 다른 객체를 지칭하고 있으므로 다르다고 출력된다.
-            System.out.println(d==e);          //false
-    	}
-    }
-    
-    //2.indexOf: 문자열에서 특정 문자가 시작되는 인덱스를 리턴한다. 없을 경우 -1을 리턴한다.
-    package first;
-    
-    public class HelloWorld {
-    
-    	public static void main(String[] args) {
-    		String a = "My name is";
-    		System.out.println(a.indexOf("e"));     //6
-            System.out.println(a.indexOf("name"));  //3
-    		System.out.println(a.indexOf("qwer"));  //-1
-    	}
-    }
-    
-    //3.replaceAll: 특정 문자를 다른 문자로 바꾸고 싶을 경우 사용
-    package first;
-    
-    public class HelloWorld {
-    
-    	public static void main(String[] args) {
-    		String a = "My name is";
-    		System.out.println(a.replaceAll("My","His"));  //His name is
-    	}
-    }
-    
-    //4.substring: 문자열 중 특정 부분을 뽑아낼 경우에 사용
-    package first;
-    
-    public class HelloWorld {
-    
-    	public static void main(String[] args) {
-    		String a = "My name is";
-    		System.out.println(a.substring(1,4)); //y n
-    	}
-    }
-    
-    //5.toUpper(Lower)Case: 문자열을 모두 대(소)문자로 변경
-    package first;
-    
-    public class HelloWorld {
-    
-    	public static void main(String[] args) {
-    		String a = "My name is";
-    		System.out.println(a.toUpperCase());  //MY NAME IS
-    		System.out.println(a.toLowerCase());  //my name is
-    	}
-    }
-    
-    //6.concat: 문자열과 문자열을 결합
-    package first;
-    
-    public class HelloWorld {
-    
-    public static void main(String[] args) {
-    		String a = "My";
-    		System.out.println(a.concat(" name is")); //My name is
-            System.out.println(a) //My, 값이 변경되는 것은 아니다.
-                
-            //아래와 같이 하면 변경시킬 수 있다.
-            a = a.concat(" name is")
-            System.out.println(a)  //My name is
-    	}
-    }
-    
-    //7.charAt(숫자): 인덱스에 해당하는 문자를 반환
-    package first;
-    
-    public class HelloWorld {
-    
-    public static void main(String[] args) {
-    		String a = "My";
-            System.out.println(a.charAt(1))  //M
-    	}
-    }
-    ```
+  ```java
+  //1. equals: 두 개의 문자열이 동일한 값을 가지고 있는지 비교하여 true, false 값을 리턴
+  //==연산자를 사용할 경우 리터럴 방식으로 생성한 변수와 new를 사용하여 생성한 변수를 비교할 때 같은 값이더라도 false를 반환하는데 이는 == 연산자가 값이 동일한지 여부를 판별하는 것이 아닌 같은 객체인지를 판별하는 것이기 때문이다.
+  package first;
   
+  public class HelloWorld {
+  
+  	public static void main(String[] args) {
+          // 리터럴 표기법
+  		String a = "My name is";
+  		String b = "My name is";
+  		String c = "My name Is";
+          
+          // 생성자 방식
+          // part2에 적혀 있듯 new 키워드 자체가 생성자가 아니다. 
+          // 클래스명과 메소드명이 동일하고 리턴 자료형이 없는 메소드를 생성자라고 한다.
+          // 생성자는 객체가 생성될 때 호출되고 객체가 생성될 때는 new라는 키워드로 객체가 만들어질 때이다.
+  		String d = new String("My name is");
+          String e = new String("My name is");
+  		System.out.println(a.equals(b));   //true
+          
+          //둘이 같다고 나오는 이유는 객체를 생성하는 방식이 아닌 리터럴을 저장하는 방식이기 때문이다.
+          System.out.println(a==b);          //true
+          
+          //c에 Is라고 썼으므로 다르다고 나온다.
+  		System.out.println(a.equals(c));   //false
+          
+          //equals는 값이 같은지를 판단하기에 true가 출력
+          System.out.println(a.equals(d));   //true
+          
+          //==는 같은 객체인지를 판단하기에 false가 출력
+  		System.out.println(a==d);          //false
+          
+          //d와 e도 마찬가지로 값은 같지만서로 다른 객체를 지칭하고 있으므로 다르다고 출력된다.
+          System.out.println(d==e);          //false
+  	}
+  }
+  
+  //2.indexOf: 문자열에서 특정 문자가 시작되는 인덱스를 리턴한다. 없을 경우 -1을 리턴한다.
+  package first;
+  
+  public class HelloWorld {
+  
+  	public static void main(String[] args) {
+  		String a = "My name is";
+  		System.out.println(a.indexOf("e"));     //6
+          System.out.println(a.indexOf("name"));  //3
+  		System.out.println(a.indexOf("qwer"));  //-1
+  	}
+  }
+  
+  //3.replaceAll: 특정 문자를 다른 문자로 바꾸고 싶을 경우 사용
+  package first;
+  
+  public class HelloWorld {
+  
+  	public static void main(String[] args) {
+  		String a = "My name is";
+  		System.out.println(a.replaceAll("My","His"));  //His name is
+  	}
+  }
+  
+  //4.substring: 문자열 중 특정 부분을 뽑아낼 경우에 사용
+  package first;
+  
+  public class HelloWorld {
+  
+  	public static void main(String[] args) {
+  		String a = "My name is";
+  		System.out.println(a.substring(1,4)); //y n
+  	}
+  }
+  
+  //5.toUpper(Lower)Case: 문자열을 모두 대(소)문자로 변경
+  package first;
+  
+  public class HelloWorld {
+  
+  	public static void main(String[] args) {
+  		String a = "My name is";
+  		System.out.println(a.toUpperCase());  //MY NAME IS
+  		System.out.println(a.toLowerCase());  //my name is
+  	}
+  }
+  
+  //6.concat: 문자열과 문자열을 결합
+  package first;
+  
+  public class HelloWorld {
+  
+  public static void main(String[] args) {
+  		String a = "My";
+  		System.out.println(a.concat(" name is")); //My name is
+          System.out.println(a) //My, 값이 변경되는 것은 아니다.
+              
+          //아래와 같이 하면 변경시킬 수 있다.
+          a = a.concat(" name is")
+          System.out.println(a)  //My name is
+  	}
+  }
+  
+  //7.charAt(숫자): 인덱스에 해당하는 문자를 반환
+  package first;
+  
+  public class HelloWorld {
+  
+  public static void main(String[] args) {
+  		String a = "My";
+          System.out.println(a.charAt(1))  //M
+  	}
+  }
+  ```
+
   - StringBuffer: 문자열을 추가하거나 변경할 때 주로 사용하는 자료형
-  
+
     - 아래 과정에서 String과 StringBuffer는 완전히 동일해 보이지만 그렇지 않다. 두 변수의 값은 동일하지만 StringBuffer 타입은 객체를 단 한 번만 생성시키는 반면에 String은 +연산을 할 때마다 새로운 객체가 생성된다(따라서 아래 예시에서는 총 4개의 객체가 생성된다). 
     - 이는 String 객체가 값을 변경할 수 없기(immutable)때문으로 위에서 살펴본 `toUpperCase`등도 마찬가지로 기존의 String 객체를 모두 대문자로 변화시키는 것이 아니라  모두 대문자로 변환 된 새로운 객체를 생성하는 것이다. StringBuffer 는 이와 반대로 값을 변경할 수 있다(mutable)
     - StringBuffer 자료형은 String 자료형보다 무거운 편에 속한다. `new StringBuffer()` 로 객체를 생성하는 것은 일반 String을 사용하는 것보다 메모리 사용량도 많고 속도도 느리다. 따라서 문자열 추가나 변경등의 작업이 많을 경우에는 StringBuffer를, 문자열 변경 작업이 거의 없는 경우에는 그냥 String을 사용하는 것이 유리하다.
+
+
+  ```java
+  //append를 사용하여 문자열을 추가 가능
+  package first;
   
-    ```java
-    //append를 사용하여 문자열을 추가 가능
-    package first;
-    
-    public class HelloWorld {
-    
-        public static void main(String[] args) {
-            StringBuffer a = new StringBuffer();
-            a.append("hello");
-            a.append(" ");
-            a.append("my name is java.");
-            System.out.println(a);  		   //hello my name is java.
-            //toString()메소드는 String 자료형으로 변경 해준다.
-            System.out.println(a.toString());  //hello my name is java.
-            //String으로는 아래와 같이 작성 가능
-            String b = "";
-            b += "hello";
-            b += " ";
-            b += "my name is java.";
-            System.out.println(b);  		   //hello my name is java.
-        }
-    }
-    
-    //insert를 사용하여 특정 위치에 원하는 문자열 삽입 가능
-    package first;
-    
-    public class HelloWorld {
-    
-        public static void main(String[] args) {
-            StringBuffer a = new StringBuffer();
-            a.append("my name is java.");
-            a.insert(0,"Hello ");  //첫 번째 인자로 인덱스, 두 번째 인자로 삽입할 문자열
-            System.out.println(a); //Hello my name is java.
-        }
-    }
-    
-    //substring: String자료형의 substring 메소드와 사용법이 동일
-    package first;
-    
-    public class HelloWorld {
-    
-        public static void main(String[] args) {
-            StringBuffer a = new StringBuffer();
-            a.append("Hello my name is java.");
-            System.out.println(a.substring(0,4)); //Hell
-        }
-    }
-    ```
+  public class HelloWorld {
   
+      public static void main(String[] args) {
+          StringBuffer a = new StringBuffer();
+          a.append("hello");
+          a.append(" ");
+          a.append("my name is java.");
+          System.out.println(a);  		   //hello my name is java.
+          //toString()메소드는 String 자료형으로 변경 해준다.
+          System.out.println(a.toString());  //hello my name is java.
+          //String으로는 아래와 같이 작성 가능
+          String b = "";
+          b += "hello";
+          b += " ";
+          b += "my name is java.";
+          System.out.println(b);  		   //hello my name is java.
+      }
+  }
   
+  //insert를 사용하여 특정 위치에 원하는 문자열 삽입 가능
+  package first;
+  
+  public class HelloWorld {
+  
+      public static void main(String[] args) {
+          StringBuffer a = new StringBuffer();
+          a.append("my name is java.");
+          a.insert(0,"Hello ");  //첫 번째 인자로 인덱스, 두 번째 인자로 삽입할 문자열
+          System.out.println(a); //Hello my name is java.
+      }
+  }
+  
+  //substring: String자료형의 substring 메소드와 사용법이 동일
+  package first;
+  
+  public class HelloWorld {
+  
+      public static void main(String[] args) {
+          StringBuffer a = new StringBuffer();
+          a.append("Hello my name is java.");
+          System.out.println(a.substring(0,4)); //Hell
+      }
+  }
+  ```
 
 
 
@@ -931,12 +938,157 @@
 
 
 
-# 리터럴
+## 형변환
+
+- 형변환(casting)
+
+  - 변수나 리터럴의 타입을 다른 타입으로 변환하는 것을 의미한다.
+  - 아래와 같은 방법으로 변환이 가능하다.
+    - 여기에 사용되는 괄호는 캐스트 연산자 혹은 형변환 연산자라고 한다.
+    - 피연산자의 값을 읽어서 지정된 타입으로 형변환하고 그 결과를 반환한다.
+    - 피연산자의 값은 형변환 후에도 아무런 변화가 없다.
+
+  ```java
+  (타입)피연산자
+  ```
+
+  - 기본형에서 boolean을 제외한 나머지 타입들은 서로 형변환이 가능하다.
+  - 기본형과 참조형간의 형변환은 불가능하다.
+
+
+
+- 정수형간의 형변환
+
+  - 큰 타입에서 작은 타입으로 변환하는 경우 크기의 차이만큼 잘려나간다.
+    - 따라서 경우에 따라 값 손실(loss of data)이 발생할 수 있다.
+    - 예를 들어 int type으로 저장된 300을 byte type으로 변환하면 44가 된다.
+    - 300은 2진수로 표현하면 0000 0000 0000 0000 0000 0001 0010 1100인데, byte는 1 byte만 표현할 수 있으므로 0010 1100까지만 표현하고, 나머지 값들은 잘려나간다.
+
+  ```java
+  int num = 300;
+  byte byteNum = (byte) num;
+  System.out.println(num);		// 300
+  System.out.println(byteNum);	// 44
+  ```
+
+  - 반대로 작은 타입에서 큰 타입으로 변환하는 경우는 저장 공간의 부족으로 잘려나가는 일이 없으므로 값 손실이 발생하지 않는다.
+    - 나머지 빈 공간은 0 또는 1로 채워진다.
+
+
+
+- 실수형 간의 형변환
+
+  - 작은 타입에서 큰 타입으로 변환하는 경우
+    - 빈 공간을 0으로 채운다.
+    - float 타입의 값을 double 타입으로 변환하는 경우, 지수(E)는 float의 기저인 127을 뺀 후 double의 기저인 1023을 더해서 변환하고, 가수(M)는 float의 가수 23자리를 채우고 남은 자리를 0으로 채운다.
+
+  - 반대로 double 타입에서 float 타입으로 변환하는 경우 
+    - 지수는 double의 기저인 1023을 뺀 후 float의 기저인 127을 더하고 가수는 double의 가수 52자리 중 23자리만 저장되고 나머지는 버려진다.
+    - 한 가지 주의할 점은 형변환할 때 가수의 24번째 자리에서 반올림이 발생할 수 있다는 것이다.
+    - 24번째 자리의 값이 1이면, 반올림이 발생하여 23번째 자리의 값이 1 증가한다.
+    - 그리고 float 타입의 범위를 넘는 값을 float으로 형변환하는 경우는 ±무한대 또는 ±0을 결과로 얻는다.
+
+
+
+- 정수형과 실수형 간의 형변환
+
+  - 정수형과 실수형은 저장형식이 완전히 다르기 때문에 정수형 사이의 변환처람 간단히 값을 채우고 자르는 식으로 할 수 없다.
+  - 정수형을 실수형으로 변환
+    - 정수를 2진수로 변환한 다음 정규화를 거쳐 실수의 저장 형식으로 저장된다.
+    - 실수형은 정수형보다 훨씬 큰 저장 범위를 갖기 때문에, 정수형을 실수형으로 변환하는 것은 별 무리가 없다.
+    - 한 가지 주의할 점은 실수형의 정밀도의 제한으로 인한 오차가 발생할 수 있다는 것이다.
+    - 예를 들어 int의 최대값은 약 20억으로 최대 10자리 정밀도를 요구한다.
+    - 그러나 float은 10진수로 약 7자리 정밀도만을 제공하므로, int를 float으로 변환할 때 정밀도 차이에 의한 오차가 발생할 수 있다.
+    - 그래서 10진수 8자리 이상의 값을 실수형으로 변환할 때는 float이 아닌 double로 변환해야 오차가 발생하지 않는다.
+
+  - 실수형을 정수형으로 변환
+    - 실수형 소수점이하 값은 버려진다.
+    - 정수형의 표현 형식으로 소수점 이하의 값은 표현할 수 없기 때문이다.
+    - 예를 들어 float 타입의 상수 9.1234567를 형변환하면 9가 된다.
+    - 그래서 실수형을 정수형으로 형변환할 때 반올림이 발생하지 않는다.
+    - 만일 실수의 소수점을 버리고 남은 정수가 정수형의 저장범위를 넘는 경우에는 정수의 오버플로우가 발생한 결과를 얻는다.
+
+
+
+- 자동 형변환
+
+  - 컴파일러가 생략된 형변환을 자동으로 추가하는 것을 의미한다.
+
+  ```java
+  float f = 10;
+  
+  // 위 코드는 아래와 같은 형변환이 생략된 것이며, 컴파일러가 자동으로 형변환 한다.
+  float f = (float)10;
+  ```
+
+  - 변수가 저장할 수 있는 값의 범위보다 더 큰 값을 저장하려는 경우에 형변환을 생략하면 에러가 발생한다.
+
+  ```java
+  // 1000은 byte가 저장할 수 있는 범위를 넘어가므로 자동 형변환이 실패하고, 에러가 발생한다.
+  byte b = 1000;
+  ```
+
+  - 연산 과정에서의 형변환
+    - 서로 다른 두 타입의 연산에서는 먼저 타입을 일치시킨 후에 연산을 수행해야 하므로 연산 과정에서 형변환이 자동으로 이루어진다.
+
+  ```java
+  int i = 3;
+  double d = 1.0 + i;
+  
+  // 위 코드는 아래와 같은 형변환이 생략된 것이다.
+  double d = 1.0 + (double)i;
+  ```
+
+  - 자동 형변환의 규칙
+    - 컴파일러는 기존의 값을 최대한 보존할 수 있는 타입으로 자동 형변환한다.
+    - 표현 범위가 좁은 타입에서 넓은 타입으로 형변환하는 경우에는 값 손실이 없으므로 두 타입 중에서 표현범위가 더 넓은 쪽으로 형변환된다.
+    - char와 short은 둘 다 2 byte의 크기로 크기가 같지만, char의 범위는 0~2<sup>16</sup>이고 short의 범위는 -2<sup>15</sup>~2<sup>15</sup>-1이므로 서로 범위가 달라서 어느 쪽으로의 형변환도 값 손실이 발생할 수 있으므로 자동 형변환이 수행될 수 없다.
+
+
+
+
+
+# 상수와 리터럴
+
+- 상수(constant)
+
+  - 변수와 마찬가지로 값을 저장할 수 있는 공간이지만 변수와 달리 한번 값을 저장하면 다른 값으로 변경할 수 없다.
+    - 상수를 선언하는 방법은 변수와 유사하지만, 변수의 타입 앞에 키워드 `final`을 붙여줘야 한다.
+    - 상수는 반드시 선언과 동시에 초기화해야 하며, 그 후 부터는 상수의 값을 변경하는 것이 허용되지 않는다.
+
+  ```java
+  final double PI;
+  PI = 3.141592;
+  
+  // 아래와 같은 재대입은 불가
+  // A = 3.14;
+  
+  // 단어와 단어 사이를 _로 구분하여 작성
+  final int AVG_PRICE;
+  AVG_PRICE=150;
+  ```
+
+  - 상수의 이름은 모두 대문자로 하는 것이 관례이며, 여러 단어로 이루어져 있는 경우 `_`로 구분한다.
+
+
+
+- `final`키워드
+  - final은 해당 entity가 오로지 한 번 할당될 수 있음을 의미한다.
+  - final 변수
+    - 해당 변수가 생성자나 대입연산자를 통해 한 번만 초기화 가능함을 의미.
+    - 이를 활용하여 상수를 선언할 때 사용.
+  - final 메소드
+    - 해당 메소드를 오버라이드하거나 숨길 수 없음을 의미.
+  - final 클래스
+    - 해당 클래스는 상속할 수 없음을 의미. 
+    - 문자 그대로 상속 계층 구조에서 ‘마지막’ 클래스이다.
+
+
 
 - 리터럴(literal)
 
   - 프로그래밍에서는 상수를 값을 한 번 저장하면 변경할 수 없는 저장공간으로 정의한다.
-    - 이는 우리가 일상 생활에서 사용하는 상수와는 뜻이다르다.
+    - 이는 우리가 일상 생활에서 사용하는 상수와는 뜻이 다르다.
     - 따라서 우리가 원래 사용하는 상수를 표현하기 위해 리터럴이라는 용어를 사용한다.
   - 리터럴은 단지 우리가 기존에 알고 있던 상수의 다른 이름일 뿐이다.
     - 즉 리터럴이란 값 그 자체를 의미한다.
@@ -991,11 +1143,10 @@
 
 
 - 문자 리터럴과 문자열 리터럴
-  - 문자 리터럴과 문자열 리터럴
-    - 문자 리터럴은 문자 하나를 표현하기 위해 사용하며, 작은 따옴표를 사용해 표현한다.
-    - 문자열 리터럴은 둘 이상의 문자를 표현할 수 있으며, 큰 따옴표를 사용해 표현한다.
-    - 문자열 리터럴은 큰 따옴표 안에 아무 것도 넣지 않는 것을 허용한다.
+  - 문자 리터럴은 문자 하나를 표현하기 위해 사용하며, 작은 따옴표를 사용해 표현한다.
     - 문자 리터럴은 작은 따옴표 안에 아무 것도 넣지 않는 것을 허용하지 않는다.
+  - 문자열 리터럴은 둘 이상의 문자를 표현할 수 있으며, 큰 따옴표를 사용해 표현한다.
+    - 문자열 리터럴은 큰 따옴표 안에 아무 것도 넣지 않는 것을 허용한다.
 
 
 
@@ -1009,8 +1160,6 @@
   long l = 123;		// int 보다 long의 범위가 넒으므로 int type리터럴을 long 타입 변수에 저장 가능하다.
   double d = 3.14f	// float보다 double의 범위가 넓으므로 float type 리터럴을 double type 변수에 저장 가능하다.
   ```
-
-
 
 
 
@@ -1120,7 +1269,6 @@
   }
   ```
 
-  
 
 
 
@@ -1148,7 +1296,6 @@
   System.out.println(a) //10
   ```
 
-  
 
 
 

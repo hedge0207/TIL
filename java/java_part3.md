@@ -394,10 +394,9 @@
 
   - 입력을 훨씬 간편하게 받을 수 있게 해준다.
   - `Scanner`의 메소드
-    - next+자료형(): next뒤에 자료형을 붙이면 자료형에 맞는 값을 입력 받을 수 있다.
-    - nextLine(): 한 줄을 통째로 입력받는다.
-    - next(): 공백을 기준으로 한 단어를 입력 받는다.
-
+    - `nextLine()`: 한 줄을 통째로 입력받는다.
+    - `next()`: 공백을 기준으로 한 단어를 입력 받는다.
+  
   ```java
   package first;
   
@@ -411,8 +410,8 @@
       }
   }
   
-  //input abcde
-  out
+  // input abcde
+  // out
   abcde
   ```
 
@@ -422,9 +421,76 @@
 
 ## 콘솔 출력
 
-- `System.out.println`을 사용
+- `System.out.println`
   - `System.out`은 `PrintStream` 클래스의 객체다.
-  - `PrintStream`은 콘솔에 값을 출력할 때 사용되는 클래스이다. 
+    - `PrintStream`은 콘솔에 값을 출력할 때 사용되는 클래스이다. 
+
+
+
+- `System.out.printf`
+
+  - 같은 값이라도 다른 형식으로 출력하고자 할 때 사용한다.
+    - `println`은 사용하기엔 편하지만 수의 값을 그대로 출력하므로, 값을 변환하지 않고는 다른 형식으로 출력할 수 없다.
+    - 그러나 `printf`를 사용하면 소수점 둘째자리까지만 출력한다던가, 정수를 16진수나 8진수로 출력한다던가 하는 것이 가능하다.
+
+  ```java
+  byte b = 1;
+  System.out.printf("b=%d%n", b);		// b=1
+  
+  int hexNum = 0x10;
+  System.out.println("hex=%x, %d%n", hexNum, hexNum);		// hex=10, 16
+  ```
+
+  - `printf`는 지시자(specifier)를 통해 변수의 값을 여러 가지 형식으로 변환하여 출력하는 기능을 가지고 있다.
+    - 지시자는 값을 어떻게 출력할 것인지를 지정해주는 역할을 한다.
+
+  | 지시자 | 설명                                      |
+  | ------ | ----------------------------------------- |
+  | %b     | boolean 형식으로 출력                     |
+  | %d     | 10진(decimal) 형식으로 출력               |
+  | %o     | 8진(octal) 정수 형식으로 출력             |
+  | %x, %X | 16진(hexa-decimal) 정수 형식으로 출력     |
+  | %f     | 부동 소수점(floating-point) 형식으로 출력 |
+  | %e, %E | 지수(exponent) 표현식으로 출력            |
+  | %c     | 문자(charater)로 출력                     |
+  | %S     | 문자열(string)로 출력                     |
+
+  - 지시자 `%d`는 출력될 값이 차지할 공간을 숫자로 지정할 수 있다.
+    - 숫자 앞에 공백을 무엇으로 채울지도 지정할 수 있다.
+
+  ```java
+  int num = 10;
+  System.out.printf("[%5d]%n", num);		// [     10]
+  System.out.printf("[%-5d]%n", num);		// [10     ]
+  System.out.printf("[%05d]%n", num);		// [0000010]
+  ```
+
+  - 지시자 `%x`와 `%o`에 `#`을 사용하면 접두사 `0x`와 `0`이 각각 붙으며, `%X`는 16진수에 사용되는 접두사와 영문자를 대문자로 출력한다.
+
+  ```java
+  long hex = 0xFFFF_FFFF_FFFF_FFFFL;
+  System.out.printf("%#x%n", hex);		// 0xffffffffffffffff
+  System.out.printf("%#X%n", hex);		// 0XFFFFFFFFFFFFFFFF
+  ```
+
+  - 10진수를 2진수로 출력해주는 지시자는 없기 때문에, 정수를 2진 문자열로 변환해주는 메서드를 사용해야한다.
+    - `Integer.toBinaryString(int i)`는 정수를 2진수로 변환해서 문자열로 반환한다.
+    - 문자열로 반환하므로 `%s` 지시자를 사용한다.
+
+  ```java
+  System.out.printf("%s%n", Integer,toBinaryString(binNum));
+  ```
+
+  - `%f` 지시자는 전체 자리수와 소숫점 아래 자리수를 지정할 수 있다.
+    - 예를 들어 아래 코드는 전체 14자리 중 10자리를 소수점 아래 자리로 출력하겠다는 의미이다.
+    - `%d`와 마찬가지로 숫자 앞에 공백을 무엇으로 채울지 지정하는 것이 가능하다.
+
+  ```java
+  System.out.printf("%14.10f", d);
+  System.out.printf("%014.10f", d);
+  ```
+
+  
 
 
 
