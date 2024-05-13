@@ -1013,3 +1013,273 @@
     - 상속 관계는 클라이언트의 관점에서 자식 클래스가 부모 클래스를 대체할 수 있을 때만 올바르다.
   - 핵심은 대체 가능성을 결정하는 것은 클라이언트라는 것이다.
 
+
+
+- is-a 관계 다시 살펴보기
+  - is-a 관계는 클라이언트 입장에서 is-a 일 때만 참이다.
+    - 클라이언트 관점에서 자식 클래스의 행동이 부모 클래스의 행동과 호환되지 않고 그로 인해 대체가 불가능하다면 그 관계를 is-a 관계라고 할 수 없다.
+    - is-a 관계로 표현된 문장을 볼 때마다 문장 앞에 "클라이언트 입장에서"라는 말이 빠져 있다고 생각하라.
+  - is-a 관계는 객체지향에서 중요한 것은 객체의 속성이 아니라 행동이라는 점을 강조한다.
+    - 일반적으로 클라이언트를 고려하지 않은 채 개념과 속성의 측면에서 상속 관계를 정할 경우 리스코프 치환 원칙을 위반하는 서브클래싱에 이르게 될 확률이 높다.
+  - 결론적으로 상속이 서브타이핑을 위해 사용될 경우에만 is-a 관계다.
+
+
+
+- LSP는 유연한 설계의 기반이다.
+  - LSP는 클라이언트가 어떤 자식 클래스와도 안정적으로 협력할 수 있는 상속 구조를 구현할 수 있는 가이드라인을 제공한다.
+    - 새로운 자식 클래스를 추가하더라도 클라이언트 입장에서 동일하게 행동하기만 한다면 클라이언트를 수정하지 않고도 상속 계층을 확장할 수 있다.
+    - 즉 클라이언트의 입장에서 퍼블릭 인터페이스의 행동 방식이 변경되지 않는다면 클라이언트의 코드를 변경하지 않고도 새로운 자식 클래스와 협력할 수 있게 된다는 것이다.
+  - LSP를 따르는 설계는 유연할뿐만 아니라 확장성이 높다.
+    - 자식 클래스가 클라이언트의 관점에서 부모 클래스를 대체할 수 있다면 기능 확장을 위해 자식 클래스를 추가하더라도 코드를 수정할 필요가 없어진다.
+    - 따라서 LSP는 OCP를 만족하는 설계를 위한 전제 조건이다.
+    - 일반적으로 LSP 위반은 잠재적은 OCP 위반이다.
+
+
+
+- 타입 계층과 LSP
+
+  - 클래스 상속은 타입 계층을 구현할 수 있는 다양한 방법 중 하나일 뿐이다.
+    - Jav의 interface나 동적 타입 언어의 duck typing 등을 사용하면 클래스 사이의 상속을 사용하지 않고 서브타이핑 관계를 구현할 수 있다.
+    - 물론 이런 기법을 사용하는 경우에도 LSP를 준수해야만 서브타이핑 관계라고 말할 수 있다.
+    - 핵심은 구현 방법과 무관하게 클라이언트 관점에서 슈퍼타입에 대해 기대하는 모든 것이 서브타입에게도 적용되어야 한다는 것이다.
+  - 덕 타이핑을 사용한 서브타이핑
+    - Python과 같은 동적 타입 언어에서는 덕 타이핑을 사용하여 상속을 사용하지 않고도 서브타이핑 관계를 구현할 수 있다.
+    - 클라이언트인 `main` 메서드 관점에서 인자로 받은 `duck`에게 하는 기대는 꽥 소리를 낼 수 있어야 하고, 헤엄을 칠 수 있어야 한다는 것이 전부다.
+    - `Duck`과 `Human` 클래스는 모두 꽥 소리를 낼 수 있고 헤엄을 칠 수 있다.
+    - 따라서 클라이언트 관점에서 `Duck`과 `Human`은 행동 호환성를 가지며 `Duck`을 `Human`으로 대체하는 것이 가능하므로, 둘은 서브타이핑 관계라고 할 수 있다.
+    - 이처럼 상속이 아닌 덕 타이핑을 통해서도 서브타이핑 구현이 가능하다.
+
+  ```python
+  class Duck:
+      def quack(self):
+          print("quack!")
+      
+      def swim(self):
+          print("swimming")
+  
+  
+  class Human:
+      def quack(self):
+          print("quack!")
+      
+      def swim(self):
+          print("swmming")
+      
+      def write(self):
+          print("writing")
+  
+  
+  def main(duck):
+      duck.quack()
+      duck.swim()
+  
+  
+  if __name__ == "__main__":
+      main(Duck())
+      main(Human())
+  ```
+
+  - LSP를 위반하는 예를 설명하는 데 클래스 상속을 자주 사용하는 이유는 대부분의 객체지향 언어가 구현 단위로서 클래스를 사용하고 코드 재사용의 목적으로 상속을 지나치게 남용하는 경우가 많기 때문이다.
+    - 물론 상속이 아닌 다른 방법을 이용하더라도 클라이언트의 관점에서 서로 다른 구성 요소를 동일하게 다뤄야 한다면 서브타이핑 관계의 제약을 고려해서 LSP를 준수해야 한다.
+  - 서브클래스와 서브타입은 서로 다른 개념이다.
+    - 어떤 클래스가 다른 클래스를 상속받으면 그 클래스의 자식 클래스 또는 서브클래스가 되지만 모든 서브클래스가 서브타입인 것은 아니다.
+    - 코드 재사용을 위해 상속을 사용했다면, 그리고 클라이언트 관점에서 자식 클래스가 부모 클래스를 대체할 수 없다면 서브타입이라고 할 수 없다.
+
+
+
+
+
+## 계약에 의한 설계와 서브타이핑
+
+- 계약에 의한 설계(Design By Contract, DBC)
+
+  - 클라이언트와 서버 사이의 협력을 의무(obligation)와 이익(benefit)으로 구성된 계약의 관점에서 표현하는 것을 의미한다.
+
+    - 아래 세 가지 요소로 구성된다.
+    - 클라이언트가 정상적으로 메서드를 실행하기 위해 만족시켜야 하는 사전조건(precondition).
+    - 메서드가 실행된 후에 서버가 클라이언트에게 보장해야 하는 사후조건(postcondition).
+    - 메서드 실행 후에 인스턴스가 만족시켜야 하는 클래스 불변식(class invariant).
+
+  - LSP이 강제하는 조건을 계약의 개념을 이용해 좀 더 명확하게 설명할 수 있다.
+
+    - LSP는 어떤 타입의 서브타입이 되기 위해서는 슈퍼타입의 인스턴스와 협력하는 클라이언트의 관점에서 서브타입의 인스턴스가 슈퍼타입을 대체하더라도 협력에 지장이 없어야 한다는 것을 의미한다.
+    - LSP와 계약에 의한 설계 사이의 관계를 아래와 같은 한 문장으로 요약할 수 있다.
+    - 서브타입이 LSP를 만족시키기 위해서는 클라이언트와 슈퍼타입 간에 체결된 계약을 준수해야 한다.
+
+    - 계약에 의한 설계에 따르면 협력하는 클라이언트와 슈퍼타입의 인스턴스 사이에는 계약이 맺어져 있다.
+    - 클라이언트와 슈퍼타입은 이 계약을 준수할 때만 정상적으로 협력할 수 있다.
+
+  - `Movie`와 `DiscountPolicy`의 관계
+
+    - 둘 사이에는 암묵적인 사전조건과 사후조건이 존재한다.
+
+  ```python
+  class Movie:
+      def __init__(self, title: str, running_time: time, fee: Money, discount_policy: DiscountPolicy):
+          self._title = title
+          self._running_time = running_time
+          self._fee = fee
+          self._discount_policy = discount_policy
+  
+      # ...
+      def calculate_movie_fee(self, screening: Screening):
+          return self._fee.minus(self._discount_policy.calculate_discount_amount(screening))
+  
+  
+  class DiscountPolicy(ABC):
+  
+      # ...
+      def calculate_discount_amount(self, screening: Screening):
+          for condition in self.conditions:
+              if condition.is_satisfied_by(screening):
+                  return self.get_discount_amount(screening)
+  
+          return Money.wons(0)
+  ```
+
+  - 사전조건
+    - `DiscountPolicy.calculate_discount_amount`메서드는 인자로 전달 된 `screening`이 null인지 여부를 확인하지 않는다.
+    - 하지만 `screening`에 null이 전달된다면 예외가 발생할 것이다.
+    - `screening`에 null이 전달되는 것은 우리가 기대했던 것이 아니며, 또한 영화 시작 시간이 아직 지나지 않았다고 가정할 것이다.
+    - 이것이 사전조건이다.
+    - 사전조건을 만족시키는 것은 `Movie`의 책임이므로 `Movie`는 사전 조건을 위반하는 `screening`을 전달해서는 안 된다.
+  - 사후조건
+    - `Movie.calculate_movie_fee` 메서드는 `DiscountPolicy.calculate_discount_amount` 메서드의 반환값에 어떤 처리도 하지 않고 `fee`에서 차감을 한다.
+    - 따라서 `DiscountPolicy.calculate_discount_amount`의 반환값은 항상 null이 아니어야 한다.
+    - 또한 할인 금액이므로 음수여선 안 된다.
+    - 이것이 사후 조건이다.
+  - 사전조건과 사후조건을 추가한다.
+    - 사전조건은 `check_precondition` 메서드로, 사후조건은 `check_postcondition` 메서드로 구현한다.
+
+  ```python
+  class Movie:
+      def __init__(self, title: str, running_time: time, fee: Money, discount_policy: DiscountPolicy):
+          self._title = title
+          self._running_time = running_time
+          self._fee = fee
+          self._discount_policy = discount_policy
+  
+      # ...
+      def calculate_movie_fee(self, screening: Screening):
+          # 올바른 screening을 전달하기 위해 인자로 넘기기 전에 체크한다.
+          if screening is None and screening.get_start_time() <= datetime.now():
+              raise InvalidScreeningException
+          return self._fee.minus(self._discount_policy.calculate_discount_amount(screening))
+  
+  
+  class DiscountPolicy(ABC):
+  
+      # ...
+      def calculate_discount_amount(self, screening: Screening):
+          # 사전조건
+          self._check_precondition(screening)
+          amount = Money.wons(0)
+          for condition in self.conditions:
+              if condition.is_satisfied_by(screening):
+                  amount = self.get_discount_amount(screening)
+                  # 사후조건
+                  self._check_postcondition(amount)
+                  return amount
+          # 사후조건
+  		self._check_postcondition(amount)
+          return amount
+      
+      # 사전조건
+      def _check_precondition(self, screening: Screening):
+          assert screening is not None and screening.get_start_time() > datetime.now()
+      
+      # 사후조건
+      def _check_postcondition(self, amount: Money):
+          assert amount is not None and amount.is_gte(Money.wons(0))
+  ```
+
+  - `DiscountPolicy`의 자식 클래스들이 `Movie`와 `DiscountPolicy` 사이에 체결된 계약을 만족한다면 이 클래스들은 `DiscountPolicy`를 대체할 수 있기 때문에 서브타이핑 관계라고 할 수 있다.
+
+
+
+- 서브타입과 사전조건
+
+  - 계약의 관점에서 상속이 초래하는 가장 큰 문제는 자식 클래스가 부모 클래스의 메서드를 오버라이딩할 수 있다는 것이다.
+    - 예를 들어 아래와 같이 `DiscountPolicy`를 상속받은 `BrokenDiscountPolicy` 클래스는 `calculate_discount_amount`를 오버라이딩한 후 여기에 새로운 사전 조건을 추가한다.
+    - 새로운 사전 조건은 영화 상영 시작 일자로부터 3일 이전까지만 할인이 가능하다는 것으로, `check_stronger_precondition` 메서드로 구현한다.
+
+  ```python
+  class BrokenDiscountPolicy(DiscountPolicy):
+      
+      def calculate_discount_amount(self, screening: Screeing):
+          self._check_precondition()
+          self._check_stronger_precondition()
+          # ...
+          self._check_postcondition()
+  
+  
+      def _check_stronger_precondition(self, screening: Screening):
+          assert (screening.get_start_time()-datetime.now()).days < 3
+  ```
+
+  - 문제는 ` Movie`가 오직 `DiscountPolicy`의 사전조건만 알고 있다는 점이다.
+    - `BrokenDiscountPolicy` 클래스가 `DiscountPolicy` 클래스의 자식 클래스이기 때문에 컴파일러는 아무런 제약 없이 업캐스팅을 허용한다.
+    - 따라서 `Movie`는 `BrokenDiscountPolicy`를 `DiscountPolicy`로 간주할 것이다.
+    - 그러나 `Movie`는 `DiscountPolicy`의 사전조건만 알고 있기에 `DiscountPolicy`의 사전조건을 만족시키기 위해 null이 아니면서 시작시간이 현재 시간 이후인 `Screening`을 전달할 것이다.
+    - 따라서 상영 시작 일자로부터 3일 이내라도 문제가 없다고 가정할 것이다.
+    - 그러나 `BrokenDiscountPolicy`의 사전조건은 이를 허용하지 않기 때문에 협력은 실패하고 만다.
+    - 다시 말해서 `BrokenDiscountPolicy`는 클라이언트의 관점에서 `DiscountPolicy`를 대체할 수 없기 때문에 서브타입이 아니다.
+  - 결국 자식 클래스가 부모 클래스의 서브타입이 되기 위해서는 아래 조건을 만족시켜야 한다.
+    - 서브타입에 더 강력한 사전조건을 정의할 수 없다.
+    - 반대로 서브타입에 슈퍼타입과 더 같거나 약한 조건은 정의할 수 있다.
+
+
+
+- 서브타입과 사후조건
+
+  - 서브타입에 슈퍼타입과 같거나 더 강한 사후조건을 정의할 수 있다.
+    - 위에서 서브타입에 더 강력한 사전조건을 정의할 수 없다는 것을 살펴봤다.
+    - 사후조건은 이와 다르게 서브타입에 같거나 더 강한 사후조건을 정의할 수 있다.
+    - 아래 예시에서 `amount`가 반드시 1000 이상이어야 한다는 새로운 사후조건을 추가했다.
+    - `Movie`는 `amount`가 null이 아니라는 `DiscountPolicy`의 사후조건만 알고 있다.
+    - 즉 `Movie`는 기존에 `DiscountPolicy`와 체결한 계약 대로 `amount`가 0 이상이기만 하면 문제가 없다.
+    - 따라서 `amount`가 반드시 1000 이상이어야 한다는 조건을 추가하더라도 `Movie`와 `DiscountPolicy` 사이에 체결된 계약을 위반하지는 않는다. 
+
+  ```python
+  class BrokenDiscountPolicy(DiscountPolicy):
+  
+      def calculate_discount_amount(self, screening: Screeing):
+          self._check_precondition()
+          # ...
+          self._check_postcondition()
+          self._check_stronger_postcondition()
+  
+      def _check_stronger_precondition(self, screening: Screening):
+          assert (screening.get_start_time()-datetime.now()).days < 3
+  
+      def _check_stronger_postcondition(self, amount: Money):
+          assert amount is not None and amount.is_gte(Money.wons(1000))
+  ```
+
+  - 서브타입에 슈퍼타입 보다 약한 사후조건을 정의할 수 없다.
+    - 약화된 사후조건은 `amount`가 null만 아니면 모두 반환한다는 것으로, `_check_weaker_postcondition`로 구현한다.
+    - 기존의 `_check_postcondition`를 `_check_weaker_postcondition`로 대체한다.
+    - 변경된 이후에는 할인 금액이 마이너스라도 그대로 반환할 것이다.
+    - `Movie`와 `DiscountPolicy` 사이의 계약 내용은 할인 금액이 음수가 아니라는 것이었으므로, 이는 둘 사이에 체결된 계약을 위반한다.
+
+  ```python
+  class BrokenDiscountPolicy(DiscountPolicy):
+  
+      def calculate_discount_amount(self, screening: Screeing):
+          self._check_precondition()
+          # ...
+          self._check_weaker_postcondition()
+  
+      def _check_weaker_postcondition(self, amount: Money):
+          assert amount is not None
+  ```
+
+
+
+- 서브타이핑을 위해 상속을 이용하고 있다면 부모 클래스가 클라이언트와 맺고 있는 계약에 대해 고민해야한다.
+  - 서브타입과 사전조건
+    - 어떤 타입이 슈퍼타입에서 정의한 사전조건 보다 더 약한 사전 조건을 정의하고 있다면 그 타입은 서브타입이 될 수 있다.
+    - 그러나 더 강한 사전조건을 정의한다면 서브타입이 될 수 없다.
+  - 서브타입과 사후조건
+    - 어떤 타입이 슈퍼타입에서 정의한 사후조건보다 더 강한 사후조건을 정의하더라도 그 타입은 여전히 서브타입이다.
+    - 그러나 더 약한 사후조건을 정의한다면 서브타입의 조건이 깨진다.
