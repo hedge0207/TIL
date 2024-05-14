@@ -1,4 +1,4 @@
-# fastapi security
+# FastAPI security
 
 ## 기본 개념
 

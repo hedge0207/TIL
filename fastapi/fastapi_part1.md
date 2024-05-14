@@ -149,7 +149,7 @@
 
 
 
-- FastAPI에서 사용하는 `Query`, `Path`, `File`등은 모두 사실은 class가 아닌 class를 반환하는 function이다.
+- FastAPI의  `Query`, `Path`, `File`등은 모두 사실은 class가 아닌 class를 반환하는 function이다.
 
 
 
@@ -165,7 +165,9 @@
 
 
 
-## Python type과 FastAPI
+
+
+## Python type hints와 FastAPI
 
 - `Annotated`와 FastAPI
 

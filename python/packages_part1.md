@@ -832,17 +832,18 @@
   print(person.dict(by_alias=True))	# {'FirstName': 'Harry', 'LastName': 'Porter'}
   ```
 
-  - alias를 설정하면 기존 field 명은 사용할 수 없게 되는데 `allow_population_by_field_name` 옵션을 `True`로 주면 둘 다 사용이 가능해진다.
+  - alias를 설정하면 기존 field 명은 사용할 수 없게 되는데 아래와 같이 설정하면 둘 다 사용 가능하다.
 
   ```python
-  from pydantic import Field, BaseModel
+  from pydantic import Field, BaseModel, ConfigDict
   
   
   class Person(BaseModel):
       name: str =  Field("John", alias="first_name")
   
-      class Config:
-          allow_population_by_field_name=True
+      model_config = ConfigDict(
+          populate_by_name=True
+      )
   
   
   person = Person(**{"name":"Harry"})

@@ -260,6 +260,91 @@
 
 
 
+# Lifespan Events
+
+- Lifespan
+
+  - FastAPI app의 `lifespan` parameter와 context manager를 사용하여 app이 실행될 때와 종료될 때 실행될 logic을 설정할 수 있다.
+    - 예를 들어, app이 실행될 때, "Hello"를 출력하고, app이 종료될 때 "Bye"를 출력하는 간단한 app을 만들려고 한다고 가정해보자.
+    - `contextlib.asynccontextmanager` decorator를 단 비동기 함수를 정의하고, 함수 내에 app 실행 전과 종료 후에 실행될 logic을 `yield`로 구분하여 작성한다.
+
+  ```python
+  from contextlib import asynccontextmanager
+  
+  from fastapi import FastAPI
+  
+  
+  @asynccontextmanager
+  async def lifespan(app: FastAPI):
+      print("Hello")
+      yield
+      print("Bye")
+  
+  
+  app = FastAPI(lifespan=lifespan)
+  ```
+
+  - Lifespan 함수
+    - 위 예시에서 `lifespan`이라는 이름으로 정의한 함수가 lifespan 함수이다.
+    - `asynccontextmanager`를 decorator로 단 비동기 함수로 작성해야 한다.
+    - Application이 시작되기 전에 `yield` 이전의 logic이 실행되고, application이 종료된 후에 `yield` 이후의 logic이 실행된다.
+  - Async Context Manager
+    - Python은 최신버전부터 async context manager를 지원한다.
+    - `asynccontextmanager` decorator는 decorator가 달린 함수를 async context manager로 전환한다.
+    - FastAPI app의 `lifespan` parameter는 async context manager를 받는다.
+
+  ```python
+  # Python의 async context manager
+  async with lifsespan(app):
+      await do_stuff()
+  ```
+
+
+
+- 더 이상 지원하지 않는 방식
+
+  - 기존에는 아래와 같은 방식을 사용했다.
+    - `app.on_event`로 이벤트를 등록하는 방식이었다.
+
+  ```python
+  from fastapi import FastAPI
+  
+  app = FastAPI()
+  
+  items = {}
+  
+  @app.on_event("startup")
+  async def startup_event():
+      items["foo"] = {"name": "Fighters"}
+      items["bar"] = {"name": "Tenders"}
+  
+  @app.on_event("shutdown")
+  def shutdown_event():
+      with open("log.txt", mode="a") as log:
+          log.write("Application shutdown")
+  ```
+
+  - 더 이상 지원하지 않는 이유
+    - Application의 시작 및 종료시에 로직이나 자원을 공유해야하는 경우가 많다.
+    - 위 방식의 경우 startp과 shutdown을 서로 다른 함수에서 관리하므로 두 함수가 공유하는 로직이나 자원을 관리하는 것이 쉽지 않다.
+    - 반면에, 위에서 살펴본 async context manager를 사용하는 방식은 하나의 함수를 사용하므로 공유가 훨씬 간편하다.
+
+  ```python
+  from contextlib import asynccontextmanager
+  
+  from fastapi import FastAPI
+  
+  
+  @asynccontextmanager
+  async def lifespan(app: FastAPI):
+      # 하나의 함수에서 관리하면 start up과 shutdown시에 공유하는 자원을 보다 간편하게 사용할 수 있다.
+      conn = SomeDB()
+      yield
+      conn.close()
+  ```
+
+
+
 
 
 # Testing
