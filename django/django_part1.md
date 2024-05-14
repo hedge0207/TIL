@@ -1,17 +1,3 @@
-# 목차
-
-- [Django란](#Django)
-- [MTV기초](#MTV기초)
-- [DTL](#DTL)
-- [MTV확장](#MTV-확장)
-- [form태그와 input태그](#form태그와-input태그)
-- [Model](#Model)
-- [HTTP](#HTTP)
-- [정적 파일 관리](#정적-파일-관리)
-- [form](#form)
-
-
-
   
 
 # Django
@@ -122,7 +108,7 @@ cf. **API**(Application Programming Interface, 응용 프로그램 프로그래�
     - 앱 이름은 복수로 지정하는 것이 관례다. 
 
   ```bash
-$ python manage.py startapp <앱이름>
+  $ python manage.py startapp <앱이름>
   ```
 
   - 장고에게 앱이 생성되었다는 것을 알리기
@@ -187,6 +173,7 @@ $ python manage.py startapp <앱이름>
   
   USE_L10N = True #Localization의 약자로 L과 N사이에 10자가 위치해 이렇게 명명
   
+
 USE_TZ = True
   ```
 
@@ -216,12 +203,12 @@ USE_TZ = True
       path('admin/', admin.site.urls),
       path('bboong/', views.index),
   ]
-```
-  
+  ```
+
 - 함수 정의하기
   
     - 위에서 어떤 url에서 어떤 함수가 처리될지 정의했으니 이제 처리될 함수를 정의해야 한다.
-  
+    
   ```python
   #위에서 views의 index라는 함수를 처리할 것이라고 했으므로 views.py에서 해당 함수를 정의해야 한다.
   from django.shortcuts import render
@@ -438,7 +425,7 @@ USE_TZ = True
 
 
     - `forloop.counter`: 반복 횟수를 출력, 당연히 for문 안에만 쓸 수 있다.
-
+    
       - `forloop.counter숫자`:입력한 숫자부터 시작한다(지정하지 않으면 1부터 시작).  숫자와 counter 사이에 띄어쓰기 안한다.
 
 
@@ -455,9 +442,9 @@ USE_TZ = True
     3 : 피자
     4 : 햄버거
     ```
-
+    
     - `empty`: 반복할 것이 없을 경우 설정한 내용을 출력
-
+    
     ```django
     <!--no_replies가 빈 배열이라고 가정하면-->
     {% for reply in no_replies%}
