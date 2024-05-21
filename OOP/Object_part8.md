@@ -565,3 +565,165 @@
 
 
 
+- 추상화 수준에서 협력 패턴 구현하기
+
+  - 먼저 적용 조건을 표현하는 추상화인 `FeeCondition`에서 시작한다.
+    - `find_time_intervals`이라는 하나의 오퍼레이션을 포함하는 인터페이스로 구현한다.
+    - `find_time_intervals`는 인자로 받은 `Call`의 통화 기간 중에서 적용 조건을 만족하는 기간을 구한 후 배열에 담아 반환한다.
+
+  ```python
+  class FeeCondition(ABC):
+  
+      def find_time_intervals(self, call: Call):
+          ...
+  ```
+
+  - 다음으로 규칙을 표현하는 `FeeRule`을 구현한다.
+    - 단위 요금과 적용 조건을 저장하는 두 개의 인스턴스 변수로 구성된다.
+    - `calculate_fee` 메서드는 `FeeCondition`에게 `find_time_intervals` 메시지를 전송해서 조건을 만족하는 시간의 목록을 받아온 후 요금을 계산한다.
+
+  ```python
+  class FeeRule:
+       
+      def __init__(self, fee_condition: FeeCondition, fee_per_duration: FeePerduration):
+           self._fee_condition = fee_condition
+           self._fee_per_duration = fee_per_duration
+      
+      def calculate_fee(self, call: Call):
+          reduce(lambda acc, val: acc + val, 
+                 map(lambda duration: self._fee_per_duration.calculate(duration), 
+                     self._fee_condition.find_time_intervals(call)), 
+                 Money.wons(0))
+  ```
+
+  - `FeePerduration` 클래스를 구현한다.
+    - "단위 시간당 요금"이라는 개념을 표현하기 위한 클래스로 이 정보를 이용해 일정 기간 동안의 요금을 계산한는 `calculate` 메서드를 구현한다.
+
+  ```python
+  class FeePerduration:
+  
+      def __init__(self, fee: Money, duration: int):
+          self._fee = fee
+          self._duration = duration
+      
+      def calculate(self, interval: DateTimeInterval):
+          return self._fee.times(round(interval.duration().seconds / self._duration))
+  ```
+
+  - `BasicPolicy`가 `FeeRule`의 집합을 사용하여 전체 통화 요금을 계산하도록 수정한다.
+
+  ```python
+  class BasicRatePolicy(RatePolicy):
+  
+      def __init__(self, fee_rules: List[FeeRule]):
+          self._fee_rules = fee_rules
+  
+      def calculate_fee(self, phone: Phone):
+          return [self._calculate(call) for call in phone.calls]
+      
+      def _calculate(self, call: Call):
+          return reduce(lambda acc, val: acc + val, 
+                        map(lambda rule: rule.calculate_fee(call), self._fee_rules), 
+                        Money.wons(0))
+  ```
+
+  - 지금까지 구현한 클래스는 모두 변하지 않는 추상화에 해당한다.
+    - 이 요소들을 조합하면 전체적인 협력 구조가 완성된다.
+    - 즉 변하지 않는 요소와 추상적인 요소만으로도 요금 계산에 필요한 전체적인 협력 구조를 설명할 수 있다는 것이며, 이것이 핵심이다.
+    - 변하는 부분과 변하지 않는 부분을 분리하고 변하는 것을 캡슐화한 코드는 오직 변하지 않는 것과 추상화에 대한 의존성만으로도 전체적인 협력을 구현할 수 있다.
+    - 변하는 것은 추상화 뒤에 캡슐화되어 숨겨져 있기 때문에 전체적인 협력의 구조에는 영향을 미치지 않는다.
+
+
+
+- 구체적인 협력 구현하기
+
+  > 아래 코드는 전체적인 협력의 일관성을 보여주기 위한 코드로, 정상적으로 동작하진 않는다.
+
+  - `FeeCondition` 인터페이스를 실체화하는 클래스를 구현한다.
+  - 시간대별 정책 구현하기
+    - `TimeOfDayFeeCondition`을 구현한다.
+    - `TimeOfDayFeeCondition`의 인스턴스는 협력 안에서 `FeeCondition`을 대체할 수 있어야 한다.
+
+  ```python
+  class TimeOfDayFeeCondition(FeeCondition):
+  
+      def __init__(self, from_: time, to: time):
+          self._from = from_
+          self._to = to
+      
+      def find_time_intervals(self, call: Call):
+          result = []
+          for interval in call.get_interval().split_by_day():
+              if self._get_from(interval) < self._get_to(interval):
+                  from_time = self._get_from(interval)
+                  to_time = self._get_to(interval)
+                  result.append(DateTimeInterval(
+                      datetime(interval.from_.year, interval.from_.month, interval.from_.day, from_time.hour, from_time.minute, from_time.second), 
+                      datetime(interval.to.year, interval.to.month, interval.to.day, to_time.hour, to_time.minute, to_time.second)
+                  ))
+          return result
+      
+      def _get_from(self, interval: DateTimeInterval):
+          return self._from if interval.from_.time() < self._from else interval.from_.time()
+      
+      def _get_to(self, interval: DateTimeInterval):
+          return self._to if interval.to.time() > self._to else interval.to.time()
+  ```
+
+  -  요일별 정책 구현하기
+
+  ```python
+  class DayOfWeekFeeCondition(FeeCondition):
+  
+      def __init__(self, day_of_week: list[int]):
+          self._day_of_week = day_of_week
+  
+      def find_time_intervals(self, call: Call):
+          result = []
+          for interval in call.get_interval().split_by_day():
+              if interval.from_.weekday() in self._day_of_week:
+                  result.append(interval)
+          return result
+  ```
+
+  - 구간별 정책 구현하기
+
+  ```python
+  class DurationFeeCondition(FeeCondition):
+  
+      def __init__(self, from_: int, to: int):
+          self._from = from_
+          self._to = to
+      
+      def find_time_intervals(self, call: Call):
+          # 구현
+          ...
+  ```
+
+
+
+- 위 예제는 변경을 캡슐화해서 협력을 일관성 있게 만들면 어떤 장점이 있는지를 잘 보여준다.
+  - 변하는 부분을 변하지 않는 부분으로부터 분리했기 때문에 변하지 않는 부분을 재사용할 수 있다.
+    - 따라서 코드의 재사용성이 향상되고 테스트해야 하는 코드의 양이 감소한다.
+  - 그리고 새로운 기능을 추가하기 위해 오직 변하는 부분만 구현하면 되기 때문에 원하는 기능을 쉽게 완성할 수 있다.
+    - 기능을 추가할 때 따라야 하는 구조를 강제할 수 있기 때문에 기능을 추가하거나 변경할 때도 설계의 일관성이 무너지지 않는다.
+    - 새로운 기본 정책을 추가하고 싶다면 `FeeCondition` 인터페이스를 구현하는 클래스를 구현하고 FeeRule과 연결하기만 하면 된다.
+  - 읽관성 있는 협력은 개발자에게 확장 포인트를 강제하기 때문에 정해진 구조를 우회하기 어렵게 만든다.
+    - 개발자는 코드의 형태로 주어진 제약 안에 머물러야 하지만 작은 문제에 집중할 수 있는 자유를 얻는다.
+    - 그리고 이 작은 문제에 대한 해결책을 전체 문맥에 연결함으로써 협력을 확장하고 구체화할 수 있따.
+  - 공통 코드의 구조와 패턴은 모든 기본 정책에 걸쳐 동일하기 때문에 코드를 한 번 이해하면 이 지식을 다른 코드를 이해하는 데 그대로 적용할 수 있다.
+
+
+
+- 개념적 무결성(Conceptual Integrity)
+  - 개념적 무결성을 일관성과 동일한 뜻으로 간주해도 무방하다.
+    - 시스템이 일관성 있는 몇 개의 협력 패턴으로 구성된다면 시스템을 이해하고, 수정하고, 확장하는 데 필요한 시간과 노력을 아낄 수 있다.
+    - 따라서 협력을 설계하고 있다면 항상 기존의 협력 패턴을 따를 수 없는지 고민해야 한다.
+  - 유사한 기능에 대해 유사한 협력 패턴을 적용하는 것은 객체지향 시스템에서 개념적 무결성을 유지할 수 있는 가장 효과적인 방법이다.
+  - 개념적 무결성을 유지하기 위해서는 지속적으로 개선해야한다.
+    - 처음에는 일관성을 유지하는 것처럼 보이던 협력 패턴이 시간이 흐르면서 새로운 요구사항이 추가되는 과정에서 일관성이 조금씩 무너지는 경우가 자주 있다.
+    - 협력을 설계하는 초기 단계에서 모든 요구사항을 미리 예상할 수 없기 때문에 이는 자연스러운 현상이다.
+    - 협력은 고정된 것이 아니므로, 만약 현재의 협력 패턴이 변경의 무게를 지탱하기 어렵다면 변경을 수용할 수 있는 협력 패턴을 향해 리팩터링해야 한다.
+
+
+
