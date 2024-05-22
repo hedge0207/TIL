@@ -438,6 +438,28 @@
 
 
 
+- restart
+
+  - Container가 종료되었을 때 platform이 적용하는 정책을 설정한다.
+
+    - `no`(default): container를 재실행하지 않는다.
+    - `always`: container가 제거되지 않는 한 항상 container를 재실행한다.
+
+    - `on-failure[:max-retries]`: container의 exit code가 error를 가리킬 경우에만 container를 재실행한다(`:`뒤에 restart를 실행할 최대 횟수를 설정할 수 있다).
+    - `unless-stopped`: service가 stop되거나 제거되지 않는 한 exit code와 무관하게 container를 재실행한다.
+
+  - 예시
+
+  ```yaml
+  restart: "no"
+  restart: always
+  restart: on-failure
+  restart: on-failure:3
+  restart: unless-stopped
+  ```
+
+
+
 - ports/expose
 
   - 컨테이너 간 통신에 사용한다.
@@ -465,17 +487,47 @@
 
   - 여러 서비스의 의존관계를 정의할 때 사용한다.
     - 예를 들어 Kibana를 실행하기전에 ES를 먼저 실행시키고자 한다면 Kibana가 ES를 의존하도록 설정할 수 있다.
-  - 주의할 점은 컨테이너의 시작 순서만 제어할 뿐 컨테이너상의 애플리케이션이 이용 가능해질 때까지 기다리는 것은 아니라는 것이다.
-
+  - 아래와 같이 설정이 가능하다.
+    - 예를 들어 아래와 같이 설정할 경우 `db`와 `redis`는 `web` 보다 먼저 생성된다.
+    - 또한 `web`은 `db`와 `redis`보다 먼저 제거된다.
+    - Compose는 dependency service(`db`, `redis`)가 dependent service(`web`)보다 먼저 시작되는 것을 보장한다.
+    - Compose는 dependency service가 ready 상태가 될 때까지 dependent service가 기다리도록 한다.
+  
   ```yaml
-  depends_on:
-    - 컨테이너1
-    - 컨테이너2
+  services:
+    web:
+  	depends_on:
+        - db
+        - redis
   ```
+  
+  - 아래와 같이 구체적으로 설정하는 것도 가능하다.
+  
+    - `restart`: `true`로 줄 경우 dependency service가 update되면 dependent service도 재시작된다.
+  
+    - `condition`: dependency가 어떤 상태일 때 준비가 완료되었다고 볼지를 설정할 수 있다.
+  
+    - `required`: `false`로 줄 경우 dependency service가 실행되지 않거나 가용하지 않을 경우에 경고만 보낸다(기본값은 `true`).
+  
+  ```yaml
+  services:
+    web:
+      depends_on:
+        db:
+          condition: service_healthy
+          restart: true
+        redis:
+          condition: service_started
+  ```
+  
+  - `condition`에서 사용할 수 있는 option들
+    - `service_started`: dependency service가 ready 상태가 되면 준비가 완료된 것으로 본다(기본값).
+    - `service_healthy`: dependency가 healthy 상태면 준비가 완료된 것으로 본다.
+    - `service_completed_successfully`: dependency가 성공적으로 완료되면 준비가 완료된 것으로 본다.
 
 
 
-- environment/emv_file
+- environment/env_file
 
   - 컨테이너 안의 환경변수를 지정할 때 사용한다.
     - `.env` 파일이라고 생각하면 된다.
@@ -735,7 +787,7 @@
     - 다른 software에서 사용하는 label과 충돌되지 않도록 resverse-DNS 표기법을 사용하는 것이 권장된다.
 
   ```yaml
-  # 아래 방식과 같이 사용하거나
+  # 아래와 같이 사용하거나
   volumes:
     db-data:
       labels:
@@ -743,7 +795,7 @@
         com.example.department: "IT/Ops"
         com.example.label-with-empty-value: ""
   
-  # 아래 방식과 같이 사용할 수 있다.
+  # 아래와 같이 사용할 수 있다.
   volumes:
     db-data:
       labels:
@@ -751,6 +803,41 @@
         - "com.example.department=IT/Ops"
         - "com.example.label-with-empty-value"
   ```
+
+
+
+
+
+### 여러 개의 compose file을 사용하기
+
+#### include
+
+- `include`
+
+  - 여러 개의 compose file을 합쳐서 사용할 수 있다.
+    - 이를 사용하여 복잡한 application을 module화 할 수 있다.
+    - `extends`, `merge`와 달리 각 compose file의 경로를 기준으로 compose file 내부의 path를 관리하여 경로 관리도 수월하다.
+    - 재귀적으로 적용되어 include한 compose file에 include가 있을 경우 모두 반영된다.
+
+  - 예시
+
+  ```yaml
+  include:
+    - my-compose-include.yaml  # serviceB가 선언되어 있는 compsoe file
+  services:
+    serviceA:
+      build: .
+      depends_on:
+        - serviceB # my-compose-include에 정의된 service를 사용할 수 있다.
+  ```
+
+  - 만약 포함되는 compose file과 포함하는 compose file에 내용이 겹칠 경우 error를 발생시킨다.
+    - 이를 통해 예상치 못한 충돌이 발생하는 것을 방지한다.
+    - error를 발생시키지 않고 override하는 방법도 있다.
+
+
+
+
 
 
 
@@ -1512,7 +1599,7 @@
 
 # Docker health check
 
-- health check
+- Health check
   - Docker container를 생성한 후 container가 제대로 실행되었는지 확인할 수 있는 기능이다.
   - Dockerfile, docker-compose file, `create` 명령어, `run` 명령어 등에서 사용 가능하다.
 
@@ -1540,7 +1627,7 @@
 
 
 
-- dockerfile에서 사용하기
+- Dockerfile에서 사용하기
 
   - 옵션들
     - `--interval`
@@ -1565,10 +1652,11 @@
 
 
 
-- docker-compose에서 사용하기
+- Docker-compose에서 사용하기
 
+  - Dockerfile과 compose file에 모두 지정할 경우 compose file에 설정한 내용이 Dockerfile에 설정한 내용을 덮어쓴다.
   - 옵션은 다른 방식들과 동일하다.
-
+  
   ```yaml
   healthcheck:
     test: ["CMD", "curl", "-f", "http://localhost"]
@@ -1577,25 +1665,19 @@
     retries: 3
     start_period: 40s
   ```
-
+  
   - `depends_on`과 함께 사용하기
     - `depends_on`에는 `condition`이라는 문법을 사용 가능하다.
-    - 의존하는 container가 `condition`에 설정된 상태가 되면 해당 container를 생성하도록 하기 위해 사용한다.
-    - `condition`에 설정 가능한 값은 아래와 같다.
-    - `service_started`: 의존하는 container가 생성만 되면 생성을 시작한다.
-    - `service_healthy`: 의존하는 container의 health check가 성공하면 생성을 시작한다.
-    - `service_compledted_successfully`: 의존하는 container가 완전히 동작하면 생성을 시작한다.
-
+    - `condition`을 `service_healthy`로 설정하면 의존하는 container의 health check가 성공하면 생성을 시작한다.
+  
   ```yaml
   # web container는 elasticsearch container의 health check가 성공하고, db가 온전히 동작하면, 생성이 시작된다.
   services:
     web:
-      build: .
       depends_on:
-        db:
+        elasticsearch:
           condition: service_healthy
-        redis:
-          condition: service_started
+    
     elasticsearch:
       image: elasticsearch
       healthcheck:
@@ -1604,8 +1686,6 @@
         timeout: 10s
         retries: 3
         start_period: 40s
-    db:
-      image: postgres
   ```
 
 
