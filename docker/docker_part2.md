@@ -487,12 +487,13 @@
 
   - 여러 서비스의 의존관계를 정의할 때 사용한다.
     - 예를 들어 Kibana를 실행하기전에 ES를 먼저 실행시키고자 한다면 Kibana가 ES를 의존하도록 설정할 수 있다.
+    - Container의 이름이 아닌 service의 이름을 적어야한다.
   - 아래와 같이 설정이 가능하다.
     - 예를 들어 아래와 같이 설정할 경우 `db`와 `redis`는 `web` 보다 먼저 생성된다.
     - 또한 `web`은 `db`와 `redis`보다 먼저 제거된다.
     - Compose는 dependency service(`db`, `redis`)가 dependent service(`web`)보다 먼저 시작되는 것을 보장한다.
     - Compose는 dependency service가 ready 상태가 될 때까지 dependent service가 기다리도록 한다.
-  
+
   ```yaml
   services:
     web:
@@ -500,15 +501,15 @@
         - db
         - redis
   ```
-  
+
   - 아래와 같이 구체적으로 설정하는 것도 가능하다.
-  
+
     - `restart`: `true`로 줄 경우 dependency service가 update되면 dependent service도 재시작된다.
-  
+
     - `condition`: dependency가 어떤 상태일 때 준비가 완료되었다고 볼지를 설정할 수 있다.
-  
+
     - `required`: `false`로 줄 경우 dependency service가 실행되지 않거나 가용하지 않을 경우에 경고만 보낸다(기본값은 `true`).
-  
+
   ```yaml
   services:
     web:
@@ -519,11 +520,124 @@
         redis:
           condition: service_started
   ```
-  
+
   - `condition`에서 사용할 수 있는 option들
     - `service_started`: dependency service가 ready 상태가 되면 준비가 완료된 것으로 본다(기본값).
     - `service_healthy`: dependency가 healthy 상태면 준비가 완료된 것으로 본다.
     - `service_completed_successfully`: dependency가 성공적으로 완료되면 준비가 완료된 것으로 본다.
+  - `service_healthy`의 경우에는 dependency service에 healthcheck가 설정되어 있어야 한다.
+    - 예를 들어 아래와 같이 `web`이 `db`를 의존하는데, `db`에 healthcheck가 설정되어 있지 않으면 container가 실행되지 않는다.
+
+  ```yaml
+  services:
+    db:
+      image: mariadb:latest
+    
+    web:
+      depends_on:
+        db:
+          condition: service_healthy
+          restart: true
+        redis:
+          condition: service_started
+  ```
+
+
+
+- `depends_on.condition.service_completed_successfully`
+
+  - `service_completed_successfully`는 의존 대상 service가 정상종료 되어야 dependent service를 실행한다.
+  - 아래와 같은 application이 있다고 가정해보자.
+    - 2초에 한 번씩 Elaasticsearch로 요청을 보내 정보를 받아오는 application이다.
+    - 만약 Elasticsearch로 요청을 보내는 시점에 Elasticsearch가 실행중이 아니라면 error가 발생하고 application이 종료된다.
+    - 따라서 아래 application이 실행되기 전에 Elasticsearch가 요청을 받을 수 있는 상태라는 것이 보장되어야 한다.
+
+  ```python
+  import time
+  import requests
+  
+  
+  while True:
+      time.sleep(2)
+      requests.get("http://123.456.7.890:9200")
+  ```
+
+  - 위 application을 위해 Elasticsearch의 상태를 check할 application을 생성한다.
+    - 일정 간격으로 Elasticsearch에 요청을 보내 Elasticsearch가 정상적으로 요청을 받을 수 있는 상태인지를 확인한다.
+    - 만약 최대 횟수만큼 요청을 보냈음에도 Elasticsearch가 요청을 받을 수 있는 상태가 아니라면 비정상 종료된다.
+    - Elasticsearch가 응답을 정상적으로 보낸다면 정상 종료된다.
+
+  ```python
+  import time
+  
+  import requests
+  from requests.exceptions import ConnectionError
+  
+  
+  MAX_RETRY_COUNT = 10
+  INTERVAL = 3
+  for i in range(1, MAX_RETRY_COUNT+1):
+      try:
+          requests.get("http://123.456.7.890:9200")
+          break
+      except ConnectionError:
+          print(f"retry: {i}/{MAX_RETRY_COUNT}")
+      time.sleep(INTERVAL)
+  else:
+      raise Exception
+  ```
+
+  - Docker compose file을 작성한다.
+
+  ```yaml
+  version: '3.2'
+  
+  
+  services:
+    dependency:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+      container_name: dependency
+      environment:
+        - node.name=dependency
+        - cluster.name=dependency
+        - discovery.type=single-node
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      restart: always
+      ports:
+        - 9200:9200
+    
+    checker:
+      image: checker:latest
+      container_name: checker
+    
+    dependent:
+      image: dependent:latest
+      container_name: dependent
+      restart: always
+      depends_on:
+        # dependent service의 dependency로 dependency가 아닌 checker를 설정한다.
+        checker:
+          condition: service_completed_successfully
+  ```
+
+  - 위에서 정의한 service들을 실행하면 아래와 같은 과정을 거치게 된다.
+    - `dependency`, `checker`, `dependent` container가 생성된다.
+    - `dependency`와 `checker`가 먼저 실행되고, `checker`는 `dependency`(Elasticsearch)에 반복적으로 요청을 보내 상태를 확인한다.
+    - `dependent`는 `depends_on`에 설정된 `checker`가 정상 종료될 때 까지 대기한다.
+    - 만약 `checker`가 `dependency`로부터 응답을 정상적으로 받으면 `checker`는 정상 종료(exit code 0)되고, `dependent`의 실행이 시작된다.
+    - 만약 `checker`가 최종적으로 `dependency`로부터 정상적인 응답을 받는 데 실패하면, `checker`는 비정상 종료(exit code 1)되고, `depenent`의 실행도 발생하지 않는다.
+
+  ```bash
+  # checker가 비정상 종료될 경우 출력되는 메시지
+  service "checker" didn't completed successfully: exit 1
+  ```
 
 
 
@@ -811,6 +925,8 @@
 ### 여러 개의 compose file을 사용하기
 
 #### include
+
+> Docker compose 2.20에서 추가된 기능이다.
 
 - `include`
 
@@ -1669,6 +1785,7 @@
   - `depends_on`과 함께 사용하기
     - `depends_on`에는 `condition`이라는 문법을 사용 가능하다.
     - `condition`을 `service_healthy`로 설정하면 의존하는 container의 health check가 성공하면 생성을 시작한다.
+    - 만약 healthcheck에 실패하면 `container for service "<service_name>" is unhealthy`라는 메시지와 함께 service가 실행되지 않는다.
   
   ```yaml
   # web container는 elasticsearch container의 health check가 성공하고, db가 온전히 동작하면, 생성이 시작된다.
