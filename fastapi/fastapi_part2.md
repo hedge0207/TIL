@@ -808,7 +808,315 @@
       return [{"item": "Foo"}, {"item": "Bar"}]
   ```
 
+
+
+
+
+
+# SQLAlchemy와 함께 사용하기
+
+- 사전 준비
+
+  - Package 구조
+
+  ```
+  .
+  └── sql_app
+      ├── __init__.py
+      ├── crud.py
+      ├── database.py
+      ├── main.py
+      ├── models.py
+      └── schemas.py
+  ```
+
+  - SQLAlchemy 설치
+
+  ```bash
+  $ pip install sqlalchemy
+  ```
+
+
+
+- SQLAlchemy 관련 요소들 생성하기
+
+  > database.py
+
+  - SQLAlchemy engine 생성하기
+    - `create_engine` 메서드를 사용한다.
+    - `connect_args={"check_same_thread": False}`는 SQLite를 사용할 때만 필요한 옵션이다.
+    - SQLite는 기본적으로 한 스레드와만 통신할 수 있는데, FastAPI에서는 하나 이상의 thread가 database와 통신할 수 있으므로 아래와 같이 설정한다.
+
+  ```python
+  from sqlalchemy import create_engine
   
+  engine = create_engine("sqlite:///./test.db", connect_args={"check_same_thread": False})
+  ```
+
+  - `Session` class 생성하기
+    - 각각의 `Session` instance는 database session이 된다(instanace가 session이 되는 것이지 class 자체가 session이 되는 것은 아니다).
+    - 아래 예시에서는 sqlalchemy의 `Session` class와 구분하기 위해 `SessionLocal`이라는 이름으로 class를 선언했다.
+
+  ```python
+  from sqlalchemy import create_engine
+  from sqlalchemy.orm import sessionmaker
+  
+  engine = create_engine("sqlite:///./test.db", connect_args={"check_same_thread": False})
+  SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+  ```
+
+  - `Base` class 생성하기
+    - ORM model들은 `Base` class를 상속 받아 생성된다.
+
+  ```python
+  from sqlalchemy import create_engine
+  from sqlalchemy.orm import sessionmaker
+  from sqlalchemy.ext.declarative import declarative_base
+  
+  engine = create_engine("sqlite:///./test.db", connect_args={"check_same_thread": False})
+  SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+  
+  Base = declarative_base()
+  ```
+
+
+
+- Database model 생성하기
+
+  > models.py
+  >
+  > SQLAlchmey에서는 database와 상호작용하는 class 혹은 instance를 지칭하기 위해 model이라는 용어를 사용한다.
+
+  - 위에서 선언한 `Base` class를 상속 받는 class를 선언한다.
+    - `__tablename__` attribute에 database의 실제 table 이름을 지정하면 된다.
+    - 각각의 attribute는 table의 column을 나타낸다.
+    - `Column`의 인자로 column의 type과 제약조건을 설정할 수 있다.
+
+  ```python
+  from sqlalchemy import Column, Integer, String, Boolean
+  
+  from .database import Base
+  
+  
+  class User(Base):
+      __tablename__ = "users"
+  
+      id = Column(Integer, primary_key=True)
+      email = Column(String, unique=True, index=True)
+      hashed_password = Column(String)
+      is_active = Column(Boolean, default=True)
+  ```
+
+  - Relationship 설정하기
+    - SQLAlchemy ORM이 제공하는 `relationship`을 사용하면 테이블 사이의 relationship을 정의할 수 있다.
+
+  ```python
+  from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+  from sqlalchemy.orm import relationship
+  
+  from .database import Base
+  
+  
+  class User(Base):
+      __tablename__ = "users"
+  
+      id = Column(Integer, primary_key=True)
+      email = Column(String, unique=True, index=True)
+      hashed_password = Column(String)
+      is_active = Column(Boolean, default=True)
+  
+      items = relationship("Item", back_populates="owner")
+  
+  
+  class Item(Base):
+      __tablename__ = "items"
+  
+      id = Column(Integer, primary_key=True)
+      title = Column(String, index=True)
+      description = Column(String, index=True)
+      owner_id = Column(Integer, ForeignKey("users.id"))
+  
+      owner = relationship("User", back_populates="items")
+  ```
+
+
+
+- Pydantic model 생성하기
+
+  > shemas.py
+  >
+  > SQLAlchemy model을 정의하는 module의 이름을 models.py로 정의했으므로, 혼란을 피하기 위해 schemas.py라는 모듈 명을 사용한다.
+  >
+  > schemas로 설정한 이유는 Pydantic model은 결국 shema를 정의하는 것이기 때문이다.
+
+  - 위에서 정의한 SQLAlchemy model에 대응하는 Pydantic model을 생성한다.
+
+  ```python
+  from typing import Union
+  
+  from pydantic import BaseModel
+  
+  
+  class ItemBase(BaseModel):
+      title: str
+      description: Union[str, None] = None
+  
+  
+  class ItemCreate(ItemBase):
+      pass
+  
+  
+  class Item(ItemBase):
+      id: int
+      owner_id: int
+  
+      class Config:
+          orm_mode = True
+  
+  
+  class UserBase(BaseModel):
+      email: str
+  
+  
+  class UserCreate(UserBase):
+      password: str
+  
+  
+  class User(UserBase):
+      id: int
+      is_active: bool
+      items: list[Item] = []
+  
+      class Config:
+          orm_mode = True
+  ```
+
+  - 생성할 때와 읽을 때 알고 있는 data가 다르므로 각 data를 표현할 수 있는 model을 모두 생성한다.
+    - 위 예시에서 `ItemBase`, `ItemCreate`, `Item`으로 세 개의 model을 생성했다.
+    - 새로 item을 생성할 때는 자동으로 할당되는 item의 id값은 알 수 없기 때문에 `ItemCreate`에는 title과 description만을 선언한다.
+    - 반면에 item을 읽어서 반환할 때는 모든 정보를 알고 있기 때문에 `Item`에는 `id`와 `owner_id`를 추가로 선언한다.
+    - `UserBase`, `UserCreate`, `User`도 마찬가지다.
+  - Pydantic의 `orm_mode`
+    - 위 예시에서 읽기용으로 선언한 model인 `Item`과 `User`에는 `orm_mode=True`라는 설정을 추가했다.
+    - Pydantic의 `orm_mode`를 True로 설정하면 data가 dict type이 아니라 ORM model이라도 읽을 수 있도록 해준다.
+
+
+
+- CRUD 실행하기
+
+  > crud.py
+
+  - Read
+
+  ```python
+  def get_user(db: Session, user_id: int):
+      return db.query(models.User).filter(models.User.id == user_id).first()
+  
+  def get_user_by_email(db: Session, email: str):
+      return db.query(models.User).filter(models.User.email == email).first()
+  
+  def get_users(db: Session, skip: int = 0, limit: int = 100):
+      return db.query(models.User).offset(skip).limit(limit).all()
+  ```
+
+  - Create
+    - SQLAlchemy model의 instance를 생성한다.
+    - 그 후 `add`를 통해 생성된 instance를 database session에 추가한다.
+    - `commit`을 통해 database에 변경 내용을 commit 한다.
+    - `refresh`를 통해 database에서 추가한 data(자동으로 생성된 id 등)가 instance에 반영되도록 한다.
+
+  ```python
+  def create_user(db: Session, user: schemas.UserCreate):
+      fake_hashed_password = user.password + "notreallyhashed"
+      db_user = models.User(email=user.email, hashed_password=fake_hashed_password)
+      db.add(db_user)
+      db.commit()
+      db.refresh(db_user)
+      return db_user
+  ```
+
+
+
+- FastAPI와 통합하기
+
+  > main.py
+
+  - Table 생성
+    - `models`에 선언한 `Base` class를 가지고 table들을 생성한다.	
+
+  ```python
+  from . models
+  from .database import SessionLocal, engine
+  
+  models.Base.metadata.create_all(bind=engine)
+  ```
+
+  - 아래와 같이 의존성(database session)을 주입하기 위한 함수를 작성한다.
+    - 각 request마다 별도의 database session/connection을 갖져야 하기 때문에 호출될 때 마다 새로운 session을 생성하도록 작성한다.
+
+  ```python
+  from .database import SessionLocal, engine
+  
+  # 의존성
+  def get_db():
+      db = SessionLocal()
+      try:
+          yield db
+      finally:
+          db.close()
+  ```
+
+  - Path operation을 작성한다.
+    - 위에서 만든 의존성을 주입한다.
+
+  ```python
+  from fastapi import Depends, FastAPI, HTTPException
+  from sqlalchemy.orm import Session
+  
+  from . import crud, models, schemas
+  from .database import SessionLocal, engine
+  
+  models.Base.metadata.create_all(bind=engine)
+  
+  app = FastAPI()
+  
+  
+  # 의존성
+  def get_db():
+      db = SessionLocal()
+      try:
+          yield db
+      finally:
+          db.close()
+  
+  
+  @app.post("/users/", response_model=schemas.User)
+  def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+      db_user = crud.get_user_by_email(db, email=user.email)
+      if db_user:
+          raise HTTPException(status_code=400, detail="Email already registered")
+      return crud.create_user(db=db, user=user)
+  
+  
+  @app.get("/users/", response_model=list[schemas.User])
+  def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+      users = crud.get_users(db, skip=skip, limit=limit)
+      return users
+  
+  
+  @app.get("/users/{user_id}", response_model=schemas.User)
+  def read_user(user_id: int, db: Session = Depends(get_db)):
+      db_user = crud.get_user(db, user_id=user_id)
+      if db_user is None:
+          raise HTTPException(status_code=404, detail="User not found")
+      return db_user
+  ```
+
+
+
+- SQLAlchemy model과 Pydantic model을 함께 사용하기 위한 기능을 제공해주는 [SQLModel](https://github.com/tiangolo/sqlmodel)이라는 library가 있다.
+
+
 
 
 
