@@ -810,6 +810,76 @@
 
 
 
+- `yield`를 사용한 의존성
+
+  - 아래와 같이 `yield`를 사용하여 dependency를 생성할 수 있다.
+    - 내부적으로는 context manager를 사용한다.
+
+  ```python
+  def get_db():
+      db = DBSession()
+      yield db
+      db.close()
+  ```
+
+  - 의존성 주입 방식은 일반적인 의존성과 동일하다.
+
+  ```python
+  from typing import Annotated
+  
+  from fastapi import Depends
+  
+  @app.get("/items/{item_id}")
+  def get_item(item_id: str, db: Annotated[str, Depends(get_db)]):
+      ...
+  ```
+
+  - `try`문과 함께 사용할 경우 dependency 사용중에 발생하는 모든 예외가 throw된다.
+    - `finally`문과 함께 사용하여 예외가 발생 여부와 무관하게 실행해야 하는 코드를 작성할 수 있다.
+
+  ```python
+  def get_db():
+      db = DBSession()
+      try:
+          yield db
+      finally:
+          db.close()
+  ```
+
+  - 아래와 같이 sub dependency를 설정하는 것도 가능하다.
+
+  ```python
+  from typing import Annotated
+  
+  from fastapi import Depends
+  
+  
+  async def dependency_a():
+      dep_a = generate_dep_a()
+      try:
+          yield dep_a
+      finally:
+          dep_a.close()
+  
+  
+  async def dependency_b(dep_a: Annotated[DepA, Depends(dependency_a)]):
+      dep_b = generate_dep_b()
+      try:
+          yield dep_b
+      finally:
+          dep_b.close(dep_a)
+  
+  
+  async def dependency_c(dep_b: Annotated[DepB, Depends(dependency_b)]):
+      dep_c = generate_dep_c()
+      try:
+          yield dep_c
+      finally:
+          dep_c.close(dep_b)
+  ```
+
+  
+
 
 
 
