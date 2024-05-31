@@ -1008,80 +1008,6 @@
 
 ## Token filter
 
-- stopword(불용어)
-
-  - 검색에 불필요한 조사나 전치사 등을 처리하기 위한 token filter
-    - `stopwords` 항목에 적용된 단어들은 tokenizing 된 텀에서 제거된다.
-    - 예를 들어 "아버지가 방에" 라는 문장을 `nori_tokenizer`로 token화하면 `아버지 / 가 / 방 / 에`로 분리되는데, 만일 "가"와 "에"를 `stopwords`에 추가했다면 `아버지 / 방`만 추출된다.
-    - settings에 추가할 수도 있고, 파일로 관리할 수도 있다.
-  - settings에 추가하기
-
-  ```json
-  {
-    "settings": {
-      "analysis": {
-        "filter": {
-          "test_stop_filter": {
-            "type": "stop",
-            "stopwords": [
-              "가",
-              "에"
-            ]
-          }
-        }
-      }
-    }
-  }
-  ```
-
-  - 일일이 지정하지 않고 언어별로 지정하기
-
-    > https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-stop-tokenfilter.html
-
-    - 위 페이지에서 지원하는 언어팩을 확인 가능하다(아직까지 한국어는 없다).
-
-  ```json
-  {
-    "settings": {
-      "analysis": {
-        "filter": {
-          "test_stop_filter": {
-            "type": "stop",
-            "stopwords": "_french_"
-          }
-        }
-      }
-    }
-  }
-  ```
-
-  - 파일로 관리하기
-    - 각각의 stopword는 파일 내에서 줄바꿈으로 구분된다.
-    - 사전 파일의 경로는 config 디렉터리를 기준으로 상대 경로를 지정해야 한다.
-    - 텍스트 인코딩은 반드시 UTF-8이어야한다.
-
-  ```json
-  {
-    "settings": {
-      "analysis": {
-        "filter": {
-          "test_stop_filter": {
-            "type": "stop",
-            "stopwords_path": "user_dict/stopword_dict.txt"
-          }
-        }
-      }
-    }
-  }
-  ```
-
-  - 파일로 관리할 경우 주의사항
-    - 파일로 관리할 때, 파일의 내용이 변경되었다면 해당 파일을 사용하는 인덱스를 close/open 해주어야 적용된다.
-    - 또한, 파일이 변경되면, 그 이후로 색인되는 문서들에만 적용되고 이미 색인된 문서들에는 적용되지 않는다.
-    - 따라서 기존에 색엔된 문서들에도 적용하려면 재색인 해야한다.
-
-
-
 - N-gram
 
   - tokenizing 결과를 정해진 길이만큼 잘라서 다시 token을 생성한다.
@@ -1210,7 +1136,7 @@
                           "type": "synonym",
                           "synonyms": [ 
                               "foo, bar => baz",
-                              "qux, qux"
+                              "qux, quxx"
                           ]
                       }
                   },
@@ -1604,10 +1530,9 @@
 
 - settings로 index analyzer에 적용된 synonym token filter update하기
 
-  - 이 방식은 불가능하며, 아래는 불가능하다는 것을 보여주기 위한 예시이다.
   - Index 생성
     - `"foo, bar"`만 synonym으로 등록하고, 이를 `text` field의 analyzer에 적용한다.
-
+  
   ```json
   // PUT test
   {
@@ -1643,19 +1568,19 @@
     }
   }
   ```
-
+  
   - 문서 색인하기
-
+  
   ```json
   // PUT test/_doc/1
   {
     "text":"foo quz"
   }
   ```
-
+  
   - Token 확인하기
     - foo와 synonym으로 설정된 bar도 token이 생성된 것을 볼 수 있다.
-
+  
   ```json
   // GET test/_termvectors/1?fields=text
   {
@@ -1673,19 +1598,19 @@
         }
   }
   ```
-
+  
   - Index close하기
     - synonym token filter를 update하기 위해 index를 close한다.
-
+  
   ```http
   POST test/_close
   ```
-
+  
   - Synonym update하기
     - 기존의 foo, bar에 baz까지 추가하고, quz, qux를 새로운 synonym으로 설정한다.
-
+  
   ```json
-  PUT test/_settings
+  // PUT test/_settings
   {
     "analysis": {
       "filter": {
@@ -1700,29 +1625,87 @@
     }
   }
   ```
-
+  
   - Index open하기
-
+  
   ```http
   POST test/_open
   ```
-
+  
   - Token 확인
-    - 기존에 synonym으로 등록된 bar token마저 사라진 것을 볼 수 있다.
+    - 얼핏 보면 정상적으로 token이 생성된 것 처럼 보인다.
+    - 그러나, `_termvectors` API는 field의 현재 token을 보여주는 것이 아니라 field에 적용된 analyzer를 기준으로 분석한 결과를 보여주는 것이다.
 
   ```json
   // GET test/_termvectors/1?fields=text
   {
-      "terms": {
+        "terms": {
+          "bar": {
+              // ...
+          },
+          "baz": {
+            // ...
+          },
           "foo": {
+            // ...
+          },
+          "qux": {
             // ...
           },
           "quz": {
             // ...
           }
         }
+      }
+    }
   }
   ```
+  
+  - 검색
+    - `standard` analyzer로 변경하여 검색해보면 검색 결과가 나오지 않는 것을 확인할 수 있다.
+  
+  ```json
+  // GET test/_search
+  {
+    "query": {
+      "match": {
+        "text": {
+          "analyzer": "standard",
+          "query":"baz"
+        }
+      }
+    }
+  }
+  ```
+  
+  - 재색인
+    - 처음 생성한 것과 동일한 문서를 재색인한다.
+  
+  ```json
+  // PUT test/_doc/1
+  {
+    "text":"foo quz"
+  }
+  ```
+  
+  - 다시 검색
+    - "baz"의 synonym으로 등록 된 "foo"가 포함된 문서가 검색 된다.
+  
+  ```json
+  // GET test/_search
+  {
+    "query": {
+      "match": {
+        "text": {
+          "analyzer": "standard",
+          "query":"baz"
+        }
+      }
+    }
+  }
+  ```
+  
+  - 지금까지 살펴본 것 처럼, index analyzer로 등록하는 방식은 재색인이 필수이므로 권장되지 않는다.
 
 
 
@@ -1957,6 +1940,240 @@
   
   POST test/_cache/clear?request=true
   ```
+
+
+
+
+
+
+
+### stopword
+
+- stopword(불용어)
+
+  - 검색에 불필요한 조사나 전치사 등을 처리하기 위한 token filter
+    - `stopwords` 항목에 적용된 단어들은 tokenizing 된 텀에서 제거된다.
+    - 예를 들어 "아버지가 방에" 라는 문장을 `nori_tokenizer`로 token화하면 `아버지 / 가 / 방 / 에`로 분리되는데, 만일 "가"와 "에"를 `stopwords`에 추가했다면 `아버지 / 방`만 추출된다.
+    - settings에 추가할 수도 있고, 파일로 관리할 수도 있다.
+    - `synonym` token filter와 마찬가지로 주로 search analyzer로 사용한다.
+  - settings에 추가하기
+
+  ```json
+  {
+    "settings": {
+      "analysis": {
+        "filter": {
+          "test_stop_filter": {
+            "type": "stop",
+            "stopwords": [
+              "가",
+              "에"
+            ]
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  - 일일이 지정하지 않고 언어별로 지정하기
+
+    > https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-stop-tokenfilter.html
+
+    - 위 페이지에서 지원하는 언어팩을 확인 가능하다(아직까지 한국어는 없다).
+
+  ```json
+  {
+    "settings": {
+      "analysis": {
+        "filter": {
+          "test_stop_filter": {
+            "type": "stop",
+            "stopwords": "_french_"
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  - 파일로 관리하기
+    - 각각의 stopword는 파일 내에서 줄바꿈으로 구분된다.
+    - 사전 파일의 경로는 config 디렉터리를 기준으로 상대 경로를 지정해야 한다.
+    - 텍스트 인코딩은 반드시 UTF-8이어야한다.
+
+  ```json
+  {
+    "settings": {
+      "analysis": {
+        "filter": {
+          "test_stop_filter": {
+            "type": "stop",
+            "stopwords_path": "user_dict/stopword_dict.txt"
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  - 파일로 관리할 경우 주의사항
+    - 파일로 관리할 때, 파일의 내용이 변경되었다면 해당 파일을 사용하는 인덱스를 close/open 해주어야 적용된다.
+    - 또한, index analyzer로 사용할 경우, 파일이 변경되면 그 이후로 색인되는 문서들에만 적용되고 이미 색인된 문서들에는 적용되지 않으므로 재색인을 해야 한다.
+
+
+
+- settings로 search analyzer에 적용된 stopword filter update하기
+
+  - Index 생성
+
+  ```json
+  // PUT test
+  {
+    "settings": {
+      "index": {
+        "analysis": {
+          "filter": {
+            "my_stop_filter": {
+              "type": "stop",
+              "stopwords": [
+                "foo"
+              ]
+            }
+          },
+          "analyzer": {
+            "my_analyzer": {
+              "tokenizer": "standard",
+              "filter": [
+                "my_stop_filter"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "mappings": {
+      "properties": {
+        "text": {
+          "type": "text",
+          "analyzer": "my_analyzer"
+        }
+      }
+    }
+  }
+  ```
+
+  - 문서 색인
+
+  ```json
+  // PUT test/_doc/1
+  {
+    "text":"foo quz"
+  }
+  ```
+
+  - 검색
+    - 아래와 같이 stopword로 등록한 "foo"를 넣어 검색하면, 1번 문서가 검색 되지 않는다.
+
+  ```json
+  // GET test/_search
+  {
+      "query": {
+          "match": {
+              "text": "foo"
+          }
+      }
+  }
+  ```
+
+  - Stopword를 update하기 위해 index를 close한다.
+
+  ```http
+  POST test/_close
+  ```
+
+  - Stopword를 update한다.
+
+  ```json
+  // PUT test/_settings
+  {
+      "analysis": {
+          "filter": {
+              "my_stop_filter": {
+                  "type": "stop",
+                  "stopwords": [
+                      "foo",
+                      "quz"
+                  ]
+              }
+          }
+      }
+  }
+  ```
+
+  - Index를 open한다.
+
+  ```http
+  POST test/_open
+  ```
+
+  - 다시 검색하기
+    - 새로 등록된 stopword인 "quz"로 검색을 해본다.
+    - "qux"가 포함된 1번 문서가 포함되지 않아 색인된 field에서 token이 제거된 것 처럼 보이지만 그렇지 않다.
+
+  ```json
+  // GET test/_search
+  {
+      "query": {
+          "match": {
+              "text": "quz"
+          }
+      }
+  }
+  ```
+
+  - `standard` analyzer로 변경하여 검색하면 "quz"가 포함된 문서가 여전히 검색 된다.
+
+  ```json
+  // GET test/_search
+  {
+      "query": {
+          "match": {
+              "text": {
+                  "analyzer": "standard",
+                  "query":"quz"
+              }
+          }
+      }
+  }
+  ```
+
+  - 변경된 stopword를 적용하기 위해 재색인을 실행한다.
+
+  ```json
+  // PUT test/_doc/1
+  {
+    "text":"foo quz"
+  }
+  ```
+
+  - 다시 검색하면 아무 결과도 나오지 않는 것을 확인할 수 있다.
+
+  ```json
+  // GET test/_search
+  {
+      "query": {
+          "match": {
+              "text": {
+                  "analyzer": "standard",
+                  "query":"quz"
+              }
+          }
+      }
+  }
+  ```
+
+  - 지금까지 살펴본 것 처럼, index analyzer로 등록하는 방식은 재색인이 필수이므로 권장되지 않는다.
 
 
 
