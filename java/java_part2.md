@@ -1,3 +1,181 @@
+# 배열
+
+- 배열(array)
+  - 같은 타입의 여러 변수를 하나의 묶음으로 다루는 것을 배열이라 한다.
+    - 중요한 것은 같은 타입이어야 한다는 것이며, 서로 다른 타입의 변수들로 구성된 배열은 만들 수 없다.
+  - 배열은 각 저장공간이 메모리상에서 연속적으로 배치되어 있다.
+    - 배열을 선언할 때 까지는 메모리에 데이터를 저장할 공간이 생기지 않는다.
+    - 배열의 길이를 지정하여 배열을 생성하는 순간 메모리에 데이터를 연속적으로 저장할 공간을 할당한다.
+
+
+
+- 배열의 선언과 생성
+
+  - 배열의 선언
+    - 원하는 타입의 변수를 선언하고 변수 또는 타입에 배열임을 의미하는 대괄호를 붙이면 된다.
+    - 일반적으로는 타입 뒤에 붙인다.
+
+  ```java
+  타입[] 변수이름;
+  ```
+
+  - 배열의 생성
+    - 배열을 생성할 때는 배열의 길이를 지정해야하며, 생성된 배열의 길이는 변경이 불가능하다.
+    - 길이를 입력하지 않을 경우 길이가 0인 배열이 생성된다.
+
+  ```java
+  // 선언
+  타입 [] 변수이름;
+  // 생성
+  변수이름 = new 타입[길이];
+  ```
+
+  - 선언과 생성을 동시에 할 수도 있다.
+
+  ```java
+  타입[] 변수이름 = new 타입[길이];
+  ```
+
+
+
+- 배열의 길이와 인덱스
+
+  - 생성된 배열의 각 저장공간을 배열의 요소(element)라 하며, `배열이름[인덱스]`의 형식으로 배열의 요소에 접근할 수 있다.
+    - Index는 배열의 요소마다 붙여진 일련번호로 각 요소를 구별하는데 사용된다.
+    - Index는 0부터 시작한다.
+  - 배열의 길이
+    - 배열을 생성할 때 괄호 안에 배열의 길이를 적어줘야 하는데, 배열의 길이는 배열의 요소의 개수이다.
+    - 배열의 길이의 최대값은 int type의 최대값이다.
+    - 길이가 0인 배열도 생성하는 것이 가능하다.
+    - `.length` 를 통해 배열의 길이를 알 수 있다.
+
+  ```java
+  int[] arr = new int [5];
+  System.out.println(arr.length);	// 5
+  ```
+
+  - 배열의 길이 변경
+    - 배열은 한 번 선언되고 나면 길이를 변경할 수 없다.
+    - 따라서 배열의 길이를 변경하기 위해서는 더 큰 배열을 새로 생성한 후, 기존 배열의 내용을 새로운 배열에 복사해야한다.
+
+  ```java
+  int[] arr = new int[]{1, 2, 3, 4, 5};
+  int[] longer_arr = new int[arr.length * 2];
+  
+  for(int i=0; i<arr.length; i++) {
+      longer_arr[i] = arr[i];
+  }
+  
+  arr = longer_arr;
+  ```
+
+
+
+- 배열의 초기화
+
+  - 배열은 생성과 동시에 자동적으로 자신의 타입에 해당하는 기본값으로 초기화된다.
+    - 따라서 배열을 사용하기 전에 따로 초기화를 해주지 않아도 된다.
+    - 그러나 만약 원하는 값으로 초기화하려면 아래와 같이 해주면 된다.
+    - 원래는 배열의 길이를 지정해야 하지만, 자동으로 중괄호 안의 값의 개수에 의해 배열의 길이가 결정되기에 배열의 길이는 지정하지 않아도 된다.
+
+  ```java
+  int[] numbers = new int[] {1,2,3,4,5};
+  ```
+
+  - 아래와 같이 `new 타입[]`을 생략하는 것도 가능하다.
+    - 단, 이는 배열의 선언과 생성을 동시에 할 때만 가능하며, 선언과 생성을 따로 할 때는 불가능하다.
+
+  ```java
+  int[] numbers = {1,2,3,4,5};
+  ```
+
+
+
+- 문자형 배열
+
+  - 배열의 타입이 String인 경우에도 int 배열의 선언과 생성 방법은 다르지 않다.
+    - 초기화 방법 역시 동일하다.
+
+  ```java
+  String[] names = new String[3];
+  // 초기화 방법도 동일하다.
+  String[] name = new String[] {"Foo", "Bar", "Baz"};
+  String[] name = {"Foo", "Bar", "Baz"};
+  ```
+
+  - char배열
+    - 문자열은 문자를 연이어 늘어놓은 것을 의미하므로 문자배열인 char 배열과 같은뜻이다.
+    - Java에서 문자열을 처리할 때 char 배열이 아닌 String class를 사용해서 문자열을 처리하는 이유는 String 클래스가 char 배열에 여러 가지 기능을 추가하여 확장한 것이기 때문이다.
+    - 따라서 char 배열을 사용하는 것 보다 String class를 사용하는 것이 문자열을 다루기 더 편리하다.
+    - 단, char 배열과 String의 중요한 차이 중 하나는 char 배열은 변경이 가능하지만 String은 변경이 불가능하다는 것이다.
+    - String은 변경이 가능한 것 처럼 보일 뿐 사실은 변경이 발생할 때 마다 새로운 String 객체가 생성되는 것이다.
+    - char 배열은 `println`을 통해 출력할 때 배열 내의 모든 char를 하나로 합쳐서 출력한다.
+
+  - char 배열을 String으로, String을 char 배열로 변환하는 것이 가능하다.
+
+  ```java
+  public class Main {
+      public static void main(String[] args) {
+          String name = "John Doe";
+          // String을 char배열로 변환
+          // 출력 결과는 String을 출력한 것과 같아서 변환이 안됐다고 생각할 수 있으나 변환이 된 것이다.
+          // 상기했듯 println은 char 배열을 출력할 때 모든 char를 하나로 합쳐서 출력한다.
+          System.out.println(name.toCharArray());		// John Doe
+          
+          // char 배열을 String으로 변환
+          char[] arr = {'a', 'b', 'c'};
+          String str = new String(arr);s
+      }
+  }
+  ```
+
+  
+
+
+
+- 배열과 관련된 method들
+
+  - `Arrays.toString()`
+    - 배열을 문자열로 변환한다.
+
+  ```java
+  import java.util.Arrays;
+  
+  public class Main {
+      public static void main(String[] args) {
+          int[] arr = new int[]{1, 2, 3, 4, 5};
+          System.out.println(Arrays.toString(arr));	// [1, 2, 3, 4, 5]
+      }
+  }
+  ```
+
+  - `System.arraycopy()`
+    - 배열을 효율적으로 복사해주는 method이다.
+    - 첫 번째 인자로 source 배열, 두 번째 인자로 복사를 시작할 source 배열의 index, 세 번째 인자로 destination 배열, 네 번째 인자로 복사한 내용을 저장하기 시작할 destination 배열의 index, 다섯 번째 인자로 복사할 길이를 지정한다. 
+
+  ```java
+  import java.util.Arrays;
+  
+  public class Main {
+      public static void main(String[] args) {
+          int[] arr = new int[]{1, 2, 3, 4, 5};
+          int[] longer_arr = new int[arr.length * 2];
+          System.arraycopy(arr, 0, longer_arr, 0, arr.length);
+          System.out.println(Arrays.toString(longer_arr));	// [1, 2, 3, 4, 5, 0, 0, 0, 0, 0]
+      }
+  }
+  ```
+
+  
+
+
+
+
+
+
+
+
+
 # 클래스
 
 - Java는 객체 지향 언어로 클래스에 대해 이해하는 것이 중요하다.
