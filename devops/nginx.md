@@ -44,6 +44,241 @@
 
 
 
+- Nginx Docker container 사용시 주의할 점
+
+  - 사전지식
+    - Docker network 내부에서 container에게 할당되는 IP는 container가 정지되면 할당 해제되고, 다시 실행되면 새로 할당된다.
+    - 그러나 컨테이너 내부에서 DNS(docker service name)로 요청을 보내면 Docker가 service name에 해당하는 IP address로 바인딩해주기에 통신에는 영향이 없다.
+    - 다만, Nginx container 사용시에는 문제가 생길 수 있다.
+  - 아래와 같이 간단한 app을 생성한다.
+    - `/ping`으로 요청을 보내면 "pong"을 반환하는 간단한 app이다.
+    - 총 3개의 application을 container로 실행할 것이고, 각 container는 자신들의 port 번호를 router prefix로 사용한다.
+    - 예를 들어 port가 8017이면 `localhost:8017/8017/ping`과 같이 요청을 보내야한다.
+
+  ```python
+  import os
+  
+  from fastapi import FastAPI, APIRouter
+  import uvicorn
+  
+  PORT = int(os.environ.get("PORT", 8017))
+  
+  app = FastAPI()
+  
+  router = APIRouter(
+      prefix=f"/{PORT}"
+  )
+  
+  @router.get("/ping")
+  def ping():
+      return "pong"
+  
+  
+  app.include_router(router)
+  
+  
+  if __name__ == "__main__":
+      uvicorn.run(app, host="0.0.0.0", port=PORT)
+  ```
+
+  - 위 app을 build하기 위한 Dockerfile을 작성한다.
+
+  ```dockerfile
+  FROM python:3.8.0
+  
+  COPY ./main.py /main.py
+  COPY ./requirements.txt /requirements.txt
+  
+  RUN pip install -r requirements.txt
+  
+  ENTRYPOINT ["/bin/bash", "-c", "python -u main.py"]
+  ```
+
+  - 위 app을 build한다.
+
+  ```bash
+  $ docker build -t network-test .
+  ```
+
+  - Nginx configuraion file을 작성한다.
+    - Docker service name으로 요청을 전송하도록 설정한다.
+
+  ```nginx
+  user  nginx;
+  worker_processes  auto;
+  
+  error_log  /var/log/nginx/error.log warn;
+  pid        /var/run/nginx.pid;
+  
+  events {
+      worker_connections  4096;
+  }
+  
+  http {
+  
+      server {
+          listen       3015;
+          listen  [::]:3015;
+          server_name  localhost;
+  
+          location /8091 {
+              proxy_pass http://network-container1:8091;
+          }
+  
+          location /8092 {
+              proxy_pass http://network-container2:8092;
+          }
+          
+          location /8093 {
+              proxy_pass http://network-container3:8093;
+          }
+      }
+  }
+  ```
+
+  - Docker network를 생성한다.
+
+  ```bash
+  $ docker network create network-test
+  ```
+
+  - Docker compose file을 작성한다.
+
+  ```yaml
+  version: '3'
+  
+  services:
+    network-container1:
+      profiles: ["app"]
+      container_name: network-container1
+      image: network-test:latest
+      environment:
+        PORT: 8091
+      networks:
+        - network-test
+    
+    network-container2:
+      profiles: ["app"]
+      container_name: network-container2
+      image: network-test:latest
+      environment:
+        PORT: 8092
+      networks:
+        - network-test
+    
+    network-container3:
+      profiles: ["app"]
+      container_name: network-container3
+      image: network-test:latest
+      environment:
+        PORT: 8093
+      networks:
+        - network-test
+    
+    network-container:
+      profiles: ["nginx"]
+      container_name: network-container
+      image: nginx:latest
+      volumes:
+        - ./nginx.conf:/etc/nginx/nginx.conf
+      ports:
+        - 3015:3015
+      networks:
+        - network-test
+  
+  # 위에서 생성한 network를 입력한다.
+  networks:
+    network-test:
+      external:
+        name: network-test
+  ```
+
+  - Container들을 실행시킨다.
+
+  ```bash
+  $ docker compose --profile app up -d
+  $ docker compose --profile nginx up -d
+  ```
+
+  - Nginx로 요청을 보낸다.
+    - 모두 정상적으로 응답이 온다.
+
+  ```bash
+  $ curl localhost:3015/8091/ping
+  $ curl localhost:3015/8092/ping
+  $ curl localhost:3015/8093/ping
+  ```
+
+  - `network-test` network를 확인해보면 각 container에 아래와 같이 IP가 할당된 것을 볼 수 있다.
+
+  ```bash
+  $ docker network inspect
+  "Containers": {
+      "3gwgre4h3434hw34hreh3eh34h3w44hw34h34h4w3hh43h34h43h43h34h4hh433": {
+          "Name": "network-container1",
+          "IPv4Address": "172.17.0.3/16",
+      },
+      "dsdg3232534246234tg443h34hw4h34534543yq3h34yh34y34t34t43t4g44453": {
+          "Name": "network-container2",
+          "IPv4Address": "172.17.0.2/16",
+      },
+      "grhytkj7k67i56j5656j56u56u8565867967i76i67u6u454565748484845yg12": {
+          "Name": "network-container3",
+          "IPv4Address": "172.17.0.4/16",
+      }
+  }
+  ```
+
+  - App container들을 정지 후 재실행 시킨다.
+
+  ```bash
+  $ docker compose --profile app stop
+  $ docker compose --profile app start
+  ```
+
+  - 다시 `network-test` network를 확인해본다.
+    - `network-container2`, `network-container3`의 IP가 변경된 것을 확인할 수 있다.
+
+  ```bash
+  $ docker network inspect
+  "Containers": {
+      "3gwgre4h3434hw34hreh3eh34h3w44hw34h34h4w3hh43h34h43h43h34h4hh433": {
+          "Name": "network-container1",
+          "IPv4Address": "172.17.0.3/16",
+      },
+      "dsdg3232534246234tg443h34hw4h34534543yq3h34yh34y34t34t43t4g44453": {
+          "Name": "network-container2",
+          "IPv4Address": "172.17.0.4/16",
+      },
+      "grhytkj7k67i56j5656j56u56u8565867967i76i67u6u454565748484845yg12": {
+          "Name": "network-container3",
+          "IPv4Address": "172.17.0.2/16",
+      }
+  }
+  ```
+
+  - 다시 Nginx로 요청을 보낸다.
+    - IP가 변경되지 않은 `network-container1`으로 보내는 요청은 여전히 정상적으로 응답이 오는 반면, IP가 변경된 `network-container2`, `network-container3`로 보내눈 요청은 `502 Bad Gateway`가 응답으로 온다.
+
+  ```bash
+  $ curl localhost:3015/8091/ping		# "pong"
+  $ curl localhost:3015/8092/ping		# 502 Bad GateWay
+  $ curl localhost:3015/8093/ping		# 502 Bad GateWay
+  ```
+
+  - Nignx log를 확인해보면 아래와 같은 message를 확인할 수 있다.
+    - `network-container2`(8092 port)로 요청을 보내면 변경된 IP인 172.17.0.4로 요청을 보내야 하는데, 기존 IP인 172.17.0.2로 요청을 보낸다.
+    - `network-container3`도 마찬가지로 기존 IP로 요청을 보낸다.
+
+  ```
+  connect() failed (111: Connection refused) while connecting to upstream, request: "GET /8092/ping HTTP/1.1", upstream: "http://172.17.0.2:8092/8092/ping", host: "localhost:3015"
+  connect() failed (111: Connection refused) while connecting to upstream, request: "GET /8093/ping HTTP/1.1", upstream: "http://172.17.0.4:8093/8093/ping", host: "localhost:3015"
+  ```
+
+
+
+
+
 ## yum으로 설치
 
 - 설치

@@ -833,6 +833,38 @@
 
 
 
+- profiles
+
+  - 아래와 같이 `profiles`를 설정한다.
+
+  ```yaml
+  services:
+    client
+  
+    nginx:
+      profiles: ["nginx"]
+      ports:
+        - 80:80
+  
+    server:
+      profiles: ["server"]
+      ports:
+        - 80:80
+  ```
+
+  - `docker compose` 명령어를 실행할 때 `--profile` 옵션을 통해 특정 profile에 속하는 service들만 명령어가 실행되도록 할 수 있다.
+    - 만약 `--profile` 옵션을 주지 않을 경우, 아무 profile도 설정되지 않은 service들에만 명령어가 실행된다.
+
+  ```bash
+  $ docker compose --profile nginx
+  ```
+
+
+
+
+
+
+
 ### volumes
 
 - 여러 service들에서 함께 사용할 수 있는 volume을 정의한다.
@@ -1363,6 +1395,9 @@
     - Container가 `none` network driver를 사용하지 않는 한 container는 오직 network interface만 볼 수 있다.
   - Container는 자신이 attach한 Docker network로부터 IP address를 받아온다.
   - Container는 둘 이상의 network에 동시에 연결할 수 있다.
+  - Docker network 내부에서 container에게 할당되는 IP는 container가 정지되면 할당 해제되고, 다시 실행되면 새로 할당된다.
+    - 따라서 정지 후 재실행하면 기존 IP address와 다른 IP를 할당받을 수도 있다.
+    - 그러나 컨테이너 내부에서 DNS(docker service name)로 요청을 보내면 Docker가 service name에 해당하는 IP address로 바인딩해주기에 통신에는 영향이 없다.
 
 
 
