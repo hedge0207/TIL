@@ -277,6 +277,110 @@
 
 
 
+- 해결방법
+
+  - Nginx에는 hostname을 IP로 resolve해주는 name server를 설정하기 위한 `resolver`를 설정할 수 있다.
+    - `resolver`는 `http`, `server`, `location` context에 작성이 가능하다.
+    - `IP`에는 DNS 서버의 IP 주소를 지정하면 된다.
+    - Docker 내부의 기본 DNS 서버는 일반적으로 127.0.0.11이며, container에서 `cat /etc/resolv.conf`로 확인이 가능하다.
+    - `valid`에는 Nginx가 DNS 조회 결과를 캐시할 시간을 지정하며, 이 시간이 지나면 Nginx는 도메인 이름을 다시 조회하여 IP를 받아온다.	
+
+
+  ```nginx
+  resolver <IP> ipv4=on ipv6=off valid=30s;
+  ```
+
+  - Nginx 파일에 아래와 같이 resolver를 추가한다.
+    - Docker 내부의 기본 DNS 서버 IP인 127.0.0.11를 입력한다.
+
+  ```nginx
+  user  nginx;
+  worker_processes  auto;
+  
+  error_log  /var/log/nginx/error.log warn;
+  pid        /var/run/nginx.pid;
+  
+  events {
+      worker_connections  4096;
+  }
+  
+  http {
+      
+      resolver 127.0.0.11 ipv4=on ipv6=off valid=30s;
+  
+      server {
+          listen       3015;
+          listen  [::]:3015;
+          server_name  localhost;
+  
+          location /8091 {
+              proxy_pass http://network-container1:8091;
+          }
+  
+          location /8092 {
+              proxy_pass http://network-container2:8092;
+          }
+          
+          location /8093 {
+              proxy_pass http://network-container3:8093;
+          }
+      }
+  }
+  ```
+
+  - 이후에 `proxy_pass`에 URL을 위와 같이 문자열로 입력하는 것이 아니라, 변수에 할당한 후, 해당 변수를 설정해줘야 한다.
+
+  ```nginx
+  user  nginx;
+  worker_processes  auto;
+  
+  error_log  /var/log/nginx/error.log warn;
+  pid        /var/run/nginx.pid;
+  
+  events {
+      worker_connections  4096;
+  }
+  
+  http {
+      
+      resolver 127.0.0.11 ipv4=on ipv6=off valid=30s;
+  
+      server {
+          listen       3015;
+          listen  [::]:3015;
+          server_name  localhost;
+  
+          location /8091 {
+              set $network-container1 "http://network-container1:8091"
+              proxy_pass $network-container1;
+          }
+  
+          location /8092 {
+              set $network-container2 "http://network-container2:8092"
+              proxy_pass $network-container2;
+          }
+          
+          location /8093 {
+              set $network-container3 "http://network-container3:8093"
+              proxy_pass $network-container3;
+          }
+      }
+  }
+  ```
+
+  - `proxy_pass`에 변수를 설정해야 하는 이유
+
+    > https://serverfault.com/questions/560632/some-nginx-reverse-proxy-configs-stops-working-once-a-day
+
+    - `proxy_pass`에 변수가 아닌 static한 값을 줄 경우, Nginx가 conf 파일을 최초로 읽을 때 domain에 해당하는 IP를 resolve한다.
+    - 반면에 변수는 변할 수 있는 값이므로, 매번 요청이 들어올 때 마다 `resolver`를 참조하여 domain에 해당하는 IP를 resolve한다.
+
+  - 이제 다른 container들의 IP가 변경되더라도 Nginx는 `resolver`를 통해 domain에 해당하는 IP 값을 받아와서 정상적으로 동작하게 된다.
+
+  - 예시에서는 Docker를 들었지만, IP가 동적으로 변경될 수 있는 service와 Nginx를 함께 사용할 경우 모두 적용할 수 있다.
+
+
+
 
 
 ## yum으로 설치
