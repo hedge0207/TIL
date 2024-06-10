@@ -605,3 +605,202 @@
     - 즉, session은 비동시적인 방식으로 사용되도록 고안되었다.
     - 따라서 여러 곳에서 동시에 사용해선 안 된다.
 
+
+
+
+
+## Databasse Metadata
+
+- Metadata
+
+  - Database의 table과 column 등을 표현하는 Python object를 database metadata라고 부른다.
+
+  - SQLAlchemy에서는 `MetaData`, `Table`, `Column`이라는 class를 통해 database medata를 다룰 수 있는 방법을 제공한다.
+  - SQLAlchemy에서 table은 `Table`을 통해 직접 구성하거나, ORM Mapped class를 통해 간접적으로 구성할 수 있다.
+
+
+
+- `Metadata`를 사용하여 table 생성하기
+
+  - `MetaData` 생성하기
+    - `MetaData`는 여러 개의 `Table` object들을 저장하고 있는 Python dictionary의 일종이며, table의 이름을 key로 가진다.
+    - `MetaData`는 일반적으로 전체 application에 하나만 생성하고, 전역으로 사용한다.
+
+  ```python
+  from sqlalchemy import Metadata
+  
+  metadata = MetaData()
+  ```
+
+  - `MetaData` 객체를 통해 `Table` 객체 생성하기
+    - `Table`을 통해 table 객체를 생성하며, table의 column은 `Column`을 통해 선언한다.	
+
+  ```python
+  from sqlalchemy import MetaData, Table, Column, Integer, String
+  
+  metadata = MetaData()
+  user_table = Table(
+      "user",
+      metadata,
+      Column("id", Integer, primary_key=True),
+      Column("name", String(30)),
+      Column("fullname", String)
+  )
+  ```
+
+  - `Column`의 제약 조건 설정하기
+    - 위에서 살펴본 것 처럼 `primary_key`를 True로 줌으로써 primary key 제약 조건을 설정할 수 있다.
+    - `ForeignKey`를 설정하여 foreign key 제약 조건을 설정할 수 있다.
+    - 아래와 같이 `Column`을 선언하는 부분 내에서 `ForeignKey` object를 사용할 경우 type을 생략할 수 있으며, 생략할 경우 참조하는 column의 type으로 선언된다.
+    - `nullable`을 False로 설정하여 NOT NULL 제약 조건을 설정할 수 있다.
+
+  ```python
+  from sqlalchemy import Table, Column, Integer, String, ForeignKey
+  
+  address_table = Table(
+      "address",
+      metadata,
+      Column("id", Integer, primary_key=True),
+      Column("user_id", ForeignKey("user.id"), nullable=False),
+      Column("email_address", String, nullable=False),
+  )
+  ```
+
+  - `Table` 객체로 DB에 실제 table 생성하기
+    - `MetaData.create_all()` method를 사용하여 DB에 table을 생성할 수 있다.
+    - `Engine`의 instance를 인자로 넘긴다.
+    - `MetaData.create_all()` method는 정확한 순서로 table들을 생성한다(위 예시에서는 address가 참조하는 user table이 먼저 생성되어야 하므로, `MetaData.create_all()` method는 user table을 먼저 생성하고 address table을 생성한다).
+
+  ```python
+  from sqlalchemy import create_engine
+  
+  engine = create_engine("sqlite+pysqlite:///:memory:", echo=True)
+  metadata.create_all(engine)
+  ```
+
+
+
+- ORM Declarative Form을 사용하여 table 생성하기
+
+  - 앞에서는 `Table` class를 직접 사용하는 방식을 살펴봤다.
+    - 이 방식이 내부적으로 SQLAlchemy가 DB table을 참조하는 방식이다.
+    - 지금부터 살펴볼 방식은  SQLAlchemy ORM을 사용하는 declarative table이라는 방식이다.
+    - Declarative table은 앞에서 살펴본 방식과 동일한 목표(`Table` 객체를 생성하고 이를 통해 DB에 table을 생성)를 ORM mapped class(혹은 mapped class)라 불리는 class를 통해 달성할 수 있다.
+  - Declarative table을 사용할 때의 이점들
+    - 보다 간결하고 Pythonic한 방식으로 column을 정의할 수 있다.
+    - 선언한 mapped class는 SQL expression을 구성하는 데 사용할 수 있으며, 정적 분석 도구를 통해 유지 보수가 용이하다.
+    - Table metadata 및 ORM mapped class 를 동시에 선언할 수 있다.
+  - Declarative Base 선언하기
+    - `DeclarativeBase`를 상속 받는 class를 선언하며, `DeclarativeBase`를 상속 받는 `Base` class가 Declarative Base가 된다.
+    - Declarative Base는 자동으로 생성된 `MetaData`의 instance를 참조한다.
+    - `Base`를 상속받는 class들은 DB의 특정 table을 참조하는 ORM mapped class가 된다.
+    - 또한 Declarative Base는 `registry`를 참조하는데, `registry`에는mapper configuration에 관한 정보가 저장되어 있다. 
+
+  ```python
+  from sqlalchemy.orm import DeclarativeBase
+  
+  class Base(DeclarativeBase):
+      pass
+  
+  print(Base.metadata)		# MetaData()
+  print(Base.registry)		# <sqlalchemy.orm.decl_api.registry object at 0x...>
+  ```
+
+  - ORM Mapped Class 선언하기
+    - PEP 484에 따라 type annotation을 적용하기 위해, `Mapped`라는 특수한 type을 사용하여 attribute가 특정 type과 mapping되었다는 것을 표현한다.
+    - 각 class는 declarative mapping 과정에서 생성된 `Table` 객체를 참조하는데(`DeclarativeBase.__table__` attribtute를 통해 접근이 가능하다), `Table` 객체의 이름은 `__tablename__` attribute의 값으로 설정된다.
+    - `Table` 객체를 직접 생성하고 `DeclarativeBase.__table__` attribute에 직접 할당하는 방식도 가능하며, 이 방식을 Declarative with Imperative Table이라 부른다.
+    - `mapped_column`는 ORM mapped class가 참조하는 `Table` 객체에 `Column`을 생성한다.
+    - `Optional`을 사용하여 nullable한 값이 되도록 할 수 있다(혹은 `<type> | None`, `Union[<type>, None]`과 같이도 할 수 있다).
+    - `Mapped`를 사용하여 type을 명시하지 않고, `mapped_column`만을 사용해도 column 추가는 가능하다.
+    - ORM mapped class는 `__init__()` method를 선언할 필요가 없으며, 기본값은 attribute들을 optional keyword arguments로 받는 것이다.
+    - 아래 예시에서는 `__repr__()` method를 선언했지만, `__init__()` method와 마찬가지로 선언하지 않아도 자동으로 추가된다.
+
+  ```python
+  from sqlalchemy.orm import Mapped, mapped_column, relationship
+  from typing import Optional
+  from sqlalchemy import String
+  
+  
+  class User(Base):
+      __tablename__ = "user"
+  
+      id: Mapped[int] = mapped_column(primary_key=True)
+      name: Mapped[str] = mapped_column(String(30))
+      # 아래와 같이 선언할 수도 있고
+      fullname: Mapped[Optional[str]]
+      # 아래와 같이 type annotation을 사용하지 않을 수도 있다.
+      # fullname = mapped_column(String(30), nullable=True)
+  
+      addresses: Mapped[list["Address"]] = relationship(back_populates="user")
+  
+      def __repr__(self) -> str:
+          return f"User(id={self.id!r}, name={self.name!r}, fullname={self.fullname!r})"
+      
+  
+  class Address(Base):
+      __tablename__ = "address"
+  
+      id: Mapped[int] = mapped_column(primary_key=True)
+      email_address: Mapped[str]
+      user_id = mapped_column(ForeignKey("user.id"))
+  
+      user: Mapped[User] = relationship(back_populates="addresses")
+  
+      def __repr__(self) -> str:
+          return f"Address(id={self.id!r}, email_address={self.email_address!r})"
+  ```
+
+  - ORM mapping을 사용하여 DB에 table 생성하기
+    - `Base.metadata.create_all()` method를 사용하면 된다.
+    - 상기했듯 Declarative Base는 자동으로 `MetaData`의 instance를 참조한다.
+    - 따라서 `MetaData`의 instance에 접근하여 `create_all()` method를 실행할 수 있다.
+
+  ```python
+  Base.metadata.create_all(engine)
+  ```
+
+
+
+- Table Reflection
+
+  - Table reflection은 현재 DB의 상태를 읽어 `Table` 혹은 `Table`과 관련된 object들을 생성하는 과정이다.
+    - 앞에서 우리는 `Table` object를 생성하고, 이 object를 통해 DDL을 실행하여 DB에 table을 생성했다.
+    - Table reflection은 이 과정을 반대로 실행하는 것이다.
+    - 즉 이미 존재하는 DB를 읽어서 Python object를 생성한다.
+  - 이미 존재하는 DB를 가지고 작업한다고 해서 반드시 table reflection을 사용해야 하는 것은 아니다.
+    - 이미 존재하는 DB를 대상으로 작업한다고 하더라도 해당 DB에 있는 table과 동일한 object를 생성하여 작업하는 것이 일반적이다.
+    - 또한 굳이 application에서 사용하지 않는 table들을 table reflection을 통해 가져오는 것은 비효율적이다.
+  - Table reflection을 위해 새로운 table을 생성한다.
+
+  ```python
+  from sqlalchemy import create_engine
+  from sqlalchemy import text
+  
+  
+  # engine 생성
+  engine = create_engine("sqlite+pysqlite:///:memory:", echo=True)
+  
+  # table 생성
+  with engine.connect() as conn:
+      conn.execute(text("CREATE TABLE some_table (x int, y int)"))
+      conn.commit()
+  ```
+
+  - Table reflection을 실행한다.
+    - Table reflection을 실행하는 다양한 방식이 있지만, 아래 예시에서는 `Table` class를 사용한다.
+    - 첫 번째 인자로 table의 이름, 두 번째 인자로 metadata를 전달한다.
+    - `autoload_with`는 `Engine`을 통해 `Column`과 `Constraint` 객체를 사용하지 않고 column과 제약조건을 읽어올 수 있게 해준다.
+
+  ```python
+  from sqlalchemy import Table, MetaData
+  
+  # metadata 생성
+  metadata = MetaData()
+  
+  # table 생성
+  some_table = Table("some_table", metadata, autoload_with=engine)
+  ```
+
+
+
