@@ -112,9 +112,8 @@
   - 일반적으로 사전조건은 메서드에 전달된 인자의 정합성을 체크하기 위해 사용된다.
     - 예를 들어 특정 인자는 null이어서는 안 되고, 특정 인자는 1 이상의 값이어야 한다는 것 등이 있을 수 있다.
     - 이러한 조건들을 메서드의 사전조건으로 정의함으로써 메서드가 잘못된 값을 기반으로 실행되는 것을 방지할 수 있다.
-  - 예시
-    - Code Contracts에서 제공하는 대부분의 메서드는 사전조건을 정의하기 위한 `Contract.Requires` 메서드를 제공한다.
-
+  - Code Contracts는 사전조건을 정의하기 위한 `Contract.Requires` 메서드를 제공한다.
+  
   ```c#
   public Reservation Reserve(Customer customer, int audienceCount)
   {
@@ -123,6 +122,261 @@
       return new Reservation(customer, this, calculateFee(audienceCount), audienceCount);
   }
   ```
-
+  
   - 위 예시에서 사전조건을 만족시킬 책임은 Reserve메서드를 호출하는 클라이언트에게 있다는 것을 기억해야한다.
-    - 클라이언트가 사전조건을 만족시키지 못할 경우 `Reserve`
+    - 클라이언트가 사전조건을 만족시키지 못할 경우 `Reserve` 메서드는 최대한 빨리 실패해서 클라이언트에게 버그가 있다는 사실을 알린다.
+    - `Contract.Requires` 메서드는 클라이언트가 계약에 명시된 조건을 만족시키지 못할 경우 `ContractException`을 발생시킨다.
+  - 계약에 의한 설계를 사용하면 계약만을 위해 준비된 전용 표기법을 사용해 계약을 명확하게 표현할 수 있다.
+    - 또한 계약을 일반 로직과 분리해서 서술함으로써 계약을 좀 더 두드러지게 강조할 수 있다.
+    - 또한 계약이 메서드의 일부로 실행되도록 함으로써 계약을 강조할 수 있다.
+
+
+
+- 사후조건
+
+  - 사후조건은 메서드의 실행 결과가 올바른지 검사하고 실행 후에 객체가 유효한 상태로 남아 있는지를 검증한다.
+    - 즉 사후조건을 통해 메서드를 호출한 후에 어떤 일이 일어났는지를 설명할 수 있다.
+    - 클라이언트가 사전조건을 만족시켰는데도 서버가 사후조건을 만족시키지 못하면 서버에 버그가 있음을 의미한다.
+  - 일반적으로 사후조건은 아래와 같은 세 가지 용도로 사용된다.
+    - 인스턴스 변수의 상태가 올바른지를 서술하기 위해
+    - 메서드에 전달된 파라미터의 값이 올바르게 변경됐는지를 서술하기 위해
+    - 반환값이 올바른지를 서술하기 위해
+  - 다음과 같은 두 가지 이유로 사후저건을 정의하는 것이 사전조건을 정의하는 것 보다 어려울 수 있다.
+    - 한 메서드 안에서 return문이 여러 번 나올 경우, return문마다 결과값이 올바른지 검증하는 코드를 추가해야 한다.
+    - 실행 전과 실행 후의 값을 비교해야 하는 경우 실행 전의 값이 메서드 실행으로 인해 다른 값으로 변경됐을 수 있기 때문에 두 값을 비교하기 어려울 수 있다.
+  - Code Contracts는 사후조건을 정의하기 위한 `Contract.Ensures` 메서드를 제공한다.
+    - `Reserve` 메서드의 사후조건은 반환값인 `Reservation` 인스턴스가 null이어서는 안 된다는 것이다.
+    - `Contract.Result<T>` 메서드가 `Reserve` 메서드의 실행 결과에 접근할 수 있게 해주는 메서드다.
+    - 이 메서드는 제너릭 타입으로 메서드의 반환 타입에 대한 정보를 명시할 것을 요구한다.
+
+  ```c#
+  public Reservation Reserve(Customer customer, int audienceCount)
+  {
+      Contract.Requires(customer != null);
+      Contract.Requires(audienceCount >= 1);
+      Contract.Ensures(Contract.Result<Rservation>() != null);
+      return new Reservation(customer, this, calculateFee(audienceCount), audienceCount);
+  }
+  ```
+
+
+
+- 불변식
+
+  - 불변식은 인스턴스 생명주기 전반에 걸쳐 지켜져야 하는 규칙을 명세한다.
+    - 일반적으로 불변식은 객체 내부 상태와 관련이 있다.
+  - 불변식은 아래와 같은 두 가지 특성을 가진다.
+    - 불변식은 클래스의 모든 인스턴스가 생성된 후에 만족돼야 한다. 즉 클래스에 정의된 모든 생성자는 불변식을 준수해야 한다는 것을 의미한다.
+    - 불변식은 클라이언트에 이해 호출 가능한 모든 메서드에 의해 준수돼야 한다. 즉 메서드가 실행되는 중에는 객체의 상태가 불안정한 상태로 빠질 수 있기 때문에 불변식을 만족시킬 필요는 없지만 메서드 실행 전과 메서드 종료 후에는 항상 불변식을 만족하는 상태가 유지돼야 한다.
+  - 불변식은 클래스의 모든 메서드의 사전조건과 사후조건에 추가되는 공통의 조건으로 생각할 수 있다.
+    - 불변식은 메서드가 실행되기 전에 사전조건과 함께 실행되며, 메서드가 실행된 후에 사후조건과 함께 실행된다.
+  - Code Contracts에서는 `Contract.Invariant` 메서드를 이용해 불변식을 정의할 수 있다.
+    - 불변식은 생성자 실행 후, 메서드 실행 전, 메서드 실행 후에 호출되어야 한다.
+
+  ```c#
+  public class Screening
+  {
+      private Movie movie;
+      private int sequence;
+      private DateTime whenScreened;
+      
+      [ContractInvariationMethod]
+      private void Invariant() {
+          Contract.Invariant(movie != null);
+          Contract.Invariant(sequence >= 1);
+          Contract.Invariant(whenScreened > DateTime.Now);
+          
+      }
+  }
+  ```
+
+
+
+
+
+## 계약에 의한 설계와 서브타이핑
+
+- 계약에 의한 설계와 리스코프 치환 원칙
+
+  - 계약에 의한 설계의 핵심은 클라이언트와 서버 사이의 견고한 협력을 위해 준수해야 하는 규약을 정의하는 것이다.
+    - 계약에 의한 설계는 클라이언트가 만족시켜야 하는 사전조건과 클라이언트의 관점에서 서버가 만족시켜야 하는 사후조건을 기술한다.
+    - 계약에 의한 설계와 리스코프 치환 원칙이 만나는 지점이 바로 이곳이다.
+    - 리스코프 치환 원칙은 슈퍼타입의 인스턴스와 협력하는 클라이언트의 관점에서 서브타입의 인스턴스가 슈퍼타입을 대체하더라도 협력에 지장이 없어야 한다는 것을 의미한다.
+    - 따라서 서브타입이 리스코프 치환 원칙을 만족시키기 위해서는 클라이언트와 슈퍼타입 간에 체결된 계약을 준수해야한다.
+
+  - 리스코프 치환 원칙의 규칙을 두 가지 종류로 세분화 할 수 있다.
+    - 계약 규칙: 협력에 참여하는 객체에 대한 기대를 표현하는 규칙
+    - 가변성 규칙: 교체 가능한 타입과 관련된 규칙
+
+  - 계약 규칙은 슈퍼타입과 서브타입 사이의 사전조건, 사후조건, 불변식에 대해 서술할 수 있는 제약에 관한 규칙이다.
+    - 서브타입에 대한 더 강력한 사전조건을 정의할 수 없다.
+    - 서브타입에 대한 더 완화된 사후조건을 정의할 수 없다.
+    - 슈퍼타입의 불변식은 서브타입에서도 반드시 유지돼야 한다.
+  - 가변성 규칙은 파라미터와 리턴 타입의 변형과 관련된 규칙이다.
+    - 서브타입의 메서드 파라미터는 반공변성을 가져야 한다.
+    - 서브타입의 리턴 타입은 공변성을 가져야 한다.
+    - 서브타입은 슈퍼타입이 발생시키는 예외와 다른 타입의 예외를 발생시켜서는 안 된다.
+
+
+
+
+
+### 계약 규칙(Contract Rules)
+
+- 계약 규칙
+
+  - [합성과 유연한 설계]에서 살펴본 핸드폰 과금 시스템의 합성 시스템을 예시로 살펴본다.
+    - 핸드폰 과금 시스템에서 `RatePolicy`는 기본 정책과 부가 정책을 구현하는 모든 객체들이 실체화해야 하는 인터페이스다.
+    - 기본 정책과 부가 정책을 구현하는 모든 객체들(`RatePolicy`를 실체화한 객체들)이 정말로 `RatePolicy`의 서브타입인지(즉 리스코프 치환 원칙을 준수하는지) 확인하려면, 이들이 `RatePolicy`가 클라이언트와 체결한 계약을 준수하는지를 확인해야 한다.
+
+  ```python
+  class RatePolicy(ABC):
+  
+      @abstractmethod
+      def calculate_fee(self, phone: Phone):
+          ...
+  ```
+
+  - `RatePolicy`의 클라이언트인 `Phone` 클래스에 `publish_bill` 메서드를 추가한다.
+
+  ```python
+  class Phone(ABC):
+  
+      def __init__(self, rate_policy: RatePolicy):
+          self._calls: List[Call] = []
+          self._rate_policy = rate_policy
+      
+      def publish_bill(self):
+          return Bill(self, self._rate_policy.calculate_fee(self._calls))
+      
+      # ...
+  ```
+
+  - `Phone.publish_bill` 메서드가 반환하는 `Bill` 클래스를 구현한다.
+
+  ```python
+  class Bill:
+      
+      def __init__(self, phone: Phone, fee: Money):
+          if phone is None:
+              raise ValueError
+          
+          if fee.is_lt(Money.wons(0)):
+              raise ValueError
+          
+          self._phone = phone
+          self._fee = fee
+  ```
+
+  - 사전조건과 사후조건
+    - `Phone.publish_bill` 메서드에서 `RatePolicy.calculate_fee()`의 반환값을 `Bill`의 생성자에 전달하는 부분에 주목해야 한다.
+    - 청구서의 요금은 최소한 0원보다 크거나 같아야하므로 `RatePolicy.calculate_fee()`의 반환값인 0보다 커야 한다.
+    - 이것이 요금을 계산하는 `RatePolicy.calculate_fee()`의 사후조건이 된다.
+    - 다음으로 `RatePolicy.calculate_fee`를 호출할 떄 클라이언트인 `Phone` 보장해야 하는 사전조건은 파라미터인 `calls`가 None이 아니어야 한다는 것이다.
+    - `RatePolicy` 인터페이스를 구현하는 클래스가 `RatePolicy`의 서브타입이 되기 위해서는 위에서 정의한 사전조건과 사후조건을 만족해야 한다.
+
+  - 먼저 기본 정책을 구현하는 추상 클래스인 `BasicRatePolicy`에 사전조건과 사후조건을 추가한다.
+
+  ```python
+  class BasicRatePolicy(RatePolicy):
+  
+      def calculate_fee(self, phone: Phone):
+          # 사전조건
+          assert phone.calls is not None
+  
+          result = Money.wons(0)
+  
+          for call in phone.calls:
+              result = result.plus(self._calculate_call_fee(call))
+              
+          # 사후조건
+          assert result.is_gte(Money.wons(0))
+          
+          return result
+  ```
+
+  - 부가정책을 구현하는 추상 클래스인 `AdditionalRatePolicy`에도 사전조건과 사후조건을 추가한다.
+
+  ```python
+  class AdditionalRatePolicy(RatePolicy):
+  
+      def calculate_fee(self, phone: Phone):
+          # 사전조건
+          assert phone.calls is not None
+  
+          fee = self._next.calculate_fee(phone)
+          result = self._after_calculated(fee)
+  
+          # 사후조건
+          assert result.is_gte(Money.wons(0))
+          
+          return result
+  ```
+
+
+
+- 서브타입에 더 강력한 사전조건을 정의할 수 없다.
+
+  - 한 번도 통화가 발생하지 않은 `Phone`에 대한 청구서를 발행하는 시나리오를 생각해보자.
+
+  ```python
+  phone = Phone(RegularPolicy(Money(10), 10))
+  bill = phone.publish_bill()
+  ```
+
+  - `Phone`의 코드를 보면 내부적으로 통화 목록을 유지하는 인스턴스 변수인 `_calls`를 선언하면서 동시에 빈 리스트로 초기화 한다.
+    - 따라서 위 코드처럼 한 번도 `Phone.call` 메서드가 호출되지 않은 경우 `RatePolicy.calculate_fee` 메서드 인자로 빈 리스트가 전달될 것이다.
+    - `calculate_fee`의 사전 조건에서는 인자가 None인 경우를 제외하고는 모든 값을 허용하기 때문에 위 코드는 사전조건을 위반하지 않는다.
+  - 만약 `RatePolicy` 클래스의 부모 클래스인 `BasicRatePolicy`에 `calls`가 빈 리스트여서는 안 된다는 사전조건을 추가한다.
+    - 이 경우, 위 에서 작성한 코드는 사전조건을 만족하지 않기 때문(`Phone.call`을 호출하지 않아 `_call`이 빈 배열이기 때문)에 정상적으로 실행되지 않을 것이다.
+
+  ```python
+  class BasicRatePolicy(RatePolicy):
+  
+      def calculate_fee(self, phone: Phone):
+          # 사전조건
+          assert phone.calls is not None
+          assert len(phone) != 0
+  
+          result = Money.wons(0)
+  
+          for call in phone.calls:
+              result = result.plus(self._calculate_call_fee(call))
+              
+          # 사후조건
+          assert result.is_gte(Money.wons(0))
+  
+          return result
+  ```
+
+  - 위와 같이 변경하면 `BasicRatePolicy`는 `Phone`과 `RatePolicy` 사이에 맺은 계약을 위반하게 된다.
+
+    - 클라이언트인 `Phone`은 오직 `RatePolicy` 인터페이스만 알고 있기 때문에 `RatePolicy`가 None을 제오회한 어떤 `calls`라도 받아들인다고 가정한다.
+    - 따라서 빈 리스트를 전달하더라도 문제가 발생하지 않는다고 예상할 것이다.
+    - 하지만 `BasicRatePolicy`는 사전조건에 새로운 조건을 추가함으로써 `Phone`과 `RatePolicy` 사이에 맺은 계약을 위반한다.
+
+    - `Phone`의 입장에서 더 이상 `RatePolicy`와 `BasicRatePolicy`는 동일하지 않다.
+    - 하나는 원래의 약속을 지키는 신뢰할 수 있는 협력자이지만, 다른 하나는 그렇지 안하.
+    - 클라이언트의 관점에서 `BasicRatePolicy`는 `RatePolicy`를 대체할 수 없기 때문에 리스코프 치환 원칙을 위반한다.
+    - `BasicRateolicy`는 `RatePolicy`의 서브타입이 아닌 것이다.
+
+  - 사전조건 강화는 리스코프 치환 원칙 위반이다.
+    - 위 예에서 알 수 있는 것 처럼 서브타입이 슈퍼타입에 정의된 사전조건을 강화하면 기존에 체결된 계약을 위반하게 된다.
+    - 계약서에 명시된 의무보다 더 많은 의무를 짊어져야 한다는 사실을 순순히 납득하는 클라이언트는 없을 것이다.
+    - 결국 사전조건을 강화한 서브타입은 클라이언트의 입장에서 수용이 불가능하기 때문에 슈퍼타입을 대체할 수 없게 된다.
+  - 사전조건을 완화하는 것은 리스코프 치환 원칙을 위반하지 않는다.
+    - 아래와 같이 `calls`에 `None`을 전달해도 예외가 발생하지 않게 수정해도 문제는 없다.
+    - 사전조건을 보장해야 하는 책임은 클라이언트에게 있는데, 이미 클라이언트인 `Phone`은 `RatePolicy.calculate_fee` 메서드를 호출할 때 (`RatePolicy`와 맺은 계약 대로 ) 인자가 None이 아닌 값을 전달하도록 보장하고 있을 것이다.
+    - 따라서 항상 인자는 None이 아닐 것이고 None 여부를 체크하는 조건문은 무시되기 때문에 수정된 사전조건은 협력에 영향을 미치지 않게 된다.
+
+  ```python
+  class BasicRatePolicy(RatePolicy):
+  
+      def calculate_fee(self, phone: Phone):
+          # 사전조건
+          if phone.calls is None:
+              return Money.wons(0)
+  ```
+
+  
+
