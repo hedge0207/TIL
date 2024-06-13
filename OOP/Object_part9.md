@@ -378,5 +378,181 @@
               return Money.wons(0)
   ```
 
+
+
+
+- 서브타입에 더 완화된 사후조건을 정의할 수 없다.
+
+  - 사후조건은 `RatePolicy.calculate_fee` 메서드의 반환값이 0보다 커야 한다는 것이었다.
+  - 아래는 10초당 100원을 부과하는 `RegularPolicy`에 1000원을 할인해주는 기본 요금 할인 정책(`RateDiscountPolicy`)를 적용하는 시나리오를 구현한 것이다.
+    - 가입자의 통화 목록에는 단 한 번의 통화 내역만 존재하고 통화 시간은 1분이다.
+    - 이 사용자는 통화시간 10초당 100원을 부과하는 요금제에 가입되어 있기 때문에 통화 요금은 600원일 것이다.
+    - 문제는 사용자의 요금제에 1000원의 기본 할인 정책이 추가되어 있다는 것이다.
+    - 따라서 최종 청구 금액은 -400원이 된다.
+
+  ```python
+  phone = Phone(RateDiscountPolicy(Money.wons(1000), RegularPolicy(Money(100), 10)))
+  phone.call(Call(datetime(2024, 11, 11, 22, 30, 0), datetime(2024, 11, 11, 22, 31, 0)))
+  bill = phone.publish_bill()
+  ```
+
+  - 사후조건을 만족시킬 책임은 서버에 있다.
+    - 클라이언트인 `Phone`은 반환된 요금이 0보다 큰지를 확인할 의무가 없으며 사후조건을 위반한 책임은 전적으로 서버인 `RateDiscountablePolicy`가 져야한다.
+    - `RateDiscountablePolicy`는 계약을 만족시킬 수 없다는 사실을 안 즉시 예외를 발생시키기 때문에 `calcaulte_fee` 오퍼레이션은 정상적으로 실행되지 않고 종료된다.
+  - `calcaulte_fee` 오퍼레이션이 정상적으로 실행되도록 `RateDiscountablePolicy`의 부모 클래스인 `AdditionalRatePolicy`에서 사후조건을 완화시킨다.
+    - 아래와 같이 사후조건을 주석으로 처리해서 마이너스 요금이 반환되더라도 예외가 발생하지 않도록 수정한다.
+    - 이제 `AdditionalRatePolicy`는 마이너스 금액도 반환할 수 있기 때문에 `Phone`과의 협력을 문제없이 처리할 수 있다.
+
+  ```python
+  class AdditionalRatePolicy(RatePolicy):
   
+      def calculate_fee(self, phone: Phone):
+          # 사전조건
+          assert phone.calls is not None
+  
+          fee = self._next.calculate_fee(phone)
+          result = self._after_calculated(fee)
+  
+          # 사후조건을 주석처리
+          # assert result.is_gte(Money.wons(0))
+  
+          return result
+  ```
+
+  - 그러나 `AdditionalRatePolicy`의 클라이언트가 아닌 `Bill`에서 예외가 발생한다.
+    - `Bill`의 생성자에서는 인자로 전달된 `fee`가 마이너스 금액일 경우 예외를 던지도록 구현되어 있기 때문이다.
+
+  ```python
+  class Bill:
+      
+      def __init__(self, phone: Phone, fee: Money):
+          if phone is None:
+              raise ValueError
+          
+          if fee.is_lt(Money.wons(0)):
+              raise ValueError
+          
+          # ...
+  ```
+
+  - 문제는 `AdditionalRatePolicy`가 마이너스 금액을 반환했다는 것이다.
+    - 예외는 `Bill`에서 발생했지만, 이는 `Bill`의 문제가 아니다.
+    - `Bill`의 입장에서 요금이 0원보다 크거나 같다고 가정하는 것은 자연스럽다.
+    - 문제는 `AdditionalRatePolicy`가 사후조건을 완화함으로써 기존에 `Phone`과 `RatePolicy` 사이에 체결된 계약을 위반했기 때문에 발생한 것이다.
+  - 사후조건을 완화한다는 것은 서버가 클라이언트에게 제공하겠다고 보장한 계약을 충족시켜주지 못한다는 것을 의미한다.
+    - 서버는 계약을 위반했기 때문에 이제 계약은 더 이상 유효하지 않다.
+    - 클라이언트인 `Phone` 입장에서 `AdditionalRatePolicy`는 더 이상 `RatePolicy`가 아니다.
+    - 다시 말해 `AdditionalRatePolicy`는 더 이상 `RatePolicy`의 서브타입이 아니다.
+  - 사후조건 완하는 리스코프 치환 원칙 위반이다.
+    - 계약서에 명시된 이익보다 더 적은 이익을 받게 된다는 사실을 납득할 수 있는 클라이언트는 없다.
+    - 결국 사후조건을 완화시키는 서버는 클라이언트의 관점에서 수용할 수 없기 때문에 슈퍼타입을 대체할 수 없다.
+  - 사후조건을 강화하는 경우에는 리스코프 치환 원칙을 위반하지 않는다.
+    - `calculate_fee`가 100원보다 크거나 같은 금액을 반환하도록 사후조건을 강화한다.
+    - `Phone`은 반환된 요금이 0보다 크기만 하다면 아무런 불만도 가지지 않기 때문에 이 변경은 클라이언트에게 아무런 영향도 미치지 않는다.
+
+  ```python
+  class AdditionalRatePolicy(RatePolicy):
+  
+      def calculate_fee(self, phone: Phone):
+          # 사전조건
+          assert phone.calls is not None
+  
+          fee = self._next.calculate_fee(phone)
+          result = self._after_calculated(fee)
+  
+          # 사후조건 강화
+          assert result.is_gte(Money.wons(100))
+  
+          return result
+  ```
+
+  
+
+- 일찍 실패하기(Fail Fast)
+
+  - 문제의 원인을 파악할 수 있는 가장 빠른 방법은 문제가 발생하자마자 프로그램이 일찍 실패하게 만드는 것이다.
+    - 일반적으로 죽은 프로그램이 입히는 피해는 절름발이 프로그램이 끼치는 것보다 훨씬 덜한 법이다(*Hunt*)
+  - 마이너스 금액을 그대로 사용하는 것 보다 처리를 종료하는 것이 올바른 선택이다.
+    - 사후조건은 서버가 보장해야 한다는 것을 기억해야한다.
+    - 클라이언트인 `Phone`은 서버인 `RatePolicy`가 계약에 명시된 사후조건을 만족시킬 것이라고 가정하기 때문에 반환값을 체크할 필요가 없다.
+    - 따라서 `Phone`dms `RatePolicy`가 항상 플러스 금액을 반환할 것이라고 가정하고 별도의 확인 없이 반환값을 그대로 `Bill`의 생성자에게 전달한다.
+    - 그리고 그 결과 원인에서 멀리 떨어진 곳에서 예외가 발생하게 된다.
+
+  - `Phone`과 `RatePolicy` 사이의 협력을 종료시키지 않고 마이너스 금액을 그대로 사용하게 하면 반환된 값을 이용하는 어딘가에서는 문제가 발생할 것이다.
+    - 게다가 문제가 발생한 `Bill`의 생성자는 마이너스 금액을 계산한 로직이 위치한 곳이 아니다.
+    - 문제의 원인을 제공한 위치로부터 너무나도 멀리 떨어져 있다.
+    - `RatePolicy`와 `Phone` 사이에서 예외를 발생시키면 이 문제를 해결할 수 있다.
+    - 예외가 발생한 그 지점이 바로 문제가 발생한 바로 그곳이다.
+
+
+
+- 슈퍼타입의 불변식은 서브타입에서도 반드시 유지돼야 한다.
+
+  - 불변식은 메서드가 실행되기 전과 후에 반드시 만족시켜야 하는 조건이다.
+    - 모든 객체는 객체가 생성된 직후부터 소멸될 때까지 불변식을 만족시켜야 한다.
+    - 하지만 메서드를 실행하는 도중에는 만족시키지 않아도 무방하다.
+    - 생성자의 경우 시작 지점에는 불변식을 만족시키지 않겠지만 생성자가 종료되는 시점에는 불변식을 만족시켜야 한다.
+  - `AdditionalRatePolicy`의 불변식
+    - `AdditionalRatePolicy`에서 다음 요금제를 가리키는 `_next`는 None이어서는 안된다.
+    - 따라서 `AdditionalRatePolicy`의 모든 메서드 실행 전과 후, 그리고 생성자의 마지막 지점에서 `_next`가 None이어서는 안 된다는 불변식을 만족시켜야 한다.
+
+  ```python
+  class AdditionalRatePolicy(RatePolicy):
+  
+      def __init__(self, next_: RatePolicy):
+          self._next = next_
+          # 불변식
+          assert self._next is not None
+  
+      def calculate_fee(self, phone: Phone):
+          # 불변식
+          assert self._next is not None
+  
+          # 사전조건
+          assert phone.calls is not None
+  
+          fee = self._next.calculate_fee(phone)
+          result = self._after_calculated(fee)
+  
+          # 사후조건 강화
+          assert result.is_gte(Money.wons(100))
+  
+          # 불변식
+          assert self._next is not None
+          
+          return result
+  ```
+
+  - 그러나 위 코드에는 불변식을 위반할 수 있는 취약점이 존재한다.
+    - 인스턴스 변수인 `_next`를 자식 클래스가 수정할 수 있다는 것이다.
+    - 예를 들어 아래와 같이 `AdditionalRatePolicy`의 자식 클래스인 `RateDiscountPolicy`에 `change_next` 메서드가 추가됐다고 가정해보자.
+    - `change_next`를 통해 `_next`의 값을 None으로 변경하는 것이 가능해졌고, 그렇게 할 경우 불변식이 유지되지 않는다.
+
+  ```python
+  class RateDiscountPolicy(AdditionalRatePolicy):
+      
+      def change_next(self, next_: RatePolicy):
+          self._next = next_
+  ```
+
+  - 이 예는 계약의 관점에서 캡슐화의 중요성을 잘 보여준다.
+    - 자식 클래스가 계약을 위반할 수 있는 코드를 작성하는 것을 막을 수 있는 유일한 방법은 인스턴스 변수의 가시성을 protected가 아니라 private로 만드는 것 뿐이다.
+    - protected 인스턴스 변수를 가진 부모 클래스의 불변성은 자식클래스에 의해 언제라도 쉽게 무너질 수 있다.
+    - 모든 인스턴스 변수의 가시성은 private으로 제한돼야 한다.
+  - 만약 자식 클래스에서 인스턴스 변수의 상태를 변겨하고 싶다면, 부모 클래스에 protected 메서드를 제공하고 이 메서드를 통해 불변식을 체크하게 해야 한다.
+
+  ```python
+  class AdditionalRatePolicy(RatePolicy):
+  
+      def __init__(self, next_: RatePolicy):
+          self._next = None
+          self._change_next(next_)
+  
+      def _change_next(self, next_: RatePolicy):
+          self._next = next_
+          # 불변식
+          assert self._next is not None
+  ```
+
+
 

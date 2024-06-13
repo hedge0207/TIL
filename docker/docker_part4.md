@@ -128,8 +128,8 @@
   $ docker stack rm <stack> [stack2 ...]
   ```
   
-  
-  
+
+
 
 
 
