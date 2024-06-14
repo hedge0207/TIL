@@ -556,3 +556,232 @@
 
 
 
+
+
+### 가변성 규칙
+
+- 서브타입은 슈퍼타입이 발생시키는 예외와 다른 타입의 예외를 발생시켜서는 안 된다.
+
+  > 부득이 Java로 작성한다.
+
+  - `RatePolicy`의 `calculateFee` 오퍼레이션이 인자로 빈 리스트를 전달받았을 때 예외를 발생시키도록 계약을 수정한다.
+
+  ```java
+  public class EmptyCallException extends Exception { ... }
+  
+  public interface RatePolicy {
+      Money calculateFee(List<Call> class) throws EmptyCallException;
+  }
+  ```
+
+  - 이제 `BasicRatePolicy`는 슈퍼타입의 계약을 준수하기위해 아래와 같이 구현될 것이다.
+
+  ```java
+  public abstract class BasicRatePolicy implements RatePolicy {
+      @Override
+      public Money calculateFee(List<Call> calls) {
+          if (calls == null || calls.isEmpty()) {
+              throw new EmptyCallException();
+          }
+      }
+  }
+  ```
+
+  - `RatePolicy`와 협력하는 메서드가 있다고 하자.
+    - 이 메서드는 `EmptyCallException` 예외가 던져질 경우 이를 캐치한 후 0원을 반환한다.
+
+  ```java
+  public void calculate(RatePolicy policy, List<Call> calls) {
+      try {
+          return policy.calculateFee(calls);
+      } catch(EmptyCallException ex) {
+          return Money.ZERO;
+      }
+  } 
+  ```
+
+  - 하지만 `RatePolicy`를 구현하는 클래스가 `EmptyCallException` 예외가 아닌 다른 예외를 던질 경우 문제가 생긴다.
+    - 예를 들어 아래와 같이 `AdditionalRatePolicy` 클래스가 `NoneElementException`을 던진다고 가정해보자.
+
+  ```java
+  public abstract class AdditionalRatePolicy implements RatePolicy {
+      @Override
+      public Money calculateFee(List<Call> calls) {
+          if (calls == null || calls.isEmpty()) {
+              throw new NoneElementException();
+          }
+      }
+  }
+  ```
+
+  - 일반적으로 부모 클래스가 던지는 예외가 속한 상속 계층이 아닌 다른 상속 계층에 속하는 예외를 던질 경우 자식 클래스는 부모 클래스를 대체할 수 없다.
+
+    - 이 경우 `AdditionalRatePolicy`는 `RatePolicy`를 대체할 수 없다.
+    - 만약 `NoneElementException` 클래스가 `EmptyCallException` 클래스의 자식 클래스라면 `AdditionalRatePolicy`는 `RatePolicy`를 대체할 수 있을 것이다.
+    - 그러나 상속 계층이 다르다면 하나의 catch문으로 두 예외를 모두 처리할 수 없기 때문에 `NoneElementException`은 예외 처리에서 잡히지 않게 된다.
+    - 결과적으로 클라이언트 입장에서 협력의 결과가 예상을 벗어났기 때문에 `AdditionalRatePolicy`는 `RatePolicy`를 대체할 수 없다.
+
+    - 따라서 서브타입이 아니다.
+
+  - 자식 클래스에서 부모 클래스에서 정의하지 않은 예외를 발생시키는 경우에도 자식 클래스는 부모 클래스를 대체할 수 없다.
+
+    - [서브클래싱과 서브타이핑]장에서 소개한 `Bird`를 상속받는 `Penguin`의 예가 이 경우에 해당한다.
+    - `Bird`의 자식 클래스인 `Penguin`은 `fly` 메서드 안에서 `UnsupportedOperationException`을 던진다.
+    - 개발자는 코드를 재사용하기 위해 `Bird`를 상속받았지만 `Penguin`은 날 수 없다는 제약조건을 만족시켜야 했기 때문에 `fly` 메서드의 실행을 막아야 했던 것이다.
+    - 예외를 던짐으로써 날 수 있는 행동을 정상적으로 동작하지 않도록 만들었기 때문에 `Penguin`의 입장에서는 원하는 결과를 얻은 것이라고 생각할 수도 있다.
+    - 하지만 클라이언트는 협력하는 모든 `Bird`가 날 수 있다고 생각할 것이다.
+    - 클라이언트는 `Bird`의 인스턴스에게 `fly` 메서드를 전송했을 때 `UnsupportedOperationException` 예외가 던져지리가고 기대하지 않았을 것이다.
+    - 따라서 클라이언트의 관점에서 `Penguin`은 `Bird`를 대체할 수 없다.
+
+  - 계약을 위반하는 또 다른 예는 자식 클래스에서 메서드의 기능을 퇴화시키는 경우다.
+
+    - 예를 들어 `Penguin`의 `fly` 메서드가 호출될 때 아무것도 하지 않는 경우가 있을 수 있다.
+    - 이렇게 하면 `fly` 메시지에는 응답할 수 있지만 나는 기능 자체는 제거할 수 있으므로 좋은 선택이라고 생각할 수 있다.
+    - 그러나 이 경우도 모든 `Bird`가 날 수 있다는 클라이언트의 관점에서는 올바르지 않다.
+
+
+
+- 공변성
+  - S가 T의 서브타입이라고 할 때, 프로그램의 어떤 위치에서 두 타입 사이의 치환 가능성을 다음과 같이 나눌 수 있다.
+    - 공변성(covariance): S와 T 사이의 서브타입 관계가 그대로 유지된다. 이 경우 해당 위치에서 S가 T 대신 사용될 수 있다.
+    - 반공변성(contravariance): S와 T 사이의 서브타입 관계가 역전된다. 이 경우 해당 위치에서 T가 S 대신 사용될 수 있다.
+    - 무공변성(invariance): S와 T 사이에 아무런 관계도 존재하지 않는다. 따라서 S대신 T를 사용하거나 T 대신 S를 사용할 수 없다.
+  - 주의할 점은 공변성과 반공변성의 지원 여부는 언어에 따라 다르다는 것이다.
+    - 따라서 사용하는 언어가 공변성과 반공변성을 어느 정도로 지원하는지를 정확하게 이해한 후 사용해야 한다.
+
+    - 예를 들어 Java는 아래에서 살펴볼 리턴 타입 공변성을 지원하지만, C#은 지원하지 않는다.
+
+    - 또한 대부분의 객체지향 언어는 파라미터 반공변성을 지원하지 않는다.
+
+
+
+- 서브타입의 리턴 타입은 공변성을 가져야한다.
+
+  - 예를 들어 아래와 같은 관계를 가진 클래스들이 있다고 가정해보자.
+    - `IndependentPublisher`는 `Publisher`의 자식클래스이다.
+    - `Megazine`은 `Book`의 자식클래스이다.
+    - `MegazineStore`는 `BookStall`의 자식클래스이다.
+    - `BookStall`은 `IndependentPublisher`가 출간한 `Book`만 판패할 수 있으며. `MegazineStore` 역시 `IndependentPublisher`가 출간한 `Megazine`만 판매할 수 있다.
+
+  ```python
+  class Publisher:
+      ...
+  
+  class IndependentPublisher(Publisher):
+      ...
+  
+  class Book:
+      def __init__(self, publisher: Publisher):
+          self._publisher = publisher
+      
+  class Megazine(Book):
+      def __init__(self, publisher: Publisher):
+          self._publisher = publisher
+  
+  class BookStall:
+      def sell(self, independent_publisher: IndependentPublisher):
+          return Book(independent_publisher)
+      
+  class MegazineStore(BookStall):
+      def sell(self, independent_publisher: IndependentPublisher):
+          return Megazine(independent_publisher)
+  ```
+
+  - 책을 구매하는 `Customer` 클래스는 아래와 같다.
+    - `BookStall`에게 `sell` 메시지를 전송해 책을 구매한다.
+
+  ```python
+  class Customer(BookStall):
+  
+      def __init__(self):
+          self._book: Book = None
+  
+      def order(self, book_stall: BookStall):
+          self._book = book_stall.sell(IndependentPublisher())
+  ```
+
+  - 공변성과 반공변성의 영역에서는 메서드의 리턴 타입과 파라미터 타입에 초점을 맞춰야한다.
+
+    - 지금까지 살펴본 서브타이핑은 단순히 서브타입이 슈퍼타입의 모든 위치에서 대체 가능하다는 것이다.
+    - 하지만 공변성과 반공변성의 영역에서는 타입의 관계가 아니라 메서드의 리턴 타입과 파라미터 타입에 초점을 맞춰야한다.
+
+  - 리턴 타입 공변성(return type covariance)
+
+    - `BookStall`의 `sell` 메서드는 `Book`의 인스턴스를 반환하고, `MegazineStore`의 `sell` 메서드는 `Megazine`의 인스턴스를 반환한다.
+    - 여기서 주목해야 할 점은 슈퍼타입인 `BookStall`이 슈퍼타입인 `Book`을 반환하고, 서브타입인 `MegazineStore`이 서브타입인 `Megazine`를 반환한다는 점이다.
+
+    - 리스코프 치환 원칙이 클라이언트 관점에서의 치환 가능성이므로 `BookStall`의 클라이언트 관점에서 리턴타입 공변성의 개념을 살펴볼 필요가 있다.
+    - `Customer` 클래스의 `order` 메서드를 살펴보면 `BookStall`에게 `sell` 메시지를 전송하는 것을 알 수 있다.
+    - `Customer`의 `order` 메서드는 `BookStall`에게 `sell` 메시지를 전송한 후 `Book` 타입의 인스턴스 변수에 대한 반환 값을 저장한다.
+    - `BookStall`의 `sell` 메서드의 반환 타입이 `Book` 타입으로 선언돼 있기 때문에 이 코드는 직관적이다.
+    - `MegazineStore`는 `BookStall`의 서브타입이므로 `BookStall`을 대신해서 협력할 수 있다.
+    - 따라서 `Customer`는 자연스럽게  `MegazineStore`에서도 책을 구매할 수 있다.
+    - `MegazineStore`의 `sell` 메서드는 `Megazine`의 인스턴스를 반환한다.
+    - 그리고 `Customer`의 `order` 메서드는 반환된 `Megazine`을 `Book` 타입의 인스턴스 변수에 대입한다.
+    - 업캐스팅에 의해 `Megzine` 역시 `Book`이기 때문에 `Customer`의 입장에서는 둘 사이의 차이를 알지 못할 것이다.
+    - `Megazine`의 인스턴스가 반환되더라도 `Customer`의 입장에서는 `Megazine` 역시 `Book`의 일종이기 때문에 `MegazineStore`로 `BookStall`을 치환하더라도 문제가 없는 것이다.
+    - `MegazineStall.sell`은 비록 반환 타입은 다르지만 정확하게 `BookStall.sell` 메서드를 대체할 수 있다.
+    - 이처럼 부모 클래스에서 구현된 메서드를 자식 클래스에서 오버라이딩할 때 부모 클래스에서 선언한 반환타입의 서브타입으로 반환타입을 지정할 수 있는 특성을 리턴 타입 공변성이라고 부른다.
+    - 간단히 말해 메서드를 구현한 클래스의 타입 계층 방향과 리턴 타입의 타입 계층 방향이 동일한 경우를 말한다.
+
+  ```
+  메서드 정의				파라미터 타입			
+  BookStall		-		Publisher
+  	↑						↑
+  MegzineStore	-   IndependentPublisher
+  ```
+
+  - 슈퍼타입 대신 서브타입을 반환하는 것은 더 강력한 사후조건을 정의하는 것과 같다.
+    - 앞서 리스코프 치환 원칙과 관련된 계약 규칙을 설명할 때 서브타입에서 메서드의 사후조건이 강화되더라도 클라이언트 입장에서는 영향이 없었다.
+    - 이와 마찬가지로 리턴타입 공변성은 계약에 의한 설계 관점에서 계약을 위반하지 않는다.
+    - 앞의 예에서 메서드를 구현한 슈퍼타입(`BookStall`)이 리턴값의 슈퍼타입(`Book`)을 반환할 경우 메서드를 오버라이딩하는 서브타입(`MegazineStore`)이 슈퍼타입에서 사용한 리턴 타입의 서브타입을 리턴 타입으로 사용하더라도 클라이언트(`Customer`)의 입장에서는 대체 가능한 것이다.
+
+
+
+- 서브타입의 메서드 파리미터는 반공변성을 가져야 한다.
+
+  - 책 판매 프로그램의 파라미터들
+    - `Customer`는 `BookStall`의 `sell` 메서드를 호출할 때 파라미터로 `IndependentPublisher` 인스턴스를 전달한다.
+    - 그리고 `BookStall`의 서브타입인 `MeazineStore`의 `sell` 메서드 역시 `IndependentPublisher` 타입의 인스턴스를 전달받도록 정의돼 있다.
+    - 여기서 `IndependentPublisher`가 `Publisher`의 서브타입이라는 사실을 기억해야 한다.
+    - 메서드의 파리머터가 `Publisher` 타입으로 정의돼 있더라도, 그 서브타입인 `IndependentPublisher`의 인스턴스를 전달하더라도 이전에 살펴본 업캐스팅을 통해 메서드가 정상적으로 동작한다.
+  - `BookStall`의 자식 클래스인 `MegazineStore`에서 `sell` 메서드의 파라미터를 아래와 같이 `IndependentPublisher`의 슈퍼타입인 `Publisher`로 변경한다고 가정해보자.
+    - 부모 클래스인 `BookStall`은 여전히 `IndependentPublisher`를 파라미터로 받는다.
+    - `Customer.order` 메서드는 `BookStall.sell` 메서드에 `IndependentPublisher` 인스턴스를 전달한다.
+    - `Bookstall` 대신 `MegazineStore` 인스턴스와 협력한다면 `IndependentPublisher` 인스턴스가 `MegazineStore.sell` 메서드의 파라미터로 전달될 것이다.
+    - 이 때 파라미터 타입이 슈퍼타입인 `Publisher` 타입으로 선언되어 있기 때문에 `IndependentPublisher` 인스턴스가 전달되더라도 문제가 없다.
+
+  ```python
+  class BookStall:
+      def sell(self, independent_publisher: IndependentPublisher):
+          return Book(independent_publisher)
+      
+  class MegazineStore(BookStall):
+      def sell(self, publisher: Publisher):
+          return Megazine(publisher=publisher)
+  ```
+
+  - 파라미터 타입 반공변성(parameter type contravariance)
+    - 이처럼 부모 클래스에서 구현된 메서드를 자식 클래스에서 오버라이딩할 때 파라미터 타입을 부모 클래스에서 사용한 파라미터 타입의 슈퍼타입을 지정할 수 있는 특성을 파라미터 반공변성이라고 부른다.
+    - 간단히 말해서 메서드를 정의한 클래스의 타입 계층(`BookStall-MegazineStore`)과 파라미터의 타입 계층(`Publisher`-`IndependentPublisher`)의 방향이 반대인 경우 서브타입 관계를 만족한다는 것을 의미한다.
+
+  ```
+  메서드 정의				파라미터 타입			
+  BookStall		-	IndependentPublisher
+  	↑						↓
+  MegzineStore	-		Publisher
+  ```
+
+  - 서브타입 대신 슈퍼타입을 파라미터로 받는 것은 더 약한 사전조건을 정의하는 것과 같다.
+    - 리스코프 치환 원칙과 관련된 계약 규칙을 설명할 때 서브타입에서 메서드의 사전조건이 약회되더라도 클라이언트 입장에서는 영향이 없었다.
+    - 파리머타 타입 반공변성은 계약에 의한 설계 관점에서 계약을 위반하지 않는다.
+    - 앞의 예에서 메서드를 구현한 슈퍼타입(`BookStall`)이 어떤 서브타입(`IndependentPublisher`)을 파라미터로 받을 경우 메서드를 오버라이딩하는 서브타입(`MegazineStore`)이 슈퍼타입에서 사용한 파라미터 타입의 슈퍼타입을 파리머타 타입으로 사용하더라도 클라이언트(`Customer`) 입장에서는 대체 가능한 것이다.
+
+
+
+- 리턴 타입 공변성과 파라미터 타입 공변성을 사전조건과 사후조건의 관점에서 설명할 수도 있다.
+  - 리턴 타입은 사후조건과 관련이 있으며 서브타입은 슈퍼타입에서 정의된 사후조건을 완화시킬 수는 없지만 강화할 수는 있다.
+    - 따라서 슈퍼타입에서 정의한 리턴 타입보다 더 강화된 서브타입 인스턴스를 반환하는 것이 가능하다.
+  - 서브타입은 슈퍼타입에서 정의한 것보다 더 강력한 사전조건을 정의할 수는 없지만 사전조건을 완화할 수는 있다.
+    - 사전조건은 파리미터에 대한 제약조건이므로 이것은 슈퍼타입에서 정의한 파라미터 타입에 대한 제약을 좀 더 완화할 수 있다는 것을 의미한다.
+    - 따라서 좀 더 완화된 파라미터에 해당하는 슈퍼타입을 파라미터로 받을 수 있는 것이다.
