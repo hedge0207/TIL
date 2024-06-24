@@ -211,3 +211,139 @@
   - 클래스가 아니라 타입에 집중해야 한다.
     - 중요한 것은 객체가 외부에 제공하는 행동, 즉 타입을 중심으로 객체들의 계층을 설계하는 것이다.
     - 타입이 아니라 클래스를 강조하면 객체의 퍼블릭 인터페이스가 아닌 세부 구현에 결합된 협력 관계를 낳게 된다.
+
+
+
+- 추상 클래스를 이용한 타입 계층 구현
+
+  - 클래스 상속을 이용해 구현을 공유하면서도 결합도로 인한 부작용을 피하는 방법이다.
+  - 영화 예매 정책에서는 할인 정책을 구현하기 위한 `DiscountPolicy`가 추상 클래스에 해당한다.
+
+  ```python
+  class DiscountPolicy(ABC):
+  
+      def __init__(self, conditions: list[DiscountCondition]):
+          self.conditions = conditions
+  
+      @abstractmethod
+      def get_discount_amount(self, screening: Screening) -> Money:
+          ...
+  
+      def calculate_discount_amount(self, screening: Screening):
+          for condition in self.conditions:
+              if condition.is_satisfied_by(screening):
+                  return self.get_discount_amount(screening)
+  
+          return Money.wons(0)
+  ```
+
+  - 추상 클래스인 `DiscountPolicy`를 상속 받는 구체 클래스를 추가함으로써 타입 계층을 구현할 수 있다.
+
+  ```python
+  class AmountDiscountPolicy(DiscountPolicy):
+  
+      def __init__(self, discount_amount: Money, conditions: list[DiscountCondition]):
+          super().__init__(conditions)
+          self.discount_amount = discount_amount
+  
+      def get_discount_amount(self, screening: Screening) -> Money:
+          return self.discount_amount
+  ```
+
+  - 구체 클래스로 타입을 정의해서 상속받는 방법과 추상 클래스로 타입을 정의해서 상속받는 방법 사이에는 두 가지 중요한 차이점이 있다.
+    - 첫 번째로 의존하는 대상의 추상화 정도가 다르다.
+    - 앞서 살펴본 `Phone`의 예시에서 자식 클래스인 `NightlyDiscountPhone`의 `calculate_fee` 메서드가 부모 클래스인 `Phone`의 `calcaulate_fee` 메서드의 구체적인 내부 구현에 강하게 결합된다.
+    - 따라서 부모 클래스의 내부 구현이 변경될 경우 자식 클래스도 함께 변경될 가능성이 높다.
+    - 이에 비해 추상클래스인 `DiscountPolicy`의 경우 자식 클래스인 `AmountDiscountPolicy`가 부모 클래스의 내부 구현이 아닌 추상 메서드의 시그니처에만 의존한다.
+    - 이 경우 자식 클래스들은 부모 클래스가 어떤 식으로 구현되어 있는지 알 필요가 없으며, 단지 추상 메서드로 정의된 `get_discount_amount` 메서드를 오버라이딩하면 된다는 사실에만 의존해도 무방하다.
+    - 두 번째로 상속을 사용하는 의도가 다르다.
+    - `Phone`은 상속을 염두에 두고 설계된 것이 아니므로 미래의 확장을 위한 어떤 준비도 되어 있지 않다.
+    - 그에 반해 `DiscountPolicy`는 처음부터 상속을 염두에 두고 설계된 클래스로, 추상클래스이기에 자신의 인스턴스를 직접 생성할 수 없다.
+    - `DiscountPolicy`의 유일한 목적은 자식 클래스를 추가하는 것이며, 추상 메서드를 제공함으로써 상속 계층을 쉽게 확장할 수 있게 하고 결합도로 인한 부작용을 박징할 수 있는 안전망을 제공한다.
+
+
+
+- 추상 클래스와 인터페이스 결합하기
+
+  - 클래스만을 이용한 방법에는 한계가 있다.
+    - 대부분의 객체지향 언어들은 단일 상속만 지원한다.
+    - 이 경우 여러 타입으로 분류되는 타입이 문제가 될 수 있는데 오직 클래스만을 이용해 타입을 구현할 경우 다중 상속이 꼭 필요하기 때문이다.
+    - 클래스와 단일 상속만으로는 이 문제를 해결할 수 없기 때문에 대부분의 경우에 해결 방법은 타입 계층을 오묘한 방식으로 비트는 것이다.
+    - Java의 경우 인터페이스를 이용하면 다중 상속 문제를 해결할 수 있는데, 클래스가 구현할 수 있는 인터페이스의 수에는 제한이 없기 때문이다.
+  - 인터페이스만을 이용한 방법에도 단점은 있다.
+    - Java 8 이전에서 제공하는 인터페이스에는 구현 코드를 포함시킬 수 없기 때문에 인터페이스만으로는 중복 코드를 제거하기 어렵다는 접이다.
+    - 따라서 효과적인 접근 방법은 인터페이스를 이용해 타입을 정의하고 특정 상속 계층에 국한된 코드를 공유할 필요가 있을 경우 추상 클래스를 이용해 코드 중복을 방지하는 것이다.
+    - 이런 형태로 추상 클래스를 사용하는 방식을 골격 구현 추상 클래스(skeletal implementation abstract class)라고 부른다.
+  - 인터페이스와 추상 클래스 결합
+    - `DiscountPolicy` 타입은 추상 클래스를 이용해서 구현했기 때문에 `DiscountPolicy` 타입에 속하는 모든 객체들은 하나의 상속 계층 안에 묶여야 하는 제약을 가진다.
+    - 이제 상속 계층에 대한 제약을 완화시켜 `DiscountPolicy`타입으로 분류될 수 있는 객체들이 구현 시에 서로 다른 상속 계층에 속하도록 만들어 볼 것이다.
+    - 이를 위한 가장 좋은 방법은 인터페이스와 추상 클래스를 결합하는 것이다.
+    - `DiscountPolicy` 타입을 추상 클래스에서 인터페이스로 변경하고 공통 코드를 담을 골격 구현 추상 클래스인 `DefaultDiscountPolicy`를 추가함으로써 상속 계층이라는 굴레를 벗어날 수 있다.
+
+  ```python
+  class DiscountPolicy(ABC):
+  	
+      @abstractmethod
+      def calculate_discount_amount(self, screening: Screening):
+          ...
+          
+  class DefaultDiscountPolicy(DiscountPolicy):
+      def __init__(self, conditions: list[DiscountCondition]):
+          self.conditions = conditions
+      
+      @abstractmethod
+      def get_discount_amount(self, screening: Screening) -> Money:
+          ...
+  
+      def calculate_discount_amount(self, screening: Screening):
+          for condition in self.conditions:
+              if condition.is_satisfied_by(screening):
+                  return self.get_discount_amount(screening)
+  
+          return Money.wons(0)
+  ```
+
+  - 그 후 `AmountDiscountPolicy`의 부모 클래스를 `DefaultDiscountPolicy`로 변경한다.
+
+  ```python
+  class AmountDiscountPolicy(DefaultDiscountPolicy):
+  
+      def __init__(self, discount_amount: Money, conditions: list[DiscountCondition]):
+          super().__init__(conditions)
+          self.discount_amount = discount_amount
+  
+      def get_discount_amount(self, screening: Screening) -> Money:
+          return self.discount_amount
+  ```
+
+  - 인터페이스와 추상 클래스를 함께 사용하는 방식은 추상 클래스만 사용하는 방법에 비해 두 가지 장점이 있다.
+    - 다양한 구현이 필요할 경우 새로운 추상 클래스를 추가해서 쉽게 해결할 수 있다.
+    - 이미 부모 클래스가 존재하는 클래스라고 하더라도 인터페이스를 추가함으로써 새로운 타입으로 쉽게 확장할 수 있다.
+    - 만약 `DiscountPolicy` 타입이 인터페이스가 아닌 추상 클래스로 구현되어 있는 경우 이 문제를  해결할 수 있는 유일한 방법은 상속 계층을 다시 조정하는 것뿐이다.
+  - 요약하면 아래와 같다.
+    - 상속 계층에 얽매이지 않는 타입 계층을 요구한다면 인터페이스로 타입을 정의한 후 추상 클래스로 기본 구현을 제공해서 중복 코드를 제거하면 된다.
+    - 만약 이런 복잡성이 필요하지 않다면 타입을 정의하기 위해 인터페이스나 추상 클래스 둘 중 하나만 사용해야 한다.
+    - 타입의 구현 방법이 단 한 가지거나 상속 계층만으로도 타입 계층을 구현하는 데 무리가 없다면 클래스나 추상 클래스를 이용해 타입을 정의하는 것이 더 좋다.
+    - 그 외의 상황이라면 인터페이스를 사용하는 것을 고려해야 한다.
+
+
+
+- 덕 타이핑 사용하기
+
+  - 덕 타이핑은 주로 동적 언어에서 사용하는 방법으로 아래와 같은 덕 테스트(duck test)를 프로그래밍 언어에 적용한 것이다.
+
+  > 어떤 새가 오리처럼 걷고, 오리처럼 헤엄치며, 오리처럼 꽥꽥 소리를 낸다면 나는 이 새를 오리라고 부를 것이다 - 제임스 윗콤 릴리
+
+  - 덕 타이핑은 객체가 어떤 인터페이스에 정의된 행동을 수행할 수만 있다면 그 객체를 해당 타입으로 분류해도 된다는 것이다.
+    - 덕 타이핑은 특정 크래스에 종속되지 않은 퍼블릭 인터페이스다.
+    - 여러 클래스를 가로지르는 이런 인터페이스는 클래스에 대한 의존을 메시지에 대한 의존으로 대치시켜 애플리케이션을 굉장히 유연하게 만들어준다.
+    - 덕 타이핑을 사용하면 메시지 수준으로 결합도를 낮출 수 있기 때문에 유연할 설계를 얻을 수 있다.
+    - 다만, 덕 타이핑을 사용하면 컴파일 시점에 발견할 수 있는 오류를 실행 시점으로 미루게 되기 때문에 코드의 안전성을 약화시킬 수 있다.
+  - 컨텍스트 독립성과 덕 타이핑
+    - [의존성 관리하기] 장에서 유연한 설계의 한 가지 조건으로 컨텍스트 독립성을 살펴봤다.
+    - 인터페이스가 클래스보다 더 유연한 설계를 가능하게 해주는 이유는 클래스가 정의하는 구현이라는 컨텍스트에 독립적인 코드를 작성할 수 있게 해주기 때문이다.
+    - 덕 타이핑은 여기서 한 걸음 더 나아간다.
+    - 단지 메서드의 시그니처만 동일하면 명시적인 타입 선언이라는 컨텍스트를 제거할 수 있다.
+    - 덕 타이핑은 클래스나 인터페이스에 대한 의존성를 메시지에 대한 의존성으로 대체한다.
+    - 결과적으로 낮은 결합도를 유지하고 변경에 유연하게 대응할 수 있다.
+
