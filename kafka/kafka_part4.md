@@ -30,12 +30,10 @@
 
       - 위 링크에서 zip 파일을 다운 받을 수 있다.
       - 혹은 지금 다운 받지 않고 dockerfile을 build할 때 설치하는 것도 가능하다.
-
-
-    - docker image 생성하기
-    
-      - 아래와 같이 dockerfile을 작성하고 image를 build한다.
-
+  
+  - Docker image 생성하기
+    - 아래와 같이 dockerfile을 작성하고 image를 build한다.
+  
   ```dockerfile
   # 위에서 zip 파일을 다운 받은 경우
   FROM confluentinc/cp-server-connect-base:latest
@@ -47,11 +45,11 @@
   FROM confluentinc/cp-server-connect-base:latest
   RUN confluent-hub install confluentinc/kafka-connect-elasticsearch:latest
   ```
-
-    - docker-compose.yml 파일 작성하기
-    
-      > 전체 설정은 https://github.com/confluentinc/cp-demo의 docker-compose.yml 파일에서 확인 가능하다.
-
+  
+  - docker-compose.yml 파일 작성하기
+  
+  > 전체 설정은 https://github.com/confluentinc/cp-demo의 docker-compose.yml 파일에서 확인 가능하다. 
+  
   ```yaml
   connect:
       image: <위에서 build한 image명>
