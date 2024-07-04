@@ -203,6 +203,51 @@
 
 
 
+## Kafka connect worker configuration
+
+> 전체 목록은 아래 문서 참조
+>
+> https://docs.confluent.io/platform/current/connect/references/allconfigs.html
+
+- `bootstrap.server`
+  - Kafka cluster에 연결하기 위한 `host:port`의 배열을 받는다.
+  - 정보
+    - Type: list
+    - Defailt: [localhost:9092]
+
+
+
+- `key.converter`
+  - Connect data의 key에 사용할 converter class를 설정한다.
+    - Source connector가 topic으로 key를 보낼 때와, sink connector가 topic에서 읽어올 때 모두 적용된다.
+  - 정보
+    - Type: class
+    - Default: X
+
+
+
+- `key.value`
+  - Connect data의 value에 사용할 converter class를 설정한다.
+    - Source connector가 topic으로 key를 보낼 때와, sink connector가 topic에서 읽어올 때 모두 적용된다.
+  - 정보
+    - Type: class
+    - Default: X
+
+
+
+- `offset.storage.file.filename`
+  - Kafka connector들 중에는 상태를 저장해야 하는 connector가 있다.
+    - 예를 들어 jdbc source connector를 사용할 때 mode를 timestamp 혹은 incrementing으로 설정할 경우 각각 `timestamp.column.name`, `incrementing.column.nam`의 값을 저장하고 있어야한다.
+    - 따라서 이 값을 저장해둘 곳이 필요하다.
+  - Kafka connect의 설정 파일(`connect-standalone.properties`)의 `offset.storage.file.filename` 설정은 위와 같은 값들을 저장할 파일의 경로를 지정하는 옵션이다.
+    - 해당 경로에 파일을 생성하고, 생성한 파일에 상태를 저장한다.
+    - 이 옵션은 오직 standalone mode에서만 설정이 가능하며, distributed mode에서는 설정할 수 없다.
+  - Connector가 삭제되더라도 파일은 삭제되지 않으며, 파일에 저장된 상태도 삭제되지 않는다.
+
+
+
+
+
 ## Converter
 
 > https://www.confluent.io/blog/kafka-connect-deep-dive-converters-serialization-explained/#internal-converters

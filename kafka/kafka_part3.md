@@ -289,16 +289,105 @@
 
 
 
-- Topic 생성하기
-
-  ```bash
-  $ docker exec -t <컨테이너 명> kafka-topics.sh --bootstrap-server <host 명>:9092 --create --topic <토픽 이름>
+- Cluster 구성하기
+  - 아래와 같이 docker-compose.yml 파일을 작성한다.
+    - 테스트용이므로 zookeeper는 하나만 생성한다.
+  
+  ```yaml
+  version: '3'
+  
+  services:
+  
+    test-zoopkeeper:
+      container_name: test-zoopkeeper
+      image: confluentinc/cp-zookeeper:latest
+      environment:
+        - ZOOKEEPER_CLIENT_PORT=2181
+      networks:
+        - test-kafka
+      restart: always
+  
+    test-kafka1:
+      image: confluentinc/cp-kafka:7.5.3
+      container_name: test-kafka1
+      environment:
+        - KAFKA_BROKER_ID=1
+        - KAFKA_ZOOKEEPER_CONNECT=test-zoopkeeper:2181
+        - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+        - KAFKA_LISTENERS=INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:29092
+        - KAFKA_ADVERTISED_LISTENERS=INTERNAL://<host_ip>:9099,EXTERNAL://test-kafka1:29092
+        - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
+        - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=3
+      ports:
+        - 9099:9092
+        - 29094:29092
+      depends_on:
+        - test-zoopkeeper
+      networks:
+        - test-kafka
+      restart: always
+    
+    test-kafka2:
+      image: confluentinc/cp-kafka:7.5.3
+      container_name: test-kafka2
+      environment:
+        - KAFKA_BROKER_ID=2
+        - KAFKA_ZOOKEEPER_CONNECT=test-zoopkeeper:2181
+        - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+        - KAFKA_LISTENERS=INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:29092
+        - KAFKA_ADVERTISED_LISTENERS=INTERNAL://test-kafka2:9092,EXTERNAL://test-kafka2:29092
+        - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
+        - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=3
+      depends_on:
+        - test-zoopkeeper
+      networks:
+        - test-kafka
+      restart: always
+    
+    test-kafka3:
+      image: confluentinc/cp-kafka:7.5.3
+      container_name: test-kafka3
+      environment:
+        - KAFKA_BROKER_ID=3
+        - KAFKA_ZOOKEEPER_CONNECT=test-zoopkeeper:2181
+        - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+        - KAFKA_LISTENERS=INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:29092
+        - KAFKA_ADVERTISED_LISTENERS=INTERNAL://test-kafka3:9092,EXTERNAL://test-kafka3:29092
+        - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
+        - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=3
+      depends_on:
+        - test-zoopkeeper
+      networks:
+        - test-kafka
+      restart: always
+  
+    test-kafka-ui:
+      container_name: test-kafka-ui
+      image: provectuslabs/kafka-ui:latest
+      ports:
+        - 8091:8080
+      environment:
+        DYNAMIC_CONFIG_ENABLED: true
+        KAFKA_CLUSTERS_0_NAME: test
+        KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: test-kafka1:29092
+      networks:
+        - test-kafka
+      restart: always
+  
+  
+  networks:
+    test-kafka:
+      driver: bridge
   ```
+  
+  - 실행한다.
+  
+  ```bash
+  $ docker compose up
+  ```
+  
 
 
-
-- cluster 구성하기
-  - `KAFKA_ZOOKEEPER_CONNECT` 정보만 동일하게 주면 cluster가 구성된다.
 
 
 
