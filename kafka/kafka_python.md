@@ -8,7 +8,6 @@
     - Pure python이기에 confluent-kafka-python에 비해 속도는 느리다.
     - 사용법이 직관적이고 간결하다.
   - aiokafka
-    - Benchmark 상으로 성능이 가장 좋다.
     - kafka-python 기반으로 만들어졌다.
 
 
@@ -133,7 +132,7 @@
   ```
   
   - 결과
-    - 100만개의 message를 consume하면서 message 1개를 poll하는데 걸리는 평균 시간을 측정한 것이다.
+    - 100만개의 message를 consume하면서 message 1개를 pull하는데 걸리는 평균 시간을 측정한 것이다.
   
   |                      | confluent-kafka        | kafka-python          | aiokafka               |
   | -------------------- | ---------------------- | --------------------- | ---------------------- |

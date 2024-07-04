@@ -559,33 +559,34 @@
 
   - `mode`
     - `bulk`: table 전체를 bulk한다.
-    - `incrementing`: 각 table에서 증가하는 column을 기준으로 새롭게 추가된 row들만 추출하며, 수정되거나 삭제 된 row들은 추출이 불가능하다.
-    - `timestamp`: timestamp-like clumn을 사용하여 새로 추가되거나 변경된 row들을 추출한다.
+    - `incrementing`: 각 table에서 증가하는 column을 기준으로 새롭게 추가된 row들만 추출하며, 수정되거나 삭제 된 row들은 추출이 불가능하다(`incrementing.column.name`으로 column을 지정할 수 있다).
+    - `timestamp`: timestamp-like column을 사용하여 새로 추가되거나 변경된 row들을 추출한다.
     - `timestamp+incrementing`: timestamp-like column을 사용하여 추가 되거나 변경된 row들을 탐지하고, 점차 증가하는 고유한 column을 사용하여 각 row들이 고유한 stream offset을 할당 받을 수 있게 한다.
-
-
-  - `connection` 관련 옵션들
-    - `url`: JDBC connection URL을 작성하며, RDBMS의 종류에 따라 형식이 다를 수 있다.
-    - `user`: JDBC connection user를 설정한다.
-    - `password`: JDBC connection password를 설정한다.
-  - `table` 관련 옵션
-    - 기본적으로 JDBC source connector는 system table이 아닌 모든 table을 대상으로 data를 가져온다.
-    - 그러나, `table.whitelist` 혹은 `table.blacklist`를 통해 data를 가져올 table을 설정할 수 있다.
-    - 둘 중 하나의 값만 설정이 가능하다.
-    - 두 설정 모두 컴마로 구분 된 table명을 String으로 받는다(e.g. `"Product, User, Email"`)
-    - `table.whitelist`: data를 가져올 table들을 나열한다.
-    - `table.blacklist`: data를 가져오지 않을 table들을 나열한다.
-
-
+  
+  
+    - `connection` 관련 옵션들
+      - `url`: JDBC connection URL을 작성하며, RDBMS의 종류에 따라 형식이 다를 수 있다.
+      - `user`: JDBC connection user를 설정한다.
+      - `password`: JDBC connection password를 설정한다.
+  
+  
+    - `table` 관련 옵션
+      - 기본적으로 JDBC source connector는 system table이 아닌 모든 table을 대상으로 data를 가져온다.
+      - 그러나, `table.whitelist` 혹은 `table.blacklist`를 통해 data를 가져올 table을 설정할 수 있다.
+      - 둘 중 하나의 값만 설정이 가능하다.
+      - 두 설정 모두 컴마로 구분 된 table명을 String으로 받는다(e.g. `"Product, User, Email"`)
+      - `table.whitelist`: data를 가져올 table들을 나열한다.
+      - `table.blacklist`: data를 가져오지 않을 table들을 나열한다.
     - `query`
       - 수집 대상 row들을 조회하는 query를 설정한다.
       - Query에 table도 지정하므로, 이 값을 설정하면 모든 table에서 data를 가져오지는 않는다.
       - 일반적으로 특정 row만 수집하고자 하거나, table들을 join하거나, table 내의 일부 column들만 필요할 경우 사용한다.
       - `mode`가 `bulk`일 경우 `WHERE` 절을 사용할 수 있으며, 다른 `mode`를 사용할 경우 가능할 수도 있고, 불가능 할 수 도 있다.
-
-  - `poll.interval.ms`
-    - 각 table에서 새로운 data를 가져올 주기를 ms단위로 설정한다.
-      - 기본값은 100ms이다.
+  
+    - `poll.interval.ms`
+      - 각 table에서 새로운 data를 가져올 주기를 ms단위로 설정한다.
+        - 기본값은 100ms이다.
+  
 
 
 
