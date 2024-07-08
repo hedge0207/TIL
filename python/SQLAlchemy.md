@@ -804,3 +804,138 @@
 
 
 
+
+
+# CRUD 실행하기
+
+## Insert
+
+- Insert 실행하기
+
+  - `insert()` method를 실행하여 새로운 data를 삽입하는 것이 가능하다.
+    - `insert()` method는 `Insert`의 instance를 생성하며, `Insert`는 SQL의 INSERT문을 표현하는 class이다.
+
+  ```python
+  from sqlalchemy import String, insert, Table, Column, Integer, String, MetaData
+  
+  
+  metadata = MetaData()
+  
+  user_table = Table(
+      "user_account",
+      metadata,
+      Column("id", Integer, primary_key=True),
+      Column("name", String(30)),
+      Column("fullname", String),
+  )
+  
+  # insert()는 Insert class의 instance를 반환하며 Insert instance의 values() method를 사용해 값을 설정한다.
+  stmt = insert(user_table).values(name="spongebob", fullname="Spongebob Squarepants")
+  print(stmt)		# INSERT INTO user_account (name, fullname) VALUES (:name, :fullname)
+  ```
+
+  - `compile()` method를 사용하여 문자열화 된 형식을 얻을 수 있다.
+
+  ```python
+  compiled = stmt.compile()
+  print(compiled.params)		# {'name': 'spongebob', 'fullname': 'Spongebob Squarepants'}
+  ```
+
+  - SQL문 실행하기
+    - INSERT문은 row를 반환하지 않지만, RETURNING 절을 지원하는 DB의 경우 값을 반환하기도 한다.
+
+  ```python
+  # table 생성
+  user_table.metadata.create_all(engine)
+  
+  # SQL문 실행
+  with engine.connect() as conn:
+      result = conn.execute(stmt)
+      conn.commit()
+      print(result.inserted_primary_key)		# (1,)
+  ```
+
+  - INSERT는 보통 VALUES 절을 자동으로 생성한다.
+    - 위 예시에서는 `Insert.values()`를 사용하여 값을 설정해줬다.
+    - 값을 설정하지 않더라도 VALUES 절 자체는 추가가 된다.
+
+  ```python
+  # VALUES 절이 자동으로 추가된 것을 확인할 수 있다.
+  print(insert(user_table))		# INSERT INTO user_account (id, name, fullname) VALUES (:id, :name, :fullname)
+  ```
+
+  - 이를 이용하여 아래와 같이 SQL문을 실행할 때 값을 설정하는 것이 가능하다.
+    - 사실 이 방식이 보다 일반적인 방식이다.
+    - `execute()`의 첫 번째 인자로 `Insert`의 instance를 넘기고, 두 번째 인자로 삽입할 값을 넘기면, SQLAlchemy가 이들을 조합하여 SQL문을 만든다.
+
+  ```python
+  with engine.connect() as conn:
+      result = conn.execute(
+          insert(user_table),
+          [
+              {"name": "sandy", "fullname": "Sandy Cheeks"},
+              {"name": "patrick", "fullname": "Patrick Star"},
+          ],
+      )
+      conn.commit()
+  ```
+
+
+
+- INSERT...RETURNING
+
+  - RETURNING 절을 지원하는 DB를 대상으로 사용할 때는, RETUNING 절이 자동으로 포함된다.
+    - RETURNING 절을 지원하는 DB들은 RETURNING 절에서 기본 값으로 반환하는 값(일반적으로 마지막으로 insert된 data의 primary key)을 가지고 있다.
+    - SQLite는 RETURNING절을 지원하며, RETURNING 절이 있을 떄 기본 값으로 마지막으로 insert된 data의 primary key를 반환하도록 되어 있다.
+    - SQLite를 사용한 위 예시에서 RETURNING절이 자동으로 포함되었고, RETURNING절이 반환하는 기본 값인 마지막으로 insert된 data의 primary key가 반환되었다.
+  - 아래와 같이 명시적으로 지정하는 것도 가능하다.
+    - `Insert.returning()` method를 사용하면 된다.	
+
+  ```python
+  insert_stmt = insert(user_table).returning(
+      user_table.c.id, user_table.c.name
+  )
+  print(insert_stmt)		
+  # INSERT INTO user_account (id, name, fullname) VALUES (:id, :name, :fullname) RETURNING user_account.id, user_account.name
+  ```
+
+  - INSERT..FROM SELECT와 조합하는 것도 가능하다.
+
+  ```python
+  select_stmt = select(user_table.c.id, user_table.c.name)
+  insert_stmt = insert(user_table).from_select(
+      ["id", "name"], select_stmt
+  )
+  print(insert_stmt.returning(user_table.c.id, user_table.c.name))
+  """
+  INSERT INTO user_account (id, name) SELECT user_account.id, user_account.name 
+  FROM user_account RETURNING user_account.id, user_account.name
+  """ 
+  ```
+
+
+
+
+- INSERT...FROM SELECT
+
+  - `Insert.from_select()` method를 사용하여 SELECT문으로 조회한 문서를 바로 삽입할 수 있다.
+
+  ```python
+  # SELECT문을 작성하고
+  select_stmt = select(user_table.c.id, user_table.c.name + "@aol.com")
+  # SELECT문으로 조회한 row들을 삽입한다.
+  insert_stmt = insert(address_table).from_select(
+      ["user_id", "email_address"], select_stmt
+  )
+  print(insert_stmt)
+  """
+  INSERT INTO address (user_id, email_address)
+  SELECT user_account.id, user_account.name || :name_1 AS anon_1
+  FROM user_account
+  """
+  ```
+
+  - 일반적으로 table을 copy할 때 사용한다.
+
+
+
