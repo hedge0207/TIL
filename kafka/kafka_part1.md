@@ -1,6 +1,6 @@
 # Kafka란
 
-## kafka 개요
+## Kafka 개요
 
 - Kafka
   - 링크드인에서 스칼라로 개발한 메시지 프로젝트
@@ -537,9 +537,60 @@
 
 
 
-# 참고
+# Streams and Tables
 
-- https://galid1.tistory.com/793
-- https://needjarvis.tistory.com/category/%EB%B9%85%EB%8D%B0%EC%9D%B4%ED%84%B0%20%EB%B0%8F%20DB/%EC%B9%B4%ED%94%84%EC%B9%B4%28Kafka%29
-- https://kafka-python.readthedocs.io/en/1.1.0
-- https://kontext.tech/column/streaming-analytics/474/kafka-topic-partitions-walkthrough-via-python#h__1
+> https://www.confluent.io/blog/kafka-streams-tables-part-1-event-streaming/
+
+- Stream과 Table
+
+  - Event
+    - Event란 발생한 무언가를 말하며, 발생한 무엇이든 event가 될 수 있다.
+    - Event는 기본적으로 key, value, timestamp로 구성된다.
+  - Event Stream
+    - Event는 event stream platform(Kafka)를 통해서 event stream으로 capture된다.
+    - Event stream은 순차적인 event들을 기록하여 event들의 history를 형성한다.
+    - 즉 history는 순차적인 event들의 발생 내역이다.
+    - 예를 들어 체스 게임을 기록하는 것을 생각해보자.
+    - 각 말들이 움직이는 것이 event에 해당하고, 각 말들의 움직임으로 순차적으로 기록하면 순차적인 event들의 발생 내역이 된다.
+    - Event stream은 과거와 현재를 모두 표현한다.
+  - Table
+    - Event stream이 event들의 history를 의미한다면, table은 특정 시점의 상태를 의미한다.
+    - 체스를 예로 들면, 체스 판의 현재 상태라고 할 수 있다.
+    - Table은 event stream의 view이며, 이 view는 새로운 event가 발생할 때 마다 지속적으로 update된다.
+  - Event Stream과 Table의 비교
+    - Stream은 변하지 않는 data를 제공하는 반면, Table은 변할 수 있는 data를 제공한다.
+    - Stream은 오직 새로운 event의 insert만 가능할뿐, 이미 추가된 event의 변경은 불가능한 반면, Table은 새로운 event(row)의 insert뿐 아니라 이미 삽입된 data(row)의 삭제, 변경도 가능하다.
+    - Stream은 같은 event를 식별할 수 있는 고유한 key가 존재하지 않는 반면, table은 같은 event를 식별할 수 있는 고유한 key가 존재한다.
+    - 아래 표는 상황별 stream과 table의 행동을 나타낸다.
+
+  |                                                        | Stream | Table  |
+  | ------------------------------------------------------ | ------ | ------ |
+  | foo라는 key를 가진 새로운 event가 발생한다.            | Insert | Insert |
+  | foo라는 key를 가진 다른 event가 발생한다.              | Insert | Update |
+  | foo라는 key를 가지고, value는 null인 event가 발생한다. | Insert | Delete |
+  | Key가 null인 event가 발생한다.                         | Insert | Ignore |
+
+  - Stream과 Table의 이원성(duality)
+    - Stream을 집계함으로써 stream을 table로 변환할 수 있다.
+    - 이는 체스의 모든 말이 이동한 경로를 복기하면 현재 체스 판의 상태(table)를 재현할 수 있는 것과 같은 원리이다.
+    - Table에 발생한 변경 사항들(insert, update, delete)을 capture하여 table을 stream(change stream)으로 변환할 수 있다.
+    - 이 과정은 일반적으로 change data capture(CDC)라 부른다.
+    - 체스 게임의 예에서는 마지막으로 이동된 말의 이동을 모두 기록하거나, 말의 마지막 이동 전의 전체 체스판의 상태와 마지막 이동 후의 체스판의 상태를 비교하여 변경 사항을 기록하면 stream이 되는 것과 같은 원리이다.
+
+
+
+- Kafka의 storage
+  - Kafka는 data를 serialize해서 쓰고, deserialize해서 읽는다.
+    - 즉, 사람이 읽을 수 있는 형태에서 binary data로 변환하여 쓰고, 읽어 올 때는 binary data에서 사람일 읽을 수 있는 형태로 읽어 온다.
+    - 주의할 점은 serialization과 deserialization 모두 Kafka client의 역할이라는 점이다.
+    - 즉 producing과 consuming하는 쪽에서 serialization과 deserialization을 수행해야한다.
+    - JSON, Apache Avro, Protobuf 등의 다양한 serialization format을 사용할 수 있다.
+    - Kafka broker는 message의 serialization format에 대해서는 모르는 상태로 오직 key와 value로 이루어진 byte값의 쌍으로 취급한다.
+    - 이로 인해 serialization format에 얽매이지 않는 확장이 가능하다.
+    - Kafka broker에서 serialization과 deserialization을 처리하지 않는 이유는, 본연의 임무에 더 집중하여, CPU 등의 자원을 보다 효율적으로 사용하기 위함이다.
+  - 저장소는 여러 개의 partition으로 분할된다.
+    - 즉, 하나의 topic은 여러 곳의 broker로 분할된다.
+    - 이는 확장성을 위한 것으로, client application이 여러 broker로부터 동시에 data를 읽어올 수 있게 해준다.
+    - Topic을 생성할 때 parition의 개수를 정해야 하며, 각 parition은 topic의 전체 데이터 중 일부를 가진다.
+    - 또한, 고가용성을 위해서는 각각의 parition이 복제되어 각기 다른 broker에 저장되어야 한다.
+    - Partition은 Kafka의 가장 기초가 되는 개념으로 확장성, 유연성, 장애 허용성이 모두 parition을 통해 보장된다. 
