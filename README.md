@@ -318,6 +318,8 @@
 
 - Data Flow Diagram(DFD)
 
+- MSA와 Event Driven
+
 - Shorts
 
 <br/>
@@ -486,6 +488,12 @@
 - MySQL의 자료형
 
 - MySQL 프로그래밍
+
+<br/>
+<br/>
+
+### mysql_part2
+- DB 복사
 
 <br/>
 <br/>
@@ -680,8 +688,6 @@
 
 # django
 ## django_part1
-- 목차
-
 - Django
 
 - MTV기초
@@ -708,8 +714,6 @@
 <br/>
 
 ## django_part2
-- 목차
-
 - 사용자 인증 관리
 
 - 데이터베이스
@@ -726,8 +730,6 @@
 <br/>
 
 ## django_part3
-- 목차
-
 - 미디어 파일 관리
 
 - Query 최적화
@@ -747,14 +749,6 @@
 - DB와 Django 연동하기
 
 - Django allauth
-
-<br/>
-<br/>
-
-## 기본 명령어
-- 명령어
-
-- Django 관련 명령어
 
 <br/>
 <br/>
@@ -1006,10 +1000,6 @@
 
 - Analyzer 수정
 
-- auto completion
-
-- completion suggester
-
 <br/>
 <br/>
 
@@ -1222,9 +1212,13 @@
 ## fastapi_part2
 - Response model
 
+- Lifespan Events
+
 - Testing
 
 - Dependencies
+
+- SQLAlchemy와 함께 사용하기
 
 - Backround Tasks
 
@@ -1234,7 +1228,7 @@
 <br/>
 
 ## fastapi_part3
-- fastapi security
+- FastAPI security
 
 - Nginx + FastAPI
 
@@ -1351,18 +1345,12 @@
 <br/>
 
 # java
-## install_jdk
-- 설치
-
-<br/>
-<br/>
-
 ## java_part1
 - JAVA 기초
 
 - 자료형
 
-- 리터럴
+- 상수와 리터럴
 
 - 연산자
 
@@ -1372,7 +1360,7 @@
 <br/>
 
 ## java_part2
-- 목차
+- 배열
 
 - 클래스
 
@@ -1390,8 +1378,6 @@
 <br/>
 
 ## java_part3
-- 목차
-
 - 예외처리
 
 - 입출력
@@ -1536,7 +1522,7 @@
 ## kafka_part1
 - Kafka란
 
-- 참고
+- Streams and Tables
 
 <br/>
 <br/>
@@ -1636,10 +1622,6 @@
 
 - -dev 패키지
 
-<br/>
-<br/>
-
-## linux_part3
 - systemd
 
 - umask
@@ -1755,6 +1737,42 @@
 <br/>
 <br/>
 
+### chapter13
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+### chapter14
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+### chapter16
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
 ### chapter2
 <br/>
 <br/>
@@ -1817,6 +1835,18 @@
 
 - 객체지향 프로그래밍
 
+- 핵심
+
+<br/>
+<br/>
+
+## Object_part10
+- 타입 계층의 구현
+
+- 동적인 협력, 정적인 코드
+
+- 핵심
+
 <br/>
 <br/>
 
@@ -1825,11 +1855,15 @@
 
 - 설계 품질과 트레이드오프
 
+- 핵심
+
 <br/>
 <br/>
 
 ## Object_part3
 - 책임 할당하기
+
+- 핵심
 
 <br/>
 <br/>
@@ -1839,6 +1873,8 @@
 
 - 객체 분해
 
+- 핵심
+
 <br/>
 <br/>
 
@@ -1846,6 +1882,8 @@
 - 의존성 관리하기
 
 - 유연한 설계
+
+- 핵심
 
 <br/>
 <br/>
@@ -1855,11 +1893,35 @@
 
 - 합성과 유연한 설계
 
+- 핵심
+
 <br/>
 <br/>
 
 ## Object_part7
 - 다형성
+
+- 서브클래싱과 서브타이핑
+
+- 핵심
+
+<br/>
+<br/>
+
+## Object_part8
+- 일관성 있는 협력
+
+- 디자인 패턴과 프레임워크
+
+- 핵심
+
+<br/>
+<br/>
+
+## Object_part9
+- 계약에 의한 설계
+
+- 핵심
 
 <br/>
 <br/>
@@ -2090,6 +2152,14 @@
 <br/>
 <br/>
 
+## SQLAlchemy
+- 개요
+
+- CRUD 실행하기
+
+<br/>
+<br/>
+
 <br/>
 <br/>
 
@@ -2240,16 +2310,12 @@
 <br/>
 
 ## spring_part1
-- 목차
-
 - 스프링 기초 개념
 
 <br/>
 <br/>
 
 ## spring_part2
-- 목차
-
 - 순수 자바로만 개발하기
 
 - IoC와 DI와 컨테이너
@@ -2262,8 +2328,6 @@
 <br/>
 
 ## spring_part3
-- 목차
-
 - 싱글톤 컨테이너
 
 - 컴포넌트 스캔
@@ -2272,8 +2336,6 @@
 <br/>
 
 ## spring_part4
-- 목차
-
 - 의존 관계 자동 주입
 
 - 빈 생명주기 콜백
