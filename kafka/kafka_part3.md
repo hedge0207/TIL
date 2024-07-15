@@ -402,52 +402,72 @@
 
 
 
-- Kafka Listener
+- Kafka Listeners
 
   > https://www.confluent.io/blog/kafka-client-cannot-connect-to-broker-on-aws-on-docker-etc/
   >
   > https://www.confluent.io/blog/kafka-listeners-explained/?utm_source=github&utm_medium=rmoff&utm_campaign=ty.community.con.rmoff-listeners&utm_term=rmoff-devx
+
+  - Kafka는 크게 두 개의 통신이 가능해야 한다.
+    - Cluster 내의 broker들 사이의 통신
+    - Cluster 외부의 client(consumer, producer)들과의 통신
+
+  - Client에서 Kafka cluster에 접근하기 위해 설정하는 정보는 cluster의 broker들에 대한 metadata를 받아오기 위한 정보이지, 실제 data에 접근하기 위한 정보가 아니다.
+    - 예를 들어 아래와 같이 Python client(producer)에 Kafka에 대한 접속 정보를 설정했다고 생각해보자.
+    - 이 때 client에 설정한 `10.11.22.33:9092`라는 접속 정보는 실제 broker에 event를 읽고 쓰기 위한 접속 정보가 아니라, Kafka cluster에 속한 broker들의 metadata를 받아오기 위한 접속 정보이다.
+    - 실제 data를 받아오기 위한 host 혹은 IP는 아래에서 설정한 접속 정보를 통해 첫 connection이 이루어지면 broker가 client로 보내준다.
+
+  ```python
+  from kafka import KafkaProducer
   
-  - Client(producer와 consumer)가 시작될 때 특정 topic에 대한 leader partition이 어느 broker에 속했는지를 확인하기 위해 모든 broker에 대한 metadata를 요청한다.
-    - Metadata에는 leader partition을 가지고 있는 broker의 endpoint에 대한 정보가 포함되어 있어 client들은 이를 활용하여 leader partition을 가진 broker에 연결한다.
-    - 주의할 점은 metadata를 받아올 때 사용하는 broker의 접속 정보와 응답으로 받아와 message를 read/write하기 위해 사용하는 metadata에 담긴 broker의 접속 정보가 별개라는 점이다.
-  - 결국 client가 partition에서 message를 read/write하기 위해서는 아래 두 단계를 거쳐야 한다.
-    - Client 최초 실행시 broker에 연결하여 metadata를 받아오는 단계.
-    - 이전 단계에서 broker로부터 받아온 metadata를 가지고 broker에 연결하는 단계.
-  - 첫 단계에서 broker가 반환하는 metadata에는 `advertised.listeners`에서 설정한 값이 담겨있다.
-    - Client가 topic에서 message를 read/write하기 위해서는 `advertised.listeners`에 설정된 listner로 요청을 보내야 한다.
-  - Listner는 아래의 조합으로 구성된다.
-    - Host/IP
-    - Port
-    - Protocol
+  producer = KafkaProducer(bootstrap_servers=['10.11.22.33:9092'])
+  ```
 
+    - Kafka broker들은 여러 개의 listener를 가질 수 있으며, 각 listener들은 아래 요소들의 조합으로 구성된다.
+      - Protocol
+      - Host/IP
+      - Port
 
+    - Listener에 대한 설정은 아래와 같은 것들이 있다(아래 이름들은 Docker의 환경 변수로 설정할 때 사용하는 것으로, 괄호 안에는 server.properties에 설정할 때의 이름이다).
+      - `KAFKA_LISTENERS`(`listeners`): Kafka의 host/IP, port를 어떤 listener와 binding할지 설정한다(기본값은 0.0.0.0).
+      - `KAFKA_ADVERTISED_LISTENERS`(`advertised.listeners`): listener들의 host/IP와 port를 설정하며, 첫 connection이후 client에 반환되는 metadata에 이 정보가 포함된다(즉, 결국 여기 설정된 listener들을 사용하여 client가 실제 event를 읽고 쓴다).
+      - `KAFKA_LISTENER_SECURITY_PROTOCOL_MAP`(`listener.security.protocol.map`): listener에서 사용할 security protocol을 `listener_name:protocol` 형식으로 설정한다.
+      - `KAFKA_INTER_BROKER_LISTENER_NAME`(`inter.broker.listener.name`): Kafka cluster 내의 broker들 사이의 통신에 사용할 listener를 설정한다.
 
-- Listner 관련 설정들
-
-  - `listeners`(`KAFKA_LISTENERS `)
-    - Broker 내부에서 사용할 주소를 설정한다.
-    - 콤마로 구분된 listner들의 목록을 설정한다.
-    - Listner와 host/IP + port를 `:`를 통해 bind한다(e.g. `LISTNER_FOO://localhost:29092`).
-    
-  - `advertised.listeners`(`KAFKA_ADVERTISED_LISTENERS `)
-    - Broker 외부로 노출할 주소를 설정한다.
-    - 콤마로 구분된 listner들의 목록을 설정한다.
-    - Listner와 host/IP + port를 `:`를 통해 bind한다.
-    - 이 정보가 client 최초 실행시에 broker가 반환하는 metadata에 담기게 된다.
-    - 설정하지 않을 경우 `listeners`에 설정한 값이 기본으로 설정된다.
-  
-  - `listener.security.protocol.map`(`KAFKA_LISTENER_SECURITY_PROTOCOL_MAP`)
-    - 각 listner에서 사용할 security protocol을 key-value 쌍으로 설정한다.
-    - Key가 listner가 되고, value가 security protocol이 된다.
-  - `inter.broker.listener.name`(`KAFKA_INTER_BROKER_LISTENER_NAME`)
-    - 같은 cluster에 속한 Kafka broker들 간의 통신에 사용되는 listner를 설정한다.
-  
   ```yaml
-  KAFKA_LISTENERS: LISTENER_FOO://kafka0:29092,LISTENER_BAR://localhost:9092
-  KAFKA_ADVERTISED_LISTENERS: LISTENER_FOO://kafka0:29092,LISTENER_BAR://localhost:9092
-  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_FOO:PLAINTEXT,LISTENER_BAR:PLAINTEXT
-  KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_FOO
+  # LISTENER_BOB을 kafka0:29092에 binding하고, LISTENER_FRED를 localhost:9092에 binding한다.
+  KAFKA_LISTENERS: LISTENER_BOB://kafka0:29092,LISTENER_FRED://localhost:9092
+  
+  # Client는 아래 listener들을 통해 event를 읽고 쓴다.
+  KAFKA_ADVERTISED_LISTENERS: LISTENER_BOB://kafka0:29092,LISTENER_FRED://localhost:9092
+  
+  # 각 listener의 security protocol을 listener_name:protocol 형식으로 설정한다.
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_BOB:PLAINTEXT,LISTENER_FRED:PLAINTEXT
+  
+  # Broker들 사이의 통신에 사용할 listener를 설정한다.
+  KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_BOB
+  ```
+
+    - Client와 broker 사이의 첫 통신 시에 broker가 어떤 listener에 대한 정보를 반환할 지는 client가 어떤 port로 첫 통신을 시도했는지에 따라 달라진다.
+      - 예를 들어 위와 같이 설정했을 때, client가 `kafka0:9092`로 접속 정보를 설정(`LISTENER_FRED`)했다면, broker는 `localhost:9092`를 client에게 반환한다.
+      - 반면에 client가 `kafka0:29092`로 접속 정보를 설정(`LISTENER_BOB`)했다면, broker는 `kafka0:29092`를 client에게 반환한다.
+
+  - Host를 설정하지 않을 경우 default network interface에 binding된다.
+    - 예를 들어 아래와 같이 설정했다고 가정해보자.
+    - `INTERNAL` listener의 경우 `INTERNAL://:29092`와 같이 host를 설정하지 않았다.
+    - 이럴 경우 default network interface에 binding된다.
+    - 아래 예시의 경우 Docker로 실행했으므로 docker network상에서 docker container가 부여 받은 IP에 binding된다.
+
+  ```yaml
+  version: '3'
+  
+  services:
+    Kafka:
+      # ...
+      environment:
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+        KAFKA_LISTENERS: INTERNAL://:29092,CONTROLLER://:29093,EXTERNAL://0.0.0.0:9092
+        KAFKA_ADVERTISED_LISTENERS: INTERNAL://:29092,EXTERNAL://127.0.0.1:9092
   ```
 
 
@@ -467,6 +487,39 @@
     - `my-kafka:29092`의 host에 해당하는 `my-kafka`는 docker network 내에서만 사용 가능하므로, docker network에 속하지 않은 client는 해당 listner로 요청을 보낼 수 없게 된다.
 
 
+
+- Docker를 사용하여 Kafka cluster를 구성할 때의 listener 설정
+
+  - 상황
+    - Kafka cluster에 속하는 모든 broker는 같은 docker network를 사용한다.
+    - 일부 client는 Kafka cluster와 동일한 docker network를 사용하지만 일부 client는 docker network를 사용하지 않는다.
+    - 단, docker network를 사용하지 않는 client라 하더라도 container와 같은 host machine에서 실행된다.
+  - 아래와 같이 docker compose file을 작성한다.
+
+  ```yaml
+    kafka0:
+      image: "confluentinc/cp-enterprise-kafka:5.2.1"
+      ports:
+        - '9092:9092'
+        - '29094:29094'
+      depends_on:
+        - zookeeper
+      environment:
+        KAFKA_BROKER_ID: 0
+        KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+        KAFKA_LISTENERS: LISTENER_BOB://kafka0:29092,LISTENER_FRED://kafka0:9092,LISTENER_ALICE://kafka0:29094
+        KAFKA_ADVERTISED_LISTENERS: LISTENER_BOB://kafka0:29092,LISTENER_FRED://localhost:9092,LISTENER_ALICE://never-gonna-give-you-up:29094
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_BOB:PLAINTEXT,LISTENER_FRED:PLAINTEXT,LISTENER_ALICE:PLAINTEXT
+        KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_BOB
+  ```
+
+  - Docker network를 사용하는 client
+    - 이 client들은 `LISTENER_BOB` listener(kafka0:29092)를 이용하여 Kafka와 통신하면 된다.
+    - 첫 통신에서 이들은 event를 읽고 쓰기 위한 접속 정보인 `kafka0`라는 hostname을 받게 된다.
+  - Docker network를 사용하지 않는 client
+    - 이 client들은 `LISTENER_FRED` listener(localhost:9092)를 이용하여 Kafka와 통신하면 된다.
+    - 9092 port가 Docker container에 의해 expose되었기 때문에 localhost:9092를 통해 통신이 가능하다.
+    - Client가 broker와 처음으로 통신할 때 localhost라는 hostname을 받게 된다.
 
 
 
