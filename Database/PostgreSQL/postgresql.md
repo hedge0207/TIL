@@ -152,25 +152,31 @@
   wal_level = logical			# default: replica
   ```
 
-  - Main에서 replication 전용 DB user 생성
+  - Main에서 `wal_level`을 확인한다.
 
+  ```sql
+  SHOW wal_level;
+  ```
+
+  - Main에서 replication 전용 DB user 생성
+  
   ```sql
   CREATE role myuser REPLICATION LOGIN PASSWORD 'password';
   ```
-
+  
   - Main에서 `pg_hba.conf`에 아래와 같이 추가한다.
     - `postgres` Docker image를 기준으로 `/var/lib/postgresql/data/pg_hba.conf`에 있다.
-
+  
   ```toml
   # TYPE  DATABASE        USER            ADDRESS                 METHOD
   
   # ...
   host    all             myuser          <standby_host>/<subnet> trust
   ```
-
+  
   - 여기까지 완료한 후 main PostgreSQL을 재실행한다.
   - Main에서 eplication 대상 table을 생성한다.
-
+  
   ```sql
   CREATE TABLE product (
     id INT NOT NULL,
@@ -190,9 +196,9 @@
   ```sql
   GRANT SELECT ON TABLE product TO myuser;
   ```
-
+  
   - Standby에서 replication 대상 table을 생성한다.
-
+  
   ```sql
   CREATE TABLE product (
     id INT NOT NULL,
@@ -200,7 +206,7 @@
     PRIMARY KEY (id)
   );
   ```
-
+  
   - Standby에서 subscription을 생성한다.
     - 이 때 replication slot을 따로 생성하지 않은 경우 subscription이 생성되면서 main server에 subscription 이름으로 replication slot이 생성된다.
 
@@ -209,9 +215,9 @@
   CONNECTION 'dbname=postgres host=<main_host> port=<main_port> user=myuser password=password' \
   PUBLICATION my_publication;
   ```
-
+  
   - 정상적으로 실행되었다면, process 조회시 `walsender`와 `logical replication launcher` 두 가지 process가 실행된다.
-
+  
   ```bash
   $ ps -ef | grep postgres
   ```
@@ -228,6 +234,17 @@
   - Logical replication slot
     - Physical replication slot과는 달리 logical decoding이라는 방식을 통해 decoding된 message를 통해 복제를 수행한다.
     - `wal_level`의 설정값을 `logical`로 설정할 경우 logical replication slot을 사용한다.
+  - Replication slot 생성하기
+  
+  ```sql
+  SELECT pg_create_logical_replication_slot('<name>', '<plugin>');
+  ```
+  
+  - Replication slot 삭제하기
+  
+  ```sql
+  select pg_drop_replication_slot('<name>');
+  ```
 
 
 
@@ -302,4 +319,89 @@
   ```
 
 
+
+
+
+# View
+
+- Materialized View
+  - 논리적인 table인 view와 달리 물리적으로 존재하는 table이다.
+    - 자주 사용되는 view의 결과를 disk에 저장해서 query 속도를 향상시키는 방식이다.
+  - PostgreSQL뿐 아니라 OracleDB 등에서도 지원한다(MySQL은 아직 지원하지 않는다).
+
+
+
+- Materialized View 생성하기
+
+  - `product` table 생성하기
+
+  ```sql
+  CREATE TABLE product (
+    id INT NOT NULL,
+    name VARCHAR(30) NOT NULL,
+    updated_time TIMESTAMP NOT NULL default current_timestamp,
+    PRIMARY KEY (id)
+  );
+  
+  INSERT INTO product VALUES (0, 'iPad');
+  
+  INSERT INTO product VALUES (1, 'iPhone');
+  
+  INSERT INTO product VALUES (2, 'AirPods');
+  ```
+
+  - `description` table 생성하기
+
+  ```sql
+  CREATE TABLE "description" (
+  	"id" INTEGER NOT NULL,
+  	"description" TEXT NOT NULL,
+  	PRIMARY KEY ("id")
+  );
+  
+  INSERT INTO description VALUES (0, 'An iPad is a line of tablet computers designed, developed, and marketed by Apple Inc.');
+  
+  INSERT INTO description VALUES (1, 'An iPhone is a line of smartphones designed and marketed by Apple Inc.');
+  
+  INSERT INTO description VALUES (2, 'AirPods are a line of wireless earbuds designed and marketed by Apple Inc.');
+  ```
+
+  - Materialized view 생성
+
+  ```sql
+  CREATE MATERIALIZED VIEW product_with_description AS
+  SELECT
+      p.id,
+      p.name,
+      p.updated_time,
+      d.description
+  FROM
+      product p
+  LEFT JOIN
+      description d
+  ON p.id = d.id;
+  ```
+
+  - 조회하기
+
+  ```sql
+  SELECT * FROM product_with_description;
+  ```
+
+
+
+- Materialzied View 갱신하기
+
+  - Materialized view는 자동으로 갱신되지 않는다.
+    - 일반적인 view의 경우 매 번 결과를 조회하여 view를 생성하므로 항상 최신 데이터를 보여준다.
+    - 그러나 materialized view는 갱신을 시켜줘야하며, 갱신하기 전에는 기반 table의 변경 사항(추가, 수정, 삭제)이 반영되지 않는다.
+  - SQL로 갱신하기
+    - SQL을 실행하여 수동으로 갱신시키는 방식이다.
+
+  ```sql
+  REFRESH MATERIALIZED VIEW <materialized_view_name>;
+  ```
+
+  - Trigger function에서는 DDL을 실행할 수 없어 trigger 함수를 등록하는 방식은 불가능한 것으로 보인다.
+  - [pg_cron](https://github.com/citusdata/pg_cron)을 사용하여 주기적으로 갱신되도록 cron job을 설정할 수 있다.
 

@@ -282,7 +282,7 @@
 
     > https://debezium.io/documentation/reference/stable/postgres-plugins.html
 
-    - `postgresql.conf` file에서 아래 property들만 수정해준다.
+    - `postgresql.conf` file에서 아래 property들만 수정해준다(PostgreSQL 공식 이미지 기준 `var/lib/postgresql/data`에 작성하면 된다).
 
   ```properties
   wal_level = logical
