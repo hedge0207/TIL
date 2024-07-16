@@ -1449,78 +1449,73 @@ keep='last'
 
     - 그래프 선언 후 show()를 사용하여 그래프 출력
 
-    ```python
-    from matplotlib import pyplot as plt
-     
-    # 처음에 넣는 리스트가 x축이 되고, 두 번째로 넣는 리스트가 y축이 된다.
-    plt.plot(["a","b","c"], [100,120,90])
-    # show()를 사용하여 출력
-    plt.show()
-    
-    plt.plot([1,2,3], ["A","B","C"])
-    plt.show()
-    ```
-
-    
-
+  
+  ```python
+  from matplotlib import pyplot as plt
+   
+  # 처음에 넣는 리스트가 x축이 되고, 두 번째로 넣는 리스트가 y축이 된다.
+  plt.plot(["a","b","c"], [100,120,90])
+  # show()를 사용하여 출력
+  plt.show()
+  
+  plt.plot([1,2,3], ["A","B","C"])
+  plt.show()
+  ```
+  
   - x,y축 레이블과 그래프의 제목 붙이기.
-
-    ```python
-    plt.plot(["a","b","c"], [48,67,58])
-    plt.xlabel('Participant')
-    plt.ylabel('Weight')
-    plt.title('Participant Weigth')
-    plt.show()
-    ```
-
-    
-
+  
+  ```python
+  plt.plot(["a","b","c"], [48,67,58])
+  plt.xlabel('Participant')
+  plt.ylabel('Weight')
+  plt.title('Participant Weigth')
+  plt.show()
+  ```
+  
   - 범례 추가
-
-    ```python
-    plt.plot(["a","b","c"], [48,67,58])
-    plt.plot(["a","b","c"], [52,68,68])
-    plt.xlabel('Participant')
-    plt.ylabel('Weight')
-    plt.title('Participant Weigth')
-    plt.legend(['Before', 'After'])
-    plt.show()
-    ```
-
-    
-
+  
+  ```python
+  plt.plot(["a","b","c"], [48,67,58])
+  plt.plot(["a","b","c"], [52,68,68])
+  plt.xlabel('Participant')
+  plt.ylabel('Weight')
+  plt.title('Participant Weigth')
+  plt.legend(['Before', 'After'])
+  plt.show()
+  ```
+  
   - DataFrame 사용
-
+  
     - 아래와 같이 pandas의 dataframe 자료형을 사용하여 표현할 수 있다.
+  
 
-    ```python
-    from matplotlib import pyplot as plt
-    import pandas as pd
-    
-    df = pd.DataFrame({'Before': [48,67,58],'After': [52,67,68]},
-                        index=["a","b","c"]
-                        )
-    plt.plot(df)
-    plt.show()
-    ```
-
-    
-
+  ```python
+  from matplotlib import pyplot as plt
+  import pandas as pd
+  
+  df = pd.DataFrame({'Before': [48,67,58],'After': [52,67,68]},
+                      index=["a","b","c"]
+                      )
+  plt.plot(df)
+  plt.show()
+  ```
+  
   - 다른 형태의 그래프
-
+  
     - 위에서 살펴본 직선 이외에도 아래와 같이 막대 그래프로 표현할 수 있다.
 
-    ```python
-    plt.bar(["a","b","c"], [48,67,58],width=0.5,color="blue")
-    plt.xlabel('Participant')
-    plt.ylabel('Weight')
-    plt.title('Participant Weigth')
-    plt.show()
-    
-    #DataFrame 자료형을 통해 여러개의 막대를 표현할 수 있다.
-    ```
+  
+  ```python
+  plt.bar(["a","b","c"], [48,67,58],width=0.5,color="blue")
+  plt.xlabel('Participant')
+  plt.ylabel('Weight')
+  plt.title('Participant Weigth')
+  plt.show()
+  
+  #DataFrame 자료형을 통해 여러개의 막대를 표현할 수 있다.
+  ```
 
-    
+
 
 
 
@@ -1532,19 +1527,22 @@ keep='last'
 - Python에서 schedule 처리를 보다 간편하게 할 수 있게 해주는 package
 
   > [github](https://github.com/agronholm/apscheduler)
-
+  >
+  > [공식문서](https://apscheduler.readthedocs.io/en/3.x/userguide.html)
+  
   - 관련 package로는 아래와 같은 것들이 있다.
     - Python의 내장 package인 `sched`
     - 분산 처리 큐 package인 `celery`
     - `sched`의 경우 지원하는 기능이 제한적이고, `celery`의 경우 package의 목적이 스케쥴링 보다는 분산 처리에 가깝다.
   - `APScheduler`를 사용하면 스케쥴링이 필요한 작업들을 동적으로 추가, 수정, 삭제할 수 있다.
+    - github에서 [다양한 예제 코드](https://github.com/agronholm/apscheduler/tree/3.x/examples/?at=master)를 볼 수 있다.
+  
   - 설치
 
   ```bash
   $ pip intall apscheduler
   ```
-
-  - github에서 [다양한 예제 코드](https://github.com/agronholm/apscheduler/tree/3.x/examples/?at=master)를 볼 수 있다.
+  
 
 
 
