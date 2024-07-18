@@ -82,6 +82,123 @@
 
 
 
+- Distributed mode로 실행하기
+
+  - 아래와 같이 Kafka connect 설정 파일을 작성한다.
+    - 전체 설정은 [Confluent 문서](https://docs.confluent.io/platform/current/connect/references/allconfigs.html)에서 확인할 수 있다.
+    - Connect를 실행할 때 인자로 설정 파일의 이름을 전달하면 된다.
+
+  ```properties
+  # connect-distributed.properties
+  bootstrap.servers=localhost:9092
+  
+  group.id=connect-cluster
+  
+  key.converter=org.apache.kafka.connect.json.JsonConverter
+  value.converter=org.apache.kafka.connect.json.JsonConverter
+  
+  key.converter.schemas.enable=true
+  value.converter.schemas.enable=true
+  
+  offset.storage.topic=connect-offsets
+  offset.storage.replication.factor=3
+  
+  config.storage.topic=connect-configs
+  config.storage.replication.factor=3
+  
+  status.storage.topic=connect-status
+  status.storage.replication.factor=3
+  
+  offset.flush.interval.ms=10000
+  
+  plugin.path=/usr/share/java
+  ```
+
+  - Kafka Connect를 distributed mode로 실행한다.
+
+  ```bash
+  $ /bin/connect-distributed connect-distributed.properties
+  ```
+
+
+
+- Distributed mode로 실행하면, connect group에 속한 connect 중 특정 connector에 문제가 생길 경우 task를 rebalancing한다.
+
+  - 예를 들어 3개의 Kafka connect로 connect group을 실행 후, 아래와 같이 connector를 실행한다.
+
+  ```bash
+  curl -XPOST 'localhost:8083/connectors' \
+  --header 'Content-type: application/json' \
+  --data-raw '{
+    "name": "mysql-cdc-source-connector",
+    "config": {  
+      "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+      "tasks.max": "1",
+      "database.hostname": "mysql-host",
+      "database.port": "3306",
+      "database.user": "mysql-user",
+      "database.password": "mysql-password",
+      "database.server.id": "123456",
+      "topic.prefix": "mysql-post",
+      "database.include.list": "test",
+      "table.include.list":"test.post",
+      "schema.history.internal.kafka.bootstrap.servers": "kafka-host:9092",
+      "schema.history.internal.kafka.topic": "schema-changes.post.test"
+    }
+  }'
+  ```
+
+  - Task의 상태를 확인한다.
+
+  ```bash
+  curl localhost:8083/connectors/mysql-cdc-source-connector/status
+  
+  {
+    "name":"mysql-cdc-source-connector",
+    "connector":{
+      "state":"RUNNING",
+      "worker_id":"11.22.33.44:8083"
+    },
+    "tasks":[
+      {
+        "id":0,
+        "state":"RUNNING",
+        "worker_id":"11.22.33.44:8083"
+      }
+    ],
+    "type":"source"
+  }
+  ```
+
+  - 해당 task를 실행하는 Kafka connect를 종료하고 다시 확인해보면 아래와 같은 상태가 된다.
+    - `connector.status`와 `tasks.0.status`가 모두 `UNASSIGNED` 상태가 된다.
+
+  ```bash
+  curl localhost:8083/connectors/mysql-cdc-source-connector/status
+  
+  {
+    "name":"mysql-cdc-source-connector",
+    "connector":{
+      "state":"UNASSIGNED",
+      "worker_id":"11.22.33.44:8083"
+    },
+    "tasks":[
+      {
+        "id":0,
+        "state":"UNASSIGNED",
+        "worker_id":"11.22.33.44:8083"
+      }
+    ],
+    "type":"source"
+  }
+  ```
+
+  - `UNASSIGNED` 상태가 되었다고 바로 rebalancing이 발생하지는 않는다.
+    - Kafka connect 설정 중 `scheduled.rebalance.max.delay.ms`(기본 값은 5분) 값은 group에서 이탈한 Kafka connect가 있을 경우, 해당 Kafka connect가 다시 복귀할 때 까지 얼마나 기다릴지를 설정한다.
+    - 만약 설정한 시간까지 Kafka connect가 group에 다시 합류하지 않을 경우, group 내의 다른 Kafka connect에게 할당된다.
+
+
+
   - Sink connect 생성하기
 
     - Connect container 실행 후 connect API를 이용하여 elasticsearch sink connector를 생성한다.
@@ -700,6 +817,314 @@
     }
   }'
   ```
+
+
+
+
+
+# ksqlDB
+
+- ksqlDB
+  - Kafka streams와 유사한 기능을 한다.
+    - Kafka streams의 경우 Java나 Rust로 작성해야만 해서 Java나 Rust를 모르는 사람은 쓸 수 없다는 문제가 있었다.
+    - SQL만을 사용하여 Kafka Streams와 유사한 작업을 할 수 있도록 하기 위해 ksqlDB가 개발되었다.
+
+
+
+- ksqlDB 실행하기
+
+  - Docker compose file을 작성한다.
+
+  ```yaml
+  version: '3.2'
+  
+  
+  services:
+    kafka1:
+      container_name: kafka1
+      image: confluentinc/cp-kafka:7.5.3
+      ports:
+        - "9097:9092"
+      environment:
+        KAFKA_NODE_ID: 1
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+        KAFKA_LISTENERS: INTERNAL://:29092,CONTROLLER://:29093,EXTERNAL://0.0.0.0:9092
+        KAFKA_ADVERTISED_LISTENERS: INTERNAL://:29092,EXTERNAL://127.0.0.1:9097
+        KAFKA_PROCESS_ROLES: 'broker,controller'
+        KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:29093,2@kafka2:29093,3@kafka3:29093
+        KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+        KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+        CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      restart: always
+  
+    kafka2:
+      container_name: kafka2
+      image: confluentinc/cp-kafka:7.5.3
+      ports:
+        - "9098:9092"
+      environment:
+        KAFKA_NODE_ID: 2
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+        KAFKA_LISTENERS: INTERNAL://:29092,CONTROLLER://kafka2:29093,EXTERNAL://0.0.0.0:9092
+        KAFKA_ADVERTISED_LISTENERS: INTERNAL://:29092,EXTERNAL://127.0.0.1:9098
+        KAFKA_PROCESS_ROLES: 'broker,controller'
+        KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:29093,2@kafka2:29093,3@kafka3:29093
+        KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+        KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+        CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      restart: always
+  
+    kafka3:
+      container_name: kafka3
+      image: confluentinc/cp-kafka:7.5.3
+      ports:
+        - "9099:9092"
+      environment:
+        KAFKA_NODE_ID: 3
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+        KAFKA_LISTENERS: INTERNAL://:29092,CONTROLLER://kafka3:29093,EXTERNAL://0.0.0.0:9092
+        KAFKA_ADVERTISED_LISTENERS: INTERNAL://:29092,EXTERNAL://127.0.0.1:9099
+        KAFKA_PROCESS_ROLES: 'broker,controller'
+        KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:29093,2@kafka2:29093,3@kafka3:29093
+        KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+        KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+        CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      restart: always
+    
+    ksqldb-server:
+      image: confluentinc/ksqldb-server:0.29.0
+      container_name: ksqldb-server
+      ports:
+        - "8088:8088"
+      environment:
+        KSQL_BOOTSTRAP_SERVERS: kafka1:9092,kafka2:9092,kafka3:9092
+        KSQL_LISTENERS: http://0.0.0.0:8088
+        KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
+        KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
+      restart: always
+  
+    ksqldb-cli:
+      image: confluentinc/ksqldb-cli:0.29.0
+      container_name: ksqldb-cli
+      entrypoint: /bin/sh
+      tty: true
+      restart: always
+  ```
+
+  - Container를 실행한다.
+
+  ```bash
+  $ docker compose up
+  ```
+
+  - ksqlDB의 CLI를 실행한다.
+    - ksqlDB server를 입력한다.
+  
+  ```bash
+  $ docker exec -it ksqldb-cli ksql http://ksqldb-server:8088
+  ```
+  
+  - ksqlDB CLI를 사용하지 않고 ksqlDB server로 http 요청을 보내는 방식으로 사용하는 것도 가능하다.
+
+
+
+
+- Stream 생성하기
+
+  - 테스트용 data를 producing한다.
+
+  ```python
+  from json import dumps
+  
+  from faker import Faker
+  from kafka import KafkaProducer
+  
+  
+  producer = KafkaProducer(acks=0, compression_type="gzip", bootstrap_servers=['localhost:9097'], \
+                          value_serializer=lambda x: dumps(x).encode('utf-8'))
+  
+  fake = Faker()
+  
+  user_topic = "ksql-test-user"
+  for i in range(1, 6):
+      value = {
+          "id": i,
+          "name": fake.name(),
+          "address": fake.address().replace("\n", " ")
+      }
+      producer.send(user_topic, value=value)
+      producer.flush()
+  
+  job_topic = "ksql-test-job"
+  for i in range(1, 6):
+      value = {
+          "id": i,
+          "job": fake.job(),
+          "company": fake.company()
+      }
+      producer.send(job_topic, value=value)
+      producer.flush()
+  ```
+
+  - `ksql-test-user`에 있는 message를 사용하여 stream을 만든다.
+    - `kafka_topic`에 입력한 topic이 없을 경우 topic을 자동으로 생성한다.
+
+  ```sql
+  CREATE STREAM user (id INT, name VARCHAR, address VARCHAR) 
+  WITH (kafka_topic='ksql-test-user', value_format='json', partitions=1);
+  ```
+
+  - Sream에서 data 조회하기
+
+  ```sql
+  SELECT * FROM user;
+  
+  # output
+  +--------------------------------------+--------------------------------------+-------------------------------------------+
+  |ID                                    |NAME                                  |ADDRESS                                    |
+  +--------------------------------------+--------------------------------------+-------------------------------------------+
+  |1                                     |Meghan Owens                          |USS Parsons FPO AE 97962                   |
+  |2                                     |Larry Graves                          |29253 Orr Unions Matthewschester, VI 27711 |
+  |3                                     |Elizabeth Romero                      |PSC 6297, Box 5733 APO AA 23588            |
+  |4                                     |Stephanie Jones                       |39821 Wood Cape West Jeffrey, OH 95871     |
+  |5                                     |Joshua Johnson                        |331 Trevor Crest South Lorihaven, GU 11857 |
+  Query Completed
+  Query terminated
+  ```
+
+
+
+- Collection join하기
+
+  - ksqlDB에서 지원하는 join은 아래와 같다.
+    - 여러 stream을 join하여 새로운 stream 생성.
+    - 여러 table을 join하여 새로운 table 생성.
+    - 여러 stream과 여러 table을 join하여 새로운 stream 생성.
+  - `job` stream을 생성한다.
+
+  ```sql
+  CREATE STREAM job (id INT, job VARCHAR, company VARCHAR) 
+  WITH (kafka_topic='ksql-test-job', value_format='json', partitions=1);
+  ```
+
+  - `user` stream과 `job` stream을 join하여 새로운 stream을 생성한다.
+    - Stream들을 join할 때는 반드시 `WITHIN` 절을 입력해야한다.
+    - 아래는 `user`에 message와 `job` message의 timestamp 차이가 1일 이내인 message를 대상으로 join한다.
+
+  ```sql
+  CREATE STREAM user_info AS
+    SELECT
+      user.id as id, 
+      name,
+      address,
+      job,
+      company
+    FROM user
+      LEFT JOIN job WITHIN 1 DAYS ON user.id = job.id;
+  ```
+
+  - 추가로 각 topic에 message를 publishing한다.
+
+  ```python
+  from json import dumps
+  
+  from faker import Faker
+  from kafka import KafkaProducer
+  
+  
+  producer = KafkaProducer(acks=0, compression_type="gzip", bootstrap_servers=['localhost:9097'], \
+                          value_serializer=lambda x: dumps(x).encode('utf-8'))
+  
+  fake = Faker()
+  
+  user_topic = "ksql-test-user"
+  for i in range(6, 11):
+      value = {
+          "id": i,
+          "name": fake.name(),
+          "address": fake.address().replace("\n", " ")
+      }
+      producer.send(user_topic, value=value)
+      producer.flush()
+  
+  job_topic = "ksql-test-job"
+  for i in range(6, 11):
+      value = {
+          "id": i,
+          "job": fake.job(),
+          "company": fake.company()
+      }
+      producer.send(job_topic, value=value)
+      producer.flush()
+  ```
+
+  - 위에서 생성한 stream을 확인한다.
+
+  ```sql
+  SELECT * FROM user_info;
+  
+  +-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+
+  |ID                     |NAME                   |ADDRESS                |JOB                    |COMPANY                |
+  +-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+
+  |6                      |Lisa Wilson            |45165 Mays Mountains Lo|Designer, television/fi|Allen PLC              |
+  |                       |                       |pezborough, PA 33125   |lm set                 |                       |
+  |7                      |Colin Garcia           |235 Walter Keys Geneber|Radio broadcast assista|Gallegos-Wright        |
+  |                       |                       |g, NH 16419            |nt                     |                       |
+  |8                      |Emily Cooper           |615 Jennifer Stream Sui|Teacher, secondary scho|Bates and Sons         |
+  |                       |                       |te 028 South Johnnytown|ol                     |                       |
+  |                       |                       |, GU 87560             |                       |                       |
+  |9                      |Julie Vaughn           |2534 Chavez Views Wanda|Pathologist            |Henry-Alvarez          |
+  |                       |                       |furt, IN 57392         |                       |                       |
+  |10                     |Anita Oliver           |168 Mandy Drive Apt. 07|Presenter, broadcasting|Williams, Harrington an|
+  |                       |                       |5 West Mike, NJ 86138  |                       |d Webb                 |
+  ```
+
+
+
+- Join을 위해서는 아래와 같은 조건을 만족해야한다.
+
+  - Join의 대상이 되는 collection(stream, table)들의 parition 설정이 동일해야 한다.
+
+  - Joining column
+    - Join을 위해서는 joining column을 기준으로 join 대상 collection들의 record를 비교해야한다.
+    - 동일한 joining column을 가진 record가 동일한 stream 작업에 함께 배치되도록 하기 위해서는 joining column이 collection을 paritioning할 때 사용한 column과 일치해야 한다.
+    - Table은 primary key에 의해 parition된다(즉, primary key로 사용된 column에 의해 paritioning된다).
+    - 따라서 table의 경우 primary key를 joining column으로 사용해야한다.
+    - 반면에 stream의 경우에는 primary key는 없지만, key column은 가질 수 있으며, key column이 있을 경우 이를 사용하여 paritioning한다.
+    - Stream은 key column이 아닌 표현식을 사용한 join이 가능하며, 만약 key column을 사용하지 않을 경우 ksqlDB는 내부적으로 stream을 repartitioning하여 암시적으로 key와 paritioning을 정의한다.
+
+  - 아래 예시는 `users` table과 `clicks` stream을 join하는 예시이다.
+    - `users`는 table이므로 `id`라는 primary key를 가지고 있지만, `clicks`는 key column을 따로 정의하지는 않았다.
+    - 따라서 ksqlDB는 key를 할당하기 위해 join을 수행하기 전에 내부적으로 joining column(`userId`)을 사용하여 repartitioning한다.
+
+  ```sql
+  CREATE TABLE users (
+      id BIGINT PRIMARY KEY, 
+      fullName STRING
+    ) WITH (
+      kafka_topic='users', 
+      value_format='json',
+      partitions=1
+  );
+  
+  CREATE STREAM clicks (
+      userId BIGINT, 
+      url STRING
+    ) WITH (
+      kafka_topic='clickstream', 
+      value_format='json',
+      partitions=1
+    );
+  
+  SELECT 
+    c.userId,
+    c.url, 
+    u.fullName 
+  FROM clicks c
+    JOIN users u ON c.userId = u.id
+  EMIT CHANGES;
+  ```
+
 
 
 
