@@ -248,7 +248,9 @@
 
 
 
-## CDC 실행해보기
+
+
+## Debezium PostgreSQL source connector를 이용한 CDC
 
 - 목표
   - Source connector로 PostgreSQL의 특정 table의 변경 사항을 추적하여 추출한다.
@@ -542,6 +544,177 @@
   ```bash
   $ curl localhost:9206/foo.public.product/_search
   ```
+
+
+
+
+
+## Debezium MySQL source connector를 이용한 CDC
+
+- Connector 준비하기
+
+  - [Confluent hub](https://www.confluent.io/hub/debezium/debezium-connector-mysql)에서 debezium source connector mysql을 다운 받는다.
+  - 다운 받은 파일의 압축을 풀고, connect 실행시에 `plugin.path`에 설정했던 경로에 압축 푼 파일들을 옮긴다.
+  - Kafka connect가 plugin을 인식했는지 확인한다.
+    - 만약 인식이 안 된다면 Kafka connect를 재실행한다.
+
+  ```bash
+  curl localhost:8083/connector-plugins
+  [
+      {
+        "class": "io.debezium.connector.mysql.MySqlConnector",
+        "type": "source",
+        "version": "2.4.2.Final"
+      }
+  ]
+  ```
+
+
+
+- DB 준비하기
+
+  > PostgreSQL과 달리 별다른 설정이 필요하지 않은 것으로 보인다.
+
+  - Table 생성
+
+  ```sql
+  CREATE TABLE product (
+    id INT NOT NULL,
+    name VARCHAR(30) NOT NULL,
+    updated_time TIMESTAMP NOT NULL,
+    PRIMARY KEY (id)
+  );
+  ```
+
+  - Data 삽입
+
+  ```bash
+  INSERT INTO product VALUES (0, 'iPad');
+  INSERT INTO product VALUES (1, 'iPhone');
+  ```
+
+
+
+- Source connector 실행하기
+
+  - 아래와 같이 실행한다.
+    - 전체 설정은 [Debezium 문서](https://debezium.io/documentation/reference/stable/connectors/mysql.html#_required_debezium_mysql_connector_configuration_properties) 참조
+    - MySQL connector는 항상 단일 task만 사용하므로, `tasks.max`에 1 이외의 어떤 값을 줘도 소용이 없다.
+    - 이는 binlog를 순차적으로 읽어야 하기에 있는 제약으로, 여러 task가 동시에 읽을 경우 순차적으로 읽는 것이 보장되지 않을 수 있기 때문이다.
+
+  ```bash
+  curl -XPOST 'localhost:8083/connectors' \
+  --header 'Content-type: application/json' \
+  --data-raw '{
+    "name": "mysql-cdc-source-connector",
+    "config": {  
+      "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+      "tasks.max": "1",
+      "database.hostname": "mysql-host",
+      "database.port": "3306",
+      "database.user": "mysql-user",
+      "database.password": "mysql-password",
+      "database.server.id": "123456",
+      "topic.prefix": "post",
+      "database.include.list": "test",
+      "table.include.list":"test.post",
+      "schema.history.internal.kafka.bootstrap.servers": "kafka-host:9092",
+      "schema.history.internal.kafka.topic": "schema-changes.post.test"
+    }
+  }'
+  ```
+
+  - 정상적으로 실행 되는지 확인
+
+  ```bash
+  $ curl localhost:8083/connectors/mysql-cdc-source-connector/status
+  ```
+
+
+
+
+
+## MongoDB source connector를 이용한 CDC
+
+- Connector 준비하기
+
+  - MongoDB에서 직접 개발한 connector가 CDC를 지원한다.
+
+  - MongoDB connector를 다운 받는다.
+
+    - Source connector와 sink connector가 통합되어 있다.
+
+    - 주의할 점은 confluent hub에서 다운 받을 경우 connector를 실행하는 데 필요한 dependency들을 별도로 설치해줘야한다는 점이다.
+    - [Maven Central](https://central.sonatype.com/artifact/org.mongodb.kafka/mongo-kafka-connect/versions)에서 `all` suffix가 붙은 jar 파일을 받으면 dependency까지 한 번에 받을 수 있다(`confluent` suffix가 붙은 jar 파일은 confluent hub에서 다운 받는 것과 동일한 파일이다).
+    - Connect 실행시에 `plugin.path`에 설정했던 경로로 다운 받은 파일을 옮긴다.
+
+  - Kafka connect가 plugin을 인식했는지 확인한다.
+
+    - 만약 인식이 안 된다면 Kafka connect를 재실행한다.
+
+    ```bash
+    curl localhost:8083/connector-plugins
+    [
+        {
+            "class": "com.mongodb.kafka.connect.MongoSinkConnector",
+            "type": "sink",
+            "version": "1.13.0"
+        },
+        {
+            "class": "com.mongodb.kafka.connect.MongoSourceConnector",
+            "type": "source",
+            "version": "1.13.0"
+        }
+    ]
+    ```
+
+
+
+- DB 준비하기
+
+  - Mongo shell 접속
+
+  ```bash
+  $ mongosh
+  ```
+
+  - DB, collection 생성
+
+  ```bash
+  $ use bookStore
+  $ db.books.insert({"title":"foo", "content":"bar"})
+  ```
+
+
+
+- Source connector 실행하기
+
+  - 아래와 같이 실행한다.
+
+    > 전체 설정은 [문서](https://www.mongodb.com/docs/kafka-connector/current/source-connector/configuration-properties/) 참조
+
+  ```bash
+  curl -XPOST 'localhost:8083/connectors' \
+  --header 'Content-type: application/json' \
+  --data-raw '{
+    "name": "mongo-cdc-source",
+    "config": {
+      "connector.class": "com.mongodb.kafka.connect.MongoSourceConnector",
+      "connection.uri": "mongodb://<MongoDB_host>:<port>",
+      "database": "bookStore",
+      "collection": "books",
+      "startup.mode": "copy_existing"
+    }
+  }'
+  ```
+
+  - `startup.mode`
+    - Source에 대한 offset 정보가 없을 경우(connector를 최초 실행하면 offset 정보가 없다) source data를 어떻게 처리할지를 설정하는 옵션이다.
+    - `latest`(default): source에 이미 존재하는 data들은 무시하고, connector 실행 시점부터 변경 사항을 broker로 전달한다.
+    - `copy_existing`: source에 이미 존재하는 모든 data를 broker로 전달한다.
+    - `timestamp`: source에 이미 존재하는 data중 `startup.mode.timestamp.start.at.operation.time`에 설정한 시점부터의 변경 사항을 broker로 전달한다.
+
+
 
 
 
