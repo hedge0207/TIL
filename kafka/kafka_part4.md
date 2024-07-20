@@ -1127,6 +1127,196 @@
 
 
 
+- ksqlDB server 주요 설정
+
+  > 전체 설정은 [공식문서](https://docs.ksqldb.io/en/latest/reference/server-configuration/) 참조
+  >
+  > confluentinc/ksqldb-server Docker image 기준 /etc/ksqldb/ksqldb-server.properties 파일에서 설정하면 된다.
+
+  - Docker container 실행시 환경변수로 설정이 가능하다. 
+    - 이 경우 맨 앞의 `ksql.<category>`는 제외한다.
+    - 모두 대문자로 변환한 뒤, "."을 "_"로 치환한다.
+    - e.g. `ksql.streams.bootstrap.servers` - `BOOTSTRAP_SERVERS`
+
+  - `ksql.streams.boostrap.servers`
+    - Kafka cluster와 최초의 connection을 위한 host와 port의 쌍을 입력한다.
+    - 여러 개를 입력할 경우 `,`로 구분하여 입력한다.
+  - `listeners`
+    - REST API 요청을 받은 linstener를 설정한다.
+    - 기본값은 `http:0.0.0.0:8088`이다.
+  - `ksql.connect.url`
+    - Kafka Connect cluster의 URL을 입력한다.
+    - 여러 개를 입력할 수는 없다.
+
+
+
+- SQL
+
+  - ksqlDB server의 현재 설정 확인
+
+  ```sql
+  SHOW PROPERTIES;
+  ```
+
+  - Stream/Table 조회
+    - `SHOW`와 `LIST` 모두 가능하다.
+    - `EXTENDED` option을 주면 더 상세한 정보를 확인 가능하다.
+
+  ```sql
+  <SHOW | LIST> <STREAMS | TABLES> [EXTENDED];
+  ```
+
+  - Stream/Table 삭제
+    - `DELETE <TOPIC>`을 줄 경우 topic도 함께 삭제한다.
+
+  ```sql
+  DROP <collection> [IF EXISTS] <collection> [DELETE <TOPIC>];
+  ```
+
+  - Topic 목록 조회
+
+  ```sql
+  <SHOW | LIST> [ALL] TOPICS [EXTENDED];
+  ```
+
+  - Connector 목록 조회
+
+  ```sql
+  <SHOW | LIST> [SOURCE | SINK] CONNECTORS;
+  ```
+
+  - Connector 생성
+
+  ```sql
+  CREATE SOURCE | SINK CONNECTOR [IF NOT EXISTS] connector_name WITH( property_name = expression [, ...]);
+  
+  /* 예시
+  CREATE SOURCE CONNECTOR `jdbc-connector` WITH(
+      "connector.class"='io.confluent.connect.jdbc.JdbcSourceConnector',
+      "connection.url"='jdbc:postgresql://localhost:5432/my.db',
+      "mode"='bulk',
+      "topic.prefix"='jdbc-',
+      "table.whitelist"='users',
+      "key"='username');
+  */
+  ```
+
+
+
+
+
+## Query
+
+- Query의 종류
+  - Persistent
+    - Server-side에서 실행되는 query로 event들의 row를 무한히 처리하는 query이다.
+    - `CREATE STREAM ... AS SELECT`나 `CREATE TABLE ... AS SELECT`를 통해 이미 존재하는 stream 혹은 table로부터 새로운 stream이나 table을 끌어낼 때 실행된다.
+  - Push
+    - Push query는 실시간으로 변경되는 결과를 client가 구독하는 형태의 query다.
+    - 변경 사항이 client에게로 push된다.
+    - Push query를 사용하여 client는 stream 또는 materiailzied table을 구독할 수 있게 된다.
+    - 변경되는 정보에 실시간으로 반응해야하는 application에 잘 맞는다.
+  - Pull
+    - RDBMDS의 query처럼 현재의 상태를 client가 요청하는 형태의 query이다.
+    - 변경 사항을 client가 pull한다.
+    - Materialized view의 현재 상태를 가져올 때 유용하게 사용할 수 있다.
+    - Request/response 기반의 application에 잘 맞는다.
+
+
+
+- Push Query
+
+  - Stream이나 table에 변경 사항을 지속 적으로 push하는 query이다.
+    - Push query는 server에서 영속적으로 실행되지 않으며, client와 연결이 끝나면 종료된다.
+  - SQL 문법
+    - `from_item`에는 stream, table, `LEFT JOIN`의 결과 중 하나가 들어갈 수 있다.
+
+  ```sql
+  SELECT select_expr [, ...]
+    FROM from_item
+    [[ LEFT | FULL | INNER ]
+      JOIN join_item
+          [WITHIN [<size> <timeunit> | (<before_size> <timeunit>, <after_size> <timeunit>)] [GRACE PERIOD <grace_size> <timeunit>]]
+      ON join_criteria]*
+    [ WINDOW window_expression ]
+    [ WHERE where_condition ]
+    [ GROUP BY grouping_expression ]
+    [ HAVING having_expression ]
+    EMIT [ output_refinement ]
+    [ LIMIT count ];
+  ```
+
+  - `EMIT`
+    - Output refinement를 설정하는 절이다.
+    - Output refinement란 결과를 emit하는 방식을 의미하며, 아래 값들 중 하나로 설정이 가능하다.
+    - `CHANGES`: 결과가 변경될 때 마다 실시간으로 결과를 emit한다.
+    - `FINAL`: 중간 결과를 무시하고 최정 결과만 emit한다. 오직 windowed aggregation에서만 사용이 가능하다.
+
+  - `WINDOW`
+    - `WINDOW` 절은 `FROM` 뒤에 오는 `from_item`이 stream일 때만 사용할 수 있다.
+    - Aggregation이나 join과 같은 operation을 수행할 때, 같은 key를 가진 record들을 어떻게 window라 불리는 group으로 묶을지를 설정한다.
+    - `TUMBLING `, `HOPPING`, `SESSION ` 중 하나의 값을 설정할 수 있다.
+  - REST API로 push query 실행하기
+    - `/query-stream` endpoint로 요청을 전송한다.
+    - Streaming 형식으로 값이 반환된다.
+    - `sql`에 실행할 push query를 입력하고, `properties`에 key:value 형태로 설정값들을 입력한다.
+
+  ```python
+  import requests
+  
+  
+  body=  {
+      "sql": "SELECT * FROM user EMIT CHANGES;",
+      "properties": {
+          "ksql.streams.auto.offset.reset": "earliest"
+      }
+  }
+  
+  session = requests.Session()
+  
+  with session.post("http://localhost:8088/query-stream", json=body, stream=True) as resp:
+      for line in resp.iter_lines():
+          if line:
+              print(line)
+  ```
+
+
+
+- Pull Query
+
+  - Stream이나 table의 현재 상태를 pull한 뒤 종료되는 query이다.
+    - Push query와 마찬가지로 server에서 영속적으로 실행되지 않으며, client에 결과를 반환하면 종료된다.
+  - SQL 문법
+    - `from_item`에는 materialized view, table, stream 중 하나가 들어갈 수 있다.
+
+  ```sql
+  SELECT select_expr [, ...]
+    FROM from_item
+    [ WHERE where_condition ]
+    [ AND window_bounds ]
+    [ LIMIT count ];
+  ```
+
+  - REST API로 pull query 실행하기
+    - Push query와는 달리 응답이 한 번만 온다.
+
+  ```python
+  import requests
+  
+  
+  body=  {
+      "sql": "SELECT * FROM user;",
+      "properties": {
+          "ksql.streams.auto.offset.reset": "earliest"
+      }
+  }
+  
+  res = requests.post("http://localhost:8088/query-stream", headers={"Content-type":"application/json"}, json=body)
+  print(res.text)
+  ```
+
+
+
 
 
 
