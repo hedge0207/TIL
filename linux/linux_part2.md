@@ -497,64 +497,57 @@
     - 이 명령어를 실행한다고 실행중인 service가 정지되진 않는다.
     - unit file을 수정하거나 unit file을 새로 생성하거나 삭제했을 경우, 아래 명령어를 실행해야 변경사항이 systemd에 반영된다.
   
-  
-      ```bash
+  ```bash
   $ systemctl daemon-reload
-      ```
+  ```
   
-      - `reload`
-        - Service와 관련된 설정 file들을 reload한다.
-        - 이는 unit file(`.service` file)을 reload하는 것이 아니라는 것에 주의해야한다.
-        - 예를 들어 `systemctl reload apache`라는 명령어는 `apache.service` file을 reload하는 것이 아니라 `httpd.conf` 같은 apache에서 사용하는 configuration file을 reload한다.
+  - reload
+    - Service와 관련된 설정 file들을 reload한다.
+    - 이는 unit file(`.service` file)을 reload하는 것이 아니라는 것에 주의해야한다.
+    - 예를 들어 `systemctl reload apache`라는 명령어는 `apache.service` file을 reload하는 것이 아니라 `httpd.conf` 같은 apache에서 사용하는 configuration file을 reload한다.
   
-      ```bash
+  ```bash
   $ systemctl reload <서비스명>
-      ```
+  ```
   
-      - 등록된 service를 실행한다.
+  - 등록된 service 실행 또는 정지
   
-      ```bash
-  $ systemctl start <서비스명>
-      ```
+  ```bash
+  $ systemctl start | stop <서비스명>
+  ```
   
-      - service를 정지한다.
+  - 등록된 service 재실행
   
-      ```bash
-  $ systemctl stop <서비스명>
-      ```
-  
-      - 실행중인 service를 재시작한다.
-  
-      ```bash
+  ```bash
   $ systemctl restart <서비스명>
-      ```
+  ```
   
-      - 특정 서비스의 상태 확인
+  - Service 상태 확인
   
-      ```bash
+  ```bash
   $ systemctl status <서비스명>
-      ```
+  ```
   
-      - 부팅시에 자동으로 실행되도록 설정
-        - 이 명령어를 실행시 `/etc/systemd/system`에 symbolic link를 생성한다.
-        - 이 경로는 booting시에 systemd가 자동으로 시작시킬 file들을 찾는 위치이다.
+  - 부팅시에 자동으로 실행되도록 설정
+    - 이 명령어를 실행시 `/etc/systemd/system`에 symbolic link를 생성한다.
+    - 이 경로는 booting시에 systemd가 자동으로 시작시킬 file들을 찾는 위치이다.
   
-      ```bash
+  ```bash
   $ systemctl enable <서비스명>
-      ```
+  ```
   
-      - 부팅시에 자동으로 실행되지 않도록 설정
-        - 이 명령어를 실행시 `/etc/systemd/system`에 생성된 symbolic link를 제거한다.
+  - 부팅시에 자동으로 실행되지 않도록 설정
+    - 이 명령어를 실행시 `/etc/systemd/system`에 생성된 symbolic link를 제거한다.
   
-      ```bash
+  ```bash
   $ systemctl disable <서비스명>
-      ```
+  ```
   
-      - 부팅시 자동으로 실행되도록 설정되어 있는지 확인
+  - 부팅시 자동으로 실행되도록 설정되어 있는지 확인
   
-      ```bash
+  ```bash
   $ systemctl is-enabled <서비스명>
-      ```
+  ```
 
 
 
