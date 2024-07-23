@@ -79,8 +79,8 @@
     - Factory를 생성하고, 클라이언트인 `order_pizza()` 메서드가 실행될 때 마다 `Pizza` 인터페이스를 구현한 구상 클래스를 생성하고, 이를 반환해준다.
     - 클라이언트인 `order_pizza()`는 factory로부터 구상 클래스를 전달받아 `Pizza` 인터페이스에 구현된 `prepare()`, `bake()` 등의 메서드만 실행시킨다.
   - 결국 문제를 다른 객체에 떠넘기는 것 아닌가?
-    - 위 예시에서는 `order_pizza()`만 살펴봤지만, `show_ingredients()` 등 pizza 인스턴스가 필요한 수 많은 메서드가 있을 수 있다.
-    - 만일 팩토리 한 곳에 위임해서 처리하지 않고, 모든 메서드에서 객체의 생성을 위와 같이 관리한다면, 수정사항이 있을 때 마다 모든 코드를 다 변경해줘야한다.
+    - 위 예시에서는 `order_pizza()`만 살펴봤지만, `show_ingredients()` 등 pizza 인스턴스가 필요한 수 많은 클라이언트가 있을 수 있다.
+    - 만일 팩토리 한 곳에 위임해서 처리하지 않고, 모든 메서드에서 객체의 생성을 위와 같이 관리한다면, 수정사항이 있을 때 마다 모든 클라이언트 코드를 다 변경해줘야한다.
   - 객체 생성 팩토리 만들기
 
   ```python
@@ -105,6 +105,7 @@
       def __init__(self, factory):
           factory = factory
       
+      # client code
       def order_pizza(self, type_):
           pizza = factory.create_pizza(type_)
           
@@ -117,11 +118,11 @@
   pizza_store = PizzaStore(SimplePizzaFactory())
   pizza = pizza_store.order_pizza()
   ```
-
+  
   - 이점
     - `order_pizza()`는 더 이상 구상 클래스에 의존하지 않는다.
     - 새로운 피자의 추가, 삭제가 일어날 때에도 factory의 코드만 변경하면 된다.
-
+  
   - Simple factory란 디자인 패턴이라기 보다는 프로그래밍에서 자주 쓰이는 관용구에 가깝다.
     - 워낙 자주 쓰이다 보니 simple factory를 factory pattern이라 부르는 사람들도 있다.
     - 그럼에도 simple factory는 정확히는 패턴은 아니다.
@@ -129,7 +130,39 @@
     - 정적 메서드를 사용하여 객체를 생성하는 factory를 의미한다.
     - Java에서 static 메서드는 해당 메서드가 포함된 클래스의 인스턴스를 생성하지 않아도 실행시킬 수 있는 메서드를 의미한다.
     - 정적 메서드를 사용하는 이유는 객체 생성을 위해 factory 클래스의 인스턴스를 만들지 않아도 돼서 보다 간편하게 객체를 생성할 수 있기 때문이다.
-    - 다만, 서브클래스를 만들어 객체 생성 메서드의 행동을 변경할 수 없다는 단점이 있다.
+    - 다만, 서브클래스를 만들어 객체를 생성하는 메서드의 행동을 변경할 수 없다는 단점이 있다.
+  
+  ```python
+  class StaticPizzaFactory:
+      
+      @staticmethod
+      def create_pizza(type_):
+          pizza = None
+          if type_ == "cheese":
+              pizza = CheesePizza()
+          elif type_ == "pepperoni":
+              pizza = PepperoniPizza()
+          elif type_ == "veggie":
+              pizza = VeggiePizza()
+          elif type_ == "clam":
+              pizza = ClamPizza()
+          return pizza
+  
+  
+  class PizzaStore:
+      
+      def order_pizza(self, type_):
+          pizza = StaticPizzaFactory.create_pizza(type_)
+          
+          pizza.prepare()
+          pizza.bake()
+          pizza.cut()
+          pizza.box()
+          return pizza
+      
+  pizza_store = PizzaStore()
+  pizza = pizza_store.order_pizza()
+  ```
 
 
 
@@ -179,7 +212,7 @@
   - 위 방식의 문제
     - 각 지점마다 Pizza를 생성하는 팩토리를 제대로 쓰긴 하는데, 정작 그 factory가 생성하는 instance로 피자를 생성하는 로직이 담긴 `PizzaStore`를 지점마다 구현하다보니 지점 사이에 차이가 생기게 된다.
     - 즉 지점마다 다른 조리법, 다른 포장 상자 등을 사용하기 시작한다.
-    - 이는 `PizzaStore`와 피자 제작 코드가 서로 분리되어 있기 때문에 발생한다.
+    - 이는 `PizzaStore`와 피자 제작 코드가 서로 분리되어 있기 때문에 발생하는 것이다.
     - 따라서 유연성을 잃지 않으면서 이 둘을 하나로 묶어줄 방법이 필요하다.
   
   -  `create_pizza` 코드를 factory가 아닌 `PizzaStore` 클래스로 다시 넣는다.
@@ -391,7 +424,7 @@
     - 즉 동일한 구성 요소(치즈, 야채, 소스)로 만들더라도 각 구성 요소별 세부 재료(레지아노 치즈, 모짜렐라 치즈, 양파, 마리나라 소스, 플럼토마토 소스)들이 다르다.
     - 따라서 이러한 재료군(family)을 관리할 방법이 필요하다.
   - 원재료 팩토리 만들기
-    - 모든 원재료를 생산하는 팩토리요 인터페이스를 정의한다.
+    - 모든 원재료를 생산하는 팩토리 인터페이스를 정의한다.
     - 각 메서드는 재료 클래스를 반환한다.
 
   ```py
@@ -399,30 +432,32 @@
   
   
   class PizzaIngredientFactory(metaclass=ABCMeta):
-  
+  	
+      @abstractmethod
       def create_dough(self):
           pass
-  
+  	
+      @abstractmethod
       def create_sauce(self):
           pass
-  
+  	
+      @abstractmethod
       def create_cheese(self):
           pass
-  
+  	
+      @abstractmethod
       def create_veggies(self):
           pass
-  
+  	
+      @abstractmethod
       def create_pepperoni(self):
           pass
   ```
-
+  
   - 뉴욕 원재료 팩토리 만들기
-
+  
   ```python
-  from abc import *
-  
-  
-  class NYPizzaIngredientFactory(metaclass=ABCMeta):
+  class NYPizzaIngredientFactory(PizzaIngredientFactory):
   
       def create_dough(self):
           return ThinCrustDough()
@@ -439,11 +474,11 @@
       def create_pepperoni(self):
           return SlicedPepperoni()
   ```
-
+  
   - Pizza 클래스 변경하기
     - Pizza 클래스가 원재료 팩토리에서 생산한 원재료만 사용하도록 코드를 변경한다.
     - `prepare()`를 추상 메서드로 변경한다.
-
+  
   ```python
   from abc import *
   
@@ -465,17 +500,17 @@
   
       # ...
   ```
-
+  
   - 더 이상 `Pizza`의 구상 클래스를 스타일 별로 만들 필요가 없다.
     - 기존에는 `Pizza`의 구상 클래스를 스타일별로 따로 만들었다(`NYCheesePizza`, `ChicagoCheesPiza` 등).
     - 이들은 다른 재료를 사용한다는 것만 빼면 다른 점이 없었다.
     - 따라서 더 이상 `Pizza`의 구상 클래스를 스타일 별로 생성하지 않고, 메뉴별로 생성한 뒤, 달라지는 부분은 원재료 팩터리에서 처리한다.
     - `Pizza`의 구상 클래스는 아래와 같이 원재료 팩토리를 사용하여 피자 재료를 만들며, 재료는 어떤 팩토리를 쓰느냐에 따라 달라지게 된다.
     - `Pizza`의 구상 클래스는 어떤 재료를 쓰는지 전혀 신경쓰지 않고, 피자를 만드는 방법만 알고 있으면 된다.
-
+  
   ```python
   class CheesePizza(Pizza):
-      def __init__(self, ingredient_factory):
+      def __init__(self, ingredient_factory: PizzaIngredientFactory):
           self.ingredient_factory = ingredient_factory
       
       def prepare(self):
@@ -484,10 +519,10 @@
           sauce = self.ingredient_factory.create_sauce()
           cheese = self.ingredient_factory.create_cheese()
   ```
-
+  
   - 지점 코드 변경하기
     - 피자 구상 클래스의 인스턴스를 생성할 때 지점별 원재료 팩토리 인스턴스를 인자로 넘긴다.
-
+  
   ```python
   class NYStylePizzaStore(PizzaStore):
       def create_pizza(type_):
