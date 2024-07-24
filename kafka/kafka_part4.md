@@ -119,6 +119,102 @@
   ```bash
   $ /bin/connect-distributed connect-distributed.properties
   ```
+  
+  - Docker compose로 distributed mode로 실행하기
+    - Cluster에 속한 worker들은 같은 `CONNECT_GROUP_ID`를 가져야한다.
+    - `CONNECT_REST_ADVERTISED_HOST_NAME`는 다른 worker들과 통신할 때 사용하기 때문에 localhost가 아닌 반드시 외부에서 접근 가능한 host나 IP를 입력해야한다.
+  
+  ```yaml
+  version: '3.2'
+  
+  
+  services:
+    connect1:
+      image: confluentinc/cp-kafka-connect:7.5.3
+      container_name: connect1
+      restart: always
+      ports:
+        - 8084:8083
+      environment:
+        CONNECT_BOOTSTRAP_SERVERS: "kafka1:9092,kafka2:9092,kafka3:9092"
+        CONNECT_GROUP_ID: "connect-cluster"
+  
+        CONNECT_CONFIG_STORAGE_TOPIC: connect-configs
+        CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets
+        CONNECT_STATUS_STORAGE_TOPIC: connect-statuses
+  
+        CONNECT_REPLICATION_FACTOR: 1
+        CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+        CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+        CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+  
+        CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+        CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+        CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+        CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+        CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
+        CONNECT_value_CONVERTER_SCHEMAS_ENABLE: "true"
+        CONNECT_REST_ADVERTISED_HOST_NAME: "connect1"
+        CONNECT_PLUGIN_PATH: "/usr/share/java"
+    
+    connect2:
+      image: confluentinc/cp-kafka-connect:7.5.3
+      container_name: connect2
+      restart: always
+      ports:
+        - 8085:8083
+      environment:
+        CONNECT_BOOTSTRAP_SERVERS: "kafka1:9092,kafka2:9092,kafka3:9092"
+        CONNECT_GROUP_ID: "connect-cluster"
+  
+        CONNECT_CONFIG_STORAGE_TOPIC: connect-configs
+        CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets
+        CONNECT_STATUS_STORAGE_TOPIC: connect-statuses
+  
+        CONNECT_REPLICATION_FACTOR: 1
+        CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+        CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+        CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+  
+        CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+        CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+        CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+        CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+        CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
+        CONNECT_value_CONVERTER_SCHEMAS_ENABLE: "true"
+        CONNECT_REST_ADVERTISED_HOST_NAME: "connect2"
+        CONNECT_PLUGIN_PATH: "/usr/share/java"
+    
+    connect3:
+      image: confluentinc/cp-kafka-connect:7.5.3
+      container_name: connect3
+      restart: always
+      ports:
+        - 8086:8083
+      environment:
+        CONNECT_BOOTSTRAP_SERVERS: "kafka1:9092,kafka2:9092,kafka3:9092"
+        CONNECT_GROUP_ID: "connect-cluster"
+  
+        CONNECT_CONFIG_STORAGE_TOPIC: connect-configs
+        CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets
+        CONNECT_STATUS_STORAGE_TOPIC: connect-statuses
+  
+        CONNECT_REPLICATION_FACTOR: 1
+        CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+        CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+        CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+  
+        CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+        CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+        CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+        CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+        CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
+        CONNECT_value_CONVERTER_SCHEMAS_ENABLE: "true"
+        CONNECT_REST_ADVERTISED_HOST_NAME: "connect3"
+        CONNECT_PLUGIN_PATH: "/usr/share/java"
+  ```
+  
+  
 
 
 
@@ -601,7 +697,7 @@
       image: confluentinc/cp-kafka:latest
       container_name: kafka
       environment:
-        - KAFKA_ZOOKEEPER_CONNECT=theo-etl-zookeeper:2181
+        - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
         - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:29093
         - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
       volumes:

@@ -1,4 +1,4 @@
-## Python에서 사용하기
+# Python에서 사용하기
 
 - Python에서 Kafka에 접근할 수 있게 해주는 라이브러리에는 아래와 같은 것들이 있다.
   - confluent-kafka
