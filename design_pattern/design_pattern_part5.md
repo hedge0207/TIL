@@ -507,6 +507,10 @@
 
 ## Model-View-Controller Pattern
 
+> 글 마다 설명이 모두 다르다.
+>
+> 추후에 완벽하게 정리된 글을 발견하면 추가할 것
+
 - MVC Pattern
   - Model
     - 모든 데이터, 상태와 애플리케이션 로직이 들어있다.
@@ -559,11 +563,86 @@
 
 
 
-- MVC 패턴 적용해보기
+- MVC, MVP, MVVM
+  - 세 패턴 모두 비즈니스 로직과 뷰를 분리하기 위해 사용하는 패턴들이다.
+    - 시스템이 수행해야 하는 비즈니스 로직과 사용자에게 보여지는 뷰를 분리하는 것은 매우 중요하다.
+    - 비즈니스 로직과 뷰가 분리되어야 새로운 기능의 추가나 기존 기능의 변경 같은 요구사항의 변화에 보다 유연하고 대응할 수 있기 때문이다.
+  - 비즈니스 로직과 뷰를 분리하는 방식이 패턴마다 약간씩 다르다.
 
-  > Streamlit을 사용하여 타이머를 만드려고 했으나 변경 사항이 생길 때 마다 렌더링이 이루어지는 streamlit 특성 상 MVC 패턴 적용이 불가능하다.
-  >
-  > 추후 PyQt5를 사용하여 다시 해볼 것
+
+
+- MVC(Model-View-Controller)
+
+  - View와 model 사이에 controller를 두어 view와 model 사이의 의존성을 제거하는 방식이다.
+  - 구성
+    - View는 사용자 인터페이스를 나타내며, model의 데이터를 보여주고, 사용자의 입력을 model에 전달하는 역할을한다.
+    - Contorller는 model과 view를 연결하는 역할을 하며, view에서 받은 입력을 model에 전달하고, model의 변경 사항을 view에 전달한다.
+    - Model은 비즈니스 로직과 데이터를 담당한다. 데이터를 가져오고 변경하는 로직을 가지고 있다.
+
+  ![image-20240718101238458](design_pattern_part5.assets/image-20240718101238458.png)
+
+  - 예시 코드
+    - Controller는 model과 view에 대한 참조를 가지고 있다.
+
+  ```python
+  class ProductModel:
+  
+      def __init__(self, name, price):
+          self._name = name
+          self._price = price
+  
+      @property
+      def name(self):
+          return self._name
+  
+      @name.setter
+      def name(self, name):
+          self._name = name
+  
+      @property
+      def price(self):
+          return self._price
+  
+      @price.setter
+      def price(self, price):
+          self._price = price
+  
+  
+  class ProductView:
+  
+      def display_product(self, name, price):
+          print(f"Product - name: {name}, price: {price}")
+      
+  
+  class Controller:
+  
+      def __init__(self, product: ProductModel, view: ProductView):
+          self._product = product
+          self._view = view
+      
+      def set_price(self, price):
+          self._product.price = price
+      
+      def display_product(self):
+          self._view.display_product(self._product.name, self._product.price)
+  
+  
+  # client
+  if __name__ == "__main__":
+      product_model = ProductModel("desk", 100_000)
+      product_view = ProductView()
+      product_controller = Controller(product_model, product_view)
+  
+      product_controller.set_price(150_000)
+      product_controller.display_product()
+  ```
+
+  - MVC 패턴의 문제점
+    - Controller가 view와 model을 모두 알고 있어야한다.
+    - 또한 다수의 view, model이 controller를 통해 연결될 경우 controller가 비대해지는 현상이 발생할 수 있다.
+    - 단일 controller가 비대해지는 상황을 피하기 위해 controller를 여러 개 둘 경우 각 controller에서 view와 model에 동시에 접근하게 되므로 모델의 상태를 일관되게 유지하기 어려울 수 있다는 문제가 있다.
+
+
 
 
 
