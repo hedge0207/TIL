@@ -325,6 +325,26 @@
 <br/>
 <br/>
 
+## IT_Essential_part6
+- 프로그래밍 언어
+
+- UI
+
+- 소프트웨어의 이해
+
+- 소프트웨어 개발 생명 주기(SDLC, System Development Life Cycle)
+
+- Agile
+
+- 소프트웨어 개발 단계
+
+- 소프트웨어 품질
+
+- 프로젝트 관리
+
+<br/>
+<br/>
+
 ## naming
 - boolean
 
@@ -397,30 +417,6 @@
 - 블록체인
 
 - 인공지능
-
-<br/>
-<br/>
-
-## 컴퓨터 공학 전공 정리_part1
-- 프로그래밍 언어
-
-- UI
-
-<br/>
-<br/>
-
-## 컴퓨터 공학 전공 정리_part2
-- 소프트웨어의 이해
-
-- 소프트웨어 개발 생명 주기(SDLC, System Development Life Cycle)
-
-- Agile
-
-- 소프트웨어 개발 단계
-
-- 소프트웨어 품질
-
-- 프로젝트 관리
 
 <br/>
 <br/>
@@ -509,6 +505,12 @@
 
 ## PostgreSQL
 ### postgresql
+- 실행하기
+
+- Replication
+
+- View
+
 <br/>
 <br/>
 
@@ -749,12 +751,6 @@
 - DB와 Django 연동하기
 
 - Django allauth
-
-<br/>
-<br/>
-
-## 배포
-- 배포
 
 <br/>
 <br/>
@@ -1177,18 +1173,8 @@
 <br/>
 <br/>
 
-## YAML
-<br/>
-<br/>
-
 ## 암호화
 - AES
-
-<br/>
-<br/>
-
-## 추천시스템
-- 추천 시스템
 
 <br/>
 <br/>
@@ -1387,6 +1373,12 @@
 <br/>
 <br/>
 
+## monitoring
+- Java Application monitoring
+
+<br/>
+<br/>
+
 <br/>
 <br/>
 
@@ -1544,6 +1536,8 @@
 ## kafka_part4
 - Kafka Connect
 
+- ksqlDB
+
 - Kafka를 사용한 application의 error handling
 
 - tips
@@ -1552,6 +1546,8 @@
 <br/>
 
 ## kafka_python
+- Python에서 사용하기
+
 <br/>
 <br/>
 
