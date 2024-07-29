@@ -813,7 +813,7 @@
     - `if0 x 0 (x+f(x-1))`에서 `x`가 0이 아닐 때의 expression은 `(x+f(x-1))`이고, `x`가 0일 때의 expression은 `0`이다.
 
 
-  ![image-20230113172300281](Introdution_To_Programming_Language_part2.assets/image-20230113172300281.png)
+  ![image-20230113172300281](Introduction_To_Programming_Language_part2.assets/image-20230113172300281.png)
 
 
 
