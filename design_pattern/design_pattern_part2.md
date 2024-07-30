@@ -6,6 +6,10 @@
     - 여기서의 `Pizza`는 인터페이스가 아닌 구상 클래스이다.
 
   ```python
+  # 구상 클래스
+  class Pizza:
+      ...
+  
   def order_pizza():
       pizza = Pizza()
       
@@ -15,13 +19,29 @@
       pizza.box()
       return pizza
   ```
-
+  
   - Pizza의 종류가 하나만 있는 것은 아니므로, 피자의 종류마다 다른 처리를 해줘야 한다.
     - `type_` parameter로 피자의 종류를 받는다.
     - 이제 `Pizza`를 추상 클래스를 생성하고, 이를 구현하는 `CheesePizza`등의 여러 구상 클래스를 생성한다.
     - `type_`을 바탕으로 어떤 구상 클래스의 인스턴스를 생성할지를 결정한다.
-
+  
   ```python
+  from abc import ABC
+  
+  # 추상 클래스
+  class Pizza(ABC):
+      ...
+  
+  # 구상 클래스들
+  class CheesePizza(Pizza):
+      ...
+  
+  class GreekPizza(Pizza):
+      ...
+  
+  class PepperoniPizza(Pizza):
+      ...
+  
   def order_pizza(type_):
       pizza = None
       if type_ == "cheese":
@@ -39,7 +59,7 @@
   ```
   
   - 신메뉴를 추가해야 한다.
-    - `GreekPizzar`를 제외하고 `VeggiePizza`와 `ClamPizza`가 추가되어야 한다.
+    - `GreekPizza`를 제외하고 `VeggiePizza`와 `ClamPizza`가 추가되어야 한다.
   
   ```py
   def order_pizza(type_):
@@ -80,11 +100,49 @@
     - 클라이언트인 `order_pizza()`는 factory로부터 구상 클래스를 전달받아 `Pizza` 인터페이스에 구현된 `prepare()`, `bake()` 등의 메서드만 실행시킨다.
   - 결국 문제를 다른 객체에 떠넘기는 것 아닌가?
     - 위 예시에서는 `order_pizza()`만 살펴봤지만, `show_ingredients()` 등 pizza 인스턴스가 필요한 수 많은 클라이언트가 있을 수 있다.
-    - 만일 팩토리 한 곳에 위임해서 처리하지 않고, 모든 메서드에서 객체의 생성을 위와 같이 관리한다면, 수정사항이 있을 때 마다 모든 클라이언트 코드를 다 변경해줘야한다.
+    - 만일 객체의 생서을 factory 한 곳에 위임해서 처리하지 않고 각 클라이언트가 객체의 생성을 관리한다면, 수정사항이 있을 때 마다 모든 클라이언트 코드를 다 변경해줘야한다.
+    - 아래 예시에서 `Pizza`의 종류가 추가되거나 삭제되면 두 개의 클라이언트 코드를 모두 수정해야한다.
+
+  ````python
+  def order_pizza(type_):
+      if type_ == "cheese":
+          pizza = CheesePizza()
+      elif type_ == "pepperoni":
+          pizza = PepperoniPizza()
+      elif type_ == "veggie":
+          pizza = VeggiePizza()
+      elif type_ == "clam":
+          pizza = ClamPizza()
+      
+      pizza.prepare()
+      pizza.bake()
+      pizza.cut()
+      pizza.box()
+      return pizza
+  
+  def show_ingredients(type_):
+      if type_ == "cheese":
+          pizza = CheesePizza()
+      elif type_ == "pepperoni":
+          pizza = PepperoniPizza()
+      elif type_ == "veggie":
+          pizza = VeggiePizza()
+      elif type_ == "clam":
+          pizza = ClamPizza()
+      
+      print(pizza.dough)
+      print(pizza.cheeze)
+  ````
+
+
+
+- Factory 적용하기
+
   - 객체 생성 팩토리 만들기
 
   ```python
   class SimplePizzaFactory:
+      
       def create_pizza(type_):
           pizza = None
           if type_ == "cheese":
@@ -101,7 +159,8 @@
   - 클라이언트 코드 수정하기
 
   ```python
-  class PizzaStore:    
+  class PizzaStore:
+      
       def __init__(self, factory):
           factory = factory
       
@@ -118,11 +177,11 @@
   pizza_store = PizzaStore(SimplePizzaFactory())
   pizza = pizza_store.order_pizza()
   ```
-  
+
   - 이점
     - `order_pizza()`는 더 이상 구상 클래스에 의존하지 않는다.
-    - 새로운 피자의 추가, 삭제가 일어날 때에도 factory의 코드만 변경하면 된다.
-  
+    - 새로운 피자의 추가, 삭제가 일어날 때에도 모든 클라이언트의 코드를 변경하는 것이 아니라 factory의 코드만 변경하면 된다.
+
   - Simple factory란 디자인 패턴이라기 보다는 프로그래밍에서 자주 쓰이는 관용구에 가깝다.
     - 워낙 자주 쓰이다 보니 simple factory를 factory pattern이라 부르는 사람들도 있다.
     - 그럼에도 simple factory는 정확히는 패턴은 아니다.
@@ -131,7 +190,7 @@
     - Java에서 static 메서드는 해당 메서드가 포함된 클래스의 인스턴스를 생성하지 않아도 실행시킬 수 있는 메서드를 의미한다.
     - 정적 메서드를 사용하는 이유는 객체 생성을 위해 factory 클래스의 인스턴스를 만들지 않아도 돼서 보다 간편하게 객체를 생성할 수 있기 때문이다.
     - 다만, 서브클래스를 만들어 객체를 생성하는 메서드의 행동을 변경할 수 없다는 단점이 있다.
-  
+
   ```python
   class StaticPizzaFactory:
       
@@ -170,12 +229,13 @@
 
   - 피자 가게가 성장하면서 각 지역마다 지점을 내기로 했다.
     - 각 지역의 특성을 반영한 다양한 스타일의 피자를 출시하려 한다.
-  - 각 피자 스타일별로 팩토리를 하나씩 생성하기로 한다.
+  - 각 피자 스타일별로 factory를 하나씩 생성하기로 한다.
     - 본사에서는 각 지역 스타일에 맞는 피자를 생성해주는 factory만 구현해준다.
     - 그리고 모든 지점에서 동일한 과정을 거쳐 피자를 만들게 하기 위해서 `PizzaStore`를 참고하여 각 지점마다 `PizzaStore` 클래스를 만들도록했다.  
   
   ```python
   class NYPizzaFactory:
+      
       def create_pizza(type_):
           pizza = None
           if type_ == "cheese":
@@ -189,6 +249,7 @@
           return pizza
   
   class ChicagoPizzaFactory:
+      
       def create_pizza(type_):
           pizza = None
           if type_ == "cheese":
@@ -202,17 +263,17 @@
           return pizza
   
   
-  ny_store = PizzaStore(NYPizzaFactory())
+  ny_store = NYPizzaStore(NYPizzaFactory())
   pizza = ny_store.order_pizza()
   
-  chicago_store = PizzaStore(ChicagoPizzaFactory())
+  chicago_store = ChicagoPizzaStore(ChicagoPizzaFactory())
   pizza = chicago_store.order_pizza()
   ```
   
   - 위 방식의 문제
     - 각 지점마다 Pizza를 생성하는 팩토리를 제대로 쓰긴 하는데, 정작 그 factory가 생성하는 instance로 피자를 생성하는 로직이 담긴 `PizzaStore`를 지점마다 구현하다보니 지점 사이에 차이가 생기게 된다.
     - 즉 지점마다 다른 조리법, 다른 포장 상자 등을 사용하기 시작한다.
-    - 이는 `PizzaStore`와 피자 제작 코드가 서로 분리되어 있기 때문에 발생하는 것이다.
+    - 이는 `PizzaStore`와 pizza factory가 서로 분리되어 있기 때문에 발생하는 것이다.
     - 따라서 유연성을 잃지 않으면서 이 둘을 하나로 묶어줄 방법이 필요하다.
   
   -  `create_pizza` 코드를 factory가 아닌 `PizzaStore` 클래스로 다시 넣는다.
@@ -245,6 +306,7 @@
   
   ```python
   class NYStylePizzaStore(PizzaStore):
+      
       def create_pizza(type_):
           pizza = None
           if type_ == "cheese":
@@ -256,9 +318,10 @@
           elif type_ == "clam":
               pizza = NYStyleClamPizza()
           return pizza
-      
+  
   
   class ChicagotylePizzaStore(PizzaStore):
+      
       def create_pizza(type_):
           pizza = None
           if type_ == "cheese":
@@ -273,13 +336,13 @@
   ```
   
   - 이제 피자의 종류는 어떤 서브클래스를 선택했느냐에 따라 결정된다.
-    - 이제 `PizzaStore` 클래스의 `order_pizza()`메서드에서는 `Pizza` 객체를 가지고 피자를 준비하고, 굽고, 자르고, 포장하는 작업을 하지만, `Pizza`는 추상 클래스이므로 `order_pizza()` 메서드는 실제로 어떤 구상 클래스에서 작업이 처리되고 있는지 전혀 알 수 없다.
+    - `PizzaStore.order_pizza()`메서드에서는 `Pizza` 객체를 가지고 피자를 준비하고, 굽고, 자르고, 포장하는 작업을 하지만, `Pizza`는 추상 클래스이므로 `PizzaStore.order_pizza()` 메서드는 실제로 어떤 `Pizza` 구상 클래스에서 작업이 처리되고 있는지 전혀 알 수 없다.
     - 즉, `PizzaStore`와 `Pizza`는 완전히 분리되어 있다.
-    - `order_pizza()`에서 `create_pizza()`를 호출하면 `Pizza`의 서브클래스가 그 호출을 받아서 피자를 만들기에, `NYStylePizzaStore`에서 `order_pizza()`가 호출되면 뉴욕 스타일 피자가 만들어지고, `ChicagoStylePizzaStore`에서 `order_pizza()`가 호출되면 시카고 스타일 피자가 만들어진다.
-    - 즉 서브 클래스에서 피자의 종류를 실시간으로 결정하는 것이 아니라, 어떤 서브클래스를 선택했느냐에 따라 피자의 종류가 결정되게 된다.
-  
-  - 결국 구상 클래스 인스턴스를 생성하는 일은 하나의 객체(simple factory)가 전부 처리하는 방식에서 일련의 서브 클래스가 처리하는 방식으로 바뀌었다.
-  
+    - `order_pizza()`에서 `create_pizza()`를 호출하면 `Pizza`의 서브클래스의 인스턴스가 생성된다.
+    - 즉 `NYStylePizzaStore`에서 `order_pizza()`가 호출되면 `create_pizza()`메서드는 뉴욕 스타일 피자 인스턴스를 생성하고, `ChicagoStylePizzaStore`에서 `order_pizza()`가 호출되면 `create_pizza()`메서드는 시카고 스타일 피자 인스턴스르 생성한다.
+    - 결국 서브 클래스에서 피자의 종류를 실시간으로 결정하는 것이 아니라, 어떤 서브클래스를 선택했느냐에 따라 피자의 종류가 결정되게 된다.
+    - 결국 구상 클래스 인스턴스를 생성하는 일은 하나의 객체(simple factory)가 전부 처리하는 방식에서 일련의 서브 클래스가 처리하는 방식으로 바뀌었다.
+    
   - Pizza class 만들기
     - 마지막으로 Pizza class와 그 서브 클래스를 만든다.
   
@@ -317,7 +380,7 @@
       def get_name(self):
           return self.name
   ```
-
+  
   - Pizza의 구상 서브 클래스 만들기
   
   ```python
@@ -342,7 +405,7 @@
 
 
 
-- 팩토리 메서드 패턴
+- Factory method 패턴
   
   - 지금까지 살펴본 패턴이 팩토리 메서드 패턴이다.
     - 모든 팩터리 패턴은 객체 생성을 캡슐화한다.
@@ -355,21 +418,21 @@
   ![image-20230326135018688](design_pattern_part2.assets/image-20230326135018688.png)
   
   - Creator 추상 클래스
-    - 객체를 만드는 메서드(위 UML에서는 `factory_method()`), 즉 팩토리 매소드용 인터페이스를 제공한다.
-    - 팩토리 메소드에 의해 생성된 구상 클래스의 인스턴스(예시의 경우 `ConcreteProduct`의 인스턴스)로 필요한 작업을 처리한다.
+    - 객체를 만드는 메서드(위 UML에서는 `factory_method()`, 피자 예시에서는 `create_pizza()`), 즉 팩토리 매소드용 인터페이스를 제공한다.
+    - 팩토리 메소드에 의해 생성된 구상 클래스의 인스턴스(예시의 경우 `ConcreteProduct`의 인스턴스, 피자 예시에서는 `NYStyleCheesePizza` 등)로 필요한 작업을 처리한다.
     - 그러나 실제 팩토리 메서드를 구현하고 구상 클래스의 인스턴스를 생성하는 일은 서브클래스에서만 할 수 있다.
   - 구상 생산자 클래스가 하나 뿐이라도 팩토리 메서드 패턴을 사용하는 것이 의미가 있는지?
-    - 구상 생산자 클래스가 하나 뿐이더라도 팩토리 메서드 패턴은 유용하다.
+    - `ConcreteCreator`가 하나 뿐이더라도 팩토리 메서드 패턴은 유용하다.
     - 다른 `ConcreteCreator`가 추가되거나 변경되더라도, `Creator` 클래스가 `ConcreteProduct`와 느슨하게 결합되어 있으므로 `Creator`는 건드릴 필요가 없다.
-  - `Creator` 클래스의 `factory_method()`는 꼭 추상 메서드로 선언해야 하는지, 혹은 `Creator` 클래스는 꼭 추상 클래스여야 하는지
-    - 꼭 그럴 필요는 없다. 
+  - `Creator` 클래스의 `factory_method()`는 꼭 추상 메서드로 선언해야 하는지, 혹은 `Creator` 클래스는 꼭 추상 클래스여야 하는지?
+    - 꼭 그럴 필요는 없다.
     - 몇몇 간단한 `ConcreteProduct` 생성을 위해 일반 메서드로 정의해서 `ConcreteCreator`를 설정하지 않았을 때 실행될 기본 팩토리 메서드로 사용해도 된다.
     - 즉, 위 예시에서는 `factory_method()`가 추상 메서드이므로 서브 클래스에서 반드시 구현을 해야 한다.
-    - 반면이 일반 메서드로 구현하면, 서브 클래스에서 반드시 구현을 하지 않아도 되고, 구현하지 않았을 경우(오버라이딩 하지 않았을 경우) `Creator`에 정의된 `factory_method()`가 실행된다.
+    - 반면에 일반 메서드로 구현하면, 서브 클래스에서 반드시 구현을 하지 않아도 되고, 구현하지 않았을 경우(오버라이딩 하지 않았을 경우) `Creator`에 정의된 `factory_method()`가 실행된다.
     - 즉, `Creator` 클래스에서 `factory_method()`를 추상 메서드로 선언하지 않으면, 이를 기본 팩토리 메서드로 사용할 수 있다.
   - Simple Factory와의 차이
     - 팩토리 메서드 패턴은 얼핏 보기에는 simple factory와 거의 유사해보인다.
-    - 그러나 팩토리 메서드 패턴은 simple factory와는 달리 생성할 `CreateProduct`를 보다 유연하게 변경할 수 있다.
+    - 그러나 팩토리 메서드 패턴은 simple factory와는 달리 생성할 `ConcreteProduct`를 보다 유연하게 변경할 수 있다.
 
 
 
@@ -395,13 +458,13 @@
     - "구현보다는 인터페이스에 맞춰 프로그래밍한다"는 원칙과 유사하지만, 이 원칙이 추상화를 더욱 강조한다.
     - 고수준 구성 요소가 저수준 구성 요소에 의존하면 안 되며, 항상 추상화에 의존하게 만들어야 한다는 뜻이 담겨 있다.
     - 고수준 구성 요소란 다른 저수준 구성 요소에 의해 정의되는 행동들이 들어있는 구성 요소를 뜻한다.
-    - 예를 들어 `PizzaStore`의 행동은 피자에 정의된`bake()`, `cut()` 등을 사용하므로 `PizzaStore`는 고수준 구성 요소라고 할 수 있다.
+    - 예를 들어 `PizzaStore`의 행동은 피자에 정의된 `bake()`, `cut()` 등을 사용하므로 `PizzaStore`는 고수준 구성 요소라고 할 수 있다.
   - 의존성 역전 원칙 적용하기
     - 위에서 살펴본 `PizzaStore`의 가장 큰 문제는 `PizzaStore`가 모든 종류의 피자에 의존한다는 점이다.
     - 이는 `order_pizza()` 메서드에서 구상 형식의 인스턴스를 직접 만들기 때문이다.
     - `Pizza`라는 추상 클래스를 만들긴 했지만, 구상 피자 객체를 생성하는 것은 아니기에, `Pizza`를 추상 클래스로 만들어 얻는 것이 별로 없다.
-    - 따라서 `order_pizza()`에서 피자를 만드는 팩토리 메서드 패턴으로 뽑아내면, `PizzaStore`는 오직 `Pizza`라는 추상 클래스에만 의존하게 된다(꼭 팩토리 메서드를 사용해야지 의존성 역전을 할 수 있는 것은 안다).
-    - 이렇게 되면 고수준 구성 요소인 `PizzaStore`가 더 이상 저수준 구성 요소인 구성 피자 클래스가 아닌 추상 클래스인 `Pizza`에 의존하게 된다.
+    - 따라서 `order_pizza()`에서 피자를 만드는 부분을 팩토리 메서드 패턴으로 뽑아내면, `PizzaStore` 추상 클래스는 오직 `Pizza`라는 추상 클래스에만 의존하게 된다(꼭 팩토리 메서드를 사용해야지 의존성을 역전시킬 수 있는 것은 아니다).
+    - 이렇게 되면 고수준 구성 요소인 `PizzaStore`가 저수준 구성 요소인 구상 피자 클래스가 아닌 추상 클래스인 `Pizza`에 의존하게 된다.
   - 왜 "역전(inversion)"이라는 단어를 사용하는 것인가
     - 객체 지향 디자인을 할 때 일반적으로 생각하는 방법과는 반대로 뒤집어서 생각해야 하기에 역전이라는 단어를 사용한다.
     - 일반적으로 디자인할 때는 `PizzaStore → [CheesPizza, GreekPizza, PeperoniPizza]`와 같은 의존관계가 형성된다.
