@@ -918,6 +918,209 @@
 
 
 
+## Custom Connector
+
+- Custom Source Connector 생성하기
+
+  - Custom source connector를 생성하기 위해서는 두 개의 class를 구현해야한다.
+    - 추상 클래스인 `SourceConnector`를 상속 받는 source connect class
+    - 추상 클래스인 `SourceTask`를 상속 받는 source task class
+    - 이 때,  `SourceConnector`는 `Connector`를 상속 받고, `SourceTask`는 `Task`를 상속받는다.
+    - 따라서 `Connect`와 `SourceConnector`의 abstract method를 모두 구현해야한다.
+  - `SourceConnector`를 상속 받는 connector class를 구현한다(아래 method들은 모두 필수로 구현해야 하는 method들이다).
+    - `CONFIG_DEF`에는 connector 생성시 `config`로 받을 인자들을 정의한다.
+    - `start()` method에는 connector가 실행될 때 수행할 동작을 정의한다.
+    - `taskClass()`는 connector가 수행할 task를 정의한 class를 반환한다.
+    - `taskConfigs()`는 task 수행에 필요한 설정 정보를 반환한다.
+    - `stop()` method에는 connector가 정지될 때 수행할 동작을 정의한다.
+    - `config()`는 설정 정보를 반환한다.
+    - `version()`은 connector의 버전 정보를 반환한다.
+
+  ```java
+  package org.example;
+  
+  import org.apache.kafka.common.config.ConfigDef;
+  import org.apache.kafka.connect.connector.Task;
+  import org.apache.kafka.connect.source.SourceConnector;
+  
+  import java.util.ArrayList;
+  import java.util.HashMap;
+  import java.util.List;
+  import java.util.Map;
+  
+  
+  public class PingSourceConnector extends SourceConnector {
+  
+      private String topic;
+      public static final String TOPIC_CONFIG = "topic";
+  
+      static final ConfigDef CONFIG_DEF = new ConfigDef()
+              .define(TOPIC_CONFIG, ConfigDef.Type.STRING, ConfigDef.NO_DEFAULT_VALUE, new ConfigDef.NonEmptyString(), ConfigDef.Importance.HIGH, "The topic to publish data to");
+  
+  
+      @Override
+      public void start(Map<String, String> props) {
+          topic = props.get(TOPIC_CONFIG);
+      }
+  
+      @Override
+      public Class<? extends Task> taskClass() {
+          return PingSourceTask.class;
+      }
+  
+      @Override
+      public List<Map<String, String>> taskConfigs(int maxTasks) {
+          ArrayList<Map<String, String>> configs = new ArrayList<>();
+          Map<String, String> config = new HashMap<>();
+          config.put(TOPIC_CONFIG, topic);
+          configs.add(config);
+          return configs;
+      }
+  
+      @Override
+      public void stop() {
+          System.out.println("stop");
+      }
+  
+      @Override
+      public ConfigDef config() {
+          return CONFIG_DEF;
+      }
+  
+      @Override
+      public String version() {
+          return "1.0";
+      }
+  }
+  ```
+
+  - `SourceTask`를 상속 받는 source task class를 구현한다.
+    - 입력으로 받은 topic에 10초에 한 번씩 "ping"이라는 payload를 가진 message를 보내는 task를 구현한다.
+    - `start()`에는 task가 실행될 때 수행할 작업들을 정의한다.
+    - `stop()`에는 task가 정지될 때 수행할 작업들을 정의한다.
+    - `version()`에는 task의 version의 정의한다.
+    - `poll()`에는 topic으로 전송할 message를 구성하는 방식을 정의하면 되며, `poll` method 가 반환한 message들은 topic으로 전송된다.
+
+  ```java
+  package org.example;
+  
+  import org.apache.kafka.connect.data.Schema;
+  import org.apache.kafka.connect.source.SourceRecord;
+  import org.apache.kafka.connect.source.SourceTask;
+  
+  import java.util.ArrayList;
+  import java.util.Collections;
+  import java.util.List;
+  import java.util.Map;
+  
+  public class PingSourceTask extends SourceTask {
+  
+      private String topic;
+      private Long streamOffset;
+  
+      @Override
+      public void start(Map<String, String> props) {
+          topic = props.get(PingSourceConnector.TOPIC_CONFIG);
+      }
+  
+      @Override
+      public List<SourceRecord> poll() throws InterruptedException {
+          ArrayList<SourceRecord> records = new ArrayList<>();
+          Map<String, String> sourcePartition = Collections.singletonMap("foo", "bar");
+          Map<String, Long> sourceOffset = Collections.singletonMap("position", streamOffset);
+          records.add(new SourceRecord(sourcePartition, sourceOffset, topic, Schema.STRING_SCHEMA, "ping"));
+          Thread.sleep(10000);
+          return records;
+      }
+  
+      @Override
+      public void stop() {
+          System.out.println("stop");
+      }
+      
+      @Override
+      public String version() {
+          return "1.0";
+      }
+  }
+  ```
+
+  - Maven 설정 파일 작성하기
+
+  ```xml
+  <project xmlns="http://maven.apache.org/POM/4.0.0"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+      <modelVersion>4.0.0</modelVersion>
+  
+      <groupId>com.example</groupId>
+      <artifactId>my-source-connector</artifactId>
+      <version>1.0-SNAPSHOT</version>
+  
+      <dependencies>
+          <dependency>
+              <groupId>org.apache.kafka</groupId>
+              <artifactId>connect-api</artifactId>
+              <version>3.0.0</version>
+          </dependency>
+          <dependency>
+              <groupId>junit</groupId>
+              <artifactId>junit</artifactId>
+              <version>4.13.2</version>
+              <scope>test</scope>
+          </dependency>
+      </dependencies>
+  
+      <build>
+          <plugins>
+              <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-compiler-plugin</artifactId>
+                  <version>3.8.1</version>
+                  <configuration>
+                      <source>1.7</source>
+                      <target>1.7</target>
+                  </configuration>
+              </plugin>
+              <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-shade-plugin</artifactId>
+                  <version>3.2.4</version>
+                  <executions>
+                      <execution>
+                          <phase>package</phase>
+                          <goals>
+                              <goal>shade</goal>
+                          </goals>
+                          <configuration>
+                              <createDependencyReducedPom>false</createDependencyReducedPom>
+                              <transformers>
+                                  <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                  <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                      <mainClass>com.example.MySourceConnector</mainClass>
+                                  </transformer>
+                              </transformers>
+                          </configuration>
+                      </execution>
+                  </executions>
+              </plugin>
+          </plugins>
+      </build>
+  </project>
+  ```
+  
+  - Build
+  
+  ```bash
+  $ mvn clean package
+```
+  
+- 결과로 생성된 `.jar` 파일을 `plugin.path`에 설정된 경로에 넣으면 된다.
+
+
+
+
+
 # ksqlDB
 
 - ksqlDB
