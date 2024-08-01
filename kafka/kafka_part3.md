@@ -836,12 +836,6 @@
 
 
 
-## ksqlDB
-
-
-
-
-
 ## Kafka Burrow
 
 > https://github.com/linkedin/Burrow
