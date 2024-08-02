@@ -921,12 +921,11 @@
 - 커맨드 패턴에 따라 음식 주문하기
 
   - 음식 주문 과정
-    - 고객이 종업원에게 원하는 물건을 주문한다(`create_order()`).
     - 종업원은 고객의 주문(`Order` class의 instance)을 받는다(`take_order()`).
     - 종업원은 주문 처리를 준비한다(`Order` 객체에 있는 `order_up()` 메서드를 호출한다).
     - `Order` 객체에는 음식을 준비할 때 필요한 모든 주문 사항이 들어있는데, `Order` 객체가 `make_burger()`, `make_shake()` 같은 메서드를 호출하여 주방장에게 행동을 지시한다.
     - 주방장은 `Order` 객체로부터 전달받은 지시사항에 따라 음식을 준비한다.
-
+    
   - 주문서(`Order` 객체)의 역할
     - 주문서는 주문 내용을 캡슐화한다.
     - 주문서의 인터페이스에는 식사 준비에 필요한 행동을 캡슐화한 `order_up()` 메서드가 들어있다(이게 유일한 메서드에다).
@@ -935,7 +934,7 @@
   - 종업원의 역할
     - 종업원은 `Order` 객체에서 `order_up()` 메서드를 호출하는 역할을 한다.
     - 실제 종업원과는 달리 주문서에 무슨 내용이 있는지, 누가 식사를 준비하는지 알 필요가 없다.
-    - `take_order()` 메서드를 통해 `Order` 객체를 받아 `Order` 객체에서 `order_up`을 호출하기만 하면 된다.
+    - `take_order()` 메서드를 통해 `Order` 객체를 받아 `Order` 객체에서 `order_up()` 메서드를 호출하기만 하면 된다.
   - 주방장의 역할
     - 식사를 준비하는 데 필요한 정보를 가지고 잇다.
     - 종업원이 `Order` 객체에 있는 `order_up()` 메서드를 호출하면, 주방장이 음식을 만들 때 필요한 메서드를 전부 처리한다.
@@ -954,7 +953,7 @@
   | Invoker            | 종업원       |
   | Receiver           | 주방장       |
   | set_command()      | take_order() |
-  | execute()          | order_up     |
+  | execute()          | order_up()   |
 
   - `Client` 
     - `Client`객체는 `Command` 객체를 생성한다.
@@ -976,7 +975,7 @@
 
   - 가정용 기기를 제어하는 데 사용할 리모컨을 위한 커맨드 객체를 생성한다.
   - 커맨드 객체는 모두 같은 인터페이스를 구현해야한다.
-    - 이 인터페이스에 메서드는 `execute()`하나 뿐이다.
+    - 이 인터페이스의 메서드는 `execute()`하나 뿐이다.
 
   ```python
   from abc import ABC
@@ -987,27 +986,44 @@
           pass
   ```
 
+  - `Receiver` 객체를 구현한다.
+  
+  ```python
+  from abc import ABC, abstractmethod
+  
+  # Receiver 객체
+  class Light(ABC):
+      @abstractmethod
+      def on(self):
+          ...
+          
+  class BathroomLight(Light):
+      def on(self):
+          print("turn on light of bathroom")
+  ```
+  
   - 조명을 켤 때 필요한 커맨드 클래스 구현
-    - 조명을 켤 때 필요한 커맨드 클래스를 구현한다.
-    - `Command` interface를 구현한 클래스이다.
-    - 생성자에 이 커맨드 객체로 제어할 특정 조명(거실 조명인지 차고 조명인지 욕실 조명인지 등)의 정보가 전달된다.
-    - 이 조명 정보가 바로 Receiver 객체이다.
-    - 해당 조명의 정보는 `light`라는 인스턴스 변수에 저장된다.
-    - `execute()` 메서드가 호출되면 Receiver 객체(`light`)에 있는 `on()` 메서드를 호출한다.
+    - `Command` interface를 구현한 구상 클래스이다.
+    - 생성자에 이 커맨드 객체로 제어할 특정 `Receiver`(거실 조명인지 차고 조명인지 욕실 조명인지 등)의 정보가 전달된다.
+    - `execute()` 메서드가 호출되면 `Receiver`의 instance(`light`)에 있는 `on()` 메서드를 호출한다.
 
   ```python
   class LigthOnCommand(Command):
-      def __init__(self, light):
+      # Command가 제어할 Receiver(Light)의 인스턴스를 전달 받는다.
+      def __init__(self, light: Light):
           self.ligth = ligth
       
       def execute(self):
+          # Receiver를 통해 행동을 처리한다.
           self.light.on()
   ```
-
+  
   - 커맨드 객체 사용하기
     - 제어할 기기를 연결할 슬롯과 버튼이 각각 하나씩 밖에 없는 리모컨이 있다고 가정하고, 이 리모컨에서 커맨드 객체를 사용해본다.
-    - 이 리모컨 객체가 Invoker 객체가 되는 것이다.
-
+    - 이 리모컨 객체가 `Invoker` 객체가 되는 것이다.
+    - `Invoker`가 요청한 작업을 최종적으로 수행하는 `Receiver` 객체에 대한 아무런 정보도 가지고 있지 않다는 점에 주목해야 한다.
+    - 이처럼 Command pattten은 작업을 요청하는 `Invoker`와 작업을 수행하는 `Receiver`를 완전히 분리하며, `Command`를 통해서만 소통이 이루어진다.
+  
   ```python
   class SimpleRemoteControl:
       def __init__(self):
@@ -1022,19 +1038,18 @@
       def button_was_pressed(self):
           self.slot.execute()
   ```
-
-  - Client 코드 작성하기
-    - `Ligth` 클래스는 고객사에서 이미 만들어두었다고 가정한다.
-
-  ```python
-  # Invoker 역할을 하는 remote 변수 생성
-  remote = SimpleRemoteControl()
-  # 고객사에서 만든 Ligth 객체 생성(Receiver 객체)
-  light = Ligth()
-  # Receiver 객체를 전달하여 Command 객체 생성
-  light_on = LigthOnCommand(light)
   
-  # Inovker 객체에 Command 객체 저장
+  - Client 코드 작성하기
+  
+  ```python
+  # Invoker 역할을 하는 SimpleRemoteControl의 instance 생성
+  remote = SimpleRemoteControl()
+  # Receiver 역할을 하는 BathroomLight의 instance 생성
+  bathroom_light = BathroomLight()
+  # Receiver 객체를 전달하여 Command 객체 생성
+  light_on = LigthOnCommand(bathroom_light)
+  
+  # Invoker 객체에 Command 객체 저장
   remote.set_command(light_on)
   # Invoker에 저장된 command 객체에서 execute() 메서드 실행
   remote.button_was_pressed()
@@ -1045,16 +1060,16 @@
 - 커맨드 패턴(Command Pattern)
 
   - 정의
-    - 작업을 요청하는 쪽(Invoker)과 처리하는 쪽(Receiver)을 분리할 수 있게 해주는 패턴이다.
+    - 작업을 요청하는 쪽(`Invoker`)과 처리하는 쪽(`Receiver`)을 분리할 수 있게 해주는 패턴이다.
     - 요청 내역을 객체로 캡슐화해서 객체를 서로 다른 요청 내역에 따라 매개변수화 할 수 있다.
     - 이를 통해 요청을 큐에 저장하거나 로그로 기록하거나 작업 취소 기능을 사용할 수 있다.
-  - Command 객체는 일련의 행동을 특정 receiver와 연결함으로써 요청을 캡슐화한다.
-    - 이를 위해 행동과 receiver를 한 객체에 넣고 `execute()`라는 메서드 하나만 외부에 공개하는 방법을 사용해야 한다.
-    - `execute()` 메서드 호출에 따라 receiver에서 일련의 작업을 처리한다.
-    - 밖에서 볼 때는 어떤 객체가 receiver 역할을 하는지, 그 receiver가 어떤 행동을 하는지 알 수 없다.
+  - `Command` 객체는 일련의 행동을 특정 `Receiver`와 연결함으로써 요청을 캡슐화한다.
+    - 이를 위해 행동과 `Receiver`를 `Command`라는 한 객체에 넣고 `execute()`라는 메서드 하나만 외부에 공개하는 방법을 사용해야 한다.
+    - `execute()` 메서드 호출에 따라 `Receiver`에서 일련의 작업을 처리한다.
+    - 밖에서 볼 때는 어떤 객체가 `Receiver` 역할을 하는지, 그 `Receiver`가 어떤 행동을 하는지 알 수 없다.
     - 단순히 `execute()` 메서드를 호출하면 해당 요청이 처리된다는 사실만 알 수 있다.
-  - Command 객체를 매개변수화 할 수도 있다.
-    - Invoker 객체는 command 객체가 특정 인터페이스를 구현하기만 했다면, 해당 command에서 실제로 어떤 일을 하는지 신경 쓸 필요가 없다.
+  - `Command` 객체를 매개변수화 할 수도 있다.
+    - `Invoker` 객체는 `Command` 객체가 특정 인터페이스(예시의 경우 `execute()` method)를 구현하기만 했다면, 해당 `Command`에서 실제로 어떤 일을 하는지 신경 쓸 필요가 없다.
 
   - 다이어그램
     - 클라이언트는 `Receiver`와 행동을 넣어 `ConcreteCommand`를 생성한다.
@@ -1093,7 +1108,7 @@
 
   - `NoCommand` 객체에 대해서
     - 위에서 `on_commands`와 `off_commands` 인스턴스 변수를 초기화 할 때 `NoCommand` 변수로 초기화했다.
-    - 이는 아래 `on_button_was_pushed` 등에서 각 인스턴스 변수에 저장된 `Command` 객체에 인덱스로 접근하기에 `IndexError`가 발생하는 것을 방지하기 위함이다(Python 스러운 방법은 아닌 듯 하다).
+    - 이는 아래 `on_button_was_pushed` 등에서 각 인스턴스 변수에 저장된 `Command` 객체에 인덱스로 접근하기에 `IndexError`가 발생하는 것을 방지하기 위함이다.
     - 이러한 객체를 널 객체라고도 하는데, 딱히 반환할 객체도 없고 클라이언트가 null을 처리하지 않게 하고 싶을 때 활용한다.
     - 구현은 아래와 같다.
 
@@ -1367,6 +1382,10 @@
     - 그 후 `store()` 메서드를 실행하여 저장소 B에 `InsertDataCommand` 객체를 저장한다.
     - 저장소 A가 다운 될 경우 저장소 B에 저장된 `InsertDataCommand` 객체들의 `load()` 메서드를 사용하여 하나씩 불러온다.
     - 불러온 `InsertDataCommand()` 객체들에서 `execute()` 메서드를 재실행한다. 
+
+
+
+
 
 
 
