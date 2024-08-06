@@ -65,7 +65,6 @@
         CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets
         CONNECT_STATUS_STORAGE_TOPIC: connect-statuses
   
-        CONNECT_REPLICATION_FACTOR: 1
         CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
         CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
         CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
@@ -1117,4 +1116,194 @@
   
   - 결과로 생성된 `.jar` 파일을 `plugin.path`에 설정된 경로에 넣으면 된다.
 
+
+
+
+
+
+
+
+## SMT(Single Message Transformation)
+
+- SMT
+
+  - Kafka Connect에서 message를 변환할 수 있게 해주는 기능이다.
+    - Kafka Connect에 내장되어 있는 transformation 기능이 있고, 사용자가 custom하게 개발도 가능하다.
+    - Value뿐 아니라 key에도 적용이 가능하다.
+
+  - Kafka Connect API를 통해 connector를 생성할 때 `config`에 `transforms` 설정을 함께 입력하여 적용이 가능하다.
+
+    - `transforms`에 실행할 transformation의 이름을 입력한다.
+    - `transforms.<tramsform_name>.type`에 transformation의 type을 입력한다.
+    - `transforms.<tramsform_name>.<propertie>`에 transformation type 별 설정 값들을 입력한다.
+
+    - 여러 개의 transformation을 적용하는 것도 가능하다.
+    - 이 경우 `transforms`에 정의된 순서대로 transformation이 실행된다.
+
+  ```json
+  // 기본 형태
+  {
+      "name": "name", 
+      "config": {
+          "transforms": "<tramsform_name>",
+          "transforms.<tramsform_name>.type": "<tramsform_type>",
+          "transforms.<tramsform_name>.<propertie1>": "<value1>",
+          "transforms.<tramsform_name>.<propertie2>": "<value2>",
+          // ...
+      }
+  }
+  
+  // 예시
+  {
+    "name": "jdbcSource", 
+    "config": {
+      "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+      // transforms 관련 설정
+      "transforms": "routeRecords",
+      "transforms.routeRecords.type": "org.apache.kafka.connect.transforms.RegexRouter",
+      "transforms.routeRecords.regex": "(.*)",
+      "transforms.routeRecords.replacement": "$1-test"
+    }
+  }
+  ```
+
+  - 동작 과정
+
+    > 아래 예시에서는 source connector를 들었지만, sink connector도 동일한 과정을 거친다(순서는 역순이다).
+
+    - Source Connector가 source로 부터 받아온 data를 `ConnectRecord`의 instance로 변환한다.
+    - 그 후, transformation의 `apply()` method를 호출하는데, 이 때 `ConnectorRecord`의 instance를 함께 넘긴다.
+    - `apply()` method는 `ConnectorRecord`의 instance를 transform한 후 변환된 `ConnectorRecord`의 instance를 반환한다.
+
+  - 주의사항
+    - SMT는 간단하고, 매우 제한적인 transformation만을 수행해야한다.
+    - 외부 API를 호출하거나 상태를 저장하거나, 무거운 작업을 수행해선 안 된다.
+    - 무거운 transformation 작업을 수행해야 할 경우 SMT가 아닌 Kafka Streams나 KSQL 등을 사용해야한다.
+  - Kafka Connect에 내장 되어 있는 transformation 사용시 주의사항
+    - Kafka source connector가 발행한 message는 일반적으로 payload와 payload에 대한 schema로 구성되는데, SMT는 payload에만 적용된다.
+    - If - else와 같은 분기문을 사용할 방법이 없다.
+    - transformation 대상 field가 존재하지 않을 경우 error가 발생한다.
+
+
+
+- SMT 개발하기
+
+  > 모든 record에 UUID를 추가하는 간단한 transformation을 개발한다.
+  >
+  > 전체 코드는 [Github](https://github.com/confluentinc/kafka-connect-insert-uuid/blob/master/src/main/java/com/github/cjmatta/kafka/connect/smt/InsertUuid.java) 참조
+
+  - `Transformation`을 구현하는 class를 생성한다.
+
+  ```java
+  public abstract class InsertUuid<R extends ConnectRecord<R>> implements Transformation<R> {}
+  ```
+
+  - Transformation이 입력으로 받을 configuration을 설정하는 `configure` method를 구현한다.
+
+  ```java
+  public abstract class InsertUuid<R extends ConnectRecord<R>> implements Transformation<R> {
+      @Override
+      public void configure(Map<String, ?> props) {
+          final SimpleConfig config = new SimpleConfig(CONFIG_DEF, props);
+          fieldName = config.getString(ConfigName.UUID_FIELD_NAME);
+  
+          schemaUpdateCache = new SynchronizedCache<>(new LRUCache<Schema, Schema>(16));
+      } 
+  }
+  ```
+
+  - `apply()` method를 구현한다.
+    - `apply()` method는 transformation의 핵심이다.
+    - Record에 schema가 있을 수도 있고, 없을 수도 있으므로 각각을 처리하기 위한 method도 함께 정의한다.
+
+  ```java
+  public abstract class InsertUuid<R extends ConnectRecord<R>> implements Transformation<R> {
+      @Override
+      public R apply(R record) {
+          if (operatingSchema(record) == null) {
+            return applySchemaless(record);
+          } else {
+            return applyWithSchema(record);
+          }
+      }
+      
+  	// shema가 없을 경우의 처리
+      private R applySchemaless(R record) {
+          final Map<String, Object> value = requireMap(operatingValue(record), PURPOSE);
+  
+          final Map<String, Object> updatedValue = new HashMap<>(value);
+  
+          updatedValue.put(fieldName, getRandomUuid());
+  
+          return newRecord(record, null, updatedValue);
+      }
+  	
+      // schema가 있을 경우의 처리
+      private R applyWithSchema(R record) {
+          final Struct value = requireStruct(operatingValue(record), PURPOSE);
+  
+          Schema updatedSchema = schemaUpdateCache.get(value.schema());
+          if(updatedSchema == null) {
+            updatedSchema = makeUpdatedSchema(value.schema());
+            schemaUpdateCache.put(value.schema(), updatedSchema);
+          }
+  
+          final Struct updatedValue = new Struct(updatedSchema);
+  
+          for (Field field : value.schema().fields()) {
+            updatedValue.put(field.name(), value.get(field));
+          }
+  
+          updatedValue.put(fieldName, getRandomUuid());
+  
+          return newRecord(record, updatedSchema, updatedValue);
+      } 
+  }
+  ```
+
+  - Transformation은 key와 value에 모두 적용 가능하므로 각각을 처리하기 위한 subclass를 생성한다.
+    - 둘 다 main class인 `InsertUuid`를 상속 받는다.
+
+  ```java
+  public abstract class InsertUuid<R extends ConnectRecord<R>> implements Transformation<R> {
+      
+      public static class Key<R extends ConnectRecord<R>> extends InsertUuid<R> {
+          @Override
+          protected Schema operatingSchema(R record) {
+              return record.keySchema();
+          }
+  
+          @Override
+          protected Object operatingValue(R record) {
+              return record.key();
+          }
+  
+          @Override
+          protected R newRecord(R record, Schema updatedSchema, Object updatedValue) {
+              return record.newRecord(record.topic(), record.kafkaPartition(), updatedSchema, updatedValue, record.valueSchema(), record.value(), record.timestamp());
+          }
+      }
+  
+      public static class Value<R extends ConnectRecord<R>> extends InsertUuid<R> {
+          @Override
+          protected Schema operatingSchema(R record) {
+              return record.valueSchema();
+          }
+  
+          @Override
+          protected Object operatingValue(R record) {
+              return record.value();
+          }
+  
+          @Override
+          protected R newRecord(R record, Schema updatedSchema, Object updatedValue) {
+              return record.newRecord(record.topic(), record.kafkaPartition(), record.keySchema(), record.key(), updatedSchema, updatedValue, record.timestamp());
+          }
+      }
+  }
+  ```
+
+  - Custom SMT 적용하기
+    - 개발이 완료된 SMT를 적용하려면 JAR 파일로 compile해야 한다.
+    - 그 후 JAR 파일을 `plugin.path` 경로에 넣으면 사용이 가능하다.
 
