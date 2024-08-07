@@ -1,997 +1,1053 @@
-# 연산자
+# 함수
 
-## 할당 연산자
+- 함수
+  - 어떤 작업을 수행하기 위해 필요한 문들의 집합을 정의한 코드 불록.
+  - 이름과 매개 변수를 가지며, 필요한 때에 호출하여 코드 블록에 담긴 문들을 일괄적으로 실행할 수 있다.
+  - 함수는 선언에 의해 정의되고 호출에 의해 실행되는데 한 번만 호출할 수 있는 것이 아니라 여러번 호출할 수 있다.
+  - 동일한 작업을 반복적으로 수행해야 한다면 동일한 작업을 중복해서 작성하는 것 보다 미리 정의된 함수를 재사용 하는 것이 효율적이다.
 
-- 할당 연산자
 
-  - 우항에 있는 피연산자의 평가 결과를 좌항에 있는 변수에 할당
+
+- Javascript의 함수는 1급 객체다.
+  
+  - 호출할 수 있다.
+  
+  - 무명의 리터럴로 표현이 가능하다.
+  
+  - 변수나 객체, 배열 등에 저장할 수 있다.
+  - 다른 함수의 리턴값이 될 수 있다.
+  - 다른 함수의 인자가 될 수 있다.
+
+
+
+## 함수 정의와 함수의 특징
+
+- 함수 정의
+
+  - 함수 선언문을 사용하여 정의
+    - `function` 키워드, 함수명, 매개변수 목록, 함수 몸체로 구성
 
   ```javascript
-  // =
-  var one = 8
-  
-  // +=
-  one += 1 // 9
-  
-  // -=
-  one -=1 //7
-  
-  // *=
-  one *= 2 //16
-  
-  // /=
-  one /= 2 //4
-  
-  // %=
-  one %= 3 //2
-  ```
-
-
-
-## 산술 연산자
-
-
-- 단항 산술 연산자
-
-
-  - `+`,`-`: 양수, 음수 변경 및 표현, 단, "+"는 음수를 양수로 변경하지 않는다.
-  - 숫자 형 문자열의 경우 숫자로 자동 형변환된다.
-  - `++`,`--`: 증가 연산자와 감소 연산자. 피연산자 앞에 오는지 뒤에 오는지에 따라 효과가 달라진다.
-
-  ```javascript
-  var x = 5, result;
-  // 선대입 후증가 (Postfix increment operator)
-  result = x++;
-  console.log(result, x); // 5 6
-  
-  // 선증가 후대입 (Prefix increment operator)
-  result = ++x;
-  console.log(result, x); // 7 7
-  
-  // 선대입 후감소 (Postfix decrement operator)
-  result = x--;
-  console.log(result, x); // 7 6
-  
-  // 선감소 후대입 (Prefix decrement operator)
-  result = --x;
-  console.log(result, x); // 5 5 
-  
-  
-  let c = 0
-  c += 10
-  console.log(c)
-  c -= 3
-  console.log(c)
-  c++     //++는 +1을 해준다.
-  console.log(c)
-  c--		//--는 -1을 해준다.
-  console.log(c)
-  
-  out
-  10
-  7
-  8
-  7
-  ```
-
-  
-
-  
-
-  
-
-- 이항 산술 연산자
-
-  - 자동형변환으로 피 연산자에 문자가 포함되어도 연산 가능
-
-  ```javascript
-  var a = '5',b=2
-  var str1='str1',str2='str2'
-  
-  //덧셈 연산자
-  //피 연산자 모두 숫자면 덧셈 연산을 수행하지만
-  //피 연산자 중 하나라도 문자열이면 피연산자가 연결된 문자열이 나온다.
-  //둘 다 숫자가 아닌 문자열일 경우에도 피연산자가 연결된 문자열이 나온다.
-  console.log(a+b)			//52
-  console.log(typeof(a+b))	//string
-  console.log(str1+str2)		//str1str2
-  console.log(typeof(str1+str2)) //string
-  
-  //피연산자가 숫자인 문자열이면 뺄셈을 수행, 숫자가 아닌 문자열이면 NaN을 반환
-  //덧셈을 제외한 모든 연산이 이와 동일
-  console.log(a-b)			//3
-  console.log(typeof(a-b))	//number
-  console.log(str1-str2)		//NaN
-  console.log(typeof(str1-str2))  //number
-  
-  console.log(a*b)			//10
-  console.log(typeof(a*b))	//number
-  console.log(str1*str2)		//NaN
-  console.log(typeof(str1*str2))	//number
-  
-  console.log(a/b)			//2.5
-  console.log(typeof(a/b))	//number
-  console.log(str1/str2)		//NaN
-  console.log(typeof(str1/str2))	//number
-  
-  console.log(a%b)			//1
-  console.log(typeof(a%b))	//number
-  console.log(str1%str2)		//NaN
-  console.log(typeof(str1%str2))	//number
-  ```
-  
-  - 나눗셈 연산자
-    - 피 연산자 모두가 정수라 할지라도 결과는 실수가 나올 수 있음(자바스크립트는 정수 타입이 별도로 존재하지 않음). 
-    - 0으로 나누면 Infinity를 반환
-  
-  ```javascript
-  var a=3,b=0
-  console.log(a/b) //Infinity
-  ```
-  
-  - 나머지 연산자
-    - 나머지를 결과값으로 취함
-    - 0으로 나머지 연산을 하면 NaN을 반환
-  
-  ```javascript
-  var a=5,b=2
-  console.log(a%b)  //1
-  
-  //
-  var a=3,b=0
-  console.log(a%b)  //NaN
-  ```
-  
-  
-
-
-
-  
-
-## 비교 연산자
-
-- 대소 관계 비교 연산자
-
-  - 피연산자가 숫자일 경우 일반적인 상식대로 대소를 비교한다.
-  - 피연산자가 문자일 경우 문자 코드의 순서대로 크기를 비교한다. 따라서 대문자가 소문자보다 작다고 판단된다.
-  - 피연산자가 객체일 경우 객체를 숫자나 문자로 자동 변환하려고 시도하고 변환되지 않으면 false반환
-
-  ```javascript
-  console.log(3<2)
-  console.log(3>=3)
-  console.log(3>2)
-  console.log(3<=3)
-  console.log("가">"나")
-  console.log("a">"b")
-  
-  out
-  false
-  true
-  true
-  true
-  false   //가, a는 각기 나, b 보다 사전순으로 앞에 있으므로 더 작다고 본다.
-  false
-  ```
-
-  
-
-
-
-
-- 동등 연산자, 일치 연산자
-
-  ```js
-  const a = 1
-  const b = '1'
-    
-  //동등 연산자
-  console.log(a==b)   //형 변환 결과 같아질 수 있으면 true를 반환
-    
-  //일치 연산자
-  console.log(a===b)  //python의 == 연산자와 동일
-    
-  out
-  true
-  false
-    
-    
-  
-  0==''  /*true*/
-  0=='0' /*true*/
-  ''=='0'/*false*/
-    
-  //삼단 논법에 따르면 마지막도 true여야 하지만 false가 출력된다.
-  //즉, 논리적으로 모순이 생길 수 있으므로 엄격하게 비교하는 ===를 쓰는 것이 좋다.
-  ```
-
-
-
-
-## 그 외 연산자
-
-- 삼항 연산자: 조건에 따라 어떤 값을 할당할지 결정
-
-  - `조건식 ? 조건식이 true일 때 반환할 값 : 조건식이 false일 때 반환할 값`
-
-  ```javascript
-  const result = Math.Pi > 4 ? 'pi가 4보다 크다':'pi가 4보다 크지 않다'
-  console.log(result)  //pi가 4보다 크지 않다
-  
-  
-  //아래와 같이 쓸 수도 있다.
-  const name="C"
-  function nameState(name) {
-      return name.length > 2 ? true : false
+  function hello(name){
+    return "Hello! "+name
   }
-  console.log(nameState(name))  //false
+  
+  console.log(hello("Cha"))	// Hello! Cha
   ```
 
-
-
--  논리 연산자
-
-  - 우항과 좌항의 피연산자를 논리 연산한다.
-  - 논리 부정(`!`) 연산자는 언제나 boolean 값을 반환한다.
-  - 논리합(`||`) 연산자와 논리곱(`&&`) 연산자는 일반적으로 boolean 값을 반환하지만 반드시 boolean 값을 반환해야 하는 것은 아니다(단축 평가).
-
-  ```javascript
-  console.log(!true)   //false
-  console.log(!false)  //true
-  
-  console.log(true || false)   //true
-  console.log(false || false)  //false
-  
-  console.log(true && true)    //true
-  console.log(true && false)   //false
-  
-  ```
-
-  - 단축 평가
-    - 논리합 연산자와 논리곱 연산자에는 단축평가가 적용된다.
-    - 단축평가: 논리 평가(true인가 false인가)를 결정한 피연산자의 평가 결과를 그대로 반영하는 것.
+  - 함수 표현식을 사용하여 정의
+    - 함수의 일급 객체 특성을 이용하여 함수 리터럴 방식으로 함수를 정의하고 변수에 할당
+    - 함수 표현식으로 정의한 함수는 함수명을 생략할 수 있는데 이러한 함수를 익명함수라 한다.
+    - 함수 표현식에서는 함수명을 생략하는 것이 일반적이다.
+    - 기명 함수의 함수명을 사용해 호출하면 에러가 발생한다.
+    - 함수명은 일반적으로 재귀호출이나 자바스크립트 디버거가 해당 함수를 구분할 수 있는 식별자로 쓰인다.
 
   ```javascript
-  // 논리합 연산자는 두 피연산자 중 하나만 true라도 true를 반환한다.
-  // 'apple'은 빈 문자열이 아니므로 true이다.
-  // 'apple'이 true이므로 뒤의 피연산자가 true인지 false인지와 무관하게 연산의 결과는 true이다.
-  // 따라서 뒤의 피연산자는 굳이 확인하지 않는다.
-  // 결국 논리 평가를 결정한 피연산자는 'apple'이 된다.
-  console.log('apple' || 'banana')  //apple
-  
-  // 아래도 마찬가지 이유로 banana가 반환된다.
-  console.log(0 || 'banana')       //banana
-  
-  
-  // 논리곱 연산자는 두 피연산자 모두 true여야 true를 반환한다.
-  // 'apple'은 빈 문자열이 아니므로 true이다.
-  // 그러나 두 피연산자 모두 true여야 true를 반환하므로 이것만으로는 true인지 false인지 구분할 수 없다.
-  // 따라서 뒤의 피연산자 'banana'까지 확인을 한다.
-  // 결국 논리 평가를 결정한 피연산자는 'banana'가 된다.
-  console.log('apple' && 'banana')  //banana
-  
-  // 아래도 마찬가지 이유로 0이 반환된다.
-  console.log(0 && 'banana') //0
-  ```
-
-
-
-- 쉼표 연산자
-
-  - 왼쪽 피연산자부터 차례대로 피연산자를 평가하고 마지막 피연산자의 평가가 끝나면 마지막 피연산자의 평가 결과를 반환
-
-  ```javascript
-  var a, b, c;
-  a = 1, b = 2, c = 3;  //3
-  ```
-
-
-
-- 그룹 연산자
-  - `()` : 그룹 내(괄호 안)의 표현식을 최우선으로 평가한다.
-
-
-
-
-
-# 제어문
-
-- 표현식
-
-  - 표현식
-    - 하나의 값으로 평가된다.
-    - 표현식은 하나의 값이 되기 때문에 다른 표현식의 일부가 되어 조금 더 복잡한 표현식을 구성할 수도 있다.
-
-  ```javascript
-  // 표현식
-  5 + 5  //10
-  // 5+5라는 표현식이 또 다른 표현식의 일부가 된다.
-  5 + 5 >8 //true
-  ```
-
-  - 표현식과 문의 차이
-    - 문이 자연어에서 완전한 문장이라면 표현식은 문을 구성하는 요소이다.
-    - 표현식은 그 자체로 하나의 문이 될 수도 있다.
-    - 표현식은 평가되어 값을 만들지만 그 이상의 행위는 할 수 없다. 
-    - 문은 var, function과 같은 선언 키워드를 사용하여 변수나 함수를 생성하기도 하고 if, for 문과 같은 제어문을 생성하여 프로그램의 흐름을 제어하기도 한다.
-
-  ```javascript
-  // 아래 자체가 표현식이지만 완전한 문이기도 하다.
-  a = 10; 
-  ```
-
-  
-
-- 블록문
-  - 0개 이상의 문들을 중괄호로 묶은 것.
-  - 코드 블록 또는 블록이라고 부르기도 한다.
-  - 문의 끝에는 세미콜론을 붙이는 것이 일반적이지만 블록문은 세미 콜론을 붙이지 않는다.
-
-
-
-- 조건문
-
-  - `if`, `else if`, `else`
-
-  ```javascript
-  let day = 7
-  let result
-  if (day===1){
-      result = '월요일'
+  // 기명 함수 표현식
+  var hi = function hello(name){
+    return "Hello! " + name
   }
-  else if (day===2){
-      result = '화요일'
+  console.log(hi("Cha"))	// Hello! Cha
+  console.log(hello("Cha"))  // ReferenceError: hello is not defined
+  
+  // 익명 함수 표현식
+  var hi = function(name){
+      return "Hello! "+name
   }
-  else if (day===3) result='수요일'  
-  //중괄호 안에 들어갈 것이 한 줄이라면 위처럼 쓸수 있지만 가독성이 떨어져 쓰지 않는다.
-  .
-  .
-  .
-  else {
-      result='일요일'
+  console.log(hi("Cha"))	// Hello! Cha
+  ```
+
+  - `Function` 생성자 함수를 사용하여 정의
+    - 이 방식은 일반적으로 사용하지 않는다.
+    - **함수 선언문과 함수 표현식은 모두 내장 함수 `Function` 생성자 함수로 함수로 생성하는 것을 단순화 시킨 축약법이다.**
+
+  ```javascript
+  var hello = new Function('name','return "Hello! "+name')
+  console.log(hello("Cha"))	// Hello! Cha
+  ```
+  - 함수 선언문과 함수 표현식
+    - 함수 표현식의 경우 위에서 살펴본 것 처럼, 함수명이 아닌 변수명으로 호출해야 하고, 함수명으로 호출할 경우 에러가 발생한다.
+    - 사실 함수 선언문도 마찬가지이다. 함수 선언문으로 함수를 선언할 경우, 자바스크립트 엔진에 의해 자동으로 함수 표현식 형태로 변경되기 때문이다.
+    - 즉, 함수명으로 호출한 것 처럼 보이지만 사실은 변수명으로 호출된 것이다.
+    - 결국 함수 선언문도 함수 표현식과 동일하게 함수 리터럴 방식으로 정의되는 것이다.
+
+  ```javascript
+  // 아래와 같이 함수 선언문으로 정의 된 함수는
+  function hello(name){
+    return "Hello! "+name
+  }
+  
+  //자바스크립트 엔진에 의해 아래와 같이 변경된다.
+  var hello = function hello(name){
+      return "Hello! "+name
+  }
+  ```
+  
+  - 메서드 단축 구문
+    - 메서드의 경우 아래와 같이 단축해서 선언하는 것이 가능하다.
+  
+  ```javascript
+  // 이런 메서드 선언을
+  const obj = {
+      foo: function() {
+          console.log("Hello!")
+      }
+  }
+  
+  //아래와 같이 단축 가능하다.
+  const obj2 = {
+      foo(){
+          console.log("Hello!")
+      }
+  }
+  ```
+  
+  
+  
+- 함수 호이스팅
+
+  - 호이스팅
+    - 정의: 선언문이 해당 Scope의 선두로 옮겨진 것처럼 동작하는 특성, 즉 자바스크립트는 선언문이 선언되기 이전에 참조가 가능하다.
+    - 자바스크립트는 let, const를 포함하여 모든 선언(var, function, class)을 호이스팅한다.
+
+  - 함수 선언문
+    - 함수 선언문으로 선언된 함수는 자바스크립트 엔진이 스크립트가 로딩되는 시점에 바로 초기화하고 이를 VO(variable object)에 저장한다.
+    - 즉, 함수 선언, 초기화, 할당이 한 번에 이루어진다. 
+    - 따라서 함수 선언의 위치와 무관하게 소스 내 어느 곳에서든 호출이 가능하다.
+
+  ```javascript
+  var result = plus(2,3)
+  console.log(result)		//5
+  
+  function plus(num1,num2){
+    return num1+num2
   }
   ```
 
-  - switch
+  - 함수 표현식
+    - 함수 표현식은 함수 호이스팅이 아니라 변수 호이스팅이 발생한다.
+    - 변수 호이스팅은 변수 생성 및 초기화와 할당이 분리되어 진행된다.
+    - 호이스팅된 변수는 undefined로 초기화 되고 실제 값의 할당은 할당문에서 이루어진다.
 
   ```javascript
-  day = 2
-  switch (day) {
-      case 1:
-          result = '월요일'
-      case 2 :
-          result = '화요일'
-      case 3 :
-          result = '수요일'
-      default:
-          result = '일요일'
+  var result = minus(3,2)			// TypeError: minus is not a function	
+  // 즉 위 문장은  아래와 같다.
+  // var result = undefined(3,2)
+  
+  var minus = function(num1,num2){
+      return num1-num2
   }
-  console.log(result)
-  
-  out
-  일요일
-  // 위의 경우 day를 어떻게 설정해도 일요일이 출력됨. 순서대로 위에서부터 찾으면서 내려오는데 맨 밑에 디폴트 값으로 일요일이 있으므로 항상 변수에 일요일이 담기게 된다. 따라서 아래와 같이 break를 적어줘야 한다.
-  
-  day = 2
-  switch (day) {
-      case 1:
-          result = '월요일'
-          break
-      case 2 :
-          result = '화요일'
-          break
-      case 3 :
-          result = '수요일'
-          break
-      default:
-          result = '일요일'
-          break
-  }
-  console.log(result)
-  
-  out
-  화요일
   ```
 
+  - 함수 호이스팅이 함수 호출 전 반드시 함수를 선언하여야 한다는 규칙을 무시하므로 코드의 구조를 엉성하게 만들수 있기 때문에 함수 표현식만을 사용하는 것이 권고된다.
+  - 또한, 함수 선언문으로 함수를 정의하면 대규모 애플리케이션을 개발하는 경우, 인터프리터가 너무 많은 코드를 변수 객체(VO)에 저장하므로 애플리케이션의 응답속도는 현저히 떨어질 수 있으므로 주의해야 한다.
 
 
-- 반복문
 
-  - while: ()안의 조건의 결과가 true이면 계속 실행하고 false면 멈춘다.
+- 일급 객체
 
-  ```javascript
-  let num = 0
-  while (num<3) {
-      console.log(num++)
-  }
-  
-  out
-  0
-  1
-  2
-  
-  let num = 0
-  while (num<3) {
-      console.log(++num)
-  }
-  
-  out
-  1
-  2
-  3
-  ```
-
-  - `do...while`
-    - 코드 블록을 싱행하고 조건식을 평가
-    - 따라서 코드 블록은 무조건 한 번 이상 실행된다.
+  - 정의: 생성, 대입, 연산, 인자 또는 반환값으로서의 전달 등 프로그래밍 언어의 기본적 조작을 제한 없이 사용할 수 있는 대상
+  - 조건
+    - 무명의 리터럴로 표현이 가능
+    - 변수나 자료구조(배열, 객체 등)에 저장 가능
+    - 함수의 매개변수로 전달 가능
+    - 반환값으로 사용 가능
 
   ```javascript
-  var cnt = 0;
-  
-  do {
-      console.log(cnt)    // 0
-      cnt++
-  } while (false){
-      console.log("hi!")  // 조건이 false임에도 일단 실행이 된다.
+  // 무명의 리터럴(아래는 함수는 함수명이 없는 무명의 리터럴이다)로 표현이 가능
+  // 변수나 자료구조에 저장이 가능(변수 plus에 저장 가능)
+  var plus = function(num1,num2){
+      return num1+num2
   }
+  
+  // 함수의 매개 변수로 전달 가능
+  // 반환 값으로 사용 가능
+  function calculate(func){
+    	return function(num1,num2){
+          result = func(num1,num2)
+          return result
+      }
+  }
+  var rst = calculate(plus)
+  console.log(rst(3,4))
   ```
 
   
 
-  - `for`
-    - 조건식이 거짓일 때까지 코드 블록을 반복 실행
+- 매개 변수
+
+  - 매개변수(인자, parameter)는 함수 내에서 변수와 동일하게 메모리 공간을 확보하며 함수에 전달한 인수는 매개변수에 할당된다.
+    - 매개변수는 인수로 초기화된다.
+    - 매개 변수의 갯수보다 인수를 적게 전달했을 때 인수가 전달되지 않은 매개변수는 undefined로 초기화 된다.
+    - 매개 변수의 갯수보다 인수를 많이 전달한 경우, 초과된 인수는 무시된다.
+
+  - Call-by-value
+    - 원시타입 인수는 Call-by-value(값에 의한 호출)로 동작한다. 
+    - 이는 함수 호출 시 원시 타입 인수를 함수에 매개 변수로 전달할 때, 매개 변수에 값을 복사하여 함수로 전달하는 방식이다.
+    - 함수 내에서 매개변수를 통해 값이 변경되어도 기존의 원본 변수 값은 변경되지 않는다.
 
   ```javascript
+  function foo(primitive){
+      primitive += 3
+      return primitive
+  }
+  
+  var x = 3
+  console.log(foo(x))		// 6
+  console.log(x)			// 3
+  ```
+
+  - Call-by-reference
+    - 객체형(참조형) 인수는 Call-by-reference(참조에 의한 호출)로 동작한다.
+    - 이는 함수 호출 시 참조 타입 인수를 함수에 매개변수로 전달할 때 매개변수에 값이 복사되지 않고 객체의 참조값이 매개변수에 저장되어 함수로 전달되는 방식이다.
+    - 함수 내에서 매개변수의 참조값을 이용하여 객체의 값을 변경했을 때 전달되어진 참조형의 인수값도 같이 변경된다.
+
+  ```javascript
+  function foo(objective){
+      objective.name = "Lee"
+      objective.smoking = false
+  }
+  
+  var obj = {
+      name:'Cha',
+      smoking:true
+  }
+  
+  console.log(obj)	// { name: 'Cha', smoking: true }
+  foo(obj)
+  console.log(obj)	// { name: 'Lee', smoking: false }
+  ```
+
+  - 순수함수
+    - 객체형 인수는 참조값을 매개변수에 전달하기 때문에 함수 몸체에서 그 값을 변경할 경우 원본 객체가 변경되는 **부수 효과(side-effect)**가 발생한다.
+    - 부수 효과를 발생시키는 함수를 **비순수 함수**라 하며 이는 복잡성을 증가시킨다.
+    - 어떠한 외부 상태도 변경하지 않는 함수를 순수함수라 한다.
+    - 비순수 함수를 최대한 줄이는 것은 부수 효과를 억제해 디버깅을 쉽게 만들어 준다.
+
+
+
+- 반환값
+
+  - 함수가 자신을 호출한 코드에게 수행한 결과를 반환할 수 있는데 이 때 반환된 값을 반환값이라 한다.
+  - `return` 키워드는 함수를 호출한 코드(caller)에게 값을 반활할 때 사용한다.
+    - 자바스크립트 해석기는 `return` 키워드를 만나면 함수의 실행을 중단한 후, 함수를 호출한 코드로 되돌아간다.
+    - 만일 `return` 키워드 이후에 다른 구문이 존재하면 그 구문은 실행되지 않는다.
+  - 함수는 배열 등을 이용하여 한 번에 여러 개의 값을 리턴할 수 있다.
+    - 반환 값이 배열이므로 당연히 인덱싱도 가능하다.
+  - 함수는 반환을 생략할 수 있다. 이때 함수는 암묵적으로  undefined를 반환한다.
+
+  ```javascript
+  function plusMinus(num1,num2){
+    var prst = num1+num2
+    var mrst = num1-num2
+    return [prst,mrst]
+  }
+  
+  console.log(plusMinus(4,1))		// [5,3]
+  console.log(plusMinus(4,1)[1])	// 3
+  ```
+
+
+
+- 함수가 반환한 함수는 바로 인자를 받는 것이 가능하다.
+
+  - 아래 예시에서 `foo` 함수는 `bar` 함수를 반환한다.
+  - 그 반환값에 바로 `foo()("hello!");`와 같이 인자를 넘기면 실행이 된다.
+
+  ```javascript
+  function foo() {
+    const bar = function (m) {
+      console.log(m);
+    };
+    return bar;
+  }
+  
+  foo()("hello!");	// hello!
+  ```
+
+  
+
+
+
+## 함수의 객체 프로퍼티
+
+- 함수는 객체이므로 프로퍼티를 가질 수 있다.
+
+  - 함수는 일반 객체와는 다른 함수만의 프로퍼티를 갖는다.
+
+  ```javascript
+  function hello(name){
+      return "Hello! "+name
+  }
+  
+  hello.x = "Cha"
+  console.log(hello.x)	// Hello! Cha
+  
+  console.dir(hello)
+  
   /*
-  for문 구조
-  for(초기화식;조건식;증감식){
-  실행코드;
-  }
-  카운트 변수 초기화: 변수 선언과 함께 꼭 키워드 재할당 가능한 var나 let을 붙임
-  제어 조건: 카운트 변수에 대한 조건
-  변수 증가: ++,-- 사용
-  두 번째 실행부터는 변수 초기화 생략하고 실행
+  ƒ hello(name)
+  arguments: null
+  caller: null
+  length: 1
+  name: "hello"
+  prototype: {constructor: ƒ}
+  __proto__: ƒ ()
   */
-  
-  for (let i=0;i<3;i++){
-      console.log(i)
+  ```
+
+
+
+- arguments 프로퍼티
+
+  - 함수 호출 시 전달된 인수들의 정보를 담고 있는 순회 가능한 유사배열객체이다.
+  - **유사배열객체**: 실제 배열 객체는 아니지만 length 프로퍼티를 가진 객체를 말한다.
+  - 유사배열객체는 진짜 객체는 아니므로 배열 메소드를 사용하려면 배열로 변환해야 한다.
+  - 함수 내부에서 지역변수처럼 사용된다(즉 함수 외부에서는 사용할 수 없다).
+  - `arguments` 객체는 매개 변수 갯수가 확정되지 않은 가변 인자 함수를 구현할 때 유용하게 사용된다.
+
+  ```javascript
+  function plus(num1,num2){
+    console.log(arguments)
+    return num1+num2
   }
   
-  out
-  0
-  1
-  2
+  plus()			// [Arguments] {}
+  plus(1)			// [Arguments] { '0': 1 }
+  plus(1,2)		// [Arguments] { '0': 1, '1': 2 }
+  plus(1,2,3)		// [Arguments] { '0': 1, '1': 2, '2': 3 }
   
-  //중첩도 가능하다.
-  //중첩된 for문에서 내부, 외부 for문 중 어떤 for문에 break를 걸지를 레이블 문을 통해 설정 가능하다(문서 참조).
-  for (let i=1;i<=6;i++){
-      for (let j=1;j<=6;j++){
-        if (i+j===6){
-          console.log([i,j])
-      }
+  
+  //가변 인자 함수
+  function minus(){
+    var bigNum = 100
+    for (var i = 0;i<arguments.length;i++){
+        bigNum-=arguments[i]
     }
+    return bigNum
+  }
+  console.log(minus())			// 100
+  console.log(minus(5))			// 95
+  console.log(minus(10,20,30))	// 45
+  
+  // arguments를 진짜 배열로 변환
+  function foo(){
+    if (!arguments.length) return 0;
+    console.log(Object.prototype.toString.call(arguments))	// [object Arguments]
+    var arr = Array.prototype.slice.call(arguments)
+    console.log(Object.prototype.toString.call(arr))			// [object Array]
   }
   
-  out
-  [1,5]
-  [2,4]
-  [3,3]
-  [4,2]
-  [5,1]
+  foo(1,2,3,4,5)
   ```
 
-  - for of
-    - 배열의 요소를 순회하기 위해 사용.
-  
-  ```js
-  const arr = ['a','b','c']
-  for (const n of arr){
-    console.log(n)
-  }
-    
-  out
-  a
-  b
-  c
-  ```
-  
-  - for in 
-    - 객체의 문자열 키(key)를 순회하기 위한 문법.
-    - 배열에는 사용하지 않는 것이 좋다.
-    - 배열은 순서를 보장하는 데이터 구조이지만 for in은 객체에 사용할 것을 염두했기에 순서를 보장하지 않기 때문이다.
-  
+
+
+- caller 프로퍼티
+
+  - 자신을 호출한 함수를 의미한다.
+
   ```javascript
-  //객체
-  const fruits = {
-      apple:2,
-      banana:10,
-      tomato:10,
-      watermelon:2,
+  function callerFunc(func){
+      var result = func()
+      return result
   }
   
-  for (const fruit in fruits){
-      console.log(fruit,fruits[fruit])
+  function foo(){
+      return "caller: " + foo.caller
   }
+  console.log(callerFunc(foo))
   /*
-    apple 2
-    banana 10
-    tomato 10
-    watermelon 2
-    */
+  caller: function callerFunc(func){
+    var result = func()
+    return result
+  }
+  */
+  ```
+
+
+
+- length 프로퍼티
+
+  - 함수 정의 시 작성된 매개변수 갯수를 의미한다.
+  - `arguments.length`의 값과는 다를 수 있으므로 주의하여야 한다. `arguments.length`는 함수 호출시 인자의 갯수이다.
+
+  ```javascript
+  function foo(){}
+  function bar(x,y,z){}
   
+  console.log(foo.length)		// 0
+  console.log(bar.length)		// 3
+  ```
+
+
+
+- name 프로퍼티
+
+  - 함수명을 나타낸다.
+  - 기명 함수의 경우 함수명을 값으로 갖고, 익명함수의 경우 변수명을 값으로 갖는다.
+
+  ```javascript
+  var named = function foo(){}
+  var anonymous = function(){}
   
-  //배열
-  var lst = ['one', 'two', 'three']
+  console.log(named.name)			// foo
+  console.log(anonymous.name)		// anonymous
+  ```
+
+
+
+- \__proto__접근자 프로퍼티
+
+  - 모든 객체는 [[Prototype]] 이라는 내부 슬롯이 있고, [[Prototype]] 내부 슬롯은 프로토타입 객체를 가리킨다.
+  - 프로토타입 객체란 프로토타입 기반 객체 지향 프로그래밍의 근간을 이루는 객체로서, 객체간의 상속을 구현하기 위해 사용된다.
+  - 즉, 프로토타입 객체는 다른 객체에 공유 프로퍼티를 제공하는 객체를 말한다.
+  - \__proto__ 프로퍼티는 [[Prototype]] 내부 슬롯이 가리키는 프로토타입 객체에 접근하기 위해 사용하는 접근자 프로퍼티이다.
+  - 내부 슬롯에는 직접 접근할 수 없고 간접적인 방법을 제공하는 경우에 한하여 접근할 수 있다.
+  - [[Prototype]] 내부 슬롯에도 직접 접근할 수 없으며 \__proto__접근자 프로퍼티를 통해 간접적으로 프로토타입 객체에 접근할 수 있다.
+
+  ```javascript
+  // __proto__ 접근자 프로퍼티를 통해 자신의 프로토타입 객체에 접근할 수 있다.
+  // 객체 리터럴로 생성한 객체의 프로토타입 객체는 Object.prototype이다.
   
-  for (var ldx in lst) {
-      console.log(idx+': '+lst[idx])
+  console.log({}.__proto__==Object.prototype)		// true
+  ```
+
+  - \_\_proto\__ 프로퍼티는 객체가 직접 소유하는 프로퍼티가 아니라 모든 객체의 프로토타입 객체인 `Object.prototype` 객체의 프로퍼티다. 모든 객체는 상속을 통해 \__proto__ 접근자 프로퍼티는 사용할 수  있다.
+    - `Object.getOwnPropertyDescriptor(속성을 찾을 대상 객체, 설명이 검색될 속성명)`은 객체에 속성명이 존재하는 경우 주어진 속성의 속성 설명자를 반환하고 없으면 `undefined`를 반환한다. 
+
+  ```javascript
+  // 객체는 __proto__ 프로퍼티를 직접 소유하지 않는다.
+  console.log(Object.getOwnPropertyDescriptor({}, '__proto__'))
+  // undefined
+  
+  // __proto__ 프로퍼티는 모든 객체의 프로토타입 객체인 Object.prototype의 접근자 프로퍼티이다.
+  console.log(Object.getOwnPropertyDescriptor(Object.prototype, '__proto__'))
+  // {get: ƒ, set: ƒ, enumerable: false, configurable: true}
+  
+  // 모든 객체는 Object.prototype의 접근자 프로퍼티 __proto__를 상속받아 사용할 수 있다.
+  console.log({}.__proto__ === Object.prototype); // true
+  ```
+
+  - 함수도 객체이므로 \__proto__ 접근자 프로퍼티를 통해 프로토타입 객체에 접근 가능하다.
+    - 함수 객체의 프로토타입 객체는 `Function.prototype`이다.
+
+  ```javascript
+  console.log((function() {}).__proto__ === Function.prototype) // true
+  ```
+
+
+
+- prototype 프로퍼티(java_part4 참고)
+
+  - 함수 객체만이 소유하는 프로퍼티
+  - prototype 프로퍼티는 함수가 객체를 생성하는 생성자 함수로 사용될 때, 생성자 함수가 생성한 인스턴스의 프로토타입 객체를 가리킨다.
+
+  ```javascript
+  // 함수 객체는 prototype 프로퍼티를 소유한다.
+  console.log(Object.getOwnPropertyDescriptor(function() {}, 'prototype'))
+  // {value: {…}, writable: true, enumerable: false, configurable: false}
+  
+  // 일반 객체는 prototype 프로퍼티를 소유하지 않는다.
+  console.log(Object.getOwnPropertyDescriptor({}, 'prototype'))
+  // undefined
+  ```
+
+
+
+
+
+
+## 함수의 다양한 형태
+
+- 생성자 함수
+  - 자바스크립트의 생성자 함수는 말 그대로 객체를 생성하는 역할을 한다.
+    -  정확히 말해서 Java와는 달리 클래스의 인스턴스를 만드는 것이 아니라 객체와 또 다른 객체를 연결하는 것 뿐이다.
+    - 단지 `Person()` 객체(함수는 객체이므로)와 `cha` 객체를 연결해 주는 것 뿐이다.
+
+  ```javascript
+  function Person(){
+      
   }
   
-  /*
-    0: one
-    1: two
-    2: three
-    */
+  var cha = new Person()
   ```
-  
-  - continue
-  
+
+  -  Java의 생성자 함수와는 다르게 그 형식이 정해져 있는 것이 아니라 기존 함수에 new 연산자를 붙여서 호출하면 해당 함수는 생성자 함수로 동작한다.
+    - `new` 연산자는 `new`를 붙인 기존 클래스와 이를 통해 생성한 객체를 연결해 주는 역할을 한다. 
+    - 생성자 함수가 아닌 일반 함수에 new 연산자를 붙여 호출하면 생성자 함수처럼 동작할 수 있다. 
+    - 따라서 일반적으로 생성자 함수명은 첫문자를 대문자로 기술하여 혼란을 방지하려는 노력을 한다.
+
+  - 동작 방식은 JavaScript_part3.생성자 함수 호출시의 this참조.
+
+
+
+- 즉시 실행 함수
+
+  - 함수의 정의와 동시에 실행되는 함수
+  - 최초 한 번만 호출되며 다시 호출할 수는 없다.
+  - 이러한 특징을 이용하여 최초 한 번만 실행이 필요한 초기화 처리 등에 사용할 수 있다.
+  - 즉시 실행 함수를 선언할 때는 반드시 마지막에 `;`를 붙여줘야 한다.
+  - 함수 선언문은 자바스크립트 엔진에 의해 함수 몸체를 닫는 중괄호 뒤에 ;가 자동 추가된다.
+    - 따라서 즉시 실행 함수는 소괄호로 감싸줘야 한다.
+    - 감싸지 않을 경우: `function(){};();`(`SyntaxError: Unexpected token (` 발생)
+    - 감쌀 경우: `(function(){}());`
+
   ```javascript
-  for (let i=0;i<4;i++){
-      if (i===3) continue
-      console.log(i)
-  }
+  // 즉시 실행 함수는 소괄호로 감싸준다.
+  // 기명 즉시 실행 함수
+  (function hello(){
+    console.log("기명 즉시 실행 함수 실행")		// 기명 즉시 실행 함수 실행
+    return "Hello!"
+  }());
   
-  out
-  1
-  2
-  4
-  ```
-  
-  
-
-
-
-
-
-# 자료구조
-
-## Array
-
-- Array(파이썬의 리스트)
-
-  - 파이썬과 마찬가지로 동적(배열 크기가 정해져 있지 않음)으로 배열의 추가와 삭제가 가능
-  - 참조형 데이터로 데이터 자체가 변수에 저장되는 것이 아니라 변수에는 해당 데이터를 찾기 위한 참조(주소)만 저장된다.
-  - 자바스크립트에서 배열은 객체이다.
-
-  ```js
-  const arr = [0,1,2,3]
-  
-  
-  //배열인지 확인
-  Array.isArray(arr)  //true
-  
-  //인덱스 접근
-  console.log(arr[0],arr[3])
-  
-  out
-  0 3
-  
-  
-  // 맨 뒤에 추가
-  arr.push(500)
-  console.log(arr)
-  
-  out
-  [0,1,2,3,500]
-  
-  
-  //맨 앞에 추가
-  arr.unshift(100)
-  console.log(arr)
-  
-  out
-  [100,0,1,2,3,500]
-  
-  //맨 앞의 요소 삭제
-  arr.shift(100)
-  console.log(arr)
-  
-  out
-  100
-  [0,1,2,3,500]
-  
-  //가장 우측의 요소삭제 후 반환
-  console.log(arr.pop())
-  console.log(arr)
-  
-  out
-  500
-  [0,1,2,3]
-  
-  
-  //역순으로 재배열, 원본도 변한다
-  console.log(arr.reverse())
-  console.log(arr)
-  out
-  [3,2,1,0]
-  [3,2,1,0]
-  
-  
-  //포함 여부 확인
-  console.log(arr.includes(0))
-  console.log(arr.includes(10))
-  
-  out
-  true
-  false
-  
-  
-  //배열 요소 전체를 연결하여 생성한 문자열을 반환, 구분자(separator)는 생략 가능, 기본 구분자는 ','
-  console.log(arr.join())   //기본값은 ,
-  console.log(arr.join(':'))
-  console.log(arr.join(''))
-  
-  out
-  3,2,1,0
-  3:2:1:0
-  3210
-  
-  
-  //인자로 지정된 요소를 배열에서 검색하여 인덱스를 반환, 중복되는 요소가 있는 경우 첫번째 인덱스만 반환, 만일 해당하는 요소가 없는 경우, -1을 반환
-  console.log(arr.indexOf(0))
-  console.log(arr.indexOf(1))
-  
-  
-  //자바스크립트의 배열은 이상하게 작동한다.
-  //[1,111,11,222,22,2]를 정렬하면 [1,11,111,2,22,222]로 정렬된다. 문자열로 인식해서 맨 앞 글자만 보고 정렬하기 때문이다.
-  //원하는 대로 정렬 하기 위해서는 아래와 같이 해야 한다.
-  arr.sort((a,b) => a - b)
-  
-  //위 코드가 가능한 것 역시 Js의 이상한 사칙연산 때문이다.
-  //위의 이항 연산자 부분 참고
-  
-  
-  //배열 합치기
-  const a=[1,2,3]
-  const b=[4,5,6]
-  console.log(a.push(b))  //[1,2,3,[4,5,6]]
-  console.log(a+b)        //"1,2,34,5,6"
-  
-  console.log(a.concat(b))  //[1,2,3,4,5,6]
-  console.log([...a, ...b]) //[1,2,3,4,5,6]
-  const c = a.push(...b)    //[1,2,3,4,5,6]
-  //세 방법 중 어느 방법이 가장 나을지는 아래 사이트를 참고
-  //https://www.measurethat.net/Benchmarks/Show/4223/0/array-concat-vs-spread-operator-vs-push
-  
-  
-  
-  //복사
-  //얕은 복사
-  newNumbers = numbers      //numbers가 바뀌면 newNumbers도 바뀐다.
-  //깊은 복사
-  newNumbers = [...numbers] //newNumbers가 새로운 리스트가 된다.
+  // 익명 즉시 실행 함수
+  (function(){
+    console.log("익명 즉시 실행 함수 실행")		// 익명 즉시 실행 함수 실행
+    return "Hi!"
+  }());
   ```
 
-  - Array helper methods
+  - 자바스크립트의 가장 큰 문제점 중 하나는 파일이 분리되어 있어도 글로벌 스코프가 하나이며, 글로벌 스코프에 선언된 변수나 함수는 코드 내의 어디서든지 접근이 가능하다는 것이다.
+    - 따라서 다른 스크립트 파일 내에서 동일한 이름으로 명명된 변수나 함수가 같은 스코프 내에 존재할 경우 원치 않는 결과를 가져올 수 있다.
+    - 즉시 실행 함수 내에 처리 로직을 모아 두면, 혹시 있을 수도 있는 변수명 또는 함수명의 충돌을 방지할 수 있어, 이를 위한 목적으로 즉시실행함수를 사용하기도 한다(함수 내부의 변수는 함수 내부에서만 효력을 가지므로).
+    - 특히 jQuery와 같은 라이브러리의 경우, 코드를 즉시 실행 함수 내에 정의해 두면 라이브러리의 변수들이 독립된 영역 내에 있게 되므로 여러 라이브러리들은 동시에 사용하더라도 변수명 충돌과 같은 문제를 방지할 수 있다.
 
-    - filter: 원하는 요소 정리하여 새로운 배열 반환
-
-    ```js
-    a = [1,2,3,4,5,6]
-    const b = a.filter((x) => {
-      return x%2==1  //결과가 true인 것만 b에 들어가게 된다.
-    })
-    console.log(b)
-    
-    
-    out
-    [1,3,5]
-    ```
-
-    - forEach: 배열의 엘리먼트 하나하나 조작 시 사용, 엘리먼트 하나하나 콜 백 함수에 전달하여 처리
-
-    - map: 배열 요소 하나 하나에 콜 백 함수 처리 후 새로운 배열 반환
-
-
-
-## Object
-
-- 자바스크립트는 객체 기반의 스크립트 언어이며 자바스크립트를 이루고 있는 거의 모든 것이 객체이다.
-
-  - 원시 타입을 제외한 나머지 값들은 모두 객체이다.
-  - object type을 객체 타입 또는 참조 타입이라 한다.
-    - 참조 타입은 객체의 모든 연산이 실제값이 아닌 참조값으로 처리됨을 의미한다.
-  - 객체는 프로퍼티를 변경, 추가, 삭제가 가능하므로 변경 가능(mutable)한 값이라 할 수 있다.
-    - 따라서 객체 타입은 동적으로 변화할 수 있으므로 어느 정도의 메모리 공간을 확보해야 하는지 예측할 수 없기 때문에 런타임에 메모리 공간을 확보하고 메모리의 힙 영역(Heap Segment)에 저장된다.
-    - 이에 반해 원시 타입은 값(value)으로 전달된다. 즉, 복사되어 전달된다. 이를 **pass-by-value**라 한다.
-
-  - **Pass-by-reference**
-    - 변수에 값 자체를 저장하고 있는 것이 아니라, 생성된 데이터의 참조값(address)를 저장하고 참조 방식으로 전달하는 것
-
-
-
-- JavaScript의 객체
-  - 키(key)와 값(value)로 구성된 프로퍼티들의 집합이다.
-  - 프로퍼티의 값으로 JS에서 사용할 수 있는 모든 값을 사용할 수 있다.
-  - JavaScript의 함수는 일급 객체이므로 값으로 취급할 수 있다. 따라서 프로퍼티 값으로 함수를 사용할 수도 있으며, 프로퍼티 값이 함수일 경우, 일반 함수와 구분하기 위해 **메서드**라 부른다.
-  - JS의 객체는 객체지향의 상속을 구현하기 위해 **프로토타입**이라고 불리는 객체의 프로퍼티와 메서드를 상속받을 수 있다.
-
-
-
-- 프로퍼티
-  - 프로퍼티는 프로퍼티 키(이름)와 프로퍼티 값으로 구성된다.
-  - 프로퍼티는 프로퍼티 키로 유일하게 식별할 수 있다. 즉, 프로퍼티 키는 프로퍼티를 식별하기 위한 식별자(identifier)다.
-  - 프로퍼티 키와 값의 명명 규칙
-    - 키: 빈 문자열을 포함하는 모든 문자열 또는 symbol 값
-    - 값: 모든 값
-    - 프로퍼티 키에 문자열이나 symbol값 이외의 값을 지정하면 암묵적으로 타입이 변환되어 문자열이 된다.
-    - 이미 존재하는 프로퍼티 키를 중복 선언하면 나중에 선언한 프로퍼티가 먼저 선언한 프로퍼티를 덮어쓴다.
-    - 표현식을 프로퍼티 키로 사용할수도 있다. 이 경우 표현식을 반드시 `[]`로 묶어야 한다.
-    - 예약어를 프로퍼티키로 사용하여도 에러가 발생하지는 않지만, 하지 않는 것이 좋다.
-  - 프로퍼티 키는 문자열이므로 본래 따옴표를 사용하여야 한다.
-    - 그러나 자바스크립트에서 사용 가능한 유효한 이름인 경우, 따옴표를 생략할 수 있다.
-    - 반대로 말하면 자바스크립트에서 사용 가능한 유효한 이름이 아닌 경우, 반드시 따옴표를 사용하여야 한다.
-    - `first_name`은 따옴표가 생략 가능하지만 `"first-name"`은 생략 불가능하다.
-
-
-
-- 객체 생성 방법
-
-  - Java와의 차이점
-    - Java와 같은 클래스 기반 객체 지향 언어는 클래스를 사전에 정의하고 필요한 시점에 new 연산자를 사용하여 인스턴스를 생성하는 방식으로 객체를 생성한다.
-    - JS는 프로토타입 기반 객체 지향 언어로서 클래스라는 개념이 없어, 별도의 객체 생성 방법이 존재한다.
-    - ECMAScript 6에서 새롭게 클래스가 도입되었다. 그러나  ES6의 클래스가 새로운 객체지향 모델을 제공하는 것이 아니며 클래스도 사실 함수이고 기존 프로토타입 기반 패턴의 문법적 설탕(Syntactic sugar)이다.
-  
-  - 객체 리터럴
-    - 가장 일반적인 객체 생성 방식
-    - `{}`를 사용하여 객체를 생성하며 중괄호 내에 1개 이상의 프로퍼티를 기술하면 해당 프로퍼티가 추가된 객체를 생성할 수 있고 아무것도 기술하지 않으면 빈 객체가 생성된다.
-    - 프로퍼티의 값으로 변수를 넣을 경우 키를 입력하지 않으면 `변수명 : 할당된 값`의 형태로 프로퍼티가 생성된다.
-  
   ```javascript
-  var emptyObj = {}
-  console.log(typeof emptyObj)     //object
+  (function () {
+    var foo = 1;
+    console.log(foo);		// 1
+  }());
   
-  var student = {
-      name: 'Cha',
-      gender: 'male',
-      sayHello: function () {
-          console.log('Hello! ' + this.name)
+  var foo = 10;
+  console.log(foo);		// 10
+  ```
+
+
+
+- 내부 함수
+
+  - 함수 내부에 정의된 함수
+  - 내부함수는 부모 함수의 변수에 접근할 수 있지만 부모 함수는 자식 함수의 변수에 접근할 수 없다.
+
+  ```javascript
+  function parent(pra){
+      var parentValue = pra
+      function child(){
+          var childValue = "Cha"
+          console.log("parentValue: "+parentValue)	// parentValue1: Ha
+          console.log("childValue: "+ childValue)		// childValue1: Cha
       }
+      child()
+      console.log("parentValue: "+parentValue)		// parentValue2: Ha
+      console.log("childValue: "+ childValue)			// ReferenceError: childValue is not defined
   }
-  console.log(typeof student)     //object
-student.sayHello()              //Hello! Cha
   
-  
-  // 프로퍼티의 값으로 변수를 넣을 경우
-  var first = 1
-  var second = 2
-  var third = 3
-  
-  const ordinal = {
-      first,
-      second,
-      third,
+  parent("Ha")
+  ```
+
+  - 내부함수는 부모함수의 외부에서 접근할 수 없다.
+
+  ```javascript
+  function hello(){
+      var hi = function(){
+          console.log("Hello!, Hi!")
+      }
+      hi()
   }
-  console.log(ordinal)  //{ first: 1, second: 2, third: 3 }
+  
+  hello()		// Hello!, Hi!
+  hi()		// ReferenceError: hi is not defined
+  ```
+
+  
+
+- 재귀 함수
+
+  - 자기 자신을 호출하는 함수
+  - 탈출 조건을 반드시 만들어야 한다. 탈출 조건이 없는 경우, 함수가 무한 호출되어 stackoverflow 에러가 발생한다. 
+  - 대부분의 재귀 함수는 for나 while 문으로 구현이 가능하다. 
+  - 반복문보다 재귀 함수를 통해 보다 직관적으로 이해하기 쉬운 구현이 가능한 경우에만 한정적으로 적용하는 것이 바람직하다.
+
+  ```javascript
+  // 피보나치 수열을 구하는 예제
+  function fibonacci(n) {
+    if (n < 2) return n
+    return fibonacci(n - 1) + fibonacci(n - 2)
+  }
+  
+  console.log(fibonacci(6)) // 8
+  
+  
+  // 팩토리얼을 구하는 예제
+  function factorial(n) {
+    if (n < 2) return 1
+    return factorial(n - 1) * n
+  }
+  
+  console.log(factorial(3)) // 6
+  ```
+
+  
+
+- 콜백 함수
+
+  - 함수를 명시적으로 호출하는 방식이 아니라 특정 이벤트가 발생했을 때 시스템에 의해 호출되는 함수
+  - 예시1. click이라는 이벤트에 의해 실행되는 콜백 함수
+  
+  ```html
+  <html>
+  <body>
+    <button id="myButton">Click me</button>
+    <script>
+      var button = document.getElementById('myButton');
+      button.addEventListener('click', function() {
+        console.log('button clicked!');
+      });
+    </script>
+  </body>
+  </html>
   ```
   
-  - Object 생성자 함수
-    - `new` 연산자와 Object 생성자 함수를 호출하여 빈 객체를 생성하고, 이후에 프로퍼티 또는 메서드를 추가하여 객체를 완성하는 방법
-    - 생성자(constructor) 함수: new 키워드와 함께 객체를 생성하고 초기화하는 함수를 말한다.
-    - 생성자 함수를 통해 생성된 객체를 인스턴스(instance)라 한다.
-    - 자바스크립트는 Object 생성자 함수 이외에도 String, Number, Boolean, Array, Date, RegExp 등의 빌트인 생성자 함수를 제공한다.
-    - **객체 리터럴 방식으로 생성된 객체는 결국 Object 생성자 함수로 객체를 생성하는 것을 단순화시킨 축약 표현이다.**
-    - 개발자가 일부러 Object 생성자 함수를 사용해 객체를 생성해야 할 일은 거의 없다.
+  - 예시2. 함수의 인자로 넘겨져 해당 함수가 실행됨으로써 실행 되는 콜백 함수
   
   ```javascript
-  // 빈 객체 생성
-  var someone = new Object();
+  function first(a,b,callback){
+      let v=a*b;
+      callback(v);
+  }
+  function callback(a){
+      console.log(a);
+  }
+  ```
   
-  // 프로퍼티 추가
-  someone.name = 'Cha';
-  someone.gender = 'male';
-  someone.sayHello = function () {
-      console.log('Hello! ' + this.name);
+    - 자바스크립트의 함수는 일급 객체이므로 변수와 유사하게 사용될 수 있다.
+      - 콜백 함수는 매개변수롤 통해 전달될 수 있다.
+      - 전달 받은 함수의 내부에서 어느 특정 시점에 실행된다.
+  
+  ```javascript
+  // 첫 매개변수로 함수가 전달되며, 두 번째 매개변수에 전달된 시간이 경과하면 매개변수로 전달된 콜백 함수가 호출된다.
+  setTimeout(function () {
+      console.log('1초 뒤 출력됩니다.');
+  }, 1000);
+  ```
+  
+    - 콜백 함수는 주로 비동기식 처리 모델에 사용된다.
+      - 비동기식 처리 모델: 처리가 종료하면 호출될 함수(콜백 함수)를 미리 매개변수에 전달하고 처리가 종료되면 콜백함수를 호출하는 것
+      - 콜백 함수는 콜백 큐에 들어 있다가 해당 이벤트가 발생하면 호출된다.
+      - 콜백 함수는 클로저이므로 콜백 큐에 단독으로 존재하다가 호출되어도 콜백함수를 전달받은 함수의 변수에 접근할 수 있다.
+    - 동기식 처리 모델에 사용되지 못한다는 말은 아니다.
+      - 아래의 코드도 명시적으로 호출하지 않고 `foo` 함수가 실행되면서 시스템에 의해 호출되었으므로 콜백 함수를 사용한 것이다.
+      - 또한 비동기적이 아닌 동기적으로 사용되었다.
+  
+  ```javascript
+  function foo(f){
+      f()
+  }
+  console.log("Cha!")				
+  foo(()=>console.log("Hello!"))	
+  console.log("Have a nice day!")
+  // Cha!
+  // Hello!
+  // Have a nice day!
+  ```
+  
+    - 아래는 비동기적으로 동작하는 함수의 예시이다.
+  
+  ```javascript
+  function foo(f){
+      setTimeout(f,1000)
+  }
+  console.log("Cha!")
+  foo(()=>console.log("Hello!"))
+  console.log("Have a nice day!")
+  // Cha!
+  // Have a nice day!
+  // Hello!
+  ```
+
+  
+
+
+
+
+
+# 프로토타입
+
+> https://poiemaweb.com/js-prototype 
+
+> https://medium.com/@bluesh55/javascript-prototype-%EC%9D%B4%ED%95%B4%ED%95%98%EA%B8%B0-f8e67c286b67 
+
+- 자바스크립트는 Java, C++ 같은 클래스 기반 객체 지향 언어와 달리 프로토타입 기반 객체 지행 언어다.
+  - 따라서 자바스크립트의 동작 원리를 이해하기 위해서는 프로토 타입의 개념을 잘 이해하고 있어야 한다.
+  - 클래스 기반 객체 지향 언어는 객체 생성 이전에 클래스를 정의하고 이를 통해 객체를 생성한다.
+  - 프로토타입 기반 객체 지향 언어는 클래스 없이도 객체를 생성할 수 있다.
+
+
+
+- 사전지식
+  - JavaScript의 모든 객체는 결국 함수를 통해 생성된다.
+    - 객체 리터럴 방식은 결국 `Object()` 생성자 함수를 축약한 방식이다.
+    - 객체인 함수와 배열을 생성하는 `Function()`,`Array()`도 함수이다. 
+    - 따라서 결국 모든 객체는 함수를 통해 생성된다.
+  - 생성자 함수가 정의될 때 2가지 일이 발생한다.
+    - 해당 함수에 Constructor(생성자) 자격 부여(`new` 를 통해 객체를 만들어 낼 수있게 된다).
+    - 해당 함수의 프로토타입 객체가 생성되고 함수와 연결된다. 이 객체의 constructor 프로퍼티는 생성자 함수를 가리키게 된다.
+  - 모든 함수는 결국 함수 생성자를 통해 생성된다.
+
+
+
+- 프로토타입(Prototype)
+
+  - 자바스크립트의 모든 객체는 자신의 부모 역할을 담당하는 객체와 연결되어 있다.
+  - 객체 지향의 상속 개념과 같이 부모 객체의 프로퍼티 또는 메서드를 상속 받아 사용할 수 있게 한다.
+  - 이러한 부모 객체를 프로토타입 객체 또는 프로토타입이라 한다.
+  - 프로토타입은 생성자 함수에 의해 생성된 각각의 객체에 공유 프로퍼티를 제공하기 위해 사용한다.
+  - 객체를 생성할 때 프로토타입이 결정된다.
+    - 결정된 프로토타입은 다른 임의의 객체로 변경 가능하다.
+    - 즉, 부모 객체인 프로토타입을 동적으로 변경할 수 있다는 것을 의미한다.
+    - 이러한 특징을 활용하여 객체의 상속을 구현할 수 있다.
+
+  ```javascript
+  var person = {
+      name:'Cha',
+      age:28
+  }
+  
+  // person에는 hasOwnProperty를 정의해 준 적이 없지만 아래 문장은 동작한다.
+  console.log(person.hasOwnProperty('name'))	//true
+  ```
+
+
+
+- [[Prototype]]
+
+  - 자바스크립트의 모든 객체는 [[Prototype]]라는 인터널 슬롯을 가진다.
+  - [[Prototype]]의 값은 `null` 또는  프로토타입 객체(부모 객체)이며, 상속을 구현하는데 사용된다.
+  - `__proto__` 접근자 프로퍼티로 접근이 가능하다.
+    - `__proto__` 프로퍼티에 접근하면 내부적으로 `Object.getPrototypeOf`가 호출되어 프로토타입 객체(부모 객체)를 반환한다.
+  - [[Prototype]] 객체의 데이터 프로퍼티는 get 엑세스를 위해 상속되어 자식 객체의 프로퍼티처럼 사용할 수 있다.
+  - 하지만 set 엑세스는 허용되지 않는다.
+
+  ```javascript
+  var person = {
+      name:'Cha',
+      age:28
+  }
+  
+  // person 객체는 __proto__ 프로퍼티로 자신의 부모 객체(포로토타입)인 Object.prototype를 가리키고 있다.
+  console.log(person.__proto__ === Object.prototype)	//true
+  ```
+
+
+
+- [[Prototype]]과 prototype 프로퍼티의 차이
+
+  - 자바스크립트의 모든 객체는 [[Prototype]]라는 인터널 슬롯을 가지며 상속을 위해 사용된다.
+    - 함수도 객체이므로 [[Prototype]] 인터널 슬롯을 갖는다.
+    - 그런데 함수 객체는 일반 객체와는 달리 prototype 프로퍼티도 소유하게 된다.
+  - [[Prototype]]
+    - `__proto__` 프로퍼티로 접근한다.
+    - 함수를 포함한 모든 객체가 가지고 있는 인터널 슬롯이다.
+    - 객체의 입장에서 자신의 부모 역할을 하는 프로토타입 객체를 가리키며 함수 객체의 경우 `Function.prototype`을 가리킨다.
+  - prototype 프로퍼티
+    - 함수 객체만 가지고 있는 프로퍼티이다.
+    - 함수 객체가 생성자로 사용될 때 이 함수를 통해 생성될 객체의 부모 역할을 하는 객체(프로토타입)를 가리킨다.
+
+  ```javascript
+  function Person(name) {
+    this.name = name;
+  }
+  
+  var cha = new Person('Cha');
+  
+  // [[Prototype]]: __proto__ 접근자 프로퍼티에 접근하며, 함수 객체의 경우 Function.prototype을 가리킨다.
+  console.log(Person.__proto__ === Function.prototype)	// true
+  
+  // prototype 프로퍼티: prototype 프로퍼티로 접근하며, Person 함수로 생성된 객체의 부모 객체를 가리킨다.
+  console.log(Person.prototype === cha.__proto__)			// true
+  
+  // 둘은 다르다!!
+  console.log(Person.prototype === Person.prototype)     // true
+  console.log(Person.__proto__ === Function.prototype)   // true
+  
+  
+  /*
+  위 예시에서 객체인 cha는 prototype 프로퍼티를 가지고 있지 않다.
+  따라서 자신의 부모 객체(프로토타입)을 확인하기 위해서는 __proto__ 프로퍼티에 접근해야 한다.
+  반면에 Person은 함수이므로 prototype 프로퍼티를 가지고 있다.
+  따라서 Person은 prototype 프로퍼티에 접근하여 자신을 통해 생성될 객체의 부모 역할을 하는 객체를 확인할 수 있다.
+  cha는 Person을 통해 생성된 객체이므로 Peson의 prototype 프로퍼티로 접근한 값과 cha의 __proto__ 프로퍼티로 접근한 값은 같을 수 밖에 없다.
+  */
+  ```
+
+  
+
+- constructor 프로퍼티
+
+  - **프로토타입 객체**는 constructor 프로퍼티를 갖는다. 이 construtor 프로퍼티는 객체의 입장에서 자신을 생성한 객체를 가리킨다.
+    - 오직 프로토타입 객체만이 constructor 프로퍼티를 갖는다.
+  - 아래 예시에서 `Person()`은 생성자 함수(객체)이고, `cha`는 생성자 함수에 의해 생성된 객체이다.
+    - `cha` 입장에서 자신을 생성한 객체는 `Person()` 생성자 함수이다.
+    - `cha`객체는 프로토타입 객체는 아니므로 constructor 프로퍼티를 갖지 않는다.
+  - 본래 프로토타입 객체가 아닌 객체는 constructor 프로퍼티를 갖지 않는다. 그러나 아래 예제에서는 `cha.constructor===Person`이 `true`를 반환하는데 이는 어떻게 된 것일까?
+    - `Person()` 생성자 함수가 생성될 때, constructor를 `Person()` 생성자 함수로 갖는 `Person.prototype` 객체도 함께 생성된다.
+  - `Person.prototype` 객체는 앞으로 `Person()` 생성자 함수로 생성되는 모든 객체의 프로토타입이 될 객체이다.
+    - `cha` 객체는 `Person()` 생성자 함수로 생성된 객체이다.
+    - 따라서 `cha` 객체의 프로토타입 객체는 `Person.prototype`객체이다.
+    - `cha` 객체는 프로토타입 객체가 아니므로 constructor 프로퍼티가 존재하지 않는다.
+    - `Person.prototype` 객체는 constructor로 `Person()` 생성자 함수를 가리킨다.
+    - `cha.constructor`는 프로토타입 체인에 따라 부모 객체인 `Person.prototype`의 constructor인 `Person()` 생성자 함수를 가리키게 된다.
+  
+  ```javascript
+  function Person(name){
+      this.name = name
+  }
+  
+  var cha = new Person('Cha')
+  
+  // Person() 생성자 함수에 의해 생성된 프로토타입 객체를 생성한 객체는 Person() 생성자 함수이다.
+  console.log(Person.prototype.constructor === Person)
+  // Person() 생성자 함수를 생성한 객체는 Function() 생성자 함수이다.
+  console.log(Person.constructor === Function)
+  // cha 객체를 생성한 객체는 Person() 생성자 함수이다.
+  console.log(cha.constructor === Person)
+  ```
+
+
+
+
+
+
+
+## 프로토타입 체인
+
+- Prototype chain
+
+  - 특정 객체의 프로퍼티나 메서드에 접근하려고 할 때 해당 객체에 접근하려는 프로퍼티나 메서드가 없다면 [[Prototype]]이 가리키는 링크를 따라 자신의 부모 역할을 하는 프로토타입 객체의 프로퍼티나 메서드를 차례로 검색하는데 이를 프로토타입 체인이라 한다.
+
+  ```javascript
+  var person = {
+      name:'Cha',
+      age:28
+  }
+  
+  // person에는 hasOwnProperty를 정의해 준 적이 없지만 person 객체의  [[Prototype]]이 가리키는 링크를 따라 person의 부모 역할을 하는 프로토타입 객체의 메서드를 호출하였기에 에러가 발생하지 않는다.
+  console.log(person.hasOwnProperty('name'))	//true
+  ```
+
+
+
+- 객체 리터럴 방식으로 생성된 객체의 프로토타입 체인
+
+  - 객체 리터럴 방식으로 생성된 객체는 내장 함수인 `Object()` 생성자 함수로 객체를 생성하는 것을 단순화시킨 것이다.
+    - `Object()` 생성자 함수는 함수 객체이므로 prototype 프로퍼티가 있다.
+  - 결국 객체 리터럴을 사용하여 객체를 생성한 경우, 그 객체의 프로토타입 객체는 `Object.prototype`이다.
+
+  ```javascript
+  var cha = {
+      name:"Cha",
+      age:28
+  }
+  
+  console.log(Function.prototype.__proto__ === Object.prototype)	// true
+  console.log(Object.__proto__ === Function.prototype)			// true
+  console.log(Object.prototype.constructor === Object)			// true
+  console.log(cha.__proto__ === Object.prototype)					// true
+  ```
+  
+  - 상세설명(`.__proto__`와 `.protytype`은 다르다는 것을 염두에 둬야 한다.)
+    - 함수를 생성하는 생성자 함수 `Funcion()`은 생성 되는 순간, 앞으로 `Function()` 생성자 함수로 생성될 모든 함수들의 프로토타입이 될 `Function.prototype`이 함께 생성된다.
+    - `Function.prototype`은 프로토타입 객체이므로 모든 객체의 부모 객체인 `Object.prototype`을 프로토타입으로 갖는다.
+    - `Object()` 생성자 함수는 `Function()` 생성자 함수로 생성된 것이므로 `Function()` 생성자 함수가 생성될 때 함께 생성된 `Function.prototype`을 프로퍼티로 갖는다.
+    - `Object.prototype`은 `Object()` 생성자 함수가 생성됨으로 인해 생성된 것이므로 `Object()`를 constructor로 갖는다.
+    - `cha` 객체는  `Object()` 생성자 함수로 생성된 것이므로 프로토타입으로 `Object.prototype`을 갖는다.
+
+
+
+- 생성자 함수로 생성된 객체의 프로토타입 체인
+
+  - 생성자 함수로 객체를 생성하기 위해서는 우선 생성자 함수를 정의하여야 한다.
+  - 함수를 정의하는 3가지 방식 모두 결국은 `Function()` 생성자 함수로 함수를 생성하는 것을 단순화 시킨 것이다.
+    - 따라서 어떠한 방식으로 함수 객체를 생성하여도 모든 함수 객체의 prototype 객체는 Function.prototype이다. 
+    - 생성자 함수도 함수 객체이므로 생성자 함수의 prototype 객체는 Function.prototype이다.
+
+  ```javascript
+  function Person(name){
+      this.name = name
+  }
+  
+  var cha = new Person('Cha')
+  
+  console.log(Function.prototype.__proto__ === Object.prototype) // true
+  console.log(Person.prototype.constructor === Person)           // true
+  console.log(Person.__proto__ === Function.prototype)           // true
+  console.log(cha.__proto__ === Person.prototype)                // true
+  console.log(Person.prototype.__proto__ === Object.prototype)   // true
+  ```
+
+  - 상세 설명(`.__proto__`와 `.protytype`은 다르다는 것을 염두에 둬야 한다.)
+    - 함수를 생성하는 생성자 함수 `Funcion()`은 생성 되는 순간, 앞으로 `Function()` 생성자 함수로 생성될 모든 함수들의 프로토타입이 될 `Function.prototype`이 함께 생성된다.
+    - `Function.prototype`은 프로토타입 객체이므로 모든 객체의 부모 객체인 `Object.prototype`을 프로토타입으로 갖는다.
+    - `Person()` 생성자 함수는 `Function()` 생성자 함수를 통해 생성되는 순간 `Person`생성자 함수로 생성될 모든 객체들의 프로토타입이 될 `Person.prototype`이 함께 생성되고 `Person.prototype`는 `Person()`이 생성되면서 생성되었으므로 consturctor는 Person을 가리킨다.
+    - `Person()` 생성자 함수는 `Function()` 생성자 함수를 통해 생성되었으므로 `Person()` 생성자함수의 프로토타입은 `Function.prototype`이 된다.
+    - `cha` 객체는 `Person()` 생성자 함수를 통해 생성되었으므로 `cha` 객체의 프로토타입은 `Person.prototype`이 된다.
+    - `Person()`생성자 함수는 프로토타입 프로퍼티로 `Person.prototype`을 가지고,  `Person.prototype`은 프로퍼티로 `Object.prototype`을 가진다.
+
+
+
+
+- 프로토타입 체인의 종점(End of prototype chain)
+  - 객체 리터럴 방식이나 생성자 함수 방식 모두 결국은 모든 객체의 부모 객체인 Object.prototype 객체에서 프로토타입 체인이 끝나게 된다.
+  - 이 때문에 **Object.prototype**객체를 **프로토타입 체인의 종점(End of prototype chain)**이라 한다.
+
+
+
+- 프로토타입 객체의 확장
+
+  - 프로토타입 객체도 객체이므로 일반 객체와 같이 프로퍼티를 추가/삭제할 수 있다.
+  - 그리고 이렇게 추가/삭제 된 프로퍼티는 즉시 프로토타입 체인에 반영된다.
+    - 아래 예시에서 `cha` 객체가 생성될 때에는 `Person()` 생성자 함수에 `work()`라는 함수가 없었다.
+    - 그러나 추가하자마자 별도의 수정 없이 `cha` 객체에서도 `work()` 메서드를 사용 가능하다.
+
+  ```javascript
+  function Person(name) {
+      this.name = name
+  }
+  
+  var cha = new Person('Cha')
+  
+  Person.prototype.work = function(){
+      console.log("Working")
+  }
+  
+  cha.work()
+  ```
+
+  
+
+- 원시 타입의 확장
+
+  - 자바스크립트에서 원시 타입을 제외한 모든 것은 객체이다.
+  - 원시 타입은 객체가 아니므로 프로퍼티나 메서드를 가질 수 없다.
+  - 그러나 원시 타입으로 프로퍼티나 메서드를 호출할 때 원시 타입과 연관된 객체로 일시적으로 변환되어 프로토타입 객체를 공유하게 된다.
+
+  ```javascript
+  // 원시 타입 문자열
+  var str = 'test'
+  console.log(typeof str)              		// string
+  console.log(str.constructor === String)     // true            
+  
+  // String() 생성자 함수로 생성한 문자열 객체
+  var strObj = new String('test')
+  console.log(typeof strObj)         			// object        
+  console.log(strObj.constructor === String)	// true
+  
+  // 메서드를 사용 가능하다.
+  console.log(str.toUpperCase())				// TEST
+  console.log(strObj.toUpperCase())			// TEST
+  ```
+
+  - 원시타입은 객체가 아니므로 프로퍼티나 메서드를 직접 추가할 수 없다.
+
+  ```javascript
+  var str = 'test';
+  
+  // 에러가 발생하지는 않는다.
+  str.someMethod = function () {
+    console.log('Add method')
   };
   
-  console.log(typeof someone); // object
-  
-  someone.sayHello();          //Hello! Cha
+  str.someMethod()  // Uncaught TypeError: str.someMethod is not a function
   ```
-  
-  - 생성자 함수
-      - 위 두 방식으로 객체를 생성하는 것은 프로퍼티 값만 다른 여러 개의 객체를 생성할 때 불편하다.
-      - 생성자 함수를 사용하면 마치 객체를 생성하기 위한 템플릿(클래스)처럼 사용하여 프로퍼티가 동일한 객체 여러 개를 간편하게 생성할 수 있다.
-      - 일반 함수와 생성자 함수를 구분하기 위해 생성자 함수의 이름은 파스칼 케이스(PascalCase)를 사용하는 것이 일반적이다.
-      - 프로퍼티 또는 메서드명 앞에 기술한 `this`는 생성자 함수가 생성할 인스턴스를 가리킨다.
-      - this에 연결되어 있는 프로퍼티와 메서드는 `public`(외부에서 참조 가능)하다.
-      - 생성자 함수 내에서 선언된 일반 변수는 `private`(외부에서 참조 불가능)하다.
-  
+
+  - 그러나 String 객체의 프로토타입 객체 `String.prototype`에 메서드를 추가하면 원시 타입, 객체 모두 메서드를 사용할 수 있다.
+    - `Number.prototype` 등 다른 객체의 프로토타입 객에 역시 마찬가지다.
+    - 자바스크립트는 표준 내장 객체의 프로토타입 객체에 개발자가 정의한 메서드의 추가를 허용한다.
+
   ```javascript
-  // 객체 리터럴 방식으로 생성
-  var student1 = {
-      name: 'Kim',
-      gender: 'male',
-      sayHello: function () {
-          console.log('Hello! ' + this.name)
-      }
-  }
+  var str = 'test';
   
-  var student1 = {
-      name: 'Lee',
-      gender: 'female',
-      sayHello: function () {
-          console.log('Hello! ' + this.name)
-      }
-  }
+  String.prototype.someMethod = function () {
+    return 'Add method'
+  };
   
+  console.log(str.someMethod())	// Add method
   
-  //생성자 함수 방식으로 생성
-  function Student(name,gender) {
+  // 원시 타입으로 프로퍼티나 메서드를 호출할 때 원시 타입과 연관된 객체로 일시적으로 변환되어 프로토타입 객체를 공유하게 된다.
+  console.log(str.__proto__ === String.prototype);                 // true
+  console.log(String.prototype.__proto__  === Object.prototype);   // true
+  console.log(String.prototype.constructor === String);            // true
+  console.log(String.__proto__ === Function.prototype);            // true
+  console.log(Function.prototype.__proto__  === Object.prototype); // true
+  ```
+
+  
+
+- 프로토타입 객체의 변경
+
+  - 객체를 생성할 때 프로토타입이 결정된다.
+  - 결정된 프로토타입 객체는 다른 임의의 객체로 변경할 수 있다.
+  - 이러한 특징을 활용하여 객체의 상속을 구현할 수 있다.
+  - 주의점
+    - 프로토타입 객체 변경 시점 이전에 생성된 객체는 기존 프로토타입 객체를 [[Prototype]]에 바인딩한다.
+    - 프로토타입 객체 변경 시점 이후에 생성된 객체는 변경된 프로토타입 객체를 [[Prototype]]에 바인딩한다.
+
+  ```javascript
+  function Person(name) {
+      this.name = name;
+    }
+    
+  var cha = new Person('Cha');
+  
+  // 프로토타입 객체의 변경
+  Person.prototype = { age: 28 };
+  
+  var kim = new Person('Kim');
+  
+  console.log(cha.gender); // undefined
+  console.log(kim.gender); // male
+  
+  // 프로토타입 객체가 변경되기 이전에는 Person()생성자 함수로 생성된 객체의 constructor는 Person() 생성자 함수를 가리킨다.
+  console.log(cha.constructor); // [Function: Person]
+  // 프로토타입 객체가 일반 객체 { age : 24 }로 변경되면서 Person.prototype.constructor 프로퍼티도 삭제된다.
+  // 따라서 kim.constructor의 값은 프로토타입 체인에 의해 Object.prototype.constructor 즉 Object() 생성자 함수가 된다.
+  console.log(kim.constructor); // [Function: Object]
+  ```
+
+
+
+- 프로토타입 체인 동작 조건
+
+  - 객체의 프로퍼티를 참조하는 경우, 해당 객체에 참조하려는 프로퍼티가 없으면 프로토타입 체인이 동작한다.
+  - 객체의 프로퍼티에 값을 할당하는 경우에는 프로토타입 체인이 동작하지 않는다.
+    - 객체에 해당 프로퍼티가 있는 경우에는 값을 재할당하고
+    - 해당 프로퍼티가 없는 경우에는 해당 객체에 프로퍼티를 동적으로 추가하기 때문이다.
+  - 예시 설명
+    - 아래에서 `cha`, `kim` 객체에는 `age`라는 참조하려는 프로퍼티가 존재하지 않는다.
+    - `age`는 `Person.prototype` 객체에만 존재한다.
+    - 따라서  `cha`, `kim`객체는 프로토타입 체인에 따라 `age`프로퍼티에 접근할 수 있다.
+    - 그런데 `cha` 객체에 `age` 프로퍼티를 할당하면 더 이상 `cha` 객체는 프로토타입 체인을 따라기지 않는다.
+
+  ```javascript
+  function Person(name) {
       this.name = name
-      this.gender = gender
-      this.sayHello = function(){
-          console.log('Hello! ' + this.name)
-      }
-  }
-  // 인스턴스 생성
-  var student1 = new Student('Kim','male')
-  var student2 = new Student('Lee','female')
-  
-  
-  //public, private
-  function Person(name,gender) {
-      var address = 'Daejeon'
-      this.name = name
-      this.gender = gender
-      this.sayHello = function(){
-          console.log('Hello! ' + this.name)
-      }
   }
   
-  var person = new Person('Cha', 'male')
+  Person.prototype.age = 28
   
-  console.log(person.name);     // Cha
-  console.log(person.address)   // undefined
+  var cha = new Person('Cha')
+  var kim = new Person('Kim')
+  
+  
+  console.log(cha.age)	// 28
+  console.log(kim.age)	// 28
+  
+  // cha 객체에 age 프로퍼티가 없으면 프로퍼티 동적 추가
+  // cha 객체에 age 프로퍼티가 있으면 해당 프로퍼티에 값 할당
+  cha.age = 20
+  
+  // 이제 cha 객체에 age라는 프로퍼티가 생겼으므로, 즉 참조하려는 프로퍼티가 있으므로, 프로토타입 체인이 동작하지 않는다.
+  console.log(cha.age)	// 20
+  console.log(kim.age)	// 28
   ```
-
-
-
-- 객체 프로퍼티 접근
-
-  - 마침표 표기법
-    - 프로퍼티 키가 유효한 자바스크립트 이름인 경우에만 사용 가능
-  - 대괄호 표기법
-    - 프로퍼티 키가 유효한 자바스크립트 이름이 아닌 경우에도 사용 가능
-    - 대괄호 내에 들어가는 프로퍼티 이름은 반드시 문자열이어야 한다.
-
-  ```javascript
-  //프로퍼티 값 일기
-  var student = {
-      'last-name': 'Cha',
-      gender: 'male',
-      10:1000    //프로퍼티의 키로 온 숫자 10은 문자열 '10'으로 자동 변환 된다.
-  }
-  
-  console.log(student.last-name)      //error
-  console.log(student[last-name])     //error
-  console.log(student['last-name'])   //Cha
-  
-  console.log(student.gender)         //male
-  console.log(student[gender])        //error
-  console.log(student['gender'])      //male
-  
-  console.log(student.10)         //error
-  console.log(student[10])        //1000
-  console.log(student['10'])      //1000
-  ```
-
-
-
-- 프로퍼티 값 갱신
-
-  - 객체가 소유하고 있는 프로퍼티에 새로운 값을 할당하면 프로퍼티 값은 갱신된다.
-
-  ```javascript
-  var student = {
-      name: 'Cha',
-      gender: 'male',
-  }
-  
-  student.name = 'Kim'
-  console.log(student.name) //Kim
-  ```
-
-
-
-- 프로퍼티 동적 생성
-
-  - 객체가 소유하고 있지 않은 프로퍼티 키에 값을 할당하면 하면 주어진 키와 값으로 프로퍼티를 생성하여 객체에 추가한다.
-
-  ```javascript
-  var student = {
-      name: 'Cha',
-      gender: 'male',
-  }
-  
-  student.age = 28
-  console.log(student.age)  //28
-  ```
-
-
-
-- 프로퍼티 삭제
-
-  - `delete` 연산자를 사용, 피연산자는 프로퍼티 키이다.
-
-  ```javascript
-  var student = {
-      name: 'Cha',
-      gender: 'male',
-  }
-  
-  delete student.name
-  console.log(student.name)  //undifined
-  ```
-
-
-
-- 프로퍼티의 키, 값 조회
-
-  - 프로퍼티의 키, 값, 키와 값 쌍을 배열로 반환
-
-  ```javascript
-  var student = {
-      name: 'Cha',
-      gender: 'male',
-  }
-  console.log(Object.keys(student))      //[ 'name', 'gender' ]
-  console.log(Object.values(student))    //[ 'Cha', 'male' ]
-  console.log(Object.entries(student))   //[ [ 'name', 'Cha' ], [ 'gender', 'male' ] ]
-  ```
-
-
-
-- 객체 안에서 key를 `[]`로 감싸면 그 안에 넣은 레퍼런스가 가리키는 실제 값이 key 값으로 사용된다.
-
-  ```javascript
-  const name = "Cha"
-  const obj = {
-      [name]: 'Developer'
-  }
-  console.log(obj)	// { Cha: 'Developer' }
-  ```
-
-
-
-- JSON과 객체의 치환
-
-  ```javascript
-  const color = {     //꼭 오브젝트가 아니라도 상관 없다.
-      red : '빨강',
-      blue : '파랑',
-      yellow : '노랑',
-  } 
-  
-  //object를 JSON으로 치환
-  const jsonData = JSON.stringify(color)
-  console.log(jsonData)
-  console.log(typeof jsonData)
-  
-  out
-  {"red":"빨강","blue":"파랑","yellow":"노랑"}
-  string
-  
-  
-  //JSON을 object로 치환
-  const parsedData = JSON.parse(jsonData)
-  console.log(parsedData)
-  console.log(typeof parsedData)
-  
-  out
-  {red: "빨강", blue: "파랑", yellow: "노랑"}
-  object
-  ```
-
-
-
