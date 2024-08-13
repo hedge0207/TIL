@@ -263,10 +263,21 @@
 # Lifespan Events
 
 - Lifespan
+  - Application이 실행되기 직전과 application이 종료된 직후에 단 한 번 실행될 로직을 정의 할 수 있는 기능이다.
+  - 일반적으로 application 전체에서 사용할 resource들을 setting하기위해 사용한다.
+    - DB connection pool이나 machine learning model등이 이에 해당한다.
 
-  - FastAPI app의 `lifespan` parameter와 context manager를 사용하여 app이 실행될 때와 종료될 때 실행될 logic을 설정할 수 있다.
-    - 예를 들어, app이 실행될 때, "Hello"를 출력하고, app이 종료될 때 "Bye"를 출력하는 간단한 app을 만들려고 한다고 가정해보자.
-    - `contextlib.asynccontextmanager` decorator를 단 비동기 함수를 정의하고, 함수 내에 app 실행 전과 종료 후에 실행될 logic을 `yield`로 구분하여 작성한다.
+
+
+- 예시
+
+  - Application에서 machine learning model을 사용해야 한다고 가정해보자.
+    - 이 model은 많은 endpoint들이 공유한다.
+    - 이 model을 loading하기 위해선 많은 data를 disk에서 읽어와야 해서 loading하는 데 많은 시간이 걸리므로, 매 요청마다 loading하는 것이 불가능한 상황이다.
+  - Lifespan 기능을 사용하여 model을 loading한다.
+    - Model을 loading하기 위한 lifespan 함수를 `asynccontextmanager` decorator와 함께 비동기 함수로 선언한다.
+    - Lifespan 함수에는 `yield`가 포함되어 있어야 하며, application이 실행되기 직전에 `yield`문 전까지 실행되고, application이 종료된 직후에 `yield`문 이후의 로직이 실행된다.
+    - `FastAPI` 인스턴스 생성시 `lifespan` parameter에 lifespan 함수를 넘겨준다.
 
   ```python
   from contextlib import asynccontextmanager
@@ -274,29 +285,29 @@
   from fastapi import FastAPI
   
   
+  def fake_answer_to_everything_ml_model(x: float):
+      return x * 42
+  
+  
+  ml_models = {}
+  
+  
   @asynccontextmanager
   async def lifespan(app: FastAPI):
-      print("Hello")
+      # ML model을 loading한다.
+      ml_models["answer_to_everything"] = fake_answer_to_everything_ml_model
       yield
-      print("Bye")
+      # ML model을 정리한다.
+      ml_models.clear()
   
   
   app = FastAPI(lifespan=lifespan)
-  ```
-
-  - Lifespan 함수
-    - 위 예시에서 `lifespan`이라는 이름으로 정의한 함수가 lifespan 함수이다.
-    - `asynccontextmanager`를 decorator로 단 비동기 함수로 작성해야 한다.
-    - Application이 시작되기 전에 `yield` 이전의 logic이 실행되고, application이 종료된 후에 `yield` 이후의 logic이 실행된다.
-  - Async Context Manager
-    - Python은 최신버전부터 async context manager를 지원한다.
-    - `asynccontextmanager` decorator는 decorator가 달린 함수를 async context manager로 전환한다.
-    - FastAPI app의 `lifespan` parameter는 async context manager를 받는다.
-
-  ```python
-  # Python의 async context manager
-  async with lifsespan(app):
-      await do_stuff()
+  
+  
+  @app.get("/predict")
+  async def predict(x: float):
+      result = ml_models["answer_to_everything"](x)
+      return {"result": result}
   ```
 
 

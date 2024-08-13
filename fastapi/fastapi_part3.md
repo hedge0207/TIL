@@ -2,20 +2,20 @@
 
 ## 기본 개념
 
-- authentication & authorization
+- Authentication & Authorization
   - 일반적으로 authentication은 인증, authorization은 인가라고 번역된다.
-  - authentication
+  - Authentication
     - 클라이언트에서 요청을 보낸 사용자를 검증하는 것.
     - 예를 들어 한국인이라는 증명으로 주민등록증을 제시하는 것은 authentication을 위한 과정이라 할 수 있다.
-  - authorization
+  - Authorization
     - 클라이언트에서 요청을 보낸 사용자가 해당 요청을 보낼 권한이 있는지 검증하는 것.
     - 예를 들어 담배를 구입하기 위해 주민등록증을 제시하는 것은 authorization을 위한 과정이라 할 수 있다.
 
 
 
 - OAuth2
-  - authentication과 authorization을 처리하기 위한 여러 방식을 정의한 specification이다.
-  - third party를 사용한 authentication 방법도 포함된다.
+  - Authentication과 authorization을 처리하기 위한 여러 방식을 정의한 specification이다.
+  - Third party를 사용한 authentication 방법도 포함된다.
     - Google로 로그인하기, Github으로 로그인하기 등
 
 
@@ -47,12 +47,14 @@
 
 - OpenAPI
   - API를 위한 specification이다.
-    - fastapi는 OpenAPI에 기반을 두고 있다.
+    - FastAPI는 OpenAPI에 기반을 두고 있다.
   - security와 관련된 여러 scheme들을 정의해 놓았다.
     - `apiKey`
     - `http`
     - `oauth2`
     - `openIdConnect`
+
+
 
 
 
@@ -66,7 +68,7 @@
 
 
 
-- password를 사용할 때의 flow
+- Password를 사용할 때의 흐름
   - 클라이언트가 인증 관련 URL로 사용자명과 비밀번호가 담긴 인증 요청을 보낸다.
   - API는 사용자명과 비밀번호를 체크하고 token을 응답으로 보낸다.
   - 클라이언트는 해당 토큰을 어딘가에 임시로 저장한다.
@@ -207,11 +209,11 @@
 
 - OAuth2 Specification
 
-  - password flow를 사용할 때 클라이언트는 반드시 `username`과 `password` field를 form data로 보내야 한다.
-  - field 명은 반드시 위와 일치해야 한다(`user-name`과 같이 보내선 안 된다).
+  - Password flow를 사용할 때 클라이언트는 반드시 `username`과 `password` field를 form data로 보내야 한다.
+  - Field 명은 반드시 위와 일치해야 한다(`user-name`과 같이 보내선 안 된다).
 
   - `scope` 라는 field를 보낼 수 있다. 
-    - white space로 구분 된 여러 개의 string이 값으로 오는데, 일반적으로 인가를 선언하기 위해 사용한다.
+    - White space로 구분 된 여러 개의 string이 값으로 오는데, 일반적으로 인가를 선언하기 위해 사용한다.
   - `grant_type`이라는 field도 보낼 수 있다.
 
 
@@ -284,7 +286,7 @@
 
 
 - `OAuth2PasswordRequestForm`
-  - form data를 선언하는 class dependency이다.
+  - Form data를 선언하는 class dependency이다.
   - `username`, `password`, `scope`, `grant_type` 등이 담겨 있다.
   - 그 밖에도 `client_id`, `client_secret`등도 담겨 있다.
   - `OAuth2PasswordRequestForm`의 경우 `grant_type`은 강제하지 않는다.
@@ -303,13 +305,13 @@
 
 
 
-- token 반환
+- Token 반환
   - `OAuth2PasswordBearer`의 파라미터로 넘긴 endpoint의 반환값은 json 형식이어야한다.
   - 또한 `access_token`과 `token_type`이라는 key를 가져야한다.
 
 
 
-- dependency 확장하기
+- Dependency 확장하기
 
   - 아래 코드는 오직 현재 active 상태(`disabled`가 True인 상태)인 user만 가져오는 dependency로 변경한 것이다.
 
@@ -411,7 +413,7 @@
 ### OAuth2 + password(hashing) + Bearer with JWT token
 
 - 지금까지는 securiy의 기본적인 flow를 살펴봤다면 아래는 실제 application에 적용해도 될 수준의 예시이다.
-  - password를 hashing하여 저장한다.
+  - Password를 hashing하여 저장한다.
   - JWT token을 사용한다.
 
 
@@ -715,7 +717,7 @@
 
 - 테스트 하기
 
-  - token 발급받기
+  - Token 발급받기
     - 아래와 같이 form-data에 username과 password를 넣어서 보내야한다.
 
   ![get_token](fastapi_part3.assets/get_token.png)
@@ -731,11 +733,11 @@
 
 
 
-### scope
+### Scope
 
 > 대부분의 경우  scope의 사용은 과잉이다. 따라서 꼭 필요하지 않다면, 굳이 사용하지 않아도 된다.
 
-- scope
+- Scope
   - OAuth2에 정의 된 spec 중 하나이다.
     - 권한과 관련된 내용이 담겨 있다.
   - scope는 문자열로 구성된 목록으로, 스페이스로 구분된다.
@@ -744,13 +746,13 @@
 
 
 
-- scope 설정하기
+- Scope 설정하기
 
   - 아래 예시에서는 입력 받은 모든 scope를 바로 넣어줬지만, 실제 application에서는 해당 입력받은 scope를 해당 user 가질 수 있는지 검증해야한다.
     - 즉 `login_for_access_token`에서 `data={"sub": user.username, "scopes": form_data.scopes}`와 같이 **바로 넣어선 안된다.**
   - `/tokem` endpoint가 사용하는 `OAuth2PasswordRequestForm`는 `scopes`라는 property를 포함하고 있다.
     - 값으로 str의 list를 받는다.
-  - endpoint에 scope 설정
+  - Endpoint에 scope 설정
     - endpoint에 scope를 설정하기 위해서는 `Security`를 import해야한다.
     - `Security`는 `Depends`처럼 dependency를 설정하기 위해 사용할 수 있으며, `scopes`라는 parameter(`List[str]`)를 받는다.
     - `Depends`와 마찬가지로 sub dependency를 가질 수 있다.
@@ -760,7 +762,7 @@
     - `SecurityScopes`는 `scopes`라는 property를 갖는데(`List[str]`), 여기에는 해당 함수와, 해당 함수를 sub dependency로 사용하는 모든 dependency들의  scope가 담겨있다.
     - 즉, 요구되는 scope들의 목록이 담겨 있다.
     - 또한 `scope_str`이라는 attribute도 지니고 있는데, 여기에는 모든 scope들을 스페이스로 구분 된 하나의 문자열로 저장되어 있다.
-  - scope 검증 과정
+  - Scope 검증 과정
     - 상기했듯 `SecurityScopes`의 `scopes` property에는 해당 함수와, 해당 함수를 sub dependency로 사용하는 모든 dependency들의 scope가 담겨있다.
     - 즉, 이 경우 `get_current_user`를 sub dependency로 사용하는 `get_current_active_user`와 `read_own_items`의 scope가 `scopes` property에 담기게 된다. 
     - 만일 `scopes` property에 있는 scope가  JWT token에 담긴 scope들의 목록에는 없다면, 해당 요청은 인가되지 않은 요청이라는 뜻이 된다.
