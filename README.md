@@ -546,8 +546,6 @@
 <br/>
 
 ## design_pattern_part1
-- 사전 지식
-
 - Strategy Pattern
 
 - Observer Pattern
@@ -1273,10 +1271,6 @@
 <br/>
 
 # ITPL
-## continuation
-<br/>
-<br/>
-
 ## Introduction_To_Programming_Language_part1
 - Syntax and Semantic
 
@@ -1394,24 +1388,68 @@
 
 - 타입
 
+- 연산자
+
+- 제어문
+
+- 자료구조
+
 <br/>
 <br/>
 
-## JavaScript_part10
+## JavaScript_part2
+- 함수
+
+- 프로토타입
+
+<br/>
+<br/>
+
+## JavaScript_part3
+- this
+
+- 스코프
+
+- 실행 컨텍스트와 JavaScript 동작 원리
+
+- 클로저
+
+<br/>
+<br/>
+
+## JavaScript_part4
+- JavaScript 객체 지향 프로그래밍
+
+-  빌트인 객체
+
+- 전역 객체
+
+- 각종 객체
+
+<br/>
+<br/>
+
+## JavaScript_part5
+- 정규표현식
+
+- 배열
+
+- DOM
+
+<br/>
+<br/>
+
+## JavaScript_part6
 - 이벤트
 
-<br/>
-<br/>
-
-## JavaScript_part11
 - 비동기식 처리 모델과 ajax
 
+<br/>
+<br/>
+
+## JavaScript_part7
 - 프로미스
 
-<br/>
-<br/>
-
-## JavaScript_part12
 - async&await
 
 - 예외처리
@@ -1423,7 +1461,7 @@
 <br/>
 <br/>
 
-## JavaScript_part13
+## JavaScript_part8
 - strict mode
 
 - ECAMAScript6
@@ -1431,7 +1469,7 @@
 <br/>
 <br/>
 
-## JavaScript_part14
+## JavaScript_part9
 - ECMAScript
 
 - Device Orientation
@@ -1439,70 +1477,6 @@
 - REST API
 
 - SPA
-
-<br/>
-<br/>
-
-## JavaScript_part2
-- 연산자
-
-- 제어문
-
-- 자료구조
-
-<br/>
-<br/>
-
-## JavaScript_part3
-- 함수
-
-- 프로토타입
-
-<br/>
-<br/>
-
-## JavaScript_part4
-- this
-
-- 스코프
-
-<br/>
-<br/>
-
-## JavaScript_part5
-- 실행 컨텍스트와 JavaScript 동작 원리
-
-- 클로저
-
-<br/>
-<br/>
-
-## JavaScript_part6
-- JavaScript 객체 지향 프로그래밍
-
--  빌트인 객체
-
-- 전역 객체
-
-<br/>
-<br/>
-
-## JavaScript_part7
-- 각종 객체
-
-<br/>
-<br/>
-
-## JavaScript_part8
-- 정규표현식
-
-- 배열
-
-<br/>
-<br/>
-
-## JavaScript_part9
-- DOM
 
 <br/>
 <br/>
@@ -1536,11 +1510,13 @@
 ## kafka_part4
 - Kafka Connect
 
+<br/>
+<br/>
+
+## kafka_part5
 - ksqlDB
 
 - Kafka를 사용한 application의 error handling
-
-- tips
 
 <br/>
 <br/>
