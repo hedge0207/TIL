@@ -1,6 +1,6 @@
 # EmailJs를 활용하여 메일 보내기
 
-## 코딩 전 설정 사항
+## 설정
 
 > https://www.emailjs.com
 
@@ -28,7 +28,7 @@
 
 
 
-## 코딩하기
+## 개발
 
 > https://www.emailjs.com/docs/ 참고
 
