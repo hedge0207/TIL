@@ -346,7 +346,7 @@
     - `DELETE <TOPIC>`을 줄 경우 topic도 함께 삭제한다.
 
   ```sql
-  DROP <collection> [IF EXISTS] <collection> [DELETE <TOPIC>];
+  DROP <STREAMS | TABLES> [IF EXISTS] <collection> [DELETE <TOPIC>];
   ```
 
   - Topic 목록 조회
