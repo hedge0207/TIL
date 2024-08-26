@@ -628,6 +628,14 @@
   ```sql
   SET GLOBAL <variable>=<value>;
   ```
+  
+  - Debezium source connector 사용시 server_id도 알아야 한다.
+  
+  ```sql
+  SELECT variable_value FROM information_schema.global_variables WHERE variable_name='server_id';
+  ```
+  
+  
 
 
 

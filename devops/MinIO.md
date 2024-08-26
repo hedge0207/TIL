@@ -1314,7 +1314,63 @@
   client.set_bucket_notification("bucket-name", config)
   ```
 
-  
+
+
+
+
+
+# AWS CLI 사용하기
+
+- AWS CLI를 설치한다.
+
+  - pip를 사용하여 설치가 가능하다.
+
+  ```bash
+  $ pip install awscli
+  ```
+
+  - 설정을 실행한다.
+
+  ```bash
+  $ aws configure
+  ```
+
+  - MinIO에서 사용하기 위해 추가적인 설정을 해준다.
+
+  ```bash
+  $ aws configure set default.s3.signature_version s3v4
+  ```
+
+
+
+- 명령어
+
+  - Bucket 목록 확인
+
+  ```bash
+  $ aws --endpoint-url http://localhost:9000 s3 ls
+  ```
+
+  - Bukcet 내의 object 목록 확인
+
+  ```bash
+  $ aws --endpoint-url http://localhost:9000 s3 ls s3://<bucket_name>
+  ```
+
+  - Bucket 생성
+
+  ```bash
+  $ aws --endpoint-url http://localhost:9000 s3 mb s3://<bucket_name>
+  ```
+
+  - Local storage와 bucket을 sync시키기
+    - `--delete` option을 주면 삭제된 파일도 함께 동기화된다.
+
+  ```bash
+  $ aws --endpoint-url http://localhost:9020 s3 sync <local_storage_path> s3://<bucket_name> --delete
+  ```
+
+
 
 
 
