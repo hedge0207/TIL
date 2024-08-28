@@ -284,6 +284,78 @@ ENTRYPOINT ["/bin/bash", "-c", "umask 0002 && python main.py"]
 
 # etc
 
+- Orphan container
+
+  - Docker를 사용하다보면 `Found orphan containers ([<container_name>]) for this project.`과 같은 warning이 발생할 때가 있다.
+    - Warning이므로 container를 실행하는 데는 아무런 문제는 없다.
+  - Orphan container warning이 발생하는 원인은 아래와 같다.
+    - Docker compose는 각 project를 구분하기 위해서 project name을  사용한다.
+    - Project name은 project 내의 container와 다른 resource들(e.g. docker network)을 고유하게 식별하기 위한 identifier를 생성하기 위해 사용된다.
+    - 예를 들어 project name이 `foo`이고, 두 개의 service `db`와 `app`이 있을 때, docker-compose.yml 파일에서 각 service의 container name을 설정해주지 않았다면  Compose는 `foo-db-1`과 `foo-app-1`이라는 두 개의 container를 생성할 것이다.
+    - Orphan container warning은 같은 project name을 가진 container가 docker-compose.yml 파일에는 정의되어 있지 않을 때 발생한다.
+    - 대부분의 문제는 project name의 default 값이 docker-compose.yml 파일이 위치한 directory name이라 발생한다.
+  - 상황1. 기존 docker-compose.yml을 수정했을 경우
+    - 처음 orphan service를 정의하고 container를 실행하면 project name은 default 값인 docker-compose.yml 파일이 위치한 directory name으로 설정된다.
+    - 이 때, `orphan` container를 삭제하지 않은 상태에서, docker-compose.yml 파일을 변경한 후 다시 실행하면, 같은 project name을 가진 `orphan`이라는 container는 생성되어 있는데, 해당 container가 docker-compose.yml 파일에는 정의되어 있지 않으므로 orphan container warning이 발생한다.
+
+  ```yaml
+  # 기존 docker-compose.yml 파일이 아래와 같을 때, docker compose up으로 container를 생성하고
+  services:
+    orphan:
+      container_name: orphan
+      image: hello-world:lates
+      
+  
+  # 이후에 아래와 같이 변경하여 다시 docker compose up으로 container를 생성하면 orphan이라는 orphan container가 있다는 warning이 발생한다.
+  services:
+    new:
+      container_name: new
+      image: hello-world:lates
+  ```
+
+  - 상황2. 동일한 directory에서 복수의 docker-compose.yml 파일을 사용할 경우
+    - 같은 directory에 아래와 같이 두 개의 docker-compose.yml 파일이 있다고 가정해보자.
+    - 마찬가지로 project name은 default 값인 두 개의 docker-compose.yml 파일이 위치한 directory name으로 설정된다.
+    - 이 때, `docker-compose up`을 실행하여 docker-compose.yml에 정의된 container를 실행하고, `docker-compose -f docker-compose.bar.yml up`을 통해 docker-compose.bar.yml에 정의된 container를 실행하면 같은 project name으로 생성된 `foo` container가 있으나 `docker-compose.bar.yml` 파일에는 정의되어 있지 않으므로 orphan container warning이 발생한다.
+
+  ```yaml
+  # docker-compose.yml
+  services:
+    foo:
+      container_name: foo
+      image: hello-world:lates
+      
+  # docker-compose.bar.yml
+  services:
+    bar:
+      container_name: bar
+      image: hello-world:lates
+  ```
+
+  - Orphan container의 생성을 방지하는 방법
+    - 대부분의 문제는 project name의 default 값인 directory name을 사용할 때 발생한다.
+    - 따라서 default 값을 사용하지 않도록 project name을 설정하면 된다.
+    - `docker compose` 명령어 실행시 아래와 같이 `-p` 옵션을 주어서 project name을 설정할 수 있다.
+    - 혹은 `COMPOSE_PROJECT_NAME` 환경 변수를 설정하는 방법도 있다.
+
+  ```bash
+  $ docker compose -p foo up
+  $ docker compose -f docker-compose.bar.yml -p bar up
+  ```
+
+  - 아래와 같이 docker-compose.yml 파일의 top level에 `name`을 설정할 수도 있다.
+
+  ```yaml
+  name: foo
+  
+  services:
+    foo:
+      container_name: foo
+      image: hello-world:latest
+  ```
+
+
+
 ## Docker Volume 사용시 ownership 문제
 
 - 문제

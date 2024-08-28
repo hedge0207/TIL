@@ -307,6 +307,33 @@
 
 
 
+- Docker compose file에서 environment 설정시 interpolation syntax
+
+  - 아래와 같이 두 가지 형태를 모두 사용할 수 있다.
+
+    - `${VAR}`
+    - `$VAR`
+
+    - 단, 대괄호로 묶을 경우 보다 다양한 기능을 사용할 수 있다.
+
+  - 기본값 설정하기
+
+    - `${VAR:-<default>}`: `VAR`의 값이 설정되어 있고 `VAR`의 값이 빈 값이 아니라면 `VAR`의 값을, 둘 중 하나라도 아니라면 `<default>`의 값을 사용한다.
+
+    - `${VAR-<default>}`: `VAR`의 값이 설정되어 있다면 `VAR`의 값을, 아니라면 `<default>`의 값을 사용한다.
+
+  - 필수값으로 설정하기
+
+    - `${VAR:?error}`:  `VAR`의 값이 설정되어 있지 않거나 `VAR`의 값이 빈 값이라면 error를 발생시킨다.
+    - `${VAR?error}`: `VAR`의 값이 설정되어 있지 않다면 error를 발생시킨다.
+
+  - 다른 값으로 설정하기
+
+    - `${VAR:+replacement}`: `VAR`의 값이 설정되어 있고 `VAR`의 값이 빈 값이 아니라면 `replacement`의 값을, 둘 중 하나라도 아니라면 비워둔다.
+    - `${VAR+replacement}`: `VAR`의 값이 설정되어 있다면 `replacement`의 값을, 아니라면 비워둔다.
+
+
+
 ## Compose 파일의 구성
 
 - `version`
