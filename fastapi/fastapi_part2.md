@@ -38,17 +38,70 @@
 
 
 
+- Redirect response
+
+  - `status_code`를 따로 설정하지 않을 경우 `307 Temporary Redirect`를 반환한 후 바로 redirect url로 연결된다.
+    - 따로 설정해주는 것도 가능한데, status_code에 따라서 redirection이 발생하지 않을 수 있다.
+
+  - 방식1.
+
+  ```python
+  import uvicorn
+  from fastapi import FastAPI
+  from fastapi.responses import RedirectResponse
+  
+  app = FastAPI()
+  
+  
+  @app.get("/hello-world")
+  async def hello_world():
+      return "Hello!"
+  
+  
+  @app.get("/my-redirect")
+  async def redirect_typer():
+      return RedirectResponse("http://localhost:8002/hello-world")
+  
+  
+  if __name__ == '__main__':
+      uvicorn.run(app, host='0.0.0.0', port=8002)
+  ```
+
+  - 방식2.
+
+  ```python
+  import uvicorn
+  from fastapi import FastAPI
+  from fastapi.responses import RedirectResponse
+  
+  app = FastAPI()
+  
+  
+  @app.get("/hello-world")
+  async def hello_world():
+      return "Hello!"
+  
+  
+  @app.get("/my-redirect", response_class=RedirectResponse)
+  async def redirect_typer():
+      return "http://localhost:8002/hello-world"
+  
+  
+  if __name__ == '__main__':
+      uvicorn.run(app, host='0.0.0.0', port=8002)
+  ```
+
+
+
 
 
 ## StreamingResponse
 
 - FastAPI는 StreamingResponse를 지원한다.
 
-  - `StreamingResponse`
+  - 기본적인 `StreamingResponse`의 사용법은 아래와 같다.
     - Generator/iterator를 첫 번째 인자로 받는다.
-  - 기본적인 StreamingResponse의 사용법은 아래와 같다.
-    - 아래에서는 file로 test를 했지만, 꼭 file이 아니어도 되며, `yield from`을 통해 streaming하고자 하는 data를 넘겨주는 함수만 있으면 된다.
-
+  
   ```python
   import asyncio
   
@@ -59,7 +112,7 @@
   app = FastAPI()
   
   
-  async def text_streamer():
+  async def text_stream():
       for i in range(30):
           yield "some text data"
           await asyncio.sleep(5)
@@ -67,7 +120,7 @@
   
   @app.get("/")
   async def main():
-      return StreamingResponse(text_streamer())
+      return StreamingResponse(text_stream())
   
   
   if __name__ == "__main__":
@@ -203,58 +256,72 @@
 
 
 
-- fastapi redirect response
+- StreamingResponse를 사용하여 SSE를 구현할 수 있다.
 
-  - `status_code`를 따로 설정하지 않을 경우 `307 Temporary Redirect`를 반환한 후 바로 redirect url로 연결된다.
-    - 따로 설정해주는 것도 가능한데, status_code에 따라서 redirection이 발생하지 않을 수 있다.
-
-  - 방식1.
-
+  - Server 구현하기
+    - `media_type`은 text/event-stream`이어야 한다.
+    - 또한 반환 값은 `\n\n`로 끝나야 한다.
+    - 둘 다 지키지 않는다고 streaming이 안 되는 것은 아니다.
+  
+  
   ```python
+  import asyncio
+  
+  from fastapi import FastAPI, Request
+  from fastapi.responses import StreamingResponse
   import uvicorn
-  from fastapi import FastAPI
-  from fastapi.responses import RedirectResponse
+  
   
   app = FastAPI()
   
-  
-  @app.get("/hello-world")
-  async def hello_world():
-      return "Hello!"
-  
-  
-  @app.get("/my-redirect")
-  async def redirect_typer():
-      return RedirectResponse("http://localhost:8002/hello-world")
+  async def streamer(id, req: Request):
+      for i in range(5):
+          if await req.is_disconnected():
+              break
+          yield f"id:{id}, message {i}\n\n"
+          await asyncio.sleep(1)
   
   
-  if __name__ == '__main__':
-      uvicorn.run(app, host='0.0.0.0', port=8002)
+  @app.get("/{id}")
+  async def test(id: int, request: Request):
+      return StreamingResponse(streamer(id, request), media_type="text/event-stream")
+  
+  
+  if __name__ == "__main__":
+      uvicorn.run(app, port=8080)
   ```
-
-  - 방식2.
-
+  
+  - 혹은 `sse.starlette.sse.EventSourceResponse`를 사용하는 방법도 있다.
+    - `pip install sse-starlette`으로 설치가 필요하다.
+  
   ```python
+  import asyncio
+  
+  from fastapi import FastAPI, Request
+  from sse_starlette.sse import EventSourceResponse
   import uvicorn
-  from fastapi import FastAPI
-  from fastapi.responses import RedirectResponse
+  
   
   app = FastAPI()
   
-  
-  @app.get("/hello-world")
-  async def hello_world():
-      return "Hello!"
-  
-  
-  @app.get("/my-redirect", response_class=RedirectResponse)
-  async def redirect_typer():
-      return "http://localhost:8002/hello-world"
+  async def streamer(id, req: Request):
+      for i in range(5):
+          if await req.is_disconnected():
+              break
+          yield f"id:{id}, message {i}"
+          await asyncio.sleep(1)
   
   
-  if __name__ == '__main__':
-      uvicorn.run(app, host='0.0.0.0', port=8002)
+  @app.get('/{id}')
+  async def stream(id: int, request: Request):    
+      return EventSourceResponse(streamer(id, request))
+  
+  
+  if __name__ == "__main__":
+      uvicorn.run(app, port=8080)
   ```
+
+
 
 
 
