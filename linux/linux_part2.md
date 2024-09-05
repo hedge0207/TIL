@@ -758,6 +758,17 @@
 
 
 
+- FUSE(Filesystem in Userspace)
+  - Unix 계열 OS에서 root 권한이 없는 사용자들이 kernel 코드를 수정하지 않고도, 자신들만의 파일 시스템을 만들 수 있게 해주는 프로그램이다.
+    - Linux, macOS, Windows 등에서 모두 사용이 가능하다.
+    - Linux kernel 2.6.15부터는 기본적으로 탑재되어 있다.
+  - 아래 세 가지로 구성된다
+    - kernerl module인 fuse.ko
+    - Userspace library인 libfuse.*
+    - Mount utility인 fusermount
+
+
+
 # etc
 
 > 추후 필요할 때 공부 할 것들의 목록
