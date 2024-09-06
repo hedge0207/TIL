@@ -1406,6 +1406,7 @@
     - `--include`: 특정 객체를 포함
     - 위 두 옵션은 wildcard를 지원한다.
     - 위 두 옵션의 순서에 따라 실행 결과가 달라질 수 있다.
+    - 또한 local path를 절대 경로로 하는지, 상대 경로로 하는지에 따라 include와 exclude의 동작이 달라진다.
   
   ```bash
   # 현재 directory(하위 directory 포함)의 file들 중 확장자가 txt인 파일들은 포함하고, foo로 시작하는 file들은 제외하지만, foo2로 시작하는 파일들은 포함시킨다.
