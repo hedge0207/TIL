@@ -629,6 +629,61 @@
 
 
 
+- Python decorator를 사용하여 factory pattern 구현하기
+
+  - 아래와 같이 file을 parsing하기 위한 세 개의 함수가 있다.
+    - 이 때, file의 type에 따라 그에 맞는 parsing 함수를 호출하려 한다.
+
+  ```python
+  def parse_csv(file_path: str):
+      print(f"parse {file_path} csv file")
+  
+  def parse_json(file_path: str):
+      print(f"parse {file_path} json file")
+  
+  def parse_html(file_path: str):
+      print(f"parse {file_path} html file")
+  ```
+
+  - 먼저 file type과 parsing 함수를 mapping할 dictionary와, mapping 함수를 decorator로 생성한다.
+
+  ```python
+  PARSERS = {}
+  
+  def register_parser(file_type: str):
+      def decorator(func):
+          PARSERS[file_type] = func
+          return func
+      return decorator
+  ```
+
+  - 위에서 생성한 mapping 함수를 사용하여 `PARSER`에 file type별 parsing함수를 등록한다.
+
+  ```python
+  @register_parser('csv')
+  def csv_parser(file_path: str):
+      return parse_csv(file_path)
+  
+  @register_parser('json')
+  def json_parser(file_path: str):
+      return parse_json(file_path)
+  
+  @register_parser('html')
+  def xml_parser(file_path: str):
+      return parse_html(file_path)
+  ```
+
+  - 아래와 같이 사용한다.
+
+  ```python
+  def get_parser(file_type: str):
+      return PARSERS.get(file_type)
+  
+  data_csv = get_parser('csv')('data.csv')
+  ```
+
+
+
 
 
 # Singleton Pattern
