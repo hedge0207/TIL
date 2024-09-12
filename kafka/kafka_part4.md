@@ -1307,3 +1307,40 @@
     - 개발이 완료된 SMT를 적용하려면 JAR 파일로 compile해야 한다.
     - 그 후 JAR 파일을 `plugin.path` 경로에 넣으면 사용이 가능하다.
 
+
+
+
+
+## 성능 테스트
+
+- Kafka Connect의 memory와 CPU 사용
+
+  - Kafka Connect의 동작 방식
+    - Kafka Connect를 통해 connector 생성하면, connector가 여러 개의 task를 생성하여 작업을 수행한다.
+    - 이 때, 하나의 task 당 하나의 thread가 생성되며 각 thread는 running과 sleeping 상태를 반복하며 작업을 수행한다.
+    - 실제 Kafka Connect service는 하나의 process에서만 실행된다.
+  - Kafka Connect의 CPU와 memory 사용량은 현재 실행 중인 task의 CPU와 memory 사용량에 달려있다.
+    - 따라서 다수의 connector를 생성하더라도, 각 connector의 task가 한 번에 실행되지 않는다면, 혹은 한 번에 실행되더라도 많은 자원을 차지하지 않는다면 문제가 되지 않는다.
+    - 그러나 하나의 connector만 생성하더라도 해당 connector가 실행한 task가 많은 자원을 차지한다면, 문제가 될 수 있다.
+  - 일반적으로 Kafka Connect의 memory 사용량을 그래프로 그리면 아래와 같다.
+    - 점차 메모리 사용량이 증가하다 GC가 발생하면 다시 감소한다.
+
+  ![](kafka_part4.assets/2G-4G_1n_10000rows_10sec.png)
+
+
+
+- 테스트
+
+  > 기본 heap size는 2GB로, 최대 heap size는 4GB로 테스트 진행
+
+  - 10초마다 한 번씩 DB에서 data를 가져오는 JDBC source connector 30개를 한 번에 실행시켰을 때의 memory와 CPU 사용률이다.
+
+  ![](kafka_part4.assets/2G-4G_30n_4000rows_10sec.png)
+
+  - 10초마다 한 번씩 DB에서 data를 가져오는 JDBC source connector 30개를 15개씩 겹치지 않게 실행했을 때의 memory와 CPU 사용률이다.
+
+  ![](kafka_part4.assets/2G-4G_30n_4000rows_10sec_interval.png)
+
+  - 결과
+    - 30개를 한 번에 실행할 경우 OOM이 발생하면서 Kafka Connect service 자체가 종료된다.
+    - 반면에 같은 30개를 15개씩 나눠서 실행할 경우 OOM이 발생하지 않고 상대적으로 안정적으로 실행된다.

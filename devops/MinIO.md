@@ -728,7 +728,7 @@
     # hostname 혹은 IP가 sequential하지 않을 경우
     # command: server --console-address ":9001" http://minio-foo/data{1...2} http://minio-bar/data{1...3}
     environment:
-      MINIO_ROOT_USER: 'foo'
+      MINIO_ROOT_USER: 'me'
       MINIO_ROOT_PASSWORD: 'minio_password'
   
   
@@ -913,6 +913,9 @@
 
   ```bash
   $ mc alias set <alias> <URL> <ACCESS_KEY> <SECRET_KEY>
+  
+  # e.g. 위에서 Multi-Node Multi-Drive MinIO와 같이 구성했을 경우 아래와 같이 하면 된다.
+  $ mc alias set foo http://<server_IP> me minio_password
   ```
 
 
@@ -952,7 +955,7 @@
     - `alias`에는 위에서 생성한 alias를 입력하면 된다.
 
   ```bash
-  mc admin config set <alias>/ notify_kafka:IDENTIFIER \
+  mc admin config set <alias>/ notify_kafka:<IDENTIFIER> \
      brokers="<ENDPOINT>" \
      topic="<string>" \
      sasl_username="<string>" \
@@ -967,17 +970,20 @@
      queue_dir="<string>" \
      queue_limit="<string>" \
      comment="<string>"
+     
+  # e.g.
+  $ mc admin config set foo notify_kafka:foo brokers="<Kafka_brokers>" topic="foo"
   ```
-
+  
   - 잘 설정됐는지 확인하려면, 아래와 같이 입력하면 된다.
-
+  
   ```bash
   $ mc admin config get <alias> notify_kafka
   ```
 
   - MinIO deployment를 재실행한다.
     - 변경된 설정을 적용하기 위해서 아래와 같이 deployment를 재시작해야한다.
-
+  
   ```bash
   $ mc admin service restart <alias>
   ```
@@ -1030,6 +1036,15 @@
 
   ```bash
   $ mc admin service restart <alias>
+  ```
+  
+  - 삭제하기
+  
+  ```bash
+  $ mc event rm <alias>/<bucket> <ARN>
+  
+  # e.g.
+  $ mc event rm foo/bar arn:minio:sqs::some_identifier:kafka
   ```
 
 
@@ -1314,7 +1329,93 @@
   client.set_bucket_notification("bucket-name", config)
   ```
 
+
+
+
+
+
+# AWS CLI 사용하기
+
+- AWS CLI를 설치한다.
+
+  - pip를 사용하여 설치가 가능하다.
+
+  ```bash
+  $ pip install awscli
+  ```
+
+  - 설정을 실행한다.
+
+  ```bash
+  $ aws configure
+  ```
+
+  - MinIO에서 사용하기 위해 추가적인 설정을 해준다.
+
+  ```bash
+  $ aws configure set default.s3.signature_version s3v4
+  ```
+
+
+
+- 명령어
+
+  - Bucket 목록 확인
+
+  ```bash
+  $ aws --endpoint-url http://localhost:9000 s3 ls
+  ```
+
+  - Bukcet 내의 object 목록 확인
+
+  ```bash
+  $ aws --endpoint-url http://localhost:9000 s3 ls s3://<bucket_name>
+  ```
+
+  - Bucket 생성
+
+  ```bash
+  $ aws --endpoint-url http://localhost:9000 s3 mb s3://<bucket_name>
+  ```
+
+  - Local storage와 bucket을 sync시키기
+    - `--delete` option을 주면 삭제된 파일도 함께 동기화된다.
+
+  ```bash
+  # local의 파일들을 S3로 sync
+  $ aws --endpoint-url http://localhost:9000 s3 sync <local_storage_path> s3://<bucket_name> --delete
   
+  # S3의 파일들을 local로 sync
+  $ aws --endpoint-url http://localhost:9000 s3 sync s3://<bucket_name> <local_storage_path> --delete
+  ```
+  
+  - Sync뿐 아니라 copy도 가능하다.
+    - 기본적으로 하나의 file만 복제가 가능하며, directory 단위로 복제하려면  `--recursive` 옵션을 줘야 한다.
+    - `--recursive` 옵션을 줄 경우 하위 directory도 모두 복제된다.
+  
+  ```bash
+  # local에서 S3로 복사
+  $ aws --endpoint-url http://localhost:9000 s3 cp <local_storage_path> s3://<bucket_name>
+  
+  # S3에서 local로 복사
+  $ aws --endpoint-url http://localhost:9000 s3 cp se://<bucket_name>/<path> <local_storage_path>
+  ```
+  
+  - `cp`와 `sync` 명령어에서 사용되는 option
+    - `--exclude`: 특정 객체를 제외
+    - `--include`: 특정 객체를 포함
+    - 위 두 옵션은 wildcard를 지원한다.
+    - 위 두 옵션의 순서에 따라 실행 결과가 달라질 수 있다.
+    - 또한 local path를 절대 경로로 하는지, 상대 경로로 하는지에 따라 include와 exclude의 동작이 달라진다.
+  
+  ```bash
+  # 현재 directory(하위 directory 포함)의 file들 중 확장자가 txt인 파일들은 포함하고, foo로 시작하는 file들은 제외하지만, foo2로 시작하는 파일들은 포함시킨다.
+  $ aws --endpoint-url http://localhost:9000 s3 sync . s3://my-bucket --include "*.txt" --exclude "foo*" --include "foo2"
+  ```
+  
+  
+
+
 
 
 

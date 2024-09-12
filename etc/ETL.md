@@ -595,6 +595,50 @@
 
 
 
+- 만약 설정해야 할 경우 아래와 같이 하면 된다.
+
+  > https://docs.aws.amazon.com/ko_kr/dms/latest/userguide/CHAP_Source.MySQL.html
+  
+  - CDC와 관련하여 설정해야 하는 binary log 관련 server system variable은 세 가지가 있다.
+    - `log_bin`: `ON`이어야 한다.
+    - `binlog_format`: `ROW`여야 한다.
+    - `binlog_row_image`: `FULL`이어야 한다.
+  - `log_bin`
+    - Binary logging을 활성화할지를 설정한다.
+    - MySQL 실행시에 `--log-bin` 옵션을 주면 `ON` 상태로 실행된다.
+  - `binlog_format`
+    - Replication을 row 기반으로 할 것인지, statement 기반으로 할 것인지, 둘을 혼용할 것인지를 설정한다.
+    - `ROW`, `STATEMENT`, `MIXED` 중 하나의 값을 설정할 수 있다(기본값은 `MIXED`).
+    - MySQL 실행시에 `--binlog-format=<format>` 옵션을 주어 설정이 가능하다.
+  
+  - `binlog_row_image`
+    - Row 기반의 replication을 사용할 때(`binlog_format`을 `ROW`로 설정했을 때) logging format을 설정한다.
+    - 기본값은 `FULL`이다.
+
+  - 아래와 같이 현재 설정을 확인할 수 있다.
+  
+  ```sql
+  SHOW VARIABLES LIKE 'log_bin';
+  SHOW VARIABLES LIKE 'binlog_format';
+  SHOW VARIABLES LIKE 'binlog_row_image';
+  ```
+
+  - 아래와 같이 설정할 수 있다.
+  
+  ```sql
+  SET GLOBAL <variable>=<value>;
+  ```
+  
+  - Debezium source connector 사용시 server_id도 알아야 한다.
+  
+  ```sql
+  SELECT variable_value FROM information_schema.global_variables WHERE variable_name='server_id';
+  ```
+  
+  
+
+
+
 - Source connector 실행하기
 
   - 아래와 같이 실행한다.

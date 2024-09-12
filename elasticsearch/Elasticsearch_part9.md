@@ -261,6 +261,7 @@
     - token filter
   - Character filter
     - Analyzer를 통해 들어온 문자열들은 character filter가 1차로 변형한다.
+    - Tokeninzing을 위한 간단한 전처리를 위한 단계이다.
     - 예를 들어 <, >, ! 등과 같은 의미 없는 특수 문자들을 제거한다거나 HTML 태그들을 제거하는 등 문자열을 구성하고 있는 문자들을 특정한 기준으로 변경한다.
   - Tokenizer
     - Tokenizer는 일정한 기준(공백이나 쉼표)에 의해 문자열은 n개의 토큰으로 나눈다.
@@ -1006,6 +1007,59 @@
 
 
 
+## Character filter
+
+- Token filter에 있는 `lowercase`는 존재하지 않는다.
+
+  - Character filter의 목적 자체가 간단한 전처리이기 때문이다.
+  - 만약 `lowercase`를 적용해야 한다면 아래와 같이 `mapping` character filter를 사용하면 된다.
+
+  ```json
+  {
+      "settings":{
+          "analysis":{
+              "char_filter":{
+                  "custom_lowercase" : {
+                      "type" : "mapping",
+                      "mappings" : [
+                          "A => a",
+                          "B => b",
+                          "C => c",
+                          "D => d",
+                          "E => e",
+                          "F => f",
+                          "G => g",
+                          "H => h",
+                          "I => i",
+                          "J => j",
+                          "K => k",
+                          "L => l",
+                          "M => m",
+                          "N => n",
+                          "O => o",
+                          "P => p",
+                          "Q => q",
+                          "R => r",
+                          "S => s",
+                          "T => t",
+                          "U => u",
+                          "V => v",
+                          "W => w",
+                          "X => x",
+                          "Y => y",
+                          "Z => z"
+                      ]
+                  }
+              }
+          }
+      }
+  }
+  ```
+
+
+
+
+
 ## Token filter
 
 - N-gram
@@ -1089,11 +1143,11 @@
 
 
 
-### synonym
+### Synonym
 
 > https://www.elastic.co/blog/boosting-the-power-of-elasticsearch-with-synonyms
 
-- synonym(유의어)
+- Synonym(유의어)
 
   - 분석 과정에서 유의어들을 보다 쉽게 처리할 수 있도록 도와주는 token filter이다.
     - 예를 들어 "Elasticsearch"를 누군가는 "ES"라고 쓰고, 누군가는 "엘라스틱서치"라고 쓴다고 하면, Elasticsearch라는 term으로 검색했을 때, ES나 엘라스틱서치라고 작성된 내용은 검색되지 않을 것이다.
@@ -1947,9 +2001,9 @@
 
 
 
-### stopword
+### Stopword
 
-- stopword(불용어)
+- Stopword(불용어)
 
   - 검색에 불필요한 조사나 전치사 등을 처리하기 위한 token filter
     - `stopwords` 항목에 적용된 단어들은 tokenizing 된 텀에서 제거된다.

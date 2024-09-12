@@ -24,6 +24,6 @@
     - Backup을 생성할 때와는 달리 `mysqldump`가 아닌 `mysql`을 사용한다.
 
   ```bash
-  $ mysql <db_name> < <file_name>.sql
+  $ mysql -u <user> -p <db_name> < <file_name>.sql
   ```
 

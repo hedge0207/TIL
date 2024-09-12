@@ -1,7 +1,3 @@
-
-
-
-
 # 리눅스 기본 명령어
 
 - top
@@ -65,10 +61,14 @@
   
   
   ```bash
-  # 기본 명령어
   $ ls [옵션]
+  ```
   
-  # ls -l과 동일한 명령어
+  - `ll`
+    - `ls -l`과 동일한 명령어
+    - 사용을 위해선 추가로 설치가 필요하다.
+  
+  ```bash
   $ ll
   ```
 
@@ -76,13 +76,8 @@
 
 - cd
 
-  - `~`: home 디렉토리로 이동
-  - `-`: 이전 디렉토리로 이동
-  - `..`: 상위 디렉토리로 이동
-  - `/`: 루트 디렉토리로 이동
-
   ```bash
-  cd [옵션]
+  cd <이동할 경로>
   ```
 
 
@@ -90,7 +85,7 @@
 - pwd
 
   - 현재 디렉터리를 보여준다.
-  - Rrint Working Directory의 약자이다.
+  - Print Working Directory의 약자이다.
 
   ```bash
   $ pwd
@@ -101,13 +96,12 @@
 - rm
 
   - 파일이나 디렉터리를 삭제한다.
-    - 기본적으로 해당 파일을 삭제할 권한이 있는 사용자만 삭제가 가능하다.
-    - root 사용자는 모든 권한이 있으므로 모든 파일을 삭제가 가능하다.
+    - 해당 파일을 삭제할 권한이 있는 사용자만 삭제가 가능하다.
   - 옵션
     - `-r`: 디렉터리를 삭제.
     - `-i`: 삭제 시 정말 삭제할지를 묻는 메시지가 나온다.
     - `-f`: 삭제 시 확인하지 않고 바로 삭제한다.
-
+  
   ```bash
   $ rm <파일 or 폴더>
   ```
@@ -120,14 +114,10 @@
 
     - 복사한 파일은 기본적으로 복사한 사용자의 소유가 된다.
     - 명령 실행을 위해 해당 파일의 읽기 권한이 필요하다.
-
-  - filezilla 설치가 가능하면 filezilla를 사용하는 것이 낫다.
-
-    >  https://filezilla-project.org/
-
-  - `-r`: 디렉토리 전체 복사
-
-  - `-p`: 소유주, 그룹, 권한, 시간 정보를 보존하여 복사
+  - 옵션
+    - `-r`: 디렉토리 전체 복사
+    - `-p`: 소유주, 그룹, 권한, 시간 정보를 보존하여 복사
+  
 
   ```bash
   $ cp <복사할 파일> <붙여넣을 폴더>
@@ -426,16 +416,15 @@
   - 설치
 
   ```bash
-  $ apt-get update
   $ apt-get install vim
   ```
-
+  
   - 실행
-
+  
   ```bash
   $ vi <파일명>
   ```
-
+  
   - 종료
     - `esc`누른 후
     - `:w`: 저장
@@ -506,14 +495,6 @@
 
 
 
-- jupyter의 ipynb 파일을 py 파일로 변환하기
-
-  ```bash
-  $ jupyter nbconvert --to script <ipynb 파일명>
-  ```
-
-
-
 
 - 백그라운드에서 실행하기
 
@@ -524,24 +505,17 @@
   $ nohup <명령어> &
   ```
 
-  - nohup.out 파일은 어느 정도 로그가 쌓이면 한 번에 나오게 되는데 python의 경우, 이를 바로 나오게 해주는 방법이 있다.
-    - `-u` 옵션을 준다.
-
-  ```bash
-  $ nohup python -u <파일명> &
-  ```
-
   - 종료
     - 프로세스 아이디 확인 후 종료한다.
-    - `ps -ef `만 입력해서 일일이 찾아도 된다.
 
+  
   ```bash
   # 프로세스 id 확인
   $ ps -ef | grep <위에서 입력한 명령어>
   
   # 종료
   $ kill -9 <프로세스 id>
-  ```
+```
 
 
 
@@ -557,7 +531,7 @@
 
   ```bash
   $ ps <옵션>
-  ```
+```
 
   - 출력
     - UID: 실행 유저
@@ -585,7 +559,8 @@
     - SSD 하드 디스크를 쓴다 하더라도 데이터를 읽어들이는 속도는 메모리에 비해 현저히 떨어지게 된다.
   - 옵션
     - `-m`,  `-g` 각각 mb, gb 단위로 출력한다(기본은 kb).
-
+    - `-h`는 사람이 읽기 편한 형태로 출력한다.
+  
   ```bash
   $ free
   ```
@@ -627,15 +602,6 @@
 
 
 
-- Python  파일 실행 후 로그 남기기
-
-  ```bash
-  $ python <실행할 파일명> > <로그 남길 파일명>
-  ```
-
-
-
-
 - 매개변수 지정
 
   - 쉘 스크립트에 매개 변수를 넘길 수 있다.
@@ -670,6 +636,9 @@
   
   # 또는
   $ cat /etc/*release*
+  
+  # 또는
+  $ cat /etc/os-release
   ```
 
 
@@ -1054,13 +1023,25 @@
     - OpenSSH라는 SSH protocol을 open source로 구현한 프로그램이 있다.
     - 서버 인증과 사용자 인증에는 비대칭키 방식을 사용하고, client와 server간의 통신에는 대칭키 방식을 사용한다.
 
+  - 설치 및 실행
+    - Ubuntu 기준이다.
+  
+  
+  ```bash
+  # 설치
+  $ apt install ssh
+  
+  # 실행
+  $ service ssh start
+  ```
+  
   - 동작 과정
-
+  
     - Client가 server의 22번 포트로 접속을 요청한다.
     - Client의 요청을 받은 server는 server에서 보관중인 public key(host key)를 client에게 전송한다.
     - Client와 server는 parameter들을 주고 받으며 연결 방식에 대해 협의한 후 접속 채널을 연다.
     - 모든 인증이 무사히 완료되면, client는 SSH 프로토콜로 server에 접속하게 된다.
-
+  
   - 서버 인증 과정
 
     - Client가 자신이 접속하고자 하는 server가 올바른 서버인지 확인하는 과정이다.
@@ -1074,17 +1055,17 @@
     - Clinet는 난수값을 생성하고 해당 난수값으로 해시를 생성해 저장한 뒤, 난수값을 server가 전달한 public key로 암호화하여 server에 전송한다.
     - Server는 암호화된 데이터를 private key(host key)로 복호화하여 난수값을 얻어낸 뒤, 해당 난수값을 해시로 만들어 다시 client로 전송한다.
     - Server로부터 해시를 전달 받은 client는 자신이 저장했던 해시와 비교하여 두 해시가 동일하면, 올바른 서버에 접속하는 것이라 판단한다.
-
+  
   - 서버 인증이 필요한 이유
-
+  
     - Client가 server에 최초로 접속 요청을 보낸 후 둘 사이에 안전한 채널이 열리기 전에, client가 server로 보낸 요청이 network상에서 악의적인 공격으로 다른 server로 납치될 수 있다.
     - 그럼 client는 자신이 접속하려던 server가 아닌 악의적인 다른 server에 데이터를 전송하게 된다.
     - 따라서 client는 중간에 다른 서버에게 자신의 요청이 가로채진 것은 아닌지 확인하는 과정이 필요하다.
-
+  
   - 사용자 인증 과정
-
+  
     > Password를 사용한 인증 방법도 있고 아예 인증을 하지 않는 방법도 있지만 SSH key를 사용하는 것이 권장되므로, SSH key를 사용할 경우만 다룬다.
-
+  
     - Server가 자신에게 접속을 요청한 client user의 identity를 확인하는 과정이다.
     - 사용자 인증에는 비대칭키(public key와 private key)가 사용된다(서버 인증에 사용된 host keys와는 다르다).
     - Client는 비대칭키를 생성하여 public key는 서버의 `<home>/.ssh/authorized_keys`에 저장하고, private key만 자신이 가지고 있는다.
@@ -1093,9 +1074,9 @@
     - Server는 무작위 문자열을 생성하고 해당 문자열로 만든 해시를 저장한 뒤, 난수는 client에게 전달 받은 public key로 암호화하여 client에게 전송한다.
     - Client는 priavate key를 사용하여 server가 전달한 암호화된 난수를 복호화하고, 복호화된 난수와 세션키를 결합하여 해시를 생성한 후 server로 전송한다.
     - Server는 저장된 난수와 세션키를 결합하여 해시를 생성하고, 해당 해시와 client에게 전달 받은 해시를 비교하여 두 해시가 동일하면 client에게 권한이 있다고 판단한다.
-
+  
   - Server와 client간의 통신
-
+  
     - Server와 client간의 통신에는 대칭키인 session key가 사용된다.
     - 대칭키 방식은 비대칭키 방식에 비해 리소스도 적게 들고 속도도 빠르다는 장점이 있지만, 대칭키가 유출될 경우 암호화된 통신을 복호화 할 수 있다는 단점이 있다.
     - SSH는 대칭키기 유출되지 않도록 하기 위해 키 교환 알고리즘을 사용하여 대칭키를 교환한다.
@@ -1140,6 +1121,44 @@
   ```
 
 
+
+- SSHFS
+
+  - 다른 서버에 위치한 directory와 file을 일반 SSH 연결을 통해 client가 mount할 수 있게 하는 파일 시스템이다.
+    - FUSE(Filesystem in Userspace)를 기반으로 한다.
+
+  - 설치
+  
+  ```bash
+  $ sudo apt install sshfs
+  ```
+  
+  - Mount하기
+    - 대상 서버에 SSH 접속이 가능해야한다.
+  
+  ```bash
+  $ sshfs <user>@<remote_IP>:<remote_path> <local_path>
+  ```
+  
+  - Mount 해제하기
+    - `unmount`가 아닌 `umount`이다.
+    - 앞서 말했듯, SSHFS는 FUSE 기반이기에 `fusermount -u`로도 가능하다.
+  
+  ```bash
+  $ umount <local_path>
+  $ fusermount -u <local_path>
+  ```
+  
+  - 주의사항
+    - Copy가 아닌 mount이므로 mount한 server에서 변경 사항이 생길 경우 mount 대상 서버에도 그대로 반영된다.
+    - Mount한 server의 권한과 상관없이 추가, 수정, 삭제가 가능하다.
+    - 중간에 연결 된 서버가 종료될 경우 mount는 해제된다.
+  - "Transport endpoint is not connected" error
+    - 만약 사용 중 위와 같은 error가 발생할 경우 아래와 같이 `fusermount -u` 명령어를 통해 mount를 해제한 후 다시 연결하면 된다.
+  
+  ```bash
+  $ fusermount -u <mount_path>
+  ```
 
 
 
