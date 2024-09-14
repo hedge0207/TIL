@@ -148,49 +148,7 @@
 <br/>
 <br/>
 
-# crawling
-## beautifulsoup
-- 목차
-
-- 크롤링의 위법성
-
-- Beautiful Soup
-
-- 기초
-
-- 웹 크롤러 만들기
-
-- get: 웹 페이지를 여는 함수
-
-- 인자로 크롤링 하려는 사이트의 주소를 입력
-
-- query_txt = input("크롤링할 키워드: ")
-
-- f_name = input("검색 결과를 저장할 파일경로와 이름을 지정하세요: ")
-
-- 위에서 표준 출력 내용을 터미널 창이 아닌 f_name에 하도록 지정했기 때문에 아래 내용은 터미널 창이 아닌 txt 파일에 저장되게 된다. 
-
-<br/>
-<br/>
-
-## scrapy
-- scrapy
-
-<br/>
-<br/>
-
-<br/>
-<br/>
-
 # CS
-## 2022_aws_summit
-- 아키텍처 현대화
-
-- 당근마켓의 사례
-
-<br/>
-<br/>
-
 ## discrete_mathematics_part1
 - 수의 체계
 
@@ -648,6 +606,8 @@
 
 - MinIO Client
 
+- AWS CLI 사용하기
+
 <br/>
 <br/>
 
@@ -661,12 +621,6 @@
 
 ## postman
 - Postman으로 API 테스트하기
-
-<br/>
-<br/>
-
-## ubuntu_docker
-- Docker로 Ubuntu 실행하기
 
 <br/>
 <br/>
@@ -780,10 +734,6 @@
 
 - Docker health check
 
-- etc
-
-- 참고
-
 <br/>
 <br/>
 
@@ -802,8 +752,6 @@
 
 - Build context
 
-- alpine image
-
 <br/>
 <br/>
 
@@ -813,6 +761,10 @@
 - Docker volume과 권한, 소유자, 소유 그룹
 
 - .bashrc에 umask 0002 명령어를 추가한다.
+
+- etc
+
+- alpine image
 
 <br/>
 <br/>
@@ -893,6 +845,12 @@
 - alias
 
 - Security
+
+<br/>
+<br/>
+
+## Elasticsearch_part14
+- Shorts
 
 <br/>
 <br/>
@@ -1105,12 +1063,54 @@
 <br/>
 
 # etc
+## 2022_aws_summit
+- 아키텍처 현대화
+
+- 당근마켓의 사례
+
+<br/>
+<br/>
+
 ## Airbyte
 - Airbyte
 
 - Airbyte 실행하기
 
 - Destination
+
+<br/>
+<br/>
+
+## crawling
+### beautifulsoup
+- 목차
+
+- 크롤링의 위법성
+
+- Beautiful Soup
+
+- 기초
+
+- 웹 크롤러 만들기
+
+- get: 웹 페이지를 여는 함수
+
+- 인자로 크롤링 하려는 사이트의 주소를 입력
+
+- query_txt = input("크롤링할 키워드: ")
+
+- f_name = input("검색 결과를 저장할 파일경로와 이름을 지정하세요: ")
+
+- 위에서 표준 출력 내용을 터미널 창이 아닌 f_name에 하도록 지정했기 때문에 아래 내용은 터미널 창이 아닌 txt 파일에 저장되게 된다. 
+
+<br/>
+<br/>
+
+### scrapy
+- scrapy
+
+<br/>
+<br/>
 
 <br/>
 <br/>
@@ -1227,6 +1227,62 @@
 - Open API
 
 - 참고
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+# front
+## web
+### babel_and_webpack
+- Babel
+
+- Webpack
+
+<br/>
+<br/>
+
+### CSS
+- CSS
+
+<br/>
+<br/>
+
+### Emailjs
+- EmailJs를 활용하여 메일 보내기
+
+<br/>
+<br/>
+
+### HCJ
+- CSS 문서 표현(상)
+
+- CSS 문서 표현(하)
+
+- 레이아웃과 고급 CSS 기능
+
+- CSS 기타
+
+<br/>
+<br/>
+
+### HTML
+- HTML이란
+
+- HTML 기본 구조
+
+<br/>
+<br/>
+
+### IndexedDB
+- IndexedDB 개요
+
+- 사용해보기
+
+<br/>
+<br/>
 
 <br/>
 <br/>
@@ -1601,6 +1657,12 @@
 - Shorts
 
 - etc
+
+<br/>
+<br/>
+
+## ubuntu_docker
+- Docker로 Ubuntu 실행하기
 
 <br/>
 <br/>
@@ -2365,86 +2427,6 @@
 
 ## Vue_배포
 - 배포
-
-<br/>
-<br/>
-
-<br/>
-<br/>
-
-# web
-## babel_and_webpack
-- Babel
-
-- Webpack
-
-<br/>
-<br/>
-
-## CSS
-- CSS
-
-<br/>
-<br/>
-
-## Emailjs
-- EmailJs를 활용하여 메일 보내기
-
-<br/>
-<br/>
-
-## HCJ
-- HTML이란
-
-- HTML 기본 구조
-
-- HTML 문서 구조화(상)
-
-- HTML 문서 구조화(하)
-
-- CSS 문서 표현(상)
-
-- CSS 문서 표현(하)
-
-- 레이아웃과 고급 CSS 기능
-
-- CSS 기타
-
-- 자바스크립트 기초
-
-- 자바스크립트 문법
-
-- 내장객체
-
-- 배열과 함수
-
-- 문서객체모델(DOM)
-
-- 이벤트 
-
-- 함수의 고급 기능
-
-- 객체의 이해와 생성
-
-- 상속
-
-- 자바스크립트 library
-
-<br/>
-<br/>
-
-## HTML
-- HTML이란
-
-- HTML 기본 구조
-
-<br/>
-<br/>
-
-## IndexedDB
-- IndexedDB 개요
-
-- 사용해보기
 
 <br/>
 <br/>
