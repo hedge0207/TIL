@@ -1235,6 +1235,58 @@
 <br/>
 
 # front
+## Vue
+### Vuex
+- 목차
+
+- Vuex 기초
+
+- Vuex로 사용자 인증 구현
+
+- Vuex로 게시글 생성 및 조회 구현
+
+<br/>
+<br/>
+
+### Vue_js
+- 목차
+
+- Vue
+
+- Vue 라이프 사이클
+
+- Vue 프로젝트
+
+<br/>
+<br/>
+
+### Vue_js심화
+- 목차
+
+- Vue router
+
+- Youtube를 활용하여 페이지 만들기
+
+- 서버와 연결
+
+- 믹스 인
+
+- 이벤트 버스
+
+- 기타 팁
+
+<br/>
+<br/>
+
+### Vue_배포
+- 배포
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
 ## web
 ### babel_and_webpack
 - Babel
@@ -2375,58 +2427,6 @@
 - 빈 생명주기 콜백
 
 - 빈 스코프
-
-<br/>
-<br/>
-
-<br/>
-<br/>
-
-# Vue
-## Vuex
-- 목차
-
-- Vuex 기초
-
-- Vuex로 사용자 인증 구현
-
-- Vuex로 게시글 생성 및 조회 구현
-
-<br/>
-<br/>
-
-## Vue_js
-- 목차
-
-- Vue
-
-- Vue 라이프 사이클
-
-- Vue 프로젝트
-
-<br/>
-<br/>
-
-## Vue_js심화
-- 목차
-
-- Vue router
-
-- Youtube를 활용하여 페이지 만들기
-
-- 서버와 연결
-
-- 믹스 인
-
-- 이벤트 버스
-
-- 기타 팁
-
-<br/>
-<br/>
-
-## Vue_배포
-- 배포
 
 <br/>
 <br/>
