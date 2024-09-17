@@ -1235,6 +1235,36 @@
 <br/>
 
 # front
+## node
+### nodejs_part1
+- Node.js란
+
+- 작업 환경 준비
+
+- Koa 기본 사용법
+
+- Node.js에서 ES 모듈 import/export 문법 사용하기
+
+<br/>
+<br/>
+
+### nodejs_part2
+- MongoDB와 연동
+
+- 데이터베이스 스키마와 모델
+
+- 데이터 CRUD
+
+- 요청 검증하기
+
+- 페이지네이션 구현
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
 ## Vue
 ### Vuex
 - 목차
@@ -1742,36 +1772,6 @@
 <br/>
 
 ## NLP_part2
-<br/>
-<br/>
-
-<br/>
-<br/>
-
-# node
-## nodejs_part1
-- Node.js란
-
-- 작업 환경 준비
-
-- Koa 기본 사용법
-
-- Node.js에서 ES 모듈 import/export 문법 사용하기
-
-<br/>
-<br/>
-
-## nodejs_part2
-- MongoDB와 연동
-
-- 데이터베이스 스키마와 모델
-
-- 데이터 CRUD
-
-- 요청 검증하기
-
-- 페이지네이션 구현
-
 <br/>
 <br/>
 
