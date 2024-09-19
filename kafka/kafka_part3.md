@@ -391,6 +391,156 @@
 
 
 
+### KRaft
+
+- Kafka와 Zookeeper
+  - Kafka는 자체적인 분산 coordinating 기능이 없어 Zookeeper에 의존했다.
+  - Zookeeper가 Kafka에서 하는 일들은 아래와 같다.
+    - 주로 metadata를 관리하는 역할을 한다.
+    - leader partition이 내려갔을 때 새로운 leader partition을 선출한다.
+    - 클러스터 내의 브로커들의 정보를 관리.
+    - Kafka의 topic 정보를 저장한다. 현재 존재하는 토픽과 각 토픽의 파티션 정보, replica들의 수 등을 저장.
+    - 각 토픽에 누가 접근하여 message를 읽고 쓸 수 있는지, consumer group의 목록, 각 consumer group에 속한 멤버들이 누구인지와 각 consumer group의 offset등에 대한 정보를 담은 엑세스 제어 목록(Access Control Lists, ACLs)을 관리.
+    - Kafka의 데이터에 접근하는 클라이언트에 관한 정보 관리.
+  - 그러나 Apache Kafka 3.5부터 Zookeeper가 deprecate됐고, 4.0부터는 Zookeeper 사용이 불가능해질 예정이다.
+
+
+
+- KRaft(Kafka Raft)
+
+  - Zookeeper에 대한 의존성을 제거하기 위해 소개된 합의 protocol이다.
+  - KRaft의 등장 배경
+    - 기존에 Kafka는 모든 topic과 parition에 대한 metadata를 zookeeper에서 읽어야했으며, 이 때 병목 현상이 발생할 가능성이 있다.
+    - 또한 Kafka broker에서 가지고 있는 metadata와 Zookeeper의 metadata가 일치하지 않는 상황도 발생할 수 있다.
+    - 그리고 Zookeeper와 Kafka는 완전히 다른 application임에도 Kafka를 사용하기 위해선 Zookeeper가 필수였기에 관리상의 어려움이 있었다.
+    - Zookeeper를 걷어냄으로써 Kafka의 전체 구조를 훨씬 간결하게 만들 수 있다.
+    - Zoopkeeper와 달리 KRaft는 Kafka의 일부이기 때문에 Kafka라는 단일 시스템만으로 완전한 운영이 가능하다.
+
+  - KRaft controller node는 Kafka metadata log를 관리하기 위한 Raft quorum을 구성한다.
+    - 이 log에는 cluster의 metadata에 관한 변경 사항이 저장된다.
+    - 기존에 Zookeeper에서 관리하던 topic, parition, ISRs, configuration 등의 모든 정보가 이 log에 저장된다.
+    - Metadata log의 leader를 active controller라고 부르며, active controller는 broker에서 생성된 모든 RPC를 처리한다.
+    - Follower controller들은 active controller에 쓰인 데이터를 복제하여 active controller에 문제가 생길 경우에 대비한다.
+    - 주기적으로 controller들은 metadata의 snapshot을 disk에 저장한다.
+    - Zookeeper를 사용할 때와 마찬가지로 KRaft 역시 과반수의 node가 실행되어야 서비스가 가능하다.
+    - 예를 들어 3개의 node로 구성할 경우 둘 이상의 node가 실행중이어야 서비스가 유지된다.
+  - Zookeeper와 함께 사용할 때의 controller
+    - Zookeeper를 사용할 경우 Kafka cluster 중 하나의 broker가 controller 역할을 하게 된다.
+    - Controller는 parition의 leader를 선출하는 역할을 하며, leader 선출 정보를 모든 broker에게 전파하고 Zookeeper에 leader 정보를 기록하는 역할을 한다.
+    - Controller의 선출은 Zookeeper의 임시 노드를 통해 이루어진다.
+    - 임시 노드에 가장 먼저 연결에 성공한 broker가 controller가 되고, 다른 broker들은 해당 임시 노드에 이미 controller가 있다는 사실을 통해 Kafka cluster 내에 controller가 있다는 것을 인지하게 된다.
+    - 이를 통해 한 cluster에 하나의 controller만 있도록 보장된다.
+  - KRaft를 사용할 때의 controller
+    - Zookeeper 모드에서 1개였던 controller가 3개로 늘어나고, 이 중 하나의 controller가 active controller, 즉 leader 역할이 된다.
+    - Leader 역할을 하는 controller가 write 역할을 한다.
+  - KRaft를 사용하더라도 broker와 KRaft를 분리된 서버에 배치하는 것이 강력히 권장된다.
+    - 즉 broker와 별개로 KRaft 서버를 할당하여 운영하는 것이 권장된다.
+    - 이렇게 구성함으로써 controller와 broker를 분리하여 높은 가용성과 안정성을 확보할 수 있다.
+    - 그러나, 서버의 리소스가 한정적인 경우에는 어쩔 수 없이 KRaft와 broker를 동시에 운영할 수도 있다.
+
+
+
+- KRaft mode로 실행하기
+
+  > https://docs.confluent.io/platform/current/installation/docker/config-reference.html#required-ak-configurations-for-kraft-mode
+
+  - KRaft mode로 실행하기 위해 반드시 설정해야 하는 것들
+    - `KAFKA_PROCESS_ROLES`: `controller`,`broker`, `broker,controller`중 하나의 값으로 설정한다.
+    - `KAFKA_NODE_ID`: Broker의 node ID를 설정한다.
+    - `KAFKA_CONTROLLER_QUORUM_VOTERS`: 정족에 참여하는 voter들의 list를 comma로 구분하여 설정한다(`{KAFKA_NODE_ID}@{host}:{port}` 형식으로 설정).
+    - `KAFKA_CONTROLLER_LISTENER_NAMES`: Controller가 사용할 listener들의 목록을 comma로 구분하여 설정하며, 첫 번째 listener만 broker에 의해 사용된다.
+    - `CLUSTER_ID `: 고유한 cluster ID를 설정한다.
+
+  - 단일 broker로 실행하기
+    - 단일 broker로 실행할 때는 `KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR` 환경 변수를 1로 줘야 한다.
+
+  ```yaml
+  version: '3'
+  
+  services:
+    KRaft-Kafka:
+      container_name: KRaft-Kafka
+      image: confluentinc/cp-kafka:7.5.3
+      ports:
+        - "9097:9097"
+      environment:
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+        KAFKA_ADVERTISED_LISTENERS: INTERNAL://:29092,EXTERNAL://127.0.0.1:9097
+        KAFKA_LISTENERS: INTERNAL://:29092,CONTROLLER://:29093,EXTERNAL://0.0.0.0:9097
+        KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+        KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+        
+        # KRaft에서 필수적인 설정들
+        CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+        KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+        KAFKA_PROCESS_ROLES: 'broker,controller'
+        KAFKA_NODE_ID: 1
+        KAFKA_CONTROLLER_QUORUM_VOTERS: 1@KRaft-Kafka:29093
+  ```
+
+  - Cluster로 구성하기
+
+  ```yaml
+  version: '3.8'
+  
+  services:
+    kafka-1:
+      container_name: kafka-1
+      image: confluentinc/cp-kafka:7.5.3
+      ports:
+        - "9097:9092"
+      environment:
+        KAFKA_NODE_ID: 1
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+        KAFKA_LISTENERS: INTERNAL://:29092,CONTROLLER://:29093,EXTERNAL://0.0.0.0:9092
+        KAFKA_ADVERTISED_LISTENERS: INTERNAL://:29092,EXTERNAL://127.0.0.1:9097
+        KAFKA_PROCESS_ROLES: 'broker,controller'
+        KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:29093,2@kafka-2:29093,3@kafka-3:29093
+        KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+        KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+        CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+  
+    kafka-2:
+      container_name: kafka-2
+      image: confluentinc/cp-kafka:7.5.3
+      ports:
+        - "9098:9092"
+      environment:
+        KAFKA_NODE_ID: 2
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+        KAFKA_LISTENERS: INTERNAL://:29092,CONTROLLER://kafka-2:29093,EXTERNAL://0.0.0.0:9092
+        KAFKA_ADVERTISED_LISTENERS: INTERNAL://:29092,EXTERNAL://127.0.0.1:9098
+        KAFKA_PROCESS_ROLES: 'broker,controller'
+        KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:29093,2@kafka-2:29093,3@kafka-3:29093
+        KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+        KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+        CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+  
+    kafka-3:
+      container_name: kafka-3
+      image: confluentinc/cp-kafka:7.5.3
+      ports:
+        - "9099:9092"
+      environment:
+        KAFKA_NODE_ID: 3
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+        KAFKA_LISTENERS: INTERNAL://:29092,CONTROLLER://kafka-3:29093,EXTERNAL://0.0.0.0:9092
+        KAFKA_ADVERTISED_LISTENERS: INTERNAL://:29092,EXTERNAL://127.0.0.1:9099
+        KAFKA_PROCESS_ROLES: 'broker,controller'
+        KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:29093,2@kafka-2:29093,3@kafka-3:29093
+        KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+        KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+        CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+  ```
+
+
+
+
+
+
+
+
+
 ## 주요 옵션
 
 ### server.properties
