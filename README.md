@@ -278,6 +278,8 @@
 
 - MSA와 Event Driven
 
+- 암호화
+
 - Shorts
 
 <br/>
@@ -1171,12 +1173,6 @@
 <br/>
 <br/>
 
-## 암호화
-- AES
-
-<br/>
-<br/>
-
 <br/>
 <br/>
 
@@ -1235,6 +1231,114 @@
 <br/>
 
 # front
+## javascript
+### JavaScript_part1
+- 브라우저 & JS의 역사
+
+- 소개
+
+- 기초
+
+- 변수의 선언
+
+- 타입
+
+- 연산자
+
+- 제어문
+
+- 자료구조
+
+<br/>
+<br/>
+
+### JavaScript_part2
+- 함수
+
+- 프로토타입
+
+<br/>
+<br/>
+
+### JavaScript_part3
+- this
+
+- 스코프
+
+- 실행 컨텍스트와 JavaScript 동작 원리
+
+- 클로저
+
+<br/>
+<br/>
+
+### JavaScript_part4
+- JavaScript 객체 지향 프로그래밍
+
+-  빌트인 객체
+
+- 전역 객체
+
+- 각종 객체
+
+<br/>
+<br/>
+
+### JavaScript_part5
+- 정규표현식
+
+- 배열
+
+- DOM
+
+<br/>
+<br/>
+
+### JavaScript_part6
+- 이벤트
+
+- 비동기식 처리 모델과 ajax
+
+<br/>
+<br/>
+
+### JavaScript_part7
+- 프로미스
+
+- async&await
+
+- 예외처리
+
+- 클래스
+
+- 모듈
+
+<br/>
+<br/>
+
+### JavaScript_part8
+- strict mode
+
+- ECAMAScript6
+
+<br/>
+<br/>
+
+### JavaScript_part9
+- ECMAScript
+
+- Device Orientation
+
+- REST API
+
+- SPA
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
 ## node
 ### nodejs_part1
 - Node.js란
@@ -1507,114 +1611,6 @@
 
 ## monitoring
 - Java Application monitoring
-
-<br/>
-<br/>
-
-<br/>
-<br/>
-
-# javascript
-## JavaScript_part1
-- 브라우저 & JS의 역사
-
-- 소개
-
-- 기초
-
-- 변수의 선언
-
-- 타입
-
-- 연산자
-
-- 제어문
-
-- 자료구조
-
-<br/>
-<br/>
-
-## JavaScript_part2
-- 함수
-
-- 프로토타입
-
-<br/>
-<br/>
-
-## JavaScript_part3
-- this
-
-- 스코프
-
-- 실행 컨텍스트와 JavaScript 동작 원리
-
-- 클로저
-
-<br/>
-<br/>
-
-## JavaScript_part4
-- JavaScript 객체 지향 프로그래밍
-
--  빌트인 객체
-
-- 전역 객체
-
-- 각종 객체
-
-<br/>
-<br/>
-
-## JavaScript_part5
-- 정규표현식
-
-- 배열
-
-- DOM
-
-<br/>
-<br/>
-
-## JavaScript_part6
-- 이벤트
-
-- 비동기식 처리 모델과 ajax
-
-<br/>
-<br/>
-
-## JavaScript_part7
-- 프로미스
-
-- async&await
-
-- 예외처리
-
-- 클래스
-
-- 모듈
-
-<br/>
-<br/>
-
-## JavaScript_part8
-- strict mode
-
-- ECAMAScript6
-
-<br/>
-<br/>
-
-## JavaScript_part9
-- ECMAScript
-
-- Device Orientation
-
-- REST API
-
-- SPA
 
 <br/>
 <br/>
