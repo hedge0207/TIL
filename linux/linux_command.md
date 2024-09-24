@@ -515,34 +515,32 @@
   
   # 종료
   $ kill -9 <프로세스 id>
-```
 
 
 
 - 실행중인 프로세스 확인
 
   - `ps` 명령어(Process Status의 약자)를 사용한다.
-  - 옵션
     - `-e`: 모든 프로세스를 출력한다.
     - `-f`: 모든 포맷을 보여준다.
     - `-l`: 긴 포맷으로 보여준다.
     - `-p`: 특정 PID의 프로세스를 보여준다.
     - `-u`: 특정 사용자의 프로세스를 보여준다.
-
+  
   ```bash
   $ ps <옵션>
-```
-
-  - 출력
-    - UID: 실행 유저
-    - PID: 프로세스 ID
-    - PPID: 부모 프로세스 ID
-    - C: CPU 사용량
-    - STIME: Start Time
-    - TTY: 프로세스 제어 위치
-    - TIME: 구동 시간
-    - CMD: 실행 명령어
-
+  ```
+  
+    - 출력
+      - UID: 실행 유저
+      - PID: 프로세스 ID
+      - PPID: 부모 프로세스 ID
+      - C: CPU 사용률(%)
+      - STIME: Start Time
+      - TTY: 프로세스 제어 위치
+      - TIME: 구동 시간
+      - CMD: 실행 명령어
+  
   ```bash
   UID        PID  PPID  C STIME TTY          TIME CMD
   root     13723 13008  1 Sep26 ?        08:43:35 python3.7 /svc/main.py
@@ -1126,7 +1124,8 @@
 
   - 다른 서버에 위치한 directory와 file을 일반 SSH 연결을 통해 client가 mount할 수 있게 하는 파일 시스템이다.
     - FUSE(Filesystem in Userspace)를 기반으로 한다.
-
+    - Linux에서는 일반적으로 `/mnt` 경로에 mount한다.
+    
   - 설치
   
   ```bash
@@ -1138,6 +1137,21 @@
   
   ```bash
   $ sshfs <user>@<remote_IP>:<remote_path> <local_path>
+  ```
+  
+  - 읽기 전용으로 마운트하기
+    - `-o ro` 옵션을 주면 읽기 전용으로 마운트가 가능하다.
+  
+  ```bash
+  $ ssfs -o ro <user>@<remote_IP>:<remote_path> <local_path>
+  ```
+  
+  - 원격 서버 접속 시 비밀번호가 필요할 경우, 아래와 같이 한 번에 실행할 수 있다.
+    - `sshpass` 등의 package가 있으면 보다 깔끔하게 실행할 수 있으나, 만약 패키지 설치가 불가능할 경우 아래 방법을 시도해보면 된다.
+    - 모든 시스템에서 동작하지는 않는다.
+  
+  ```bash
+  $ sshfs -o password_stdin <user>@<remote_IP>:<remote_path> <local_path> <<< '<password>'
   ```
   
   - Mount 해제하기
@@ -1159,6 +1173,26 @@
   ```bash
   $ fusermount -u <mount_path>
   ```
+  
+  - Python으로 실행하기
+  
+  ```python
+  import subprocess
+  
+  command = ["sshfs", "user@remote_IP:/remote_path", "/local_path"]
+  subprocess.run(command, check=True)
+  
+  # read only로 설정
+  command = ["sshfs", "-o", "ro", "user@remote_IP:/remote_path", "/local_path"]
+  res = subprocess.run(command, check=True)
+  
+  # password 입력
+  command = ["sshfs", "-o", "password_stdin", "user@remote_IP:/remote_path", "/local_path"]
+  # input에 password를 encoding한 값을 넣어준다.
+  subprocess.run(command, input="password".encode(), check=True)
+  ```
+
+
 
 
 
