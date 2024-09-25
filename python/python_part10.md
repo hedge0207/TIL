@@ -37,8 +37,6 @@
 
 
 
-
-
 - Log를 file에 작성하기
 
   - `basicConfig`를 사용하여, log를 file에 작성할 수 있다.
@@ -171,22 +169,48 @@
 
   - Log message를 handler에 설정된 목적지까지 보내는 역할을 한다.
 
+    - Handler는 개발자가 직접 instance를 생성하는 식으로 사용하지 않고, logger에 설정해줄 handler를 custom하기 위해 사용된다.
+
   - Handler가 처리할 수 있는 목록들
 
     > https://docs.python.org/3.10/howto/logging.html#useful-handlers 에서 전체 목록을 확인 가능하다.
-
+  
     - `StreamHandler`: Log를 stream으로 보낸다.
     - `FileHandler`: Log를 file로 보낸다.
     - `RotatingFileHandler`: Log를 file로 보내되 log file의 최대 크기를 설정하여 해당 크기가 넘어갈 경우 log file이 교체되도록 설정할 수 있다.
     - `TimeRotatingFileHandler`: Log를 file로 보내되, 특정 시간 간격으로 log file이 교체되도록 설정할 수 있다.
-
+    - `WatchedFileHandler`: log file이 외부적으로 변경되었을 때 이를 감지하고, 새로운 파일을 열어 log를 기록한다.
+  
   - Handler를 설정하는 method들
-
+  
     - `setLevel()`: Logger object와 마찬가지로, 처리할 log의 최소 level을 설정한다. Logger에 설정해준 level과 다를 수 있으며, 따라서 logger에서는 처리된 log가 handler에서는 처리되지 않을 수 있다.
     - `setFormatter()`: Formatter object를 설정한다.
     - `addFilter()`, `removeFilter()`: Filter object를 설정하거나 설정에서 제거한다.
-
-  - Handler는 개발자가 직접 instance를 생성하는 식으로 사용하지 않고, logger에 설정해줄 handler를 custom하기 위해 사용된다.
+  
+  - `WatchedFileHandler` 예시
+    - 아래와 같이 실행했을 때, `./my_app.log`파일을 삭제하거나, 파일 이름을 변경하면, `WatchedFileHandler`는 새로운 `./my_app.log` 파일을 생성하여 다시 log를 작성한다.
+  
+  ```python
+  import time
+  import logging
+  from logging.handlers import WatchedFileHandler
+  
+  logger = logging.getLogger('my_logger')
+  logger.setLevel(logging.INFO)
+  
+  handler = WatchedFileHandler('./my_app.log')
+  logger.addHandler(handler)
+  
+  while 1:
+      logger.info('This is a log message')
+      time.sleep(1)
+  ```
+  
+  - `RotatingFileHandler`와 `WatchedFileHandler`의 차이
+    - `RotatingFileHandler` 혹은 `TimeRotatingFileHandler`는 `WatchedFileHandler`와는 달리 작성 중인 log 파일에 변경 사항이 생긴다고 해서 새로운 파일을 생성하지는 않는다.
+    - 대신, 각기 파일 크기와 시간에 따라서 기존 로그 파일을 백업하고 새로운 로그 파일을 생성하여 로그를 작성한다.
+    - 따라서 두 handler는 사용 목적이 다르다.
+    - `WatchedFileHandler`의 경우 logrotate와 같은 외부 툴을 통해 log file을 관리하고자 할 때 적합하고, `RotatingFileHandler`와 `TimeRotatingFileHandler` 는 외부 툴을 사용하지 않고도 로그 파일의 크기가 커지는 것을 방지하고자 할 때 적합하다.
 
 
 
