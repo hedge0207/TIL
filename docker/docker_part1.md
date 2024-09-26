@@ -860,9 +860,26 @@
 - `docker stats`
 
   - Container 별 resource 사용량을 보여준다.
-
+  - 옵션
+    - `--all`, `-a`: 모든 컨테이너의 상태를 보여준다.
+    - `--format`: Go 템플릿을 통해 format을 설정할 수 있다.
+    - `--no-stream`: 명령어 실행 시점의 상태를 보여준다.
+    - `--no-trunc`: 결과를 잘라내지 않고 전부 보여준다.
+  
   ```bash
   $ docker stats
+  ```
+  
+  - 결과
+    - `NET I/O`: 컨테이너가 네트워크 인터페이스를 통해 주고 받은 데이터의 양
+    - `BLOCK I/O`: 컨테이너가 disk에서 읽고 쓴(read and write) 데이터의 양
+  
+  ```
+  CONTAINER ID   NAME           CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O         PIDS
+  34ac359a659b   container1     0.00%     41.64MiB / 125.6GiB   0.03%     392kB / 15.1MB    0B / 0B           49
+  d71698367f39   container2     0.23%     227.7MiB / 125.6GiB   0.18%     168MB / 68.7MB    8.19kB / 0B       62
+  d62202653708   container3	  0.19%     59.24MiB / 125.6GiB   0.05%     27.7MB / 11MB     4.1kB / 8.19kB    13
+  4b6e5264a8f2   container4	  0.54%     368.5MiB / 125.6GiB   0.29%     2.98GB / 4.09GB   4.1kB / 0B        19
   ```
 
 
@@ -1128,14 +1145,39 @@
     - `--read-only=[true|false]`: 컨테이너의 파일 시스템을 읽기 전용으로 만든다.
     - `-w(--workdir)=경로`: 컨테이너의 작업 디렉토리를 지정한다.
     - `-u(--user)=사용자명`: 사용자명 또는 UID를 지정한다.
-  - 주의점
-    - restart 옵션은 되도록 지정해주는 것이 좋다.
+  
+  - 권한 관련 설정
+  
+    > https://docs.docker.com/engine/containers/run/#runtime-privilege-and-linux-capabilities
+  
+    - `--cap-add`: Linux capability를 추가한다.
+    - `--cap-drop`: Linux capability를 제거한다.
+    - `--privileged`: Container에게 host machine의 모든 capability와 device에 접근할 수 있는 권한을 준다.
+    - `--device=[]`: Container에게 host machine의 device에 접근할 수 있는 권한을 준다.
+  
+  - restart 옵션은 되도록 지정해주는 것이 좋다.
     - 만일 Docker client자체가 내려갈 경우 Docker client를 재실행했을 때, restart 옵션을 주지 않은 컨테이너들을 자동으로 재생성되지 않기 때문이다.
     - 물론 수동으로 띄워도 되지만 만일 A, B, C 컨테이너가 하나의 서비스를 구성하고 있고, B, C 컨테이너가 A 컨테이너에 의존적이라 A 컨테이너가 정상적으로 떠있어야 B, C도 동작하는 경우에 문제가 생길 수 있다.
     - A에 restart 옵션이 없다면 Docker client가 재실행되면서 B, C는 자동으로 다시 생성되지만 A는 재생성되지 않아 B, C도 Error가 발생하는 경우가 있을 수 있기 때문이다.
     - 정확히는 위와 같이 복수의 컨테이너가 하나의 서비스를 구성하고 있을 경우 "restart 옵션을 설정해주는 것이 좋다"기 보다 하나의 서비스를 구성하고 있는 컨테이너들은 restart 설정을 맞춰주는 것이 좋다.
   - `publish` 옵션
     - `-p(--publish)[호스트의 포트 번호]:[컨테이너의 포트 번호]`는 컨테이너 외부의 `host:port`를 컨테이너 내부의 `host:port`와 연결하겠다는 의미이다.
+
+
+
+- `--privileged` 옵션 관련 주의 사항
+  - `--privileged` 옵션은 container에게 아래와 같은 capability를 준다.
+    - 모든 Linux kernel capability
+    - default seccomp profile 비활성화
+    - default AppArmor profile 비활성화
+    - SELinux process label 비활성화
+    - Host machine의 모든 device에 대한 접근 권한
+    - `/sys`를 읽고 쓸 수 있는 권한
+    - cgroups mounts read-write
+  - `--privileged` 옵션은 운영 환경에서는 사용하지 않는 것이 좋다.
+    - `--privileged` 옵션은 host machine이 할 수 있는 거의 모든 권한을 부여 받는다.
+    - 이 옵션은 container에게 과한 권한을 주기에 예상치 못한 문제가 발생할 수 있다.
+    - 따라서 운영 환경에서는 container에 필요한 권한만 `--cap-add` 혹은 `--device`를 통해 부여해야한다.
 
 
 
@@ -1206,7 +1248,8 @@
 - 컨테이너에 연결하기
 
   - 정확히는 host machin의 표준 입력(stdin)과 표준 출력(stdout), error stream을 실행중인 container에 연결하는 명령어이다.
-  - Host machine의 stdin, stdout, error stream이 container의 root process에 연결되는 형식이다.
+    - Host machine의 stdin, stdout, error stream이 container의 root process에 연결되는 형식이다.
+  
   - Container를 실행했을 때의 환경이 foreground로 보이게 된다.
   
   ```bash
@@ -1220,12 +1263,12 @@
   - 가동 중인 컨테이너에서 새로운 프로세스를 실행
     - 백그라운드에서 실행되고 있는 컨테이너에 액세스하고자 할 때는 attach  명령으로 연결해도 쉘이 작동하지 않는 경우 명령을 접수할 수 없다.
     - 따라서 아래 명령어를 입력하여 임의의 명령을 실행한다.
-  - `-d(--detach)`: 명령을 백그라운드에서 실행한다.
-  - `-i(--interactive)`: 컨테이너의 표준 입력을 연다.
-    - 이를 통해 attach되어 있지 않아도 container의 stdin에 접근할 수 있게 되어, container 내부에 명령어를 입력할 수 있게 된다.
+  - 옵션
+    - `-d(--detach)`: 명령을 백그라운드에서 실행한다.
+    - `-i(--interactive)`: 컨테이너의 표준 입력을 연다. 이를 통해 attach되어 있지 않아도 container의 stdin에 접근할 수 있게 되어, container 내부에 명령어를 입력할 수 있게 된다.
+    - `-t(--tty)`: tty 디바이스를 사용한다.
+    - `-u(--user)`: 사용자명을 지정한다.
   
-  - `-t(--tty)`: tty 디바이스를 사용한다.
-  - `-u(--user)`: 사용자명을 지정한다.
   
   ```bash
   $ docker exec [옵션] <컨테이너 식별자> <실행할 명령> [인수]
