@@ -10,10 +10,10 @@
     - 단순하게 말해서, `__iter__`, `__next__` 메서드를 지닌 객체를 말한다. 
   - `range`는 이터레이터를 생성하는 함수로, `range(10)`은 실제로 10개의 숫자를 생성하는 것이 아니라 이터레이터를 생성하는 것이다.
     - 이터레이터만 미리 생성하고 값이 필요한 시점이 되었을 때 값을 만든다.
-    - 이처럼 데이터 생성을 뒤로 만드는 방식을 **지연평가**(lazy evaluation)라 한다.
+    - 이처럼 데이터 생성을 뒤로 미루는 방식을 **지연평가**(lazy evaluation)라 한다.
   - 시퀀스 객체와의 차이
     - 시퀀스 객체는 기본적으로 반복 가능한 객체에 포함된다.
-    - 둘의 차이는 시퀀스 객체는 이터러블한 객체 중에서도 순서가 보장되는 객체라는 것이다.
+    - 단, 시퀀스 객체는 이터러블한 객체 중에서도 순서가 보장되는 객체만을 의미한다.
   - 이터레이터와 이터러블의 차이
     - 이터러블은 반복 가능한 객체를 의미하며 `__iter__` 메서드만 가지고 있으면 이터러블이다.
     - 이터레이터는 값을 차례대로 꺼낼 수 있는 객체를 의미하며 `__iter__`메서드와 `__next__`메서드를 가지고 있으면 이터레이터이다.
@@ -60,7 +60,7 @@
     - 반복할 때마다 이터레이터에서 `__next__`를 통해 반복을 수행한다.
     - 더 이상 꺼낼 것이 없으면  `StopIteration` 예외가 발생하고 반복이 종료된다.
     - `range`뿐 아니라 모든 이터레이터에 적용된다.
-  - `__iter__`와 `__next__`를 가진 객체를 이터레이터 프로토콜을 지원한다고 말한다.
+  - `__iter__`와 `__next__`를 가진 객체를 "이터레이터 프로토콜을 지원하는 객체"라고 말한다.
 
 
 
@@ -192,6 +192,8 @@
 
 
 
+
+
 ## 제너레이터
 
 - 제너레이터
@@ -204,10 +206,10 @@
 
 
 
-- yield
+- `yield`
 
   - 제네레이터를 만들기 위한 Python keyword
-    - yield는 ''양보하다''라는 뜻도 가지고 있는데, 함수 바깥으로 전달하면서 코드 실행을 함수 바깥에 양보한다는 의미에서 yield를 키워드로 지정한 것이다.
+    - yield는 ''양보하다''라는 뜻도 가지고 있는데, 함수 바깥으로 전달하면서 코드 실행을 함수 바깥에 양보한다는 의미에서 `yield`를 키워드로 지정한 것이다.
   - 함수 안에서 yield를 사용하면 함수는 제너레이터가 되며, yield에는 값을 지정한다.
     - `number_generator` 함수를 호출하면 **제터레이터 객체가 반환**된다(함수가 실행되는 것이 아니다).
     - 제네레이터는 `__next__` 메서드가 호출될 때마다 yield 까지 코드를 실행하며, yield에서 값을 발생시킨다.
@@ -247,9 +249,9 @@
   # [..., '__iter__', ..., '__next__', ...]
   ```
 
-  - yield와 return
-    - yield도 제너레이터 함수 끝까지 도달하면 `StopIteration`이 발생한다.
-    - return도 마찬가지로 중간에 return이 될 경우 `StopIteration`이 발생한다.
+  - `yield`와 `return`
+    - `yield`도 `next` 함수와 마찬가지로 제너레이터 함수 끝까지 도달하면 `StopIteration` exception이 발생한다.
+    - `return`도 마찬가지로 중간에 return이 될 경우 `StopIteration` exception이 발생한다.
 
   ```python
   def number_generator():
@@ -318,7 +320,7 @@
     - 바깥쪽 호출자와 가장 안쪽에 있는 하위 제너레이터 사이에 양방향 채널을 열어주는 역할을 한다.
   - `yield from` 관련 용어
     - 대표 제너레이터(delegating generator): `yield from <반복형>`을 담고 있는 제너레이터 함수, 즉 다른 제너레이터를 호출하는 제너레이터.
-    - 하위 제너레이터(subgenerator): yield from 표현식 중 <반복형> 가져오는 제너레이터.
+    - 하위 제너레이터(subgenerator): `yield from` 표현식 중 <반복형> 가져오는 제너레이터.
     - 호출자(caller): 대표 제너레이터를 호출하는 코드.
   - `yield from`의 동작 원리
     - `yield from`은 뒤에 오는 반복자의 `iter` 메서드를 호출한다.
@@ -361,7 +363,7 @@
   '''
   ```
   
-  - `yield from`에 제네레이터 객체도 지정이 가능하다.
+  - `yield from` 뒤에 제네레이터 객체도 지정이 가능하다.
   
   ```python
   def number_generator(end):
@@ -427,7 +429,7 @@
           try:
               _s = yield _y
           # 대표 제너레이터와 하위 제너레이터의 종료를 처리한다.
-          except GenerationExit as _e:
+          except GeneratorExit as _e:
               try:
                   _m = _i.close
               # 모든 반복형이 하위 제너레이터가 될 수 있으므로, 하위 제너레이터에 close()메서드가 없을 수 있다.
@@ -459,7 +461,7 @@
           else:
               try:
                   # 마지막으로 호출자로부터 받은 값이 None이면 next 호출
-                  if _s in None:
+                  if _s is None:
                       _y = next(_i)
                   # 아니면 send를 호출한다.
                   else:
@@ -469,6 +471,10 @@
                   break
   RESULT = _r
   ```
+
+
+
+
 
 
 
@@ -496,7 +502,7 @@
 
 
 - 코루틴
-  - cooperative routine의 약어로 서로 협력하는 루틴이다.
+  - Cooperative routine의 약어로 서로 협력하는 루틴이다.
     - 메인 루틴과 서브 루틴처럼 종속된 관계가 아니라 서로 대등한 관계이며 특정 시점에 상대의 코드를 실행한다.
     - 메인루틴-서브루틴과 마찬가지로 한 루틴이 실행되는 동안 다른 루틴은 대기상태에 있게 된다.
   
@@ -521,8 +527,8 @@
 
 - 코루틴에 값 보내기
 
-  - 코루틴에 값을 보내면서 코드를 실행할 때는 `send` 메서드를 사용한다.
-    - 값을 받아오는 yield에는 괄호를 씌워야 한다고 하는데, 안씌워도 동작한다(무슨 차이가 있는지 모르겠다).
+  - 코루틴에 값을 보낼때는 `send` 메서드를 사용한다.
+    - `yield`와 그 뒤의 값에 괄호를 씌울 경우 연산 우선순위를 조정 가능하다(예를 들어 `yield x + y`와 `(yield x) + y`는 다르다).
   
   
   ```python
@@ -544,8 +550,8 @@
   
   - 실행 과정
     - 메인 루틴에서 코루틴을 생성하고 `next()`를 통해 코루틴을 실행한다.
-    - while문이 실행되고 `yield` 키워드를 만나면서 메인루틴에 실행을 넘겨준다.
-    - `send()`를 통해 코루틴에 값을 보내고, num이 print된후 다시 반복문을 돌아 `yield` 키워드를 만나면서 메인루틴에 실행을 넘겨준다.
+    - `while`문이 실행되고 `yield` 키워드를 만나면서 메인루틴에 실행을 넘겨준다.
+    - `send()`를 통해 코루틴에 값을 보내고, num이 출력된후 다시 반복문을 돌아 `yield` 키워드를 만나면서 메인루틴에 실행을 넘겨준다.
 
 
 
@@ -553,8 +559,8 @@
 
   - 코루틴은 기동(primming) 과정이 필요하다. 
     - 즉, 코루틴 객체를 생성하고 난 후, `next`를 통해 코루틴이 호출자로부터 값을 받을 수 있도록 처음 나오는 `yield`문까지 실행을 진행하는 과정이 필요하다.
-  - 만일 기동 과정 없이 `send`를 호출하면 error가 발생하는데, 이는 data를 받아올 `yield`문이 아직 실행되지도 않았기 때문이다.
-  - decorator를 통해서 코루틴 생성 시에 자동으로 기동이 되게 할 수 있다.
+    - 만일 기동 과정 없이 `send`를 호출하면 error가 발생하는데, 이는 data를 받아올 `yield`문이 아직 실행되지도 않았기 때문이다.
+  - Decorator를 통해서 코루틴 생성 시에 자동으로 기동이 되게 할 수 있다.
     - 단, 모든 코루틴이 이러한 방식으로 기동되는 것 만은 아니라는 것을 염두에 두어야 한다.
     - 예를 들어 `yield from`은 뒤에 오는 코루틴이 기동된 적 없다고 가정하고 자동으로 기동을 시킨다(따라서 아래와 같이 decorator를 사용하면 2번 기동된다).
   
@@ -613,10 +619,10 @@
 
   - 코루틴의 종료
     - 코루틴은 아래의 두 가지 경우에 종료된다.
-    - `close` 메서드를 호출하는 경우
+    - `close()` 메서드를 호출하는 경우
     - 해당 객체에 대한 참조가 모두 사라져 GC 되는 경우
   
-  - `close` 메서드를 통해 코루틴을 종료할 수 있다.
+  - `close()` 메서드를 통해 코루틴을 종료할 수 있다.
     - Python 스크립트가 끝나도 코루틴이 자동으로 종료된다.
   
   ```python
@@ -636,7 +642,7 @@
   ```
   
   - `GeneratorExit` 예외처리하기
-    - 코루틴 객체에서 close 메서드를 호출하면 코루틴이 종료될 때 `GeneratorExit ` 예외가 발생한다.
+    - 코루틴 객체의 `close()` 메서드를 호출하면 코루틴이 종료될 때 `GeneratorExit ` 예외가 발생한다.
   
   ```python
   def number_coroutine():
@@ -659,7 +665,7 @@
   
   - 코루틴 안에서 예외 발생시키기
     - 코루틴 안에서 예외를 발생시켜 코루틴 종료하기
-    - `throw` 메서드를 사용한다.
+    - `throw()` 메서드를 사용한다.
   
   ```python
   def sum_coroutine():
@@ -686,8 +692,8 @@
 - 코루틴의 반환값 가져오기
 
   - Python 3.3부터 코루틴이 값을 반환하는 기능이 추가되었다.
-  - 코루틴이 종료되면 StopIteration 예외가 발생한다.
-    - return 문이 반환하는 값은 StopIteration 예외의 속성이 담겨 호출자에게 전달된다.
+  - 코루틴이 종료되면 `StopIteration` 예외가 발생한다.
+    - `return` 문이 반환하는 값은 `StopIteration` 예외의 속성이 담겨 호출자에게 전달된다.
 
   ```python
   from itertools import count
@@ -840,7 +846,7 @@
   DEPARTURE_INTERAVAL = 5
   
   
-  # time is the simulation time when the event occurs, proc is the number of the taxi process instance, and action is a string describing the activity
+  # time은 event가 발생했을 때의 시간을 의미하고, proc은 taxi process instance의 번호를 의미하며, action은 활동 내용을 의미한다.
   Event = collections.namedtuple('Event','time proc action')
   
   # 각 텍시마다 한 번씩 호출되어 택시의 행동을 나타내는 제너레이터 객체를 생성한다.
@@ -891,10 +897,11 @@
           :param end_time: only one parameter needs to be specified for the end time
           :return:
           '''
+          # 각 taxi의 첫 번째 event를 events에 추가한다.
           for _, proc in sorted(self.procs.items()):
               # 코루틴을 기동한다.
               first_event = next(proc)
-              # 기동시에 생성된 이벤트(leave garage)를 우선순위큐에 저장한다.
+              # 기동시에 생성된 이벤트(leave garage)를 우선순위큐에 추가한다.
               self.events.put(first_event)
   
           sim_time = 0
@@ -955,9 +962,9 @@
 
 
 
-- generator based coroutine
+- Generator based coroutine
   - 위와 같이 generator를 통해 만든 coroutine을 generator base coroutine이라 부른다.
-  - async, await가 공식 문법으로 채택된 python 3.7 부터는 굳이 사용하지 않는 방식이다.
+  - `async`, `await`가 공식 문법으로 채택된 python 3.7 부터는 굳이 사용하지 않는 방식이다.
   - Python 3.10에서 삭제되었다.
 
 
@@ -993,13 +1000,13 @@
 
 
 - Python과 async
-  - async
+  - `async`
     - 비동기적으로 동작하는 함수를 만들 수 있게 해주는 Python keyword.
     - 코루틴(제너레이터)를 보다 쉽게 작성할 수 있도록 해주는 일종의 문법적 설탕이다.
     - Python 3.4에서 asyncio라는 비동기 처리를 위한 라이브러리가 표준 라이브러리로 채택되었다.
     - Python 3.5에서 async/await가 문법으로 채택되었다.
   - 코루틴과 async
-    - async 키워드를 사용하여 비동기처리를 하는 함수를 코루틴이라 부른다.
+    - `async` 키워드를 사용하여 비동기처리를 하는 함수를 코루틴이라 부른다.
     - Python에는 제네레이터 기반의 코루틴이 있으므로 async 기반의 코루틴과 구분하기 위해 async 기반의 코루틴을 네이티브 코루틴이라 부른다.
 
 
@@ -1055,7 +1062,7 @@
   - `yield from`을 보다 쉽게 작성해 줄 수 있도록 하는 문법적 설탕이다.
     - Python 3.5부터 사용 가능하다.
     - 이전 버전에서는 `yield from` 뒤에 generator를 두는 방식으로 사용했다면, `await` 키워드는 뒤에 코루틴 객체(뿐 아니라 `__await__` 메서드가 구현된 awaitable한 객체)를 두는 방식으로 사용한다.
-  - async로 생성한 코루틴 함수 내에서만 사용이 가능하다.
+  - `async`로 생성한 코루틴 함수 내에서만 사용이 가능하다.
   
   ```python
   import asyncio
@@ -1100,7 +1107,7 @@
   import time
   import asyncio
   
-  async def count_number_sync(n):
+  async def count_number_async(n):
       for i in range(1, n+1):
           print(i, '/', n)
           await asyncio.sleep(0.5)
@@ -1108,8 +1115,8 @@
   async def process_async():
       start = time.time()
       await asyncio.wait([
-          asyncio.create_task(count_number_sync(5)),
-          asyncio.create_task(count_number_sync(5))
+          asyncio.create_task(count_number_async(5)),
+          asyncio.create_task(count_number_async(5))
       ])
       print(time.time() - start)	# 2.5044925212860107
   
@@ -1147,11 +1154,10 @@
     - `add_done_callback()`으로 call back 함수를 등록할 수 있다.
 
   - `asyncio.Future`를 사용하여 유사 Semaphore 구현
-
-    - `asyncio.Future`를 사용하면 busy wating 방식을 사용하지 않고도 polling이 가능한 Semaphore를 구현할 수 있다.
-
-    - `asyncio.Future` 객체 생성시에 ``asyncio.Future()`와 같이 객체를 직접 생성하는 방식보다, 아래의 `loop.create_future()`와 같이 생성하는 것이 권장된다.
-
+  - `asyncio.Future`를 사용하면 busy wating 방식을 사용하지 않고도 polling이 가능한 Semaphore를 구현할 수 있다.
+    
+  - `asyncio.Future` 객체 생성시에 `asyncio.Future()`와 같이 객체를 직접 생성하는 방식보다, 아래의 `loop.create_future()`와 같이 생성하는 것이 권장된다.
+  
   ```python
   from datetime import datetime
   from collections import deque
@@ -1219,7 +1225,7 @@
     - `__step()` 메서드는 `Task` 객체에 저장된 코루틴 객체를 사용하여 해당 코루틴을 실행시키는 메서드이다.
     - Eventloop는 적절한 때가 되면  `__step()` 메서드를 호출하고, 코루틴이 실행된다.
 
-    - 코루틴이 실행되다가 `await` keywor을 만나게 되면 또 다른 코루틴을 실행시키게 되고, 그 코루틴 안에서 또 다른 코루틴을 실행시키면서 코루틴 체인이 형성될 수 있다.
+    - 코루틴이 실행되다가 `await` keyword를 만나게 되면 또 다른 코루틴을 실행시키게 되고, 그 코루틴 안에서 또 다른 코루틴을 실행시키면서 코루틴 체인이 형성될 수 있다.
 
     - 코루틴이 실행되다가 I/O 관련 코루틴을 만나게 되면, 자신의 실행을 중단하고 이후의 실행을 예약한 뒤 Eventloop에 제어권을 넘긴다.
     - 제어권을 넘겨 받은 Eventloop는 예약된 코루틴 중 우선 순위가 높은 것을 선택하여 이를 실행시킨다.
@@ -1234,11 +1240,13 @@
     - 3.7 이후부터는 `asyncio.run()`만으로 간단하게 실행할 수 있지만, 아래 코드가 동작 과정을 더 잘 보여주므로, 아래 코드를 가지고 설명한다.
 
   ```python
+  import asyncio
+  
   loop = asyncio.get_event_loop()
   loop.run_until_complete(first_coroutine())
   loop.close()
   ```
-
+  
   - `get_event_loop()`
     - 현재 스레드에 설정된 Eventloop를 반환하는 함수로, 만약 설정된 Eventloop가 없다면, 새로 생성하여 이 스레드에 설정한 뒤 반환한다.
   - `run_until_complete(coroutine)`
@@ -1267,7 +1275,7 @@
 
 - `asyncio.create_task()`
 
-  - 코루틴을 실행시키는 방법은 대략적으로 세 가지이다.
+  - 코루틴을 실행시키는 방법은 대표적으로 세 가지가 있다.
     - `await` keyword 사용
     - `asyncio.run()`
     - `asyncio.create_task()`
@@ -1278,10 +1286,16 @@
   - 여러 task의 동시적인 실행을 위해서는 `asyncio.create_task()` 메서드를 사용해야한다.
     - `create_task()` 메서드는 `coroutine` 객체를 인자로 받아 이를 이용하여 `Task` 객체를 생성하고 반한환다.
     - 이 때 해당 task의 실행이 Eventloop에 예약된다.
-  - `asyncio.gather()`
-    - `Future` 객체(`Task` 객체 포함)들이 완료 상태가 될 때까지 기다리는 함수이다.
+
+
+
+
+- `asyncio.gather()`
+
+  - `Future` 객체(`Task` 객체 포함)들이 완료 상태가 될 때까지 기다리는 함수이다.
     - 인자로 여러 개의 awaitable 객체를 받을 수 있으며, `coroutine` 객체를 받을 경우 자동으로 `Task` 객체로 warpping도 시켜준다.
     - 인자로 받은 모든 awaitable 객체들이 완료되면 그것들의 결과 값들을 list 형태로 반환한다.
+
   - 예시
 
   ```python
@@ -1309,7 +1323,7 @@
 
   - 위 코드의 실행 과정은 아래와 같다.
     - 1번에 의해 Task 0가 생성되고, 실행이 Eventloop에 예약된다.
-    - Eventloop에 예약된 task가 없으므로 바로 실행되고, `main()` 코루틴이 실행된다.
+    - Eventloop에 기존에 예약되어 있던 task가 없으므로, 새로 예약된 task가 바로 실행되어 `main()` 코루틴이 실행된다.
     - 2번에 의해서 Task1과 Task2가 생성되고, 실행이 Eventloop에 예약된다.
     - 3번에서 `asyncio.gather()` 메서드가 실행되면서 Task0가 Task 1이 완료될 때까지 제어권을 Eventloop에게 넘기고 대기한다.
     - Eventloop가 Task1을 실행한다.
