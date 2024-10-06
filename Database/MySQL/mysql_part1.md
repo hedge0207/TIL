@@ -958,6 +958,175 @@
 
 ## MYSQL 내장 함수
 
+- 제어 흐름 함수
+
+  - 프로그램의 흐름을 제어할 때 사용한다.
+
+  - IF(수식, 참, 거짓)
+
+  ```sql
+  SELECT IF (100>200, '참', '거짓')
+  ```
+
+  - IFNULL(수식1, 수식2)
+    - 수식1이 NULL이 아니면 수식1이 반환되고, 수식1이 NULL이면 수식2가 반환된다.
+    - 아래 예시에서, 첫 번째는 "널입니다."가 출력되고, 두 번째는 1이 출력된다.
+
+  ```sql
+  SELECT IFNULL(NULL, '널입니다.'), IFNULL(1, '널입니다.')
+  ```
+
+  - NULLIF(수식1, 수식2)
+    - 수식1과 수식2가 같으면 NULL을 반환하고, 다르면 수식1을 반환한다.
+    - 아래 예시에서 첫 번째는 NULL이 반환되고, 두 번째는 200이 반환된다.
+
+  ```sql
+  SELECT NULLIF(100, 100), NULLIF(200,100)
+  ```
+
+  - CASE ~ WHEN ~ ELSE ~ END
+    - CASE는 내장 함수는 아니며, 연산자(operator)로 분류된다.
+
+  ```sql
+  SELECT CASE 10
+              WHEN 1 THEN '일'
+              WHEN 5 THEN '오'
+              WHEN 7 THEN '칠'
+              ELSE '그 외'
+         END AS 'CASE 연습';
+  ```
+
+
+
+- 문자열 함수
+
+  - ASCII(문자)
+    - 문자의 아스키 코드 값을 돌려준다.
+
+  ```sql
+  SELECT ASCII('A');	-- 65
+  ```
+
+  - CHAR(숫자)
+    - 숫자의 아스키 코드값에 해단하는 문자를 반환한다.
+
+  ```sql
+  SELECT CHAR(65); -- A
+  ```
+
+  - BIT_LENGTH(문자열), CHAR_LENGTH(문자열), LENGTH(문자열)
+    - BIT_LENGTH는 할당된 bit 크기를 반환한다.
+    - CHAR_LENGTH는 문자열의 문자 개수를 반환한다.
+    - LENGTH는 문자열에 할당된 byte 수를 반환한다.
+
+  ```sql
+  SELECT CHAR_LENGTH('abc');
+  ```
+
+  - CONCAT(문자열1, 문자열2), CONCAT_WS(구분자, 문자열1, 문자열2)
+    - 문자열을 이어준다.
+    - CONCAT_WS는 구분자를 사이에 넣어 문자열을 이어준다.
+
+  ```sql
+  SELECT CONCAT_WS('-', '2024', '01', '01'); -- 2024-01-01
+  ```
+
+  - LEFT, RIGHT
+    - 왼쪽 또는 오른쪽에서 두 번째 파라미터 만큼 문자열을 반환한다.
+
+  ```sql
+  SELECT LEFT ('abcde', 2); -- ab
+  SELECT RIGHT ('abcde', 2); -- de
+  ```
+
+  - UPPER, LOWER
+    - 모두 대문자로 또는 소문자로 변환한다.
+
+  ```sql
+  SELECT LOWER('ABC'); -- abc
+  ```
+
+  - REVERSE
+    - 문자열의 순서를 뒤집는다.
+
+  ```sql
+  SELECT REVERSE('123'); -- 321
+  ```
+
+  - SUBSTRING(문자열, offset, limit)
+    - 문자열의 offset부터 limit만큼 문자를 반환한다.
+    - limit이 생략될 경우 끝까지 반환한다.
+
+  ```sql
+  SELECT SUBSTRING('ABCDE', 2, 2); -- BC
+  ```
+
+
+
+- 수학 함수
+
+  - ABS
+    - 숫자의 절댓값을 반환한다.
+
+  ```sql
+  SELECT ABS(-1); -- 1
+  ```
+
+  - CELING, FLOOR, ROUND
+    - 각기 올림, 내림, 반올림을 계산한다.
+
+  ```sql
+  SELECT FLOOR(1.6) -- 1
+  ```
+
+
+
+- 날짜 및 시간 함수
+
+  - ADDDATE(날짜, 차이), SUBDATE(날짜, 차이)
+    - 날짜를 기준으로 차이를 더하거나 뺀 날짜를 구한다.
+
+  ```sql
+  SELECT ADDDATE('2024-01-01', INTERVAL 31 DAY);
+  ```
+
+  - CURDATE, CURTIME, NOW, SYSDATE
+    - CURDATE는 현재 날짜, CURTIME는 현재 시간, NOW와 SYSDATE는 현재 날짜와 시간을 반환한다.
+  - DATE, TIME
+    - DATETIME 형식에서 연-월-일 또는 시:분:초만 추출한다.
+
+
+
+- 시스템 정보 함수
+
+  - USER
+    - 현재 사용자를 반환한다.
+
+  - DATABASE
+    - 현재 선택된 DB를 반환한다.
+  - VERSION
+    - 현재 MySQL 버전을 구한다.
+  - SLEEP(초)
+    - Query의 실행을 잠시 멈춘다.
+
+
+
+
+
+# 조인(JOIN) 
+
+- 조인
+  - 두 개 이상의 테이블을 서로 묶어서 하나의 결과 집합으로 만들어 내는 것을 말한다.
+  - 아래와 같은 종류가 있다.
+    - INNER JOIN
+    - OUTER JOIN
+    - CROSS JOIN
+    - SELF JOIN
+
+
+
+- INNER JOIN
+
 
 
 

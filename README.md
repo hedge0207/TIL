@@ -961,7 +961,7 @@
 <br/>
 <br/>
 
-## Elasticsearch_senario
+## elasticsearch_senario
 - ES 클러스터 구축 시나리오
 
 <br/>
