@@ -724,6 +724,17 @@
 - plain highlighter
   - Standard Lucene highlighter를 사용하는 highlighter이다.
   - 단일 fileld에 대해 단일 query를 match 시킬 때는 잘 동작하지만, 많은 document를 대상으로 여러 field에 복잡한 query로 highlight를 적용해야 할 경우 사용하지 않는 것이 좋다.
+  
+  - 동작 방식
+    - Matching된 document에 대해 작은 in-memory index를 생성한다.
+    - In-memory index를 대상으로 original query를 실행하여 low-level의 matching에 대한 정보를 받아온다.
+    - 이 정보를 바탕으로 highlighting을 실행한다.
+    - 이 과정을 matching된 모든 document를 대상으로 실행한다.
+  
+  - 한계
+    - 위 과정을 모든 matching된 모든 document를 대상으로 실행하므로 memory를 많이 사용하게 된다.
+      - 또한 original query를 실행하므로 original  query가 복잡해지 수록 실행에 들어가는 비용도 커진다.
+      - 따라서 많은 field들을 가진 많은 양의 document들을 대상으로 plain highlighter를 사용할 경우 성능이 떨어질 수 있다.
 
 
 
@@ -1233,9 +1244,6 @@
   }
   ```
 
-  
-
-
 
 
 
@@ -1435,6 +1443,87 @@
     - Java의 `BreakIterator`는 각 passage가 `fragment_size`를 초과하지 않는한, 전체 문장이 되도록 쪼갠다.
   - 각 passage의 점수를 BM25로 계산하여 `number_of_fragments` 만큼의 passage를 선정한다.
   - 마지막으로, 각 passage와 일치하는 일치하는 string을 text로부터 추출한다.
+
+
+
+- Highlighting은 오직 반환 대상 문서들을 대상으로만 실행된다.
+
+  - 따라서 highlighting에 문제가 있는 문서가 있다고 하더라도 해당 문서가 반환 대상 문서가 아니라면 error가 발생하지 않는다.
+  - Test를 위한 data를 색인한다.
+    - "foo"를 검색했을 때 둘 다 검색될 수 있도록 두 문서 모두 foo를 포함시킨다.
+
+  ```json
+  // PUT highlighting_test/_doc/1
+  {
+    "text":"foo bar"
+  }
+  
+  // PUT highlighting_test/_doc/2
+  {
+    "text":"foo"
+  }
+  ```
+
+  - Data와 함께 생성된 index의 `index.highlight.max_analyzed_offset` 값을 변경해 1번 문서를 highlighting할 때 error가 발생하도록 조작한다.
+    - 아래와 같이 변경하면 highlighting시에 최대 3개의 chacater까지만 분석 대상으로 하기 때문에 `text` field가 3글자로 이루어진 2번 문서는 문제가 없지만 7글자로 이루어진 1번 문서는 error가 발생하게 된다.
+
+  ```json
+  // PUT highlighting_test/_settings
+  {
+    "index": {
+      "highlight": {
+        "max_analyzed_offset":3
+      }
+    }
+  }
+  ```
+
+  - 두 문서가 모두 반환되도록 highlight를 포함하여 검색을 실행한다.
+    - 아래 query를 실행하면 `text`field의 값의 길이가 `index.highlight.max_analyzed_offset`에 설정된 값을 초과했다는 message와 함께 `search_phase_execution_exception` error가 발생한다.
+
+  ```json
+  // GET highlighting_test/_search
+  {
+      "query": {
+          "match": {
+              "text": "foo"
+          }
+      },
+      "highlight": {
+          "fields": {
+              "text": {}
+          }
+      }
+  }
+  ```
+
+  - 반면에 2번 문서만 반환되도록 highlight를 포함하여 검색을 실행하면 결과는 정상적으로 나온다.
+    - `size`를 1로 주면 tf값이 더 커 점수가 커진 2번 문서가 반환되며, highlgiht가 error 없이 정상 실행되는 것을 볼 수 있다. 
+    - 아래에서는 `size`를 조절했지만, `sort` 등 반환 문서를 변경하는 어떤 조작이든 마찬가지다.
+
+  ```json
+  // GET highlighting_test/_search
+  {
+      "size":1,
+      "query": {
+          "match": {
+              "text": "foo"
+          }
+      },
+      "highlight": {
+          "fields": {
+              "text": {}
+          }
+      }
+  }
+  ```
+
+  - 결론
+    - Highlighting이 불가능한 문서가 있다고 하더라도, 해당 문서가 검색 되고 반환 대상에 포함되지 않는 한 문제가 발생하지는 않는다.
+    - 그러나 오히려 이러한 점 때문에 문제가 발생했을 때 원인을 파악하는 것이 까다로울 수 있다.
+    - 따라서 highlighting을 실행해야 할 경우 관련 설정을 정확히 확인해야 한다.
+
+
 
 
 
