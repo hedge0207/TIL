@@ -665,9 +665,9 @@
 
 
 
-- test 코드에서 이벤트 발생시키기
+- 테스트 코드에서 이벤트 발생시키기
 
-  - fastapi에는 앱이 시작될 때나 종료되는 등의 event가 발생할 때 특정 로직을 실행시킬 수 있다.
+  - FastAPI는 애플리케이션의 시작이나 종료 등의 event가 발생할 때 특정 로직을 실행시킬 수 있다.
     - 그러나 테스트는 실제 앱을 실행하는 것은 아니므로 event가 발생하지는 않는데, test 코드에서 event를 발생시키는 방법이 있다.
   - 아래와 같이 `with`를 사용하면 앱이 실행된 것과 같은 효과가 있다.
 
@@ -719,6 +719,9 @@
     - Database connection을 공유하는 것.
     - 보안을 강화하고 인증과 인가 등을 처리하는 것.
     - 요약하자면 코드의 반복을 최소화하는 것이 목표이다.
+  - Callable한 값이면 의존성 주입이 가능하다.
+    - FastAPI는 먼저 dependency가 callable한 값인지를 확인한다.
+    - 그 후에 callable의 parameter들을 분석한다.
 
 
 
@@ -730,8 +733,53 @@
     - Dependency의 type은 dependency의 반환 type(예시의 경우 dict)을 입력하면 된다.
 
   ```python
-  from typing import Union
+  from typing import Annotated
   # Depends를 import한다.
+  from fastapi import Depends, FastAPI
+  
+  app = FastAPI()
+  
+  
+  def common_parameters(
+      q: Union[str, None] = None, skip: int = 0, limit: int = 100
+  ):
+      return {"q": q, "skip": skip, "limit": limit}
+  
+  # path operation function의 parameter로 Depends를 사용하여 dependency를 선언한다.
+  @app.get("/items/")
+  def read_items(commons: Annotated[dict, Depends(common_parameters)]):
+      return commons
+  ```
+  
+  - `Annotated[dict, Depends(common_parameters)]`에서 `Annotated`
+    - 사실 FastAPI에서는 `Annotated[dict, Depends(common_parameters)]`에서 type을 선언하는 부분(예시의 경우 dict)은 아무 의미가 없다.
+    - 즉, `Annotated[Any, Depends(common_parameters)]`와 같이 작성해도 실제 기능에는 아무런 차이가 없다.
+    - 그러나, 위와 같이 type을 선언해줌으로써 editor가 type을 알 수 있도록 해 자동 완성 등의 기능을 사용할 수 있게 된다.
+
+  - 동작 방식
+    - Request가 들어오면 우선 query parameter를 인자로 dependency(`common_parameters`)를 호출한다.
+    - Dependency로부터 반환값을 받고 그 값을 path operation function의 parameter로 넘긴다.
+  - 예시
+  
+  ```json
+  // GET /items?q=foo&skip=1&limit=2
+  {
+      "q": "foo",
+      "skip": 1,
+      "limit": 2
+  }
+  ```
+
+
+
+- Dependency 재사용하여 중복 코드 제거하기
+
+  - 아래 예시에서 두 개의 path operation function은 동일한 dependency를 주입 받는다.
+    - 이로 인해 `commons: Annotated[dict, Depends(common_parameters)]` 부분이 중복으로 들어가게 된다.
+
+  ```python
+  from typing import Annotated, Union
+  
   from fastapi import Depends, FastAPI
   
   app = FastAPI()
@@ -742,20 +790,47 @@
   ):
       return {"q": q, "skip": skip, "limit": limit}
   
-  # path operation function의 parameter로 Depends를 사용하여 dependency를 선언한다.
+  
   @app.get("/items/")
-  async def read_items(commons: dict = Depends(common_parameters)):
+  async def read_items(commons: Annotated[dict, Depends(common_parameters)]):
       return commons
   
   
   @app.get("/users/")
-  async def read_users(commons: dict = Depends(common_parameters)):
+  async def read_users(commons: Annotated[dict, Depends(common_parameters)]):
       return commons
   ```
 
-  - 동작 방식
-    - Request가 들어오면 우선 query parameter를 인자로 dependency를 호출한다.
-    - Dependency로부터 반환값을 받고 그 값을 path operation function의 parameter로 넘긴다.
+  - 아래와 같이 dependency를 재사용하여 중복 코드를 제거할 수 있다.
+
+  ```python
+  from typing import Annotated, Union
+  
+  from fastapi import Depends, FastAPI
+  
+  app = FastAPI()
+  
+  
+  async def common_parameters(
+      q: Union[str, None] = None, skip: int = 0, limit: int = 100
+  ):
+      return {"q": q, "skip": skip, "limit": limit}
+  
+  # 여러 곳에서 사용되는 dependency를 선언하여 재사용한다.
+  CommonsDep = Annotated[dict, Depends(common_parameters)]
+  
+  
+  @app.get("/items/")
+  async def read_items(commons: CommonsDep):
+      return commons
+  
+  
+  @app.get("/users/")
+  async def read_users(commons: CommonsDep):
+      return commons
+  ```
+
+  - 이는 Python의 type alias를 사용한 방식으로, FastAPI만의 특별한 문법은 아니다.
 
 
 
@@ -766,7 +841,7 @@
   - 예시
 
   ```python
-  from typing import Union
+  from typing import Annotated
   
   from fastapi import Depends, FastAPI
   from typing_extensions import Annotated
@@ -784,34 +859,35 @@
           self.limit = limit
   
   # 의존성을 주입한다.
-  @app.get("/items/")
-  async def read_items(commons: CommonQueryParams = Depends(CommonQueryParams)):
-      response = {}
-      if commons.q:
-          response.update({"q": commons.q})
-      items = fake_items_db[commons.skip : commons.skip + commons.limit]
-      response.update({"items": items})
-      return response
+  @app.get("/items")
+  def read_items(commons: Annotated[CommonQueryParams, Depends(CommonQueryParams)]):
+      return {"q": commons.q, "skip": commons.skip, "limit": commons.limit}
   ```
-
+  
   - 동작 방식
-    - Request가 들어오면, dependency class의 `__init__` method가 호출되고, dependency class의 instance를 반환한다.
+    - Request가 들어오면, query parameter를 인자로 dependency class(`CommonQueryParams`)의 `__init__` method가 호출되고, dependency class의 instance를 반환한다.
     - Dependency가 반환한 instance를 path operation function의 parameter로 넘긴다.
-  - 위 예시를 보면 dependency를 선언하는 부분에 아래와 같이 `CommonQueryParams`가 중복되어 들어가는 것을 볼 수 있다.
-
-  ```python
-  async def read_items(commons: CommonQueryParams = Depends(CommonQueryParams)):
-      pass
+  
+  - 예시
+  
+  ```json
+  // GET /items?q=foo&skip=1&limit=2
+  {
+      "q": "foo",
+      "skip": 1,
+      "limit": 2
+  }
   ```
 
-  - FastAPI는 아래와 같이 중복을 없앨 수 있는 shortcut을 제공한다.
-
+  - Dependency가 class일 경우의 shortcut
+    - FastAPI에서는 dependency가 class일 경우에만 사용할 수 있는 shortcut을 제공한다.
+  
   ```python
-  from typing import Annotated
+  # 아래와 같은 의존성을
+  commons: Annotated[CommonQueryParams, Depends(CommonQueryParams)]
   
-  
-  async def read_items(commons: CommonQueryParams = Depends()):
-      pass
+  # 아래와 같이 짧게 작성이 가능하다.
+  commons: Annotated[CommonQueryParams, Depends()]
   ```
 
 
@@ -888,10 +964,50 @@
 
 
 
+- 전역 의존성 설정하기
+
+  - 애플리케이션 전체에 적용될 의존성을 설정할 수 있다.
+  - FastAPI 애플리케이션을 선언할 때 `dependencies` parameter에 추가하면 된다.
+    - 여기 추가한 dependency는 모든 path operation function에 적용된다.
+
+  ```python
+  async def verify_token(x_token: Annotated[str, Header()]):
+      if x_token != "fake-super-secret-token":
+          raise HTTPException(status_code=400, detail="X-Token header invalid")
+  
+  
+  async def verify_key(x_key: Annotated[str, Header()]):
+      if x_key != "fake-super-secret-key":
+          raise HTTPException(status_code=400, detail="X-Key header invalid")
+      return x_key
+  
+  
+  # dependencies에 전역 의존성을 추가한다.
+  app = FastAPI(dependencies=[Depends(verify_token), Depends(verify_key)])
+  ```
+
+  - Router별로 설정하는 것도 가능하다.
+
+  ```python
+  router = APIRouter(
+      prefix="/items",
+      tags=["items"],
+      dependencies=[Depends(get_token_header)],
+      responses={404: {"description": "Not found"}},
+  )
+  ```
+
+
+
 - `yield`를 사용한 의존성
+
+  - `yield`를 사용하면 의존성 주입이 끝난 후 추가적인 작업을 수행하는 것이 가능하다.
+    - Dependency에서 `return`이 아닌 `yield`를 사용하면 된다.
+    - Dependency 당 `yield`는 한 번만 사용해야한다.
 
   - 아래와 같이 `yield`를 사용하여 dependency를 생성할 수 있다.
     - 내부적으로는 context manager를 사용한다.
+    - `yield`문 뒤에는 의존성 주입이 종료된 후 실행할 작업을 정의한다.
 
   ```python
   def get_db():
@@ -910,18 +1026,6 @@
   @app.get("/items/{item_id}")
   def get_item(item_id: str, db: Annotated[str, Depends(get_db)]):
       ...
-  ```
-
-  - `try`문과 함께 사용할 경우 dependency 사용중에 발생하는 모든 예외가 throw된다.
-    - `finally`문과 함께 사용하여 예외가 발생 여부와 무관하게 실행해야 하는 코드를 작성할 수 있다.
-
-  ```python
-  def get_db():
-      db = DBSession()
-      try:
-          yield db
-      finally:
-          db.close()
   ```
 
   - 아래와 같이 sub dependency를 설정하는 것도 가능하다.
@@ -956,7 +1060,109 @@
           dep_c.close(dep_b)
   ```
 
+
+
+- `yield`문을 사용한 의존성에서 예외 처리
+
+  - `yield`문을 사용한 의존성에서 `try`문을 사용할 경우 dependency 사용 중에 발생하는 모든 예외가 throw된다.
+  - 예시
+    - `get_username`라는 의존성을 주입받는 `get_item` path operation function에서 예외가 발생할 경우, `get_username`에서 이를 catch할 수 있다.
+
+  ```python
+  from typing import Annotated
+  from fastapi import Depends, FastAPI, HTTPException
   
+  app = FastAPI()
+  
+  def get_username():
+      try:
+          yield "Rick"
+      except Exception:
+          raise HTTPException(500, "Catch Exception")
+  
+  
+  @app.get("/items")
+  def get_item(username: Annotated[str, Depends(get_username)]):
+      raise Exception
+  ```
+
+  - `finally`문과 함께 사용하여 예외가 발생 여부와 무관하게 실행해야 하는 코드를 작성할 수 있다.
+
+  ```python
+  def get_db():
+      db = DBSession()
+      try:
+          yield db
+      finally:
+          db.close()
+  ```
+
+  - 만약 의존성을 사용하는 곳에서 `HTTPException`을 raise했고, 의존성에 `except` 문으로 발생한 예외를 catch하지 못했다면 error가 발생하지 않는다.
+    - 의존성을 사용하는 곳에서는 `HTTPException`를 raise했지만, 의존성에서는 해당 exception을 catch하지는 않는다.
+    - 이 경우 error가 발생하지 않는다.
+    - 의존성에 `try`, `except`문이 아예 없을 때도 마찬가지이다.
+  
+  ```python
+  class MyException(Exception):
+      ...
+  
+      
+  def get_username():
+      try:
+  	    yield "Rick"
+      except MyException:
+          ...
+          
+  @app.get("/items")
+  def get_item(username: Annotated[str, Depends(get_username)]):
+      raise HTTPException(404)
+  ```
+  
+  - 그러나, 만약 의존성에 의존성을 사용하는 곳에서 발생한 exception을 catch하는 `except` 문이 있고, 이 `except`문에서 `HTTPException`을 다시 raise하지 않으면 error가 발생한다.
+    - 아래 코드의 경우 error가 발생한다.
+  
+  
+  ```python
+  def get_username():
+      try:
+          yield "Rick"
+      # HTTPException을 catch는 하되,
+      except Exception:
+          # HTTPException을 다시 raise하지 않는다.
+          ...
+  
+  
+  @app.get("/items")
+  def get_item(username: Annotated[str, Depends(get_username)]):
+      raise HTTPException(404)
+  ```
+  
+  - `HTTPException`이 아닌 예외가 의존성을 사용하는 곳에서 발생했을 경우 의존성에서 `try`, `except` 문의 존재 여부와 무관하게 `HTTPException`을 raise하지 않으면 error가 발생한다.
+  
+  ```python
+  # 아래 경우에도 error가 발생하고
+  def get_username():
+      yield "Rick"
+  
+  @app.get("/items")
+  def get_item(username: Annotated[str, Depends(get_username)]):
+      raise Exception
+  
+  
+  
+  # 이 경우에도 error가 발생한다.
+  def get_username():
+      try:
+          yield "Rick"
+      except Exception:
+          raise
+  
+  @app.get("/items")
+  def get_item(username: Annotated[str, Depends(get_username)]):
+      raise Exception
+  ```
+
+
 
 
 
