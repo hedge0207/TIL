@@ -567,4 +567,329 @@
   import animal.mammalia.dog.*;
   ```
 
+
+
+
+
+
+# Enum
+
+- 열거형
+
+  - 서로 관련된 상수를 편리하게 선언하기 위한 것
+    - 여러 상수를 정의할 때 사용하면 유용하다.
+    - JDK 1.5부터 새로 추가되었다.
+  - 기존에 아래와 같았던 class가
+
+  ```java
+  class Card {
+      static final int CLOVER = 0;
+      static final int HEART = 1;
+      static fianl int DIAMOND = 2;
+      static final int SPADE = 3;
+      
+      stacic final int ACE = 0;
+      static final int TWO = 1;
+      static final int THREE = 2;
+      
+      final int kind;
+      final int value;
+  }
+  ```
+
+  - Enum을 사용하면 보다 단순해진다.
+
+  ```java
+  class Card {
+      // 열거형 kind
+      enum Kind { CLOVER, HEART, DIAMOND, SPADE }
+      // 열겨형 Value
+      enum Value { ACE, TWO, THREE }
+      
+      final Kind kind;
+      final Value value
+  }
+  ```
+
+  - Typesafe enum
+    - Java의 enum은 타입에 안전한 열거형이다.
+    - C에서는 타입이 달라도 값이 같으면 조건식 결과가 참이었으나, Java의 열거형은 타입까지 체크한다.
+    - 이는 실제 값이 같아도 타입이 다르면 컴파일 에러가 발생한다는 의미이다.
+    - 값뿐만 아니라 타입도 체크하기 때문에 typesafe라 표현한다.
+
+  ```java
+  // Enum을 사용하지 않았을 때, 아래는 참이 되지만 의미상으로는 거짓이어야 한다.
+  Card.HEART == Card.TWO 	
+      
+  // Enum을 사용했을 때, 컴파일 에러가 발생한다.
+  Card.Kind.HEART == Card.TWO
+  ```
+
+  - Enum을 사용하면 상수가 변경되더라도 기존의 소스를 다시 컴파일하지 않아도 된다.
+    - 원래 상수의 값이 바뀌면, 해당 상수를 참조하는 모든 소스를 다시 컴파일해야 한다.
+    - 그러나 열거형 상수를 사용하면, 기존의 소스를 다시 컴파일하지 않아도 된다.
+
+
+
+- 열겨형의 정의와 사용
+
+  - 열거형을 정의하는 방법
+
+  ```java
+  enum <열거형이름> { 상수명1, 상수명2, ... }
   
+  // e.g.
+  enum Direction { EAST, WEST, SOUTH, NORTH}
+  ```
+
+  - 열거형에 정의된 상수를 사용하는 방법
+    - `열거형이름.상수명`으로 사용하면 된다.
+    - 클래스의 static 변수를 참조하는 것과 동일하다.
+
+  ```java
+  dir = Direction.SOUTH
+  ```
+
+  - 열거형 상수간의 비교
+    - 열거형 상수간의 비교에는 `==`를 사용할 수 있으며 `equals()`가 아닌 `==`로 비교한다는 것에서 알 수 있듯 매우 빠른 성능으로 비교가 가능하다.
+    - 그러나 `<`, `>`와 같은 비교 연산자는 사용할 수 없고, `compareTo()`는 사용 가능하다.
+
+  ```java
+  dir == Direction.SOUTH
+  ```
+
+  - `switch`문의 조건식에도 열거형을 사용할 수 있다.
+    - 이 때 주의할 점은 case문에 열거형의 이름은 적지 않고 상수의 이름만 적어야 한다는 것이다.
+
+  ```java
+  void move() {
+      switch(dir) {
+          case EAST:
+              // ...
+          case WEST:
+              // ...
+          // ...
+      }
+  }
+
+
+
+- `java.lang.Enum`
+
+  - 모든 열거형의 조상이 되는 클래스이다.
+    - 아래와 같은 메서드를 가지고 있다(즉, 모든 열거형은 아래 메서드를 사용 가능하다).
+
+  | 메서드                                      | 설명                                                      |
+  | ------------------------------------------- | --------------------------------------------------------- |
+  | `Class<E> getDeclaringClass()`              | 열거형의 Class 객체를 반환한다.                           |
+  | `String name()`                             | 열거형의 상수 이름을 문자열로 반환한다.                   |
+  | `int ordinal()`                             | 열거형 상수가 정의된 순서를 반환한다.                     |
+  | `T valueOf(Class<T> enumType, String name)` | 지정된 열거형에서 name과 일치하는 열거형 상수를 반환한다. |
+
+  - 컴파일러가 모든 열거형에 자동으로 추가해주는 메서드에는 아래와 같은 것들이 있다.
+
+  | 메서드                          | 설명                                                         |
+  | ------------------------------- | ------------------------------------------------------------ |
+  | `static E values()`             | 열거형의 모든 상수를 배열에 담아 반환한다.                   |
+  | `static E valueOf(String name)` | 상수의 이름으로 문자열 상수에 대한 참조를 얻을 수 있게 해준다. |
+
+  - 메서드 예시
+
+  ```java
+  Direction[] dArr = Direction.values();
+  
+  for (Direction d : dArr) {
+      System.out.printf("%s=%d%n", d.name(), d.ordinal());
+  }
+  ```
+
+
+
+- 열겨헝에 멤버 추가하기
+
+  - `Enum.ordinal()` 메서드가 열거향 상수가 정의된 순서를 반환하지만, 이 값을 열거형 상수의 값으로 사용하지 않는 것이 좋다.
+  - 열거형 상수의 값이 불연속적인 경우에는 아래와 같이 열거형 상수의 이름 옆에 원하는 값을 괄호와 함께 적어주면 된다.
+
+  ```java
+  enum Direction { EAST(3), WEST(9), SOUTH(6), NORTH(12) }
+  ```
+
+  - 그 후 지정된 값을 저장할 수 있는 인스턴스 변수와 생성자를 새로 추가해야한다.
+    - 이 때 주의할 점은, 먼저 열거형 상수를 모두 정의한 다음에 다른 멤버들을 추가해야 한다는 것이다.
+    - 또한 열거형 상수 정의의 끝에는 `;`를 붙여줘야한다.
+    - 열거형의 인스턴스 변수는 반드시` final`이 있어야 한다는 제약이 있는 것은 아니지만, value는 열거형 **상수**의 값을 저장하기 위한 것이므로 일반적으로 `final`을 붙인다.
+    - 열거형의 생성자는 제어자가 묵시적으로 `private`이다.
+
+  ```java
+  class Direction {
+      // 열거형 상수를 정의하고
+      EAST(3), WEST(9), SOUTH(6), NORTH(12);
+      
+      // 인스턴스변수와 생성자를 추가한다.
+      private final int value;
+      
+      // 생성자의 제어자는 묵시적으로 private이다.
+      Direction(int value) {
+          this.value = value;
+      }
+      
+      // 외부에서 값을 얻을 수 있는 메서드도 추가한다.
+      public int getValue() { return value; }
+  }
+  ```
+
+  - 필요에 따라 열거형 상수에 복수의 값일 지정할 수도 있다.
+    - 이에 맞게 인스턴스 변수와 생성사를 생성해야 한다.
+
+  ```java
+  class Direction {
+      // 열거형 상수를 정의하고
+      EAST(3, "e"), WEST(9, "w"), SOUTH(6, "s"), NORTH(12, "n");
+      
+      private final int value;
+      private final char acronym;
+      
+      Direction(int value, char acronym) {
+          this.value = value;
+          this.acronym = acronym;
+      }
+      
+      public int getValue() { return value; }
+      
+      public char getAcronym { return acronym; }
+  }
+  ```
+
+
+
+- 열거형에 추상 메서드 추가하기
+
+  - 아래 열거형 `Trasportation`은 운송 수단의 종류별로 상수를 정의하고 있으며, 각 운송 수단에는 기본 요금이 책정되어 있다.
+
+  ```java
+  enum Transportation {
+      BUS(100), TRAIN(150), SHIP(100);
+      
+      private final int BASIC_FARE;
+      
+      private Transportation(int basicFare) {
+          BASIC_FARE = basicFare;
+      }
+      
+      // 운송 요금을 반환
+      int fare() {
+          return BASIC_FARE
+      }
+  }
+  ```
+
+  - 이 때, 거리에 따라 추가 요금을 계산하는 방식이 각 운송 수단마다 다르다고 가정해보자.
+    - 이럴 때, 열거형에 추상 메서드를 선언하면 각 열거형 상수가 이 추상 메서드를 반드시 구현해야 한다.
+
+  ```java
+  enum Transportation {
+      BUS(100) { int fare(int distnace) { return distance * BASIC_FARE * 1.2; }}
+      TRAIN(150) { int fare(int distance) { return distnace * BASIC_FARE; }}
+      SHIP(100) { int fare(int distance) { return distance * BASIC_FARE * 1.3; }}
+      
+      // 거리에 따른 요금을 계산하는 추상 메서드
+      abstract int fare(int distance);
+      
+      // 제어자를 protected로 설정하여 각 상수에서 접근 가능하도록한다.
+      protected final int BASIC_FARE;
+      
+      Transportation(int basciFare) {
+          BASIC_FARE = basciFare
+      }
+      
+      public int getBasicFare() { return BASIC_FARE; }
+  }
+
+
+
+- 열거형의 내부 구현
+
+  - 아래와 같은 열거형이 있다고 가정해보자.
+
+  ```java
+  enum Direction { EAST, WEST, SOUTH, NORTH }
+  ```
+
+  - 이 때 열거형 상수 하나하나가 `Direction`객체이다.
+    - 위 enum 클래스를 일반 클래스로 정의하면 아래와 같을 것이다.
+    - `Direction` 클래스의 static 상수 `EAST`, `WEST`, `SOUTH`, `NORTH`의 값은 객체의 주소이고, 이 값은 바뀌지 않는 값이므로 `==`로 비교가 가능한 것이다.
+
+  ```java
+  class Direction {
+      static final Direction EAST = new Direction("EAST");
+      static final Direction WEST = new Direction("WEST");
+      static final Direction SOUTH = new Direction("SOUTH");
+      static final Direction NORTH = new Direction("NORTH");
+      
+      private String name;
+      
+      private Direction(String name) {
+          this.name = name;
+      }
+  }
+  ```
+
+  - 모든 열거형의 조상 클래스인 추상 클래스 `Enum`을 간략화하면 아래와 같다.
+    - `MyEnum<T extends MyEnum<T>>`와 같이 선언한 이유는 `MyEnum<T>`와 같이 선언할 경우, 타입 `T`에 `ordinal()`이 정의되어 있는지 확인할 수 없기에 `compareTo()`를 아래와 같이 간단하게 작성할 수 없기 때문이다.
+    - 타입 `T`가 `MyEnum`의 자손이므로 `ordinal()`이 정의되어 있는 것이 분명하므로 형변환 없이도 에러가 나지 않는다. 
+
+  ```java
+  abstract class MyEnum<T extends MyEnum<T>> implements Comparable<T> {
+      static int id = 0;
+      
+      int ordinal;
+      String name = "";
+      
+      public int ordinal() { return ordinal; }
+      
+      MyEnum(String name) {
+          this.name = name;
+          ordinal = id++;		// 객체를 생성할 때마다 증가시킨다.
+      }
+      
+      public int compareTo(T t) {
+          return ordinal - t.ordinal();
+      }
+  }
+  ```
+
+  - 위에서 작성한 `MyEnum`을 상속받도록 다시 `Direction`를  작성하면 아래와 같다.
+    - 추상 메서드를 추가하면 클래스 앞에도 abstact를 붙여야 하고, 각 static 상수도 추상 메서드를 구현해야한다.
+    - 익명 클래스 형태로 추상 메서드를 구현한다.
+
+  ```java
+  abstract class Direction extends MyEnum {
+      static final Direction EAST = new Direction("EAST") {
+          // 익명클래스
+          Point move(Point p) { /* 생략 */ }
+      }
+      static final Direction WEST = new Direction("EAST") {
+          // 익명클래스
+          Point move(Point p) { /* 생략 */ }
+      }
+      static final Direction SOUTH = new Direction("EAST") {
+          // 익명클래스
+          Point move(Point p) { /* 생략 */ }
+      }
+      static final Direction NORTH = new Direction("EAST") {
+          // 익명클래스
+          Point move(Point p) { /* 생략 */ }
+      }
+      
+      private String name;
+      
+      private Driection(String name) {
+          this.name = name;
+      }
+      
+      abstract Point move(Point p);
+  }
+  ```
+
+  
+
