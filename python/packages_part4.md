@@ -812,6 +812,200 @@ for task, stats in self.env.stats.entries.items():
 
 
 
+# contextlib
+
+## contextlib
+
+- `contextlib`
+  - Python의 context manager를 보다 쉽게 선언할 수 있게 해주는 module이다.
+    - 원래 Python에서 context manager를 선언하려면 `__enter__`와 `__exit__` method를 선언한 class가 있어야 한다.
+  - `contextlib`을 사용하면 함수 선언만으로 context manager를 사용할 수 있게 해준다.
+
+
+
+- `contextmanager`
+
+  - Context manager를 생성하기 위한 factory function을 정의할 때 사용하는 decorator이다.
+    - `@contextmanager` decorator가 붙은 함수는 반드시 generator를 반환해야하며, 반드시 하나의 값만을 반환해야한다.
+    - Generator가 yield되고 난 후 `with` block 내부의 문들이 실행된다.
+
+  ```python
+  from contextlib import contextmanager
+  
+  @contextmanager
+  def managed_resource(*args, **kwds):
+      # resource를 aquire하는 code
+      resource = acquire_resource(*args, **kwds)
+      try:
+          yield resource
+      finally:
+          # resource를 release하는 code
+          release_resource(resource)
+  ```
+
+  - 만약 `with` block에서 처리되지 않은 exception이 발생하면, `yield`가 발생한 generator 내부에서 다시 raise된다.
+    - 따라서 `try`, `except`, `finally` 문을 사용하여 다시 raise된 exception을 처리해야한다.
+
+  ```python
+  from contextlib import contextmanager
+  
+  @contextmanager
+  def my_context(name: str):
+      try:
+          yield "Hello {}".format(name)
+      except Exception as e:
+          print(e)	# Some exception
+  
+  
+  with my_context("John") as ctx:
+      raise Exception("Some exception")
+  ```
+
+  - `@contextmanager` decorator로 생성한 context manager는 decorator로 사용이 가능하다.
+    - 또한, dectorator로 사용한 context manager는 수식하는 함수가 호출될 때 마다 새로운 generator를 반환한다.
+
+  ```python
+  from contextlib import contextmanager
+  
+  
+  @contextmanager
+  def my_context():
+      print("Before the function call")
+      yield
+      print("After the function call")
+  
+  # context manager를 데코레이터로 사용
+  @my_context()
+  def say_hello():
+      print("Hello, World!")
+  
+  # 실행
+  say_hello()
+  ```
+
+
+
+- `asynccontextmanager`
+
+  - 비동기적인 context manager를 생성하는 factory function을 정의할 때 사용하는 decorator이다.
+    - `asynccontextmanager`decorator가 붙은 함수는 `async with`문에서 사용이 가능하다.
+  - `@contextmanager` decorator로 생성한 context manager와 마찬가지로 `@asynccontextmanager` decorator로 선언한 context manager 또한 `async with`와 함께 사용할 수도 있지만, decorator로도 사용할 수 있다.
+
+  ```python
+  import time
+  from contextlib import asynccontextmanager
+  
+  @asynccontextmanager
+  async def timeit():
+      now = time.monotonic()
+      try:
+          yield
+      finally:
+          print(f'it took {time.monotonic() - now}s to run')
+  
+  @timeit()
+  async def main():
+      ...
+  ```
+
+
+
+- `closing`
+
+  - `with` block이 종료됐을 때 무언가를 닫는 context manager를 반환하는 class이다.
+    - 예를 들어 아래 예시에서 `with` block이 종료되면 `page.close()`를 자동으로 호출한다.
+    - 즉, 명시적으로 `close()`를 호출하지 않아도 자동으로 호출해주며, 심지어 error가 발생해도 `page.close()`를 호출한다.
+    - 일반적으로 `contextlib`을 사용하지 않고 선언한 context manager를 관리하기 위해 사용한다.
+
+  ```python
+  from contextlib import closing
+  
+  # contextlib을 사용하지 않은 context manager
+  class MyContext:
+      def __enter__(self):
+          print("enter")
+          return "Hello World"
+      
+      def __exit__(self, type, value, traceback):
+          print("exit")
+  
+      def close(self):
+          print("close")
+  
+  # closing은 close() 메서드를 자동으로 호출하는 context manager를 반환한다.
+  with closing(MyContext()) as my_context:
+      with my_context as ctx:
+          ...
+  ```
+
+  - 간소화하면 아래 코드와 원리가 같다.
+
+  ```python
+  from contextlib import contextmanager
+  
+  @contextmanager
+  def closing(thing):
+      try:
+          yield "Hello World"
+      finally:
+          thing.close()
+  ```
+
+
+
+- `suppress`
+
+  - `with` block 내에서 지정한 exception이 발생했을 경우 이를 막고, `with` block 이후의 문들을 실행하는 context manager를 반환하는 class이다.
+  - 아래와 같이 suppress 없이 `with` block 내에서 exception이 발생할 경우, 프로그램이 종료된다.
+
+  ```python
+  with open("file_does_not_exist.txt", "r") as f:
+      f.readlines()
+      
+  # FileNotFoundError: [Errno 2] No such file or directory: 'no_exist_file.txt'
+  ```
+
+  - 반면에 아래와 같이 `suppress`를 사용할 경우 `with` block 내에서 exception이 발생하더라도 `with` block 외부의 문부터 실행이 재개된다.
+
+  ```python
+  from contextlib import suppress
+  
+  
+  with suppress(FileNotFoundError):
+      with open("file_does_not_exist.txt", "r") as f:
+          f.readlines()
+      print("inside the block")	# 실행 X
+  print("outside block")			# 이 부분만 실행된다.
+  ```
+
+  - 간소화하면 아래 코드와 유사하다.
+
+  ```python
+  try:
+      with open("file_does_not_exist.txt", "r") as f:
+          f.readlines()
+      print("inside the block")
+  except FileNotFoundError:
+      print("outside block")
+  ```
+
+
+
+- `redirect_stdout`, `redirect_stderr`
+
+  - 각기 stdout과 stderr을 `sys.stdout`, `sys.stderr`에서 임시로 다른 file 혹은 file-like 객체로 redirect 시키는 context manager이다.
+  - 아래와 같이 실행하면 stdout이 `help.txt` 파일에 작성된다.
+
+  ```python
+  with open('help.txt', 'w') as f:
+      with redirect_stdout(f):
+          help(print)
+  ```
+
+
+
+
+
 # Shorts
 
 - faker
@@ -943,5 +1137,4 @@ for task, stats in self.env.stats.entries.items():
       assert isinstance(service3.api_client, ApiClient)
   ```
 
-  
 
