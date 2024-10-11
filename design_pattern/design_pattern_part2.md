@@ -983,9 +983,9 @@
     
   - 주문서(`Order` 객체)의 역할
     - 주문서는 주문 내용을 캡슐화한다.
-    - 주문서의 인터페이스에는 식사 준비에 필요한 행동을 캡슐화한 `order_up()` 메서드가 들어있다(이게 유일한 메서드에다).
+    - 주문서의 인터페이스에는 식사 준비에 필요한 행동을 캡슐화한 `order_up()` 메서드가 들어있다(이게 유일한 메서드이다).
     - 식사를 주문해야 하는 객체(주방장)의 레퍼런스도 들어있다.
-    - 실제와 다른 점은 종업원이 고객이 무엇을 주문했는지, 누가 요리를 할 건지 등을 신경쓰지만, 여기서는 Order 객체가 그러한 역할을 한다는 점이다.
+    - 실제와 다른 점은 종업원이 고객이 무엇을 주문했는지, 누가 요리를 할 건지 등을 신경쓰지만, 여기서는 `Order` 객체가 그러한 역할을 한다는 점이다.
   - 종업원의 역할
     - 종업원은 `Order` 객체에서 `order_up()` 메서드를 호출하는 역할을 한다.
     - 실제 종업원과는 달리 주문서에 무슨 내용이 있는지, 누가 식사를 준비하는지 알 필요가 없다.
@@ -1026,10 +1026,10 @@
 
 
 
-- 첫 번째 커맨드 객체 만들기
+- 첫 번째 Command 객체 만들기
 
   - 가정용 기기를 제어하는 데 사용할 리모컨을 위한 커맨드 객체를 생성한다.
-  - 커맨드 객체는 모두 같은 인터페이스를 구현해야한다.
+  - Command 객체는 모두 같은 인터페이스를 구현해야한다.
     - 이 인터페이스의 메서드는 `execute()`하나 뿐이다.
 
   ```python
@@ -1041,12 +1041,12 @@
           pass
   ```
 
-  - `Receiver` 객체를 구현한다.
+  - Receiver 클래스를 구현한다.
   
   ```python
   from abc import ABC, abstractmethod
   
-  # Receiver 객체
+  # Receiver 클래스
   class Light(ABC):
       @abstractmethod
       def on(self):
@@ -1075,11 +1075,12 @@
   
   - 커맨드 객체 사용하기
     - 제어할 기기를 연결할 슬롯과 버튼이 각각 하나씩 밖에 없는 리모컨이 있다고 가정하고, 이 리모컨에서 커맨드 객체를 사용해본다.
-    - 이 리모컨 객체가 `Invoker` 객체가 되는 것이다.
-    - `Invoker`가 요청한 작업을 최종적으로 수행하는 `Receiver` 객체에 대한 아무런 정보도 가지고 있지 않다는 점에 주목해야 한다.
-    - 이처럼 Command pattten은 작업을 요청하는 `Invoker`와 작업을 수행하는 `Receiver`를 완전히 분리하며, `Command`를 통해서만 소통이 이루어진다.
+    - 이 리모컨 객체가 Invoker 객체가 되는 것이다.
+    - Invoker가 요청한 작업을 최종적으로 수행하는 Receiver 객체에 대한 아무런 정보도 가지고 있지 않다는 점에 주목해야 한다.
+    - 이처럼 Command pattten은 작업을 요청하는 Invoker와 작업을 수행하는 Receiver를 완전히 분리하며, Command를 통해서만 소통이 이루어진다.
   
   ```python
+  # Invoker 클래스
   class SimpleRemoteControl:
       def __init__(self):
           # Command 객체를 저장 할 하나의 slot
@@ -1101,7 +1102,7 @@
   remote = SimpleRemoteControl()
   # Receiver 역할을 하는 BathroomLight의 instance 생성
   bathroom_light = BathroomLight()
-  # Receiver 객체를 전달하여 Command 객체 생성
+  # Command 객체 생성, Receiver 객체를 전달하여 생성한다.
   light_on = LigthOnCommand(bathroom_light)
   
   # Invoker 객체에 Command 객체 저장

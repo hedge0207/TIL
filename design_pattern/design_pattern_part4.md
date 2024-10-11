@@ -213,7 +213,7 @@
     - Context가 `request()` 메서드를 호출하면 그 작업은 상태 객체에게 맡가젼디(`state.handle()`)
     - 구상 상태 클래스는 원하는 만큼 만들 수 있다.
 
-  ![image-20230423161204091](design_pattenr_part4.assets/image-20230423161204091.png)
+  ![image-20230423161204091](design_pattern_part4.assets/image-20230423161204091.png)
 
   - 전략 패턴과의 관계
     - 전략 패턴과 거의 유사한 다이어그램을 가지고 있다.
@@ -874,7 +874,7 @@
 
   - 클래스 다이어그램
 
-  ![image-20230416173211749](design_pattenr_part4.assets/image-20230416173211749.png)
+  ![image-20230416173211749](design_pattern_part4.assets/image-20230416173211749.png)
 
   - 주의사항
     - 추상 메서드가 너무 많아질 경우 서브 클래스에서 일일이 추상 메서드를 구현해야하는 번거로움이 있다.
