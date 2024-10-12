@@ -431,6 +431,8 @@
 
 - MySQL 프로그래밍
 
+- 조인(JOIN) 
+
 <br/>
 <br/>
 
@@ -485,12 +487,6 @@
 <br/>
 
 # design_pattern
-## design_pattern
-- Design Pattern
-
-<br/>
-<br/>
-
 ## design_pattern_part1
 - Strategy Pattern
 
@@ -1147,18 +1143,6 @@
 <br/>
 <br/>
 
-## tips
--  유용한 사이트
-
-- Jupyter Notebook 
-
-- 초기화시 해야 할 것들
-
-- 단축키
-
-<br/>
-<br/>
-
 <br/>
 <br/>
 
@@ -1718,6 +1702,8 @@
 
 - 패키지
 
+- Enum
+
 <br/>
 <br/>
 
@@ -2204,6 +2190,8 @@
 - aggs 결과 확인
 
 - 각 task별 결과 확인
+
+- contextlib
 
 - Shorts
 
