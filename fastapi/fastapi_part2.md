@@ -1164,6 +1164,213 @@
 
 
 
+- `yield`와 `except`를 사용해서 의존성을 관리할 경우 반드시 의존성을 사용하는 곳에서 발생한 exception을 다시 raise해야한다.
+
+  - 예를 들어 아래와 같이 의존성을 사용하는 곳에서 예외가 발생했고, 이를 의존성에서 catch는 하되, 다시 raise하지 않았다고 가정해보자.
+    - 아래 예시에서 의존성을 사용하는 곳에서는 `InternalError`를 raise했지만, 의존성에서 이를 catch는 하되 다시 raise하지는 않았다.
+    - `fastapi.exceptions.FastAPIError`이 발생하게 되고, client에는 status code 500이 response로 반환된다.
+    - 또한 server입장에서도 어디서 error가 발생했는지 알 수가 없는 상태가 된다.
+
+  ```python
+  from typing import Annotated
+  from fastapi import Depends, FastAPI
+  
+  
+  app = FastAPI()
+  
+  class InternalError(Exception):
+      pass
+  
+  
+  def get_username():
+      try:
+          yield "foo"
+      except InternalError:
+          # 다시 raise하지 않는다.
+          ...
+  
+  
+  @app.get("/items")
+  def get_item(username: Annotated[str, Depends(get_username)]):
+      if username == "foo":
+          raise InternalError("Internal Error")
+      return username
+  ```
+
+  - 반면에 아래와 같이 의존성에서 다시 raise를 한다고 가정해보자.
+    - 이 경우에도 마찬가지로 client에는 status code 500이 response로 반환된다.
+    - 그러나 이번에는 `fastapi.exceptions.FastAPIError`이 발생하는 것이 아니라 `InternalError`가 발생하여, 어떤 이유로 error가 발생한 것인지 보다 명확하게 확인이 가능하다.
+
+  ```python
+  from typing import Annotated
+  from fastapi import Depends, FastAPI
+  
+  
+  app = FastAPI()
+  
+  class InternalError(Exception):
+      pass
+  
+  
+  def get_username():
+      try:
+          yield "foo"
+      except InternalError:
+          # 다시 raise한다.
+          raise
+  
+  
+  @app.get("/items")
+  def get_item(username: Annotated[str, Depends(get_username)]):
+      if username == "foo":
+          raise InternalError("Internal Error")
+      return username
+  ```
+
+  - 아래 코드와 위 코드의 log를 확인해보면 차이가 보다 명확해진다.
+
+
+
+- `yield`를 사용한 dependency의 동작 과정
+
+  > [사진 출처](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#always-raise-in-dependencies-with-yield-and-except)
+
+  - 위에서부터 아래로 흐르면서 실행된다.
+    - 아래 다이어그램에서는 `HTTPException`만 보여주지만, `yield`에서 catch할 수 있는 다른 exception들도 raise가 가능하다.
+
+
+  ![dependency_with_yield](fastapi_part2.assets/dependency_with_yield.png)
+
+  - 오직 하나의 response만이 client로 전송될 수 있다.
+    - 이는 error response일 수도 있고, path operation이 반환한 response일 수도 있다.
+    - 한 번 response가 반환되고 나면 다른 response는 반환될 수 없다.
+
+
+
+- `yield`를 사용한 dependency와 context manager
+
+  - FastAPI에서 `yield`를 사용하여 dependency를 생성할 때, 내부적으로 context manager를 사용한다.
+  - Python의 context manager를 `yield`를 사용한 dependency 내부에서 사용이 가능하다.
+
+  ```python
+  class MySuperContextManager:
+      def __init__(self):
+          self.db = DBSession()
+  
+      def __enter__(self):
+          return self.db
+  
+      def __exit__(self, exc_type, exc_value, traceback):
+          self.db.close()
+  
+  
+  def get_db():
+      with MySuperContextManager() as db:
+          yield db
+  ```
+
+
+
+- Dependency에 parameter를 전달하는 방법
+
+  - FastAPI의 dependency에 인자를 전달할 때 path parameter, query parameter, request body의 변수 이름을 기반으로 전달한다.
+
+  ```python
+  app = FastAPI()
+  
+  
+  class RequestBody(BaseModel):
+      offset: int
+      limit: int
+  
+  def complex_dependency(path_param, query_param, my_request: RequestBody):
+      print(path_param)
+      print(query_param)
+      print(my_request)
+  
+  
+  @app.get("/test/{path_param}")
+  async def test(my_request: RequestBody, dep: Annotated[RequestBody, Depends(complex_dependency)]):
+  ```
+
+  - 예시
+
+  ```json
+  // GET /test/1?query_param=2
+  {
+      "offset": 0,
+      "limit": 5
+  }
+  ```
+
+  - Query parameter의 경우에는 path operation function에 따로 선언하지 않아도 전달이 가능하다.
+
+  ```python
+  app = FastAPI()
+  
+  def complex_dependency(query_param):
+      return query_param
+  
+  
+  @app.get("/test")
+  async def test(dep: Annotated[str, Depends(complex_dependency)]):
+      return {"response": dep}
+  ```
+
+  - 예시
+
+  ```js
+  // GET /test?query_param=1
+  {
+      "response": "1"
+  }
+  ```
+
+
+
+- Python class에 `__call__` method를 선언하면 class의 instance를 callable하게 만들 수 있다.
+
+  - Class는 원래 callable하며, `__call__` method를 선언했을 때 callable해지는 것은 class가 아닌 class의 instance이다.
+    - Query parameter가 `__call__` method의 parameter로 전달되고, `__call__` method의 반환 값이 path operation function의 parameter로 전달된다.
+
+  ```python
+  from typing import Annotated
+  from fastapi import Depends, FastAPI
+  import uvicorn
+  
+  
+  app = FastAPI()
+  
+  
+  class FixedContentQueryChecker:
+      def __init__(self, fixed_content: str):
+          self.fixed_content = fixed_content
+  
+      def __call__(self, q: str = ""):
+          return self.fixed_content in q
+  
+  
+  checker = FixedContentQueryChecker("bar")
+  
+  
+  @app.get("/query-checker/")
+  async def read_query_check(fixed_content_included: Annotated[bool, Depends(checker)]):
+      return {"fixed_content_in_query": fixed_content_included}
+  ```
+
+  - 예시
+
+  ```json
+  // GET /query-checker?bar
+  {
+      "fixed_content_in_query": true
+  }
+  ```
+
+
+
+
+
 
 
 
