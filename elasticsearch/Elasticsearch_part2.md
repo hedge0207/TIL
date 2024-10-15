@@ -432,15 +432,17 @@
     - 네트워크게 문제가 생겨 A-B, C-D를 제외한 network가 모두 끊기게 되었다.
     - 이 상황에서 연결이 되는 A-B가 A를 master node로 하는 cluster를 형성하고, C-D가 C를 master node로 하는 cluster를 생성하게 되었다.
     - 시간이 흐를 수록 두 cluster 사이의 data는 점점 차이가 벌어질 것이고, 나중에 다시 합쳐야 할 때 어느 data를 기준으로 합쳐야 할지 알 수도 없게 된다.
-
+    - 즉 데이터 정합성에 문제가 발생한다.
+    
   - Elasticsearch에서는 이를 방지하기 위해 master eligible node의 개수를 홀수로 설정하는 것을 권장한다.
     - Master eligible node의 개수를 홀수로 설정하는 것은 split brain을 방지하기 위함이다.
     - 만약 짝수 개의 master eligible node들이 절반씩 두 그룹으로 나뉘어졌다고 하면, 어떤 그룹을 선택하여 cluster를 지속할지 정하기가 쉽지 않다.
     - 그러나 홀수 개라면 정확히 절반으로 나뉘는 경우가 나올 수 없으므로, 더 많은 node들이 속한 그룹을 선택하여 cluster를 지속하고, 다른 group은 작동을 멈추는 식으로 동작할 수 있다.
+    - 그 후 네트워크가 정상화 되면 작동을 멈춘 그룹을 다시 가동하여 작동 중인 그룹에 합치면 데이터 정합성에 문제가 생기지 않는다.
   - Master eligible node의 개수를 홀수로 설정하는 것을 권장하는 또 다른 이유는 Elasticsearch의 master 선출이 정족수 기반이기 때문이다.
     - 아래 표를 보면 master eligible node가 3개일 때와 4개일 때 정족수는 4개일 때가 더 높지만 정지 되어도 되는 node의 수는 차이가 없다.
     - 즉 홀수가 짝수에 비해 정족수 대비 정지 되어도 되는 node의 수가 더 많으므로 홀수로 하는 것이 더 효율적이다.
-
+  
   | Master 후보 노드의 개수 | 정족수 | 허용 가능한 실패한 node의 개수 |
   | ----------------------- | ------ | ------------------------------ |
   | 3                       | 2      | 1                              |
@@ -471,11 +473,11 @@
   - Elasticsearch가 권장하는 cluster의 최소 구성
     - Elastic Cloud의 최소 구성은 아래와 같다.
 
-  |        | Tiebreaker          | Data1  | Data2  |
-  | ------ | ------------------- | ------ | ------ |
-  | 역할   | master, voting_only | himrst | himrst |
-  | Memory | 1GB                 | 4GB    | 4GB    |
-  | Disk   | 12GB                | 120GB  | 120GB  |
+  |        | Node1(Tiebreaker)   | Node2(Data1) | Node3(Data2) |
+  | ------ | ------------------- | ------------ | ------------ |
+  | 역할   | master, voting_only | himrst       | himrst       |
+  | Memory | 1GB                 | 4GB          | 4GB          |
+  | Disk   | 12GB                | 120GB        | 120GB        |
 
 
 

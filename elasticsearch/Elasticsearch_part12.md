@@ -885,7 +885,7 @@
 - Completion suggester 사용하여 구현하기
 
   - Index를 생성한다.
-    - 자동 완성 대상 filed를 `completion` type으로 생성한다.
+    - 자동 완성 대상 field를 `completion` type으로 생성한다.
 
   ```json
   // PUT qac-index
@@ -900,7 +900,7 @@
   }
   ```
 
-  - 자동 완성을 위한 data를 색인한다.
+  - 자동 완성 후보군을 색인한다.
 
   ```json
   // PUT qac-index/_doc/1
@@ -986,10 +986,9 @@
 
 - Ngram tokenizer와 filter를 사용하여 구현하기
 
-  - 전방 일치, 부분 일치, 후방 일치가 모두 가능하도록 할 것이다.
-    - 후방 일치를 위해서 ngram filter와 [reverse filter](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-reverse-tokenfilter.html)를 함께 사용할 것이다.
   - 아래와 같이 index를 생성하고, data는 위와 동일하게 색인한다.
-
+    - 전방 일치, 부분 일치, 후방 일치가 모두 가능하도록 할 것이다.
+  
   ```json
   // PUT qac-index
   {
@@ -1020,27 +1019,22 @@
       "properties": {
         "text":{
           "type":"text",
-          "fields":{
-            "ngram":{
-              "type":"text",
-              "analyzer":"ngram_analyzer"
-            }
-          }
+          "analyzer":"ngram_analyzer"
         }
       }
     }
   }
   ```
-
+  
   - 검색한다.
     - 전방, 부분, 후방 일치 모두 잘 동작하는 것을 확인할 수 있다.
-
+  
   ```json
   // GET qac-index/_search
   {
     "query": {
       "match": {
-        "text": "붕어빵"
+        "text": "붕어"
       }
     }
   }
@@ -1063,7 +1057,7 @@
     }
   }
   ```
-
+  
   - 한계
     - ngram을 사용하여 형태소 분석을 하면 매우 많은 token이 생성되게 된다.
     - 이는 색인 시간, index 크기, 검색 시간을 모두 증가시킬 수 있으므로 주의해서 사용해야한다.
@@ -1073,7 +1067,7 @@
 - 한글 자모 대상으로 자동 완성 하기
 
   - 한글의 경우 초성, 중성, 종성이 결합되어 하나의 글자를 이루는 형태로 자동완성을 완벽하게 구현하기가 영문에 비해 까다롭다.
-    - 예를 들어 사용자가 각시탈을 검색하기 위해 "부"까지 검색할 경우 자모 단위로 token이 분리되지 않으면 븡어빵을 자동완성 결과로 제안해 줄 수 없다.
+    - 예를 들어 사용자가 붕어빵을 검색하기 위해 "부"까지 검색할 경우 자모 단위로 token이 분리되지 않으면 븡어빵을 자동완성 결과로 제안해 줄 수 없다.
     - 붕어빵은 ngram으로 자른다고 하더라도 ["붕", "붕어", "붕어빵", "어", "어빵", "빵"]으로 분할된다.
     - 따라서 최소한 "붕"까지는 입력해야 붕어빵을 제안할 수 있다.
     - 또 다른 문제는 자음이 종성으로 온 것인지 다음 글자의 초성으로 온 것인지 알 수 없다는 것이다.
@@ -1163,7 +1157,7 @@
   }
   ```
 
-  - 위에서 검색한 것 처럼 검색할 경,우 "기계 붕어빵"이 순서까지 정확함에도 둘의 점수가 같아 "붕어빵 기계"가 더 상단에 노출된다.
+  - 아래와 같이 검색할 경우, "기계 붕어빵"이 순서까지 정확함에도 둘의 점수가 같아 "붕어빵 기계"가 더 상단에 노출된다.
 
   ```json
   // GET ko-qac-index/_search
@@ -1330,7 +1324,8 @@
 
     - 대량의 text 집합이나 검색 log 집합을 가지고 학습시킨다.
 
-    
+
+
 
 
 
@@ -1510,40 +1505,6 @@
 
 
 
-- `function_score` query를 `script_score` query로 변환하기.
-
-  - `script_score` query가 `function_score` query보다 단순하므로, 가능하면 `script_score`를 쓰는 사용하는 것이 권장된다.
-    - 아래와 같은 `function_score`query의 function들을 `script_score` query로 변환하는 것이 가능하다.
-  - `weight`
-    - `weight` function은 `script_score`로 아래와 같이 변환할 수 있다.
-
-  ```json
-  "script" : {
-      "source" : "params.weight * _score",
-      "params": {
-          "weight": 2
-      }
-  }
-  ```
-
-  - `random_score`
-    - `script_score`의 `randomScore`로 변환이 가능하다.
-  - `field_value_factor`
-    - 아래와 같이 `script_score`로 변환이 가능하다.
-
-  ```json
-  "script" : {
-      "source" : "Math.log10(doc['field'].value * params.factor)",
-      "params" : {
-          "factor" : 5
-      }
-  }
-  ```
-
-
-
-
-
 - script_score
 
   - 다른 쿼리를 래핑할 수 있게 해주고, 스크립트 표현식을 통해 문서의 숫자 필드 값을 활용하여 계산한 값으로 scoring을 할 수 있게 해준다.
@@ -1579,45 +1540,6 @@
   ```
 
 
-
-- `weight`
-
-  - weight를 score에 곱한 score를 얻기 위해 사용한다.
-    - 반드시 float 값을 줘야 한다.
-  - 특정 쿼리에 설정 한 부스트 값은 정규화 되는 반면, weight를 통해 곱해진 점수는 정규화 되지 않는다.
-  - 예시
-
-  ```bash
-  "weight" : float
-  ```
-
-
-
-- random
-
-  - 0이상 1미만의 랜덤한 score를 생성한다.
-    - 기본값으로 무선적인 값 생성을 위해 내부 Lucene 문서의 id들을 사용한다.
-    - 이는 매우 효율적이지만 문서들이 병합에 의해 다시 넘버링 되기 때문에 reproducible하지는 않다.
-    - reproducible하게 사용하려면 seed와 field를 주면 된다.
-  - 최종 score는 seed, 점수가 매겨질 documents들의 field의 최솟값, 인덱스명과 샤드 id에 기반한 값을 기반으로 계산되므로, 같은 값을 가지고 있지만 다른 인덱스에 저장된 문서들은 각기 다른 값을 갖게 된다. 
-    - 그러나, 같은 샤드에 같은 field의 같은 값을 지닌 문서들은 동일한 score를 갖게 된다.
-    - 따라서 모든 document들이 고윳값을 가지고 있는 field(주로 `_seq_no` field)를 사용하는 것이 권장된다.
-    - 단, 문서에 변경사항이 있으면 `_seq_no`도 변경되므로 점수도 변경되게 된다.
-  - 예시
-
-  ```bash
-  GET /_search
-  {
-    "query": {
-      "function_score": {
-        "random_score": {
-          "seed": 10,
-          "field": "_seq_no"
-        }
-      }
-    }
-  }
-  ```
 
 
 
@@ -1688,37 +1610,221 @@
 
 
 - 파라미터
-  - `weight`
-    - 점수는 각기 다른 척도로 계산 될 수 있으며, 때때로 점수에 각기 다른 함수를 적용하길 원할 수 있다.
-    - 따라서 이를 위해 각 함수가 계산하는 점수를 조정하기 위해 `weight`를 사용한다.
-    - `weigth`는 함수마다 하나씩 선언되며, 각각의 `weight`는 함수가 계산한 점수와 곱해진다.
-    - 만일 함수의 선언 없이 `weigth`만 정의할 경우, `weight`는 `weight` 그 자체를 반환하는 함수처럼 동작한다.
   - `score_mode`
     - function에 의해 계산된 score 값들이 어떻게 결합될지를 결정하는 파라미터
     - 만일 scocre_mode가 avg로 설정되었을 경우에, 점수들은 weighted average로 결합된다.
     - 예를 들어 두 개의 함수가 각기 1, 2를 점수로 반환하였고, 각각의 weight가 3, 4로 주어졌다면, 점수는 `(1*3+2*4)/2`가 아닌`(1*3+3*4)/(3+4)`로 계산된다.
-    - multifly: 점수를 곱한다(기본값).
-    - sum: 점수를 합산한다.
-    - avg: 점수의 평균을 낸다.
-    - first: filter와 일치하는 첫 번째 함수를 적용한다.
-    - max: 점수들 중 최댓값을 사용한다.
-    - min: 점수들 중 최솟값을 사용한다.
+    - `multifly`: 점수를 곱한다(기본값).
+    - `sum`: 점수를 합산한다.
+    - `avg`: 점수의 평균을 낸다.
+    - `first`: matching filter를 가지고 있는 첫 번째 function을 적용한다.
+    - `max`: 점수들 중 최댓값을 사용한다.
+    - `min`: 점수들 중 최솟값을 사용한다.
+  
+  ```json
+  // GET test/_search
+  // 예를 들어 아래와 같이 `sum`으로 주면 function A로 계산된 점수와 function B로 계산된 점수를 더한다.
+  {
+    "query": {
+      "function_score": {
+        "query": {
+          "match": {
+            "foo": "dog"
+          }
+        },
+        "score_mode": "sum",
+        "functions": [
+          // function A
+          {
+            "filter": { "match": { "foo": "cat" } },
+            "weight": 100
+          },
+          // function B
+          {
+            "filter": { "match": { "foo": "cute" } },
+            "weight": 10
+          }
+        ]
+      }
+    }
+  }
+  ```
+  
   - `max_boost`
     - 계산된 점수의 최댓값을 설정할 수 있다.
     - 만일 계산 된 점수가 `max_boost`에 설정한 값 보다 높을 경우  점수는 `max_boost`에 설정한 값이 되게 된다.
     - 기본 값은 FLT_MAX(실수 형식으로 포함할 수 있는 최댓값)이다.
   - `boost_mode`
-    - 계산된 점수가 query의 점수와 어떻게 결합 될 것인지를 결정하는 파라미터
-    - multifly: 쿼리 score와 function score를 곱한다(기본값).
-    - replace: function score를 사용한다.
-    - sum: 쿼리 score와 function score를 더한다.
-    - avg: 쿼리 score와 function score의 평균을 낸다.
-    - max: 점수들 중 최댓값을 사용한다.
-    - min: 점수들 중 최솟값을 사용한다.
+    - 기존 점수와 function score로 새롭게 계산된 점수로 어떻게 최종 score를 계산할지를 설정하는 옵션이다.
+    - `multifly`: 쿼리 score와 function score를 곱한다(기본값).
+    - `replace`: 기존 점수는 사용하지 않고, function score만 사용한다.
+    - `sum`: 쿼리 score와 function score를 더한다.
+    - `avg`: 쿼리 score와 function score의 평균을 낸다.
+    - `max`: 점수들 중 최댓값을 사용한다.
+    - `min`: 점수들 중 최솟값을 사용한다.
+  
+  ```json
+  GET test/_search
+  {
+    "query": {
+      "function_score": {
+        "query": {
+          "match": {
+            "foo": "dog"
+          }
+        },
+        "boost_mode": "sum",
+        "functions": [
+          {
+            "filter": { "match": { "foo": "cat" } },
+            "weight": 100
+          },
+          {
+            "filter": { "match": { "foo": "cute" } },
+            "weight": 10
+          }
+        ]
+      }
+    }
+  }
+  ```
+  
   - `min_score`
     - 기본적으로, 조정 된 점수는 어떤 문서가 match될지에 영향을 주지 않는다.
     - `min_score`는 특정 점수를 충족하지 못하는 문서를 제외시킨다. 
     - `min_score`가 동작하려면 쿼리에서 반환 된 모든 문서에 점수를 매긴 다음 하나씩 필터링 해야 한다.
+
+
+
+- script score
+
+  - `function_score` 내에서 `script_score`를 사용할 수 있다.
+  - 예시
+
+  ```json
+  // GET /_search
+  {
+    "query": {
+      "function_score": {
+        "query": {
+          "match": { "message": "elasticsearch" }
+        },
+        "script_score": {
+          "script": {
+            "source": "Math.log(2 + doc['my-int'].value)"
+          }
+        }
+      }
+    }
+  }
+  ```
+
+
+
+- weight
+
+  - weight를 score에 곱한 score를 얻기 위해 사용한다.
+    - 반드시 float 값을 줘야 한다.
+  - weight를 사용하는 이유
+    - 점수는 각기 다른 척도로 계산 될 수 있으며, 때때로 점수에 각기 다른 함수를 적용하길 원할 수 있다.
+    - 따라서 이를 위해 각 함수가 계산하는 점수를 조정하기 위해 `weight`를 사용한다.
+
+  - `weigth`는 함수마다 하나씩 선언되며, 각각의 `weight`는 함수가 계산한 점수와 곱해진다.
+    - 만일 함수의 선언 없이 `weigth`만 정의할 경우, `weight`는 `weight` 그 자체를 반환하는 함수처럼 동작한다.
+
+  - 특정 쿼리에 설정 한 부스트 값은 정규화 되는 반면, weight를 통해 곱해진 점수는 정규화 되지 않는다.
+  - 예시
+
+  ```bash
+  "weight" : float
+  ```
+
+
+
+- random
+
+  - 0이상 1미만의 랜덤한 score를 생성한다.
+    - 기본값으로 무선적인 값 생성을 위해 내부 Lucene 문서의 id들을 사용한다.
+    - 이는 매우 효율적이지만 문서들이 병합에 의해 다시 넘버링 되기 때문에 reproducible하지는 않다.
+    - reproducible하게 사용하려면 `seed`와 `field`를 주면 된다(`seed` 값과 `field` 값을 동일하게 주면 항상 동일한 값을 얻을 수 있다.).
+  - 최종 score는 seed, 점수가 매겨질 documents들의 field의 최솟값, 인덱스명과 샤드 id에 기반한 값을 기반으로 계산되므로, 같은 값을 가지고 있지만 다른 인덱스에 저장된 문서들은 각기 다른 값을 갖게 된다. 
+    - 그러나, 같은 샤드에 같은 field의 같은 값을 지닌 문서들은 동일한 score를 갖게 된다.
+    - 따라서 모든 document들이 고윳값을 가지고 있는 field(주로 `_seq_no` field)를 사용하는 것이 권장된다.
+    - 단, 문서에 변경사항이 있으면 `_seq_no`도 변경되므로 점수도 변경되게 된다.
+  - 예시
+
+  ```json
+  // GET /_search
+  {
+    "query": {
+      "function_score": {
+        "random_score": {
+          "seed": 10,
+          "field": "_seq_no"
+        }
+      }
+    }
+  }
+  ```
+
+
+
+- `field_value_factor`
+
+  - 점수에 가중치를 주기 위해 document에 있는 field를 사용하는 방식이다.
+  - 만일 여러 값을 가진 filed를 사용할 경우, 첫 번째 값만 가중치 계산에 사용된다.
+  - 상세 옵션은 [공식 문서](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html#function-field-value-factor) 참고
+  - 예시
+
+  ```json
+  // GET /_search
+  {
+    "query": {
+      "function_score": {
+        "field_value_factor": {
+          "field": "my-int",
+          "factor": 1.2,
+          "modifier": "sqrt",
+          "missing": 1
+        }
+      }
+    }
+  }
+  ```
+
+
+
+- `function_score` query를 `script_score` query로 변환하기.
+
+  - `script_score` query가 `function_score` query보다 단순하므로, 가능하면 `script_score`를 쓰는 사용하는 것이 권장된다.
+    - 아래와 같은 `function_score`query의 function들을 `script_score` query로 변환하는 것이 가능하다.
+  - `weight`
+    - `weight` function은 `script_score`로 아래와 같이 변환할 수 있다.
+
+  ```json
+  "script" : {
+      "source" : "params.weight * _score",
+      "params": {
+          "weight": 2
+      }
+  }
+  ```
+
+  - `random_score`
+    - `script_score`의 `randomScore`로 변환이 가능하다.
+  - `field_value_factor`
+    - 아래와 같이 `script_score`로 변환이 가능하다.
+
+  ```json
+  "script" : {
+      "source" : "Math.log10(doc['field'].value * params.factor)",
+      "params" : {
+          "factor" : 5
+      }
+  }
+  ```
+
+
 
 
 
