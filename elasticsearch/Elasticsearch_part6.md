@@ -733,8 +733,8 @@
   
   - 한계
     - 위 과정을 모든 matching된 모든 document를 대상으로 실행하므로 memory를 많이 사용하게 된다.
-      - 또한 original query를 실행하므로 original  query가 복잡해지 수록 실행에 들어가는 비용도 커진다.
-      - 따라서 많은 field들을 가진 많은 양의 document들을 대상으로 plain highlighter를 사용할 경우 성능이 떨어질 수 있다.
+    - 또한 original query를 실행하므로 original  query가 복잡해지 수록 실행에 들어가는 비용도 커진다.
+    - 따라서 많은 field들을 가진 많은 양의 document들을 대상으로 plain highlighter를 사용할 경우 성능이 떨어질 수 있다.
 
 
 
@@ -791,6 +791,9 @@
     - 검색 query 이외에 검색 결과를 highlight하는데 사용할 query를 추가로 정의한다.
     - Elasticsearch는 `highlight_query`에 search query가 들어가 있는지 검사하지 않기에, search query를 `highlight_query`에 포함시키지 않으면 search query의 내용은 highlight되지 않는다.
     - 입력하지 않을 경우 search query가 적용된다.
+  - `number_of_fragments`(`fvh` highlighter에서만 사용 가능)
+    - 반환될 fragment들의 최대 개수를 설정한다.
+    - 기본 값은 0으로, 아무 fragment도 반환하지 않고, 전체 문서를 반환한다.
 
 
 

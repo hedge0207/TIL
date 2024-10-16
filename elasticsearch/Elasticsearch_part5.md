@@ -1442,6 +1442,7 @@
   {
       "query": {
           "bool": {
+              // should 라는 것에 주목해야 한다.
               "should": [
                   { "match": { "title":          "quick brown fox" }},
                   { "match": { "title.original": "quick brown fox" }},
@@ -1496,10 +1497,10 @@
   }
   
   // 아래와 같이 처리된다.
-  +(first_name:george last_name:george) +(first_name:washington last_name:washington)
+  +(last_name:george | first_name:george) +(last_name:washington | first_name:washington)
   
   // 만약 위에서 cross_fields가 아닌 best_fields를 사용했다면, 아래와 같이 처리된다.
-  (+first_name:george +last_name:washington) | (first_name:george last_name:washington)
+  ((+last_name:george +last_name:washington) | (+first_name:george +first_name:washington))
   ```
   
   - 위와 같이 query를 생성함으로써 `cross_fields`는 term frequency가 달라지는 문제를 해결한다.
@@ -1563,7 +1564,7 @@
   ((+A:안녕 +A:세상) | (+(C:안녕 | B:안녕) +(B:세상 | C:세상)))
   ```
   
-  - 위와 같이 각기 다른 analyzer들을 같은 analyzer를 사용하는 field들끼리 묶는 방식 자체는 별 문제가 되지 않지만, `operator`나 `minimum_should_match`를 사용할 때는 `most_fields`나 `best_fields`에서 `operator`나 `minimum_should_match`를 사용할 때 겪는 문제를 동일하게 겪을 수 있다.
+  - 위와 같이 각기 다른 analyzer들을 multi_match의 대상 field로 묶는 방식 자체는 별 문제가 되지 않지만, `operator`나 `minimum_should_match`를 사용할 때는 `most_fields`나 `best_fields`에서 `operator`나 `minimum_should_match`를 사용할 때 겪는 문제를 동일하게 겪을 수 있다.
     - 따라서 `operator`나 `minimum_should_match`를 사용해야 할 때는 같은 analyzer를 사용하는 fields들 끼리 묶어서 아래와 같이 `dis_max` query를 사용하는 것이 권장된다.
   
   ```json

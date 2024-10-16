@@ -122,70 +122,15 @@
 
 
 
-- Pipeline simulation하기
-
-  - Pipeline을 임의의 문서들에 simulation 해 볼 수 있다.
-    - `docs`에 simulation을 실행할 문서들을 입력하면 된다.
-
-  ```json
-  // POST /_ingest/pipeline/my-pipeline-id/_simulate
-  {
-      "docs": [
-          {
-              "_index": "index",
-              "_id": "id",
-              "_source": {
-                  "foo": "bar"
-              }
-          },
-          {
-              "_index": "index",
-              "_id": "id",
-              "_source": {
-                  "foo": "rab"
-              }
-          }
-      ]
-  }
-  ```
-
-  - Simulation 대상 pipeline은 path parameter로 주거나 request body에 포함시키면 된다.
-    - 이미 생성한 pipeline의 경우 path parameter로 설정해야 하고, 생성한 적 없는 pipeline은 body에 넣어야한다.
-
-  ```json
-  // POST /_ingest/pipeline/my-pipeline-id/_simulate
-  
-  // POST /_ingest/pipeline/_simulate
-  {
-      "pipeline":{
-          "description": "_description",
-          "processors": [
-              {
-                  "set" : {
-                      "field" : "field2",
-                      "value" : "_value"
-                  }
-              }
-          ]
-      }
-  }
-  ```
-
-  - Query parameter로 `verbose`값을 true로 줄 경우 보다 상세한 결과가 출력된다.
-
-  ```http
-  POST _ingest/pipeline/my-pipeline-id/_simulate?verbose=true
-  ```
-
-
-
 - Ingest simulation하기
 
   - 주어진 문서들을 대상으로 ingest pipeline을 simulation 할 수 있다.
     - Pipeline 개발용으로 사용하는 기능이며, index에 실제로 데이터를 색인하지는 않는다.
     - `docs`에 simulation할 문서들을 입력하면 된다.
     - 이미 존재하는 pipeline을 대체해서 사용하는 것도 가능하다.
-
+    - Simulation 대상 pipeline은 path parameter로 주거나 request body에 포함시키면 된다.
+    - 이미 생성한 pipeline의 경우 path parameter로 설정해야 하고, 생성한 적 없는 pipeline은 body에 넣어야한다.
+  
   ```json
   // POST /_ingest/_simulate
   {
@@ -219,22 +164,22 @@
       }
   }
   ```
-
+  
   - 요청 endpoint는 아래와 같다.
     - `target`은 ingest pipeline을 simulation해 볼 index를 의미한다.
     - `target`은 각 문서별로  설정하는 것도 가능하며, 둘 다 설정할 경우 문서에 설정한 값이 우선 순위를 가진다.
     - 만약 문서에 index를 설정하지 않았다면, `target`에 설정한 값이 적용된다.
-
+  
   ```http
   POST /_ingest/_simulate
   POST /_ingest/<target>/_simulate
   ```
-
+  
   - `pipeline_substitutions`에 대체할 pipeline을 설정할 수 있다.
     - `pipeline_id` key로, pipeline 생성시에 pipeline에 설정해주는 값과 동일한 object를 value로 갖는다.
     - 아래와 같이 실행할 경우 만약 `my-index`에 `foo-pipeline`이라는 pipeline이 설정되어 있다면, 해당 pipeline을 `pipeline_substitutions`에 정의한 `my-pipeline`으로 대체해서 실행한다.
     - 만약 `my-index`에 `bar-pipeline`도 설정되어 있다면, 해당 pipeline은 변경 없이 실행된다.
-
+  
   ```json
   // POST /_ingest/_simulate
   {
@@ -267,10 +212,10 @@
       }
   }
   ```
-
+  
   - 꼭 를 설정해줘야 하는 것은 아니다.
     - 아래와 같이 실행하면, pipeline의 대체 없이 이미 설정된 pipeline으로 simulation한다.
-
+  
   ```json
   // POST /_ingest/_simulate
   {
@@ -291,6 +236,12 @@
           }
       ]
   }
+  ```
+  
+  - Query parameter로 `verbose`값을 true로 줄 경우 보다 상세한 결과가 출력된다.
+  
+  ```http
+  POST _ingest/pipeline/my-pipeline-id/_simulate?verbose=true
   ```
 
 

@@ -862,6 +862,7 @@
   - 너무 많은 shard 개수를 설정하는 것은 overhead를 크게 증가시킬 수 있다.
     - 모든 index와 index 내부의 shard들은 memory와 CPU를 필요로한다.
     - 대부분의 경우에 적은 수의 큰 shard들이 많은 수의 작은 shard들 보다 더 적은 resource를 사용한다.
+    - 또한 샤드가 많을 수록 병렬 처리해야 하는 양이 많아진다는 의미이므로 네트워크 통신과 병렬 처리 오버헤드가 증가한다.
   - Segment와 shard
     - Elasticsearch는 빠른 검색을 위해서 segment들의 metadata를 heap memory에 저장한다.
     - Shard의 크기가 커질수록 segment들은 보다 적은 수로 병합되면서 크기가 점차 증가한다.
