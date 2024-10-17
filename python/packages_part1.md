@@ -578,6 +578,8 @@
 
 
 
+
+
 ## Basemodel
 
 - 예시
@@ -634,7 +636,7 @@
 
 
 
-- pydantic의 Dict type에 key, value 타입 지정하기
+- Pydantic의 dict type에 key, value 타입 지정하기
 
   - 리스트의 첫 번째 요소에 key의 type, 두 번째 요소에 value의 type을 입력한다.
 
@@ -922,6 +924,60 @@
       aggregation: Union[BucketAggregation, MetricAggregation]
       sub: 'Aggregation' = None
   ```
+
+
+
+- Required, optional, nullable fields
+
+  - Pydantic V2부터 `Optional` annotator를 사용했을 때의 로직이 변경되었다.
+    - 이전까지는 `Optional`을 사용하면 해당 field는 문자 그대로 optional한 field가 되었다.
+    - 그러나 V2부터는 `Optional`을 사용하더라도 required field가 된다.
+    - V2 기준으로 optional한 값이 되게하려면 기본값을 줘야한다.
+  - `Optional`의 의미
+    - `Optional[T]`은 `Union[T, None]`과 동일하다.
+    - 즉. `Optional[T]`는 해당 field가 T type이며, None이 될 수도 있다는 것을 의미한다.
+
+  - `Optional`과 기본값에 따른 필드 정의는 아래와 같다.
+
+  | State                                                       | Field Definition          |
+  | ----------------------------------------------------------- | ------------------------- |
+  | Required, cannot be `None`                                  | f1: str                   |
+  | Not required, cannot be `None`, is "abc" by default         | f2: str = "abc"           |
+  | Not required, can be `None`(implicit), is `None` by default | f3: str = None            |
+  | Required, can be `None`                                     | f4: Optional[str]         |
+  | Not required, can be `None`, is `None` by default           | f5: Optional[str] = None  |
+  | Not required, can be `None`, is "abc" by default            | f6: Optional[str] = "abc" |
+  | Required, can be any type (including `None`)                | f7: Any                   |
+  | Not required, can be any type (including `None`)            | f8: Any = None            |
+
+  - `str = None`과 `Optional[str] = None`의 차이
+    - 둘 다 기능적으로는 동일하게 동작하지만, 아래와 같은 차이가 있다.
+    - 엄밀히 말해서 `f1`의 경우 사실은 None이 될 수 없다.
+    - 그러나 dynamic typing을 지원하는 Python의 특성상 None도 할당 가능한 것이다.
+
+  ```python
+  from pydantic import BaseModel
+  from typing import Optional
+  
+  
+  class Foo(BaseModel):
+      f1: str = None
+      f2: Optional[str] = None
+  
+  for field in Foo.model_fields.values():
+      print(repr(field))
+      
+  """
+  FieldInfo(annotation=str, required=False, default=None)
+  FieldInfo(annotation=Union[str, NoneType], required=False, default=None)
+  """
+  ```
+
+  - 그럼 `str = None`과 `Optional[str] = None` 중 어떤 방식을 사용해야 하는가?
+    - Zen of Python에는 "암시적인 것 보다는 명시적인 것이 낫다(Explicit is better than implicit.)"는 항목이 있다.
+    - 따라서 None이 될 수 있음을 보다 명시적으로 표현하는 `Optional[str] = None`를 사용하는 것이 더 나을 것 같다.
+
+
 
 
 

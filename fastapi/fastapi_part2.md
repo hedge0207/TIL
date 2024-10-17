@@ -867,7 +867,8 @@
   - 동작 방식
     - Request가 들어오면, query parameter를 인자로 dependency class(`CommonQueryParams`)의 `__init__` method가 호출되고, dependency class의 instance를 반환한다.
     - Dependency가 반환한 instance를 path operation function의 parameter로 넘긴다.
-  
+    - `__init__` 메서드가 매 번 호출된다는 것에 주의해야 한다.
+    
   - 예시
   
   ```json
@@ -878,7 +879,7 @@
       "limit": 2
   }
   ```
-
+  
   - Dependency가 class일 경우의 shortcut
     - FastAPI에서는 dependency가 class일 경우에만 사용할 수 있는 shortcut을 제공한다.
   

@@ -464,6 +464,26 @@
 
   - `--dry-run`
     - 실행 결과만 보여주고 실제 실행하지는 않는다.
+  - `--without dev`
+    - Dev dependency 들은 설치하지 않는다(`--only main`도 동일하다).
+    - 이전 버전에서는 `--no-dev` 였으나 현재는 deprecated 됐다.
+  
+  ```bash
+  $ poetry install --no-dev
+
+
+
+- `lock`
+
+  - `pyproject.toml` 파일에 있는 dependency들을 lock한다.
+    - Lock file을 갱신한다.
+  - `--no-update`
+    - 기본적으로 `lock`이 실행되면, dependency들은 호환 가능한 가장 최근 버전으로 lock된다.
+    - 만약 최신 버전으로 update를 원하지 않는다면 이 옵션을 주면 된다.
+
+  ```bash
+  $ poetry lock --no-update
+  ```
 
 
 
@@ -623,6 +643,39 @@
   ```bash
   $ poetry config --list
   ```
+  
+  - `--unset`
+    - 특정 설정을 제거한다.
+  
+  ```bash
+  $ poetry config <제거할 설정> --unset
+  ```
+  
+  - 설정 적용하기
+  
+  ```bash
+  $ poetry config <설정> <설정 내용
+  
+  # e.g.
+  $ poetry config virtualenvs.path /path/to/cache/directory/virtualenvs
+  ```
+  
+  - 설정 확인하기
+  
+  ```bash
+  $ poetry config <설정>
+  
+  # e.g.
+  $ poetry config virtualenvs.path		# /path/to/cache/directory/virtualenvs
+  ```
+  
+  - `virtualenvs.in-project`
+    - Project의 root directory에 virtualenv를 생성할지 여부를 설정한다.
+    - 기본값은 None이며, true로 줄 경우 project의 root directory `.venv`라는 이름으로 생성하고, 주지 않을 경우 `{cahce-dir}/virtualenvs` 또는 `{project-dir}/.venv` 중 이미 존재하는 directory에 생성한다.
+  
+  ```bash
+  $ poetry config virtualenvs.in-project true
+  ```
 
 
 
@@ -636,7 +689,7 @@
 
 
 
-- export
+- `export`
 
   - Lockfile을 다른 format으로 export한다.
 
