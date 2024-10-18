@@ -85,13 +85,17 @@
 
 
 
-- 카프카를 비롯한 대부분의 분산 시스템의 장점
-  - 높은 확장성
-    - 카프카의 단일 브로커(노드)로는 처리가 힘들 경우 브로커를 늘리기만 하면 된다.
-    - 또한 브로커를 추가하는 것이 매우 쉽다.
-  - 안정성
-    - 동일한 역할을 수행하는 브로커들 중 일부 브로커의 장애 발생시 나머지 브로커들이 장애 발생 노드 분까지 처리를 맡게 된다.
-    - 이를 통해 안정적인 서비스 운영이 가능하다.
+- Kafka는 clustering이 가능하다.
+  - 여러 개의 broker를 묶어서 하나의 cluster를 구성한다.
+  - Clustering을 통해 얻을 수 있는 이점들은 아래와 같다.
+    - 여러 server에 부하를 분산시킬 수 있다.
+    - 확장성 있는 시스템을 구축할 수 있다.
+    - 안정적인 시스템을 구축할 수 있다.
+  - Broker와 parition
+    - 한 Topic의 여러 개의 partition은 cluster 내의 broker들에 분산되어 저장된다.
+    - 이를 통해 한 topic에 대한 요청을 여러 broker가 처리할 수 있게 되어 부하가 분산된다.
+    - 또한 partition은 replica를 가지며, replica가 아닌 partition을 leader라 부른다.
+    - Leader partition과 replica partition은 각기 다른 broker에 저장되어, 한 broker에 문제가 생기더라도, 다른 broker에 저장된 replica set을 이용하여 서비스가 가능하다.
 
 
 
