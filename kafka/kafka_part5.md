@@ -561,3 +561,467 @@
   - 장애가 발생하면(main application에 문제가 생겨 종료되면) in-memory storage에 저장되어 있단 unique id들도 삭제될텐데 그럴 때는 어떻게 해야 하나?
 
     - redirect topic에 있는 값들을 읽어 in-memory storage에 저장하면 간단히 해결된다.
+
+
+
+
+
+
+
+# Event-Driven Microservices
+
+- Kafka를 사용하여 event-driven microservices를 구축하는 이유
+  - Microservice의 문제점
+    - 컴포넌트 들 사이에 강한 결합이 생기는 경우가 있다.
+    - 또한 전체 시스템을 구성하는 컴포넌트 가 증가할수록 컴포넌트들 사이의 관계가 점점 더 복잡해진다.
+    - 이에따라 새로운 기능 추가나 요구사항의 변경을 수용하기 힘들어진다.
+  - Kafka 등의 message queue를 사용하면 각 컴포넌트 사이의 결합도를 낮출 수 있다.
+
+
+
+- Kafka를 사용하여 event-driven microservices 구축하기
+
+  > [Confluent blog의 포스트 참고](https://www.confluent.io/blog/event-driven-microservices-with-python-and-kafka/?session_ref=https://www.google.com/)
+
+  - 피자 제작 application을 Event-driven architecture로 구성할 것있다.
+  - 프로젝트 구조도
+
+  ![image-20241021135754510](kafka_part5.assets/image-20241021135754510.png)
+
+
+
+- 피자 주문을 받고, 주문을 확인할 앱 만들기
+
+  - FastAPI를 사용하여 API server를 실행한다.
+
+  ```python
+  from contextlib import asynccontextmanager
+  from threading import Thread
+  import json
+  
+  from fastapi import FastAPI
+  import uvicorn
+  
+  import pizza_service
+  
+  
+  @asynccontextmanager
+  async def lifespan(app: FastAPI):
+      t = Thread(target=pizza_service.load_orders)
+      t.start()
+      yield
+  
+  app = FastAPI(lifespan=lifespan)
+  
+  @app.post('/order/{count}')
+  def order_pizzas(count):
+      order_id = pizza_service.order_pizzas(int(count))
+      return json.dumps({"order_id": order_id})
+  
+  
+  @app.get('/order/{order_id}')
+  def get_order(order_id):
+      return pizza_service.get_order(order_id)
+  
+  
+  if __name__ == '__main__':
+      uvicorn.run(app, host="0.0.0.0", port=8094)
+  ```
+
+  - 피자 주문과 관련될 비즈니스 로직을 처리할 `pizza_service.py` 모듈을 작성한다.
+
+  ```python
+  import json
+  import time
+  
+  from kafka import KafkaProducer, KafkaConsumer
+  
+  from pizza import Pizza, PizzaOrder
+  
+  
+  TOPIC = "pizza"
+  BOOTSTRAP_SERVERS = ["localhost:9092"]
+  pizza_producer = KafkaProducer(acks=0, 
+          compression_type="gzip", 
+          bootstrap_servers=BOOTSTRAP_SERVERS,
+          key_serializer=lambda x: json.dumps(x).encode("utf-8"),
+          value_serializer=lambda x: json.dumps(x).encode("utf-8")
+  )
+  
+  pizza_warmer = {}
+  
+  def order_pizzas(count):
+      order = PizzaOrder(count)
+      pizza_warmer[order.id] = order
+      for _ in range(count):
+          new_pizza = Pizza()
+          new_pizza.order_id = order.id
+          pizza_producer.send(TOPIC, key=order.id, value=new_pizza.__dict__)
+      pizza_producer.flush()
+      return order.id
+  
+  def get_order(order_id):
+      order = pizza_warmer[order_id]
+      if order == None:
+          return "Order not found, perhaps it's not ready yet."
+      else:
+          return order.__dict__
+  
+  def load_orders():
+      pizza_consumer = KafkaConsumer(
+          TOPIC,
+          bootstrap_servers=BOOTSTRAP_SERVERS,
+          auto_offset_reset="earliest",
+          consumer_timeout_ms=10_000,
+          enable_auto_commit=False,
+          group_id="pizza_shop",
+          max_poll_records=500,
+          key_deserializer=lambda x: json.loads(x) if x else x,
+          value_deserializer=lambda x: json.loads(x) if x else x
+      )
+  
+      pizza_consumer.subscribe(["pizza-with-veggies"])
+      while True:
+          record = pizza_consumer.poll()
+          if record:
+              for messages in record.values():
+                  for message in messages:
+                      pizza = message.value
+                      add_pizza(pizza["order_id"], pizza)
+              continue
+          time.sleep(1)
+  
+  def add_pizza(order_id, pizza):
+      if order_id in pizza_warmer.keys():
+          order = pizza_warmer[order_id]
+          order.add_pizza(pizza)
+  ```
+
+  - 피자와 주문을 표현하기 위한 모델(`pizza.py`)을 정의한다.
+
+  ```python
+  import uuid
+  
+  
+  class Pizza:
+      def __init__(self):
+          self.order_id = ''
+          self.sauce = ''
+          self.cheese = ''
+          self.meats = ''
+          self.veggies = ''
+  
+  
+  
+  class PizzaOrder:
+      def __init__(self, count):
+          self.id = str(uuid.uuid4().int)
+          self.count = count
+          self.pizzas = []
+  
+      def add_pizza(self, pizza):
+          self.pizzas.append(pizza)
+  
+      def get_pizzas(self):
+          return self.pizzas
+  ```
+
+
+
+- 각 단계를 거치면서 피자를 제작할 앱들을 작성한다.
+
+  - 기본 구조는 모두 동일하다.
+    - 이전 단계의 topic으로부터 message를 받아온다.
+    - 받아온 message(Pizza)에 각 단계에 맞는 토핑을 추가한다.
+    - 다음 단계의 topic으로 토핑이 추가된 message를 전송한다.
+  - Sauce
+
+  ```python
+  import time
+  import json
+  import random
+  
+  from kafka import KafkaProducer, KafkaConsumer
+  
+  
+  COMSUMER_TOPIC = "pizza"
+  PRODUCER_TOPIC = "pizza-with-sauce"
+  BOOTSTRAP_SERVERS = ["localhost:9092"]
+  
+  sauce_producer = KafkaProducer(acks=0, 
+      compression_type="gzip", 
+      bootstrap_servers=BOOTSTRAP_SERVERS,
+      key_serializer=lambda x: json.dumps(x).encode("utf-8"),
+      value_serializer=lambda x: json.dumps(x).encode("utf-8")
+  )
+  
+  pizza_consumer = KafkaConsumer(
+      COMSUMER_TOPIC,
+      bootstrap_servers=BOOTSTRAP_SERVERS,
+      auto_offset_reset="earliest",
+      consumer_timeout_ms=10_000,
+      enable_auto_commit=False,
+      group_id="sauces",
+      max_poll_records=500,
+      key_deserializer=lambda x: json.loads(x) if x else x,
+      value_deserializer=lambda x: json.loads(x) if x else x
+  )
+  
+  
+  def start_service():
+      while True:
+          record = pizza_consumer.poll()
+          if not record:
+              continue
+  
+          for messages in record.values():
+              for message in messages:
+                  pizza = message.value
+                  add_sauce(message.key, pizza)
+  
+          time.sleep(1)
+  
+  def add_sauce(order_id, pizza):
+      pizza["sauce"] = calc_sauce()
+      sauce_producer.send(PRODUCER_TOPIC, key=order_id, value=pizza)
+      print(pizza)
+      sauce_producer.flush()
+  
+  def calc_sauce():
+      i = random.randint(0, 8)
+      sauces = ["regular", "light", "extra", "none", "alfredo", "regular", "light", "extra", "alfredo"]
+      return sauces[i]
+  
+  
+  if __name__ == "__main__":
+      start_service()
+  
+  ```
+
+  - Cheese
+
+  ```python
+  import time
+  import json
+  import random
+  
+  from kafka import KafkaProducer, KafkaConsumer
+  
+  
+  COMSUMER_TOPIC = "pizza-with-sauce"
+  PRODUCER_TOPIC = "pizza-with-cheese"
+  BOOTSTRAP_SERVERS = ["localhost:9092"]
+  
+  
+  cheese_producer = KafkaProducer(acks=0, 
+      compression_type="gzip", 
+      bootstrap_servers=BOOTSTRAP_SERVERS,
+      key_serializer=lambda x: json.dumps(x).encode("utf-8"),
+      value_serializer=lambda x: json.dumps(x).encode("utf-8")
+  )
+  
+  sauce_consumer = KafkaConsumer(
+      COMSUMER_TOPIC,
+      bootstrap_servers=BOOTSTRAP_SERVERS,
+      auto_offset_reset="earliest",
+      consumer_timeout_ms=10_000,
+      enable_auto_commit=False,
+      group_id="cheeses",
+      max_poll_records=500,
+      key_deserializer=lambda x: json.loads(x) if x else x,
+      value_deserializer=lambda x: json.loads(x) if x else x
+  )
+  
+  
+  def start_service():
+      while True:
+          record = sauce_consumer.poll()
+          if not record:
+              continue
+  
+          for messages in record.values():
+              for message in messages:
+                  pizza = message.value
+                  add_cheese(message.key, pizza)
+  
+          time.sleep(1)
+  
+  
+  def add_cheese(order_id, pizza):
+      pizza["cheese"] = calc_cheese()
+      cheese_producer.send(PRODUCER_TOPIC, key=order_id, value=pizza)
+      print(pizza)
+      cheese_producer.flush()
+  
+  
+  def calc_cheese():
+      i = random.randint(0, 6)
+      cheeses = ["extra", "none", "three cheese", "goat cheese", "extra", "three cheese", "goat cheese"]
+      return cheeses[i]
+  
+  
+  if __name__ == "__main__":
+      start_service()
+  ```
+
+  - Meat
+
+  ```python
+  import time
+  import json
+  import random
+  
+  from kafka import KafkaProducer, KafkaConsumer
+  
+  
+  COMSUMER_TOPIC = "pizza-with-cheese"
+  PRODUCER_TOPIC = "pizza-with-meats"
+  BOOTSTRAP_SERVERS = ["localhost:9092"]
+  
+  
+  meats_producer = KafkaProducer(acks=0, 
+      compression_type="gzip", 
+      bootstrap_servers=BOOTSTRAP_SERVERS,
+      key_serializer=lambda x: json.dumps(x).encode("utf-8"),
+      value_serializer=lambda x: json.dumps(x).encode("utf-8")
+  )
+  
+  cheese_consumer = KafkaConsumer(
+      COMSUMER_TOPIC,
+      bootstrap_servers=BOOTSTRAP_SERVERS,
+      auto_offset_reset="earliest",
+      consumer_timeout_ms=10_000,
+      enable_auto_commit=False,
+      group_id="meats",
+      max_poll_records=500,
+      key_deserializer=lambda x: json.loads(x) if x else x,
+      value_deserializer=lambda x: json.loads(x) if x else x
+  )
+  
+  
+  def start_service():
+      while True:
+          record = cheese_consumer.poll()
+          if not record:
+              continue
+  
+          for messages in record.values():
+              for message in messages:
+                  pizza = message.value
+                  add_meats(message.key, pizza)
+  
+          time.sleep(1)
+  
+  def add_meats(order_id, pizza):
+      pizza["meats"] = calc_meats()
+      meats_producer.send(PRODUCER_TOPIC, key=order_id, value=pizza)
+      print(pizza)
+      meats_producer.flush()
+  
+  
+  def calc_meats():
+      i = random.randint(0, 4)
+      meats = ["pepperoni", "sausage", "ham", "anchovies", "salami", "bacon", "pepperoni", "sausage", "ham", "anchovies", "salami", "bacon"]
+      selection = []
+      if i == 0:
+          return "none"
+      else:
+          for _ in range(i):
+              selection.append(meats[random.randint(0, 11)])
+      return " & ".join(set(selection))
+  
+  
+  if __name__ == "__main__":
+      start_service()
+  ```
+
+  - Veggie
+
+  ```python
+  import time
+  import json
+  import random
+  
+  from kafka import KafkaProducer, KafkaConsumer
+  
+  
+  COMSUMER_TOPIC = "pizza-with-meats"
+  PRODUCER_TOPIC = "pizza-with-veggies"
+  BOOTSTRAP_SERVERS = ["localhost:9092"]
+  
+  
+  veggies_producer = KafkaProducer(acks=0, 
+      compression_type="gzip", 
+      bootstrap_servers=BOOTSTRAP_SERVERS,
+      key_serializer=lambda x: json.dumps(x).encode("utf-8"),
+      value_serializer=lambda x: json.dumps(x).encode("utf-8")
+  )
+  
+  meats_consumer = KafkaConsumer(
+      COMSUMER_TOPIC,
+      bootstrap_servers=BOOTSTRAP_SERVERS,
+      auto_offset_reset="earliest",
+      consumer_timeout_ms=10_000,
+      enable_auto_commit=False,
+      group_id="meats",
+      max_poll_records=500,
+      key_deserializer=lambda x: json.loads(x) if x else x,
+      value_deserializer=lambda x: json.loads(x) if x else x
+  )
+  
+  
+  def start_service():
+      while True:
+          record = meats_consumer.poll()
+          if not record:
+              continue
+  
+          for messages in record.values():
+              for message in messages:
+                  pizza = message.value
+                  add_veggies(message.key, pizza)
+  
+          time.sleep(1)
+  
+  
+  def add_veggies(order_id, pizza):
+      pizza["veggies"] = calc_veggies()
+      print(pizza)
+      veggies_producer.send(PRODUCER_TOPIC, key=order_id, value=pizza)
+      veggies_producer.flush()
+  
+  
+  def calc_veggies():
+      i = random.randint(0,4)
+      veggies = ["tomato", "olives", "onions", "peppers", "pineapple", "mushrooms", "tomato", "olives", "onions", "peppers", "pineapple", "mushrooms"]
+      selection = []
+      if i == 0:
+          return "none"
+      else:
+          for _ in range(i):
+              selection.append(veggies[random.randint(0, 11)])
+      return " & ".join(set(selection))
+  
+  
+  if __name__ == "__main__":
+      start_service()
+  ```
+
+
+
+- 동작 과정
+  - API server로 피자 주문 요청을 보낸다.
+  - API server는 `Pizza`의 인스턴스를 생성하고, 해당 인스턴스를 Kafka topic으로 전송한다.
+  - 토핑을 추가하는 서비스들은 Kafka topic에서 이전 단계가 보낸 message를 받아, 자신이 맡은 토핑을 추가하고 다음 단계 topic으로 message를 보낸다.
+  - API server는 마지막 단계에 해당하는 topic을 구독하고, 여기서 받아온 message를 다시 `Pizza` 인스턴스로 변환하여 저장한다.
+
+
+
+
+
+
+
+
+
+
+
