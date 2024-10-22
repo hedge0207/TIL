@@ -576,6 +576,12 @@
     - 또한 전체 시스템을 구성하는 컴포넌트 가 증가할수록 컴포넌트들 사이의 관계가 점점 더 복잡해진다.
     - 이에따라 새로운 기능 추가나 요구사항의 변경을 수용하기 힘들어진다.
   - Kafka 등의 message queue를 사용하면 각 컴포넌트 사이의 결합도를 낮출 수 있다.
+    - 그러나 컴포넌트들 사이의 결합도가 완전히 사라지도록 할 수는 없다.
+    - 각 컴포넌트들은 서로 message의 형식을 공유하기 때문이다.
+    - 또한 design-time의 결합도는 낮출 수 있어도, run-time의 결합도를 낮추는 것은 매우 어려울 수 있다.
+    - 예를 들어 아래 예시에서는 design-time의 결합도를 낮추는데 집중했고, 그 덕분에 개발과 배포는 상대적으로 간편해졌다.
+    - 그러나 설계 상으로는 각 컴포넌트가 message를 통해 느슨하게 연결되어 있긴 하지만, 실제 실행될 때(run-time), 한 컴포넌트에서 문제가 발생하면 전체 주문 과정이 실패하게 된다.
+    - 다만, 이는 design-time 결합도에 비해 run-time 결합도를 낮추는 게 힘들다는 것이지, event-driven 구조가 높은 run-time 결합도를 가진다는 것은 아니다.
 
 
 
@@ -583,16 +589,33 @@
 
   > [Confluent blog의 포스트 참고](https://www.confluent.io/blog/event-driven-microservices-with-python-and-kafka/?session_ref=https://www.google.com/)
 
-  - 피자 제작 application을 Event-driven architecture로 구성할 것있다.
-  - 프로젝트 구조도
+  - 피자 제작 application을 Event-driven architecture로 구성할 것이다.
+  - 프로젝트 구성도
 
-  ![image-20241021135754510](kafka_part5.assets/image-20241021135754510.png)
+  ![image-20241021153217787](kafka_part5.assets/image-20241021153217787.png)
+  
+  - 프로젝트 구조
+  
+  ```python
+  .
+  ├─pizza-service
+  │	main.py
+  │	pizza.py
+  │	pizza_service.py
+  │
+  └─topping_services
+  	cheese_service.py
+  	meat_service.py
+  	sauce_service.py
+  	base_service.py
+  	veggie_service.py
+  ```
 
 
 
-- 피자 주문을 받고, 주문을 확인할 앱 만들기
+- `pizza-service`
 
-  - FastAPI를 사용하여 API server를 실행한다.
+  - `main.py`
 
   ```python
   from contextlib import asynccontextmanager
@@ -628,7 +651,7 @@
       uvicorn.run(app, host="0.0.0.0", port=8094)
   ```
 
-  - 피자 주문과 관련될 비즈니스 로직을 처리할 `pizza_service.py` 모듈을 작성한다.
+  - `pizza_service.py`
 
   ```python
   import json
@@ -639,8 +662,10 @@
   from pizza import Pizza, PizzaOrder
   
   
-  TOPIC = "pizza"
-  BOOTSTRAP_SERVERS = ["localhost:9092"]
+  PRODUCER_TOPIC = "pizza"
+  CONSUMER_TOPIC = "pizza-with-veggies"
+  
+  BOOTSTRAP_SERVERS = ["localhost:9097"]
   pizza_producer = KafkaProducer(acks=0, 
           compression_type="gzip", 
           bootstrap_servers=BOOTSTRAP_SERVERS,
@@ -656,7 +681,7 @@
       for _ in range(count):
           new_pizza = Pizza()
           new_pizza.order_id = order.id
-          pizza_producer.send(TOPIC, key=order.id, value=new_pizza.__dict__)
+          pizza_producer.send(PRODUCER_TOPIC, key=order.id, value=new_pizza.__dict__)
       pizza_producer.flush()
       return order.id
   
@@ -669,7 +694,7 @@
   
   def load_orders():
       pizza_consumer = KafkaConsumer(
-          TOPIC,
+          CONSUMER_TOPIC,
           bootstrap_servers=BOOTSTRAP_SERVERS,
           auto_offset_reset="earliest",
           consumer_timeout_ms=10_000,
@@ -680,7 +705,6 @@
           value_deserializer=lambda x: json.loads(x) if x else x
       )
   
-      pizza_consumer.subscribe(["pizza-with-veggies"])
       while True:
           record = pizza_consumer.poll()
           if record:
@@ -695,10 +719,11 @@
       if order_id in pizza_warmer.keys():
           order = pizza_warmer[order_id]
           order.add_pizza(pizza)
+  
   ```
-
-  - 피자와 주문을 표현하기 위한 모델(`pizza.py`)을 정의한다.
-
+  
+  - `pizza.py`
+  
   ```python
   import uuid
   
@@ -710,7 +735,6 @@
           self.cheese = ''
           self.meats = ''
           self.veggies = ''
-  
   
   
   class PizzaOrder:
@@ -728,283 +752,164 @@
 
 
 
-- 각 단계를 거치면서 피자를 제작할 앱들을 작성한다.
+- `topping_services`
 
   - 기본 구조는 모두 동일하다.
     - 이전 단계의 topic으로부터 message를 받아온다.
     - 받아온 message(Pizza)에 각 단계에 맞는 토핑을 추가한다.
     - 다음 단계의 topic으로 토핑이 추가된 message를 전송한다.
-  - Sauce
+  - `base_service.py`
 
   ```python
+  from abc import ABC, abstractmethod
   import time
   import json
-  import random
   
   from kafka import KafkaProducer, KafkaConsumer
   
   
-  COMSUMER_TOPIC = "pizza"
-  PRODUCER_TOPIC = "pizza-with-sauce"
-  BOOTSTRAP_SERVERS = ["localhost:9092"]
+  class BaseService(ABC):
+      _BOOTSTRAP_SERVERS = ["localhost:9097"]
+      _topping_type = None
   
-  sauce_producer = KafkaProducer(acks=0, 
-      compression_type="gzip", 
-      bootstrap_servers=BOOTSTRAP_SERVERS,
-      key_serializer=lambda x: json.dumps(x).encode("utf-8"),
-      value_serializer=lambda x: json.dumps(x).encode("utf-8")
-  )
+      def __init__(self, consumer_topic, producer_topic):
+          self._producer_topic = producer_topic
+          self._producer = KafkaProducer(acks=0, 
+              compression_type="gzip", 
+              bootstrap_servers=self._BOOTSTRAP_SERVERS,
+              key_serializer=lambda x: json.dumps(x).encode("utf-8"),
+              value_serializer=lambda x: json.dumps(x).encode("utf-8")
+          )
+          self._consumer = KafkaConsumer(
+              consumer_topic,
+              bootstrap_servers=self._BOOTSTRAP_SERVERS,
+              auto_offset_reset="earliest",
+              consumer_timeout_ms=10_000,
+              enable_auto_commit=False,
+              group_id="meats",
+              max_poll_records=500,
+              key_deserializer=lambda x: json.loads(x) if x else x,
+              value_deserializer=lambda x: json.loads(x) if x else x
+          )
+      
+      def _add_topping(self, order_id, pizza):
+          pizza[self._topping_type] = self._calc_topping()
+          self._producer.send(self._producer_topic, key=order_id, value=pizza)
+          self._producer.flush()
+      
+      @abstractmethod
+      def _calc_topping(self):
+          ...
+      
+      def start_service(self):
+          while True:
+              record = self._consumer.poll()
+              if not record:
+                  continue
   
-  pizza_consumer = KafkaConsumer(
-      COMSUMER_TOPIC,
-      bootstrap_servers=BOOTSTRAP_SERVERS,
-      auto_offset_reset="earliest",
-      consumer_timeout_ms=10_000,
-      enable_auto_commit=False,
-      group_id="sauces",
-      max_poll_records=500,
-      key_deserializer=lambda x: json.loads(x) if x else x,
-      value_deserializer=lambda x: json.loads(x) if x else x
-  )
+              for messages in record.values():
+                  for message in messages:
+                      pizza = message.value
+                      self._add_topping(message.key, pizza)
   
-  
-  def start_service():
-      while True:
-          record = pizza_consumer.poll()
-          if not record:
-              continue
-  
-          for messages in record.values():
-              for message in messages:
-                  pizza = message.value
-                  add_sauce(message.key, pizza)
-  
-          time.sleep(1)
-  
-  def add_sauce(order_id, pizza):
-      pizza["sauce"] = calc_sauce()
-      sauce_producer.send(PRODUCER_TOPIC, key=order_id, value=pizza)
-      print(pizza)
-      sauce_producer.flush()
-  
-  def calc_sauce():
-      i = random.randint(0, 8)
-      sauces = ["regular", "light", "extra", "none", "alfredo", "regular", "light", "extra", "alfredo"]
-      return sauces[i]
-  
-  
-  if __name__ == "__main__":
-      start_service()
-  
+              time.sleep(1)
   ```
-
-  - Cheese
-
+  
+  - `sauce_service.py`
+  
   ```python
-  import time
-  import json
   import random
   
-  from kafka import KafkaProducer, KafkaConsumer
+  from base_service import BaseService
   
   
-  COMSUMER_TOPIC = "pizza-with-sauce"
-  PRODUCER_TOPIC = "pizza-with-cheese"
-  BOOTSTRAP_SERVERS = ["localhost:9092"]
+  class SauceService(BaseService):
+      _topping_type = "sauce"
   
-  
-  cheese_producer = KafkaProducer(acks=0, 
-      compression_type="gzip", 
-      bootstrap_servers=BOOTSTRAP_SERVERS,
-      key_serializer=lambda x: json.dumps(x).encode("utf-8"),
-      value_serializer=lambda x: json.dumps(x).encode("utf-8")
-  )
-  
-  sauce_consumer = KafkaConsumer(
-      COMSUMER_TOPIC,
-      bootstrap_servers=BOOTSTRAP_SERVERS,
-      auto_offset_reset="earliest",
-      consumer_timeout_ms=10_000,
-      enable_auto_commit=False,
-      group_id="cheeses",
-      max_poll_records=500,
-      key_deserializer=lambda x: json.loads(x) if x else x,
-      value_deserializer=lambda x: json.loads(x) if x else x
-  )
-  
-  
-  def start_service():
-      while True:
-          record = sauce_consumer.poll()
-          if not record:
-              continue
-  
-          for messages in record.values():
-              for message in messages:
-                  pizza = message.value
-                  add_cheese(message.key, pizza)
-  
-          time.sleep(1)
-  
-  
-  def add_cheese(order_id, pizza):
-      pizza["cheese"] = calc_cheese()
-      cheese_producer.send(PRODUCER_TOPIC, key=order_id, value=pizza)
-      print(pizza)
-      cheese_producer.flush()
-  
-  
-  def calc_cheese():
-      i = random.randint(0, 6)
-      cheeses = ["extra", "none", "three cheese", "goat cheese", "extra", "three cheese", "goat cheese"]
-      return cheeses[i]
+      def _calc_topping(self):
+          i = random.randint(0, 8)
+          sauces = ["regular", "light", "extra", "none", "alfredo", "regular", "light", "extra", "alfredo"]
+          return sauces[i]
   
   
   if __name__ == "__main__":
-      start_service()
+      service = SauceService("pizza", "pizza-with-sauce")
+      service.start_service()
   ```
-
-  - Meat
-
+  
+  - `cheese_service.py`
+  
   ```python
-  import time
-  import json
   import random
   
-  from kafka import KafkaProducer, KafkaConsumer
+  from base_service import BaseService
   
   
-  COMSUMER_TOPIC = "pizza-with-cheese"
-  PRODUCER_TOPIC = "pizza-with-meats"
-  BOOTSTRAP_SERVERS = ["localhost:9092"]
+  class CheeseService(BaseService):
+      _topping_type = "cheese"
   
-  
-  meats_producer = KafkaProducer(acks=0, 
-      compression_type="gzip", 
-      bootstrap_servers=BOOTSTRAP_SERVERS,
-      key_serializer=lambda x: json.dumps(x).encode("utf-8"),
-      value_serializer=lambda x: json.dumps(x).encode("utf-8")
-  )
-  
-  cheese_consumer = KafkaConsumer(
-      COMSUMER_TOPIC,
-      bootstrap_servers=BOOTSTRAP_SERVERS,
-      auto_offset_reset="earliest",
-      consumer_timeout_ms=10_000,
-      enable_auto_commit=False,
-      group_id="meats",
-      max_poll_records=500,
-      key_deserializer=lambda x: json.loads(x) if x else x,
-      value_deserializer=lambda x: json.loads(x) if x else x
-  )
-  
-  
-  def start_service():
-      while True:
-          record = cheese_consumer.poll()
-          if not record:
-              continue
-  
-          for messages in record.values():
-              for message in messages:
-                  pizza = message.value
-                  add_meats(message.key, pizza)
-  
-          time.sleep(1)
-  
-  def add_meats(order_id, pizza):
-      pizza["meats"] = calc_meats()
-      meats_producer.send(PRODUCER_TOPIC, key=order_id, value=pizza)
-      print(pizza)
-      meats_producer.flush()
-  
-  
-  def calc_meats():
-      i = random.randint(0, 4)
-      meats = ["pepperoni", "sausage", "ham", "anchovies", "salami", "bacon", "pepperoni", "sausage", "ham", "anchovies", "salami", "bacon"]
-      selection = []
-      if i == 0:
-          return "none"
-      else:
-          for _ in range(i):
-              selection.append(meats[random.randint(0, 11)])
-      return " & ".join(set(selection))
-  
+      def _calc_topping(self):
+          i = random.randint(0, 6)
+          cheeses = ["extra", "none", "three cheese", "goat cheese", "extra", "three cheese", "goat cheese"]
+          return cheeses[i]
   
   if __name__ == "__main__":
-      start_service()
+      service = CheeseService("pizza-with-sauce", "pizza-with-cheese")
+      service.start_service()
   ```
-
-  - Veggie
-
+  
+  - `meat_service.py`
+  
   ```python
-  import time
-  import json
   import random
   
-  from kafka import KafkaProducer, KafkaConsumer
+  from base_service import BaseService
   
   
-  COMSUMER_TOPIC = "pizza-with-meats"
-  PRODUCER_TOPIC = "pizza-with-veggies"
-  BOOTSTRAP_SERVERS = ["localhost:9092"]
+  class MeatService(BaseService):
+      _topping_type = "meats"
   
-  
-  veggies_producer = KafkaProducer(acks=0, 
-      compression_type="gzip", 
-      bootstrap_servers=BOOTSTRAP_SERVERS,
-      key_serializer=lambda x: json.dumps(x).encode("utf-8"),
-      value_serializer=lambda x: json.dumps(x).encode("utf-8")
-  )
-  
-  meats_consumer = KafkaConsumer(
-      COMSUMER_TOPIC,
-      bootstrap_servers=BOOTSTRAP_SERVERS,
-      auto_offset_reset="earliest",
-      consumer_timeout_ms=10_000,
-      enable_auto_commit=False,
-      group_id="meats",
-      max_poll_records=500,
-      key_deserializer=lambda x: json.loads(x) if x else x,
-      value_deserializer=lambda x: json.loads(x) if x else x
-  )
-  
-  
-  def start_service():
-      while True:
-          record = meats_consumer.poll()
-          if not record:
-              continue
-  
-          for messages in record.values():
-              for message in messages:
-                  pizza = message.value
-                  add_veggies(message.key, pizza)
-  
-          time.sleep(1)
-  
-  
-  def add_veggies(order_id, pizza):
-      pizza["veggies"] = calc_veggies()
-      print(pizza)
-      veggies_producer.send(PRODUCER_TOPIC, key=order_id, value=pizza)
-      veggies_producer.flush()
-  
-  
-  def calc_veggies():
-      i = random.randint(0,4)
-      veggies = ["tomato", "olives", "onions", "peppers", "pineapple", "mushrooms", "tomato", "olives", "onions", "peppers", "pineapple", "mushrooms"]
-      selection = []
-      if i == 0:
-          return "none"
-      else:
-          for _ in range(i):
-              selection.append(veggies[random.randint(0, 11)])
-      return " & ".join(set(selection))
-  
+      def _calc_topping(self):
+          i = random.randint(0, 4)
+          meats = ["pepperoni", "sausage", "ham", "anchovies", "salami", "bacon", "pepperoni", "sausage", "ham", "anchovies", "salami", "bacon"]
+          selection = []
+          if i == 0:
+              return "none"
+          else:
+              for _ in range(i):
+                  selection.append(meats[random.randint(0, 11)])
+          return " & ".join(set(selection))
   
   if __name__ == "__main__":
-      start_service()
+      service = MeatService("pizza-with-cheese", "pizza-with-meats")
+      service.start_service()
+  ```
+  
+  - `veggie_servivce.py`
+  
+  ```python
+  import random
+  
+  from base_service import BaseService
+  
+  
+  class VeggieService(BaseService):
+      _topping_type = "veggies"
+  
+      def _calc_topping(self):
+          i = random.randint(0,4)
+          veggies = ["tomato", "olives", "onions", "peppers", "pineapple", "mushrooms", "tomato", "olives", "onions", "peppers", "pineapple", "mushrooms"]
+          selection = []
+          if i == 0:
+              return "none"
+          else:
+              for _ in range(i):
+                  selection.append(veggies[random.randint(0, 11)])
+          return " & ".join(set(selection))
+  
+  if __name__ == "__main__":
+      service = VeggieService("pizza-with-meats", "pizza-with-veggies")
+      service.start_service()
   ```
 
 
