@@ -387,8 +387,6 @@
 
 
 
-
-
 - Kafka Connect API
 
   | method   | endpoint                                              | description                                     |
@@ -409,7 +407,7 @@
   | `POST`   | /connectors/<connector 이름>/tasks/\<task id>/restart | 실행 중인 connector의 task 재시작               |
   | `GET`    | /connectors/<connector 이름>/topics                   | Connector별 연동된 토픽 정보 확인               |
   | `GET`    | /connector-plugins                                    | Connect에 존재하는 connector 플러그인 목록 확인 |
-  | `PUT`    | /connector-plugins/<플러그인 이름>/validate           | Connector 생성 시 설정값 유효성 확인            |
+  | `PUT`    | /connector-plugins/<플러그인 이름>/config/validate    | Connector 생성 시 설정값 유효성 확인            |
 
 
 

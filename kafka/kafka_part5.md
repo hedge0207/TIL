@@ -922,6 +922,142 @@
 
 
 
+- 테스트
+
+  - 피자 주문하기
+
+  ```http
+  POST /order/3
+  ```
+
+  - 주문 확인
+
+  ```http
+  GET /order/87685427894568984649547650511171285697
+  ```
+
+  - 응답
+
+  ```json
+  {
+      "id": "87685427894568984649547650511171285697",
+      "count": 3,
+      "pizzas": [
+          {
+              "order_id": "87685427894568984649547650511171285697",
+              "sauce": "extra",
+              "cheese": "goat cheese",
+              "meats": "pepperoni & salami & sausage & anchovies",
+              "veggies": "none"
+          },
+          {
+              "order_id": "87685427894568984649547650511171285697",
+              "sauce": "alfredo",
+              "cheese": "three cheese",
+              "meats": "none",
+              "veggies": "peppers"
+          },
+          {
+              "order_id": "87685427894568984649547650511171285697",
+              "sauce": "extra",
+              "cheese": "goat cheese",
+              "meats": "salami",
+              "veggies": "none"
+          }
+      ]
+  }
+  ```
+
+
+
+- 새로운 기능 추가하기
+
+  - Event-driven microservice를 채택하면 새로운 기능을 상대적으로 간단하게 추가할 수 있게 된다.
+    - 상기했듯, event-driven 구조에서는 각 컴포넌트들이 느슨하게 결합된다.
+    - 따라서 기존 컴포넌트에 영향을 미치지 않고도 각 컴포넌트가 publish하는 message의 구조만 알고 있으면 새로운 컴포넌트를 추가할 수 있다.
+    - 심지어 run-time에 추가하는 것도 가능하다.
+  - 예를 들어 각 피자의 토핑 중에서 어떤 육류가 올라갔는지만을 확인하는 컴포넌트를 추가해야 한다고 가정해보자.
+    - 아래와 같이 기존에 meat_service가 publish 하던 topic을 구독하는 컴포넌트를 하나 생성하기만 하면 된다.
+
+  ![image-20241021153329252](kafka_part5.assets/image-20241021153329252.png)
+
+  - 새로운 FastAPI 앱을 생성한다.
+
+  ```python
+  from contextlib import asynccontextmanager
+  from threading import Thread
+  
+  from fastapi import FastAPI
+  import uvicorn
+  
+  import report_service
+  
+  
+  @asynccontextmanager
+  async def lifespan(app: FastAPI):
+      t = Thread(target=report_service.start_consumer)
+      t.start()
+      yield
+  
+  app = FastAPI(lifespan=lifespan)
+  
+  @app.get('/report')
+  def generate_report():
+      return report_service.generate_report()
+  
+  if __name__ == '__main__':
+      uvicorn.run(app, host="0.0.0.0", port=8089)
+  ```
+
+  - 비즈니스 로직을 처리할 모듈을 추가한다.
+
+  ```python
+  import time
+  import json
+  
+  from kafka import KafkaConsumer
+  
+  
+  BOOTSTRAP_SERVERS = ["localhost:9097"]
+  # pizza-with-meats topic에서 message를 읽어온다.
+  TOPIC = "pizza-with-meats"
+  meats = {}
+  
+  def start_consumer():
+      consumer = KafkaConsumer(
+          TOPIC,
+          bootstrap_servers=BOOTSTRAP_SERVERS,
+          auto_offset_reset="earliest",
+          consumer_timeout_ms=10_000,
+          enable_auto_commit=False,
+          group_id="pizza_shop",
+          max_poll_records=500,
+          key_deserializer=lambda x: json.loads(x) if x else x,
+          value_deserializer=lambda x: json.loads(x) if x else x
+      )
+      
+      while True:
+          record = consumer.poll()
+          if record:
+              for messages in record.values():
+                  for message in messages:
+                      pizza = message.value
+                      add_meat_count(pizza["meats"])
+              continue
+          time.sleep(1)
+  
+  def add_meat_count(meat):
+      if meat in meats:
+          meats[meat] = meats[meat] + 1
+      else:
+          meats[meat] = 1
+  
+  def generate_report():
+      return meats
+  ```
+
+
+
 
 
 
