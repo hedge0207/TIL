@@ -627,3 +627,72 @@
     - 또한 SSE는 웹소켓과 달리 HTTP 프로토콜을 사용하여 간단하게 구현이 가능하다.
     - 양방향 통신이 아닌 server로부터 client로 데이터를 전송하는 단방향 통신만 필요한 경우라면 웹소켓 대신 SSE를 사용하는 것이 권장된다.
   - SSE는 GET method만을 허용한다.
+
+
+
+- UUID(Universally Unique Identifier)
+
+  - 128-bit(16 byte)의 고유 식별자.
+    - [RFC 4122](https://www.rfc-editor.org/rfc/rfc4122)에 스펙이 정의되어 있다.
+    - 다른 고유 ID 생성 방법과 다르게, UUID는 중앙 시스템에 등록하고 발급하는 과정이 없어 상대적으로 더 빠르고 간단하게 만들 수 있다.
+    - 다른 고유 식별자에 비해 정렬, 차수, 해싱 등 다양한 알고리즘에 사용하기 쉽다.
+  - GUID(Globally Unique IDentifier)와의 차이
+    - 기본적으로 UUID와 GUID는 같다고 보면 된다.
+    - 일반적으로 Microsoft에서는 GUID라는 용어를 주로 사용한다.
+    - 그러나 상황에 따라 다른 용어가 되기도 하는데, 그 이유는 UUID를 생성하는 방식이 여러 가지가 있기 때문이다.
+    - UUID를 생성하는 방식에 따라 UUID와 GUID가 다를 수도 있다.
+  - UUID의 구조
+    - 하이픈으로 구분된 5개의 16진수 형식의 36(8-4-4-4-12)자 문자열로 표시되는 128비트값이다.
+    - 하이픈 사이에 있는 16진수 숫자들은 하나의 필드로, 각 필드는 정수로 취급되며 가장 중요한 숫자가 앞에 나온다.
+    - `time_low` - `time_mid` - `time_high_and_version` - `clock_seq_hi_and_reserved` - `clock_seq_low` - `node` 순이다.
+    - Timestamp, clock sequence 등으로 각 부분을 구분하긴 하지만, 이는 구조를 만들 때는 UUID1을 기반으로 했기 때문으로 다른 버전에서는 각 부분에 다른 값을 사용하기도 한다.
+
+  | Field                     | Size            | Description                         |
+  | ------------------------- | --------------- | ----------------------------------- |
+  | time low                  | 4hexOctet/32bit | 타임스탬프의 low field              |
+  | time mid                  | 2hexOctet/16bit | 타임스탬프의 mid field              |
+  | time high and version     | 2hexOctet/16bit | 타임스탬프의 high field & UUID 버전 |
+  | clock seq hi and reserved | hexOctet/8bit   | 클락 시퀀스의 high field & variant  |
+  | clock seq low             | hexOctet/8bit   | 클락 시퀀스의 low field             |
+  | node                      | 6hexOctet/48bit | node 식별자                         |
+
+  - Timestamp
+    - UUID1에서는 UTC 기준(UTC를 사용할 수 없는 경우 system의 local time을 사용하지만, 권장되지는 않는다)으로 그레고리력이 제정된 1582년 10월 15일 00:00:00.00로부터 지난 시간을 기준으로 결정된다.
+    - UUID3, UUID5에서는 시간이 아니라 name(URL, DNS, programming language의 예약어 등)을 기반으로 만들어진다.
+    - UUID4 역시 시간이 아니라 무선적으로 생성된 값을 사용한다.
+  - Clock Sequence
+    - UUID1에서는 (시스템이 초기화 되는 등의 이유로) 시스템 시간이 되돌아가거나 노드 ID가 변경될 때 중복된 UUID 값이 생성되는 것을 방지하기 위한 무선적인 값을 의미한다.
+    - UUID3, UUID5에서는 timestamp와 마찬가지로 name을 기반으로 생성된다.
+    - UUID4 역시 무선적으로 생성된 값을 사용한다.
+  - Node
+    - UUID1에서는 IEEE 802 MAC address를 사용하며, IEEE address가 없는 system에서는 무선적으로 생성된 값을 사용한다.
+    - UUID3, UUID5에서는 timestamp와 마찬가지로 name을 기반으로 생성된다.
+    - UUID4는 무선적으로 생성된 값을 사용한다.
+
+
+
+- UUID 버전
+
+  > 버전이 높다고 좋은 것은 아니다.
+
+  - UUID1
+    - Timestamp와 Node ID(MAC address)를 기반으로 생성된다.
+    - 생성 시 시간이 반영되므로 순서가 보장되고, 중복 가능성이 매우 낮다는 장점이 있다.
+    - 그러나 MAC address를 기반으로 한다는 특성 때문에 보안상의 이유로 잘 사용되지 않는다.
+  - UUID2
+    - UUID1에서 clock sequence를 사용자 ID (UID 또는 GID)로 대체하여 생성한다.
+    - 특정 보안 환경에서 사용되는 DCE (Distributed Computing Environment)에서 사용된다.
+    - 보안 관련 시스템이 아니면 거의 사용하지 않는다.
+  - UUID3
+    - Namespace별 특정 name을 MD5 hash를 사용하여 생성한다.
+    - 예를 들어 namespace가 DNS면 `www.example.com`을 name으로 생성하는 방식이다.
+    - 동일한 namespace와 이름에 대해 항상 같은 UUID가 생성된다는 장점이 있다.
+    - MD5 hash algorithm이 보안상 취약하다는 문제가 있어, 보안이 중요할 경우 사용해선 안 된다.
+  - UUID4
+    - 임의의 난수 값으로 생성한다.
+    - 완전히 무선적으로 생성하므로 충돌 확률이 매우 낮으며 보안성이 높다.
+    - Timestamp를 사용하지 않기 때문에 순서가 보장되지 않으며, 생성 시점을 알 수 없다는 단점이 있다.
+    - 가장 많이 사용되는 방식이다.
+  - UUID5
+    - UUID3와 유사하지만 MD5가 아닌 SHA-1 hash algorithm을 사용한다.
+    - UUID3보다 보안성이 더 높다는 장점이 있으나, SHA-1도 현재는 안전하지 않다고 평가된다.
