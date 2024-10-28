@@ -108,16 +108,6 @@
 <br/>
 <br/>
 
-# C
-## C
-- Pointer
-
-<br/>
-<br/>
-
-<br/>
-<br/>
-
 # clean_code
 ## clean_code_part1
 - 깨끗한 코드
@@ -438,6 +428,8 @@
 
 ### mysql_part2
 - DB 복사
+
+- Shorts
 
 <br/>
 <br/>
@@ -876,8 +868,6 @@
 
 - Exist query
 
-- function_score
-
 - Nested query
 
 - 검색 관련 옵션
@@ -957,7 +947,7 @@
 <br/>
 <br/>
 
-## elasticsearch_senario
+## Elasticsearch_senario
 - ES 클러스터 구축 시나리오
 
 <br/>
@@ -1095,6 +1085,12 @@
 
 <br/>
 <br/>
+
+<br/>
+<br/>
+
+## C_pointer
+- Pointer
 
 <br/>
 <br/>
@@ -1704,6 +1700,8 @@
 
 - Enum
 
+- 스레드
+
 <br/>
 <br/>
 
@@ -1750,11 +1748,59 @@
 
 - Kafka를 사용한 application의 error handling
 
+- Event-Driven Microservices
+
 <br/>
 <br/>
 
 ## kafka_python
 - Python에서 사용하기
+
+<br/>
+<br/>
+
+## python-microservices
+### meat_reporter
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+### pizza_service
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+### topping_services
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+<br/>
+<br/>
 
 <br/>
 <br/>
