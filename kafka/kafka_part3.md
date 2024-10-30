@@ -686,7 +686,9 @@
 
 
 
-## 카프카 커맨드 라인 툴
+## Kafka Command Line Tool
+
+> 전체 tool에 대한 설명은 [공식 문서](https://kafka.apache.org/081/documentation.html#basic_ops_leader_balancing) 참고
 
 - 카프카 커맨드 라인 툴
   - 카프카 브로커 운영에 필요한 다양한 명령을 내릴 수 있다.
@@ -883,8 +885,6 @@
 
 
 
-
-
 - kafka-verifiable-producer/consumer.sh
 
   - 카프카 클러스터 설치가 완료된 이후에 토픽에 데이터를 전송하여 간단한 네트워크 통신 테스트를 할 때 유용하게 사용이 가능하다.
@@ -941,6 +941,117 @@
   ```
 
 
+
+- `kafka-reassign-partitions.sh`
+
+  - Partition을 재분배한다.
+    - Parition 설정을 명시한 JSON 파일을 인자로 받아, 명시된 대로 parition을 재설정한다.
+
+  - 재할당을 진행할 topic들을 명시하여 아래와 같은 JSON 파일을 작성한다.
+
+  ```json
+  // tmp.json
+  {
+      "version":1,
+      "topics": [
+          {"topic":"foo"},
+          {"topic":"bar"}
+      ]
+  }
+  ```
+
+  - `kafka-reassign-partitions.sh`를 통해 재할당 후보들을 받아온다.
+    - `--generate` 옵션을 통해 재할당에 관한 제안을 받을 수 있다.
+    - `--topics-to-move-json-file`에 위에서 작성한 JSON파일 경로를 입력한다.
+    - `--broker-list` 옵션에 재할당하고자 하는 broker id를 입력한다.
+
+  ```json
+  // bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 --topics-to-move-json-file tmp.json --broker-list "5,6" --generate 
+  
+  // 현재 할당 상황
+  Current partition replica assignment
+  
+  {"version":1,
+   "partitions":[{"topic":"foo","partition":2,"replicas":[1,2]},
+                 {"topic":"foo","partition":0,"replicas":[3,4]},
+                 {"topic":"bar","partition":2,"replicas":[1,2]},
+                 {"topic":"bar","partition":0,"replicas":[3,4]},
+                 {"topic":"foo","partition":1,"replicas":[2,3]},
+                 {"topic":"bar","partition":1,"replicas":[2,3]}]
+  }
+  
+  // 재할당 제안
+  Proposed partition reassignment configuration
+  
+  {"version":1,
+   "partitions":[{"topic":"foo","partition":2,"replicas":[5,6]},
+                 {"topic":"foo","partition":0,"replicas":[5,6]},
+                 {"topic":"bar","partition":2,"replicas":[5,6]},
+                 {"topic":"bar","partition":0,"replicas":[5,6]},
+                 {"topic":"foo","partition":1,"replicas":[5,6]},
+                 {"topic":"bar","partition":1,"replicas":[5,6]}]
+  }
+  ```
+
+  - 위에서 제안 받은 내용을 JSON 파일로 작성한다.
+    - 전까지의 과정은 필수적인 과정은 아니며, 바로 현재 단계부터 시작해도 된다.
+
+  ```json
+  // proposed.json
+  {"version":1,
+   "partitions":[{"topic":"foo","partition":2,"replicas":[5,6]},
+                 {"topic":"foo","partition":0,"replicas":[5,6]},
+                 {"topic":"bar","partition":2,"replicas":[5,6]},
+                 {"topic":"bar","partition":0,"replicas":[5,6]},
+                 {"topic":"foo","partition":1,"replicas":[5,6]},
+                 {"topic":"bar","partition":1,"replicas":[5,6]}]
+  }
+  ```
+
+  - 재할당을 실행한다.
+    - `--reassignment-json-file` 옵션에 위에서 작성한 JSON 파일 경로를 입력한다.
+    - `--execute` 옵션을 주면 재할당 결과를 미리 볼 수 있다.
+
+  ```json
+  // bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 --reassignment-json-file proposed.json --execute
+  Current partition replica assignment
+  
+  {"version":1,
+   "partitions":[{"topic":"foo1","partition":2,"replicas":[1,2]},
+                 {"topic":"foo1","partition":0,"replicas":[3,4]},
+                 {"topic":"foo2","partition":2,"replicas":[1,2]},
+                 {"topic":"foo2","partition":0,"replicas":[3,4]},
+                 {"topic":"foo1","partition":1,"replicas":[2,3]},
+                 {"topic":"foo2","partition":1,"replicas":[2,3]}]
+  }
+  
+  Save this to use as the --reassignment-json-file option during rollback
+  Successfully started reassignment of partitions
+  {"version":1,
+   "partitions":[{"topic":"foo1","partition":2,"replicas":[5,6]},
+                 {"topic":"foo1","partition":0,"replicas":[5,6]},
+                 {"topic":"foo2","partition":2,"replicas":[5,6]},
+                 {"topic":"foo2","partition":0,"replicas":[5,6]},
+                 {"topic":"foo1","partition":1,"replicas":[5,6]},
+                 {"topic":"foo2","partition":1,"replicas":[5,6]}]
+  }
+  ```
+
+  - 재할당 과정 확인하기
+    - `--verify` 옵션을 주면 재할당 진행 과정을 확인할 수 있다.
+
+  ```json
+  // bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 --reassignment-json-file proposed.json --verify
+  Status of partition reassignment:
+  Reassignment of partition [foo1,0] completed successfully
+  Reassignment of partition [foo1,1] is in progress
+  Reassignment of partition [foo1,2] is in progress
+  Reassignment of partition [foo2,0] completed successfully
+  Reassignment of partition [foo2,1] completed successfully 
+  Reassignment of partition [foo2,2] completed successfully 
+  ```
+
+  
 
 
 

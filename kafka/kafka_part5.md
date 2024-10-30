@@ -1060,7 +1060,37 @@
 
 
 
+# ETC
 
+- Skew
+
+  - Skew는 Kafka topic의 partition들이 각 broker에 균등하기 나눠지는 것이 아니라 한쪽으로 치우쳐진 상황이다.
+
+    - Leader skew는 leader partition이 각 broker에 균등하게 분산되지 않은 상황을 의미한다.
+    - Broker skew는 partition이 각 broker에 균등하게 문산되지 않은 상황을 의미한다(leader skew도 broker skew에 포함된다).
+    - 일반적으로 broker의 partition 개수가 각 broker별 parition 개수의 평균 보다 클 경우 broker skew라고 말한다.
+
+    - Skew가 발생할 경우 더 많은 partition을 가진 broker에 부하가 집중될 수 있다.
+
+  - Leader skew가 발생할 수 있는 상황
+
+    - 3개의 leader partition이 각각 2개의 follower partition을 가지고, 3개의 broker에 고르게 분산되어 있다고 가정해보자. 즉 모든 broker는 leader partition 하나와 follower partition 2개를 가지고 있다.
+    - 이 때, 하나의 broker에 문제가 생겨 borker가 내려가게 되었다.
+    - 문제가 발생한 broker에 있던 leader partition을 대신하기 위해 남은 두 개의 broker가 가지고 있던 follower partition 중 하나가 leader parition으로 승급된다.
+    - 이 경우 한 broker에는 leader partition이 하나, 나머지 하나의 다른 broker에는 leader patition이 두 개가 된다.
+    - 이 때, leader를 하나만 가지고 있던 broker에도 문제가 생기고 마찬가지 과정을 통해 남은 하나의 broker에 leader partition 3개가 위치하게 된다.
+    - 이후에 문제가 생겼던 두 개의 broker가 다시 올라오더라도 leader partition이 재배치 되지 않으면, 하나의 broker에 3개의 leader partition이 위치한 상태가 유지된다.
+
+  - Leader skew를 해결할 수 있는 방법
+
+    - Broker 설정 중 `auto.leader.rebalance.enable`의 값을 `true`로 설정하여(기본값이 `true`) leader partition이 자동으로 rebalancing 되도록 한다.
+    - Kafka는 leader partition 선출을 다시 할 수 있게 해주는 `kafka-preferred-replica-election.sh` CLI를 제공하므로, 이를 활용하면 된다.
+
+  - Broker skew를 해결할 수 있는 방법
+
+    - `kafka-reassign-partitions.sh` CLI를 사용하여 parition을 재분배한다.
+    - 단, 이는 partition의 개수만 고려할뿐 크기까지 고려하지는 않는다.
+    - 또한 cconsumer rebalancing이 발생하므로 운영 상황에서는 신중히 실행해야 한다.
 
 
 
