@@ -1098,12 +1098,52 @@
 
 # Uvicorn과 Gunicorn
 
-- gunicorn으로 여러 개의 워커 실행하기
+- Uvicorn
 
-  - fastapi는 내부적으로 uvicorn을 사용한다.
+  - Python을 위한 ASGI web server이다.
+    - 현재까지는 HTTP/1.1과WebSocket을 지원한다.
+  - 설치
+
+  ```bash
+  $ pip install uvicorn
+  
+  # 최소한의 dependency와 함께 설치
+  $ pip install 'uvicorn[standard]'
+  ```
+
+
+
+- Uvicorn을 process manager와 함께 사용하기
+
+  - Uvicorn을 process manager와 함께 사용하면 보다 탄력적으로 여러 process들을 관리할 수 있다.
+
+    - Socket setup
+    - 여러 sever process의 실행
+    - Process들의 실행 여부 모니터링. 
+    - Process 재실행을 위한 signal 청취
+    - Process 종료
+    - 실행 중인 process들의 개수 조절.
+
+  - Built-in
+
+    - Uvicorn에는 여러개의 worker process를 실행하기 위한 `--workers` option이 있다.
+
+    - Gunicorn과 달리 uvicorn은 pre-fork하지 않고 [spawn](https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods)하는데, 이는 uvicorn의 multiprocess manager가 Windows에서도 동작할 수 있게 해준다.
+    - Process manager는 process들의 상태를 모니터링하고, 예상치 못하게 종료된 process들을 restart하는 등의 역할을 수행한다.
+
+  - Built-in 외에도 아래와 같은 것들을 사용할 수 있다.
+
+    - Gunicorn
+    - Supervisor
+    - Circus
+
+
+
+- Gunicorn으로 여러 개의 워커 실행하기
+
+  - Fastapi는 내부적으로 uvicorn을 사용한다.
     - uvicorn은 ASGI 서버로 비동기적인 처리를 처리할 수 있다는 장점이 있다.
-    - 그러나 single process이기에 한 번에 여러 요청을 처리해야 하는 상용 환경에서 사용하기에는 무리가 있다.
-  - gunicorn은 WSGI 서버이다.
+  - Gunicorn은 WSGI 서버이다.
     - WSGI 서버이기에 비동기 요청은 처리가 불가능하다.
     - gunicorn은 WSGI 서버이면서 process manager의 역할도 한다.
     - 즉 클라이언트로부터 들어온 요청을 여러 프로세스로 분배하는 역할을 한다.
@@ -1125,6 +1165,15 @@
   $ gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:80
   ```
 
+  - CPython이 아닌 PyPy로 실행하고자 한다면 아래와 같이 하면 된다.
+    - `UvicornWorker`는 `uvloop`와 `httptools`를 사용한다.
+    - 만약 PyPy로 실행하고자 한다면 pure-python implementation을 사용해야한다.
+    - `UvicornWorker`대신 `UvicornH11Worker`를 사용하면 된다.
+
+  ```bash
+  $ gunicorn -w 4 --worker-class uvicorn.workers.UvicornH11Worker
+  ```
+
   - 옵션
 
     - `main:app`: `main`은 실행하려는 python module 이름을 이고, `app`은 fastapi application의 이름이다.
@@ -1136,6 +1185,7 @@
   - uvicorn 역시 process manager로 사용하는 것이 가능하다.
 
     - 그러나 worker process들을 관리하는 능력이 아직까지는 gunicorn에 비해 제한적이므로 gunicorn을 process manager로 사용하는 것이 더 낫다.
+    - 그러나 최근 버전에서는 uvicorn에도 여러 관리 기능이 추가되어, uvicorn만 사용해도 무방하다.
 
   ```bash
   $ uvicorn main:app --host 0.0.0.0 --port 8080 --workers 4
@@ -1143,8 +1193,26 @@
 
 
 
+- Gunicorn 설정
+  - `worker_class`
+    - 사용할 worker의 type을 설정한다.
+    - `sync`, `eventlet`, `gevent`, `tornado`, `gthread` 중 하나의 값을 받는다.
+    - 혹은 `gunicorn.workers.base.Worker`를 상속 받는 custom worker를 입력할 수도 있다.
+    - `--worker-class`(`-k`)로 설정한다.
+  - `workers`
+    - Request를 처리하기 위한 worker의 개수를 설정한다(기본값은 1).
+    - Gunicorn은 4-12개의 worker 만으로 초당 수백개에서 수천개의 요청을 처리할 수 있으므로, 지나치게 많은 수의 worker를 설정하는 것은 권장하지 않는다.
+    - 일반적으로 `(2*<num_cores>) + 1`개가 [권장](https://docs.gunicorn.org/en/latest/design.html#how-many-workers)된다.
+    - `--workers`(`-w`)로 설정한다.
+  - `worker_connections`
+    - Worker process 당 동시에 허용할 수 있는 connection의 개수를 설정한다.
+    - 오직 worker type이 `gthread`, `eventlet`, `gevent`일 때만 유효하다.
+    - `--worker-connections`로 설정한다.
 
-- Logging
+
+
+
+- Gunicorn Logging
 
   - `--log-config` 옵션으로 logging을 위한 configuration 파일을 지정할 수 있다.
   - Python logging mudule과 동일한 형식으로 configuration 파일을 작성하면 된다.
@@ -1198,7 +1266,7 @@
       uvicorn.run(app)
   ```
 
-  - gunicorn으로 app 실행
+  - Gunicorn으로 app 실행
 
   ```bash
   $ gunicorn main:app --bind 0.0.0.0:8080  --worker-class uvicorn.workers.UvicornWorker --log-config logging.conf
@@ -1216,7 +1284,7 @@
     - 아래와 같이 함수를 추가해줘도 되고, `logging.Filter`를 상속 받는 class를 지정해줘도 된다.
     - 단 class를 지정해줄 경우 반드시 `filter` 메서드를 가지고 있어야한다.
     - 주의할 점은 `gunicorn.access`가 아닌 `uvicorn.access`에 설정해줘야한다는 점이다.
-  
+
   ```python
   from fastapi import FastAPI
   import logging
@@ -1245,12 +1313,6 @@
   if __name__ == "__main__":
       uvicorn.run(app)
   ```
-  
-  
-
-
-
-
 
 
 
