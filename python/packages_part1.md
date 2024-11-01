@@ -981,17 +981,180 @@
 
 
 
-
-
 ## Validator
 
-### Annotated Validator
+- `Annotated`를 사용하여 validator를 설정할 수 있다.
 
-- `Annotated`를 사용하여 validation을 할 수 있다.
+  - 아래와 같이 설정한다.
 
-  - Python 3.9부터 typing package에 추가 된 `Annotated`를 사용하여 validation이 가능하다.
-
+  ```python
+  from typing import Any, List, Annotated
   
+  from pydantic import BaseModel, ValidationError
+  from pydantic.functional_validators import AfterValidator
+  
+  # validation 함수1
+  def check_squares(v: int) -> int:
+      assert v**0.5 % 1 == 0, f'{v} is not a square number'
+      return v
+  
+  # validation 함수2
+  def double(v: Any) -> Any:
+      return v * 2
+  
+  # validation 함수를 포함하여 type을 선언한다.
+  MyNumber = Annotated[int, AfterValidator(double), AfterValidator(check_squares)]
+  
+  
+  class DemoModel(BaseModel):
+      number: List[MyNumber]
+  
+  
+  print(DemoModel(number=[2, 8]))
+  try:
+      DemoModel(number=[2, 4])
+  except ValidationError as e:
+      print(e)
+  ```
+
+  - Validator function의 종류
+    - `AfterValidator`: Pydantic의 내부 parsing이 완료된 후에 validator가 실행된다.
+    - `BeforeValidator`: Pydantic의 내부 parsing이 실행되기 전에 validator가 실행된다.
+    - `PlainValidator`: `mode='before'`와 같이 실행한 것과 유사하지만, Pydantic이 추가적인 내부 validation을 실행하지는 않는다.
+    - `WrapValidator`: Pydantic이 내부 로직을 실행하기 전과 후에 모두 실행할 수 있는 validator이다.
+    - 여러 개의 before, after, wrap validator를 사용할 수 있지만, `PlainValidator`는 오직 하나만 사용할 수 있다.
+  - Validation 순서는 `Annotated`내에 작성한 순서에 따라 결정된다.
+    - 먼저 before와 wrap validator가 뒤에서 앞으로 실행된다.
+    - 그 후 after validator가 앞에서 뒤로 실행된다.
+
+  ```python
+  from typing import Any, Callable, List, cast, Annotated, Annotated
+  
+  from typing_extensions import TypedDict
+  
+  from pydantic import (
+      AfterValidator,
+      BaseModel,
+      BeforeValidator,
+      ValidationInfo
+  )
+  from pydantic.functional_validators import field_validator
+  
+  
+  class Context(TypedDict):
+      logs: List[str]
+  
+  
+  def make_validator(label: str) -> Callable[[Any, ValidationInfo], Any]:
+      def validator(v: Any, info: ValidationInfo) -> Any:
+          context = cast(Context, info.context)
+          context['logs'].append(label)
+          return v
+  
+      return validator
+  
+  
+  class A(BaseModel):
+      x: Annotated[
+          str,
+          BeforeValidator(make_validator('before-1')),
+          AfterValidator(make_validator('after-1')),
+          BeforeValidator(make_validator('before-2')),
+          AfterValidator(make_validator('after-2')),
+          BeforeValidator(make_validator('before-3')),
+          AfterValidator(make_validator('after-3')),
+          BeforeValidator(make_validator('before-4')),
+          AfterValidator(make_validator('after-4')),
+      ]
+  
+      val_x_before = field_validator('x', mode='before')(
+          make_validator('val_x before')
+      )
+      val_x_after = field_validator('x', mode='after')(
+          make_validator('val_x after')
+      )
+  
+  
+  context = Context(logs=[])
+  
+  A.model_validate({'x': 'abc', 'y': 'def'}, context=context)
+  for log in context['logs']:
+      print(log)
+   
+  """
+  val_x before
+  before-4
+  before-3
+  before-2
+  before-1
+  after-1
+  after-2
+  after-3
+  after-4
+  val_x after
+  """
+  ```
+
+
+
+- Model validator
+
+  - `@model_validator`를 사용하면 전체 model을 validation 할 수 있다.
+    - `@model_validator`를 추가한 method는 self instance를 반환해야한다(단, `mode`에 따라 달라질 수 있다).
+    - 자식 class에서 부모 클래스의 `@model_validator` method를 사용할 수 있으며, 오버라이딩도 가능하다.
+  - `mode`에 따라 달라지는 것들이 있다.
+    - `mode='before'`일 경우 validator method는 class method여야 하며, 첫 번째 인자는 class 자체를 받는다.
+    - `mode='after'`일 경우 validator method의 첫 번째 인자로 self를 받으며, 반드시 self를 반환해야한다.
+
+  ```python
+  from typing import Any
+  
+  from typing_extensions import Self
+  
+  from pydantic import BaseModel, ValidationError, model_validator
+  
+  
+  class UserModel(BaseModel):
+      username: str
+      password1: str
+      password2: str
+  
+      @model_validator(mode='before')
+      @classmethod
+      def check_card_number_omitted(cls, data: Any) -> Any:
+          if isinstance(data, dict):
+              assert (
+                  'card_number' not in data
+              ), 'card_number should not be included'
+          return data
+  
+      @model_validator(mode='after')
+      def check_passwords_match(self) -> Self:
+          pw1 = self.password1
+          pw2 = self.password2
+          if pw1 is not None and pw2 is not None and pw1 != pw2:
+              raise ValueError('passwords do not match')
+          return self
+  
+  
+  print(UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn'))
+  
+  try:
+      UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn2')
+  except ValidationError as e:
+      print(e)
+  try:
+      UserModel(
+          username='scolvin',
+          password1='zxcvbn',
+          password2='zxcvbn',
+          card_number='1234',
+      )
+  except ValidationError as e:
+      print(e)
+  ```
+
+
 
 
 
@@ -1181,6 +1344,8 @@
 
 
 
+
+
 ### 특정 field를 validation하기(Pydantic 2.0 이상)
 
 - `field_validator`를 사용한다.
@@ -1235,9 +1400,10 @@
   
   ```
 
-  
 
-  
+
+
+
 
 
 
