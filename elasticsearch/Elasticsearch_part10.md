@@ -1491,6 +1491,124 @@
 
 
 
+# Elasticsearch thread pool
+
+- Thread Pool의 종류
+
+  > 전체 목록은 [Elasticsearch 공식 문서](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-threadpool.html) 참고
+
+  - `generic`
+    - Background node discovery 등의 일반적인 동작에 사용된다.
+    - Thread pool type은 scaling이다.
+  - `search`
+    - Shard level의 검색 및 count에 사용되며(즉, query phase에 사용), 이 연산은 `search_worker` thread pool에 offload(위임) 된다.
+    - Fetch phase를 비롯한 검색과 관련된 작업들에도 사용된다.
+    - Thread pool의 type은 fixed이며, 기본값은 `int(node.processors*3) / 2) + 1`이고 queue size의 기본값은 1000이다.
+  - `search_worker`
+    - 같은 shard 내에 있는 여러 segment에 걸쳐서 동시에 실행되는 무거운 count/search 작업에 사용된다.
+    - Thread pool의 type은 fixed이며, 기본값은 `int(node.processors*3) / 2) + 1`이고 queue size의 기본값은 무제한이다.
+  - `search_throttled`
+    - count/search/suggest/get 등에 사용된다.
+    - Thread pool의 type은 fixed이며, 기본값은 1이고, queue_size의 기본값은 100이다.
+  - `search_coordination`
+    - 검색과 관련된 가벼운 조정에 사용된다.
+    - Thread pool의 type은 fixed이며, 기본값은 `node.processors / 2`이고 queue size의 기본값은 1000이다.
+  - `get`
+    - Get을 수행하는 데 사용된다.
+    - Thread pool의 type은 fixed이며, 기본값은 `int(node.processors*3) / 2) + 1`이고 queue size의 기본값은 1000이다.
+  - `analyze`
+    - Analyze request를 수행하는 데 사용된다.
+    - Thread pool의 type은 fixed이며, 기본값은 1, queue size의 기본값은 16이다.
+  - `write`
+    - 단일 문서의 index/delete/update, ingest processor의 수행, 그리고 bulk를 수행하는 데 사용된다.
+    - Thread pool의 type은 fixed이며, 기본값은 `node.processors`이며 queue size의 기본값은 10000이다.
+    - Thread pool의 최대 크기는 `1 + node.processors`이다.
+
+
+
+- Node가 얼마 만큼의 thread pool을 사용하게 할지 설정할 수 있다.
+
+  - Thread pool 설정은 static 설정으로, 변경하려면 Elasticsearch를 재실행해야 한다.
+  - `elasticsearch.yml` 파일을 통해 thread pool의 개수를 조정할 수 있다.
+
+  ```yaml
+  thread_pool:
+      write:
+          size: 30
+  ```
+
+  - 아래와 같이 queue_size도 설정할 수 있다.
+    - `queue_size`가 가득차게 되면, 이후에 오는 요청은 거부된다.
+
+  ```yaml
+  thread_pool:
+      write:
+          size: 30
+          queue_size: 1000
+  ```
+
+  - 아래와 같이 scaling도 가능하다.
+    - Thread pool의 크기가 dynamic하게 변경된다.
+    - 부하와 `core`, `max`에 의해 동적으로 변경된다.
+    - `keep_alive`는 thread pool에 있는 thread가 수행하는 작업이 없을 때 얼마나 thread pool에 남아있을지를 설정하는 값이다.
+
+  ```yaml
+  thread_pool:
+      warmer:
+          core: 1
+          max: 8
+          keep_alive: 2m
+  ```
+
+  - Processor의 개수 조정하기
+    - Processor의 개수는 자동으로 탐지되며, thread pool 설정은 이 값을 기반으로 자동으로 설정된다.
+    - 아래와 같이 processor의 개수를 조정할 수 있다.
+    - 단, 실제 processor 이상의 값은 설정할 수 없다.
+    - 부동 소수점도 설정 가능하다.
+    - 특수한 상황이 아니면 수정하지 않는 것이 권장된다.
+
+  ```yaml
+  node.processors: 2
+  ```
+
+  - Processor의 개수를 조정하는 것이 유용한 경우
+    - 만약 여러 개의 Elasticsearch instance를 하나의 host에서 실행해야 한다고 가정해보자.
+    - 단, Elasticsearch가 CPU의 일부만 사용하고 있는 것 처럼 실행하고자 한다.
+    - 이 때, `node.processors`를 조정하면 CPU의 일부만 사용하는 것 처럼 실행할 수 있다.
+
+
+
+- Thread pool 확인하기
+
+  - 아래와 같이 thread pool을 확인할 수 있다.
+
+  ```http
+  GET /_cat/thread_pool
+  ```
+
+  - Path parameter
+    - 쉼표로 분리된 thread pool의 이름들을 입력하면 해당 thread pool만 확인이 가능하다.
+
+  ```http
+  GET /_cat/thread_pool/<thread_pool_A>[,<thread_pool_B>,...]
+  ```
+
+  - Query parameter
+    - `format`: JSON, YAML 등의 format을 지정할 수 있다.
+    - `h`: 특정 column만 지정해서 확인이 가능하다.
+    - `help`: `_cat/thread_pool`을 통해 확인할 수 있는 정보들을 확인할 수 있다.
+    - `v`: 응답에 head를 포함시킨다.
+    - `s`: 정렬한다.
+  - `_nodes`를 통해서도 thread pool에 관한 정보를 확인할 수 있다.
+
+  ```http
+  GET _nodes/thread_pool
+  ```
+
+
+
+
+
 
 
 
