@@ -635,7 +635,6 @@
   SELECT variable_value FROM information_schema.global_variables WHERE variable_name='server_id';
   ```
   
-  
 
 
 
@@ -673,6 +672,224 @@
   ```bash
   $ curl localhost:8083/connectors/mysql-cdc-source-connector/status
   ```
+  
+  - 만약 timezone을 설정해야하면 `database.connectionTimeZone`으로 설정한다.
+  
+  ```json
+  curl -XPOST 'localhost:8083/connectors' \
+  --header 'Content-type: application/json' \
+  --data-raw '{
+    "name": "mysql-cdc-source-connector",
+    "config": {  
+      "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+      "database.connectionTimeZone": "Asia/Seoul",
+      // ...
+    }
+  }'
+  ```
+
+
+
+- Timezone Converter
+
+  - Debezium이 event를 전송할 때, timestamp field의 timezone 값은 data source의 type과 설정에 따라 다양할 수 있다.
+    - 이를 일관성 있게 관리하기 위해 timezone converter를 사용할 수 있다.
+    - Timezone을 geo-graphic timezone(e.g. `Asia/Seoul`) 혹은 UTC offset(e.g. `+02:00`)으로 설정할 수 있다.
+  - 아래와 같이 설정하면 된다.
+
+  ```json
+  {
+      "config":{
+          "transforms": "convertTimezone",
+          "transforms.convertTimezone.type": "io.debezium.transforms.TimezoneConverter",
+          "transforms.convertTimezone.converted.timezone": "Pacific/Easter"
+      }
+  }
+  ```
+
+  - `include.list`와 `exclude.list`를 통해 포함, 제외할 field들을 지정할 수 있다.
+
+  - Debezium MySQL source connector 뿐 아니라 모든 Debezium connector에서 사용할 수 있다.
+
+
+
+- MySQL date type
+
+  - MySQL의 timezone을 조회한다.
+
+  ```sql
+  SELECT @@GLOBAL.time_zone, @@SESSION.time_zone, @@system_time_zone;
+  ```
+
+  - 결과는 아래와 같다.
+
+  | `@@GLOBAL.time_zone` | `@@SESSION.time_zone` | `@@system_time_zone` |
+  | -------------------- | --------------------- | -------------------- |
+  | SYSTEM               | SYSTEM                | UTC                  |
+
+  - Source table을 생성한다.
+
+  ```sql
+  CREATE TABLE `user_source` (
+  	`id` INT NOT NULL AUTO_INCREMENT,
+  	`join_time` TIME NULL DEFAULT NULL,
+  	`join_date` DATE NULL DEFAULT NULL,
+  	`join_datetime` DATETIME NULL DEFAULT NULL,
+  	`join_timestamp` TIMESTAMP NULL DEFAULT NULL,
+  	PRIMARY KEY (`id`) USING BTREE
+  );
+  ```
+
+  - `user_source` table에 데이터를 삽입한다.
+
+  ```sql
+  INSERT INTO user_source VALUES (1, "00:00:00", "2024-11-04", "2024-11-04 00:00:00", "2024-11-04 00:00:00");
+  ```
+
+  - `user_source`를 대상으로 Debezium source connector를 생성한다.
+    - `time.precision.mode`를 `connect`로 설정하고, 다른 시간 관련 설정은 주지 않는다.
+
+  ```json
+  {
+    "name": "1",
+    "config": {
+        "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+        "database.include.list": "test",
+        "table.include.list": "test.user_source",
+        "time.precision.mode": "connect",
+        // ...
+    }
+  }
+  ```
+  
+  - Message의 `payload.after` 값을 확인한다.
+    - 1730678400000는 `DATETIME` 형식으로 변환하면 `2024-11-04 00:00:00`이다.
+  
+  ```json
+  {
+      "payload": {
+  		"after": {
+  			"id": 1,
+  			"join_time": 0,
+  			"join_date": 20031,
+  			"join_datetime": 1730678400000,
+  			"join_timestamp": "2024-11-04T00:00:00Z"
+  		}
+  	}
+  }
+  ```
+  
+  - 기존 설정에 `database.connectionTimeZone` 값만 추가한다.
+  
+  ```json
+  {
+    "name": "2",
+    "config": {
+        "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+        "database.include.list": "test",
+        "table.include.list": "test.user_source",
+        "time.precision.mode": "connect",
+        "database.connectionTimeZone": "Asia/Seoul",	// 추가한다.
+        // ...
+    }
+  }
+  ```
+  
+  - 위 source connector로 생성한 message를 확인한다.
+    - 기존과 `join_timestamp` 값만 달라졌다(기존 값에서 9시간 전으로 설정된다).
+  
+  ```json
+  {
+      "payload": {
+  		"after": {
+  			"id": 1,
+  			"join_time": 0,
+  			"join_date": 20031,
+  			"join_datetime": 1730678400000,
+  			"join_timestamp": "2024-11-03T15:00:00Z"
+  		}
+  	}
+  }
+  ```
+  
+  - 이번에는 기존 설정에 Debezium timezone converter만 추가한다.
+  
+  ```json
+  {
+    "name": "3",
+    "config": {
+        "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+        "database.include.list": "test",
+        "table.include.list": "test.user_source",
+        "time.precision.mode": "connect",
+        // 아래와 같이 timezone converter를 추가한다.
+        "transforms": "convertTimezone",
+        "transforms.convertTimezone.type": "io.debezium.transforms.TimezoneConverter",
+        "transforms.convertTimezone.converted.timezone": "Asia/Seoul",
+        // ...
+    }
+  }'
+  ```
+  
+  - 위 source connector로 생성한 message를 확인한다.
+    - 기존과 `join_datetime`, `join_timestamp`의 값이 달라졌다.
+    - 1730646000000는 `DATETIME` 형식으로 변환하면 `2024-11-03 15:00:00`으로, source table에 저장된 값보다 9시간 이전 시간이다.
+    - `join_timestamp`의 값은 기존 대비 9시간 후로 설정되며 한국 표준시(KST, +09:00)로 설정된다.
+  
+  ```json
+  {
+      "payload": {
+  		"after": {
+  			"id": 1,
+  			"join_time": 0,
+  			"join_date": 20031,
+  			"join_datetime": 1730646000000,
+  			"join_timestamp": "2024-11-04T09:00:00+09:00"
+  		}
+  	}
+  }
+  ```
+  
+  - `database.connectionTimeZone`과 Debezium timezone converter를 모두 추가한다.
+  
+  ```json
+  {
+    "name": "4",
+    "config": {
+        "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+        "database.include.list": "test",
+        "table.include.list": "test.user_source",
+        "time.precision.mode": "connect",
+        // connectionTimeZone을 추가하고
+        "database.connectionTimeZone": "Asia/Seoul",
+        // timezone converter를 추가한다.
+        "transforms": "convertTimezone",
+        "transforms.convertTimezone.type": "io.debezium.transforms.TimezoneConverter",
+        "transforms.convertTimezone.converted.timezone": "Asia/Seoul",
+        // ...
+    }
+  }
+  ```
+  
+  - Message를 확인한다.
+    - 기존과 `join_datetime`의 값이 달라졌다.
+    - 1730646000000는 `DATETIME` 형식으로 변환하면 `2024-11-03 15:00:00`으로, source table에 저장된 값보다 9시간 이전 시간이다.
+    - `join_timestamp`의 값은 기존에 `2024-11-04T00:00:00Z`에서 `2024-11-04T00:00:00+09:00`로 변경됐다.
+  
+  ```json
+  {
+      "payload": {
+  		"after": {
+  			"id": 1,
+  			"join_time": 0,
+  			"join_date": 20031,
+  			"join_datetime": 1730646000000,
+  			"join_timestamp": "2024-11-04T00:00:00+09:00"
+  		}
+  }
+  ```
+
+
 
 
 
