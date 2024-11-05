@@ -1309,6 +1309,79 @@
 
 
 
+## Kafka Source Connector 성능 개선하기
+
+> [참조한 블로그](https://www.confluent.io/blog/how-to-increase-throughput-on-kafka-connect-source-connectors/?session_ref=https://www.google.com/)
+
+- 개선이 가능한 것과 불가능한 것
+  - 무엇이 개선이 가능하고, 무엇이 개선이 불가능한지 알려면 source connector의 동작 방식에 대해 알아야 한다.
+    - Source connect는, JDBC source connector를 예로 들면, 아래와 순서로 동작한다.
+    - 먼저 connector가 source로부터 record들을 pull 해온다.
+    - 다음으로 converter가 설정된 data type으로 record를 변환한다.
+    - 그 후 transformations에서 SMT(simple message transformations)가 적용된다.
+    - 그 후 producer가 Kafka topic으로 record들을 전송한다.
+    - 최종적으로 Kafka endpoint는 producer가 전송한 record들을 받는다.
+  - Source connector의 구성 요소 중에서 개선할 수 없는 것들은 아래와 같다.
+    - Converter: record를 정해진 format(Avro, JSON 등)으로 변환하는 것은 항상 일정한 시간이 필요하므로 개선이 불가능하다.
+    - Transformations: Transformation은 이미 매우 빠르며, converter와 마찬가지로 변환에 일정한 시간이 필요하므로 개선이 불가능하다.
+  - Source connector의 구성 요소 중에서 개선할 수 있는 것들은 아래와 같다.
+    - Connector: connector configuration을 통해 개선이 가능하다.
+    - Producer: `batch.size`와 같은 configuration을 통해 throughput을 증가시킬 수 있다.
+
+
+
+- Connector 개선하기
+  - Connector를 개선하는 것은 connector의 configuration에 달렸다.
+    - 예를 들어 Confluent JDBC Source connector는 `batch.max.rows`, `poll.interval.ms`와 같은 설정으로 성능 개선이 가능하다.
+  - 만약 connector에 설정할 수 있는 설정값들 중 더 많은 데이터를 pulling하기 위한 설정이 없다면, 개선이 불가능하다.
+
+
+
+- Producer 개선하기
+  - 아래와 같은 설정을 통해 producer의 성능을 개선할 수 있다.
+    - `batch.size`: Kafka topic으로 전송하는 최대 batch 크기를 bytes 단위로 설정한다.
+    - `linger.ms`: batch 크기가 채워질때 까지 대기하는 기간을 milliseconds 단위로 설정한다.
+    - `buffer.memory`: producer가 서버로 전송되기를 기다리는 record들을 buffering하는 데 사용할 수 있는 총 메모리를 bytes 단위로 설정한다.
+    - `compression.type`: message가 produce 되기 전에 압축될 타입을 설정한다.
+  - `batch.size`는 connector에 의해 반환되는 record의 크기와 일치하는 것이 좋다.
+    - 즉 `batch.size = number_of_records * record_size_avg_in_bytes`와 같이 설정하는 것이 좋다.
+    - 예를 들어 connector가 DB에서 한 번 pulling할 때 마다 500개의 record를 가져오고, record의 평균 크기가 1KB라면 `batch_size`는 512000(`(500*1) * 1024 = 512000`) byte.로 설정하는 것이 좋다(KiB를 bytes로 변환하기위해 1024를 곱함).
+  - `linger.ms`의 값은 connector에서 producer로 record를 반환하는 주기에 따라 설정하는 것이 좋다.
+    - `linger.ms`의 값이 너무 작을 경우, batch가 다 채워지기 전에 request를 보내 불필요하게 많은 수의 request를 보내게 된다.
+    - 반대로 `linger.ms`의 값이 너무 클 경우, producer가 불필요하게 오랜 시간 동안 대기하게 된다.
+    - 일반적으로, connector에서 producer로 반환되는 record의 수가 클 수록 반환 시간도 오래 걸릴 것이므로, `linger.ms`의 값을 크게 설정하는 것이 좋다.
+    - 반면에 connector에서 producer로 반환되는 record의 수가 작을 수록 더 자주 반환할 것이므로, `linger.ms`의 값을 작게 설정하는 것이 좋다.
+  - `buffer.memory`
+    - 이 값은 producer가 사용할 수 있는 전체 memory의 양과 대략적으로 일치시키는 것이 좋지만, producer는 buffering 외에도 memory를 사용해야하므로 완전히 동일하게는 설정하지 않는 것이 좋다.
+    - 예를 들어 Kafka broker에 문제가 생겨 producer가 broker에 message를 전송하지 않는다고 가정해보자.
+    - 이 때, producer는 buffer memory에 message를 저장하기 시작한다.
+    - 시간이 지나면서  buffer가 가득차게 되면  buffer가 비워질 때 까지 `max.block.ms` 만큼 대기하고, `max.block.ms` 안에 buffer가 비워지지 않으면 producer는 exception을 throw한다.
+    - `buffer.memory`가 너무 낮게 설정될 경우, 단 시간 내에 가득 차게 되고, `max.blocks.ms` 내에 비워지지 않으면 exception이 throw된다.
+    - 반면에 `buffer.memory`가 너무 높게 설정될 경우, OOM이 발생할 수 있다.
+  - `compression.type`
+    - 각 compression type마다 장단점이 존재한다.
+    - Data마다 적절한 compression type이 다르므로, 사용중인 data에 적합한 compression type을 지정해야한다.
+    - Message를 더 작게 만들 수는 있지만, 압축하는 시간이 추가되어 전체 처리 시간은 증가할 수 있다.
+
+
+
+- 모니터링을 위한 JMX metrics
+  - Connector 지표
+    - `source-record-poll-rate`: source connector의 worker가 초당 polling한 record의 평균 개수이다.
+    - `poll-batch-avg-time-ms`: batch당 record를 polling하는 데 소요되는 평균 시간을 ms로 표시한 것이다.
+    - `source-record-write-rate`: 초당 transformations에서 변환되어 kafka로 전송되는 record의 평균 개수이다.
+  - Broker 지표
+    - `kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec`: client로부터의 byte 수신 속도를 나타내며, throughput을 확인할 수 있다.
+  - Producer 지표
+    - `record-size-avg`: 평균 record 크기로, `batch.size`를 계산할 때 사용할 수 있다.
+    - `batch-size-avg`: request 당 전송되는 bytes의 평균 크기(`batch.size` 설정에 따라 달라질 수 있다).
+    - `records-per-request-avg`: request 당 전송되는 record의 평균 개수.
+    - `record-send-rate`: 초당 전송되는 record의 평균 개수.
+
+
+
+
+
 ## 성능 테스트
 
 - Kafka Connect의 memory와 CPU 사용
