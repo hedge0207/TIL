@@ -559,6 +559,10 @@
 <br/>
 <br/>
 
+## grafana
+<br/>
+<br/>
+
 ## Jenkins
 - Jenkins tutorial
 
@@ -598,6 +602,10 @@
 ## postman
 - Postman으로 API 테스트하기
 
+<br/>
+<br/>
+
+## Prometheus
 <br/>
 <br/>
 
@@ -796,6 +804,8 @@
 
 - Bootstrap check
 
+- Elasticsearch thread pool
+
 <br/>
 <br/>
 
@@ -947,7 +957,7 @@
 <br/>
 <br/>
 
-## Elasticsearch_senario
+## elasticsearch_senario
 - ES 클러스터 구축 시나리오
 
 <br/>
@@ -1178,10 +1188,8 @@
 
 - Nginx + FastAPI
 
-<br/>
-<br/>
+- Uvicorn과 Gunicorn
 
-## guincorn
 <br/>
 <br/>
 
@@ -1749,6 +1757,10 @@
 - Kafka를 사용한 application의 error handling
 
 - Event-Driven Microservices
+
+- Prometheus와 Grafana를 사용하여 Kafka Connect 모니터링하기
+
+- ETC
 
 <br/>
 <br/>
