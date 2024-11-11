@@ -1006,6 +1006,230 @@ for task, stats in self.env.stats.entries.items():
 
 
 
+# contextvars
+
+- contextvars
+  - Context variable을 사용하기 위한 Python package이다.
+    - Context variable이란 context에 따라 다른 값을 반환하는 변수이다.
+    - Python 3.7에 추가되었다.
+
+  - 용도
+    - 주로 비동기 프로그래밍 혹은 멀티스레딩 환경에서 변수의 context를 관리하기 위해 사용한다.
+    - contextvars를 사용하면 각 비동기 작업이나 스레드가 다른 작업의 상태나 값을 공유하지 않고 독립적인 컨텍스트를 유지할 수 있다.
+
+
+
+
+- `ContextVar`
+
+  - Context variable을 관리하기 위한 class이다.
+
+    - 첫 번째 인자로 `name`을, 두 번째 인자로 `default`를 받는다.
+    - `name`에는 variable의 이름을 설정하며, `default`는 특정 context에 해당하는 value가 없을 때 반환될 기본 값을 설정한다.
+
+    ```python
+    var = ContextVar('var', default=42)
+    ```
+
+    - `.get([default])`
+      - 현재 context에 대한 context variable 값을 반환한다.
+      - 만약 context에 해당하는 context variable 값이 없을 경우 아래 순서로 값을 반환한다.
+      - `.get()` method 실행시 넘긴 defaul값
+      - `ContextVar`의 instance 생성시에 설정한 default 값
+      - 둘 다 없을 경우 `LookupError`가 raise된다.
+
+    ```python
+    import contextvars 
+    
+    var = contextvars.ContextVar("var")
+    print(var.get("default"))		# default
+    try:
+        var.get()
+    except LookupError as e:
+        print("Error")				# Error
+    
+    var_with_default = contextvars.ContextVar("var", default=42)
+    print(var_with_default.get())	# 42
+    ```
+
+    - `.set(value)`
+      - Context variable에 현재 context에 대한 값을 설정한다.
+      - `.reset()` method를 통해서 variable을 이전의 값으로 되돌릴 수 있게 해주는 `Token` instance를 반환한다.
+
+    ```python
+    import contextvars 
+    
+    var = contextvars.ContextVar("var") 
+    token = var.set("value")
+    print(var.get())		# value
+    print(type(token))		# <class 'Token'>
+    ```
+
+    - `.reset(token)`
+      - Context variable을 `.set()` method를 통해 새로운 값이 설정되기 이전의 상태로 되돌린다.
+
+    ```python
+    from contextvars import ContextVar
+    
+    var = ContextVar("var")
+    
+    var.set("original value")
+    token = var.set("new value")
+    print(var.get())		# new value
+    var.reset(token)
+    print(var.get())		# original value
+    ```
+
+
+
+- `Token`
+
+  - `ContextVar.set()` method를 통해 반환되는 객체다.
+    - `ContextVar.reset()` method에 전달되어 variable의 이전 값으로 되돌릴 수 있게 해준다.
+  - `var`
+    - `Token` 객체를 생성하도록 한 `ContextVar` 객체를 가리킨다.
+
+  ```python
+  from contextvars import ContextVar
+  
+  var = ContextVar("var")
+  
+  token = var.set("value")
+  print(token.var)		# <ContextVar name='var' at 0x4ah1ccff9f0>
+  ```
+
+  - `old_value`
+    - `ContextVar.set()`으로 새로운 값이 설정되기 이전의 값을 가리킨다.
+    - 만약 `ContextVar.set()` 이전에 값이 없었다면 `Token.MISSING`을 가리킨다.
+
+  ```python
+  from contextvars import ContextVar
+  
+  var = ContextVar("var")
+  
+  token = var.set("value")
+  print(token.old_value)			# <Token.MISSING>
+  token = var.set("new value")
+  print(token.old_value)			# value
+  ```
+
+
+
+- `Context`
+
+  - Context를 표현하는 객체이다.
+    - `Context()`와 같이 객체를 직접 생성하면 빈 context가 생성된다.
+    - 일반적으로 `copy_context()`를 통해 현재 context를 복제하여 사용한다.
+    - `copy_context()` method는 현재 context를 담은 `Context` 객체를 반환한다.
+  - `run()` 
+    - `Context` 객체에 저장된 context에서 callable을 실행한다.
+    - 아래 예시를 보면 var에 "changed"라는 새로운 값을 설정했음에도, 새로운 값이 설정되기 전에 복사된 `ctx`가 저장하고 있는 context에서 실행되는 `run_in_context` method는 "original"을 출력한다.
+
+  ```python
+  import contextvars
+  
+  var = contextvars.ContextVar("var")
+  var.set("original")
+  
+  ctx = contextvars.copy_context()
+  
+  def run_in_context():
+      print(var.get())     # original
+  
+  var.set("changed")
+  ctx.run(run_in_context)
+  print(var.get())        # changed
+  ```
+
+  - `values()`
+    - `Context`에 저장된 값들이 담긴 목록을 반환한다.
+
+  ```python
+  import contextvars
+  
+  var = contextvars.ContextVar("var")
+  var.set("original")
+  
+  ctx = contextvars.copy_context()
+  
+  var.set("changed")
+  
+  for value in ctx.values():
+      print(value)			# original
+  ```
+
+  - `items()`
+    - `Context`에 저장된 context variable과 그 값을 반환한다.
+
+  ```python
+  import contextvars
+  
+  var = contextvars.ContextVar("var")
+  var.set("original")
+  
+  ctx = contextvars.copy_context()
+  
+  var.set("changed")
+  
+  for context_var, value in ctx.items():
+      print(context_var, value)			# <ContextVar name='var' at 0x4ah1ccff9f0> original
+  ```
+
+
+
+- contextvars 패키지의 용도
+
+  - 만약 아래와 같이 여러 비동기 요청에서 사용해야 하는 변수가 있다고 가정해보자.
+    - `var` 변수는 모든 비동기 요청이 사용하는 값이다.
+    - 아래 코드를 실행하면 2가 두 번 출력된다.
+
+  ```python
+  import asyncio
+  
+  
+  var = None
+  
+  async def process_request(value):
+      global var
+      var = value
+      await asyncio.sleep(1)
+      print(var)
+  
+  async def main():
+      await asyncio.gather(process_request(1), process_request(2))
+  
+  asyncio.run(main())
+  ```
+
+  - 이런 상황에서 contextvars 패키지를 사용하면 위와 같은 문제를 해결할 수 있다.
+    - 이제 context variable이 된 `var`의 값은 context(어떤 비동기 요청에서 사용되는가)에 따라 달라지게 된다.
+
+  ```python
+  import contextvars
+  import asyncio
+  
+  
+  var = contextvars.ContextVar('var')
+  
+  async def process_request(id):
+      var.set(id)
+      await asyncio.sleep(1)
+      print(var.get())
+  
+  async def main():
+      await asyncio.gather(process_request(1), process_request(2))
+  
+  asyncio.run(main())
+  ```
+
+
+
+
+
+
+
+
+
 # Shorts
 
 - faker
@@ -1136,5 +1360,4 @@ for task, stats in self.env.stats.entries.items():
       service3 = container.service_factory()
       assert isinstance(service3.api_client, ApiClient)
   ```
-
 
