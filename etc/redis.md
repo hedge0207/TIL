@@ -393,12 +393,322 @@
   
     - 메모리 관련 설정
       - 64bit 환경에서는 maxmemory의 default 값은 0이며, swap 메모리를 사용할 때까지 계속해서 커지게 된다.
-        - 32bit 환경에서는 3GB가 기본 값이다.
+      - 32bit 환경에서는 3GB가 기본 값이다.
   
   ```bash
   maxmemory <가용 메모리의 60~70%>
   maxmemory-policy <policy>
   ```
+
+
+
+
+
+## Cluster로 설치하기
+
+- 각 redis node 별로 설정 파일을 준비한다.
+
+  - `redis1.conf`
+
+  ```toml
+  port 7001
+  cluster-enabled yes
+  cluster-config-file nodes.conf
+  cluster-node-timeout 3000
+  appendonly yes
+  ```
+
+  - `redis2.conf`
+
+  ```toml
+  port 7002
+  cluster-enabled yes
+  cluster-config-file nodes.conf
+  cluster-node-timeout 3000
+  appendonly yes
+  ```
+
+  - `redis3.conf`
+
+  ```toml
+  port 7003
+  cluster-enabled yes
+  cluster-config-file nodes.conf
+  cluster-node-timeout 3000
+  appendonly yes
+  ```
+
+
+
+- Docker compose로 실행하기
+
+  - 아래와 같이 docker compose file을 작성한다.
+
+  ```yaml
+  services:
+    redis1:
+      image: redis:6.2.6
+      container_name: redis1
+      environment:
+        - TZ=Asia/Seoul
+      volumes:
+        - ./config/redis1.conf:/etc/redis.conf
+      command: redis-server /etc/redis.conf
+      restart: always
+      ports:
+        - 7001:7001
+        - 17001:17001
+    
+    redis2:
+      image: redis:6.2.6
+      container_name: redis2
+      environment:
+        - TZ=Asia/Seoul
+      volumes:
+        - ./config/redis2.conf:/etc/redis.conf
+      command: redis-server /etc/redis.conf
+      restart: always
+      ports:
+        - 7002:7002
+        - 17002:17002
+    
+    redis3:
+      image: redis:6.2.6
+      container_name: redis3
+      environment:
+        - TZ=Asia/Seoul
+      volumes:
+        - ./config/redis3.conf:/etc/redis.conf
+      command: redis-server /etc/redis.conf
+      restart: always
+      ports:
+        - 7003:7003
+        - 17003:17003
+  ```
+
+  - 실행하기
+
+  ```bash
+  $ docker compose up
+  ```
+
+
+
+- 클러스터 설정하기
+
+  - Docker container 내부에 attach한다.
+
+  ```bash
+  $ docker exec -it redis1 /bin/bash
+  ```
+
+  - redis-cli를 사용하여 cluster를 구성한다.
+
+  ```bash
+  $ redis-cli --cluster create <host>:7001 <host>:7002 <host>:7003
+  ```
+
+  - 정상적으로 구성 됐는지 확인한다.
+
+  ```bash
+  $ redis-cli -p 7001
+  cluster nodes
+  cluster info
+  ```
+
+
+
+- Slave 추가하기
+
+  - 위 구조에서는 slave를 설정하지 않았기 때문에, 고가용성이 보장되지 않는다.
+    - 고가용성이 보장되도록 하기 위해서는 아래와 같이 slave node를 함께 띄워야 한다.
+
+  - Slave node들을 위한 설정 파일을 작성한다.
+
+  ```toml
+  # redis-slave1.conf
+  port 7101
+  cluster-enabled yes
+  cluster-config-file nodes.conf
+  cluster-node-timeout 3000
+  appendonly yes
+  
+  # redis-slave2.conf
+  port 7102
+  cluster-enabled yes
+  cluster-config-file nodes.conf
+  cluster-node-timeout 3000
+  appendonly yes
+  
+  # redis-slave3.conf
+  port 7103
+  cluster-enabled yes
+  cluster-config-file nodes.conf
+  cluster-node-timeout 3000
+  appendonly yes
+  ```
+
+  - Docker compose file에 slave 노드을 추가한다.
+
+  ```yaml
+  services:
+    redis1:
+      image: redis:6.2.6
+      container_name: redis1
+      environment:
+        - TZ=Asia/Seoul
+      volumes:
+        - ./config/redis1.conf:/etc/redis.conf
+      command: redis-server /etc/redis.conf
+      restart: always
+      ports:
+        - 7001:7001
+        - 17001:17001
+    
+    redis2:
+      image: redis:6.2.6
+      container_name: redis2
+      environment:
+        - TZ=Asia/Seoul
+      volumes:
+        - ./config/redis2.conf:/etc/redis.conf
+      command: redis-server /etc/redis.conf
+      restart: always
+      ports:
+        - 7002:7002
+        - 17002:17002
+    
+    redis3:
+      image: redis:6.2.6
+      container_name: redis3
+      environment:
+        - TZ=Asia/Seoul
+      volumes:
+        - ./config/redis3.conf:/etc/redis.conf
+      command: redis-server /etc/redis.conf
+      restart: always
+      ports:
+        - 7003:7003
+        - 17003:17003
+    
+    redis-slave1:
+      image: redis:6.2.6
+      container_name: redis-slave1
+      environment:
+        - TZ=Asia/Seoul
+      volumes:
+        - ./config/redis-slave1.conf:/etc/redis.conf
+      command: redis-server /etc/redis.conf
+      restart: always
+      ports:
+        - 7101:7101
+        - 17101:17101
+      
+    redis-slave2:
+      image: redis:6.2.6
+      container_name: redis-slave2
+      environment:
+        - TZ=Asia/Seoul
+      volumes:
+        - ./config/redis-slave2.conf:/etc/redis.conf
+      command: redis-server /etc/redis.conf
+      restart: always
+      ports:
+        - 7102:7102
+        - 17102:17102
+      
+    redis-slave3:
+      image: redis:6.2.6
+      container_name: redis-slave3
+      environment:
+        - TZ=Asia/Seoul
+      volumes:
+        - ./config/redis-slave3.conf:/etc/redis.conf
+      command: redis-server /etc/redis.conf
+      restart: always
+      ports:
+        - 7103:7103
+        - 17103:17103
+  ```
+
+  - Cluster를 설정한다.
+
+  ```bash
+  $ docker exec -it redis1 /bin/bash
+  $ redis-cli --cluster create <host>:7001 <host>:7002 <host>:7003
+  $ redis-cli -p 7001
+  cluster info
+  cluster nodes
+  ```
+
+  - Slave를 추가한다.
+
+  ```bash
+  $ redis-cli --cluster add-node <host>:7101 <host>:7001 --cluster-slave
+  $ redis-cli --cluster add-node <host>:7102 <host>:7002 --cluster-slave
+  $ redis-cli --cluster add-node <host>:7103 <host>:7003 --cluster-slave
+  ```
+
+  - 정상적으로 추가 됐는지 확인한다.
+
+  ```bash
+  $ redis-cli -p 7001
+  cluster info
+  cluster nodes
+  ```
+
+
+
+- 고가용성 확인하기
+
+  - Redis CLI에 접속한다.
+    - `-c` 옵션은 cluster mode로 접속하는 option으로 다른 node에도 접근할 수 있게 해준다.
+
+  ```bash
+  $ redis-cli -p 7001 -c
+  ```
+
+  - Key와 value를 설정한다.
+    - 세 개의 master node에 모두 분배되도록 한다.
+
+  ```bash
+  set foo bar
+  set bar baz
+  set baz qux
+  ```
+
+  - 세 개의 master node에 분배된 상태에서 아래와 같이 하나의 master node를 정지한다.
+    - `redis1` node에는 baz:qux가 저장되어 있었다.
+
+  ```bash
+  $ docker stop redis1
+  ```
+
+  - 다른 container에 attach한다.
+
+  ```bash
+  $ docker exec -it redis2 /bin/bash
+  ```
+
+  - Redis CLI에 접속하여 cluster 상태를 확인한다.
+    - 기존에 `redis1` node의 slave였던 `redis-slave1` node가 master가 된 것을 확인할 수 있다.
+
+  ```bash
+  $ redis-cli -p 7002 -c
+  cluster nodes
+  ```
+
+  - 기존에 `redis1` node에 저장되어 있던 baz key로 조회가 가능한지 확인한다.
+    - `redis-slave1` node에서 값을 redirect 해주는 것을 확인할 수 있다.
+
+  ```bash
+  get baz
+  Redirected to slot [4813] located at <docker_network_host>:7101
+  ```
+
+
+
+
 
 
 
@@ -456,8 +766,6 @@
   ```bash
   > monitor
   ```
-
-
 
 
 
@@ -561,9 +869,6 @@
      11) "key2"
   ```
   
-  
-  
-  
 
 
 
@@ -666,6 +971,8 @@
 
 
 
+
+
 ## Python
 
 - Python에서 사용하기
@@ -686,9 +993,9 @@
   import redis
   
   
-  r = redis.Redis(host="111.222.333.444",port=6379)
+  r = redis.Redis(host="localhost",port=6379)
   # 비밀번호를 서정한 경우
-  r = redis.Redis(host="111.222.333.444",port=6379,password=1234)
+  r = redis.Redis(host="localhost",port=6379,password=1234)
   print(r.ping())	# True
   ```
   
@@ -700,7 +1007,7 @@
   import redis
   
   
-  r = redis.Redis(host="111.222.333.444",port=6379)
+  r = redis.Redis(host="localhost", port=6379)
   r.set("key", "value")
   
   my_dict = {"a":1,"B":2}
@@ -715,7 +1022,7 @@
   import redis
   
   
-  r = redis.Redis(host="111.222.333.444",port=6379)
+  r = redis.Redis(host="localhost", port=6379)
   r.mset({"key":"value","key2":"value2"})
   ```
   
@@ -725,7 +1032,7 @@
   import redis
   
   
-  r = redis.Redis(host="111.222.333.444",port=6379)
+  r = redis.Redis(host="localhost", port=6379)
   print(r.get("key")) 	# b'value'
   print(r.get("key").decode("utf-8"))		# value
   ```
@@ -736,7 +1043,7 @@
   import redis
   
   
-  r = redis.StrictRedis('111.222.333.444', port=6379)
+  r = redis.StrictRedis('localhost', port=6379)
   init = 0 # cursor 값 0으로 스캔 시작
   
   while(True):
@@ -754,7 +1061,7 @@
   import redis
   
   
-  r = redis.Redis(host="111.222.333.444",port=6379)
+  r = redis.Redis(host="localhost",port=6379)
   r.delete("key")
   ```
   
@@ -764,7 +1071,7 @@
   import redis
   
   
-  r = redis.Redis(host="111.222.333.444",port=6379)
+  r = redis.Redis(host="localhost",port=6379)
   r.flushdb()
   ```
 
