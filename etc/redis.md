@@ -406,6 +406,31 @@
 
 ## Cluster로 설치하기
 
+- Clustering 관련 설정은 아래와 같다.
+
+  - `cluster-enabled`
+    - Cluster mode로 실행할지 여부를 설정한다.
+    - `yes`로 줄 경우 cluster mode로 실행된다.
+  - `cluster-config-file`
+    - 클러스터의 상태를 기록하는 파일의 위치를 설정한다.
+    - 클러스터의 상태가 변경될 때 마다 설정된 경로의 파일에 변경 사항이 기록된다.
+    - `redis` docker image 기준으로 `/data`를 기준으로 경로가 설정된다.
+  - `cluster-node-timeout`
+    - Cluster를 구성 중인 node가 down되었다고 판단하는 시간이다.
+    - 단위는 millisecond이다.
+
+  ```toml
+  cluster-enabled yes
+  cluster-config-file nodes.conf
+  cluster-node-timeout 3000
+  ```
+
+  - Port
+    - 기본 포트에 10000을 더한 포트를 클러스터 버스 포트로 사용한다.
+    - 따라서 기본 포트와 기본 포트에 10000을 더한 포트 모두 사용 가능해야 한다.
+
+
+
 - 각 redis node 별로 설정 파일을 준비한다.
 
   - `redis1.conf`
@@ -707,6 +732,100 @@
   ```
 
 
+
+- 주의사항
+
+  - 주의할 점은 예전 버전에서는 cluster 생성시에 hostname이 아닌 IP를 입력해야 한다는 것이다.
+    - 6.2.6 버전에서는 hostname이 사용 불가능한 것을 확인
+    - 7.2.0 버전에서는 hostname이 사용 가능한 것을 확인
+
+  - 예를 들어 아래와 같이 같은 docker network를 사용한도록 구성했을 때
+    - 모든 노드가 기본 포트(6379)를 사용하도록 설정한다.
+
+  ```yaml
+  services:
+    redis1:
+      image: redis:6.2.6
+      container_name: redis1
+      environment:
+        - TZ=Asia/Seoul
+      volumes:
+        - ./config/redis1.conf:/etc/redis.conf
+      command: redis-server /etc/redis.conf
+      restart: always
+      networks:
+        - redis-test
+    
+    redis2:
+      image: redis:6.2.6
+      container_name: redis2
+      environment:
+        - TZ=Asia/Seoul
+      volumes:
+        - ./config/redis2.conf:/etc/redis.conf
+      command: redis-server /etc/redis.conf
+      restart: always
+      networks:
+        - redis-test
+    
+    redis3:
+      image: redis:6.2.6
+      container_name: redis3
+      environment:
+        - TZ=Asia/Seoul
+      volumes:
+        - ./config/redis3.conf:/etc/redis.conf
+      command: redis-server /etc/redis.conf
+      restart: always
+      networks:
+        - redis-test
+    
+    redis-slave1:
+      image: redis:6.2.6
+      container_name: redis-slave1
+      environment:
+        - TZ=Asia/Seoul
+      volumes:
+        - ./config/redis-slave1.conf:/etc/redis.conf
+      command: redis-server /etc/redis.conf
+      restart: always
+      networks:
+        - redis-test
+  
+    redis-slave2:
+      image: redis:6.2.6
+      container_name: redis-slave2
+      environment:
+        - TZ=Asia/Seoul
+      volumes:
+        - ./config/redis-slave2.conf:/etc/redis.conf
+      command: redis-server /etc/redis.conf
+      restart: always
+      networks:
+        - redis-test
+    
+    redis-slave3:
+      image: redis:6.2.6
+      container_name: redis-slave3
+      environment:
+        - TZ=Asia/Seoul
+      volumes:
+        - ./config/redis-slave3.conf:/etc/redis.conf
+      command: redis-server /etc/redis.conf
+      restart: always
+      networks:
+        - redis-test
+  
+  networks:
+    redis-test:
+      driver: bridge
+  ```
+
+  - 아래와 같이 hostname을 사용하더라도 clustering은 불가능하다.
+
+  ```bash
+  $ redis-cli --cluster create redis1:6379 redis2:6379 redis3:6379
+  ```
 
 
 
