@@ -192,6 +192,135 @@
 
 
 
+## Replica Set에 새로운 member 추가 및 삭제
+
+- Cluster 구성하기
+
+  - 테스트를 위해 아래와 같이 docker-compose file을 작성한다.
+
+  ```yaml
+  version: '3.2'
+  
+  
+  services:
+  
+    mongo1:
+      image: mongo:latest
+      container_name: mongo1
+      command: mongod --replSet myReplicaSet --bind_ip localhost,mongo1
+      ports: 
+        - 27018:27017
+      networks:
+        - mongo-network
+    
+    mongo2:
+      image: mongo:latest
+      container_name: mongo2
+      command: mongod --replSet myReplicaSet --bind_ip localhost,mongo2
+      ports: 
+        - 27019:27017
+      networks:
+        - mongo-network
+    
+    mongo3:
+      image: mongo:latest
+      container_name: mongo3
+      command: mongod --replSet myReplicaSet --bind_ip localhost,mongo3
+      ports: 
+        - 27020:27017
+      networks:
+        - mongo-network
+  
+  networks:
+    mongo-network:
+      driver: bridge
+  ```
+
+  - 컨테이너들을 실행한다.
+
+  ```bash
+  $ docker compose up
+  ```
+
+  - 세 개의 노드 중 두 개 만으로 cluster를 구성한다.
+
+  ```bash
+  $ mongosh
+  
+  config = {
+    _id: "myReplicaSet",
+    protocolVersion: 1,
+    members: [
+      {_id:0, host: "mongo1:27017"},
+      {_id:1, host: "mongo2:27017"}
+    ]
+  };
+  
+  rs.initiate(config);
+  # 확인
+  rs.status();
+  ```
+
+
+
+- 새로운 node 추가하기
+
+  - 위에서 container를 실행은 했지만 replica set에 등록은 하지 않은 mongo3 node를 replica set에 추가할 것이다.
+
+  - 확인해야 할 점
+
+    - Replica set에 새로운 node를 추가할 때 주의할 점은 node는 반드시 하나의 replica set에만 속해야 한다는 것이다.
+    - 즉, 이미 replica set에 속해 있는 node를 다른 replica set에 추가할 수 없다.
+
+    - 또한 새로 추가되는 node의 data directory는 data가 포함되어서는 안 된다.
+    - 만약 새로운 node가 recovering 상태라면, secondary 상태가 되어야 한다.
+
+  - 만약 replica set에서 어떤 node가 primary인지 알 수 없을 경우, replica set에 속한 node 들 중 아무 곳에서나 아래 명령어를 입력하면, primary node 정보를 확인 가능하다.
+
+  ```bash
+  db.hello()
+  ```
+
+  - 기존 replica set에 새로운 node 추가하기
+
+  ```bash
+  rs.add({_id:2, host: "mongo3:27017"})
+  ```
+
+  - 정상적으로 추가 되었는지 확인한다.
+
+  ```bash
+  rs.status()
+  ```
+
+
+
+- Replica set에서 node 제거하기
+
+  - Replica set의 primary node에서 아래 명령어를 실행한다.
+
+  ```bash
+  rs.remove("mongo3:27017")
+  ```
+
+  - 혹은 `rs.conf()`를 통해서도 가능하다.
+    - 아래 예시에서는 `mongo2` node를 제거한다.
+
+  ```bash
+  # 현재 설정 복사
+  config = rs.conf()
+  
+  # 현재 설정에서 멤버 제거
+  config.members.splice(1,1)
+  
+  # 재설정
+  rs.reconfig(cfg)
+  ```
+
+
+
+
+
 
 # Mongo Shell
 
