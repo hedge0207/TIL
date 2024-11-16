@@ -8,7 +8,7 @@ class Updater:
         self.text = ""
     
     def make_text(self, d, cur_dir):
-        for path in os.listdir(cur_dir):
+        for path in sorted(os.listdir(cur_dir)):
             if path == ".git":
                 continue
             if os.path.isdir(new_path:="{}/{}".format(cur_dir, path)):
