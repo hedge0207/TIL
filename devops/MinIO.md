@@ -1413,7 +1413,60 @@
   $ aws --endpoint-url http://localhost:9000 s3 sync . s3://my-bucket --include "*.txt" --exclude "foo*" --include "foo2"
   ```
   
+  - Include와 exclude filter에 사용할 수 있는 pattern symbol들은 아래와 같다.
+    - `*`: 모든 것을 matching시킨다.
+    - `?`: 모든 single character를 matching시킨다.
+    - `[sequence]`: `sequence`에 있는 모든 character를 matching시킨다.
+    - `[!sequence]`: `sequence`에 포함되지 않는 모든 character를 matching시킨다
   
+  - Include와 exclude의 순서에 따라 결과가 달라질 수 있다.
+  
+  ```bash
+  # .txt 파일을만 포함시킨다.
+  --exclude "*" --include "*.txt"
+  
+  # 모든 파일을 제외시킨다.
+  --include "*.txt" --exclude "*"
+  ```
+  
+  - 각 filter는 source directory에 대해 평가된다.
+    - 만약 source location이 directory가 아닌 file일 경우 해당 source location에 해당하는 file을 저장하고 있는 directory가 source directory가 된다.
+    - 아래 예시는 `aws s3 cp /tmp/foo s3://bucket/ --recursive --exclude ".git/*"`와 같이 실행했을 때 어떻게 동작하는지를 보여준다.
+  
+  ```bash
+  # 폴더 구조가 아래와 같을 때
+  /tmp/foo/
+    .git/
+    |---config
+    |---description
+    foo.txt
+    bar.txt
+    baz.jpg
+  
+  # 아래 명령어를 실행하면, source directory는 /tmp/foo가 된다.
+  $ aws s3 sync /tmp/foo s3://bucket/ --exclude ".git/*"
+  # 이 때 --exclude ".git/*" filter는 /tmp/foo/.git/*와 같이 적용된다.
+  ```
+  
+  - 기본적으로 모든 파일은 include 대상이다.
+    - 따라서 `--include`만 주는 것은 결과에 아무런 영향도 미치지 않는다.
+  
+  ```bash
+  # 예를 들어 아래와 같은 파일들이 있을 때
+  $ ls
+  test.txt    text.txt    test.py    text.py
+  
+  # 기본적으로 모든 파일이 include 대상이므로 아래와 같이 include를 줘도, include와 match되는 파일만 sync되는 것이 아니라, 모든 파일이 sync된다.
+  # 따라서 아래 명령어의 결과는 모두 같다.
+  $ aws s3 sync . s3://bucket/ --include "*.py"
+  $ aws s3 sync . s3://bucket/ --include "*.txt"
+  $ aws s3 sync . s3://bucket/ --include "test.*"
+  $ aws s3 sync . s3://bucket/ --include "text.*"
+  ```
+
+
+
+
 
 
 
