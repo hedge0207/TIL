@@ -1168,6 +1168,8 @@
 
 
 
+
+
 # Manage application data
 
 - Docker는 컨테이너 내부에 데이터를 저장한다.
@@ -1192,10 +1194,10 @@
   - Volume
     - Data를 host의 filesystem중 docker가 관리하고 있는 영역에 저장하는 방식이다.
     - Container의 데이터를 host의 `/var/lib/docker/volume`(기본값)이라는 경로에 저장한다.
-    - 해당 경로는 docker를 설치할 때 지정된 docker의 root 경로(`/var/lib/docker`)로, 볼륨 외에도 이미지, 컨테이너 관련된 정보들이 저장되어 있다.
+    - 해당 경로는 docker를 설치할 때 지정된 Docker의 root 경로(`/var/lib/docker`)로, 볼륨 외에도 이미지, 컨테이너 관련된 정보들이 저장되어 있다.
   
   - tmpfs
-    - host의 메모리에 저장
+    - Host의 메모리에 저장
     - 파일로 저장하는 것이 아니라 메모리에 저장하는 것이므로 영구적인 방법은 아니다.
   - Bind mount와 volume의 차이
     - Volume은 오직 해당 volume을 사용하는 컨테이너에서만 접근이 가능하지만 bind mount 된 데이터는 다른 컨테이너 또는 호스트에서도 접근이 가능하다.
@@ -1207,7 +1209,7 @@
   
   - 공식문서에서는 volume을 사용하는 것을 추천한다.
     - 백업이나 이동이 쉽다.
-    - docker CLI 명령어로 볼륨을 관리할 수 있다(`docker volume ~`).
+    - Docker CLI 명령어로 볼륨을 관리할 수 있다(`docker volume ~`).
     - 볼륨은 리눅스, 윈도우 컨테이너에서 모두 동작한다.
     - 컨테이너간에 볼륨을 안전하게 공유할 수 있다.
     - 볼륨드라이버를 사용하면 볼륨의 내용을 암호화하거나 다른 기능을 추가할 수 있다.
@@ -1237,7 +1239,7 @@
     - 여러 컨테이너는 동시에 같은 volume에 마운트 할 수 있다.
     - 다를 컨테이너에 연결된 하나의 볼륨에서 읽기, 쓰기 모두 동시에 처리 가능하다.
   - 마운트 하려는 디렉토리 혹은 파일이 호스트의 filesystem에 있는지 확신하기 어려울 경우
-    - volume은 host의 filesystem 중에서도 docker가 관리하는 영역에 생성되므로 호스트의 filesystem에 마운트할 파일 혹은 폴더가 실제로 존재한다는 것이 보장된다.
+    - volume은 host의 filesystem 중에서도 Docker가 관리하는 영역에 생성되므로 호스트의 filesystem에 마운트할 파일 혹은 폴더가 실제로 존재한다는 것이 보장된다.
   - Data를 local(host의 filesystem)이 아닌 cloud나 remote 호스트에 저장해야 할 경우
   - Data를 백업하거나 복원하거나 다른 host로 옮겨야 할 경우
   - 높은 수준의 I/O가 발생하는 작업을 해야 할 경우
@@ -1317,7 +1319,7 @@
 
 - Docker volume의 경로 변경하기
 
-  - docker data root directory 자체를 변경하는 방법
+  - Docker data root directory 자체를 변경하는 방법
     - 아래 [Data Root Directory 변경] 부분 참고
   - 지정한 경로에 volume  생성하기
     - `--driver local`의 의미는 local, 즉 호스트에 저장하겠다는 의미이다.
@@ -1383,13 +1385,13 @@
 
 > https://docs.docker.com/storage/bind-mounts/
 
-- bind mounts를 사용해야 하는 경우
+- Bind mounts를 사용해야 하는 경우
   - 설정 파일을 호스트와 컨테이너가 공유해야 하는 경우
   - 소스코드를 호스트와 컨테이너가 공유해야 하는 경우
 
 
 
-- bind mount
+- Bind mount
 
   - volume과 달리 다른 컨테이너나 호스트도 파일의 내용에 접근이 가능하다.
   - 마운트하기
@@ -1403,12 +1405,151 @@
 
 
 
+
+
 ## tmpfs
 
 > https://docs.docker.com/storage/tmpfs/
 
 - tmpfs를 사용해야 하는 경우
   - 보안상의 이유 등으로 데이터를 호스트나 컨테이너에 일시적으로 저장하고자 할 경우.
+
+
+
+
+
+## Volume을 Bind mount로 이동하기
+
+- Volume 및 container 생성하기
+
+  - Compose file 작성
+
+  ```yaml
+  version: '3.2'
+  
+  
+  services:
+    elasticsearch:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+      container_name: elasticsearch
+      environment:
+        - node.name=es8
+        - cluster.name=es8
+        - discovery.type=single-node
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      restart: always
+      ports:
+        - 9205:9200
+      volumes:
+        - test-volume:/usr/share/elasticsearch/data
+  
+  volumes:
+    test-volume:
+  ```
+
+  - Volume 확인
+    - Volume이 정상적으로 생성 됐는지 확인한다.
+    - 위와 같이 생성한 volume은 `<directory_name>_`이 prefix로 붙는다.
+
+  ```bash
+  $ docker volume ls | grep test-volume
+  ```
+
+  - Data를 삽입한다.
+
+  ```bash
+  $ curl -XPUT localhost:9205/test/_doc/1 -H 'Content-Type:application/json' -d '{"name":"foo"}'
+  ```
+
+
+
+- Volume을 bind-mount로 이동하기
+
+  > 만약을 위해 data를 backup해 두는 것이 좋다.
+
+  - Host에 bind mount할 경로를 생성한다.
+
+  ```bash
+  $ mkdir -p /home/user/bind_mount
+  ```
+
+  - 데이터 복사를 위한 linux alpine 이미지를 받아온다.
+
+  ```bash
+  $ docker pull alpine
+  ```
+
+  - Alpine 컨테이너를 사용하여 volume에 저장된 data를 bind mount할 경로로 이동복사한다.
+    - Alpine Linux container에 기존 volume과 새로운 bind mount를 모두 설정한다.
+
+  ```bash
+  docker run --rm \
+    -v <directory_name>_test-volume:/old-data \
+    -v /home/user/bind_mount:/new-data \
+    alpine sh -c "cp -a /old-data/. /new-data/"
+  ```
+
+  - 기존 컨테이너를 삭제한다.
+
+  ```bash
+  $ docker compose down
+  ```
+
+  - 컨테이너 설정을 업데이트한다.
+
+  ```yaml
+  version: '3.2'
+  
+  
+  services:
+    elasticsearch:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+      container_name: elasticsearch
+      environment:
+        - node.name=es8
+        - cluster.name=es8
+        - discovery.type=single-node
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+        - xpack.security.enabled=false
+        - xpack.security.enrollment.enabled=false
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      restart: always
+      ports:
+        - 9205:9200
+      volumes:
+        - /home/user/bind_mount:/usr/share/elasticsearch/data
+  ```
+
+  - 컨테이너를 다시 실행한다.
+
+  ```bash
+  $ docker compose up
+  ```
+
+  - 데이터를 확인한다.
+
+  ```bash
+  $ curl localhost:9205/_search
+  ```
+
+  - 기존 볼륨은 삭제한다.
+
+  ```bash
+  $ docker volume rm <directory_name>_test-volume
+  ```
+
+
 
 
 
