@@ -796,14 +796,6 @@
 
 
 
-- Docker 실행 환경 확인
-
-  ```bash
-  $ docker system info
-  ```
-
-
-
 - `docker system`
 
   - `docker system df`
@@ -1124,7 +1116,7 @@
     - `-d(--detach)`: 백그라운드에서 실행한다.
     - `-u(--user)`: 사용자명을 지정한다.
     - `--restart=[no | on-failure | onfailure:횟수 | always | unless-stopped]`: 명령의 실행 결과에 따라 컨테이너를 재시작 한다.
-    - `--rm`: 명령 실행 완료 후 컨테이너를 자동으로 삭제한다.
+    - `--rm`: 컨테이너가 종료될 때, container를 삭제하고 컨테이너가 사용한 anonymous volume도 함께 삭제한다.
   - 네트워크 설정 옵션
     - `--add--host=[호스트명:IP 주소]`: 컨테이너의 /etc/hosts에 호스트명과 IP 주소를 정의.
     - `--dns=[IP 주소]`: 컨테이너용 DNS 서버의 IP 주소 지정

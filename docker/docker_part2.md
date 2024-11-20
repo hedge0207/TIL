@@ -733,16 +733,19 @@
     - <volume_name>:<컨테이너의 디렉토리 경로>:<access_mode>
   ```
 
-  - Long syntax
-    - `type`: `volume`, `bind`, `tmpfs`, `npipe`, `cluster` 중 하나의 type을 입력한다.
-    - `source`: `bind`의 경우 host의 경로, `volume`의 경우 volume의 이름을 입력하며, `tmpfs`의 경우 입력하지 않는다.
-    - `target`: container 내부의 경로를 입력한다.
-    - `read_only`: volume을 read-only로 설정할지를 입력한다.
-    - `volume`
-      - `nocopy`: volume이 생성될 때, container의 data를 복사해올지를 설정한다.
-    - `bind`
-      - `create_host_path`: source path에 설정된 directory가 없다면 directory를 설정할지 여부를 입력한다(short syntax로 생성할 경우 true가 기본값이다).
-      - `selinux`: `z`나 `Z` 중 하나를 입력한다.
+
+
+
+- Volume long syntax
+  - `type`: `volume`, `bind`, `tmpfs`, `npipe`, `cluster` 중 하나의 type을 입력한다.
+  - `source`: `bind`의 경우 host의 경로, `volume`의 경우 volume의 이름을 입력하며, `tmpfs`의 경우 입력하지 않는다.
+  - `target`: container 내부의 경로를 입력한다.
+  - `read_only`: volume을 read-only로 설정할지를 입력한다.
+  - `volume`
+    - `nocopy`: volume이 생성될 때, container의 data를 복사해올지를 설정한다.
+  - `bind`
+    - `create_host_path`: source path에 설정된 directory가 없다면 directory를 설정할지 여부를 입력한다(short syntax로 생성할 경우 true가 기본값이다).
+    - `selinux`: `z`나 `Z` 중 하나를 입력한다.
 
   ```yaml
   services:
@@ -777,6 +780,40 @@
   ```
 
 
+
+- profiles
+
+  - 아래와 같이 `profiles`를 설정한다.
+
+  ```yaml
+  services:
+    client
+  
+    nginx:
+      profiles: ["nginx"]
+      ports:
+        - 80:80
+  
+    server:
+      profiles: ["server"]
+      ports:
+        - 80:80
+  ```
+
+  - `docker compose` 명령어를 실행할 때 `--profile` 옵션을 통해 특정 profile에 속하는 service들만 명령어가 실행되도록 할 수 있다.
+    - 만약 `--profile` 옵션을 주지 않을 경우, 아무 profile도 설정되지 않은 service들에만 명령어가 실행된다.
+
+  ```bash
+  $ docker compose --profile nginx
+  ```
+
+
+
+
+
+
+
+### network
 
 
 - network
@@ -844,6 +881,8 @@
   services:
     other_app:
       build: ./other_app
+    networks:
+      - default
   
   networks:
     default:
@@ -857,36 +896,6 @@
         external:
           name: backend
   ```
-
-
-
-- profiles
-
-  - 아래와 같이 `profiles`를 설정한다.
-
-  ```yaml
-  services:
-    client
-  
-    nginx:
-      profiles: ["nginx"]
-      ports:
-        - 80:80
-  
-    server:
-      profiles: ["server"]
-      ports:
-        - 80:80
-  ```
-
-  - `docker compose` 명령어를 실행할 때 `--profile` 옵션을 통해 특정 profile에 속하는 service들만 명령어가 실행되도록 할 수 있다.
-    - 만약 `--profile` 옵션을 주지 않을 경우, 아무 profile도 설정되지 않은 service들에만 명령어가 실행된다.
-
-  ```bash
-  $ docker compose --profile nginx
-  ```
-
-
 
 
 
@@ -956,7 +965,7 @@
 
   - `labels`
     - Volume에 metadata를 추가하기 위해 사용한다.
-    - 배열 형태나 dictionary 형태를 사용 할 수 있따.
+    - 배열 형태나 key:value 형태를 사용 할 수 있다.
     - 다른 software에서 사용하는 label과 충돌되지 않도록 resverse-DNS 표기법을 사용하는 것이 권장된다.
 
   ```yaml
@@ -983,8 +992,6 @@
 
 ### 여러 개의 compose file을 사용하기
 
-#### include
-
 > Docker compose 2.20에서 추가된 기능이다.
 
 - `include`
@@ -1009,8 +1016,6 @@
   - 만약 포함되는 compose file과 포함하는 compose file에 내용이 겹칠 경우 error를 발생시킨다.
     - 이를 통해 예상치 못한 충돌이 발생하는 것을 방지한다.
     - error를 발생시키지 않고 override하는 방법도 있다.
-
-
 
 
 
@@ -1156,10 +1161,12 @@
 - 여러 리소스의 일괄 삭제
 
   - docker-compose에 정의된 컨테이너를 일괄 정지 후 삭제시킨다.
-  - `--rmi all`: compose에 정의된 모든 이미지 삭제
-  - `--rmi local`: 커스텀 태그가 없는 이미지만 삭제
-  - `-v, --volumes`: Compose 정의 파일의 데이터 볼륨을 삭제
-
+  - 옵션
+    - `--rmi all`: compose에 정의된 모든 이미지 삭제
+    - `--rmi local`: 커스텀 태그가 없는 이미지만 삭제
+    - `-v, --volumes`: Compose 정의 파일의 데이터 볼륨을 삭제
+  
+  
   ```bash
   $ docker-compose down
   ```
@@ -1317,6 +1324,22 @@
 
 
 
+- Anonymous volume
+
+  - 이름에서 알 수 있듯이 이름이 없는 volume이다.
+    - Container를 실행할 때, 아래와 같이 mount point만 지정하고, volume의 이름을 지정하지 않은 경우 생성된다.
+    - Anonymous volume의 이름은 Docker host 내에서 unique함이 보장되는 값으로 설정된다.
+
+  ```bash
+  $ docker run --name volume-test -v /app/volume volume-test
+  ```
+
+  - Named volume과 마찬가지로 anonymous volume을 사용하는 container가 삭제되더라도 anonymous volume은 삭제되지 않는다.
+    - 단, container를 생성할 때, `--rm` 옵션을 주었다면, container가 종료될 때, container와 함께 anonymous volume도 삭제된다.
+    - `--rm` 옵션을 주더라도, anonymous volume이 아니라면 삭제되지 않는다.
+
+
+
 - Docker volume의 경로 변경하기
 
   - Docker data root directory 자체를 변경하는 방법
@@ -1378,6 +1401,8 @@
     - 그러나 그렇게 보일뿐, 실제로는 용량을 차지하지는 않는다.
     - 또한 bind mounts 방식인 것 같지만, `docker inspect <container_name>`을 통해서 `Mounts.type`을 확인해보면 `volume`으로 생성된 것을 확인할 수 있다.
     - 따라서 `docker volume` 명령어를 통해 조작이 가능하다.
+
+
 
 
 

@@ -635,7 +635,8 @@
     - 다른 사람들(theads)는 문이 잠겨 있는 동안은 화장실을 이용하지 못한다.
   - GIL이 영향을 미치는 범위
     - CPU bound는 GIL의 영향을 받고, I/O bound는 GIL의 영향을 받지 않는다는 설명들이 있는데 이는 잘못된 것이다.
-    - GIL의 영향을 받는지 여부는 Python runtime과 상호작용을 하는가에 달려있다. 즉 python runtime과 상호작용을 하면 GIL의 영향을 받고, 반대일 경우 아니다.
+    - GIL의 영향을 받는지 여부는 Python runtime과 상호작용을 하는가에 달려있다. 즉 Python runtime과 상호작용을 하면 GIL의 영향을 받고, 반대일 경우 아니다.
+    - Python runtime과 상호작용 한다는 것의 의미는 Python interpreter가 프로그램 실행 중 관리하는 시스템적 동작(memory 관리, refcnt 조정, 객체 생성/삭제 등)을 포함하는 작업을 의미한다.
     - CPU bound란 CPU 성능에 영향을 받는 작업으로, 일반적으로 연산을 수행하거나 image processing과 같이 수학적 계산을 많이 하는 작업들이 이에 속한다.
     - I/O bound란 대부분의 시간을 input/output을 기다리는데 사용하는 작업을 뜻하며, filesystem에 접근하거나 network 통신을 하는 작업들이 이에 속한다.
     - 보통 하나의 프로그램은 CPU bound와 I/O bound 작업들이 함께 섞여 있다.
