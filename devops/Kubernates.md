@@ -117,3 +117,223 @@
     - 그리고 서비스로 들어온 요청이 파드에 실제로 접근할 수 있는 방법을 관리한다.
     - 이 때 관리를 담당하는 컴포넌트가 kube-proxy이다.
     - 즉 파드의 IP는 매번 변하지만 kube-proxy가 이 파드에 접근할 수 있는 방법을 그때마다 관리하고 갱신하며, 서비스 오브젝트는 이 정보를 사용하여 파드가 외부에서 접근할 수 있는 경로를 제공한다.
+
+
+
+
+
+## minikube 사용해보기
+
+- minukube 실행하기
+
+  - [minikube 사이트](https://minikube.sigs.k8s.io/docs/start/?arch=%2Fwindows%2Fx86-64%2Fstable%2F.exe+download)에서 minikube 설치 파일을 다운 받는다.
+  - minikube 시작하기
+    - minukube를 실행하기 위해서는 Docker, Hyper-V 등의 container 또는 virtual machine manager가 실행중이어야한다.
+    - `--nodes` flag를 통해 node의 개수를 설정할 수 있다(기본값은 1).
+    - `-p` flag를 통해 minikube VM이 사용할 이름을 설정할 수 있다(기본적 값은 minikube).
+
+  ```bash
+  $ minikube start
+  ```
+
+  - minikube dashboard 열기
+    - 아래 명령어 실행시 자동으로 웹 브라우저가 열린다.
+    - 만약 자동으로 웹 브라우저가 열리는 것을 원치 않는다면 `--url` 옵션을 주면되며, 이 경우 접속을 위한 url만 출력한다.
+    - 만약 위에서 `-p` option을 준 경우 -p로 profile도 함께 지정해줘야한다.
+
+  ```bash
+  $ minikube dashboard
+  ```
+
+
+
+
+- minikube 명령어
+
+  - Pause
+    - 배포된 application에는 영향을 미치지 않고, Kubernetes를 일시 정지한다.
+
+  ```bash
+  $ minikube pause
+  ```
+
+  - Unpause
+
+  ```bash
+  $ minikube unpause
+  ```
+
+  - Stop
+    - Cluster를 정지한다.
+
+  ```bash
+  $ minikube stop
+  ```
+
+  - Memory limit 변경
+    - Memoery limit을 변경한다.
+    - 실행 후 재시작을 해야 한다.
+
+  ```bash
+  $ minikube config set memory 9001
+  ```
+
+  - 이전 버전의 Kubernetes로 실행되는 cluster를 생성한다.
+
+  ```bash
+  $ minikube start -p aged --kubernetes-version=v1.16.1
+  ```
+
+  - 모든 minikube cluster를 삭제한다.
+
+  ```bash
+  $ minikube delete --all
+  ```
+
+  - minikube docker daemon에 연결하기
+    - `minikube docker-env` 명령어는 터미널의 Docker CLI가 minikube 내부의 Docker engine을 가리키려면 어떻게 해야 하는지 출력하는 명령어이다.
+    - `eval`을 통해 이 명령어들을 수행함으로써 터미널의 Docker CLI가 minikube 내부의 Docker engine을 가리키도록 한다.
+
+  ```bash
+  $ eval $(minikube docker-env)
+  ```
+
+
+
+- Deployment 생성하기
+
+  - Deployment는 Pod들을 관리하고 scaling하는 데 도움을 준다.
+
+    - Kubernetes Deployment는 Pod들의 상태를 확인하고, Pod의 container에 문제가 있을 경우 container를 재실행한다.
+
+  - Deployment 생성
+
+    > Windows의 경우 CMD에서 실행해야 한다.
+
+    - `kubectl create` 명령어를 사용하여 Pod를 관리할 deployment를 생성한다.
+    - `--`는 `kubectl` 명령어와 container의 실행 명령어를 구분하는 구분자이다.
+    - `/agnhost netexec`는 container가 시작될 때 실행할 명령이다.
+    - `--http-port`는 `netexec` 명령어의 인수이다.
+
+  ```bash
+  $ kubectl create deployment hello-node --image=registry.k8s.io/e2e-test-images/agnhost:2.39 -- /agnhost netexec --http-port=8080
+  
+  # 위 명령어는 아래와 같은 형식이다.
+  $ kubectl <command> <resource_type> <resource_name> --image <image> -- <container_command> <container_command_arguments>
+  ```
+
+  - Deployment 확인
+    - 가용해질 때 까지 시간이 좀 걸리므로, 만약 `READU`가 `0/1`이라면 잠시 후에 다시 시도하면 된다.
+
+  ```bash
+  $ kubectl get deployments
+  
+  # output
+  NAME         READY   UP-TO-DATE   AVAILABLE   AGE
+  hello-node   1/1     1            1           1m
+  ```
+
+  - Pod 확인하기
+
+  ```bash
+  $ kubectl get pods
+  
+  # output
+  NAME                          READY     STATUS    RESTARTS   AGE
+  hello-node-5f76cf6ccf-br9b5   1/1       Running   0          1m
+  ```
+
+  - Cluster event 확인하기
+
+  ```bash
+  $ kubectl get events
+  ```
+
+  - `kubectl` 설정 확인하기
+
+  ```bash
+  $ kubectl config view
+  ```
+
+  - Pod 내의 container에 대한 application log 확인
+
+  ```bash
+  $ kubectl logs hello-node-5f76cf6ccf-br9b5
+  ```
+
+
+
+- Service 생성하기
+
+  - Kubernetes Service
+    - 기본적으로, Pod는 오직 Kubernetes cluster내의 internal IP 주소로만 접근이 가능하다.
+    - 위에서 생성한 `hello-node` container에 Kubernetes virtual network 외부에서도 접근할 수 있게 하려면 Pod를 Kubernetes Service로 expose해야한다.
+  - Pod를 public internet으로 expose하기
+    - `--type=LoadBalancer` flag는 Service를 cluster 외부로 expose하겠다는 것을 의미한다.
+
+  ```
+  kubectl expose deployment hello-node --type=LoadBalancer --port=8080
+  ```
+
+  - 생성한 service 확인하기
+
+  ```bash
+  $ kubectl get services
+  
+  # output
+  NAME         TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
+  hello-node   LoadBalancer   10.102.142.18   <pending>     8080:30369/TCP   21s
+  kubernetes   ClusterIP      10.76.0.2       <none>        443/TCP          23m
+  ```
+
+  - `minikube`로 service에 연결하기
+
+  ```bash
+  $ minikube service hello-node
+  ```
+
+
+
+- Addon 활성화하기
+
+  - minikube에는 addons들이 내장되어 있다.
+    - 아래 명령어를 통해 addon들을 확인할 수 있다.
+
+  ```bash
+  $ minikube addons list
+  ```
+
+  - Addon 활성화하기
+
+  ```bash
+  $ minikube addons enable <addon>
+  
+  # e.g.
+  $ minikube addons enable metrics-server
+  ```
+
+  - Addon을 설치하면서 생성된 Pod와 Service 확인하기
+
+  ```bash
+  $ kubectl get pod,svc -n kube-system
+  ```
+
+  - 위에서 설치한 `metrics-server`의 output 확인하기
+
+  ```bash
+  $ kubectl top pods
+  ```
+
+  - Addon 비활성화하기
+
+  ```bash
+  $ minikube addon disable <addon>
+  
+  # e.g.
+  $ minikube addons disable metrics-server
+  ```
+
+
+
+
+
