@@ -1,5 +1,7 @@
 # 개요
 
+> https://docs.github.com/en/actions
+
 - Github Actions
   - CI(Continuous Intergration)과 CD(Continuous Delivery)를 위한 platform이다.
     - build, test, deployment pipeline을 자동화해준다.
@@ -231,6 +233,10 @@
           with:
             name: output-log-file
   ```
+
+
+
+
 
 
 
@@ -901,13 +907,98 @@
             - 6379/tcp
   ```
 
+
+
+
+
+
+
+
+
+
+# Github Container Registry
+
+- Container Registry
+  - 조직 또는 개인 계정 내에 container image를 저장할 수 있게 해주는 기능이다.
+    - Image를 특정 repository와 연결하는 것도 가능하다.
+    - Github Packages를 통해 사용이 가능하다.
+  - Personal access token 발급이 필요하다.
+    - Github Packages는 personal access token(classic)을 통해서만 인증이 가능하므로, personal access token(classic)을 발급 받아야 한다.
+    - Personal access token(classic)의 생성은 Github profile → Settings → Developer Settings → Personal access tokens → Tokens(classic)에서 할 수 있다.
+
+
+
+- 테스트용 이미지 생성하기
+
+  - FastAPI application 작성
+
+  ```python
+  from fastapi import FastAPI
+  import uvicorn
   
+  
+  app = FastAPI()
+  
+  @app.get("/ping")
+  def ping():
+      return "pong"
+  
+  if __name__ == "__main__":
+      uvicorn.run(app, host="0.0.0.0", port=8098)
+  ```
+
+  - `requirements.txt` 작성
+
+  ```txt
+  pydantic==2.5.3
+  pydantic_core==2.14.6
+  pydantic-settings==2.1.0
+  uvicorn==0.27.0.post1
+  fastapi==0.109.0
+  requests==2.31.0
+  ```
+
+  - Dockerfile 작성
+
+  ```dockerfile
+  FROM python:3.12.0
+  
+  COPY ./main.py /main.py
+  COPY ./requirements.txt /requirements.txt
+  
+  RUN pip install -r requirements.txt
+  
+  ENTRYPOINT ["/bin/bash", "-c", "python -u main.py"]
+  ```
+
+  - Image build
+    - Image의 이름은 `ghcr.io/<user_name>/<image_name>[:<tag>]` 형식이어야 한다.
+
+  ```bash
+  $ docker build -t ghcr.io/<user_name>/test-app:1.0.0 .
+  ```
 
 
 
 
+- Github Container Registry 사용하기
 
-# 참고
+  - Github Container Registry에 로그인하기
+    - 위에서 발급 받은 토큰으로 로그인한다.
 
-- https://docs.github.com/en/actions
+  ```bash
+  $ docker login ghcr.io -u <user_name> -p <token>
+  ```
+
+  - Image push하기
+
+  ```bash
+  $ docker push ghcr.io/<user_name>/test-app:1.0.0
+  ```
+
+  - Image pull하기
+
+  ```bash
+  $ docker pull ghcr.io/<user_name>/test-app:1.0.0
+  ```
 
