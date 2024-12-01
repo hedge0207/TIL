@@ -337,3 +337,202 @@
 
 
 
+
+
+# Kubernetes 기초
+
+- 배포할 application 생성하기
+
+  - FastAPI application 작성
+
+  ```python
+  from fastapi import FastAPI
+  import uvicorn
+  
+  
+  app = FastAPI()
+  
+  @app.get("/ping")
+  def ping():
+      return "pong"
+  
+  if __name__ == "__main__":
+      uvicorn.run(app, host="0.0.0.0", port=8098)
+  ```
+
+  - `requirements.txt` 작성
+
+  ```txt
+  pydantic==2.5.3
+  pydantic_core==2.14.6
+  pydantic-settings==2.1.0
+  uvicorn==0.27.0.post1
+  fastapi==0.109.0
+  requests==2.31.0
+  ```
+
+  - Dockerfile 작성
+
+  ```dockerfile
+  FROM python:3.12.0
+  
+  COPY ./main.py /main.py
+  COPY ./requirements.txt /requirements.txt
+  
+  RUN pip install -r requirements.txt
+  
+  ENTRYPOINT ["/bin/bash", "-c", "python -u main.py"]
+  ```
+
+  - Image build
+
+  ```bash
+  $ docker build -t ghcr.io/<user_name>/test-app:1.0.0 .
+  ```
+
+  - Kubernetes는 기본적으로 Docker Hub나 컨테이너 레지스트리에서 이미지를 가져온다.
+    - 따라서 위와 같이 local에 image를 build하더라도 Kubernetes가 찾을 수 없다.
+    - 사용을 위해선 Docker hub 등에 image를 push해야한다.
+    - Docker registry를 local에 띄워서 사용하는 방식의 경우, local에 설치된 Docker registry가 https를 사용하도록 변경해줘야한다.
+  - 위 이미지를 Github container registry에 push 한다.
+    - 그 후, 별도의 인증 없이 kubectl에서 image에 접근하기 위해서 image의 visibility를 public으로 변경한다(선택).
+
+  ```bash
+  $ docker push ghcr.io/<user_name>/test-app:1.0.0
+  ```
+
+
+
+- Cluster 생성하기
+
+  - Kubernetes cluster
+    - Kubernetes는 컴퓨터들을 연결하여 단일 형상으로 동작하도록 컴퓨팅 클러스터를 구성하고 높은 가용성을 제공하도록 조율한다.
+    - Kubernetes는 container화 된 application을 cluser에 배포할 수 있도록 해주는데, 이를 위해서는 application이 host machine과 분리되어 packaging되어야 한다(즉, host에 종속되어서는 안 된다).
+    - Kubernetes는 cluster내에 있는 application들의 분배와 scheduling을 자동화해준다.
+  - minikube를 사용하여 cluster 생성하기
+
+  ```bash
+  $ minikube start
+  ```
+
+
+
+
+
+## Deployment
+
+- Application deploy하기
+
+  > [그림 출처](https://kubernetes.io/docs/tutorials/kubernetes-basics/deploy-app/deploy-intro/)
+
+  ![module_02_first_app](Kubernates.assets/module_02_first_app.svg)
+
+  - Kubernetes Deployments
+    - Container화된 application을 Kubernetes cluster에 배포하기 위해서는 Kubernetes Deployment를 생성해야한다.
+    - Deployment는 Kubernetes에게 어떻게 application의 instance를 생성하고 수정할지를 지시하는 역할을 한다.
+    - Deployment가 한 번 생성되면, Kubernetes control plane은 Deployment에 포함된 application instance를 scheduling하여 cluster 내의 node에서 실행될 수 있도록 한다.
+    - Application의 instance가 생성되면 Kubernetes Deployment controller는 지속적으로 해당 instance를 monitoring한다.
+    - 먄약 instance를 hosting하던 Node에 문제가 생길 경우, Deployment controller는 instance를 cluster내의 다른 Node에 있는 instance로 대체한다.
+  - Deployment 생성하기
+    - 아래 명령어가 실행되면 application의 instance가 실행될 적합한 Node를 찾는다.
+    - 그 후 위에서 찾은 Node에서 실행시키기 위해 application을 scheduling한다.
+    - 필요할 때 새 노드에서 인스턴스를 다시 scheduling하도록 클러스터를 설정한다.
+
+  ```bash
+  $ kubectl create deployment <deployment_name> --image=<image>
+  
+  # e.g.
+  $ kubectl create deployment test-deployment --image ghcr.io/<user_name>/test-app:1.0.0
+  ```
+
+  - Deployment 확인하기
+
+  ```bash
+  $ kubectl get deployments
+  ```
+
+  - `kubectl proxy`
+    - 기본적으로 Kubernetes cluster 외부에서는 cluster 내부로 요청하는 것이 불가능하다.
+    - 그러나 `kubectl proxy` 명령어를 통해 요청을 cluster로 forward하는 proxy를 생성할 수 있다.
+    - `--port`로 port를 설정할 수 있으며, 기본 port는 8001이다.
+
+  ```bash
+  $ kubectl proxy
+  ```
+
+  - Proxy 테스트하기
+
+  ```bash
+  $ curl localhost:8001/version
+  ```
+
+  - API server는 각 Pod에 대한 endpoint를 자동으로 생성한다.
+    - 이 endpoint 역시 proxy를 통해 접근 가능하다.
+
+  ```bash
+  $ curl http://localhost:8001/api/v1/namespaces/default/pods/test-deployment-2985we4287-8cgrh
+  ```
+
+  - 우리가 위에서 deploy한 app에도 접근할 수 있다.
+    - 아래에서 살펴볼 Service를 생성할 경우 proxy 없이 접근이 가능해진다.
+
+  ```bash
+  $ curl http://localhost:8001/api/v1/namespaces/default/pods/test-deployment-2985we4287-8cgrh:8098/proxy/ping
+  # "pong"
+  ```
+
+  - Pod의 container에 bash session을 연결할 수도 있다.
+
+  ```bash
+  $ kubectl exec -it <pod_name> -- bash
+  ```
+
+
+
+- Pod 확인하기
+
+  > [그림 출처](https://kubernetes.io/docs/tutorials/kubernetes-basics/explore/explore-intro/)
+
+  ![module_03_pods](Kubernates.assets/module_03_pods.svg)
+
+  - Pod
+    - Deployment를 생성하면 Kubernetes는 Pod를 생성한다.
+    - Pod는 application instance를 hosting하는 역할을 한다.
+    - Pod는 하나 혹은 그 이상의 application container들의 집합이다.
+    - Pod는 자신이 scheduling된 Node에 묶이게 되며, 종료될 때 까지 해당 Node에 남아있는다.
+    - 만약 Node에 문제가 발생할 경우, 동일한 Pod가 cluster 내의 가용한 Node로 scheduling된다.
+  - 같은 Pod에 속한 container들은 일부 resource를 공유하기도 한다.
+    - Volume 형태로 storage를 공유한다.
+    - Cluster IP address를 공유한다.
+    - 각 container가 어떻게 실행되었는지(container image version, 사용하는 port 등)를 공유한다.
+  - Pod 확인
+
+  ```bash
+  $ kubectl get pods
+  ```
+
+  - Pod 상세 정보 보기
+
+  ```bash
+  $ kubectl describe pods
+  ```
+
+
+
+- Node
+
+  - Node는 Kubernetes의 worker machine이며 VM일 수도 있고, physical machine일 수도 있다.
+
+    - 각 Node는 control plane에 의해 관리된다.
+    - 모든 Pod는 Node 내에서 실행되며, 하나의 Node는 여러 개의 Pod를 가질 수 있다.
+    - Control plane은 cluster 내의 Node들에서 실행될 Pod들의 scheduling을 자동으로 실행한다.
+    - Control plane은 scheduling을 수행할 때 각 Node의 가용한 자원을 고려한다.
+
+  - 모든 Kubernetes Node는 최소한 아래 두 개를 수행한다.
+
+    - Kubelet: Node와 control plane사이의 통신을 담당하며, Node에서 실행중인 Pod들과 그 container들을 관리한다.
+
+    - Container runtime: Registry로 부터 container를 pulling하고, container를 unpacking하며 application을 실행하는 역할을 한다.
+
+
+
