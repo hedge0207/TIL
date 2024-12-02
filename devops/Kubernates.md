@@ -536,3 +536,159 @@
 
 
 
+
+
+## Service
+
+- Kubernetes Service
+  - Service
+    - Kubernetes Service는 Pod들의 논리적 집합과, Pod이 접근하는 정책에 대한 정의이다.
+    - Service는 traffic을 Pod들에게 route한다.
+    - Service는 서로 의존관계에 있는 Pod들을 찾아내고 routing하는 역할을 한다.
+    - Service를 통해 의존 관계에 있는 Pod들이 느슨하게 연결될 수 있다.
+    - 각각의 Pod는 같은 Node에 속해있다 할지라도 고유한 IP를 가진다.
+    - 이 IP들은 Service 없이는 cluster 내부로 노출되지 않는다.
+  - Service는 아래와 같이 다양한 방식으로 노출이 가능하다.
+    - ClusterIP(default): Service를 cluster 내의 internal IP에 노출한다. 이 방식은 cluster 내에서만 Service에 접근할 수 있도록 한다.
+    - NodePort: NAT를 사용하여 cluster 내의 각 선택된 Node의 동일한 포트에 서비스를 노출한다. cluster 외부에서 `<NodeIP>:<NodePort>` 형식으로 접근할 수 있도록 한다.
+    - LoadBalancer: 현재 cloud에 external load balancer를 생성하고, Service에 고정된 external IP를 할당한다.
+    - ExternalName: Service를 `externalName` field의 값(e.g. foo.example.com)에 mapping한다.
+  - Label
+    - Service가 Pod들을 matching시킬 때 사용하는 거이 label과 selector이다.
+    - Label은 key/value 쌍으로 이루어져 있으며, 당야한 방식으로 사용될 수 있다.
+
+
+
+- Service 사용하기
+
+  - Service 목록 확인
+    - 목록을 확인해보면 `kubernetes`라는 생성한 적 없는 service가 보일텐데, 이는 minikube가 cluster를 시작할 때 기본으로 생성되는 service이다.
+
+  ```bash
+  $ kubectl get services
+  ```
+
+  - Service 생성
+    - `type`은 `NodePort`로 생성한다.
+    - 위에서 배포한 app이 사용하는 8098 port를 `--port` flag에 입력한다.
+
+  ```bash
+  $ kubectl expose deployment/test-deployment --type="NodePort" --port 8098
+  ```
+
+  - `NodePort` type으로 설정했을 때, 몇 번 port가 외부에 open되었는지를 확인하려면 아래와 같이 하면 된다.
+
+  ```bash
+  $ kubectl decribe services/test-deployment
+  ```
+
+  - 이제 우리가 생성한 application으로 요청을 보낼 수 있게 된다.
+
+  ```bash
+  $ curl http://<minikube_IP>:8098
+  ```
+
+  - 만약 Docker Desktop을 container driver로 사용하여 minikube를 실행한다면, minikube tunnel이 필요하다.
+    - 이는 Docker Desktop의 container가 host computer로부터 격리되어 있기 때문이다.
+
+  ```bash
+  # 먼저 아래 명령어를 실행한다.
+  $ minikube service test-deployment --url
+  
+  # 위 명령어를 실행하면 ttp://127.0.0.1:51082와 같은 url이 나올텐데, 위 명령어를 실행한 창을 그대로 띄워둔 상태에서 출력된 url로 요청을 보내면 된다.
+  $ curl ttp://127.0.0.1:51082/ping
+  ```
+
+
+
+- Service를 Label과 함께 사용하기
+
+  - Deployment는 자동으로 Pod에 대한 label을 생성한다.
+    - 아래 명령어를 실행하면, deployment에 대한 설명이 나오는데, `Labels` 항목에서 label을 확인할 수 있다.
+
+  ```bash
+  $ kubectl describe deployment
+  ```
+
+  - Pod 정보 확인하기
+    - 위에서 얻은 label 정보로 Pod의 정보를 확인한다.
+    - `-l` flag 뒤에 label을 입력한다.
+
+  ```bash
+  $ kubectl get pods -l app=test-deployment
+  ```
+
+  - Service 정보 확인하기
+    - 위에서 얻은 label 정보로 Service 정보를 확인한다.
+    - `-l` flag 뒤에 label을 입력한다.
+
+  ```bash
+  $ kubectl
+  ```
+
+  - Pod에 새로운 label 적용하기
+    - 아래와 같이 `kubectl label` 명령어를 사용하여 Pod에 새로운 label을 적용할 수 있다.
+
+  ```bash
+  $ kubectl label pods <pod_name> <key>=<value>
+  
+  # e.g.
+  $ kubectl label pods test-deployment-2985we4287-8cgrh foo=bar
+  ```
+
+  - 새로 적용된 label 확인하기
+    - 기존 label 외에 새로운 label이 추가된 것을 확인할 수 있다.
+
+  ```bash
+  $ kubectl describe pods test-deployment-2985we4287-8cgrh
+  ```
+
+
+
+- Service 삭제하기
+
+  - Service 삭제
+
+  ```bash
+  $ kubectl delete service -l app=test-deployment
+  ```
+
+  - 삭제되었는지 확인
+
+  ```bash
+  $ kubectl get services
+  ```
+
+  - Route가 더 이상 expose 되지 않는지 확인하기
+    - Docker desktop을 minikube container engine으로 사용할 경우 `minikube service test-deployment --url`를 통해 출력된 url로 요청을 보내봐야 한다.
+    - 요청이 실패하면 더 이상 expose 되지 않는 것이다.
+
+  ```bash
+  $ curl http://<minikube_IP>:8098
+  ```
+
+  - Application에는 문제가 없는지 확인하기
+    - Service 삭제 이후에 application에 문제가 없는지 확인하기 위해, cluster 내부에서 application으로 요청을 보내본다.
+
+  ```bash
+  $ kubectl exec -ti test-deployment-2985we4287-8cgrh -- curl http://localhost:8098
+  ```
+
+
+
+- Headless Service
+  - `spec.clusterIP`를 `None`으로 설정한 Service를 Headless Service라 한다.
+    - Cluster IP가 할당되지 않기 때문에 kube-proxy는 이 Service를 처리하지 않는다.
+    - 또한 load balancing이나 proxing 역시 실행되지 않는다.
+  - 사용하는 이유
+    - 일반적으로 client에서 Pod로 가는 요청은 Service를 거치며, Service는 client로부터 요청을 받아서 Pod 중 하나에 요청을 전달한다.
+    - 그러나 Headless Service의 경우 client가 자신이 원하는 Pod에 직접 요청을 보낼 수 있게 해준다.
+    - 만약 모든 Pod들과 통신해야 하는 client가 있다고 가정했을 때, 이 client는 모든 Pod의 IP주소를 알아야한다.
+    - 모든 Pod의 IP 주소를 알아내기 위해 Kubernetes API로 요청을 보내 해당 Pod들의 IP를 받아올 수도 있겠으나, 이는 client가 Kubernetes에 의존성이 생기는 것이므로 바람직한 방법은 아니다.
+    - Kubernetes의 DNS Lookup을 통해 client에게 Pod IP 목록을 알려줄 수 있다.
+    - 특정 Service에 대해 DNS Lookup을 수행하면 DNS 서버는 Service의 Cluster IP 하나를 반환한다.
+    - 그러나 Headless Servie는 Cluster IP가 없으므로, Headless Service에 대한 DNS Lookup 요청이 DNS 서버에 들어가면, Service에 소속된 Pod IP 목록을 전부 반환한다.
+    - Client는 이를 받아 이를 순회하면서 다시 DNS Lookup을 수행하고 Pod들의 IP를 알 수 있게된다.
+
+
+
