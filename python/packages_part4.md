@@ -8,17 +8,19 @@
 
 
 - 특징
-  - Python code로 test scenario 작성이 가능하다.
-  - 많은 수의 유저가 동시에 사용하는 상황을 테스트 가능하다.
+  
+  - 장점
+    - Python code로 test scenario 작성이 가능하다.
+    - 많은 수의 유저가 동시에 사용하는 상황을 테스트 가능하다.
     - 이벤트 기반(gevnet 사용)으로 수천명의 동시 사용자를 테스트 가능하다.
-  - Web 기반의 UI를 제공한다.
-  - 어떤 시스템이든 테스트가 가능하다.
-  - 가볍고 변경에 유연하다.
-
-
-
-- 단점
-  - 하드웨어 모니터링 기능이 없다.
+    - Web 기반의 UI를 제공한다.
+    - 어떤 시스템이든 테스트가 가능하다.
+    - 가볍고 변경에 유연하다.
+  
+  
+  - 단점
+    - 하드웨어 모니터링 기능이 없다.
+  
 
 
 
@@ -1301,63 +1303,66 @@ for task, stats in self.env.stats.entries.items():
 
 
 
-- Provider override
+- GitPython
 
-  - 한 provider를 다른 provider로 override할 수 있다.
-    - Test시에 유용하게 사용할 수 있는데, 실제 API client를 개발용 stub으로 변경하는 등과 같이 사용할 수 있기 때문이다.
-  - Override를 위해서는 `Provider.override()` method를 호출해야한다.
-    - 이 method는 overriding이라 불리는 하나의 argument를 받는다.
-    - 만약 overriding에 provider를 넘길 경우 provider 호출 시 원래 provider 대신 이 provider가 호출된다.
-    - 만약 overriding에 provider가 아닌 값을 넘길 경우 원래 provider 호출 시 원래 provider가 호출되는 대신 이 value가 반환된다.
+  > https://github.com/gitpython-developers/GitPython
 
-  - 예시
+  - Python을 사용하여 Git을 다룰 수 있게 해준다.
+    - Python으로 개발되었으며, 2009년부터 개발이 시작됐다.
+    - 같은 개발자가 개발한 gitoxide는 Rust로 git을 구현한 것이다.
+    - 현재 새로운 기능의 추가는 이루어지지 않고, 유지보수만 되고 있다.
+    - Python 3.7 이상과 Git 1.7 이상이 요구된다.
+  - 설치
 
-  ```python
-  import dataclasses
-  import unittest.mock
-  
-  from dependency_injector import containers, providers
-  
-  
-  class ApiClient:
-      ...
-  
-  
-  class ApiClientStub(ApiClient):
-      ...
-  
-  
-  @dataclasses.dataclass
-  class Service:
-      api_client: ApiClient
-  
-  
-  class Container(containers.DeclarativeContainer):
-  
-      api_client_factory = providers.Factory(ApiClient)
-  
-      service_factory = providers.Factory(
-          Service,
-          api_client=api_client_factory,
-      )
-  
-  
-  if __name__ == "__main__":
-      container = Container()
-  
-      # 운영 환경에서 사용할 ApiClient 대신 ApiClientStub을 생성하도록 override한다.
-      container.api_client_factory.override(providers.Factory(ApiClientStub))
-      service1 = container.service_factory()
-      assert isinstance(service1.api_client, ApiClientStub)
-  
-      # 2. override를 context manager로 사용하여 APIClient의 mock object를 override한다.
-      with container.api_client_factory.override(unittest.mock.Mock(ApiClient)):
-          service2 = container.service_factory()
-          assert isinstance(service2.api_client, unittest.mock.Mock)
-  
-      # 3. .reset_override()룰 사용하여 override를 해제한다.
-      container.api_client_factory.reset_override()
-      service3 = container.service_factory()
-      assert isinstance(service3.api_client, ApiClient)
+  ```bash
+  $ pip install GitPython
   ```
 
+  - 새로운 git repository 시작하기
+
+  ```python
+  from git import Repo
+  
+  repo = Repo.init(path_to_dir)
+  ```
+
+  - Local git repo 사용하기
+
+  ```bash
+  from git import Repo
+  
+  repo = Repo.init(path_to_dir)
+  ```
+
+  - URL을 사용하여 clone하기
+
+  ```python
+  from git import Repo
+  
+  
+  repo = Repo.clone_from("https://github.com/<user_name>/<repo>", my_dir, branch=branch)
+  ```
+
+  - add, commit
+
+  ```python
+  from git import Repo
+  
+  
+  path = "./gitpython-test"
+  repo = Repo.clone_from("https://github.com/<user_name>/<repo>", path)
+  repo.remote("origin")
+  
+  new_file = f"{path}/test.txt"
+  with open(new_file, "w") as f:
+      f.write("Hello World!")
+  
+  print(repo.untracked_files)
+  
+  repo.index.add('.')
+  repo.index.commit("Commit message")
+  ```
+
+  
+
+  

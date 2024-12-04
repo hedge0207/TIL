@@ -1860,6 +1860,68 @@
 
 
 
+- Provider override
+
+  - 한 provider를 다른 provider로 override할 수 있다.
+    - Test시에 유용하게 사용할 수 있는데, 실제 API client를 개발용 stub으로 변경하는 등과 같이 사용할 수 있기 때문이다.
+  - Override를 위해서는 `Provider.override()` method를 호출해야한다.
+    - 이 method는 overriding이라 불리는 하나의 argument를 받는다.
+    - 만약 overriding에 provider를 넘길 경우 provider 호출 시 원래 provider 대신 이 provider가 호출된다.
+    - 만약 overriding에 provider가 아닌 값을 넘길 경우 원래 provider 호출 시 원래 provider가 호출되는 대신 이 value가 반환된다.
+
+  - 예시
+
+  ```python
+  import dataclasses
+  import unittest.mock
+  
+  from dependency_injector import containers, providers
+  
+  
+  class ApiClient:
+      ...
+  
+  
+  class ApiClientStub(ApiClient):
+      ...
+  
+  
+  @dataclasses.dataclass
+  class Service:
+      api_client: ApiClient
+  
+  
+  class Container(containers.DeclarativeContainer):
+  
+      api_client_factory = providers.Factory(ApiClient)
+  
+      service_factory = providers.Factory(
+          Service,
+          api_client=api_client_factory,
+      )
+  
+  
+  if __name__ == "__main__":
+      container = Container()
+  
+      # 운영 환경에서 사용할 ApiClient 대신 ApiClientStub을 생성하도록 override한다.
+      container.api_client_factory.override(providers.Factory(ApiClientStub))
+      service1 = container.service_factory()
+      assert isinstance(service1.api_client, ApiClientStub)
+  
+      # 2. override를 context manager로 사용하여 APIClient의 mock object를 override한다.
+      with container.api_client_factory.override(unittest.mock.Mock(ApiClient)):
+          service2 = container.service_factory()
+          assert isinstance(service2.api_client, unittest.mock.Mock)
+  
+      # 3. .reset_override()룰 사용하여 override를 해제한다.
+      container.api_client_factory.reset_override()
+      service3 = container.service_factory()
+      assert isinstance(service3.api_client, ApiClient)
+  ```
+
+
+
 
 
 ## Container
