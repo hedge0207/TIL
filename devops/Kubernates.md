@@ -692,3 +692,209 @@
 
 
 
+
+
+## Scale Application
+
+- Scale App
+  - 여러 개의 instance가 실행되도록 scale up할 수 있다.
+    - 새로운 Pod를 생성하고, traffic이 각 Pod로 분산되도록 하면 된다.
+    - 새로운 Pod의 생성은 Deployment를 수정하면 가능하고, traffic이 각 Pod로 분산되도록 하는 것은 Service를 `LoadBalancer` type으로 생성하면 가능하다.
+  - Service는 실행 중인 Pod들을 지속적으로 monitoring하고 요청을 받을 수 있는 Pod에게만 요청을 분산한다.
+
+
+
+- Scaling a Deployment
+
+  - Deployment를 확인한다.
+    - `NAME`은 cluster 내의 Deployment의 이름을 보여준다.
+    - `READY`는 CURRENT/DESIRED replica의 비율을 보여준다.
+    - `UP-TO-DATE`는 desired state를 달성하기 위해 update 되어야 하는 replica의 수를 보여준다.
+    - `AVAILABLE`은 application의 replica 중 얼마나 많은 수가 사용 가능한지를 보여준다.
+    - `AGE`는 application이 실행 중인 시간을 보여준다.
+
+  ```bash
+  $ kubectl get deployments
+  ```
+
+  - ReplicaSet 확인하기
+    - 아래 명령어를 통해 Deployment가 생성한 ReplicaSet을 확인할 수 있다.
+    - `DESIRED`는 application의 instance 중 Deployment를 생성할 때 설정한 desired number를 보여준다.
+    - `CURRENT`는 현재 실행 중인 replica의 수를 보여준다.
+
+  ```bash
+  $ kubectl get rs
+  ```
+
+  - Deployment를 scale하기
+    - `kubectl scale` 명령어를 통해 instance의 desired number를 설정할 수 있다.
+
+  ```bash
+  $ kubectl scale deployments/test-deployment --replicas=4
+  ```
+
+  - Deployment 다시 확인하기
+    - 출력 되는 값이 달라진 것을 확인할 수 있다.
+
+  ```bash
+  $ kubectl get deployments
+  ```
+
+  - Pod의 개수가 달라졌는지 확인하기
+
+  ```bash
+  $ kubectl get pods -o wide
+  ```
+
+  - 변경 사항은 Deployment events log에 기록된다.
+    - 아래 명령어를 통해 확인이 가능하다.
+    - `Events` 항목을 확인하면 된다.
+
+  ```bash
+  $ kubectl describe deployments/test-deployment
+  ```
+
+
+
+- Load Balancing
+
+  - Load balancing을 위한 Service를 생성한다.
+    - 생성한 후 시간이 지나도 계속 pending 상태일 텐데, 이는 external load balancer를 사용하지 않아서 그런 것이다.
+    - 이 경우에도 테스트에는 문제가 없다.
+
+  ```bash
+  $ kubectl expose deployment/test-deployment --type="LoadBalancer" --port 8098
+  ```
+
+  - 요청을 보내고, 각 Pod의 log를 확인해보면, 각 Pod로 요청이 분배되는 것을 확인할 수 있다.
+
+  ```bash
+  $ kubectl logs <pod_name>
+  ```
+
+
+
+- Scale in
+
+  - Scale out 때와 마찬가지로 `kubectl scale` 명령어를 사용하면 된다.
+    - 기존 4개에서 2개로 줄인다.
+
+  ```bash
+  $ kubectl scale deployments/test-deployment --replicas=2
+  ```
+
+  - 확인하기
+
+  ```bash
+  $ kubectl get pods -o wide
+  ```
+
+
+
+
+
+## Rolling Update
+
+- Rolling update
+  - 필요성
+    - 사용자는 항상 서비스에 접근할 수 있기를 원한다.
+    - 개발자는 하루에도 여러 번 새로운 버전을 배포하기를 원한다.
+    - 따라서 서비스의 중단 없이도 새로운 버전을 배포할 수 있어야 하는데 rolling update를 통해 이를 해결할 수 있다.
+  - Kubernetes에서의 rolling update
+    - Kubernetes는 기존의 Pod를 새로운 Pod로 교체하는 방식으로 rolling update를 수행한다.
+    - 새로운 Pod는 가용한 자원과 함께 Node에 schedule된다.
+    - Kubernetes에서 update는 version으로 기록되고, 이전 version으로 되돌리는 것도 가능하다.
+
+
+
+- Update용 image 준비하기
+
+  - `main.py` 파일을 수정한다.
+    - `/foo` endpoint를 추가한다.
+
+  ```python
+  from fastapi import FastAPI
+  import uvicorn
+  
+  
+  app = FastAPI()
+  
+  @app.get("/ping")
+  def ping():
+      return "pong"
+  
+  @app.get("/foo")
+  def foo():
+      return "bar"
+  
+  if __name__ == "__main__":
+      uvicorn.run(app, host="0.0.0.0", port=8098)
+  ```
+
+  - 새로운 tag를 붙여서 build한다.
+
+  ```bash
+  $ docker build -t ghcr.io/<user_name>/test-app:1.1.0 .
+  ```
+
+  - Github container registry에 push한다.
+
+  ```bash
+  $ docker push ghcr.io/<user_name>/test-app:1.1.0
+  ```
+
+
+
+- Rolling update 실행하기
+
+  - 먼저 현재 image의 버전을 확인한다.
+    - `Containers.<deployment_name>.Image`를 확인하면 된다.
+
+  ```bash
+  $ kubectl describe pods
+  ```
+
+  - Image를 변경한다.
+    - `kubectl set image` 명령어를 통해 변경이 가능하다.
+
+  ```bash
+  $ kubectl set image deployments/<deployment_name> <container_name>=<image>:<tag>
+  
+  # e.g.
+  $ kubectl set image deployments/test-deployment test-app=ghcr.io/<user_name>/test-app:1.1.0
+  ```
+
+  - 확인하기
+    - 새로 추가된 `/foo` endpoint로 요청을 보내본다.
+
+  ```bash
+  $ curl http://<minikube_IP>:8098/foo
+  ```
+
+  - Update 확정하기
+    - `kubectl rollout status`를 통해 update를 확정할 수 있다.
+
+  ```bash
+  $ kubectl rollout status deployments/test-deployment
+  ```
+
+
+
+- Roll back하기
+
+  - 아래 명령어를 통해 roll back이 가능하다.
+
+  ```bash
+  $ kubectl rollout undo deployments/test-deployment
+  ```
+
+  - 다시 원래 image로 돌아왔는지 확인한다.
+
+  ```bash
+  $ kubectl describe pods
+  ```
+
+
+
+
+
