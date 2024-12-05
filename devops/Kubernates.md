@@ -898,3 +898,170 @@
 
 
 
+
+
+# Volume
+
+- Volume
+  - Volume이 필요한 이유
+    - Container 내부의 file들은 일시적이다.
+    - 따라서 container가 정지되면, container 내부에 저장된 모든 파일들은 사라지게 된다.
+    - 또한 하나의 Pod에 여러 container가 file을 공유해야 하는 경우, volume 없이 이를 구현하는 것은 매우 까다롭다.
+  - Kubernetes는 다양한 종류의 volume을 지원한다.
+    - Pod는 다양한 종류의 volume을 동시에 사용할 수 있다.
+    - Ephemeral volume은 Pod가 종료되면 함께 사라진다.
+    - Persistent volume은 Pod가 종료되도 남아있다.
+    - 두 종류의 volume 모두 container가 재실행되더라도 data를 보존한다.
+  - Volume을 사용하는 방법
+    - `.spec.volumes`에 Pod가 사용할 volume을 정의한다.
+    - `.spec.containers[*].volumeMounts`에 위에서 정의한 volume을 어디에 mount할지를 정의한다.
+    - Pod 내에서 실행되는 각 container에 대해 각 volume을 어디에 mount할지 개별적으로 지정해줘야한다.
+
+
+
+
+
+## Persistent Volume
+
+- PersistentVolume(PV)과 PersistentVolumeClaim(PVC)
+  - PersistentVolume
+    - 관리자에 의해 수동으로 프로비저닝 되거나, Storage Class에 의해 동적으로 프로비저닝된 cluster 내부의 storage이다.
+    - PersistentVolume은 Node와 마찬가지로 cluster 내부의 resource이다.
+    - PersistentVolume은 Volume과 같은 volume plugin이지만, PersistentVolume을 사용하는 Pod와는 독립적인 lifecycle을 가지고 있다.
+  - PersistentVolumeClaim(PVC)
+    - PVC는 사용자가 storage에 대해 보내는 요청이다.
+    - Pod가 Node의 resource를 사용하는 것 같이, PVC는 PV의 resource를 사용한다.
+    - Pod가 특정 level의 resource(CPU, Memory)를 요청할 수 있는 것 같이, claime은 특정한 크기와 access mode(ReadWriteOnce, ReadOnlyMany, ReadWriteMany, ReadWriteOncePod)를 요청할 수 있다.
+  - PersistentVolume의 type
+    - `csi`: Container Storage Interface(CSI)
+    - `fc`: Fiber Channel(FC) storage
+    - `hostPath`: HostPath volume은 오직 single node일 때만 동작하며, multi node cluster에서는 동작하지 않는다. Test용으로 사용해야한다.
+    - `iscsi`: iSCSI(SCSI over IP) storage
+    - `local`: Node에 mount되는 local storage device
+    - `nfs`: Networ File System(NFS) storage
+
+
+
+- Volume과 claim의 lifecycle
+  - PV는 cluster 내부의 resource이고, PVC는 해당 resource에 대한 요청이다.
+    - PV와 PVC의 상호작용은 아래와 같은 lifecycle을 따른다.
+  - Provisioning
+    - PV가 provisioning 되는 방법에는 static한 방법과 dynamic한 방법이 있다.
+    - Static한 방법의 경우 cluster 관리자가 PV를 생성한다. PV에는 real storage의 상세 정보가 담겨 있다.
+    - Dynamic한 방법은 관리자가 생성한 static PV와 matching되는 PVC 없을 경우, cluster가 PVC에 대한 volume을 동적으로 provisioning한다.
+    - Dynamic한 방법의 경우 StorageClass를 기반으로 한다.
+    - PVC는 storage class에 요청을 보내는데, 해당 storage class는 관리자에 의해 생성된 상태여야한다.
+    - 만약 claim이 `""`로 설정된 class에 요청을 보낼 경우, dynamic provisioning은 비활성화 된다.
+    - Storage class 기반의 dynamic storage provisioning을 활성화하기 위해서는, API server의 `DefaultStorageClass` admission contoller가 활성화 되어야 한다.
+  - Binding
+    - Control plan의 control loop는 새로운 PVC가 있는지 지켜보다 matching되는 PV가 있으면, 그 둘을 binding한다.
+    - 만약 PV가 새로운 PVC에 대해 동적으로 provisioning된 경우, control loop는 항상 PV를 PVC와 binding한다.
+  - Using
+    - Pod는 claim을 통해 volume을 사용한다.
+    - Cluster는 claim을 검사하여 bound된 volume을 찾고, 해당 volume을 Pod에 mount한다.
+
+
+
+- Persistent Volume
+
+  - PV 설정
+    - 각 PV는 volume의 spec과 상태를 포함하고 있다.
+    - PersistentVolume object의 이름은 반드시 유효한 DNS subdomain name이어야 한다.
+
+  ```yaml
+  apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    name: pv0003
+  spec:
+    capacity:
+      storage: 5Gi
+    volumeMode: Filesystem
+    accessModes:
+      - ReadWriteOnce
+    persistentVolumeReclaimPolicy: Recycle
+    storageClassName: slow
+    mountOptions:
+      - hard
+      - nfsvers=4.1
+    nfs:
+      path: /tmp
+      server: 172.17.0.2
+  ```
+
+  - `spec.capacity`
+
+    - 일반적으로 PV는 특정한 storage capacity를 가지고 있으며, 이 값은, `spec.capacity`를 통해 설정할 수 있다.
+    - 현재로서는 storage size가 유일한 설정이다.
+
+  - `spec.volumeMode`
+
+    - PV의 경우 `Filesystem`과 `Block`이라는 두 개의 mode를 설정할 수 있다(기본 값은 `Filesystem`).
+    - `Filesystem`으로 설정할 경우 volume이 Pod의 directory에 mount된다.
+    - `Block`으로 설정하면 volume을 raw block device로 사용할 수 있으며, 이 경우 volume은 Pod에 filesystem 없이 block device로 제공된다.
+
+  - `spec.accessModes`
+
+    - `ReadWriteOnce`(`RWO`): Volume을 단일 node에 read-write로 mount한다.
+    - `ReadOnlyMany`(`ROX`): 여러 node에 read-only로 mount한다.
+    - `ReadWriteMany`(`RWX`): 여러 node에 read-write로 mount한다.
+    - `ReadWriteOncePod`(`RWOP`): 단일 Pod에 read-write로 mount한다.
+
+  - `spec.persistentVolumeReclaimPolicy`
+
+    - `Retain`: 수동 reclamation
+    - `Recycle`: basic scrub(`rm -rf /<volume>/*`)
+    - `Delete`: volume 삭제
+
+  - `spec.storageClassName`
+
+    > 과거에는 `volume.beta.kubernetes.io/storage-class`를 사용했으나, deprecate 될 예정이다.
+
+    - `spec.storageClassName`에 StorageClass의 이름을 설정하여 PV의 class를 설정할 수 있다.
+    - 특정 class의 PV는 오직 해당 class에 요청을 보내는 PVC에만 binding될 수 있다.
+    - `spec.storageClassName`이 없는 PV는 특정 class에 요청을 보내지 않는 PVC에만 binding될 수 있다.
+
+
+
+- PersistentVolumeClaim
+
+  - PVC 설정
+    - 각 PVC는 각각의 spec과 status를 포함하고 있다.
+    - PVC object의 이름은 유효한 DNS subdomain name이어야한다.
+
+  ```yaml
+  apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: myclaim
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    volumeMode: Filesystem
+    resources:
+      requests:
+        storage: 8Gi
+    storageClassName: slow
+    selector:
+      matchLabels:
+        release: "stable"
+      matchExpressions:
+        - {key: environment, operator: In, values: [dev]}
+  ```
+
+  - `spec.accessModes`
+    - PV와 동일하다.
+  - `spec.volumeMode`
+    - PV와 동일하다.
+  - `spec.resources`
+    - Pod와 마찬가지로 claim 역시 특정한 양의 resource를 요청할 수 있다.
+    - 설정 방식은 PV의 `spec.capacity`와 동일하다.
+  - `spec.storageClassName`
+    - Claim은 StorageClass의 이름을 `spec.storageClassName`에 정의하여 특정 class에 요청을 보낼 수 있다.
+    - PVC와 동일한 `spec.storageClassName`을 가진 PV만 PVC에 binding될 수 있다.
+    - PVC가 꼭 class에 요청을 보내야 하는 것은 아니다.
+    - `spec.storageClassName`이 `""`로 설정된 PVC는 class가 설정되지 않은 PV에 요청을 보내는 것으로 해석되므로, class가 지정되지 않은 PV에만 binding 될 수 있다.
+  - `spec.selector`
+    - Claim은 여러 volume들을 filtering하기 위해 label selector를 설정할 수 있다.
+    - `matchLabels`: Volume에 이 값에 해당하는 label이 있어야한다.
+    - `matchExpressions`: key, value 목록, key와 value를 연결하는 연산자를 지정하여 만든 requirements 목록으로, 유효한 연산자에는 `In`, `NotIn`, `Exists`, `DoesNotExist`가 있다.
