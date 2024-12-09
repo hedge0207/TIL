@@ -1065,3 +1065,167 @@
     - Claim은 여러 volume들을 filtering하기 위해 label selector를 설정할 수 있다.
     - `matchLabels`: Volume에 이 값에 해당하는 label이 있어야한다.
     - `matchExpressions`: key, value 목록, key와 value를 연결하는 연산자를 지정하여 만든 requirements 목록으로, 유효한 연산자에는 `In`, `NotIn`, `Exists`, `DoesNotExist`가 있다.
+
+
+
+
+
+## Ephemeral Volume
+
+- Ephemeral volume
+  - Pod의 lifecycle을 따르는 volume이다.
+    - 즉, Pod가 생성될 때 함께 생성되고, Pod가 삭제될 때 함께 삭제된다.
+  - 주요 용도
+    - Application에 추가적인 storage가 필요하지만, 그 곳에 저장되는 데이터가 영구적으로 저장될 필요는 없는 경우.
+    - 예를 들어 caching application을 사용하려고 하는데, memory에 더 이상 여유가 없고, caching 속도가 memory에 비해 조금 느려도 무방하다면, Ephemeral volume을 사용하는 것을 고려할 수 있다.
+    - 또는 설정 파일이나 secret key 등의 data가 read-only로 file 형태로 저장되어야 할 경우에도 사용할 수 있다.
+  - Ephemeral volume의 type
+    - `emptyDir`: 처음 생성될 때 비어 있는 volume.
+    - `configMap`, `downwardAPI`, `secret`: Kubernetes의 data를 Pod에 주입하기 위해 사용하는 volume.
+    - `CSI ephemeral volumes`: CSI driver에 의해 제공되는 volume.
+    - `generic ephemeral volumes`: 모든 storage driver에 의해 제공되는 volume.
+
+
+
+- Ephemeral volume 생성하기
+
+  - PV 혹은 PVC와는 달리 Pod 생성시에 inline으로 생성한다.
+  - Generic ephemeral volume을 생성하는 예시이다.
+
+  ```yaml
+  kind: Pod		# Pod를 생성할 때 함께 생성한다.
+  apiVersion: v1
+  metadata:
+    name: my-app
+  spec:
+    containers:
+      - name: my-frontend
+        image: busybox:1.28
+        volumeMounts:
+        - mountPath: "/scratch"
+          name: scratch-volume
+        command: [ "sleep", "1000000" ]
+    volumes:
+      - name: scratch-volume
+        ephemeral:
+          volumeClaimTemplate:
+            metadata:
+              labels:
+                type: my-frontend-volume
+            spec:
+              accessModes: [ "ReadWriteOnce" ]
+              storageClassName: "scratch-storage-class"
+              resources:
+                requests:
+                  storage: 1Gi
+  ```
+
+
+
+
+
+## Storage Class
+
+- StorageClass
+  - StorageClass는 아래와 같은 field들을 가지고 있으며, 이 값들 PVC를 충족하는 PV를 동적으로 provisioning할 때 사용한다.
+    - `provisioner`
+    - `parameters`
+    - `reclaimPolicy`
+  - 아래와 같은 순서로 동작한다.
+    - StorageClass 정의.
+    - StorageClass를 참조하는 PVC 생성.
+    - PVC의 StorageClass 설정에 따라 PV가 동적으로 provisioning.
+    - Pod가 PVC를 mount하여 storage를 사용.
+  - 사용자가 특정 class에 요청을 보낼 때, StorageClass의 이름을 사용하므로 이름을 잘 지어야한다.
+    - StorageClass가 생성될 때 관리자가 이름을 포함한 다른 parameter들을 설정한다.
+
+
+
+- StorageClass 예시
+
+  - 설정 파일
+
+  ```yaml
+  apiVersion: storage.k8s.io/v1
+  kind: StorageClass
+  metadata:
+    name: low-latency
+    annotations:
+      storageclass.kubernetes.io/is-default-class: "false"
+  provisioner: csi-driver.example-vendor.example
+  reclaimPolicy: Retain
+  allowVolumeExpansion: true
+  mountOptions:
+    - discard
+  volumeBindingMode: WaitForFirstConsumer
+  parameters:
+    guaranteedReadWriteLatency: "true"
+  ```
+
+  - `provisioner`
+    - 모든 StorageClass는 어떤 volume plugin을 사용하여 PV를 provisioning할 것인지를 결정하는 `provisioner` field가 설정되어야한다.
+    - Provisioner에는 Kubernetes가 제공하는 internal provisioner와 Kubernetes spec에 따라 외부에서 만들어진 external provisioner가 있다.
+    - Internal provisioner는 `kubernetes.io`라는 prefix가 붙어있다.
+
+  - `reclaimPolicy`
+    - StorageClass에 의해 동적으로 생성된 PV의 reclaim policy는 StorageClass의 `reclaimPolicy ` field에 따라 결정된다.
+    - `reclaimPolicy`는 `Delete`나 `Retain` 둘 중 하나의 값을 가질 수 있으며, 기본 값은 `Delete`이다.
+    - 수동으로 생성되어 StorageClass에 의해 관리되는 PV에는 PV 생성시에 설정된 reclaim policy가 적용된다.
+  - `allowVolumeExpansion`
+    - PV는 확장 가능하게 설정될 수 있다.
+    - PV에 해당하는 PVC를 수정하여 volume의 크기를 조정할 수 있다.
+    - 모든 volume type이 지원하는 것은 아니다.
+  - `mountOptions`
+    - StorageClass에 의해 동적으로 생성된 PV의 mount option은 StorageClass의 `mountOptions ` field에 따라 결정된다.
+    - 만약 volume plugin이 mount option을 지원하지 않음에도 `mountOptions`가 설정되었을 경우, provisioning은 실패하게 된다.
+  - `volumeBindingMode`
+    - Volume binding과 dynamic provisioning이 언제 실행되어야 하는지를 설정한다.
+    - 기본 값은 `Immediate`로, PVC가 생성되는 즉시 volume binding과 dynamic provisioning이 실행된다.
+  - `parameters`
+    - StorageClass의 volume에 적용할 parameter를 설정한다.
+    - `provisioner`에 따라 각기 다른 parameter를 설정해야한다.
+
+
+
+- Default StorageClass
+
+  - 하나의 StorageClass를 cluster의 default StorageClass로 설정할 수 있다.
+    - PVC에 `storageClassName`을 설정하지 않으면 default StorageClass가 적용된다.
+    - 만약 여러 개의 default StorageClass가 설정되었을 경우, Kubernetes는 가장 최근에 생성된 default StorageClass를 사용한다.
+    - Cluster에 default StorageClass가 없을 수도 있다.
+  - Default StorageClass가 없을 경우에도 `storageClassName`을 설정하지 않고 PVC를 생성할 수 있다.
+    - 이 경우 default StorageClass가 생성되기 전까지 `storageClassName`은 아무 값도 없는 상태가 된다.
+    - 만약 추후에 defaut StorageClass가 생성되면, control plane은 `storageClassName`이 설정되지 않은(빈 값으로 설정되었거나, 아예 key 자체를 선언하지 않은) 모든 PVC를 찾아낸다.
+    - 그 후 control plane은 이러한 PVC에 대해 default StorageClass를 적용한다.
+    - 단, 만약 `storageClassName`이 `""`로 설정된 경우, 이러한 PVC에 대해서는 적용되지 않는다.
+  - Default StorageClass를 생성하는 방법
+    - StorageClass를 생성할 때, 아래와 같이 `metadata.annotations.storageclass.kubernetes.io/is-default-class`의 값을 `"true"`로 설정하면 된다.
+
+  ```yaml
+  apiVersion: storage.k8s.io/v1
+  kind: StorageClass
+  metadata:
+    name: low-latency
+    annotations:
+      storageclass.kubernetes.io/is-default-class: "true"
+  provisioner: csi-driver.example-vendor.example
+  reclaimPolicy: Retain
+  allowVolumeExpansion: true
+  mountOptions:
+    - discard
+  volumeBindingMode: WaitForFirstConsumer
+  parameters:
+    guaranteedReadWriteLatency: "true"
+  ```
+
+  - Default StorageClass를 변경하는 방법
+    - 만약 `standard`와 `gold`라는 두 개의 StorageClass가 있고, 현재 default StorageClass가 `standard`라고했을 때, default StorageClass를 `gold`로 바꾸려면 아래와 같이 하면 된다.
+    - 기존 default StorageClass의 `storageclass.kubernetes.io/is-default-class` 값을 `"false"`로 변경하고, 새로 default StorageClass로 사용할 StorageClass의 `storageclass.kubernetes.io/is-default-class`값을 `"true"`로 변경한다.
+
+  ```bash
+  # 기존 default StorageClass의 설정 변경
+  $ kubectl patch storageclass standard -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+  
+  # 새로운 default StorageClass의 설정 변경
+  $ kubectl patch storageclass gold -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+  ```
