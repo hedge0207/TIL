@@ -1334,7 +1334,9 @@
 
 
 
-# AWS CLI 사용하기
+
+
+# AWS CLI
 
 - AWS CLI를 설치한다.
 
@@ -1467,6 +1469,213 @@
 
 
 
+
+
+
+# Rclone
+
+- Rclone
+  - Cloud storage에 있는 파일을 관리하기 위한 commad-line program이다.
+    - Go로 개발되었다.
+    - Windows, macOS, Linux 등에서 모두 사용이 가능하다.
+    - S3를 포함하여 [70개 이상의 cloud storage](https://rclone.org/#providers)를 지원한다.
+  - 아래와 같은 기능을 지원한다.
+    - Cloud storage에 file backup 혹은 encrypt.
+    - Cloud storage로부터 file restore 혹은 decrypt.
+    - Cloud storage의 data를 다른 cloud storage나 local로 mirror.
+    - 서로 다른 cloud storage 사이의 data 이전.
+
+
+
+- 설치하기
+
+  - Ubuntu에 설치하기
+    - 설치  과정에서 zip을 다룰 수 있는 package가 필요하다.
+
+  ```bash
+  # 만약 zip을 다룰 수 있는 package가 없다면, package를 먼저 설치한다.
+  $ apt install zip
+  
+  # 아래 명령어로 간단하게 설치가 가능하다.
+  $ curl https://rclone.org/install.sh | sudo bash
+  ```
+
+  - Docker image도 제공하며, 아래와 같이 실행이 가능하다.
+
+  ```bash
+  $ docker pull rclone/rclone:latest
+  $ docker run --rm rclone/rclone:latest version
+  ```
+
+  - 설치 확인
+
+  ```bash
+  $ rclone version
+  ```
+
+  - 아래 명령어를 통해 rclone을 설정할 수 있다.
+    - Storage 선택부터 storage에 접속할 수 있는 접속 정보까지 CLI를 통해서 설정이 가능하다.
+    - 각 storage별 설정 정보는 [rclone 사이트](https://rclone.org/docs/)에서 확인이 가능하다.
+    - Linux에서 configuration은 OS 계정별로 설정된다.
+    - 설정한 내용은 `~/.config/rclone/rclone.conf`에 저장된다.
+    - 해당 파일을 직접 수정해도 된다.
+
+  ```bash
+  $ rclone config
+  ```
+
+  - MinIO에 연결하려면, 아래와 같이 설정하면 된다.
+
+  ```bash
+  env_auth> 1
+  access_key_id> USWUXHGYZQYFYFFIT3RE
+  secret_access_key> MOJRH0mkL1IPauahWITSVvyDrQbEEIwljvmxdq03
+  region>
+  endpoint> http://10.11.22.33:9000
+  location_constraint>
+  server_side_encryption>
+  ```
+
+
+
+- rclone 사용해보기
+
+  - 기본 문법
+    - `<subcommand>`에는 `sync`, `copy`, `ls` 등을 사용할 수 있다.
+
+  ```bash
+  $ rclone <subcommand> [options] [parameter] [parameter...]
+  ```
+
+  - Configuration 상의 모든 remote 확인
+
+  ```bash
+  $ rclone listremotes
+  ```
+
+  - Sync시키기
+    - 아래 예시는 MinIO bucket으로 sync시키는 예시이다.
+
+  ```bash
+  $ rclone sync /path/to/files <minio_remote_name>:<bucket_name>
+  ```
+
+  - `sync` 관련 옵션
+
+    > 모든 option은 [rclone 문서](https://rclone.org/commands/rclone_sync/#sync-options) 참조
+
+    - `--dry-run`: 실제 실행하진 않고, 실행 결과만을 보여준다.
+
+    - `--delete-excluded`: Sync에서 제외된 file들을 dest에서 삭제한다.
+    - `--exclude`: Pattern에 matching되는 file들은 제외한다.
+    - `--exclude-from`: File에 작성된 exclude pattern을 읽어서 적용한다.
+    - `--include`: Pattern에 matching되는 file들을 포함시킨다.
+    - `--include-from`: File에 작성된 include pattern을 읽어서 적용한다.
+    - `--filter`: Filtering rule을 추가한다.
+    - `--filter-from`: File에 작성된 filtering pattern을 읽어서 적용한다.
+    - `--ignore-case`: Filter에서 case를 무시한다.
+    - `--include-from` 보다 `--include`가 우선하고, `--exclude-from`보다 `--exclude`가 우선하며, `--filter-from` 보다 `--filter`가 우선한다.
+
+
+
+- Filter, include, exclude
+
+  - Pattern
+    - `pattern-list`에는 공백 없이 `,`로 구분된 pattern들을 입력한다.
+
+  ```
+  *         separator(/)가 아닌 모든 길이의 character를 matching시킨다.
+  **        separator(/)를 포함한 모든 길이의 character를 matching시킨다.
+  ?         separator(/)가 아닌 모든 single character를 matching시킨다.
+  [ [ ! ] { character-range } ]
+            character class (must be non-empty)
+  { pattern-list }
+            pattern alternatives
+  {{ regexp }}
+            regular expression to match
+  c         matches character c (c != *, **, ?, \, [, {, })
+  \c        matches reserved character c (c = *, **, ?, \, [, {, }) or character classㄴ
+  ```
+
+  - `character-range`
+
+  ```
+  c         matches character c (c != \, -, ])
+  \c        matches reserved character c (c = \, -, ])
+  lo - hi   matches character c for lo <= c <= hi
+  ```
+
+  - Pattern이 `/`로 시작할 경우, 오직 top level의 directory에서만 matching시킨다.
+
+  ```
+  file.jpg	- file.jpg를 matching시킨다.
+  			- directory/file.jpg를 matching시킨다.
+  
+  /file.jpg	- top level directory에 있는 file.jpg를 matching시킨다.
+  			- directory/file.jpg는 matching시키지 않는다.
+  ```
+
+  - `--filter` pattern에 `+` 혹은 `-`를 줘서 포함, 제외를 결정할 수 있다.
+    - 예를 들어 아래와 같이 pattern 내에 `-`를 입력하면 모든 `.bak`을 제외하겠다는 의미이다.
+
+  ```bash
+  $ rclone ls remote: --filter "- *.bak"
+  ```
+
+  - `--filter +`는 `--include`와 다르다.
+    - `--include`의 경우 `--exclude *` rule을 내포하고 있으나, `--filter +`는 그렇지 않다.
+    - 즉, `--include`는 모든 file들이 exclude되었다고 가정하고 포함시킬 파일을 하나씩 추가해 나가는 과정이지만, `--filter`는 그렇지 않다.
+
+  ```bash
+  # 아래와 같은 파일이 있을 때
+  foo.txt  bar.txt  foo.py  bar.py
+  
+  # --include "*.txt"가 포함시키는 파일은 아래의 두 개뿐이다.
+  foo.txt  bar.txt
+  
+  # 그러나 --include "+ *.txt"는 모든 파일을 포함시킨다.
+  ```
+
+  - `--include...`, `--exclude...`, `--filter...`를 섞어서 사용해선 안 된다.
+    - 섞어서 사용한다고 error가 발생하지는 않지만 예상치 못 한 결과가 나올 수 있다.
+    - 일반적인 경우에는 `--filter...`를 사용하는 것이 권장된다.
+
+
+
+- Rclone을 사용하여 원격 서버의 file을 MinIO로 sync하기
+
+  - SFTP remote와 MinIO remote를 각각 생성한다.
+
+  ```bash
+  $ rclone config
+  ```
+
+  - 최종적인 설정 파일은 아래와 같다.
+
+  ```ini
+  [sftp-test]
+  type = sftp
+  host = my-host
+  user = foo
+  pass = ZVwmVwFIgevsUGWnhaEGEgfgrerU
+  shell_type = unix
+  md5sum_command = md5sum
+  sha1sum_command = sha1sum
+  
+  [minio-test]
+  type = s3
+  provider = Minio
+  access_key_id = my_access_key
+  secret_access_key = my_secret_key
+  endpoint = http://10.11.22.33:9000
+  acl = private
+  ```
+
+  - 원격 서버의 file을 MinIO로 sync한다.
+
+  ```bash
+  $ rclone sync sftp-test:/path/to/file minio-test:<bucket_name>
+  ```
 
 
 
