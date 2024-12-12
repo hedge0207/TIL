@@ -1229,3 +1229,260 @@
   # 새로운 default StorageClass의 설정 변경
   $ kubectl patch storageclass gold -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
   ```
+
+
+
+
+
+# Kubelet을 Standalone mode로 실행하기
+
+- 실행 전 준비
+
+  - Swap memory 비활성화하기
+    - 기본적으로 kubelet은 node에 swap memory가 활성화되어 있을 경우 시작되지 않는다.
+    - 따라서 kubelet이 swap을 허용하도록 하거나, swap을 비활성화해야한다.
+    - 만약 kubelet이 swap을 허용하도록 하고자 한다면, kubelet 설정 파일에 `failSwapOn: false`와 같이 작성하면 된다.
+
+  ```bash
+  # Swap이 활성화되어 있는지 확인한다. 아래 명령어를 실행했을 때, 아무 메시지도 출력되지 않으면, 이미 비활성화 되어 있는 것이다.
+  $ sudo swapon --show
+  
+  # Swap 비활성화
+  $ sudo swapoff -a
+  ```
+
+  - IPv4 packet forwarding 활성화
+
+  ```bash
+  # IPv4 packet forwarding이 활성화 되어 있는지 확인한다. 만약 1이 출력되면, 활성화되어 있는 것이다.
+  $ cat /proc/sys/net/ipv4/ip_forward
+  
+  # 활성화하기
+  $ sudo tee /etc/sysctl.d/k8s.conf <<EOF
+  net.ipv4.ip_forward = 1
+  EOF
+  
+  # 적용하기
+  $ sudo sysctl --system
+  ```
+
+
+
+- Component 설정하기
+
+  - Container runtime 설치하기
+    - 여기서는 [CRI-O container runtime](https://github.com/cri-o/cri-o)을 사용한다.
+    - 아래 방법 외에도 다양한 설치 방법이 있다.
+
+  ```bash
+  # 설치 script 다운
+  $ curl https://raw.githubusercontent.com/cri-o/packaging/main/get > crio-install
+  
+  # 설치
+  $ sudo bash crio-install
+  
+  # crio service 시작
+  $ sudo systemctl daemon-reload
+  $ sudo systemctl enable --now crio.service
+  
+  # test
+  $ sudo systemctl is-active crio.service
+  ```
+
+  - Network plugin 설치
+    - `cri-o` installer는 `cni-plugins` package를 설치한다.
+    - 아래 명령어를 실행하여 설치 여부를 확인할 수 있다.
+    - 설정을 확인했을 때,  subnet range의 값(예시의 경우 10.85.0.0/16)이 현재 활성화된 network와 겹치지 않는지 확인해야한다.
+    - 만약 겹칠 경우, 겹치지 않게 설정 파일을 수정한 뒤 service를 다시 시작해야한다.
+
+  ```bash
+  # 설치 확인
+  $ /opt/cni/bin/bridge --version
+  
+  # 설정 확인
+  $ cat /etc/cni/net.d/11-crio-ipv4-bridge.conflist
+  
+  # output
+  {
+    "cniVersion": "1.0.0",
+    "name": "crio",
+    "plugins": [
+      {
+        "type": "bridge",
+        "bridge": "cni0",
+        "isGateway": true,
+        "ipMasq": true,
+        "hairpinMode": true,
+        "ipam": {
+          "type": "host-local",
+          "routes": [
+              { "dst": "0.0.0.0/0" }
+          ],
+          "ranges": [
+              [{ "subnet": "10.85.0.0/16" }]
+          ]
+        }
+      }
+    ]
+  }
+  ```
+
+
+
+- Kubelet 설치
+
+  - Kubelet 다운
+
+  ```bash
+  $ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubelet"
+  ```
+
+  - 설정 파일 만들기
+    - 지금은 테스트용으로 kubelet을 실행하므로, 보안과 port 관련 설정을 최대한 단순하게 설정했지만, 실제 운영 환경에서는 아래와 같이 설정해선 안 된다.
+
+  ```bash
+  $ sudo mkdir -p /etc/kubernetes/manifests
+  $ sudo tee /etc/kubernetes/kubelet.yaml <<EOF
+  apiVersion: kubelet.config.k8s.io/v1beta1
+  kind: KubeletConfiguration
+  authentication:
+    webhook:
+      enabled: false # 실제 운영 환경에선 이렇게 설정하면 안 된다.
+  authorization:
+    mode: AlwaysAllow # 실제 운영 환경에선 이렇게 설정하면 안 된다.
+  enableServer: false
+  logging:
+    format: text
+  address: 127.0.0.1 # Restrict access to localhost
+  readOnlyPort: 10255 # 실제 운영 환경에선 이렇게 설정하면 안 된다.
+  staticPodPath: /etc/kubernetes/manifests
+  containerRuntimeEndpoint: unix:///var/run/crio/crio.sock
+  EOF
+  ```
+
+  - 설치
+
+  ```bash
+  $ chmod +x kubelet
+  $ sudo cp kubelet /usr/bin/
+  ```
+
+  - `systemd` service unit file 생성
+    - 아래에서 `[Service]`를 설정하는 부분을 보면 `--kubeconfig`가 argument가 빠져있는 것을 볼 수 있다.
+    - `--kubeconfig` argument는 kubeconfig file의 경로를 설정하는 것인데, 아래와 같이 이를 설정하지 않으면 standalone mode로 동작하게 된다.
+
+  ```bash
+  $ sudo tee /etc/systemd/system/kubelet.service <<EOF
+  [Unit]
+  Description=Kubelet
+  
+  [Service]
+  ExecStart=/usr/bin/kubelet \
+   --config=/etc/kubernetes/kubelet.yaml
+  Restart=always
+  
+  [Install]
+  WantedBy=multi-user.target
+  EOF
+  ```
+
+  - `kubelet` service 시작하기
+
+  ```bash
+  $ sudo systemctl daemon-reload
+  $ sudo systemctl enable --now kubelet.service
+  ```
+
+  - 실행 됐는지 확인
+
+  ```bash
+  $ sudo systemctl is-active kubelet.service
+  ```
+
+  - Kubelet의 `/healthz` endpoint를 통해 정상 실행중인지 확인
+
+  ```bash
+  $ curl http://localhost:10255/healthz?verbose
+  
+  # output
+  [+]ping ok
+  [+]log ok
+  [+]syncloop ok
+  healthz check passed
+  ```
+
+  - Kubelet의 `/pods` endpoint를 통해 Pod 확인하기
+    - 아직 Pod를 생성한 적 없으므로 아무것도 출력되지 않는다.
+
+  ```bash
+  $ curl http://localhost:10255/pods | jq '.'
+  
+  # output
+  {
+    "kind": "PodList",
+    "apiVersion": "v1",
+    "metadata": {},
+    "items": null
+  }
+  ```
+
+
+
+- Kubelet에서 Pod 실행하기
+
+  - Standalone mode에서는 Pod manifest를 통해 Pod를 실행할 수 있다.
+    - Manifest는 local filesystem에서 불러오거나, configuration source에서 HTTP를 통해 가져올 수 있다.
+  - Manifest 생성하기
+
+  ```bash
+  $ cat <<EOF > static-web.yaml
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    name: static-web
+  spec:
+    containers:
+      - name: web
+        image: nginx
+        ports:
+          - name: web
+            containerPort: 80
+            protocol: TCP
+  EOF
+  ```
+
+  - 위에서 생성한 manifest 파일을 `/etc/kubernetes/manifests` directory에 복사한다.
+
+  ```bash
+  $ sudo cp static-web.yaml /etc/kubernetes/manifests/
+  ```
+
+
+
+- Kubelet과 Pod 정보 확인하기
+
+  - Pod 정보 확인하기
+    - Pod networking plugin은 network bridge를 생성하고, 각 Pod에 대한 `veth`  interface 쌍을 생성한다(하나는 Pod 내부에 위치하고, 다른 하나는 host level에 위치한다).
+
+  ```bash
+  $ curl http://localhost:10255/pods | jq '.'
+  ```
+
+  - `static-web` Pod의 IP 주소 확인하기
+
+  ```bash
+  $ curl http://localhost:10255/pods | jq '.items[].status.podIP'
+  
+  # output
+  "10.85.0.4"
+  ```
+
+  - `nginx` Pod로 요청 전송하기
+    - 기본 port가 80이므로, port는 명시하지 않는다.
+
+  ```bash
+  $ curl http://10.85.0.4
+  ```
+
+
+
