@@ -307,3 +307,237 @@
   Wed Nov 27 02:35:27 UTC 2024 The basket is full of watermelons
   ```
 
+
+
+- Multi-container Pod에서 ConfigMap을 통해 설정 변경하기
+
+  - Multi-container Pod
+    - 2개 이상의 서로 다른 container를 포함하고 있는 Pod를 의미한다.
+    - 일반적으로 하나의 Pod 안에서는 하나의 process가 하나의 container를 구동한다.
+    - 그러나 경우에 따라 main process에 도움을 줄 수 있는 보조 역할의 container를 더해서 운영해야 할 수도 있다.
+  - 이번에도 마찬가지로 literal value를 사용하여 ConfigMap을 생성한다.
+
+  ```bash
+  $ kubectl create configmap color --from-literal=color=red
+  ```
+
+  - Deployment를 생성한다.
+
+  ```bash
+  $ kubectl apply -f https://k8s.io/examples/deployments/deployment-with-configmap-two-containers.yaml
+  ```
+
+  - 위에서 Deployment를 생성할 때 사용한 `deployments/deployment-with-configmap-two-containers.yaml` 파일은 아래와 같다.
+    - `nginx`와 `alpine`이라는 두 개의 container를 사용하는 Pod들을 생성한다.
+    - 두 개의 container는 의사소통을 위해 `emptyDir` volume을 공유한다.
+    - `nginx` container는 Nginx web server를 실행시키며, `emptyDir`의 mount 경로는 `/usr/share/nginx/html`이다.
+    - `alpine` container는 ConfigMap의 내용을 기반으로하는 HTML 파일을 작성하는 역할을 하며, `emptyDir`의 mount 경로는 `/pod-data`이다.
+
+  ```yaml
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: configmap-two-containers
+    labels:
+      app.kubernetes.io/name: configmap-two-containers
+  spec:
+    replicas: 3
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: configmap-two-containers
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/name: configmap-two-containers
+      spec:
+        volumes:
+          - name: shared-data
+            emptyDir: {}
+          - name: config-volume
+            configMap:
+              name: color
+        containers:
+          - name: nginx
+            image: nginx
+            volumeMounts:
+              - name: shared-data
+                mountPath: /usr/share/nginx/html
+          - name: alpine
+            image: alpine:3
+            volumeMounts:
+              - name: shared-data
+                mountPath: /pod-data
+              - name: config-volume
+                mountPath: /etc/config
+            command:
+              - /bin/sh
+              - -c
+              - while true; do echo "$(date) My preferred color is $(cat /etc/config/color)" > /pod-data/index.html;
+                sleep 10; done;
+  ```
+
+  - Pod의 상태를 확인한다.
+    - Pod당 2개의 container를 실행하여 READY가 2/2인 것을 확인할 수 있다.
+
+  ```bash
+  $ kubectl get pods --selector=app.kubernetes.io/name=configmap-two-contain
+  
+  # output
+  NAME                                        READY   STATUS    RESTARTS   AGE
+  configmap-two-containers-565fb6d4f4-2xhxf   2/2     Running   0          20s
+  configmap-two-containers-565fb6d4f4-g5v4j   2/2     Running   0          20s
+  configmap-two-containers-565fb6d4f4-mzsmf   2/2     Running   0          20s
+  ```
+
+  - Deployment를 expose한다.
+    - Nginx의 기본 port인 80 port를 target port로 설정한다.
+
+  ```bash
+  $ kubectl expose deployment configmap-two-containers --name=configmap-service --port=8080 --target-port=80
+  ```
+
+  - Port를 forward 시킨다.
+    - `kubectl port-forward`를 통해 local의 port를 Pod로 forward시킬 수 있다.
+
+  ```bash
+  $ kubectl port-forward service/configmap-service 8080:8080
+  ```
+
+  - Service에 접근해본다.
+
+  ```bash
+  $ curl http://localhost:8080
+  
+  # output
+  Wed Nov 27 04:45:34 UTC 2024 My preferred color is red
+  ```
+
+  - ConfigMap을 수정한다.
+    - `data.color`의 값을 red에서 blue로 수정한다.
+
+  ```bash
+  $ kubectl edit configmap color
+  ```
+
+  - 잠시 기다린 뒤 다시 Service에 접근해본다.
+    - blue로 변경된 것을 확인할 수 있다.
+
+  ```bash
+  $ curl http://localhost:8080
+  
+  # output
+  Wed Nov 27 06:12:56 UTC 2024 My preferred color is blue
+  ```
+
+
+
+- Sidecar container를 실행하는 Pod의 ConfigMap을 수정하여 설정 변경하기
+
+  - Sidecar container
+    - 메인 container의 기능을 향상시키거나 확장하기 위해 사용하는 container를 sidecar container라고 부른다.
+    - 일반적으로 메인 container에 logging, monitoring, security, data synchronization 등의 기능을 제공한다.
+    - Multi container의 일종이며 Kubernetes 환경에서 실제 이용되는 많은 수의 multi container Pod가 이런 패턴을 따르고 있다.
+    - Sidecar container는 개념적으로 Init Container이기 때문에, main container가 실행되기 전에 sidecar container가 실행된다는 것이 보장된다.
+
+  - Deployment를 생성한다.
+    - 이번에는 이전에 생성한 후 수정한 `color` ConfigMap을 그대로 사용한다.
+
+  ```bash
+  $ kubectl apply -f https://k8s.io/examples/deployments/deployment-with-configmap-and-sidecar-container.yaml
+  ```
+
+  - 위에서 Deployment를 생성할 때 사용한 `deployments/deployment-with-configmap-and-sidecar-container.yaml`은 아래와 같다.
+    - 이번에는 `alpine` container가 sidecar container가 된다.
+    - `alpine` container는 `nginx` container가 사용할 HTML file을 생성하는 역할을 한다.
+    - `alpine` container는 Init Container이므로 `nginx`보다 먼저 실행된다는 것이 보장되고, 따라서 `nginx` container가 실행될 때, `alpine` container가 생성한 HTML file이 이미 존재하게 된다.
+    - Main container와 sidecar container는 이번에도 `emptyDir` volume을 공유하고, mount 경로는 이전과 동일하다.
+
+  ```yaml
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: configmap-sidecar-container
+    labels:
+      app.kubernetes.io/name: configmap-sidecar-container
+  spec:
+    replicas: 3
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: configmap-sidecar-container
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/name: configmap-sidecar-container
+      spec:
+        volumes:
+          - name: shared-data
+            emptyDir: {}
+          - name: config-volume
+            configMap:
+              name: color
+        containers:
+          - name: nginx
+            image: nginx
+            volumeMounts:
+              - name: shared-data
+                mountPath: /usr/share/nginx/html
+        initContainers:
+          - name: alpine
+            image: alpine:3
+            restartPolicy: Always
+            volumeMounts:
+              - name: shared-data
+                mountPath: /pod-data
+              - name: config-volume
+                mountPath: /etc/config
+            command:
+              - /bin/sh
+              - -c
+              - while true; do echo "$(date) My preferred color is $(cat /etc/config/color)" > /pod-data/index.html;
+                sleep 10; done;
+  ```
+
+  - Pod의 상태를 확인한다.
+
+  ```bash
+  $ kubectl get pods --selector=app.kubernetes.io/name=configmap-sidecar-container
+  ```
+
+  - Deployment를 expose한다.
+
+  ```bash
+  $ kubectl expose deployment configmap-sidecar-container --name=configmap-sidecar-service --port=8081 --target-port=80
+  ```
+
+  - Port를 forward한다.
+
+  ```bash
+  $ kubectl port-forward service/configmap-sidecar-service 8081:8081
+  ```
+
+  - Service에 접근해본다.
+
+  ```bash
+  $ curl http://localhost:8081
+  
+  # output
+  Sat Feb 17 13:09:05 UTC 2024 My preferred color is blue
+  ```
+
+  - ConfigMap을 수정한다.
+    - `data.color`를 blue에서 green으로 변경한다.
+
+  ```bash
+  $ kubectl edit configmap color
+  ```
+
+  - 잠시 기다린 뒤 다시 Service에 접근해본다.
+    - green으로 변경된 것을 확인할 수 있다.
+
+  ```bash
+  $ curl http://localhost:8081
+  
+  # output
+  Wed Nov 27 06:31:02 UTC 2024 My preferred color is green
+  ```
+
