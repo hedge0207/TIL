@@ -541,3 +541,153 @@
   Wed Nov 27 06:31:02 UTC 2024 My preferred color is green
   ```
 
+
+
+- Volume으로 mount된 immutable한 ConfigMap을 통해 설정 변경하기
+
+  - Immutable ConfigMap
+    - Immutable ConfigMap은 고정적이고, 시간의 흘러도 변경될 가능성이 없는 설정을 위해 사용된다.
+    - ConfigMap을 immutable하게 만들면, kubelet이 변경 사항을 지속적으로 확인하지 않아도 되므로 성능이 향상될 수 있다.
+  - Immutable ConfigMap을 변경하는 방법들
+    - ConfigMap의 이름을 변경한 후 실행중인 Pod가 새로운 이름의 ConfigMap을 참조하도록 변경한다.
+    - 이전 값을 사용하는 Pod를 실행했던 모든 Node를 교체한다.
+    - 이전에 ConfigMap을 load했던 모든 Node에서 kubelet을 재실행한다.
+  - Immutable ConfigMap을 생성한다.
+
+  ```bash
+  $ kubectl apply -f https://k8s.io/examples/configmap/immutable-configmap.yaml
+  ```
+
+  - 위에서 ConfigMap을 생성할 때 사용한 `configmap/immutable-configmap.yaml`의 내용은 아래와 같다.
+    - Immutable ConfigMap을 생성한다.
+
+
+  ```yaml
+  apiVersion: v1
+  data:
+    company_name: "ACME, Inc." # existing fictional company name
+  kind: ConfigMap
+  immutable: true
+  metadata:
+    name: company-name-20150801
+  ```
+
+  - Deployment를 추가로 생성한다.
+
+  ```bash
+  $ kubectl apply -f https://k8s.io/examples/deployments/deployment-with-immutable-configmap-as-volume.yaml
+  ```
+
+  - 위 Deployment를 생성할 때 사용한 `deployments/deployment-with-immutable-configmap-as-volume.yaml`의 내용은 아래와 같다.
+    - 위에서 생성한 `company-name-20150801` immutable ConfigMap을 Pod의 container에 volume으로 mount한다.
+
+  ```yaml
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: immutable-configmap-volume
+    labels:
+      app.kubernetes.io/name: immutable-configmap-volume
+  spec:
+    replicas: 3
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: immutable-configmap-volume
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/name: immutable-configmap-volume
+      spec:
+        containers:
+          - name: alpine
+            image: alpine:3
+            command:
+              - /bin/sh
+              - -c
+              - while true; do echo "$(date) The name of the company is $(cat /etc/config/company_name)";
+                sleep 10; done;
+            ports:
+              - containerPort: 80
+            volumeMounts:
+              - name: config-volume
+                mountPath: /etc/config
+        volumes:
+          - name: config-volume
+            configMap:
+              name: company-name-20150801
+  ```
+
+  - Pod의 상태를 확인한다.
+
+  ```bash
+  $ kubectl get pods --selector=app.kubernetes.io/name=immutable-configmap-volume
+  ```
+
+  - Pod의 log를 확인한다.
+    - Pod의 container는 ConfigMap에 정의된 data를 참조하여, 해당 data를 출력한다.
+
+  ```bash
+  $ kubectl logs deployments/immutable-configmap-volume
+  
+  # output
+  Found 3 pods, using pod/immutable-configmap-volume-78b6fbff95-5gsfh
+  Thu Nov 28 00:30:08 UTC 2024 The name of the company is ACME, Inc.
+  Thu Nov 28 00:30:18 UTC 2024 The name of the company is ACME, Inc.
+  Thu Nov 28 00:30:28 UTC 2024 The name of the company is ACME, Inc.
+  ```
+
+  - ConfigMap이 immutable이라면 값을 바꿀 수 없다.
+    - ConfigMap을 immutable하게 생성한 경우, mutable하게 변경하거나, `data` 혹은 `binaryData` field의 내용을 변경할 수 없다.
+    - Immutable한 ConfigMap을 사용하는 Pod의 동작을 변경하려면, 새로운 immutable ConfigMap을 생성하고, 새로 생성한 immutable ConfigMap을 참조하도록 Deployment를 수정해야한다.
+
+  - 새로운 immutable ConfigMap 생성하기
+
+  ```bash
+  $ kubectl apply -f https://k8s.io/examples/configmap/new-immutable-configmap.yaml
+  ```
+
+  - 위에서 ConfigMap을 생성할 때 사용한 `configmap/new-immutable-configmap.yaml`의 내용은 아래와 같다.
+
+  ```yaml
+  apiVersion: v1
+  data:
+    company_name: "Fiktivesunternehmen GmbH" # new fictional company name
+  kind: ConfigMap
+  immutable: true
+  metadata:
+    name: company-name-20240312
+  ```
+
+  - Deployment가 새로 생성한 ConfigMap을 참조하도록 수정한다.
+    - `spec.template.spec.volumes.configMap.name`의 값을 company-name-20150801에서 company-name-20240312으로 변경한다.
+
+  ```bash
+  $ kubectl edit deployment immutable-configmap-volume
+  ```
+
+  - Pod의 상태를 확인한다.
+    - 새로 생성된 모든 Pod들이 정상적으로 실행되는지 확인한다.
+
+  ```bash
+  $ kubectl get pods --selector=app.kubernetes.io/name=immutable-configmap-volume
+  ```
+
+  - Pod의 로그를 확인한다.
+    - 변경된 것을 확인할 수 있다.
+
+  ```bash
+  $ kubectl logs deployment/immutable-configmap-volume
+  
+  # output
+  Found 3 pods, using pod/immutable-configmap-volume-5fdb88fcc8-n5jx4
+  Thu Nov 28 00:45:38 UTC 2024 The name of the company is Fiktivesunternehmen GmbH
+  Thu Nov 28 00:45:48 UTC 2024 The name of the company is Fiktivesunternehmen GmbH
+  Thu Nov 28 00:45:58 UTC 2024 The name of the company is Fiktivesunternehmen GmbH
+  ```
+
+  - 기존에 사용하던 immutable ConfigMap을 삭제한다.
+
+  ```bash
+  $ kubectl delete configmap company-name-20150801
+  ```
+
