@@ -560,8 +560,7 @@
 
   - 위에서 ConfigMap을 생성할 때 사용한 `configmap/immutable-configmap.yaml`의 내용은 아래와 같다.
     - Immutable ConfigMap을 생성한다.
-
-
+  
   ```yaml
   apiVersion: v1
   data:
@@ -571,16 +570,16 @@
   metadata:
     name: company-name-20150801
   ```
-
+  
   - Deployment를 추가로 생성한다.
-
+  
   ```bash
   $ kubectl apply -f https://k8s.io/examples/deployments/deployment-with-immutable-configmap-as-volume.yaml
   ```
-
-  - 위 Deployment를 생성할 때 사용한 `deployments/deployment-with-immutable-configmap-as-volume.yaml`의 내용은 아래와 같다.
-    - 위에서 생성한 `company-name-20150801` immutable ConfigMap을 Pod의 container에 volume으로 mount한다.
-
+  
+    - 위 Deployment를 생성할 때 사용한 `deployments/deployment-with-immutable-configmap-as-volume.yaml`의 내용은 아래와 같다.
+      - 위에서 생성한 `company-name-20150801` immutable ConfigMap을 Pod의 container에 volume으로 mount한다.
+  
   ```yaml
   apiVersion: apps/v1
   kind: Deployment
@@ -616,16 +615,16 @@
             configMap:
               name: company-name-20150801
   ```
-
-  - Pod의 상태를 확인한다.
-
+  
+    - Pod의 상태를 확인한다.
+  
   ```bash
   $ kubectl get pods --selector=app.kubernetes.io/name=immutable-configmap-volume
   ```
-
-  - Pod의 log를 확인한다.
-    - Pod의 container는 ConfigMap에 정의된 data를 참조하여, 해당 data를 출력한다.
-
+  
+    - Pod의 log를 확인한다.
+      - Pod의 container는 ConfigMap에 정의된 data를 참조하여, 해당 data를 출력한다.
+  
   ```bash
   $ kubectl logs deployments/immutable-configmap-volume
   
@@ -635,19 +634,20 @@
   Thu Nov 28 00:30:18 UTC 2024 The name of the company is ACME, Inc.
   Thu Nov 28 00:30:28 UTC 2024 The name of the company is ACME, Inc.
   ```
-
-  - ConfigMap이 immutable이라면 값을 바꿀 수 없다.
-    - ConfigMap을 immutable하게 생성한 경우, mutable하게 변경하거나, `data` 혹은 `binaryData` field의 내용을 변경할 수 없다.
-    - Immutable한 ConfigMap을 사용하는 Pod의 동작을 변경하려면, 새로운 immutable ConfigMap을 생성하고, 새로 생성한 immutable ConfigMap을 참조하도록 Deployment를 수정해야한다.
-
-  - 새로운 immutable ConfigMap 생성하기
-
+  
+    - ConfigMap이 immutable이라면 값을 바꿀 수 없다.
+      - ConfigMap을 immutable하게 생성한 경우, mutable하게 변경하거나, `data` 혹은 `binaryData` field의 내용을 변경할 수 없다.
+      - Immutable한 ConfigMap을 사용하는 Pod의 동작을 변경하려면, 새로운 immutable ConfigMap을 생성하고, 새로 생성한 immutable ConfigMap을 참조하도록 Deployment를 수정해야한다.
+  
+  
+    - 새로운 immutable ConfigMap 생성하기
+  
   ```bash
   $ kubectl apply -f https://k8s.io/examples/configmap/new-immutable-configmap.yaml
   ```
-
-  - 위에서 ConfigMap을 생성할 때 사용한 `configmap/new-immutable-configmap.yaml`의 내용은 아래와 같다.
-
+  
+    - 위에서 ConfigMap을 생성할 때 사용한 `configmap/new-immutable-configmap.yaml`의 내용은 아래와 같다.
+  
   ```yaml
   apiVersion: v1
   data:
@@ -657,24 +657,24 @@
   metadata:
     name: company-name-20240312
   ```
-
-  - Deployment가 새로 생성한 ConfigMap을 참조하도록 수정한다.
-    - `spec.template.spec.volumes.configMap.name`의 값을 company-name-20150801에서 company-name-20240312으로 변경한다.
-
+  
+    - Deployment가 새로 생성한 ConfigMap을 참조하도록 수정한다.
+      - `spec.template.spec.volumes.configMap.name`의 값을 company-name-20150801에서 company-name-20240312으로 변경한다.
+  
   ```bash
   $ kubectl edit deployment immutable-configmap-volume
   ```
-
-  - Pod의 상태를 확인한다.
-    - 새로 생성된 모든 Pod들이 정상적으로 실행되는지 확인한다.
-
+  
+    - Pod의 상태를 확인한다.
+      - 새로 생성된 모든 Pod들이 정상적으로 실행되는지 확인한다.
+  
   ```bash
   $ kubectl get pods --selector=app.kubernetes.io/name=immutable-configmap-volume
   ```
-
-  - Pod의 로그를 확인한다.
-    - 변경된 것을 확인할 수 있다.
-
+  
+    - Pod의 로그를 확인한다.
+      - 변경된 것을 확인할 수 있다.
+  
   ```bash
   $ kubectl logs deployment/immutable-configmap-volume
   
@@ -684,10 +684,211 @@
   Thu Nov 28 00:45:48 UTC 2024 The name of the company is Fiktivesunternehmen GmbH
   Thu Nov 28 00:45:58 UTC 2024 The name of the company is Fiktivesunternehmen GmbH
   ```
-
-  - 기존에 사용하던 immutable ConfigMap을 삭제한다.
-
+  
+    - 기존에 사용하던 immutable ConfigMap을 삭제한다.
+  
   ```bash
   $ kubectl delete configmap company-name-20150801
+  ```
+
+
+
+
+
+
+
+## ConfigMap을 사용하여 Redis 설정해보기
+
+- ConfigMap 생성하기
+
+  - Configuration block을 비워둔 채로 아래와 같이 ConfigMap 생성을 위한 yaml 파일을 작성한다.
+
+  ```yaml
+  # example-redis-config.yaml
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: example-redis-config
+  data:
+    redis-config: ""
+  ```
+
+  - 위 파일을 사용하여 ConfigMap을 생성한다.
+
+  ```bash
+  $ kubectl apply -f ./example-redis-config.yaml
+  ```
+
+
+
+- Redis Pod 생성하기
+
+  - Redis Pod를 생성한다.
+
+  ```bash
+  $ kubectl apply -f https://raw.githubusercontent.com/kubernetes/website/main/content/en/examples/pods/config/redis-pod.yaml
+  ```
+
+  - 위에서 Redis Pod를 생성할 때 사용한 `pods/config/redis-pod.yaml`의 내용은 아래와 같다.
+    - `config`라는 이름의 volume을 생성한다.
+    - `spec.volumes[1].configMap.items[0]`를 보면 `example-redis-config`라는 ConfigMap에서 `redis-config`라는 key에 해당하는 값을 가져온다는 것을 확인할 수 있다.
+    - 이 key에 해당하는 값이 파일로 변환되어 `config` 볼륨에 저장되며, 파일 이름은 `redis.conf`이다.
+    - `spec.containers[0].volumeMounts[1]`를 보면 `config`라는 이름의 volume이 container의 `/redis-master` 경로에 mount된다는 것을 확인할 수 있다.
+
+  ```yaml
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    name: redis
+  spec:
+    containers:
+    - name: redis
+      image: redis:5.0.4
+      command:
+        - redis-server
+        - "/redis-master/redis.conf"
+      env:
+      - name: MASTER
+        value: "true"
+      ports:
+      - containerPort: 6379
+      resources:
+        limits:
+          cpu: "0.1"
+      volumeMounts:
+      - mountPath: /redis-master-data
+        name: data
+      - mountPath: /redis-master
+        name: config
+    volumes:
+      - name: data
+        emptyDir: {}
+      - name: config
+        configMap:
+          name: example-redis-config
+          items:
+          - key: redis-config
+            path: redis.conf
+  ```
+
+
+
+- Redis의 현재 설정 확인하기
+
+  - `redis-cli`에 연결한다.
+
+  ```bash
+  $ kubectl exec -it redis -- redis-cli
+  ```
+
+  - `redis-cli`에서 `maxmemory` 값을 확인한다.
+
+  ```bash
+  127.0.0.1:6379> CONFIG GET maxmemory
+  
+  # output
+  1) "maxmemory"
+  2) "0"
+  ```
+
+  - `redis-cli`에서 `maxmemory-policy`를 확인한다.
+
+  ```bash
+  127.0.0.1:6379> CONFIG GET maxmemory-policy
+  
+  # output
+  1) "maxmemory-policy"
+  2) "noeviction"
+  ```
+
+
+
+- ConfigMap 수정하기
+
+  - 원래 비어 있던 `redis-config`에 아래와 같은 내용을 추가한다.
+
+  ```yaml
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: example-redis-config
+  data:
+    redis-config: |
+      maxmemory 2mb
+      maxmemory-policy allkeys-lru
+  ```
+
+  - ConfigMap을 수정한다.
+    - 위에서 수정한 yaml 파일의 내용이 ConfigMap에 반영되도록 한다.
+
+  ```bash
+  $ kubectl apply -f example-redis-config.yaml
+  ```
+
+  - 변경 사항이 적용됐는지 확인한다.
+
+  ```bash
+  $ kubectl describe configmap/example-redis-config
+  
+  # output
+  Name:         example-redis-config
+  Namespace:    default
+  Labels:       <none>
+  Annotations:  <none>
+  
+  Data
+  ====
+  redis-config:
+  ----
+  maxmemory 2mb
+  maxmemory-policy allkeys-lru
+  ```
+
+
+
+- Redis 설정이 변경되었는지 확인하기
+
+  - 확인하기
+
+  ```bash
+  $ kubectl exec -it redis -- redis-cli
+  
+  127.0.0.1:6379> CONFIG GET maxmemory
+  # output
+  1) "maxmemory"
+  2) "0"
+  
+  127.0.0.1:6379> CONFIG GET maxmemory-policy
+  # output
+  1) "maxmemory-policy"
+  2) "noeviction"
+  ```
+
+  - 변하지 않은 것을 확인할 수 있다.
+
+    - 이는 변경된 ConfigMap을 반영하기 위해서 Pod를 재실행해야 하는데, 재실행하지 않았기 때문이다.
+
+    - 아래와 같이 기존의 Pod를 삭제하고, 다시 생성한다.
+
+  ```bash
+  $ kubectl delete pod redis
+  $ kubectl apply -f https://raw.githubusercontent.com/kubernetes/website/main/content/en/examples/pods/config/redis-pod.yaml
+  ```
+
+  - Redis 설정을 다시 확인한다.
+    - 정상적으로 변경된 것을 확인할 수 있다.
+
+  ```bash
+  $ kubectl exec -it redis -- redis-cli
+  
+  127.0.0.1:6379> CONFIG GET maxmemory
+  # output
+  1) "maxmemory"
+  2) "2097152"
+  
+  127.0.0.1:6379> CONFIG GET maxmemory-policy
+  # output
+  1) "maxmemory-policy"
+  2) "allkeys-lru"
   ```
 
