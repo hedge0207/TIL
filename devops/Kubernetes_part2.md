@@ -892,3 +892,283 @@
   2) "allkeys-lru"
   ```
 
+
+
+
+
+# Load balancer 사용하기
+
+- Kubernetes Service의 type을 `LoadBalancer`로 설정할 경우, load balancer가 필요하다.
+
+  - 일반적으로 AWS 등의 cloud provider가 제공하는 load balancer를 사용한다.
+  - 그러나, 아래에서는 cloud 환경이 아닌 local mahcine으로 테스트를 진행하므로, 별도의 load balancer가 필요하다.
+  - minikube의 경우, addon 중에 metallb를 사용하면 load balancer를 사용할 수 있다.
+    - 아래와 같이 metallb addon을 활성화한다.
+
+  ```bash
+  $ minikube addons enable metallb
+  ```
+
+  - metallb 관련 Pod들이 정상적으로 생성 됐는지 확인한다.
+    - metallb 관련 Pod들은 `default` namespaec가 아닌 `metallb-system` namespace에 생성된다.
+    - 따라서 아래와 같이 `-n` option으로 `metallb-system` namespace를 지정해줘야한다.
+
+  ```bash
+  $ kubectl get pods -n metallb-system
+  ```
+
+  - metallb 관련 ConfigMap이 생성됐는지 확인한다.
+    - 기본적으로 `config`라는 ConfigMap이 생성된다.
+
+  ```bash
+  $ kubectl get configmap -n metalb-system
+  ```
+
+
+
+- Deployment 생성하기
+
+  - Deployment 생성을 위한 yaml file
+    - Replica는 5로 설정하여 총 5개의 Pod를 생성한다.
+    - 8080 port로 요청을 보낸다.
+
+  ```yaml
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      app.kubernetes.io/name: load-balancer-example
+    name: hello-world
+  spec:
+    replicas: 5
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: load-balancer-example
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/name: load-balancer-example
+      spec:
+        containers:
+        - image: gcr.io/google-samples/hello-app:2.0
+          name: hello-world
+          ports:
+          - containerPort: 8080
+  ```
+
+  - Deployment 생성
+
+  ```bash
+  $ kubectl apply -f https://k8s.io/examples/service/load-balancer-example.yaml
+  ```
+
+  - Deployment를 확인한다.
+
+  ```bash
+  $ kubectl get deployments hello-world
+  $ kubectl describe deployments hello-world
+  ```
+
+  - ReplicaSet을 확인한다.
+
+  ```bash
+  $ kubectl get replicasets
+  $ kubectl describe replicasets
+  ```
+
+
+
+- Service 생성하기
+
+  - Service를 생성한다.
+    - Service의 type은 `LoadBalancer`로 설정한다.
+
+  ```bash
+  $ kubectl expose deployment hello-world --type=LoadBalancer --name=my-service
+  ```
+
+  - Service의 정보를 확인한다.
+    - 아래와 같이 `EXTERNAL-IP`의 값이 `<pending>`인걸 확인할 수 있는데, 이는 load balancer가 없기 때문이다.
+
+  ```bash
+  $ kubectl get services my-service
+  
+  # output
+  NAME         TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)    AGE
+  my-service   LoadBalancer   10.3.245.137   <pending>   		8080/TCP 
+  ```
+
+  - Service에 대한 상세 정보를 확인한다.
+    - Load balancer가 설정된 상태면 `LoadBalancer Ingress` 항목도 표시되는데, 현재는 load balancer가 없기에 표시되지 않는다.
+    - 아래에서 `Endpoints` 항목을 보면 Service가 여러 개의 endpoint들을 가진 것을 볼 수 있다.
+    - 이는 application을 실행하는 Pod들의 내부 IP이다.
+
+  ```bash
+  $ kubectl describe services my-service
+  
+  # output
+  Name:           my-service
+  Namespace:      default
+  Labels:         app.kubernetes.io/name=load-balancer-example
+  Annotations:    <none>
+  Selector:       app.kubernetes.io/name=load-balancer-example
+  Type:           LoadBalancer
+  IP:             10.3.245.137
+  Port:           <unset> 8080/TCP
+  NodePort:       <unset> 32377/TCP
+  Endpoints:      10.0.0.6:8080,10.0.1.6:8080,10.0.1.7:8080 + 2 more...
+  Session Affinity:   None
+  Events:         <none>
+  ```
+
+  - Pod들의 내부 IP 확인하기
+    - `IP` 항복에서 Service 상세 정보의 `Endpoints` 항목에서 봤던 IP들을 확인할 수 있다.
+
+  ```bash
+  $ kubectl get pods --output=wide
+  
+  # output
+  NAME                         ...  IP         NODE
+  hello-world-2895499144-1jaz9 ...  10.0.1.6   gke-cluster-1-default-pool-e0b8d269-1afc
+  hello-world-2895499144-2e5uh ...  10.0.1.8   gke-cluster-1-default-pool-e0b8d269-1afc
+  hello-world-2895499144-9m4h1 ...  10.0.0.6   gke-cluster-1-default-pool-e0b8d269-5v7a
+  hello-world-2895499144-o4z13 ...  10.0.1.7   gke-cluster-1-default-pool-e0b8d269-1afc
+  hello-world-2895499144-segjf ...  10.0.2.5   gke-cluster-1-default-pool-e0b8d269-cpuc
+  ```
+
+
+
+- Load balancer 설정하기
+
+  - Service가 사용할 수 있도록 metallb의 ConfigMap을 수정한다.
+  - metallb addon을 enable하면, `metallb-system` namespace에 `config`라는 이름의 ConfigMap이 생성된다.
+
+  ```bash
+  $ kubectl get configmap -n metallb-system
+  
+  # output
+  Name:         config
+  Namespace:    metallb-system
+  Labels:       <none>
+  Annotations:  <none>
+  
+  Data
+  ====
+  config:
+  ----
+  address-pools:
+  - name: default
+    protocol: layer2
+    addresses:
+    - -
+  
+  
+  BinaryData
+  ====
+  
+  Events:  <none>
+  ```
+
+  - metallb가 자동으로 생성한 `config` ConfigMap을 아래와 같이 수정한다.
+    - Address pool을 지정한다.
+    - `192.168.49.100-192.168.49.100`와 같이 지정하면 오직 `192.168.49.100`만 사용할 수 있는 것과 동일하다.
+    - `192.168.49.100`로 설정하는 이유는, 우선 minikube는 기본적으로 192.168.49.0/24 서브넷을 사용한다.
+    - 따라서 이 IP범위 내의 주소(192.168.49.1부터 192.168.49.254)를 사용 가능하다.
+    - 그러므로 address pool 역시 192.168.49.1부터 192.168.49.254 사이의 구간으로 지정할 수 있지만, `192.168.49.1-192.168.49.10`정도의 낮은 구간은 minikube가 자체적으로 사용할 수 있으므로 충돌을 피하기 위해 `192.168.49.100-192.168.49.200` 정도의 구간을 선택한다.
+    - 그런데, 현재는 오직 my-service 하나만을 실행할 것이므로 굳이 넓은 구간을 지정하지 않고, `192.168.49.100` 하나만 사용하도록 한다.
+
+  ```bash
+  $ cat <<EOF | kubectl apply -f -
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    namespace: metallb-system
+    name: config
+  data:
+    config: |
+      address-pools:
+      - name: default
+        protocol: layer2
+        addresses:
+        - 192.168.49.100-192.168.49.100
+  EOF
+  ```
+
+  - ConfigMap이 잘 수정되었는지 확인한다.
+
+  ```bash
+  $ kubectl describe configmap config -n metallb-system
+  
+  # output
+  Name:         config
+  Namespace:    metallb-system
+  Labels:       <none>
+  Annotations:  <none>
+  
+  Data
+  ====
+  config:
+  ----
+  address-pools:
+  - name: default
+    protocol: layer2
+    addresses:
+    - 192.168.49.100-192.168.49.100
+  
+  
+  BinaryData
+  ====
+  
+  Events:  <none>
+  ```
+
+  - Service를 확인한다.
+    - `EXTERNAL-IP`의 값이 우리가 위에서 설정한 `192.168.49.100`로 변경된 것을 확인할 수 있다.
+    - 또한 `LoadBalancer Ingress` 항목도 표시되며, `Events` 항목에서 할당 내역을 볼 수 있다.
+
+  ```bash
+  $ kubectl get services my-service
+  # output
+  NAME         TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)    AGE
+  my-service   LoadBalancer   10.3.245.137   192.168.49.100   8080/TCP   54s
+  
+  $ kubectl describe services my-service
+  # output
+  # ...
+  LoadBalancer Ingress:     192.168.49.100
+  # ...
+  Events:
+    Type    Reason        Age                    From                Message
+    ----    ------        ----                   ----                -------
+    Normal  IPAllocated   9m40s                  metallb-controller  Assigned IP "192.168.49.100"
+    Normal  nodeAssigned  8m27s (x2 over 9m40s)  metallb-speaker     announcing from node "minikube-m02"
+  ```
+
+
+
+- Application에 접근해보기
+
+  - `LoadBalancer Ingress`에 있는 IP로 application에 요청을 보내본다.
+
+  ```bash
+  $ curl 192.168.49.100:8080
+  ```
+
+  - 만약 Docker Desktop을 container driver로 사용하여 minikube를 실행한다면, minikube tunnel이 필요하다.
+    - 이는 Docker Desktop의 container가 host computer로부터 격리되어 있기 때문이다.
+    - `Hostname`을 통해 어느 Pod에서 요청을 처리했는지를 확인할 수 있다.
+    - 요청을 반복적으로 보내보면 각기 다른 Pod로 요청이 분산되는 것을 확인할 수 있다.
+
+  ```bash
+  # 먼저 아래 명령어를 실행한다.
+  $ minikube service test-deployment --url
+  
+  # 위 명령어를 실행하면 ttp://127.0.0.1:51082와 같은 url이 나올텐데, 위 명령어를 실행한 창을 그대로 띄워둔 상태에서 출력된 url로 요청을 보내면 된다.
+  $ curl ttp://127.0.0.1:51082
+  
+  # output
+  Hello, world!
+  Version: 2.0.0
+  Hostname: hello-world-4ttdc175u3-m2b4t
+  ```
+
